@@ -11,6 +11,7 @@ private:
 public:
 	foocls (int i):i(i){}
 	foocls (const foocls &) = delete;
+	foocls (const foocls &&fcls):i(fcls.i){}
 	operator int () const {return i;}
 	void incr (){this->i++;}
 };
