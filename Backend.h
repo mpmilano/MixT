@@ -15,23 +15,9 @@ namespace backend {
 	public:
 		template<typename T>
 		class Handle;
-#include "Backend-impl.h"
 
-		template<typename T> 
-		class Handle : public HandlePrime {
-		private:
-			std::unique_ptr<T> stored_obj;
-			virtual bool is_abstract()  {return false;}
-			operator T& (){ return *stored_obj;}
-			void operator =(std::unique_ptr<T> n) {stored_obj = std::move(n);}
-			operator std::unique_ptr<T>() {return std::move(stored_obj);}
-			Handle(DataStore& parent,std::unique_ptr<T> n):HandlePrime(parent),stored_obj(std::move(n)){}
-		public: 
-			friend class DataStore;
-			Handle (const Handle&) = delete;
-			virtual ~Handle() {}
-			
-		};
+//hiding implemntation details here.  
+#include "Backend-impl.h"
 
 		template<typename T> 
 		Handle<T>& newHandle() {
@@ -100,9 +86,6 @@ namespace backend {
 		template<typename T, typename F, typename... A>
 		void add_f(Handle<T> &h, F addfun, A... args) {F(*(h.stored_obj), args...);}
 
-
-
-		int return_one () {return 1;}
 		DataStore () {}
 		DataStore (const DataStore<L> &) = delete;
 		virtual ~DataStore() {
