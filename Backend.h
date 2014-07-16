@@ -12,6 +12,9 @@ namespace backend {
 	template <Level L>
 	class DataStore {
 
+	public:
+		template<typename T>
+		class Handle;
 		
 	private: 
 		class HandlePrime;
