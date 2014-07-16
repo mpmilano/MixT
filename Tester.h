@@ -14,6 +14,9 @@ namespace tester {
 	using namespace backend;
 	using namespace std;
 
+	template<typename R, typename IR, Level L, typename... A>
+	class Fuzz;
+
 	template<Level L, typename R, typename IR,  typename... A>
 	Fuzz<R,IR,L,A...> registerTestFunction(DataStore<L> &,
 					       function<IR (list<R>)> &,
