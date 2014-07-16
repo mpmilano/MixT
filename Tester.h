@@ -14,16 +14,16 @@ namespace tester {
 	using namespace backend;
 	using namespace std;
 
-	template<typename R, typename IR, Level L, typename... A>
+	template<typename R, typename IR, Level L>
 	class Fuzz;
 
 	template<Level L, typename R, typename IR,  typename... A>
-	Fuzz<R,IR,L,A...> registerTestFunction(DataStore<L> &,
+	Fuzz<R,IR,L> registerTestFunction(DataStore<L> &,
 					       function<IR (list<R>)> &,
 					       function<R (DataStore<L> &, A... )> &,
 					       CONST_LVALUE(A)... extra_args);
 		
-	template<typename R, typename IR, Level L, typename... A>
+	template<typename R, typename IR, Level L>
 	class Fuzz {
 	public:
 		typedef function<IR (list<R>)> checker_fun;
@@ -32,10 +32,12 @@ namespace tester {
 	private:
 		DataStore<L> &ds;
 		test_list test_funs;
-	public:
 		Fuzz(DataStore<L> &ds):	ds(ds), test_funs(test_list()){}
-
-
+	public:
+		Fuzz(const Fuzz<R,IR,L> &) = delete;
+		Fuzz(Fuzz<R,IR,L> &&fz):ds(fz.ds),test_funs(std::move(fz.test_funs)){}
+		
+		template <typename... A>
 		void registerTestFunction(checker_fun &check_invariants, 
 					  function<R (DataStore<L> &, A... )> &tf, 
 					  CONST_LVALUE(A)... extra_args){
@@ -43,22 +45,27 @@ namespace tester {
 			test_funs.push_back(make_pair(check_invariants, storeargs));
 		}
 
-		friend 	template<Level L, typename R, typename IR,  typename... A>
-		Fuzz<R,IR,L,A...> registerTestFunction(DataStore<L> &,
-						       function<IR (list<R>)> &,
-						       function<R (DataStore<L> &, A... )> &,
-						       CONST_LVALUE(A)... extra_args);
+		template<Level L1, typename R1, typename IR1,  typename... A1>
+		friend Fuzz<R1,IR1,L1> registerTestFunction(DataStore<L1> &,
+							    function<IR1 (list<R1>)> &,
+							    function<R1 (DataStore<L1> &, A1... )> &,
+							    CONST_LVALUE(A1)... extra_args);
+
+
 		
 
 	};
 
 	template<Level L, typename R, typename IR,  typename... A>
-	Fuzz<R,IR,L,A...> registerTestFunction(DataStore<L> &ds,
+	Fuzz<R,IR,L> registerTestFunction(DataStore<L> &ds,
 					       function<IR (list<R>)> &check_invariants,
 					       function<R (DataStore<L> &, A... )> &tf,
 					       CONST_LVALUE(A)... extra_args){
-		auto &&ret = Fuzz<R,IR,L,A...>(ds);
+		static bool ranit = false;
+		if (ranit) {throw "Run only once!";}
+		ranit = true;
+		auto &&ret = Fuzz<R,IR,L>(ds);
 		ret.registerTestFunction(check_invariants, tf, extra_args...);
-		return ret;
+		return std::move(ret);
 	}
 }
