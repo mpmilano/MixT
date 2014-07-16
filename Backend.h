@@ -19,38 +19,21 @@ namespace backend {
 //hiding implemntation details here.  
 #include "Backend-impl.h"
 
-		template<typename T> 
-		Handle<T>& newHandle() {
-			std::unique_ptr<Handle<T> > tmp(new Handle<T>(*this,std::unique_ptr<T>()));
-			auto &ret = *tmp; 
-			place_correctly(std::move(tmp));
-			return ret;
-		}
+		//create/delete object slots
 
 		template<typename T>
-		Handle<T>& newHandle(std::unique_ptr<T> r){
-			std::unique_ptr<Handle<T> > tmp(new Handle<T>(*this,std::move(r)));
-			auto &ret = *tmp;
-			place_correctly(std::move(tmp));
-			return ret;
-		}
+		Handle<T>& newHandle(std::unique_ptr<T> r){return newhandle_internal(std::move(r));}
 
 		template<typename T>
-		Handle<T>& newHandle(T r){
-			auto obj = new T(r); 
-			std::unique_ptr<Handle<T> > tmp(new Handle<T>(*this,std::unique_ptr<T>(obj)));
-			auto &ret = *tmp;
-			place_correctly(std::move(tmp));
-			return ret;
-		}
+		Handle<T>& newHandle(T r){return newhandle_internal(std::unique_ptr<T>(new T(r)));}
 
 		template<typename T>
-		Handle<T>& newHandle(T* r){
-			std::unique_ptr<Handle<T> > tmp(new Handle<T>(*this,std::unique_ptr<T>(r)));
-			auto &ret = *tmp;
-			place_correctly(std::move(tmp));
-			return ret;
-		}
+		Handle<T>& newHandle(T* r = nullptr){return newhandle_internal(std::unique_ptr<T>(r));}
+
+		template<typename T>
+		std::unique_ptr<T> del(Handle<T>& hndl) {return del_internal(hndl);}
+
+		//KVstore-style interface
 
 		template<typename T>
 		T& get(Handle<T> &hndl) {return hndl;}
@@ -63,14 +46,6 @@ namespace backend {
 		
 		template<typename T>
 		std::unique_ptr<T> take(Handle<T>& hndl){ return hndl;}
-
-		template<typename T>
-		std::unique_ptr<T> del(Handle<T>& hndl){
-			std::unique_ptr<T> ret = hndl;
-			assert(hndls[hndl.id]->id == hndl.id);
-			hndls[hndl.id].reset(nullptr);
-			return ret;
-		}
 
 		//commutative operations
 
@@ -85,6 +60,8 @@ namespace backend {
 
 		template<typename T, typename F, typename... A>
 		void add_f(Handle<T> &h, F addfun, A... args) {F(*(h.stored_obj), args...);}
+
+		//constructors and destructor
 
 		DataStore () {}
 		DataStore (const DataStore<L> &) = delete;

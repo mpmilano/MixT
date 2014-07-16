@@ -56,3 +56,19 @@
 			
 		};
 
+		template<typename T>	
+		Handle<T>& newhandle_internal(std::unique_ptr<T> r) {
+			std::unique_ptr<Handle<T> > tmp(new Handle<T>(*this,std::move(r)));
+			auto &ret = *tmp;
+			place_correctly(std::move(tmp));
+			return ret;
+		}
+
+		template<typename T>
+		std::unique_ptr<T> del_internal(Handle<T> &hndl){
+			std::unique_ptr<T> ret = hndl;
+			assert(hndls[hndl.id]->id == hndl.id);
+			hndls[hndl.id].reset(nullptr);
+			return ret;
+		}
+
