@@ -14,6 +14,7 @@ public:
 	foocls (const foocls &&fcls):i(fcls.i){}
 	operator int () const {return i;}
 	void incr (){this->i++;}
+	virtual ~foocls() {std::cout << "I'm being deleted! I had a " << i << std::endl; }
 };
 
 int main () {
@@ -25,6 +26,22 @@ int main () {
 		std::cout << tmp3 << std::endl;
 		tester::registerTestFunction(tmp, tmp2, fuzz, tmp3);
 		std::cout << tmp3 << std::endl;
+		tmp.newHandle<int>();
+		tmp.newHandle(4);
+		tmp.newHandle(new foocls(8));
+		auto &hfcls = tmp.newHandle(std::unique_ptr<foocls>(new foocls(4)));
+		tmp.get(hfcls);
+		auto fcls = tmp.take(hfcls);
+		tmp.give(hfcls, new foocls(3));
+		tmp.incr(hfcls); tmp.incr(hfcls);
+		std::cout << "deletes the 3" << std::endl;
+		tmp.give(hfcls, std::move(fcls));
+		std::cout << "deletes the 4" << std::endl;
+		tmp.del(hfcls);
+		
+		
+
+		std::cout << "destructing whole structure" << std::endl;
 	}
 	myds tmp;
 	int i = tmp.return_one() ;
