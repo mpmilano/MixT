@@ -63,6 +63,7 @@
 			HandleImpl<T> &hi;
 			Handle(HandleImpl<T> &hi):hi(hi){}
 		public: 
+			static constexpr Level level = L;
 			friend class DataStore;
 			virtual ~Handle() {}
 
