@@ -8,11 +8,11 @@ namespace election{
 
 	VoteTracker::VoteTracker(backend::DataStore& ds):
 		ds(ds),
-		votes({ds.newHandle<Level::causal>(8),
-					ds.newHandle<Level::causal>(0),
-					ds.newHandle<Level::causal>(0),
-					ds.newHandle<Level::causal>(0),
-					ds.newHandle<Level::causal>(0),})
+		votes({ds.newHandle<Level::strong>(8),
+					ds.newHandle<Level::strong>(0),
+					ds.newHandle<Level::strong>(0),
+					ds.newHandle<Level::strong>(0),
+					ds.newHandle<Level::strong>(0),})
 	{}
 	
 	void VoteTracker::countVote(Candidate cnd){
@@ -22,12 +22,23 @@ namespace election{
 		return ds.get(votes[(int) cnd]);
 	}
 	VoteTracker::counts VoteTracker::currentTally(){
+		DataStore::Handle<Level::causal,
+				  DataStore::HandleAccess::read,
+				  int> 
+			votes_[(int)Candidate::Count] =
+			{ds.newConsistency<Level::causal> (votes[0]),
+			 ds.newConsistency<Level::causal> (votes[1]),
+			 ds.newConsistency<Level::causal> (votes[2]),
+			 ds.newConsistency<Level::causal> (votes[3]),
+			 ds.newConsistency<Level::causal> (votes[4]),
+			};
+
 		auto interim =  counts(
-			ds.get(votes[0]),
-			ds.get(votes[1]),
-			ds.get(votes[2]),
-			ds.get(votes[3]),
-			ds.get(votes[4]));
+			ds.get(votes_[0]),
+			ds.get(votes_[1]),
+			ds.get(votes_[2]),
+			ds.get(votes_[3]),
+			ds.get(votes_[4]));
 		auto total = interim.andrew + 
 			interim.ross + 
 			interim.nate + 
@@ -43,11 +54,11 @@ namespace election{
 
 	VoteTracker::counts VoteTracker::FinalTally(){
 		return counts(
-			ds.get<Level::strong>(votes[0]),
-			ds.get<Level::strong>(votes[1]),
-			ds.get<Level::strong>(votes[2]),
-			ds.get<Level::strong>(votes[3]),
-			ds.get<Level::strong>(votes[4]));
+			ds.get(votes[0]),
+			ds.get(votes[1]),
+			ds.get(votes[2]),
+			ds.get(votes[3]),
+			ds.get(votes[4]));
 	}
 
 }

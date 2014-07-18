@@ -10,7 +10,9 @@ namespace election{
 	class VoteTracker{
 	public:
 		typedef backend::DataStore::Handle
-			<backend::Level::causal,int> VoteH;
+			<backend::Level::strong,
+			backend::DataStore::HandleAccess::all, 
+			int> VoteH;
 
 	private:
 		backend::DataStore& ds;
