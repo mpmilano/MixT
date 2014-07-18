@@ -42,7 +42,13 @@ int main () {
 		std::cout << "deletes the 3" << std::endl;
 		tmp.give(hfcls, std::move(fcls));
 		std::cout << "deletes the 4" << std::endl;
-		tmp.newConsistency<Level::causal>(hfcls);
+		assert(hfcls.level == Level::strong);
+		assert(hfcls.ha == DataStore::HandleAccess::all);
+		auto ro = tmp.newConsistency<Level::causal>(hfcls);
+		assert(ro.level == Level::causal);
+		assert(ro.ha == DataStore::HandleAccess::read);
+		tmp.get(ro);
+		//tmp.give(ro,new foocls(400));
 		tmp.del(hfcls);
 		
 
