@@ -37,7 +37,7 @@ namespace backend {
 
 		//KVstore-style interface
 
-		template<Level L, typename T>
+		template<Level L, Level L_effective = L, typename T>
 		T& get(Handle<L, T> &hndl) {return hndl.hi;}
 
 		template<Level L, typename T>

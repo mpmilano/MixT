@@ -15,6 +15,9 @@ namespace tester {
 	using namespace std;
 
 	//Fuzzer: register unit tests to run
+
+	//The idea is that the "fastest" level is replaced with L. 
+	//This lets you try out operations at different consistencies.
 	template<Level L, typename R, typename IR>
 	class Fuzz;
 
