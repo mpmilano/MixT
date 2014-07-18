@@ -1,6 +1,6 @@
 
-#include "Backend.h"
-#include "Tester.h"
+#include "Backend.hpp"
+#include "Tester.hpp"
 #include <iostream>
 
 typedef backend::DataStore myds;
