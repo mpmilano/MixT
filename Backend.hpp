@@ -21,6 +21,19 @@ namespace backend {
 		
 		enum class HandleAccess {read, write, all};
 
+		static constexpr bool canWrite(HandleAccess ha){
+			return ha == HandleAccess::write ? true 
+				: (ha == HandleAccess::all ? 
+				   true : false);
+		}
+
+		static constexpr bool canRead(HandleAccess ha){
+			return ha == HandleAccess::read ? true 
+				: (ha == HandleAccess::all ? 
+				   true : false);
+		}
+
+
 		template<Level L, HandleAccess HA, typename T>
 		class Handle; //extends TypedHandle<T>
 
@@ -63,30 +76,19 @@ namespace backend {
 
 		//KVstore-style interface
 
-		template<Level L, typename T>
-		T& get(Handle<L, HandleAccess::read, T> &hndl)
+		template<Level L, typename T, HandleAccess HA>
+		typename std::enable_if<canRead(HA), T&>::type
+		get(Handle<L, HA, T> &hndl)
 			{return hndl.hi();}
 
-		template<Level L, typename T>
-		T& get(Handle<L, HandleAccess::all, T> &hndl) 
-			{return hndl.hi();}
-
-		template<Level L, typename T>
-		void give(Handle<L, HandleAccess::write, T> &hndl, 
-			  std::unique_ptr<T> obj) 
+		template<Level L, typename T, HandleAccess HA>
+		typename std::enable_if<canWrite(HA), void>::type
+		give(Handle<L, HA, T> &hndl, std::unique_ptr<T> obj) 
 			{hndl.hi() = std::move(obj);}
 
-		template<Level L, typename T>
-		void give(Handle<L, HandleAccess::all, T> &hndl, 
-			  std::unique_ptr<T> obj) 
-			{hndl.hi() = std::move(obj);}
-
-		template<Level L, typename T>
-		void give(Handle<L, HandleAccess::write, T> &hndl, T* obj) 
-			{hndl.hi() = std::unique_ptr<T>(obj);}
-
-		template<Level L, typename T>
-		void give(Handle<L, HandleAccess::all, T> &hndl, T* obj) 
+		template<Level L, typename T, HandleAccess HA>
+		typename std::enable_if<canWrite(HA), void>::type
+		give(Handle<L, HA, T> &hndl, T* obj) 
 			{hndl.hi() = std::unique_ptr<T>(obj);}
 
 		template<Level L, typename T>
@@ -95,25 +97,20 @@ namespace backend {
 
 		//commutative operations
 
-		template<Level L, typename T>
-		void incr_op(Handle<L, HandleAccess::all, T> &h) 
-			{(*(h.hi().stored_obj))++;}
-		template<Level L, typename T>
-		void incr_op(Handle<L, HandleAccess::write, T> &h) 
+
+		template<Level L, typename T, HandleAccess HA>
+		typename std::enable_if<canWrite(HA), void>::type
+		incr_op(Handle<L, HA, T> &h) 
 			{(*(h.hi().stored_obj))++;}
 
-		template<Level L, typename T>
-		void incr(Handle<L, HandleAccess::write, T> &h) 
-			{h.hi().stored_obj->incr();}
-		template<Level L, typename T>
-		void incr(Handle<L, HandleAccess::all, T> &h) 
+		template<Level L, typename T, HandleAccess HA>
+		typename std::enable_if<canWrite(HA), void>::type
+		incr(Handle<L, HA, T> &h) 
 			{h.hi().stored_obj->incr();}
 
-		template<Level L, typename T, typename... A>
-		void add(Handle<L, HandleAccess::write, T> &h, A... args) 
-			{h.hi().stored_obj->add(args...);}
-		template<Level L, typename T, typename... A>
-		void add(Handle<L, HandleAccess::all, T> &h, A... args) 
+		template<Level L, typename T, HandleAccess HA, typename... A>
+		typename std::enable_if<canRead(HA), void>::type
+		add(Handle<L, HA, T> &h, A... args) 
 			{h.hi().stored_obj->add(args...);}
 
 		//constructors and destructor
