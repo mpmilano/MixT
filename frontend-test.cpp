@@ -41,6 +41,7 @@ int main () {
 		std::cout << "deletes the 3" << std::endl;
 		tmp.give(hfcls, std::move(fcls));
 		std::cout << "deletes the 4" << std::endl;
+		tmp.get<Level::causal>(noview);
 		auto causalview = tmp.newConsistency<Level::causal>(noview);
 		tmp.del(causalview);		
 		
