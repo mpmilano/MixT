@@ -8,7 +8,7 @@ namespace election{
 
 	VoteTracker::VoteTracker(backend::DataStore& ds):
 		ds(ds),
-		votes({ds.newHandle<Level::causal>(0),
+		votes({ds.newHandle<Level::causal>(8),
 					ds.newHandle<Level::causal>(0),
 					ds.newHandle<Level::causal>(0),
 					ds.newHandle<Level::causal>(0),
@@ -22,12 +22,23 @@ namespace election{
 		return ds.get(votes[(int) cnd]);
 	}
 	VoteTracker::counts VoteTracker::currentTally(){
-		return counts(
+		auto interim =  counts(
 			ds.get(votes[0]),
 			ds.get(votes[1]),
 			ds.get(votes[2]),
 			ds.get(votes[3]),
 			ds.get(votes[4]));
+		auto total = interim.andrew + 
+			interim.ross + 
+			interim.nate + 
+			interim.dexter + 
+			interim.constabob;
+		return counts((interim.andrew * 100) / total,
+			      (interim.nate * 100) / total,
+			      (interim.ross * 100) / total,
+			      (interim.dexter * 100) / total,
+			      (interim.constabob * 100) / total,
+			      true);
 	}
 
 	VoteTracker::counts VoteTracker::FinalTally(){
@@ -50,7 +61,7 @@ int main (){
 	v.countVote(election::Candidate::Nate);
 	v.countVote(election::Candidate::Ross);
 	v.countVote(election::Candidate::Andrew);
-	v.currentTally();
+	std:: cout << v.currentTally() << std::endl;
 	v.countVote(election::Candidate::Ross);
 	v.countVote(election::Candidate::ConstaBob);
 	v.countVote(election::Candidate::Ross);
