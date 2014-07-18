@@ -14,6 +14,7 @@ namespace tester {
 	using namespace backend;
 	using namespace std;
 
+	//Fuzzer: register unit tests to run
 	template<typename R, typename IR, Level L>
 	class Fuzz;
 
@@ -41,8 +42,9 @@ namespace tester {
 		void registerTestFunction(checker_fun &check_invariants, 
 					  function<R (DataStore<L> &, A... )> &tf, 
 					  CONST_LVALUE(A)... extra_args){
-			test_fun &&storeargs = bind(tf, placeholders::_1, ref(extra_args)...);
-			test_funs.push_back(make_pair(check_invariants, storeargs));
+			test_funs.push_back(
+				make_pair(check_invariants, 
+					  bind(tf, placeholders::_1, ref(extra_args)...)));
 		}
 
 		template<Level L1, typename R1, typename IR1,  typename... A1>
@@ -50,10 +52,6 @@ namespace tester {
 							    function<IR1 (list<R1>)> &,
 							    function<R1 (DataStore<L1> &, A1... )> &,
 							    CONST_LVALUE(A1)... extra_args);
-
-
-		
-
 	};
 
 	template<Level L, typename R, typename IR,  typename... A>

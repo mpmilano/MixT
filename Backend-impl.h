@@ -1,6 +1,6 @@
 	private: 
 		class HandlePrime;
-		std::vector<std::unique_ptr<HandlePrime>> hndls;
+		std::vector<std::unique_ptr<HandlePrime> > hndls;
 		std::queue<int> next_ids;
 		bool destructing = false;
 		int get_next_id(){
@@ -40,7 +40,7 @@
 
 	public:
 
-		template<typename T> 
+		template<Level L, typename T> 
 		class Handle : public HandlePrime {
 		private:
 			std::unique_ptr<T> stored_obj;
@@ -56,16 +56,16 @@
 			
 		};
 
-		template<typename T>	
-		Handle<T>& newhandle_internal(std::unique_ptr<T> r) {
-			std::unique_ptr<Handle<T> > tmp(new Handle<T>(*this,std::move(r)));
+		template<Level L, typename T>	
+		Handle<L, T>& newhandle_internal(std::unique_ptr<T> r) {
+			std::unique_ptr<Handle<L, T> > tmp(new Handle<L, T>(*this,std::move(r)));
 			auto &ret = *tmp;
 			place_correctly(std::move(tmp));
 			return ret;
 		}
 
-		template<typename T>
-		std::unique_ptr<T> del_internal(Handle<T> &hndl){
+		template<Level L, typename T>
+		std::unique_ptr<T> del_internal(Handle<L, T> &hndl){
 			std::unique_ptr<T> ret = hndl;
 			assert(hndls[hndl.id]->id == hndl.id);
 			hndls[hndl.id].reset(nullptr);
