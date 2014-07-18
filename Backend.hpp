@@ -19,7 +19,9 @@ namespace backend {
 		template<typename T>
 		class TypedHandle; //extends GenericHandle
 		
-		template<Level L, typename T>
+		enum class HandleAccess {read, write, all};
+
+		template<Level L, HandleAccess HA, typename T>
 		class Handle; //extends TypedHandle<T>
 
 //hiding implemntation details here.  
@@ -28,71 +30,91 @@ namespace backend {
 		//create/delete object slots
 
 		template<Level L, typename T>
-		Handle<L, T> newHandle(std::unique_ptr<T> r)
-			{return newhandle_internal<L>(std::move(r));}
+		Handle<L,HandleAccess::all, T> 
+		newHandle(std::unique_ptr<T> r)
+			{return newhandle_internal<L,HandleAccess::all>
+					(std::move(r));}
 
 		template<Level L, typename T>
-		Handle<L, T> newHandle(T r)
-			{return newhandle_internal<L>
+		Handle<L,HandleAccess::all, T> newHandle(T r)
+			{return newhandle_internal<L,HandleAccess::all>
 					(std::unique_ptr<T>(new T(r)));}
 
 		template<Level L, typename T>
-		Handle<L, T> newHandle(T* r = nullptr)
-			{return newhandle_internal<L>
+		Handle<L,HandleAccess::all, T> newHandle(T* r = nullptr)
+			{return newhandle_internal<L,HandleAccess::all>
 					(std::unique_ptr<T>(r));}
 
-		template<Level L, typename T>
-		std::unique_ptr<T> del(Handle<L, T>& hndl) 
+		template<Level L,typename T>
+		std::unique_ptr<T> del(Handle<L,HandleAccess::all,T>& hndl)
 			{return del_internal<L>(hndl);}
 
 		template<Level Lnew, typename T>
-		Handle<Lnew, T> newConsistency(TypedHandle<T> &old)
-			{ return Handle<Lnew, T>(old.hi());}
+		Handle<Lnew, HandleAccess::read, T> newConsistency
+		(Handle<Level::strong,HandleAccess::all,T> &old)
+			{return Handle<Lnew,HandleAccess::read,T>(old.hi());}
+
+		template<Level Lnew, typename T>
+		Handle<Lnew, HandleAccess::write, T> newConsistency
+		(Handle<Level::causal,HandleAccess::all,T> &old)
+			{ return Handle<Lnew,HandleAccess::write, T>
+					(old.hi());}
 
 
 		//KVstore-style interface
 
-		template<Level L, Level L_effective = L, typename T>
-		T& get(Handle<L, T> &hndl) {return hndl.hi();}
+		template<Level L, typename T>
+		T& get(Handle<L, HandleAccess::read, T> &hndl)
+			{return hndl.hi();}
 
-		template<Level L_effective, typename T>
-		T& get(TypedHandle<T> &hndl) {return hndl.hi();}
+		template<Level L, typename T>
+		T& get(Handle<L, HandleAccess::all, T> &hndl) 
+			{return hndl.hi();}
 
-		template<Level L, Level L_effective = L, typename T>
-		void give(Handle<L, T> &hndl, std::unique_ptr<T> obj) 
+		template<Level L, typename T>
+		void give(Handle<L, HandleAccess::write, T> &hndl, 
+			  std::unique_ptr<T> obj) 
 			{hndl.hi() = std::move(obj);}
 
-		template<Level L, Level L_effective = L, typename T>
-		void give(Handle<L, T> &hndl, T* obj) 
+		template<Level L, typename T>
+		void give(Handle<L, HandleAccess::all, T> &hndl, 
+			  std::unique_ptr<T> obj) 
+			{hndl.hi() = std::move(obj);}
+
+		template<Level L, typename T>
+		void give(Handle<L, HandleAccess::write, T> &hndl, T* obj) 
 			{hndl.hi() = std::unique_ptr<T>(obj);}
-		
-		template<Level L, Level L_effective = L, typename T>
-		std::unique_ptr<T> take(Handle<L, T>& hndl)
+
+		template<Level L, typename T>
+		void give(Handle<L, HandleAccess::all, T> &hndl, T* obj) 
+			{hndl.hi() = std::unique_ptr<T>(obj);}
+
+		template<Level L, typename T>
+		std::unique_ptr<T> take(Handle<L,HandleAccess::all,T>& hndl)
 			{ return hndl.hi();}
 
 		//commutative operations
 
-		template<Level L, Level L_effective = L, typename T>
-		void incr_op(Handle<L, T> &h) 
+		template<Level L, typename T>
+		void incr_op(Handle<L, HandleAccess::all, T> &h) 
+			{(*(h.hi().stored_obj))++;}
+		template<Level L, typename T>
+		void incr_op(Handle<L, HandleAccess::write, T> &h) 
 			{(*(h.hi().stored_obj))++;}
 
-		template<Level L, Level L_effective = L, typename T>
-		void incr(Handle<L, T> &h) {h.hi().stored_obj->incr();}
+		template<Level L, typename T>
+		void incr(Handle<L, HandleAccess::write, T> &h) 
+			{h.hi().stored_obj->incr();}
+		template<Level L, typename T>
+		void incr(Handle<L, HandleAccess::all, T> &h) 
+			{h.hi().stored_obj->incr();}
 
-		template<Level L, Level L_effective = L,
-			 typename T, typename... A>
-		void add(Handle<L, T> &h, A... args) 
+		template<Level L, typename T, typename... A>
+		void add(Handle<L, HandleAccess::write, T> &h, A... args) 
 			{h.hi().stored_obj->add(args...);}
-
-		template<Level L, Level L_effective = L, 
-			 typename T, typename... A>
-		void size(Handle<L, T> &h, A... args) 
-			{h.hi().stored_obj->size(args...);}
-
-		template<Level L, Level L_effective = L, 
-			 typename T, typename F, typename... A>
-		void add_f(Handle<L, T> &h, F addfun, A... args) 
-			{F(*(h.hi().stored_obj), args...);}
+		template<Level L, typename T, typename... A>
+		void add(Handle<L, HandleAccess::all, T> &h, A... args) 
+			{h.hi().stored_obj->add(args...);}
 
 		//constructors and destructor
 

@@ -67,13 +67,13 @@
 		private: 
 			virtual bool is_virtual() = 0;
 			HandleImpl<T> &h_i;
-			HandleImpl<T> &hi(){return h_i;}
+			HandleImpl<T> &hi() const {return h_i;}
 		public:
 			TypedHandle(HandleImpl<T> &hi):h_i(hi){}
 			friend class DataStore;
 		};
 
-		template<Level L, typename T>
+		template<Level L, HandleAccess HA, typename T>
 		class Handle : public TypedHandle<T> {
 		private:
 			virtual bool is_virtual() {return false;}
@@ -81,19 +81,18 @@
 			Handle(HandleImpl<T> &hi):TypedHandle<T>(hi){}
 			static constexpr Level level = L;
 			friend class DataStore;
-
 		};
 
-		template<Level L, typename T>	
-		Handle<L, T> newhandle_internal(std::unique_ptr<T> r) {
+		template<Level L, HandleAccess HA, typename T>	
+		Handle<L, HA, T> newhandle_internal(std::unique_ptr<T> r) {
 			std::unique_ptr<HandleImpl<T> > tmp(new HandleImpl<T>(*this,std::move(r)));
 			auto &ret = *tmp;
 			place_correctly(std::move(tmp));
-			return Handle<L,T>(ret);
+			return Handle<L,HA,T>(ret);
 		}
 
-		template<Level L, typename T>
-		std::unique_ptr<T> del_internal(Handle<L, T> &hndl_i){
+		template<Level L, HandleAccess HA, typename T>
+		std::unique_ptr<T> del_internal(Handle<L,HA,T> &hndl_i){
 			auto &hndl = hndl_i.hi(); 
 			std::unique_ptr<T> ret = hndl;
 			assert(hndls[hndl.id]->id == hndl.id);
