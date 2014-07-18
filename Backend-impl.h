@@ -40,32 +40,45 @@
 
 	public:
 
-		template<Level L, typename T> 
-		class Handle : public HandlePrime {
+		template<typename T> 
+		class HandleImpl : public HandlePrime {
 		private:
 			std::unique_ptr<T> stored_obj;
 			virtual bool is_abstract()  {return false;}
-			operator T& (){ return *stored_obj;}
-			void operator =(std::unique_ptr<T> n) {stored_obj = std::move(n);}
-			operator std::unique_ptr<T>() {return std::move(stored_obj);}
-			Handle(DataStore& parent,std::unique_ptr<T> n):HandlePrime(parent),stored_obj(std::move(n)){}
+			operator T& (){ return *(this->stored_obj);}
+			void operator =(std::unique_ptr<T> n) {this->stored_obj = std::move(n);}
+			operator std::unique_ptr<T>() {return std::move(this->stored_obj);}
+			HandleImpl(DataStore& parent,std::unique_ptr<T> n):HandlePrime(parent),stored_obj(std::move(n)){}
 		public: 
 			friend class DataStore;
-			Handle (const Handle&) = delete;
-			virtual ~Handle() {}
+			HandleImpl (const HandleImpl&) = delete;
+			
+			virtual ~HandleImpl() {}
 			
 		};
 
+		template<Level L, typename T>
+		class Handle {
+		private:
+			HandleImpl<T> &hi;
+			Handle(HandleImpl<T> &hi):hi(hi){}
+		public: 
+			friend class DataStore;
+			virtual ~Handle() {}
+
+		};
+
 		template<Level L, typename T>	
-		Handle<L, T>& newhandle_internal(std::unique_ptr<T> r) {
-			std::unique_ptr<Handle<L, T> > tmp(new Handle<L, T>(*this,std::move(r)));
+		Handle<L, T> newhandle_internal(std::unique_ptr<T> r) {
+			std::unique_ptr<HandleImpl<T> > tmp(new HandleImpl<T>(*this,std::move(r)));
 			auto &ret = *tmp;
 			place_correctly(std::move(tmp));
-			return ret;
+			return Handle<L,T>(ret);
 		}
 
 		template<Level L, typename T>
-		std::unique_ptr<T> del_internal(Handle<L, T> &hndl){
+		std::unique_ptr<T> del_internal(Handle<L, T> &hndl_i){
+			auto &hndl = hndl_i.hi; 
 			std::unique_ptr<T> ret = hndl;
 			assert(hndls[hndl.id]->id == hndl.id);
 			hndls[hndl.id].reset(nullptr);
