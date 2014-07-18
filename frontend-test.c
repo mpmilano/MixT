@@ -35,7 +35,8 @@ int main () {
 		tmp.get(hfcls);
 		auto fcls = tmp.take(hfcls);
 		tmp.give(hfcls, new foocls(3));
-		tmp.incr(hfcls); tmp.incr(hfcls);
+		tmp.incr(hfcls); 
+		tmp.incr<Level::fastest,Level::causal>(hfcls);
 		std::cout << "deletes the 3" << std::endl;
 		tmp.give(hfcls, std::move(fcls));
 		std::cout << "deletes the 4" << std::endl;
