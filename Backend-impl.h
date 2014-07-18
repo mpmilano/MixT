@@ -57,15 +57,30 @@
 			
 		};
 
+		class GenericHandle{
+		private: 
+			virtual bool is_virtual() = 0;
+		};
+
+		template <typename T>
+		class TypedHandle : public GenericHandle{
+		private: 
+			virtual bool is_virtual() = 0;
+			HandleImpl<T> &h_i;
+			HandleImpl<T> &hi(){return h_i;}
+		public:
+			TypedHandle(HandleImpl<T> &hi):h_i(hi){}
+			friend class DataStore;
+		};
+
 		template<Level L, typename T>
-		class Handle {
+		class Handle : public TypedHandle<T> {
 		private:
-			HandleImpl<T> &hi;
-			Handle(HandleImpl<T> &hi):hi(hi){}
+			virtual bool is_virtual() {return false;}
 		public: 
+			Handle(HandleImpl<T> &hi):TypedHandle<T>(hi){}
 			static constexpr Level level = L;
 			friend class DataStore;
-			virtual ~Handle() {}
 
 		};
 
@@ -79,7 +94,7 @@
 
 		template<Level L, typename T>
 		std::unique_ptr<T> del_internal(Handle<L, T> &hndl_i){
-			auto &hndl = hndl_i.hi; 
+			auto &hndl = hndl_i.hi(); 
 			std::unique_ptr<T> ret = hndl;
 			assert(hndls[hndl.id]->id == hndl.id);
 			hndls[hndl.id].reset(nullptr);

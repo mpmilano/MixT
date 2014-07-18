@@ -57,7 +57,7 @@ namespace tester {
 							    CONST_LVALUE(A1)... extra_args);
 	};
 
-	template<Level L, typename R, typename IR,  typename... A>
+	template<Level L = Level::fastest, typename R, typename IR,  typename... A>
 	Fuzz<L,R,IR> registerTestFunction(DataStore &ds,
 					       function<IR (list<R>)> &check_invariants,
 					       function<R (DataStore &, A... )> &tf,

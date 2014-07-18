@@ -32,6 +32,7 @@ int main () {
 		tmp.newHandle<Level::fastest>(new foocls(8));
 		auto hfcls = tmp.newHandle<Level::fastest>(std::unique_ptr<foocls>(new foocls(4)));
 		auto strongview = tmp.newConsistency<Level::strong>(hfcls);
+		myds::TypedHandle<foocls> &noview = strongview;
 		tmp.get(hfcls);
 		auto fcls = tmp.take(hfcls);
 		tmp.give(hfcls, new foocls(3));
@@ -40,8 +41,8 @@ int main () {
 		std::cout << "deletes the 3" << std::endl;
 		tmp.give(hfcls, std::move(fcls));
 		std::cout << "deletes the 4" << std::endl;
-		tmp.del(hfcls);
-		
+		auto causalview = tmp.newConsistency<Level::causal>(noview);
+		tmp.del(causalview);		
 		
 
 		std::cout << "destructing whole structure" << std::endl;
