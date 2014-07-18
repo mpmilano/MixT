@@ -40,27 +40,27 @@ namespace backend {
 		template<Level L, Level L_effective = L, typename T>
 		T& get(Handle<L, T> &hndl) {return hndl.hi;}
 
-		template<Level L, typename T>
+		template<Level L, Level L_effective = L, typename T>
 		void give(Handle<L, T> &hndl, std::unique_ptr<T> obj) {hndl.hi = std::move(obj);}
 
-		template<Level L, typename T>
+		template<Level L, Level L_effective = L, typename T>
 		void give(Handle<L, T> &hndl, T* obj) {hndl.hi = std::unique_ptr<T>(obj);}
 		
-		template<Level L, typename T>
+		template<Level L, Level L_effective = L, typename T>
 		std::unique_ptr<T> take(Handle<L, T>& hndl){ return hndl.hi;}
 
 		//commutative operations
 
-		template<Level L, typename T>
+		template<Level L, Level L_effective = L, typename T>
 		void incr_op(Handle<L, T> &h) {h.hi.stored_obj->operator++();}
 
-		template<Level L, typename T>
+		template<Level L, Level L_effective = L, typename T>
 		void incr(Handle<L, T> &h) {h.hi.stored_obj->incr();}
 
-		template<Level L, typename T, typename... A>
+		template<Level L, Level L_effective = L, typename T, typename... A>
 		void add(Handle<L, T> &h, A... args) {h.hi.stored_obj->add(args...);}
 
-		template<Level L, typename T, typename F, typename... A>
+		template<Level L, Level L_effective = L, typename T, typename F, typename... A>
 		void add_f(Handle<L, T> &h, F addfun, A... args) {F(*(h.hi.stored_obj), args...);}
 
 		//constructors and destructor
