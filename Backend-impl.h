@@ -80,6 +80,7 @@
 		public: 
 			Handle(HandleImpl<T> &hi):TypedHandle<T>(hi){}
 			static constexpr Level level = L;
+			static constexpr HandleAccess ha = HA;
 			friend class DataStore;
 		};
 
