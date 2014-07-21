@@ -1,4 +1,9 @@
-	private: 
+public:
+
+template<typename T>
+class HandleImpl;
+
+private: 
 		class HandlePrime;
 		std::vector<std::unique_ptr<HandlePrime> > hndls;
 		std::queue<int> next_ids;
