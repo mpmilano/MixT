@@ -5,6 +5,8 @@
 #include <utility>
 #include <tuple>
 #include <memory>
+#include <cstdlib>
+#include <vector>
 
 #define CONST_LVALUE(x)  typename add_lvalue_reference<typename add_const<x>::type>::type
 #define RVALUE(x) typename add_rvalue_reference<x>::type
@@ -48,6 +50,23 @@ namespace tester {
 			test_funs.push_back(
 				make_pair(check_invariants, 
 					  bind(tf, placeholders::_1, ref(extra_args)...)));
+		}
+
+		std::list<IR> runTestFunctions(){
+			auto old_level = ds.fastest_lvl; 
+			ds.fastest_lvl = L;
+			std::list<IR> &&test_res = std::list<IR>();
+			for (auto &pair : this->test_funs) {
+				auto &checker = pair.first;
+				auto &tester = pair.second;
+				int random = rand() %100; 
+				std::list<R> results_list;
+				for (int i = 0; i < random; ++i)
+					results_list.push_back(tester(ds));
+				test_res.push_back(checker(results_list));
+			}
+			ds.fastest_lvl = old_level;
+			return test_res;
 		}
 
 		template<Level L1, typename R1, typename IR1,  typename... A1>

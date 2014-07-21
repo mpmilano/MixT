@@ -8,8 +8,19 @@
 
 namespace backend {
 	enum class Level { causal, strong, fastest};
+}
+
+namespace tester{	
+	template<backend::Level L, typename R, typename IR>
+	class Fuzz;
+}
+
+namespace backend{
 
 	class DataStore {
+
+	private: 
+		Level fastest_lvl = Level::fastest;
 
 	public:
 
@@ -122,6 +133,9 @@ namespace backend {
 		}
 		
 		friend class HandlePrime;
+		
+		template<Level L, typename R, typename IR>
+		friend class tester::Fuzz;
 	};
 
 

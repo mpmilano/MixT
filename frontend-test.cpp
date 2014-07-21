@@ -25,7 +25,8 @@ int main () {
 		std::function<int (myds&, foocls&)> fuzz = [](myds &, foocls& add){add.incr(); return add + 1;};
 		foocls tmp3(0);
 		std::cout << tmp3 << std::endl;
-		tester::registerTestFunction(tmp, tmp2, fuzz, tmp3);
+		auto fuzzcls = tester::registerTestFunction(tmp, tmp2, fuzz, tmp3);
+		fuzzcls.runTestFunctions();
 		std::cout << tmp3 << std::endl;
 		tmp.newHandle<Level::fastest, int>();
 		tmp.newHandle<Level::fastest>(4);
@@ -57,7 +58,8 @@ int main () {
 	myds tmp;
 	std::function<int (std::list<int>)> tmp2 = [](std::list<int> l){return l.front();};
 	std::function<int (myds&, int)> fuzz = [](myds &, int add){return add + 1;};
-	tester::registerTestFunction(tmp, tmp2, fuzz, 0);
+	auto fuzcls = tester::registerTestFunction(tmp, tmp2, fuzz, 0);
+	fuzcls.runTestFunctions();
 	return 0;
 	
 }
