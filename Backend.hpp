@@ -124,6 +124,13 @@ namespace backend{
 		add(Handle<L, HA, T> &h, A... args) 
 			{h.hi().stored_obj->add(args...);}
 
+
+		template<Level L, typename R, typename... A>
+		R ro_transaction(std::function<R (A...)> &f)
+			{return f();}
+
+		
+
 		//constructors and destructor
 
 		DataStore () {}

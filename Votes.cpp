@@ -32,33 +32,42 @@ namespace election{
 			 ds.newConsistency<Level::causal> (votes[3]),
 			 ds.newConsistency<Level::causal> (votes[4]),
 			};
-
-		auto interim =  counts(
-			ds.get(votes_[0]),
-			ds.get(votes_[1]),
-			ds.get(votes_[2]),
-			ds.get(votes_[3]),
-			ds.get(votes_[4]));
-		auto total = interim.andrew + 
+		
+		std::function<VoteTracker::counts ()> 
+			transaction = [&](){
+			auto interim =  counts(
+				ds.get(votes_[0]),
+				ds.get(votes_[1]),
+				ds.get(votes_[2]),
+				ds.get(votes_[3]),
+				ds.get(votes_[4]));
+			auto total = 
+			interim.andrew + 
 			interim.ross + 
 			interim.nate + 
 			interim.dexter + 
 			interim.constabob;
-		return counts((interim.andrew * 100) / total,
-			      (interim.nate * 100) / total,
-			      (interim.ross * 100) / total,
-			      (interim.dexter * 100) / total,
-			      (interim.constabob * 100) / total,
-			      true);
+			return counts((interim.andrew * 100) / total,
+				      (interim.nate * 100) / total,
+				      (interim.ross * 100) / total,
+				      (interim.dexter * 100) / total,
+				      (interim.constabob * 100) / total,
+				      true);};
+		return ds.ro_transaction<votes_[0].level>(transaction);
 	}
 
 	VoteTracker::counts VoteTracker::FinalTally(){
-		return counts(
-			ds.get(votes[0]),
-			ds.get(votes[1]),
-			ds.get(votes[2]),
-			ds.get(votes[3]),
-			ds.get(votes[4]));
+		std::function<VoteTracker::counts ()> 
+			transaction = [&](){
+			return counts(
+				ds.get(votes[0]),
+				ds.get(votes[1]),
+				ds.get(votes[2]),
+				ds.get(votes[3]),
+				ds.get(votes[4]));
+		};
+		return ds.ro_transaction<votes[0].level>(transaction);
+		
 	}
 
 }
