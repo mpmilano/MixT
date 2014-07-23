@@ -135,12 +135,12 @@ namespace backend{
 			std::integral_constant<bool,true>>::type {};
 
 		template < typename R, typename... Args>
-		auto ro_transaction(R &f, DataStore &ds, Args... args) {
+		auto ro_transaction(R &f, Args... args) {
 			typedef typename std::result_of<R(DataStore&, Args...)>::type ret_type;
 			static_assert(all_handles<Args...>::value, "Passed non-Handles as arguments to function!");
 			static_assert(std::is_convertible<R, ret_type (*) (DataStore&, Args...)>::value, 
 				      "You passed me a non-stateless function!  Bad!");
-			return f(ds, args...);
+			return f(*this, args...);
 		}
 
 		//constructors and destructor

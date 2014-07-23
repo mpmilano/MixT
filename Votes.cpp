@@ -23,8 +23,7 @@ namespace election{
 		return ds.get(votes[(int) cnd]);
 	}
 	VoteTracker::counts VoteTracker::currentTally(){
-		return counts(0,0,0,0,0);
-		/*
+/*
 		DataStore::Handle<Level::causal,
 				  DataStore::HandleAccess::read,
 				  int> 
@@ -35,14 +34,16 @@ namespace election{
 			 ds.newConsistency<Level::causal> (votes[3]),
 			 ds.newConsistency<Level::causal> (votes[4]),
 			};
+
+		typedef DataStore::Handle<votes_[0].level, votes_[0].ha, int> hndl;
 		
-		auto transaction = [&](DataStore::Handle<votes_[0].level, votes_[0].ha,int> ){
+		auto transaction = [](DataStore& ds, hndl v0, hndl v1, hndl v2, hndl v3, hndl v4) {
 			auto interim =  counts(
-				ds.get(votes_[0]),
-				ds.get(votes_[1]),
-				ds.get(votes_[2]),
-				ds.get(votes_[3]),
-				ds.get(votes_[4]));
+				ds.get(v0),
+				ds.get(v1),
+				ds.get(v2),
+				ds.get(v3),
+				ds.get(v4));
 			auto total = 
 			interim.andrew + 
 			interim.ross + 
@@ -56,7 +57,7 @@ namespace election{
 				      (interim.constabob * 100) / total,
 				      true);};
 
-		return ds.ro_transaction(transaction,votes_[0]); 
+		return ds.ro_transaction(transaction,votes_[0],votes_[1],votes_[2],votes_[3],votes_[4]); 
 //*/
 	}
 
@@ -70,7 +71,7 @@ namespace election{
 				ds.get(v3),
 				ds.get(v4));
 		};
-			return ds.ro_transaction(transaction,ds,votes[0],votes[1],votes[2],votes[3],votes[4]);
+			return ds.ro_transaction(transaction,votes[0],votes[1],votes[2],votes[3],votes[4]);
 		
 	}
 
