@@ -86,6 +86,7 @@ private:
 			Handle(HandleImpl<T> &hi):TypedHandle<T>(hi){}
 			static constexpr Level level = L;
 			static constexpr HandleAccess ha = HA;
+			typedef T stored_type;
 			friend class DataStore;
 		};
 
