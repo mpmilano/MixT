@@ -109,10 +109,10 @@ private:
 
 
 template <typename C>
-std::integral_constant<bool,true> is_not_handle_f(C*);
+static constexpr std::integral_constant<bool,true> is_not_handle_f(C*);
 
 template < Level L, DataStore::HandleAccess HA, typename T>
-std::integral_constant<bool,false> is_not_handle_f(DataStore::Handle<L,HA,T>*);
+static constexpr std::integral_constant<bool,false> is_not_handle_f(DataStore::Handle<L,HA,T>*);
 
 template<typename T>
 struct is_not_handle : public decltype( is_not_handle_f ( (T*) nullptr) ) {};

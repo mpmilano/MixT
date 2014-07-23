@@ -134,21 +134,13 @@ namespace backend{
 			std::integral_constant<bool,false>,
 			std::integral_constant<bool,true>>::type {};
 
-		template < typename R>
-		auto ro_transaction(R &f) {
-			return f();
-		}
-
-		template < typename F, Level L, HandleAccess HA, typename T>
-		auto ro_transaction(F &f, Handle<L,HA,T> arg) {
-			return f(arg);
-		}
-		
-
-		template < typename R, Level L, HandleAccess HA, typename T, typename... Rest>
-		typename std::enable_if< std::is_same<Handle<L,HA,T>,Rest...>::value, R >::type
-		ro_transaction(std::function<R (Handle<L,HA,T>, Rest...)> &f, Handle<L,HA,T> arg1, Rest... args) {
-			return f(arg1, args...);
+		template < typename R, typename... Args>
+		auto ro_transaction(R &f, DataStore &ds, Args... args) {
+			typedef typename std::result_of<R(DataStore&, Args...)>::type ret_type;
+			static_assert(all_handles<Args...>::value, "Passed non-Handles as arguments to function!");
+			static_assert(std::is_convertible<R, ret_type (*) (DataStore&, Args...)>::value, 
+				      "You passed me a non-stateless function!  Bad!");
+			return f(ds, args...);
 		}
 
 		//constructors and destructor
