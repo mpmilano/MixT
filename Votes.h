@@ -26,10 +26,12 @@ namespace election{
 			const int ross; 
 			const int dexter; 
 			const int constabob;
+
 		private: 
 			bool percents = false;
 			std::string annot() const 
 			{ return percents ? "%" : ""; } 
+
 		public:
 			friend std::ostream& operator<<
 				(std::ostream& s, const counts& c){
@@ -40,6 +42,7 @@ namespace election{
 				  << " ConstaBob: " << c.constabob<< c.annot();
 				return s;
 			}
+
 		counts(int andrew, 
 		       int nate, 
 		       int ross, 

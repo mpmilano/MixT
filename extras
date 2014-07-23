@@ -1,8 +1,4 @@
-#include <iostream>
 #include <type_traits>
-#include "Backend.hpp"
-
-using namespace backend;
 
 template <template <typename...> class F, typename P>
 struct any;
@@ -19,55 +15,3 @@ struct any <F, C <> > : public std::integral_constant <bool, false> {};
 
 
 template <typename...> struct pack { };
-template <typename T> using is_int = std::is_same <int, T>;
-
-
-
-	using namespace std;
-	typedef std::integral_constant<bool,true> tt;
-	typedef std::integral_constant<bool,false> ft;
-
-
-template <typename C>
-tt is_not_handle_f(C*);
-
-template < Level L, DataStore::HandleAccess HA, typename T>
-ft is_not_handle_f(DataStore::Handle<L,HA,T>*);
-
-template<typename T>
-struct is_not_handle : public decltype( is_not_handle_f ( (T*) nullptr) ) {};
-
-template<typename... Args>
-struct all_handles : std::conditional<
-	any <is_not_handle, pack<Args...> >::value,
-	ft,
-	tt>::type {};
-
-int main(){
-
-	
-	cout << "true " << std::conditional<any <is_int, pack <int, void, float, double> >::value,
-				 tt, ft>::type::value << endl;   // evaluates to true
-	cout << "false " << any <is_int, pack <char, void, float, double> >() << endl;  // evaluates to false
-
-	cout << "false " << is_not_handle<DataStore::Handle<Level::strong, DataStore::HandleAccess::all, int> > () << endl;
-
-	cout << "true " << is_not_handle<int> () << endl;
-
-	cout << "false " << any <is_int, pack <DataStore::Handle<Level::strong, DataStore::HandleAccess::all, int>, 
-				   char, void, float, double> >() << endl;  // evaluates to false
-
-	cout << "true " << any <is_not_handle, pack <DataStore::Handle<Level::strong, DataStore::HandleAccess::all, int>, 
-				   char, void, float, double> >() << endl;  // evaluates to true
-
-	cout << "false " << any <is_not_handle, pack <DataStore::Handle<Level::strong, DataStore::HandleAccess::all, int> > >() << endl;
-
-	cout << "true " << all_handles<DataStore::Handle<Level::strong, DataStore::HandleAccess::all, int> > () << endl;
-
-	cout << "true " << all_handles<DataStore::Handle<Level::strong, DataStore::HandleAccess::all, int>, 
-				       DataStore::Handle<Level::causal, DataStore::HandleAccess::all, int>
-				       > () << endl;
-
-	//cout << any <is_not_handle, int, int, DataStore::Handle<Level::strong, DataStore::HandleAccess::all, int> > () << endl;
-
-}

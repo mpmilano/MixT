@@ -4,6 +4,7 @@
 namespace election{
 
 	using namespace backend;
+
 //counts order: Andrew, Nate, Ross, Dexter, ConstaBob
 
 	VoteTracker::VoteTracker(backend::DataStore& ds):
@@ -33,8 +34,7 @@ namespace election{
 			 ds.newConsistency<Level::causal> (votes[4]),
 			};
 		
-		std::function<VoteTracker::counts ()> 
-			transaction = [&](){
+		auto transaction = [&](DataStore::Handle<votes_[0].level, votes_[0].ha,int> ){
 			auto interim =  counts(
 				ds.get(votes_[0]),
 				ds.get(votes_[1]),
@@ -53,12 +53,13 @@ namespace election{
 				      (interim.dexter * 100) / total,
 				      (interim.constabob * 100) / total,
 				      true);};
-		return ds.ro_transaction<votes_[0].level>(transaction);
+
+		return ds.ro_transaction(transaction,votes_[0]);
 	}
 
 	VoteTracker::counts VoteTracker::FinalTally(){
-		std::function<VoteTracker::counts ()> 
-			transaction = [&](){
+		typedef DataStore::Handle<votes[0].level, votes[0].ha, int> hndl;
+		auto transaction = [&](hndl) {
 			return counts(
 				ds.get(votes[0]),
 				ds.get(votes[1]),
@@ -66,7 +67,7 @@ namespace election{
 				ds.get(votes[3]),
 				ds.get(votes[4]));
 		};
-		return ds.ro_transaction<votes[0].level>(transaction);
+		return ds.ro_transaction(transaction,votes[0]);
 		
 	}
 

@@ -5,6 +5,9 @@
 #include <queue>
 #include <cassert>
 #include <iostream>
+#include "extras"
+
+#define LVALUE(x) typename add_lvalue_reference<x>::type
 
 namespace backend {
 	enum class Level { causal, strong, fastest};
@@ -125,11 +128,28 @@ namespace backend{
 			{h.hi().stored_obj->add(args...);}
 
 
-		template<Level L, typename R, typename... A>
-		R ro_transaction(std::function<R (A...)> &f)
-			{return f();}
+		template<typename... Args>
+		struct all_handles : std::conditional<
+			any <is_not_handle, pack<Args...> >::value,
+			std::integral_constant<bool,false>,
+			std::integral_constant<bool,true>>::type {};
 
+		template < typename R>
+		auto ro_transaction(R &f) {
+			return f();
+		}
+
+		template < typename F, Level L, HandleAccess HA, typename T>
+		auto ro_transaction(F &f, Handle<L,HA,T> arg) {
+			return f(arg);
+		}
 		
+
+		template < typename R, Level L, HandleAccess HA, typename T, typename... Rest>
+		typename std::enable_if< std::is_same<Handle<L,HA,T>,Rest...>::value, R >::type
+		ro_transaction(std::function<R (Handle<L,HA,T>, Rest...)> &f, Handle<L,HA,T> arg1, Rest... args) {
+			return f(arg1, args...);
+		}
 
 		//constructors and destructor
 
