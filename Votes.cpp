@@ -23,7 +23,6 @@ namespace election{
 		return ds.get(votes[(int) cnd]);
 	}
 	VoteTracker::counts VoteTracker::currentTally(){
-/*
 		DataStore::Handle<Level::causal,
 				  DataStore::HandleAccess::read,
 				  int> 

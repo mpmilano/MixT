@@ -139,7 +139,7 @@ namespace backend{
 			typedef typename std::result_of<R(DataStore&, Args...)>::type ret_type;
 			static_assert(all_handles<Args...>::value, "Passed non-Handles as arguments to function!");
 			static_assert(std::is_convertible<R, ret_type (*) (DataStore&, Args...)>::value, 
-				      "You passed me a non-stateless function!  Bad!");
+				      "You passed me a non-stateless function! \n Expected: R f(DataStore&, Handles....)");
 			return f(*this, args...);
 		}
 
