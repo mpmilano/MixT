@@ -70,7 +70,7 @@ namespace election{
 				ds.get(v3),
 				ds.get(v4));
 		};
-			return ds.ro_transaction(transaction,votes[0],votes[1],votes[2],votes[3],votes[4]);
+		return ds.ro_transaction(transaction,votes[0],votes[1],votes[2],votes[3],votes[4]);
 		
 	}
 

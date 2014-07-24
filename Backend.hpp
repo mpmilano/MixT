@@ -141,13 +141,25 @@ namespace backend{
 			std::integral_constant<bool,false>,
 			std::integral_constant<bool,true>>::type {};
 
-		template < typename R, typename... Args>
+		template < typename R, typename... Args, std::enable_if<true,int>::type _dummy = 0>
 		auto ro_transaction(R &f, Args... args) {
 			static_assert(all_handles<Args...>::value, "Passed non-Handles as arguments to function!");
 			static_assert(is_stateless<R, DataStore&, Args...>::value,
 				      "You passed me a non-stateless function! \n Expected: R f(DataStore&, Handles....)");
 			static_assert(all_handles_read<Args...>::value, "Error: passed non-readable handle into ro_transaction");
 			return f(*this, args...);
+		}
+
+		//explicitly to make the errors prettier.
+		template < typename R, typename... Args>
+		typename std::enable_if<!(all_handles<Args...>::value || 
+					  is_stateless<R, DataStore&, Args...>::value || 
+					  all_handles_read<Args...>::value)>::type
+		ro_transaction(R &f, Args... args) {
+			static_assert(all_handles<Args...>::value, "Passed non-Handles as arguments to function!");
+			static_assert(is_stateless<R, DataStore&, Args...>::value,
+				      "You passed me a non-stateless function! \n Expected: R f(DataStore&, Handles....)");
+			static_assert(all_handles_read<Args...>::value, "Error: passed non-readable handle into ro_transaction");
 		}
 
 		//constructors and destructor
