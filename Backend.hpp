@@ -27,13 +27,6 @@ namespace backend{
 			: (ha == HandleAccess::all ? 
 			   true : false);
 	}
-	
-	template<typename... Rest>
-	static constexpr bool canRead(HandleAccess ha, Rest... r){
-		return ha == HandleAccess::read ? canRead(r...)
-			: (ha == HandleAccess::all ? 
-			   canRead (r... ) : false);
-	}
 
 	static constexpr bool canRead(HandleAccess ha){
 		return ha == HandleAccess::read ? true
@@ -142,11 +135,18 @@ namespace backend{
 			std::integral_constant<bool,false>,
 			std::integral_constant<bool,true>>::type {};
 
+		template<typename... Args>
+		struct all_handles_read : std::conditional<
+			any <handle_no_read, pack<Args...> >::value,
+			std::integral_constant<bool,false>,
+			std::integral_constant<bool,true>>::type {};
+
 		template < typename R, typename... Args>
 		auto ro_transaction(R &f, Args... args) {
 			static_assert(all_handles<Args...>::value, "Passed non-Handles as arguments to function!");
 			static_assert(is_stateless<R, DataStore&, Args...>::value,
 				      "You passed me a non-stateless function! \n Expected: R f(DataStore&, Handles....)");
+			static_assert(all_handles_read<Args...>::value, "Error: passed non-readable handle into ro_transaction");
 			return f(*this, args...);
 		}
 
