@@ -116,3 +116,14 @@ static constexpr std::integral_constant<bool,false> is_not_handle_f(DataStore::H
 
 template<typename T>
 struct is_not_handle : public decltype( is_not_handle_f ( (T*) nullptr) ) {};
+
+
+
+template <typename C>
+static constexpr std::integral_constant<bool,true> handle_no_read_f(C*);
+
+template < Level L, HandleAccess HA, typename T>
+	static constexpr std::integral_constant<bool,!canRead(HA)> handle_no_read_f(DataStore::Handle<L,HA,T>*);
+
+template<typename T>
+struct is_not_handle : public decltype( is_not_handle_f ( (T*) nullptr) ) {};
