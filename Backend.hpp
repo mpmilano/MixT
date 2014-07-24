@@ -20,6 +20,27 @@ namespace tester{
 
 namespace backend{
 
+	enum class HandleAccess {read, write, all};
+	
+	static constexpr bool canWrite(HandleAccess ha){
+		return ha == HandleAccess::write ? true 
+			: (ha == HandleAccess::all ? 
+			   true : false);
+	}
+	
+	template<typename... Rest>
+	static constexpr bool canRead(HandleAccess ha, Rest... r){
+		return ha == HandleAccess::read ? canRead(r...)
+			: (ha == HandleAccess::all ? 
+			   canRead (r... ) : false);
+	}
+
+	static constexpr bool canRead(HandleAccess ha){
+		return ha == HandleAccess::read ? true
+			: (ha == HandleAccess::all ? 
+			   true : false);
+	}
+
 	class DataStore {
 
 	private: 
@@ -33,19 +54,6 @@ namespace backend{
 		template<typename T>
 		class TypedHandle; //extends GenericHandle
 		
-		enum class HandleAccess {read, write, all};
-
-		static constexpr bool canWrite(HandleAccess ha){
-			return ha == HandleAccess::write ? true 
-				: (ha == HandleAccess::all ? 
-				   true : false);
-		}
-
-		static constexpr bool canRead(HandleAccess ha){
-			return ha == HandleAccess::read ? true 
-				: (ha == HandleAccess::all ? 
-				   true : false);
-		}
 
 
 		template<Level L, HandleAccess HA, typename T>

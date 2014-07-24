@@ -24,7 +24,7 @@ namespace election{
 	}
 	VoteTracker::counts VoteTracker::currentTally(){
 		DataStore::Handle<Level::causal,
-				  DataStore::HandleAccess::read,
+				  HandleAccess::read,
 				  int> 
 			votes_[(int)Candidate::Count] =
 			{ds.newConsistency<Level::causal> (votes[0]),

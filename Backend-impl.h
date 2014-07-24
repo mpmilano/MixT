@@ -111,7 +111,7 @@ private:
 template <typename C>
 static constexpr std::integral_constant<bool,true> is_not_handle_f(C*);
 
-template < Level L, DataStore::HandleAccess HA, typename T>
+template < Level L, HandleAccess HA, typename T>
 static constexpr std::integral_constant<bool,false> is_not_handle_f(DataStore::Handle<L,HA,T>*);
 
 template<typename T>

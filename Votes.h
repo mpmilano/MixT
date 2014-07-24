@@ -11,7 +11,7 @@ namespace election{
 	public:
 		typedef backend::DataStore::Handle
 			<backend::Level::strong,
-			backend::DataStore::HandleAccess::all, 
+			backend::HandleAccess::all, 
 			int> VoteH;
 
 	private:
