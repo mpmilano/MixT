@@ -127,3 +127,33 @@ template < Level L, HandleAccess HA, typename T>
 
 template<typename T>
 struct handle_no_read : public decltype( handle_no_read_f ( (T*) nullptr) ) {};
+
+
+template <typename C>
+static constexpr std::integral_constant<bool,true> handle_no_write_f(C*);
+
+template < Level L, HandleAccess HA, typename T>
+	static constexpr std::integral_constant<bool,!canWrite(HA)> handle_no_write_f(DataStore::Handle<L,HA,T>*);
+
+template<typename T>
+struct handle_no_write : public decltype( handle_no_write_f ( (T*) nullptr) ) {};
+
+
+
+		template<typename... Args>
+		struct all_handles : std::conditional<
+			any <is_not_handle, pack<Args...> >::value,
+			std::integral_constant<bool,false>,
+			std::integral_constant<bool,true>>::type {};
+
+		template<typename... Args>
+		struct all_handles_read : std::conditional<
+			any <handle_no_read, pack<Args...> >::value,
+			std::integral_constant<bool,false>,
+			std::integral_constant<bool,true>>::type {};
+
+		template<typename... Args>
+		struct all_handles_write : std::conditional<
+			any <handle_no_write, pack<Args...> >::value,
+			std::integral_constant<bool,false>,
+			std::integral_constant<bool,true>>::type {};

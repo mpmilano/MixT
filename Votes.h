@@ -61,6 +61,7 @@ namespace election{
 		VoteTracker(backend::DataStore&);
 
 		void countVote(Candidate);
+		void voteForTwo(Candidate, Candidate);
 		int getCount(Candidate);
 		counts currentTally();
 		counts FinalTally();

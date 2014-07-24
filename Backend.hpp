@@ -10,7 +10,7 @@
 #define LVALUE(x) typename add_lvalue_reference<x>::type
 
 namespace backend {
-	enum class Level { causal, strong, fastest};
+	enum class Level { causal, strong};
 }
 
 namespace tester{	
@@ -34,10 +34,16 @@ namespace backend{
 			   true : false);
 	}
 
-	class DataStore {
+	static constexpr bool operator <= (HandleAccess h1, HandleAccess h2){
+		return ((int)h1) <= ((int) h2);
+	}
 
-	private: 
-		Level fastest_lvl = Level::fastest;
+	static constexpr bool operator >= (HandleAccess h1, HandleAccess h2){
+		return ((int)h1) >= ((int) h2);
+	}
+
+
+	class DataStore {
 
 	public:
 
@@ -77,17 +83,28 @@ namespace backend{
 		std::unique_ptr<T> del(Handle<L,HandleAccess::all,T>& hndl)
 			{return del_internal<L>(hndl);}
 
+///*
 		template<Level Lnew, typename T>
-		Handle<Lnew, HandleAccess::read, T> newConsistency
-		(Handle<Level::strong,HandleAccess::all,T> &old)
-			{return Handle<Lnew,HandleAccess::read,T>(old.hi());}
+		auto newConsistency (Handle<Level::strong,HandleAccess::all,T> &old) {
+			static_assert(Lnew <= Level::strong, "Error: cannot acquire stronger read-only handle");
+			return Handle<Lnew,HandleAccess::read,T>(old.hi());} 
 
 		template<Level Lnew, typename T>
-		Handle<Lnew, HandleAccess::write, T> newConsistency
-		(Handle<Level::causal,HandleAccess::all,T> &old)
-			{ return Handle<Lnew,HandleAccess::write, T>
-					(old.hi());}
+		auto newConsistency (Handle<Level::causal,HandleAccess::all,T> &old) {
+			static_assert(Lnew >= Level::causal, "Error: cannot acquire weaker write-only handle");
+			return Handle<Lnew,HandleAccess::write,T>(old.hi());} //*/
 
+
+		static constexpr HandleAccess hlpr_fun(Level Lold){
+			return (Lold == Level::strong ? HandleAccess::read : HandleAccess::write);
+		}
+
+/*
+		template<Level Lnew, Level Lold, typename T>
+		auto newConsistency
+		(Handle<Level::causal,HandleAccess::all,T> &old) {
+			return Handle<Lnew,hlpr_fun(Lold), T> (old.hi());}
+//*/
 
 		//KVstore-style interface
 
@@ -128,20 +145,7 @@ namespace backend{
 		add(Handle<L, HA, T> &h, A... args) 
 			{h.hi().stored_obj->add(args...);}
 
-
-		template<typename... Args>
-		struct all_handles : std::conditional<
-			any <is_not_handle, pack<Args...> >::value,
-			std::integral_constant<bool,false>,
-			std::integral_constant<bool,true>>::type {};
-
-		template<typename... Args>
-		struct all_handles_read : std::conditional<
-			any <handle_no_read, pack<Args...> >::value,
-			std::integral_constant<bool,false>,
-			std::integral_constant<bool,true>>::type {};
-
-		template < typename R, typename... Args, std::enable_if<true,int>::type _dummy = 0>
+		template < typename R, typename... Args>
 		auto ro_transaction(R &f, Args... args) {
 			static_assert(all_handles<Args...>::value, "Passed non-Handles as arguments to function!");
 			static_assert(is_stateless<R, DataStore&, Args...>::value,
@@ -150,16 +154,22 @@ namespace backend{
 			return f(*this, args...);
 		}
 
-		//explicitly to make the errors prettier.
+
 		template < typename R, typename... Args>
-		typename std::enable_if<!(all_handles<Args...>::value || 
-					  is_stateless<R, DataStore&, Args...>::value || 
-					  all_handles_read<Args...>::value)>::type
-		ro_transaction(R &f, Args... args) {
+		auto wo_transaction(R &f, Args... args) {
 			static_assert(all_handles<Args...>::value, "Passed non-Handles as arguments to function!");
 			static_assert(is_stateless<R, DataStore&, Args...>::value,
 				      "You passed me a non-stateless function! \n Expected: R f(DataStore&, Handles....)");
-			static_assert(all_handles_read<Args...>::value, "Error: passed non-readable handle into ro_transaction");
+			static_assert(all_handles_write<Args...>::value, "Error: passed non-writeable handle into ro_transaction");
+			return f(*this, args...);
+		}
+
+		template < typename R, typename... Args>
+		auto rw_transaction(R &f, Args... args) {
+			static_assert(all_handles<Args...>::value, "Passed non-Handles as arguments to function!");
+			static_assert(is_stateless<R, DataStore&, Args...>::value,
+				      "You passed me a non-stateless function! \n Expected: R f(DataStore&, Handles....)");
+			return f(*this, args...);
 		}
 
 		//constructors and destructor

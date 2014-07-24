@@ -18,11 +18,22 @@ namespace election{
 	
 	void VoteTracker::countVote(Candidate cnd){
 		ds.incr_op(votes[(int) cnd]);
-	}	
+	}
+
+	void VoteTracker::voteForTwo(Candidate cnd1, Candidate cnd2){
+		assert (cnd1 != cnd2);
+		auto transaction = [](DataStore& ds, VoteH cnd1, VoteH cnd2){
+			ds.incr_op(cnd1);
+			ds.incr_op(cnd2);
+		};
+		ds.wo_transaction(transaction, votes[(int) cnd1], votes[(int) cnd2]);
+	}
+
 	int VoteTracker::getCount(Candidate cnd){
 		return ds.get(votes[(int) cnd]);
 	}
 	VoteTracker::counts VoteTracker::currentTally(){
+		//DataStore::Handle<Level::causal, HandleAccess::write, int> htmp = ds.newConsistency<Level::causal> (votes[0]);
 		DataStore::Handle<Level::causal,
 				  HandleAccess::read,
 				  int> 
@@ -36,7 +47,7 @@ namespace election{
 
 		typedef DataStore::Handle<votes_[0].level, votes_[0].ha, int> hndl;
 		
-		auto transaction = [](DataStore& ds, hndl v0, hndl v1, hndl v2, hndl v3, hndl v4) {
+		auto transaction = [](DataStore &ds, hndl v0, hndl v1, hndl v2, hndl v3, hndl v4) {
 			auto interim =  counts(
 				ds.get(v0),
 				ds.get(v1),
@@ -89,6 +100,7 @@ int main (){
 	v.countVote(election::Candidate::Ross);
 	v.countVote(election::Candidate::ConstaBob);
 	v.countVote(election::Candidate::Ross);
+	v.voteForTwo(election::Candidate::Ross, election::Candidate::ConstaBob);
 	v.getCount(election::Candidate::Ross);
 	v.countVote(election::Candidate::Andrew);
 	v.countVote(election::Candidate::Ross);
