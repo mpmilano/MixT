@@ -16,8 +16,10 @@ struct any <F, C <> > : public std::integral_constant <bool, false> {};
 
 template <typename...> struct pack { };
 
-/*
+///*
 
+
+template <typename F, typename...Args>
 void funcptr_helper(...);
 
 template <typename F, typename...Args>
@@ -25,15 +27,16 @@ auto funcptr_helper(F, Args...) -> decltype(std::declval<F>()(std::declval<Args>
 
 template <typename F, typename...Args>
 struct funcptr {
-	typedef decltype(funcptr_helper(std::declval<F>(), std::declval<Args>()...)) (*type)(Args...);
+	typedef decltype(funcptr_helper<F, Args...>(std::declval<F>(), std::declval<Args>()...)) (*type)(Args...);
 };
 
 template <typename F, typename...Args>
 struct is_stateless : std::is_convertible<F, typename funcptr<F, Args...>::type>::type {};
 
+
 //*/
 
-///*
+/*
 template <typename F, typename... Args>
 struct is_stateless : std::is_convertible<F, typename std::result_of<F(Args...)>::type (*) (Args...)>::type 
 {};
