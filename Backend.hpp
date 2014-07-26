@@ -83,17 +83,6 @@ namespace backend{
 		std::unique_ptr<T> del(Handle<L,HandleAccess::all,T>& hndl)
 			{return del_internal<L>(hndl);}
 
-///*
-		template<Level Lnew, typename T>
-		auto newConsistency (Handle<Level::strong,HandleAccess::all,T> &old) {
-			static_assert(Lnew <= Level::strong, "Error: cannot acquire stronger read-only handle");
-			return Handle<Lnew,HandleAccess::read,T>(old.hi());} 
-
-		template<Level Lnew, typename T>
-		auto newConsistency (Handle<Level::causal,HandleAccess::all,T> &old) {
-			static_assert(Lnew >= Level::causal, "Error: cannot acquire weaker write-only handle");
-			return Handle<Lnew,HandleAccess::write,T>(old.hi());} //*/
-
 		template<Level L, typename T>
 		auto ro_hndl(Handle<L,HandleAccess::all,T> &old){
 			return Handle<L,HandleAccess::read,T>(old.hi());
@@ -104,17 +93,16 @@ namespace backend{
 			return Handle<L,HandleAccess::write,T>(old.hi());
 		}
 
-
-		static constexpr HandleAccess hlpr_fun(Level Lold){
+		static constexpr HandleAccess newConsistency_lvl(Level Lold){
 			return (Lold == Level::strong ? HandleAccess::read : HandleAccess::write);
 		}
 
-/*
 		template<Level Lnew, Level Lold, typename T>
 		auto newConsistency
-		(Handle<Level::causal,HandleAccess::all,T> &old) {
-			return Handle<Lnew,hlpr_fun(Lold), T> (old.hi());}
-//*/
+		(Handle<Lold,HandleAccess::all,T> &old) {
+		return Handle<Lnew,newConsistency_lvl(Lold), T> (old.hi());
+		}
+
 
 		//KVstore-style interface
 

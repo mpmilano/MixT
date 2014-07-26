@@ -10,9 +10,9 @@ namespace election{
 	VoteTracker::VoteTracker(backend::DataStore& ds):
 		ds(ds),
 		votes({ds.newHandle<Level::strong>(8),
-					ds.newHandle<Level::strong>(0),
-					ds.newHandle<Level::strong>(0),
-					ds.newHandle<Level::strong>(0),
+			ds.newHandle<Level::strong>(0),
+			ds.newHandle<Level::strong>(0),
+			ds.newHandle<Level::strong>(0),
 					ds.newHandle<Level::strong>(0),})
 	{}
 	
@@ -22,7 +22,7 @@ namespace election{
 
 	void VoteTracker::voteForTwo(Candidate cnd1, Candidate cnd2){
 
-		typedef DataStore::Handle<votes[0].level, HandleAccess::write, int> hndl;
+		typedef DataStore::Handle<VoteH::level, HandleAccess::write, int> hndl;
 
 		assert (cnd1 != cnd2);
 		auto transaction = [](DataStore& ds, hndl cnd1, hndl cnd2){
@@ -69,7 +69,7 @@ namespace election{
 	}
 
 	VoteTracker::counts VoteTracker::FinalTally(){
-		typedef DataStore::Handle<votes[0].level, HandleAccess::read, int> hndl;
+		typedef DataStore::Handle<VoteH::level, HandleAccess::read, int> hndl;
 		auto transaction = [](DataStore &ds, hndl v0, hndl v1, hndl v2, hndl v3, hndl v4) {
 			return counts(
 				ds.get(v0),

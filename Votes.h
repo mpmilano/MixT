@@ -16,7 +16,7 @@ namespace election{
 
 	private:
 		backend::DataStore& ds;
-		VoteH votes[(int)Candidate::Count];
+		std::array<VoteH, (int)Candidate::Count > votes;
 
 	public:
 		class counts{
