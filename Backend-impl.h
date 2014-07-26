@@ -107,6 +107,8 @@ private:
 			return ret;
 		}
 
+template<bool b>
+struct neg : std::integral_constant<bool, !b> {};
 
 template <typename C>
 static constexpr std::integral_constant<bool,true> is_not_handle_f(C*);
@@ -115,8 +117,10 @@ template < Level L, HandleAccess HA, typename T>
 static constexpr std::integral_constant<bool,false> is_not_handle_f(DataStore::Handle<L,HA,T>*);
 
 template<typename T>
-struct is_not_handle : public decltype( is_not_handle_f ( (T*) nullptr) ) {};
+struct is_not_handle : decltype( is_not_handle_f ( (T*) nullptr) ) {};
 
+template<typename T>
+struct is_handle : neg<is_not_handle<T>::value> {};
 
 
 template <typename C>
@@ -126,7 +130,10 @@ template < Level L, HandleAccess HA, typename T>
 	static constexpr std::integral_constant<bool,!canRead(HA)> handle_no_read_f(DataStore::Handle<L,HA,T>*);
 
 template<typename T>
-struct handle_no_read : public decltype( handle_no_read_f ( (T*) nullptr) ) {};
+struct handle_no_read : decltype( handle_no_read_f ( (T*) nullptr) ) {};
+
+template<typename T>
+struct handle_read : neg<handle_no_read<T>::value> {};
 
 
 template <typename C>
@@ -136,24 +143,16 @@ template < Level L, HandleAccess HA, typename T>
 	static constexpr std::integral_constant<bool,!canWrite(HA)> handle_no_write_f(DataStore::Handle<L,HA,T>*);
 
 template<typename T>
-struct handle_no_write : public decltype( handle_no_write_f ( (T*) nullptr) ) {};
+struct handle_no_write : decltype( handle_no_write_f ( (T*) nullptr) ) {};
 
+template<typename T>
+struct handle_write : neg<handle_no_write<T>::value> {};
 
+template<typename... Args>
+struct all_handles : bool_const<! any<is_not_handle, pack<Args...> >::value > {};
 
-		template<typename... Args>
-		struct all_handles : std::conditional<
-			any <is_not_handle, pack<Args...> >::value,
-			std::integral_constant<bool,false>,
-			std::integral_constant<bool,true>>::type {};
+template<typename... Args>
+struct all_handles_read : bool_const<! any <handle_no_read, pack<Args...> >::value > {};
 
-		template<typename... Args>
-		struct all_handles_read : std::conditional<
-			any <handle_no_read, pack<Args...> >::value,
-			std::integral_constant<bool,false>,
-			std::integral_constant<bool,true>>::type {};
-
-		template<typename... Args>
-		struct all_handles_write : std::conditional<
-			any <handle_no_write, pack<Args...> >::value,
-			std::integral_constant<bool,false>,
-			std::integral_constant<bool,true>>::type {};
+template<typename... Args>
+struct all_handles_write : bool_const <! any <handle_no_write, pack<Args...> >::value> {};

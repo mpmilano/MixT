@@ -33,6 +33,8 @@ struct funcptr {
 template <typename F, typename...Args>
 struct is_stateless : std::is_convertible<F, typename funcptr<F, Args...>::type>::type {};
 
+template <bool b>
+struct bool_const : std::integral_constant <bool, b> {};
 
 //*/
 

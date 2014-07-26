@@ -148,28 +148,21 @@ namespace backend{
 		template < typename R, typename... Args>
 		auto ro_transaction(R &f, Args... args) {
 			static_assert(all_handles<Args...>::value, "Passed non-Handles as arguments to function!");
+			//static_assert(!exists_write_handle<Args...>::value "b");
 			static_assert(is_stateless<R, DataStore&, Args...>::value,
 				      "You passed me a non-stateless function, or screwed up your arguments! \n Expected: R f(DataStore&, Handles....)");
 			static_assert(all_handles_read<Args...>::value, "Error: passed non-readable handle into ro_transaction");
 			return f(*this, args...);
 		}
 
-		template < typename R, typename... Args>
-		auto ro_transaction(...) {
-			static_assert(all_handles<Args...>::value, "Passed non-Handles as arguments to function!");
-			static_assert(is_stateless<R, DataStore&, Args...>::value,
-				      "You passed me a non-stateless function, or screwed up your arguments! \n Expected: R f(DataStore&, Handles....)");
-			static_assert(all_handles_read<Args...>::value, "Error: passed non-readable handle into ro_transaction");
-		}
-
-
 
 		template < typename R, typename... Args>
 		auto wo_transaction(R &f, Args... args) {
 			static_assert(all_handles<Args...>::value, "Passed non-Handles as arguments to function!");
+			//static_assert(!exists_read_handle<Args...>::value "b");
 			static_assert(is_stateless<R, DataStore&, Args...>::value,
 				      "You passed me a non-stateless function, or screwed up your arguments! \n Expected: R f(DataStore&, Handles....)");
-			static_assert(all_handles_write<Args...>::value, "Error: passed non-writeable handle into ro_transaction");
+			static_assert(all_handles_write<Args...>::value, "Error: passed non-writeable handle into wo_transaction");
 			return f(*this, args...);
 		}
 
@@ -178,6 +171,8 @@ namespace backend{
 			static_assert(all_handles<Args...>::value, "Passed non-Handles as arguments to function!");
 			static_assert(is_stateless<R, DataStore&, Args...>::value,
 				      "You passed me a non-stateless function, or screwed up your arguments! \n Expected: R f(DataStore&, Handles....)");
+			static_assert(all_handles_write<Args...>::value, "Error: passed non-writeable handle into rw_transaction");
+			static_assert(all_handles_read<Args...>::value, "Error: passed non-readable handle into rw_transaction");
 			return f(*this, args...);
 		}
 
