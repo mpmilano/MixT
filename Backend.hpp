@@ -94,6 +94,16 @@ namespace backend{
 			static_assert(Lnew >= Level::causal, "Error: cannot acquire weaker write-only handle");
 			return Handle<Lnew,HandleAccess::write,T>(old.hi());} //*/
 
+		template<Level L, typename T>
+		auto ro_hndl(Handle<L,HandleAccess::all,T> &old){
+			return Handle<L,HandleAccess::read,T>(old.hi());
+		}
+
+		template<Level L, typename T>
+		auto wo_hndl(Handle<L,HandleAccess::all,T> &old){
+			return Handle<L,HandleAccess::write,T>(old.hi());
+		}
+
 
 		static constexpr HandleAccess hlpr_fun(Level Lold){
 			return (Lold == Level::strong ? HandleAccess::read : HandleAccess::write);
@@ -148,7 +158,7 @@ namespace backend{
 		template < typename R, typename... Args>
 		auto ro_transaction(R &f, Args... args) {
 			static_assert(all_handles<Args...>::value, "Passed non-Handles as arguments to function!");
-			//static_assert(!exists_write_handle<Args...>::value "b");
+			static_assert(!exists_write_handle<Args...>::value, "Passed write-enabled handles as argument to ro function!");
 			static_assert(is_stateless<R, DataStore&, Args...>::value,
 				      "You passed me a non-stateless function, or screwed up your arguments! \n Expected: R f(DataStore&, Handles....)");
 			static_assert(all_handles_read<Args...>::value, "Error: passed non-readable handle into ro_transaction");
@@ -159,7 +169,7 @@ namespace backend{
 		template < typename R, typename... Args>
 		auto wo_transaction(R &f, Args... args) {
 			static_assert(all_handles<Args...>::value, "Passed non-Handles as arguments to function!");
-			//static_assert(!exists_read_handle<Args...>::value "b");
+			static_assert(!exists_read_handle<Args...>::value, "Passed read-enabled handles as argument to wo function!");
 			static_assert(is_stateless<R, DataStore&, Args...>::value,
 				      "You passed me a non-stateless function, or screwed up your arguments! \n Expected: R f(DataStore&, Handles....)");
 			static_assert(all_handles_write<Args...>::value, "Error: passed non-writeable handle into wo_transaction");

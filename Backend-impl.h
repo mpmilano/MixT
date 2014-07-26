@@ -156,3 +156,9 @@ struct all_handles_read : bool_const<! any <handle_no_read, pack<Args...> >::val
 
 template<typename... Args>
 struct all_handles_write : bool_const <! any <handle_no_write, pack<Args...> >::value> {};
+
+template<typename... Args>
+struct exists_write_handle : any <handle_write, pack<Args...> > {};
+
+template<typename... Args>
+struct exists_read_handle : any <handle_read, pack<Args...> > {};

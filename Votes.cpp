@@ -21,31 +21,23 @@ namespace election{
 	}
 
 	void VoteTracker::voteForTwo(Candidate cnd1, Candidate cnd2){
+
+		typedef DataStore::Handle<votes[0].level, HandleAccess::write, int> hndl;
+
 		assert (cnd1 != cnd2);
-		auto transaction = [](DataStore& ds, VoteH cnd1, VoteH cnd2){
+		auto transaction = [](DataStore& ds, hndl cnd1, hndl cnd2){
 			ds.incr_op(cnd1);
 			ds.incr_op(cnd2);
 		};
-		ds.wo_transaction(transaction, votes[(int) cnd1], votes[(int) cnd2]);
+		ds.wo_transaction(transaction, ds.wo_hndl(votes[(int) cnd1]),ds.wo_hndl( votes[(int) cnd2]));
 	}
 
 	int VoteTracker::getCount(Candidate cnd){
 		return ds.get(votes[(int) cnd]);
 	}
 	VoteTracker::counts VoteTracker::currentTally(){
-		//DataStore::Handle<Level::causal, HandleAccess::write, int> htmp = ds.newConsistency<Level::causal> (votes[0]);
-		DataStore::Handle<Level::causal,
-				  HandleAccess::read,
-				  int> 
-			votes_[(int)Candidate::Count] =
-			{ds.newConsistency<Level::causal> (votes[0]),
-			 ds.newConsistency<Level::causal> (votes[1]),
-			 ds.newConsistency<Level::causal> (votes[2]),
-			 ds.newConsistency<Level::causal> (votes[3]),
-			 ds.newConsistency<Level::causal> (votes[4]),
-			};
 
-		typedef DataStore::Handle<votes_[0].level, votes_[0].ha, int> hndl;
+		typedef DataStore::Handle<Level::causal, HandleAccess::read, int> hndl;
 		
 		auto transaction = [](DataStore &ds, hndl v0, hndl v1, hndl v2, hndl v3, hndl v4) {
 			auto interim =  counts(
@@ -67,12 +59,17 @@ namespace election{
 				      (interim.constabob * 100) / total,
 				      true);};
 
-		return ds.ro_transaction(transaction,votes_[0],votes_[1],votes_[2],votes_[3],votes_[4]); 
+		return ds.ro_transaction(transaction,
+					 ds.newConsistency<Level::causal> (votes[0]),
+					 ds.newConsistency<Level::causal> (votes[1]),
+					 ds.newConsistency<Level::causal> (votes[2]),
+					 ds.newConsistency<Level::causal> (votes[3]),
+					 ds.newConsistency<Level::causal> (votes[4])); 
 //*/
 	}
 
 	VoteTracker::counts VoteTracker::FinalTally(){
-		typedef DataStore::Handle<votes[0].level, votes[0].ha, int> hndl;
+		typedef DataStore::Handle<votes[0].level, HandleAccess::read, int> hndl;
 		auto transaction = [](DataStore &ds, hndl v0, hndl v1, hndl v2, hndl v3, hndl v4) {
 			return counts(
 				ds.get(v0),
@@ -81,8 +78,12 @@ namespace election{
 				ds.get(v3),
 				ds.get(v4));
 		};
-		return ds.ro_transaction(transaction,votes[0],votes[1],votes[2],votes[3],votes[4]);
-		
+		return ds.ro_transaction(transaction,
+					 ds.ro_hndl(votes[0]),
+					 ds.ro_hndl(votes[1]),
+					 ds.ro_hndl(votes[2]),
+					 ds.ro_hndl(votes[3]),
+					 ds.ro_hndl(votes[4]));
 	}
 
 }
