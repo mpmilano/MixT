@@ -1,0 +1,45 @@
+#include <type_traits>
+
+template <template <typename...> class F, typename P>
+struct any;
+
+template<
+	template <typename...> class F,
+	template <typename...> class C, typename E, typename... En
+	>
+struct any <F, C <E, En...> >:
+	public std::conditional <F <E>{}, std::integral_constant <bool, true>, any <F, C<En...> > >::type {};
+
+template <template <typename...> class F, template <typename...> class C>
+struct any <F, C <> > : public std::integral_constant <bool, false> {};
+
+
+template <typename...> struct pack { };
+
+///*
+
+
+template <typename F, typename...Args>
+void funcptr_helper(...);
+
+template <typename F, typename...Args>
+auto funcptr_helper(F, Args...) -> decltype(std::declval<F>()(std::declval<Args>()...));
+
+template <typename F, typename...Args>
+struct funcptr {
+	typedef decltype(funcptr_helper<F, Args...>(std::declval<F>(), std::declval<Args>()...)) (*type)(Args...);
+};
+
+template <typename F, typename...Args>
+struct is_stateless : std::is_convertible<F, typename funcptr<F, Args...>::type>::type {};
+
+template <bool b>
+struct bool_const : std::integral_constant <bool, b> {};
+
+//*/
+
+/*
+template <typename F, typename... Args>
+struct is_stateless : std::is_convertible<F, typename std::result_of<F(Args...)>::type (*) (Args...)>::type 
+{};
+//*/

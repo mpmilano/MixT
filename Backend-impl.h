@@ -1,4 +1,9 @@
-	private: 
+public:
+
+template<typename T>
+class HandleImpl;
+
+private: 
 		class HandlePrime;
 		std::vector<std::unique_ptr<HandlePrime> > hndls;
 		std::queue<int> next_ids;
@@ -67,33 +72,34 @@
 		private: 
 			virtual bool is_virtual() = 0;
 			HandleImpl<T> &h_i;
-			HandleImpl<T> &hi(){return h_i;}
+			HandleImpl<T> &hi() const {return h_i;}
 		public:
 			TypedHandle(HandleImpl<T> &hi):h_i(hi){}
 			friend class DataStore;
 		};
 
-		template<Level L, typename T>
+		template<Level L, HandleAccess HA, typename T>
 		class Handle : public TypedHandle<T> {
 		private:
 			virtual bool is_virtual() {return false;}
 		public: 
 			Handle(HandleImpl<T> &hi):TypedHandle<T>(hi){}
 			static constexpr Level level = L;
+			static constexpr HandleAccess ha = HA;
+			typedef T stored_type;
 			friend class DataStore;
-
 		};
 
-		template<Level L, typename T>	
-		Handle<L, T> newhandle_internal(std::unique_ptr<T> r) {
+		template<Level L, HandleAccess HA, typename T>	
+		Handle<L, HA, T> newhandle_internal(std::unique_ptr<T> r) {
 			std::unique_ptr<HandleImpl<T> > tmp(new HandleImpl<T>(*this,std::move(r)));
 			auto &ret = *tmp;
 			place_correctly(std::move(tmp));
-			return Handle<L,T>(ret);
+			return Handle<L,HA,T>(ret);
 		}
 
-		template<Level L, typename T>
-		std::unique_ptr<T> del_internal(Handle<L, T> &hndl_i){
+		template<Level L, HandleAccess HA, typename T>
+		std::unique_ptr<T> del_internal(Handle<L,HA,T> &hndl_i){
 			auto &hndl = hndl_i.hi(); 
 			std::unique_ptr<T> ret = hndl;
 			assert(hndls[hndl.id]->id == hndl.id);
@@ -101,3 +107,58 @@
 			return ret;
 		}
 
+template<bool b>
+struct neg : std::integral_constant<bool, !b> {};
+
+template <typename C>
+static constexpr std::integral_constant<bool,true> is_not_handle_f(C*);
+
+template < Level L, HandleAccess HA, typename T>
+static constexpr std::integral_constant<bool,false> is_not_handle_f(DataStore::Handle<L,HA,T>*);
+
+template<typename T>
+struct is_not_handle : decltype( is_not_handle_f ( (T*) nullptr) ) {};
+
+template<typename T>
+struct is_handle : neg<is_not_handle<T>::value> {};
+
+
+template <typename C>
+static constexpr std::integral_constant<bool,true> handle_no_read_f(C*);
+
+template < Level L, HandleAccess HA, typename T>
+	static constexpr std::integral_constant<bool,!canRead(HA)> handle_no_read_f(DataStore::Handle<L,HA,T>*);
+
+template<typename T>
+struct handle_no_read : decltype( handle_no_read_f ( (T*) nullptr) ) {};
+
+template<typename T>
+struct handle_read : neg<handle_no_read<T>::value> {};
+
+
+template <typename C>
+static constexpr std::integral_constant<bool,true> handle_no_write_f(C*);
+
+template < Level L, HandleAccess HA, typename T>
+	static constexpr std::integral_constant<bool,!canWrite(HA)> handle_no_write_f(DataStore::Handle<L,HA,T>*);
+
+template<typename T>
+struct handle_no_write : decltype( handle_no_write_f ( (T*) nullptr) ) {};
+
+template<typename T>
+struct handle_write : neg<handle_no_write<T>::value> {};
+
+template<typename... Args>
+struct all_handles : bool_const<! any<is_not_handle, pack<Args...> >::value > {};
+
+template<typename... Args>
+struct all_handles_read : bool_const<! any <handle_no_read, pack<Args...> >::value > {};
+
+template<typename... Args>
+struct all_handles_write : bool_const <! any <handle_no_write, pack<Args...> >::value> {};
+
+template<typename... Args>
+struct exists_write_handle : any <handle_write, pack<Args...> > {};
+
+template<typename... Args>
+struct exists_read_handle : any <handle_read, pack<Args...> > {};

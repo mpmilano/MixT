@@ -25,25 +25,32 @@ int main () {
 		std::function<int (myds&, foocls&)> fuzz = [](myds &, foocls& add){add.incr(); return add + 1;};
 		foocls tmp3(0);
 		std::cout << tmp3 << std::endl;
-		tester::registerTestFunction(tmp, tmp2, fuzz, tmp3);
+		auto fuzzcls = tester::registerTestFunction(tmp, tmp2, fuzz, tmp3);
+		fuzzcls.runTestFunctions();
 		std::cout << tmp3 << std::endl;
 		tmp.newHandle<Level::fastest, int>();
 		tmp.newHandle<Level::fastest>(4);
 		tmp.newHandle<Level::fastest>(new foocls(8));
-		auto hfcls = tmp.newHandle<Level::fastest>(std::unique_ptr<foocls>(new foocls(4)));
+		auto hfcls = tmp.newHandle<Level::strong>(std::unique_ptr<foocls>(new foocls(4)));
 		auto strongview = tmp.newConsistency<Level::strong>(hfcls);
 		myds::TypedHandle<foocls> &noview = strongview;
+		assert(&noview);
 		tmp.get(hfcls);
 		auto fcls = tmp.take(hfcls);
 		tmp.give(hfcls, new foocls(3));
 		tmp.incr(hfcls); 
-		tmp.incr<hfcls.level,Level::causal>(hfcls);
+		tmp.incr(hfcls);
 		std::cout << "deletes the 3" << std::endl;
 		tmp.give(hfcls, std::move(fcls));
 		std::cout << "deletes the 4" << std::endl;
-		tmp.get<Level::causal>(noview);
-		auto causalview = tmp.newConsistency<Level::causal>(noview);
-		tmp.del(causalview);		
+		assert(hfcls.level == Level::strong);
+		assert(hfcls.ha == DataStore::HandleAccess::all);
+		auto ro = tmp.newConsistency<Level::causal>(hfcls);
+		assert(ro.level == Level::causal);
+		assert(ro.ha == DataStore::HandleAccess::read);
+		tmp.get(ro);
+		//tmp.give(ro,new foocls(400));
+		tmp.del(hfcls);
 		
 
 		std::cout << "destructing whole structure" << std::endl;
@@ -51,7 +58,8 @@ int main () {
 	myds tmp;
 	std::function<int (std::list<int>)> tmp2 = [](std::list<int> l){return l.front();};
 	std::function<int (myds&, int)> fuzz = [](myds &, int add){return add + 1;};
-	tester::registerTestFunction(tmp, tmp2, fuzz, 0);
+	auto fuzcls = tester::registerTestFunction(tmp, tmp2, fuzz, 0);
+	fuzcls.runTestFunctions();
 	return 0;
 	
 }

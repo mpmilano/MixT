@@ -10,11 +10,13 @@ namespace election{
 	class VoteTracker{
 	public:
 		typedef backend::DataStore::Handle
-			<backend::Level::causal,int> VoteH;
+			<backend::Level::strong,
+			backend::HandleAccess::all, 
+			int> VoteH;
 
 	private:
 		backend::DataStore& ds;
-		VoteH votes[(int)Candidate::Count];
+		std::array<VoteH, (int)Candidate::Count > votes;
 
 	public:
 		class counts{
@@ -24,10 +26,12 @@ namespace election{
 			const int ross; 
 			const int dexter; 
 			const int constabob;
+
 		private: 
 			bool percents = false;
 			std::string annot() const 
 			{ return percents ? "%" : ""; } 
+
 		public:
 			friend std::ostream& operator<<
 				(std::ostream& s, const counts& c){
@@ -38,6 +42,7 @@ namespace election{
 				  << " ConstaBob: " << c.constabob<< c.annot();
 				return s;
 			}
+
 		counts(int andrew, 
 		       int nate, 
 		       int ross, 
@@ -56,6 +61,7 @@ namespace election{
 		VoteTracker(backend::DataStore&);
 
 		void countVote(Candidate);
+		void voteForTwo(Candidate, Candidate);
 		int getCount(Candidate);
 		counts currentTally();
 		counts FinalTally();
