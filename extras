@@ -16,8 +16,6 @@ struct any <F, C <> > : public std::integral_constant <bool, false> {};
 
 template <typename...> struct pack { };
 
-///*
-
 
 template <typename F, typename...Args>
 void funcptr_helper(...);
@@ -36,10 +34,36 @@ struct is_stateless : std::is_convertible<F, typename funcptr<F, Args...>::type>
 template <bool b>
 struct bool_const : std::integral_constant <bool, b> {};
 
-//*/
+template<typename T>
+constexpr bool wrapper(T){
+	return true;
+}
 
-/*
-template <typename F, typename... Args>
-struct is_stateless : std::is_convertible<F, typename std::result_of<F(Args...)>::type (*) (Args...)>::type 
-{};
-//*/
+template
+<typename F,
+ typename std::decay<F>::type FP,
+ typename... Args,
+ bool = wrapper(FP(Args{}...))>
+constexpr bool is_constexpr_impl(bool&&)
+{
+	return true;
+}
+
+template
+<typename F,
+ typename std::decay<F>::type FP,
+ typename... Args>
+constexpr bool is_constexpr_impl(const bool&&)
+{
+	return false;
+}
+
+template
+<typename F,
+ typename std::decay<F>::type FP,
+ typename... Args>
+constexpr bool is_constexpr(Args...)
+{
+	return is_constexpr_impl<F, FP, Args...>(0);
+}
+
