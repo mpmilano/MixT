@@ -143,6 +143,8 @@ namespace backend{
 		add(Handle<L, HA, T> &h, A... args) 
 			{h.hi().stored_obj->add(args...);}
 
+		//transactions interface
+
 		template < typename R, typename... Args>
 		auto ro_transaction(R &f, Args... args) {
 			static_assert(all_handles<Args...>::value, "Passed non-Handles as arguments to function!");
