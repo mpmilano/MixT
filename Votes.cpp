@@ -23,10 +23,10 @@ namespace election{
 
 	void VoteTrackerClient::voteForTwo(Candidate cnd1, Candidate cnd2){
 
-		typedef DataStore::Handle<VoteH::level, HandleAccess::write, int> hndl;
+		typedef DataStore::Handle<1,VoteH::level, HandleAccess::write, int> hndl;
 
 		assert (cnd1 != cnd2);
-		auto transaction = [](Client& ds, hndl cnd1, hndl cnd2){
+		auto transaction = [](Client<1>& ds, hndl cnd1, hndl cnd2){
 			ds.incr_op(cnd1);
 			ds.incr_op(cnd2);
 		};
@@ -38,9 +38,9 @@ namespace election{
 	}
 	counts VoteTrackerClient::currentTally(){
 
-		typedef DataStore::Handle<Level::causal, HandleAccess::read, int> hndl;
+		typedef DataStore::Handle<1,Level::causal, HandleAccess::read, int> hndl;
 		
-		auto transaction = [](Client &ds, hndl v0, hndl v1, hndl v2, hndl v3, hndl v4) {
+		auto transaction = [](Client<1> &ds, hndl v0, hndl v1, hndl v2, hndl v3, hndl v4) {
 			auto interim =  counts(
 				ds.get(v0),
 				ds.get(v1),
@@ -70,8 +70,8 @@ namespace election{
 	}
 
 	counts VoteTrackerClient::FinalTally(){
-		typedef DataStore::Handle<VoteH::level, HandleAccess::read, int> hndl;
-		auto transaction = [](Client &ds, hndl v0, hndl v1, hndl v2, hndl v3, hndl v4) {
+		typedef DataStore::Handle<1, VoteH::level, HandleAccess::read, int> hndl;
+		auto transaction = [](Client<1> &ds, hndl v0, hndl v1, hndl v2, hndl v3, hndl v4) {
 			return counts(
 				ds.get(v0),
 				ds.get(v1),

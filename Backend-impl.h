@@ -82,6 +82,7 @@ private:
 				stored_obj(new T(*old.stored_obj)){}
 		public: 
 			friend class DataStore;
+			template<Client_Id>
 			friend class Client;
 			HandleImpl (const HandleImpl&) = delete;
 			
@@ -103,10 +104,11 @@ private:
 		public:
 			TypedHandle(HandleImpl<T> &hi):h_i(hi){}
 			friend class DataStore;
+			template<Client_Id>
 			friend class Client;
 		};
 
-		template<Level L, HandleAccess HA, typename T>
+		template<Client_Id id, Level L, HandleAccess HA, typename T>
 		class Handle : public TypedHandle<T> {
 		private:
 			virtual bool is_virtual() {return false;}
@@ -116,11 +118,12 @@ private:
 			static constexpr HandleAccess ha = HA;
 			typedef T stored_type;
 			friend class DataStore;
+			template<Client_Id>
 			friend class Client;
 		};
 
-		template<Level L, HandleAccess HA, typename T>	
-		Handle<L, HA, T> newhandle_internal(std::unique_ptr<T> r) {
+		template<Client_Id id, Level L, HandleAccess HA, typename T>	
+		auto newhandle_internal(std::unique_ptr<T> r) {
 			std::unique_ptr<HandleImpl<T> > tmp(new HandleImpl<T>(*this,std::move(r)));
 			auto &ret = *tmp;
 			static const copy_h copyf = [](const HandlePrime &_hp, DataStore& np){
@@ -129,11 +132,11 @@ private:
 				return std::unique_ptr<HandlePrime >(new HandleImpl<T>(np,h));
 			};
 			place_correctly(std::move(tmp), copyf);
-			return Handle<L,HA,T>(ret);
+			return Handle<id,L,HA,T>(ret);
 		}
 
-		template<Level L, HandleAccess HA, typename T>
-		std::unique_ptr<T> del_internal(Handle<L,HA,T> &hndl_i){
+		template<Client_Id id, Level L, HandleAccess HA, typename T>
+		auto del_internal(Handle<id,L,HA,T> &hndl_i){
 			auto &hndl = hndl_i.hi(); 
 			std::unique_ptr<T> ret = hndl;
 			assert(hndls[hndl.id]->id == hndl.id);

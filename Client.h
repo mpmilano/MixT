@@ -4,6 +4,7 @@
 
 namespace backend {
 	
+	template<Client_Id cid>
 	class Client {
 	private:
 		DataStore& master;
@@ -28,73 +29,70 @@ namespace backend {
 		//create/delete object slots
 		
 		template<Level L, typename T>
-		DataStore::Handle<L,HandleAccess::all, T>
+		DataStore::Handle<cid, L,HandleAccess::all, T>
 		newHandle(std::unique_ptr<T> r)
-			{return local.newhandle_internal<L,HandleAccess::all>
+			{return local.newhandle_internal<cid, L,HandleAccess::all>
 					(std::move(r));}
 		
 		template<Level L, typename T>
-		DataStore::Handle<L,HandleAccess::all, T> newHandle(T r)
-			{return local.newhandle_internal<L,HandleAccess::all>
+		DataStore::Handle<cid, L,HandleAccess::all, T> newHandle(T r)
+			{return local.newhandle_internal<cid, L,HandleAccess::all>
 					(std::unique_ptr<T>(new T(r)));}
 		
 		template<Level L, typename T>
-		DataStore::Handle<L,HandleAccess::all, T> newHandle(T* r = nullptr)
-			{return local.newhandle_internal<L,HandleAccess::all>
+		DataStore::Handle<cid, L,HandleAccess::all, T> newHandle(T* r = nullptr)
+			{return local.newhandle_internal<cid, L,HandleAccess::all>
 					(std::unique_ptr<T>(r));}
 		
-		template<Level L,typename T>
-		std::unique_ptr<T> del(DataStore::Handle<L,HandleAccess::all,T>& hndl)
+		template<Level L, typename T>
+		std::unique_ptr<T> del(DataStore::Handle<cid, L,HandleAccess::all,T>& hndl)
 			{return local.del_internal<L>(hndl);}
 		
 		template<Level L, typename T>
-		auto ro_hndl(DataStore::Handle<L,HandleAccess::all,T> &old){
-			return DataStore::Handle<L,HandleAccess::read,T>(old.hi());
+		auto ro_hndl(DataStore::Handle<cid, L,HandleAccess::all,T> &old){
+			return DataStore::Handle<cid, L,HandleAccess::read,T>(old.hi());
 		}
 		
 		template<Level L, typename T>
-		auto wo_hndl(DataStore::Handle<L,HandleAccess::all,T> &old){
-			return DataStore::Handle<L,HandleAccess::write,T>(old.hi());
+		auto wo_hndl(DataStore::Handle<cid, L,HandleAccess::all,T> &old){
+			return DataStore::Handle<cid, L,HandleAccess::write,T>(old.hi());
 		}	
 
 		template<Level Lnew, Level Lold, typename T>
-		auto newConsistency (DataStore::Handle<Lold,HandleAccess::all,T> &old) {
-			return DataStore::Handle<Lnew,
+		auto newConsistency (DataStore::Handle<cid, Lold,HandleAccess::all,T> &old) {
+			return DataStore::Handle<cid, Lnew,
 						 (Lold == Level::strong ? 
 						  HandleAccess::read : 
 						  HandleAccess::write),
 						 T> (old.hi());
 		}
-			
-		
-		void waitForSync();
 		
 		//KVstore-style interface
 		
 		template<typename T, HandleAccess HA>
 		typename std::enable_if<canRead(HA), T&>::type
-		get(DataStore::Handle<Level::causal, HA, T> &hndl)
+		get(DataStore::Handle<cid,Level::causal, HA, T> &hndl)
 			{return hndl.hi();}
 
 		template<typename T, HandleAccess HA>
 		typename std::enable_if<canRead(HA), T&>::type
-		get(DataStore::Handle<Level::strong, HA, T> &hndl) {
+		get(DataStore::Handle<cid,Level::strong, HA, T> &hndl) {
 			waitForSync(); return hndl.hi();
 		}
 
 		
 		template<Level L, typename T, HandleAccess HA>
 		typename std::enable_if<canWrite(HA), void>::type
-		give(DataStore::Handle<L, HA, T> &hndl, std::unique_ptr<T> obj) 
+		give(DataStore::Handle<cid, L, HA, T> &hndl, std::unique_ptr<T> obj) 
 			{hndl.hi() = std::move(obj);}
 		
 		template<Level L, typename T, HandleAccess HA>
 		typename std::enable_if<canWrite(HA), void>::type
-		give(DataStore::Handle<L, HA, T> &hndl, T* obj) 
+		give(DataStore::Handle<cid, L, HA, T> &hndl, T* obj) 
 			{hndl.hi() = std::unique_ptr<T>(obj);}
 		
 		template<Level L, typename T>
-		std::unique_ptr<T> take(DataStore::Handle<L,HandleAccess::all,T>& hndl)
+		std::unique_ptr<T> take(DataStore::Handle<cid, L,HandleAccess::all,T>& hndl)
 			{ return hndl.hi();}
 		
 		//commutative operations
@@ -102,7 +100,7 @@ namespace backend {
 			
 		template<Level L, typename T, HandleAccess HA>
 		typename std::enable_if<canWrite(HA), void>::type
-		incr_op(DataStore::Handle<L, HA, T> &h) 
+		incr_op(DataStore::Handle<cid, L, HA, T> &h) 
 			{
 				auto f = [&](){(*(h.hi().stored_obj))++;};
 				pending_updates.push_back(f);
@@ -111,12 +109,12 @@ namespace backend {
 		
 		template<Level L, typename T, HandleAccess HA>
 		typename std::enable_if<canWrite(HA), void>::type
-		incr(DataStore::Handle<L, HA, T> &h) 
+		incr(DataStore::Handle<cid, L, HA, T> &h) 
 			{h.hi().stored_obj->incr();}
 		
 		template<Level L, typename T, HandleAccess HA, typename... A>
 		typename std::enable_if<canRead(HA), void>::type
-		add(DataStore::Handle<L, HA, T> &h, A... args) 
+		add(DataStore::Handle<cid, L, HA, T> &h, A... args) 
 			{h.hi().stored_obj->add(args...);}
 		
 		//transactions interface
@@ -151,6 +149,29 @@ namespace backend {
 			static_assert(all_handles_read<Args...>::value, "Error: passed non-readable handle into rw_transaction");
 			return f(*this, args...);
 		}
+
+		typedef void (*copy_hndls_f) (DataStore& from, DataStore &to);
+		
+		void waitForSync(){
+			static const copy_hndls_f copy_hndls = [](DataStore& from, DataStore &to){
+				for (auto& ptr_copy : to.hndls) {
+					auto& ptr = ptr_copy.first;
+					auto& copy = ptr_copy.second;
+					if (from.hndls.size() <= ptr->id) {
+						auto &m_ptr = from.hndls[ptr->id].first;
+						if (m_ptr->rid == ptr->rid) {
+							ptr.operator=(copy(*m_ptr, to));
+						}
+					}
+				}
+			};
+			copy_hndls(master,local);
+			for (auto &update : pending_updates) update();
+			copy_hndls(local,master);
+			pending_updates.clear();
+		}
+
+
 	};
 	
 	

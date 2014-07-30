@@ -22,7 +22,6 @@ namespace tester{
 
 namespace backend{
 
-	class Client;
 
 	enum class HandleAccess {read, write, all};
 	
@@ -38,6 +37,12 @@ namespace backend{
 			   true : false);
 	}
 
+	typedef int Client_Id;
+
+	template<Client_Id cid>
+	class Client;
+
+
 	class DataStore {
 
 	public:
@@ -50,7 +55,7 @@ namespace backend{
 		
 
 
-		template<Level L, HandleAccess HA, typename T>
+		template<Client_Id cid, Level L, HandleAccess HA, typename T>
 		class Handle; //extends TypedHandle<T>
 
 	private:
@@ -77,6 +82,7 @@ namespace backend{
 		}
 		
 		friend class HandlePrime;
+		template<Client_Id cid>
 		friend class Client;
 		
 		template<Level L, typename R, typename IR>

@@ -46,7 +46,8 @@ namespace election{
 			{}
 	};
 
-	typedef backend::DataStore::Handle<backend::Level::strong, backend::HandleAccess::all, int> VoteH;
+	typedef backend::DataStore::Handle<0,backend::Level::strong, backend::HandleAccess::all, int> VoteH_primary;
+	typedef backend::DataStore::Handle<1,backend::Level::strong, backend::HandleAccess::all, int> VoteH_secondary;
 
 
 	class VoteTrackerServer;
@@ -54,7 +55,8 @@ namespace election{
 	class VoteTrackerClient {
 
 	private : 
-		backend::Client ds;
+		typedef VoteH_secondary VoteH;
+		backend::Client<1> ds;
 		VoteTrackerClient(VoteTrackerServer&);
 		std::array<VoteH, (int)Candidate::Count > votes;
 	public :
@@ -76,8 +78,9 @@ namespace election{
 	public:
 
 	private:
+		typedef VoteH_primary VoteH;
 		backend::DataStore& upstream_ds;
-		backend::Client ds;
+		backend::Client<0> ds;
 		std::array<VoteH, (int)Candidate::Count > votes;
 
 	public:

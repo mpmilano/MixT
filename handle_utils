@@ -11,8 +11,8 @@ namespace backend {
 	static constexpr std::integral_constant<bool,true> is_not_handle_f(C*)
 	{return std::integral_constant<bool,true>();}
 	
-	template < Level L, HandleAccess HA, typename T>
-	static constexpr std::integral_constant<bool,false> is_not_handle_f(DataStore::Handle<L,HA,T>*)
+	template < Client_Id cid, Level L, HandleAccess HA, typename T>
+	static constexpr std::integral_constant<bool,false> is_not_handle_f(DataStore::Handle<cid, L,HA,T>*)
 	{return std::integral_constant<bool,false>();}
 	
 	template<typename T>
@@ -26,8 +26,8 @@ namespace backend {
 	static constexpr std::integral_constant<bool,true> handle_no_read_f(C*)
 	{return std::integral_constant<bool,true>();}
 	
-	template < Level L, HandleAccess HA, typename T>
-	static constexpr std::integral_constant<bool,!canRead(HA)> handle_no_read_f(DataStore::Handle<L,HA,T>*)
+	template < Client_Id cid, Level L, HandleAccess HA, typename T>
+	static constexpr std::integral_constant<bool,!canRead(HA)> handle_no_read_f(DataStore::Handle<cid, L,HA,T>*)
 	{return std::integral_constant<bool,!canRead(HA)>();}
 
 	template<typename T>
@@ -41,8 +41,8 @@ namespace backend {
 	static constexpr std::integral_constant<bool,true> handle_no_write_f(C*)
 	{return std::integral_constant<bool,true>();}
 	
-	template < Level L, HandleAccess HA, typename T>
-	static constexpr std::integral_constant<bool,!canWrite(HA)> handle_no_write_f(DataStore::Handle<L,HA,T>*)
+	template < Client_Id cid, Level L, HandleAccess HA, typename T>
+	static constexpr std::integral_constant<bool,!canWrite(HA)> handle_no_write_f(DataStore::Handle<cid, L,HA,T>*)
 	{return std::integral_constant<bool,!canWrite(HA)>();}
 	
 	template<typename T>
