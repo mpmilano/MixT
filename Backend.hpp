@@ -72,6 +72,7 @@ namespace backend{
 
 		DataStore (const DataStore &) = delete;
 		virtual ~DataStore() {
+			std::cout << "Prepare for segfault!" << std::endl;
 			this-> destructing = true;
 		}
 		

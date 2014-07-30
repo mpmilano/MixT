@@ -20,6 +20,10 @@ namespace backend {
 			master(old.master),
 			local(std::move(old.local)),
 			pending_updates(std::move(old.pending_updates)){}
+
+		~Client(){
+			std::cout << "observe! " << std::endl;
+		}
 		
 		//create/delete object slots
 		
@@ -99,7 +103,11 @@ namespace backend {
 		template<Level L, typename T, HandleAccess HA>
 		typename std::enable_if<canWrite(HA), void>::type
 		incr_op(DataStore::Handle<L, HA, T> &h) 
-			{(*(h.hi().stored_obj))++;}
+			{
+				auto f = [&](){(*(h.hi().stored_obj))++;};
+				pending_updates.push_back(f);
+				f();				
+			}
 		
 		template<Level L, typename T, HandleAccess HA>
 		typename std::enable_if<canWrite(HA), void>::type
