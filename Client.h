@@ -55,13 +55,14 @@ namespace backend {
 		template<Level Lnew, Level Lold, typename T>
 		auto newConsistency (DataStore::Handle<Lold,HandleAccess::all,T> &old) {
 			return DataStore::Handle<Lnew,
-						 (Lold == Level::strong ? HandleAccess::read : HandleAccess::write),
+						 (Lold == Level::strong ? 
+						  HandleAccess::read : 
+						  HandleAccess::write),
 						 T> (old.hi());
 		}
 			
 		
-		template<Level L, typename T, HandleAccess HA>
-		void waitForSync(DataStore::Handle<L, HA, T> &){}
+		void waitForSync();
 		
 		//KVstore-style interface
 		

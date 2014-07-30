@@ -9,6 +9,7 @@ private:
 
 		class HandlePrime;
 		std::vector<std::unique_ptr<HandlePrime> > hndls;
+std::vector<std::function<std::unique_ptr<HandlePrime> (const HandlePrime&) > > copy;
 		std::queue<int> next_ids;
 		bool destructing = false;
 		int get_next_id(){
@@ -19,13 +20,23 @@ private:
 			}
 			else return hndls.size();
 		}
+
+		static int get_next_rid(){
+			static int rinit = 0;
+			return ++rinit;
+		}
 		class HandlePrime {
 		private: 
 			DataStore& parent;
 			virtual bool is_abstract() = 0;
 		public:
 			const uint id;
-			HandlePrime(DataStore& parent):parent(parent),id(parent.get_next_id()){}
+			const uint rid;
+			HandlePrime(DataStore& parent):
+				parent(parent),
+				id(parent.get_next_id()),
+				rid(get_next_rid()){}
+
 			HandlePrime(const HandlePrime&) = delete;
 			virtual ~HandlePrime() {
 				if (!parent.destructing){
