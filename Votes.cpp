@@ -7,39 +7,40 @@ namespace election{
 
 //counts order: Andrew, Nate, Ross, Dexter, ConstaBob
 
-	VoteTracker::VoteTracker(backend::DataStore& ds):
-		ds(ds),
+	VoteTrackerServer::VoteTrackerServer(backend::DataStore& _ds):
+		upstream_ds(_ds),
+		ds(_ds),
 		votes({ds.newHandle<Level::strong>(8),
 			ds.newHandle<Level::strong>(0),
 			ds.newHandle<Level::strong>(0),
 			ds.newHandle<Level::strong>(0),
-					ds.newHandle<Level::strong>(0),})
-	{}
+					ds.newHandle<Level::strong>(0),}) {}
+
 	
-	void VoteTracker::countVote(Candidate cnd){
+	void VoteTrackerClient::countVote(Candidate cnd){
 		ds.incr_op(votes[(int) cnd]);
 	}
 
-	void VoteTracker::voteForTwo(Candidate cnd1, Candidate cnd2){
+	void VoteTrackerClient::voteForTwo(Candidate cnd1, Candidate cnd2){
 
 		typedef DataStore::Handle<VoteH::level, HandleAccess::write, int> hndl;
 
 		assert (cnd1 != cnd2);
-		auto transaction = [](DataStore& ds, hndl cnd1, hndl cnd2){
+		auto transaction = [](Client& ds, hndl cnd1, hndl cnd2){
 			ds.incr_op(cnd1);
 			ds.incr_op(cnd2);
 		};
 		ds.wo_transaction(transaction, ds.wo_hndl(votes[(int) cnd1]),ds.wo_hndl( votes[(int) cnd2]));
 	}
 
-	int VoteTracker::getCount(Candidate cnd){
+	int VoteTrackerClient::getCount(Candidate cnd){
 		return ds.get(votes[(int) cnd]);
 	}
-	VoteTracker::counts VoteTracker::currentTally(){
+	counts VoteTrackerClient::currentTally(){
 
 		typedef DataStore::Handle<Level::causal, HandleAccess::read, int> hndl;
 		
-		auto transaction = [](DataStore &ds, hndl v0, hndl v1, hndl v2, hndl v3, hndl v4) {
+		auto transaction = [](Client &ds, hndl v0, hndl v1, hndl v2, hndl v3, hndl v4) {
 			auto interim =  counts(
 				ds.get(v0),
 				ds.get(v1),
@@ -68,9 +69,9 @@ namespace election{
 //*/
 	}
 
-	VoteTracker::counts VoteTracker::FinalTally(){
+	counts VoteTrackerClient::FinalTally(){
 		typedef DataStore::Handle<VoteH::level, HandleAccess::read, int> hndl;
-		auto transaction = [](DataStore &ds, hndl v0, hndl v1, hndl v2, hndl v3, hndl v4) {
+		auto transaction = [](Client &ds, hndl v0, hndl v1, hndl v2, hndl v3, hndl v4) {
 			return counts(
 				ds.get(v0),
 				ds.get(v1),
@@ -86,11 +87,21 @@ namespace election{
 					 ds.ro_hndl(votes[4]));
 	}
 
+	VoteTrackerClient VoteTrackerServer::spawnClient(){
+		return VoteTrackerClient(*this);
+	}
+
+	VoteTrackerClient::VoteTrackerClient(VoteTrackerServer& s):ds(s.upstream_ds),votes(s.votes){}
+
+	VoteTrackerClient::VoteTrackerClient(VoteTrackerClient&& s):ds(std::move(s.ds)),votes(std::move(s.votes)){}
+
+
 }
 
 int main (){
 	backend::DataStore ds;
-	election::VoteTracker v(ds);
+	election::VoteTrackerServer vs(ds);
+	auto v = vs.spawnClient();
 	v.FinalTally();
 	v.countVote(election::Candidate::Ross);
 	v.countVote(election::Candidate::Dexter);
