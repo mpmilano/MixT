@@ -1,4 +1,5 @@
 #include "Client.h"
+#include <iostream>
 
 using namespace backend;
 
@@ -17,9 +18,7 @@ void backend::Client::waitForSync(){
 				}
 			}
 		}
-		
 	};
-
 	copy_hndls(master,local);
 	for (auto &update : pending_updates) update();
 	copy_hndls(local,master);

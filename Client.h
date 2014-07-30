@@ -1,5 +1,6 @@
 #pragma once
 #include "Backend.hpp"
+#include <execinfo.h>
 
 namespace backend {
 	
@@ -66,10 +67,17 @@ namespace backend {
 		
 		//KVstore-style interface
 		
-		template<Level L, typename T, HandleAccess HA>
+		template<typename T, HandleAccess HA>
 		typename std::enable_if<canRead(HA), T&>::type
-		get(DataStore::Handle<L, HA, T> &hndl)
+		get(DataStore::Handle<Level::causal, HA, T> &hndl)
 			{return hndl.hi();}
+
+		template<typename T, HandleAccess HA>
+		typename std::enable_if<canRead(HA), T&>::type
+		get(DataStore::Handle<Level::strong, HA, T> &hndl) {
+			waitForSync(); return hndl.hi();
+		}
+
 		
 		template<Level L, typename T, HandleAccess HA>
 		typename std::enable_if<canWrite(HA), void>::type
