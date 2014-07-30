@@ -8,7 +8,7 @@ class HandleImpl;
 private:
 
 		class HandlePrime;
-		typedef std::function<std::unique_ptr<HandlePrime> (const HandlePrime&, DataStore&) > copy_h;
+		typedef std::unique_ptr<HandlePrime> (*copy_h) (const HandlePrime&, DataStore&);
 
 		std::vector<std::pair < std::unique_ptr<HandlePrime>, copy_h> > hndls;
 		std::queue<int> next_ids;
@@ -123,7 +123,7 @@ private:
 		Handle<L, HA, T> newhandle_internal(std::unique_ptr<T> r) {
 			std::unique_ptr<HandleImpl<T> > tmp(new HandleImpl<T>(*this,std::move(r)));
 			auto &ret = *tmp;
-			copy_h copyf = [](const HandlePrime &_hp, DataStore& np){
+			static const copy_h copyf = [](const HandlePrime &_hp, DataStore& np){
 				auto *_h = static_cast<const HandleImpl<T>* >(&_hp);
 				HandleImpl<T> const &h = *_h;
 				return std::unique_ptr<HandlePrime >(new HandleImpl<T>(np,h));
