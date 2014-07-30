@@ -7,13 +7,18 @@ namespace backend {
 	private:
 		DataStore& master;
 		DataStore local;
+		std::list<std::function<void ()> > pending_updates;
+
 	public:
 		
 		Client(DataStore& master):master(master){
 			master.syncClient(local);
 		}
 
-		Client(Client&& old):master(old.master),local(std::move(old.local)){}
+		Client(Client&& old):
+			master(old.master),
+			local(std::move(old.local)),
+			pending_updates(std::move(old.pending_updates)){}
 		
 		//create/delete object slots
 		
@@ -45,16 +50,13 @@ namespace backend {
 		template<Level L, typename T>
 		auto wo_hndl(DataStore::Handle<L,HandleAccess::all,T> &old){
 			return DataStore::Handle<L,HandleAccess::write,T>(old.hi());
-		}
-		
-		static constexpr HandleAccess newConsistency_lvl(Level Lold){
-			auto ret =(Lold == Level::strong ? HandleAccess::read : HandleAccess::write);
-			return ret;
-		}
-		
+		}	
+
 		template<Level Lnew, Level Lold, typename T>
 		auto newConsistency (DataStore::Handle<Lold,HandleAccess::all,T> &old) {
-			return DataStore::Handle<Lnew,newConsistency_lvl(Lold), T> (old.hi());
+			return DataStore::Handle<Lnew,
+						 (Lold == Level::strong ? HandleAccess::read : HandleAccess::write),
+						 T> (old.hi());
 		}
 			
 		
