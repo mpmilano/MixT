@@ -16,23 +16,11 @@ namespace backend {
 		DataStore::Handle<cid,L,HandleAccess::all, T>
 		gethandle_internal(DataStore::HandleImpl<T> &underlying){
 			auto &copy = master.hndls[underlying.id].second;
-			assert(underlying.id >= local.hndls.size() || 
-			       local.hndls[underlying.id].first.get() == nullptr );
-			
+			assert(local.hndls[underlying.id].first.get() == nullptr );
 			auto &&new_obj = copy(underlying,local);
 			DataStore::HandleImpl<T>& ret = (DataStore::HandleImpl<T>&) (*new_obj);
-
 			auto &&h = DataStore::HandlePair(std::move(new_obj),copy);
-
-			if (underlying.id == local.hndls.size())
-				local.hndls.push_back(std::move(h));
-			else if (underlying.id > local.hndls.size()){
-				local.hndls.resize(underlying.id);
-				local.hndls.push_back(std::move(h));
-			}
-			else {
-				local.hndls[h.first->id] = std::move(h);
-			}
+			local.hndls[h.first->id] = std::move(h);
 			return DataStore::Handle<cid,L,HandleAccess::all,T>(ret);
 		}
 
@@ -46,7 +34,6 @@ namespace backend {
 		template<Level L, typename T>
 		std::unique_ptr<T> del_internal(DataStore::Handle<cid, L,HandleAccess::all,T>& hndl) {
 			auto &&ret = local.del_internal<L>(hndl);
-			if (!local.next_ids.empty()) local.next_ids.pop();
 			return std::move(ret);
 		}
 
@@ -62,10 +49,6 @@ namespace backend {
 			master(old.master),
 			local(std::move(old.local)),
 			pending_updates(std::move(old.pending_updates)){}
-
-		~Client(){
-			std::cout << "observe! " << std::endl;
-		}
 		
 		//create/delete object slots
 		
@@ -201,13 +184,11 @@ namespace backend {
 		void waitForSync(){
 			static const copy_hndls_f copy_hndls = [](DataStore& from, DataStore &to){
 				for (auto& ptr_copy : to.hndls) {
-					auto& ptr = ptr_copy.first;
-					auto& copy = ptr_copy.second;
-					if (from.hndls.size() <= ptr->id) {
-						auto &m_ptr = from.hndls[ptr->id].first;
-						if (m_ptr->rid == ptr->rid) {
-							ptr.operator=(copy(*m_ptr, to));
-						}
+					auto& ptr = ptr_copy.second.first;
+					auto& copy = ptr_copy.second.second;
+					auto &m_ptr = from.hndls[ptr->id].first;
+					if (m_ptr->rid == ptr->rid) {
+						ptr.operator=(copy(*m_ptr, to));
 					}
 				}
 			};

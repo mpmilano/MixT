@@ -23,16 +23,10 @@ private:
 		};
 
 
-		std::vector<HandlePair > hndls;
-		std::queue<int> next_ids;
-		bool destructing = false;
+		std::map<uint,HandlePair > hndls;
 		int get_next_id(){
-			if (next_ids.size() > 0) {
-				const int &ret = next_ids.front();
-				next_ids.pop();
-				return ret;
-			}
-			else return hndls.size();
+			static int id = 0;
+			return ++id;
 		}
 
 		static int get_next_rid(){
@@ -54,28 +48,17 @@ private:
 			HandlePrime(DataStore& newParent, const HandlePrime &old):
 				parent(newParent),
 				id(old.id),
-				rid(old.rid){}
+				rid(old.rid){assert(&old.parent != &parent);}
 
 			HandlePrime(const HandlePrime &old) = delete;
 
-			virtual ~HandlePrime() {
-				if (!parent.destructing){
-					parent.next_ids.push(id);
-				}
-			}
+
 		};
 
 		void place_correctly(std::unique_ptr<HandlePrime> hndl, copy_h f){
-			auto h = HandlePair(std::move(hndl), f);
-			if (h.first->id == hndls.size()) {
-				hndls.push_back(std::move(h));
-			}
-			else {
-				assert (h.first->id < hndls.size());
-				assert (! hndls[h.first->id].first);
-				hndls[h.first->id] = std::move(h);
-			}
-
+			auto h = HandlePair(std::move(hndl),f);
+			assert (! hndls[h.first->id].first);
+			hndls[h.first->id] = std::move(h);
 		}
 
 

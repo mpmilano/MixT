@@ -5,6 +5,7 @@
 #include <queue>
 #include <cassert>
 #include <iostream>
+#include <map>
 #include "extras"
 
 #define LVALUE(x) typename add_lvalue_reference<x>::type
@@ -70,15 +71,9 @@ namespace backend{
 		DataStore () {}
 
 		DataStore(DataStore&& ds):
-			hndls(std::move(ds.hndls)),
-			next_ids(std::move(ds.next_ids)),
-			destructing(std::move(ds.destructing)){}
+			hndls(std::move(ds.hndls)){}
 
 		DataStore (const DataStore &) = delete;
-		virtual ~DataStore() {
-			std::cout << "Prepare for segfault!" << std::endl;
-			this-> destructing = true;
-		}
 		
 		friend class HandlePrime;
 		template<Client_Id cid>
