@@ -42,7 +42,6 @@ namespace backend{
 	template<Client_Id cid>
 	class Client;
 
-
 	class DataStore {
 
 	public:

@@ -66,6 +66,13 @@ namespace backend {
 						  HandleAccess::write),
 						 T> (old.hi());
 		}
+
+		template<Client_Id cid_old, Level l, HandleAccess ha, typename T>
+		Handle<cid,l,ha,T> get_access(Handle<cid_old,l,ha,T> &hndl, Client<cid_old> &o) {
+			assert (&master == &o.master);
+			//TODO - IDs will be (potentially) different at master.
+		}
+
 		
 		//KVstore-style interface
 		
