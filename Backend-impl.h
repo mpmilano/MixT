@@ -7,10 +7,23 @@ class HandleImpl;
 
 private:
 
+
 		class HandlePrime;
 		typedef std::unique_ptr<HandlePrime> (*copy_h) (const HandlePrime&, DataStore&);
 
-		std::vector<std::pair < std::unique_ptr<HandlePrime>, copy_h> > hndls;
+		class HandlePair{
+		public:
+			std::unique_ptr<HandlePrime> first;
+			copy_h second;
+			HandlePair():first(nullptr),second([](const HandlePrime&, DataStore&) {
+					assert(false && "There's a bug!");
+					return std::unique_ptr<DataStore::HandlePrime>(nullptr);}){}
+			HandlePair(std::unique_ptr<HandlePrime> &&first, copy_h second):first(std::move(first)),second(second) {}
+
+		};
+
+
+		std::vector<HandlePair > hndls;
 		std::queue<int> next_ids;
 		bool destructing = false;
 		int get_next_id(){
@@ -53,7 +66,7 @@ private:
 		};
 
 		void place_correctly(std::unique_ptr<HandlePrime> hndl, copy_h f){
-			auto h = make_pair(std::move(hndl), f);
+			auto h = HandlePair(std::move(hndl), f);
 			if (h.first->id == hndls.size()) {
 				hndls.push_back(std::move(h));
 			}
@@ -140,7 +153,7 @@ private:
 			auto &hndl = hndl_i.hi(); 
 			std::unique_ptr<T> ret = hndl;
 			assert(hndls[hndl.id]->id == hndl.id);
-			hndls[hndl.id].reset(nullptr);
+			hndls[hndl.id].first.reset(nullptr);
 			return ret;
 		}
 

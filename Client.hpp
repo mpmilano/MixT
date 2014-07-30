@@ -11,6 +11,47 @@ namespace backend {
 		DataStore local;
 		std::list<std::function<void ()> > pending_updates;
 
+		
+		template<Level L, typename T>
+		DataStore::Handle<cid,L,HandleAccess::all, T>
+		gethandle_internal(DataStore::HandleImpl<T> &underlying){
+			auto &copy = master.hndls[underlying.id].second;
+			assert(underlying.id >= local.hndls.size() || 
+			       local.hndls[underlying.id].first.get() == nullptr );
+			
+			auto &&new_obj = copy(underlying,local);
+			DataStore::HandleImpl<T>& ret = (DataStore::HandleImpl<T>&) (*new_obj);
+
+			auto &&h = DataStore::HandlePair(std::move(new_obj),copy);
+
+			if (underlying.id == local.hndls.size())
+				local.hndls.push_back(std::move(h));
+			else if (underlying.id > local.hndls.size()){
+				local.hndls.resize(underlying.id);
+				local.hndls.push_back(std::move(h));
+			}
+			else {
+				local.hndls[h.first->id] = std::move(h);
+			}
+			return DataStore::Handle<cid,L,HandleAccess::all,T>(ret);
+		}
+
+		
+		template<Level L, typename T>
+		DataStore::Handle<cid,L,HandleAccess::all, T>
+		newHandle_internal(std::unique_ptr<T> r){
+			return gethandle_internal<L,T>(master.newhandle_internal<cid,L,HandleAccess::all>(std::move(r)).hi());
+		}
+
+		template<Level L, typename T>
+		std::unique_ptr<T> del_internal(DataStore::Handle<cid, L,HandleAccess::all,T>& hndl) {
+			auto &&ret = local.del_internal<L>(hndl);
+			if (!local.next_ids.empty()) local.next_ids.pop();
+			return std::move(ret);
+		}
+
+
+
 	public:
 		
 		Client(DataStore& master):master(master){
@@ -31,22 +72,19 @@ namespace backend {
 		template<Level L, typename T>
 		DataStore::Handle<cid, L,HandleAccess::all, T>
 		newHandle(std::unique_ptr<T> r)
-			{return local.newhandle_internal<cid, L,HandleAccess::all>
-					(std::move(r));}
+			{return newHandle_internal<L>(std::move(r));}
 		
 		template<Level L, typename T>
 		DataStore::Handle<cid, L,HandleAccess::all, T> newHandle(T r)
-			{return local.newhandle_internal<cid, L,HandleAccess::all>
-					(std::unique_ptr<T>(new T(r)));}
+			{return newHandle_internal<L>(std::unique_ptr<T>(new T(r)));}
 		
 		template<Level L, typename T>
 		DataStore::Handle<cid, L,HandleAccess::all, T> newHandle(T* r = nullptr)
-			{return local.newhandle_internal<cid, L,HandleAccess::all>
-					(std::unique_ptr<T>(r));}
+			{return newHandle_internal<L>(std::unique_ptr<T>(r));}
 		
 		template<Level L, typename T>
 		std::unique_ptr<T> del(DataStore::Handle<cid, L,HandleAccess::all,T>& hndl)
-			{return local.del_internal<L>(hndl);}
+			{return del_internal(hndl);}
 		
 		template<Level L, typename T>
 		auto ro_hndl(DataStore::Handle<cid, L,HandleAccess::all,T> &old){
@@ -68,9 +106,10 @@ namespace backend {
 		}
 
 		template<Client_Id cid_old, Level l, HandleAccess ha, typename T>
-		Handle<cid,l,ha,T> get_access(Handle<cid_old,l,ha,T> &hndl, Client<cid_old> &o) {
+		DataStore::Handle<cid,l,ha,T> get_access(DataStore::Handle<cid_old,l,ha,T> &hndl, Client<cid_old> &o) {
+			static_assert(cid != cid_old, "You already have access to this handle.");
 			assert (&master == &o.master);
-			//TODO - IDs will be (potentially) different at master.
+			return gethandle_internal<l>((DataStore::HandleImpl<T>&) *master.hndls[hndl.hi().id].first);
 		}
 
 		
@@ -177,6 +216,9 @@ namespace backend {
 			copy_hndls(local,master);
 			pending_updates.clear();
 		}
+
+		template<Client_Id>
+		friend class Client;
 
 
 	};
