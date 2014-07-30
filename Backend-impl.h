@@ -5,11 +5,12 @@ public:
 template<typename T>
 class HandleImpl;
 
-private: 
+private:
 
 		class HandlePrime;
-		std::vector<std::unique_ptr<HandlePrime> > hndls;
-std::vector<std::function<std::unique_ptr<HandlePrime> (const HandlePrime&) > > copy;
+		typedef std::function<std::unique_ptr<HandlePrime> (const HandlePrime&, DataStore&) > copy_h;
+
+		std::vector<std::pair < std::unique_ptr<HandlePrime>, copy_h> > hndls;
 		std::queue<int> next_ids;
 		bool destructing = false;
 		int get_next_id(){
@@ -37,7 +38,13 @@ std::vector<std::function<std::unique_ptr<HandlePrime> (const HandlePrime&) > > 
 				id(parent.get_next_id()),
 				rid(get_next_rid()){}
 
-			HandlePrime(const HandlePrime&) = delete;
+			HandlePrime(DataStore& newParent, const HandlePrime &old):
+				parent(newParent),
+				id(old.id),
+				rid(old.rid){}
+
+			HandlePrime(const HandlePrime &old) = delete;
+
 			virtual ~HandlePrime() {
 				if (!parent.destructing){
 					parent.next_ids.push(id);
@@ -45,14 +52,15 @@ std::vector<std::function<std::unique_ptr<HandlePrime> (const HandlePrime&) > > 
 			}
 		};
 
-		void place_correctly(std::unique_ptr<HandlePrime> h){
-			if (h->id == hndls.size()) {
+		void place_correctly(std::unique_ptr<HandlePrime> hndl, copy_h f){
+			auto h = make_pair(std::move(hndl), f);
+			if (h.first->id == hndls.size()) {
 				hndls.push_back(std::move(h));
 			}
 			else {
-				assert (h->id < hndls.size());
-				assert (! hndls[h->id]);
-				hndls[h->id] = std::move(h);
+				assert (h.first->id < hndls.size());
+				assert (! hndls[h.first->id].first);
+				hndls[h.first->id] = std::move(h);
 			}
 
 		}
@@ -69,6 +77,9 @@ std::vector<std::function<std::unique_ptr<HandlePrime> (const HandlePrime&) > > 
 			void operator =(std::unique_ptr<T> n) {this->stored_obj = std::move(n);}
 			operator std::unique_ptr<T>() {return std::move(this->stored_obj);}
 			HandleImpl(DataStore& parent,std::unique_ptr<T> n):HandlePrime(parent),stored_obj(std::move(n)){}
+			HandleImpl(DataStore& parent,const HandleImpl& old):
+				HandlePrime(parent,old),
+				stored_obj(new T(*old.stored_obj)){}
 		public: 
 			friend class DataStore;
 			friend class Client;
@@ -112,7 +123,12 @@ std::vector<std::function<std::unique_ptr<HandlePrime> (const HandlePrime&) > > 
 		Handle<L, HA, T> newhandle_internal(std::unique_ptr<T> r) {
 			std::unique_ptr<HandleImpl<T> > tmp(new HandleImpl<T>(*this,std::move(r)));
 			auto &ret = *tmp;
-			place_correctly(std::move(tmp));
+			copy_h copyf = [](const HandlePrime &_hp, DataStore& np){
+				auto *_h = static_cast<const HandleImpl<T>* >(&_hp);
+				HandleImpl<T> const &h = *_h;
+				return std::unique_ptr<HandlePrime >(new HandleImpl<T>(np,h));
+			};
+			place_correctly(std::move(tmp), copyf);
 			return Handle<L,HA,T>(ret);
 		}
 
