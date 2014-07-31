@@ -41,16 +41,12 @@ private:
 
 			HandlePrime(const HandlePrime &old) = delete;
 
-			virtual std::unique_ptr<HandlePrime> clone (DataStore& np) const = 0;
+			virtual HandlePrime& clone (DataStore& np) const = 0;
 
 			template<typename T>
 			friend class HandleImpl;
 
 		};
-
-		void place_correctly(std::unique_ptr<HandlePrime> h){
-			hndls[h->id] = std::move(h);
-		}
 
 		template<typename T> 
 		class HandleImpl : public HandlePrime {
@@ -69,29 +65,25 @@ private:
 			HandleImpl(DataStore& parent,const HandleImpl& old):
 				HandlePrime(parent,old),
 				stored_obj(new T(*old.stored_obj)){}
+
+			static HandleImpl<T>& place(HandleImpl<T>* hi){
+				HandlePrime* h = hi;
+				hi->parent.hndls[h->id] = std::unique_ptr<HandlePrime>(h);
+				return *hi;
+			}
 		public: 
-			friend class DataStore;
-			template<Client_Id>
-			friend class Client;
 			HandleImpl (const HandleImpl&) = delete;
 
 			static HandleImpl<T>& constructAndPlace(DataStore& parent,std::unique_ptr<T> n){
-				HandleImpl<T>* hi = new HandleImpl<T>(parent, std::move(n));
-				HandlePrime* h = hi;
-				parent.hndls[h->id] = std::unique_ptr<HandlePrime>(h);
-				return *hi;
+				return place(new HandleImpl<T>(parent, std::move(n)));
 			}
 
 			static HandleImpl<T>& constructAndPlace(DataStore& parent,const HandleImpl& old) {
-				HandleImpl<T>* hi = new HandleImpl<T>(parent, old);
-				HandlePrime* h = hi;
-				parent.hndls[h->id] = std::unique_ptr<HandlePrime>(h);
-				return *hi;
+				return place(new HandleImpl<T>(parent, old));
 			}
 
-			virtual std::unique_ptr<HandlePrime> clone (DataStore& np) const {
-				HandleImpl<T> const &h = *this;
-				return std::unique_ptr<HandlePrime >(new HandleImpl<T>(np,h));
+			virtual HandlePrime& clone (DataStore& np) const {
+				return place(new HandleImpl<T>(np,*this));
 			}
 			
 			virtual ~HandleImpl() {}
@@ -134,10 +126,7 @@ private:
 
 		template<Client_Id id, Level L, HandleAccess HA, typename T>	
 		auto newhandle_internal(std::unique_ptr<T> r) {
-			std::unique_ptr<HandleImpl<T> > tmp(new HandleImpl<T>(*this,std::move(r)));
-			auto &ret = *tmp;
-			place_correctly(std::move(tmp));
-			return Handle<id,L,HA,T>(ret);
+			return Handle<id,L,HA,T>(HandleImpl<T>::constructAndPlace(*this,std::move(r)));
 		}
 
 		template<Client_Id id, Level L, HandleAccess HA, typename T>

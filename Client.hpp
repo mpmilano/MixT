@@ -17,13 +17,11 @@ namespace backend {
 		gethandle_internal(const DataStore::HandleImpl<T> &underlying){
 			assert(local.hndls[underlying.id].get() == nullptr );
 			assert(master.hndls[underlying.id].get() != nullptr );
-			assert(master.hndls[underlying.id]->rid == underlying.rid );
-			std::unique_ptr <DataStore::HandlePrime> &&ret = master.hndls[underlying.id]->clone(local);
-			auto* ptr = dynamic_cast<DataStore::HandleImpl<T>* >(ret.get());
+			assert(master.hndls[underlying.id]->rid == underlying.rid);
+			auto* ptr = dynamic_cast<DataStore::HandleImpl<T>* >(
+				&(master.hndls[underlying.id]->clone(local)));
 			assert(ptr);
-			auto &h = *ptr;
-			local.hndls[ret->id] = std::move(ret);
-			return DataStore::Handle<cid,L,HandleAccess::all,T>(h);
+			return DataStore::Handle<cid,L,HandleAccess::all,T>(*ptr);
 		}
 
 		
@@ -189,7 +187,7 @@ namespace backend {
 					auto &ptr = ptr_p.second;
 					auto &m_ptr = from.hndls[ptr->id];
 					if (m_ptr->rid == ptr->rid) {
-						ptr.operator=(m_ptr->clone(to));
+						m_ptr->clone(to);
 					}
 				}
 			};
