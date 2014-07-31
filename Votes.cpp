@@ -10,11 +10,11 @@ namespace election{
 	VoteTrackerServer::VoteTrackerServer(backend::DataStore& _ds):
 		upstream_ds(_ds),
 		ds(_ds),
-		votes({ds.newHandle<Level::strong>(8),
-			ds.newHandle<Level::strong>(0),
-			ds.newHandle<Level::strong>(0),
-			ds.newHandle<Level::strong>(0),
-					ds.newHandle<Level::strong>(0),}) {}
+		votes(make_array(ds.newHandle<Level::strong>(new fake_int(8)),
+				 ds.newHandle<Level::strong>(new fake_int(0)),
+				 ds.newHandle<Level::strong>(new fake_int(0)),
+				 ds.newHandle<Level::strong>(new fake_int(0)),
+				 ds.newHandle<Level::strong>(new fake_int(0)))) {}
 
 	
 	void VoteTrackerClient::countVote(Candidate cnd){
@@ -23,7 +23,7 @@ namespace election{
 
 	void VoteTrackerClient::voteForTwo(Candidate cnd1, Candidate cnd2){
 
-		typedef DataStore::Handle<1,VoteH::level, HandleAccess::write, int> hndl;
+		typedef DataStore::Handle<1,VoteH::level, HandleAccess::write, dType> hndl;
 
 		assert (cnd1 != cnd2);
 		auto transaction = [](Client<1>& ds, hndl cnd1, hndl cnd2){
@@ -38,7 +38,7 @@ namespace election{
 	}
 	counts VoteTrackerClient::currentTally(){
 
-		typedef DataStore::Handle<1,Level::causal, HandleAccess::read, int> hndl;
+		typedef DataStore::Handle<1,Level::causal, HandleAccess::read, dType> hndl;
 		
 		auto transaction = [](Client<1> &ds, hndl v0, hndl v1, hndl v2, hndl v3, hndl v4) {
 			auto interim =  counts(
@@ -70,7 +70,7 @@ namespace election{
 	}
 
 	counts VoteTrackerClient::FinalTally(){
-		typedef DataStore::Handle<1, VoteH::level, HandleAccess::read, int> hndl;
+		typedef DataStore::Handle<1, VoteH::level, HandleAccess::read, dType> hndl;
 		auto transaction = [](Client<1> &ds, hndl v0, hndl v1, hndl v2, hndl v3, hndl v4) {
 			return counts(
 				ds.get(v0),
@@ -92,36 +92,38 @@ namespace election{
 	}
 
 	VoteTrackerClient::VoteTrackerClient(VoteTrackerServer& s):ds(s.upstream_ds),votes(
-		{ds.get_access(s.votes[0],s.ds),
-				ds.get_access(s.votes[1],s.ds),
-				ds.get_access(s.votes[2],s.ds),
-				ds.get_access(s.votes[3],s.ds),
-				ds.get_access(s.votes[4],s.ds)}){}
+		(make_array(ds.get_access(s.votes[0],s.ds),
+			    ds.get_access(s.votes[1],s.ds),
+			    ds.get_access(s.votes[2],s.ds),
+			    ds.get_access(s.votes[3],s.ds),
+			    ds.get_access(s.votes[4],s.ds)))){}
 
 	VoteTrackerClient::VoteTrackerClient(VoteTrackerClient&& s):ds(std::move(s.ds)),votes(std::move(s.votes)){}
-
 
 }
 
 int main (){
-	backend::DataStore ds;
-	election::VoteTrackerServer vs(ds);
-	auto v = vs.spawnClient();
-	v.FinalTally();
-	v.countVote(election::Candidate::Ross);
-	v.countVote(election::Candidate::Dexter);
-	v.countVote(election::Candidate::Nate);
-	v.countVote(election::Candidate::Ross);
-	v.countVote(election::Candidate::Andrew);
-	std:: cout << v.currentTally() << std::endl;
-	v.countVote(election::Candidate::Ross);
-	v.countVote(election::Candidate::ConstaBob);
-	v.countVote(election::Candidate::Ross);
-	v.voteForTwo(election::Candidate::Ross, election::Candidate::ConstaBob);
-	v.getCount(election::Candidate::Ross);
-	v.countVote(election::Candidate::Andrew);
-	v.countVote(election::Candidate::Ross);
-	v.countVote(election::Candidate::Nate);
-	v.countVote(election::Candidate::Ross);
-	std::cout << v.FinalTally() << std::endl;
+
+	{
+		backend::DataStore ds;
+		election::VoteTrackerServer vs(ds);
+		auto v = vs.spawnClient();
+		v.FinalTally();
+		v.countVote(election::Candidate::Ross);
+		v.countVote(election::Candidate::Dexter);
+		v.countVote(election::Candidate::Nate);
+		v.countVote(election::Candidate::Ross);
+		v.countVote(election::Candidate::Andrew);
+		std:: cout << v.currentTally() << std::endl;
+		v.countVote(election::Candidate::Ross);
+		v.countVote(election::Candidate::ConstaBob);
+		v.countVote(election::Candidate::Ross);
+		v.voteForTwo(election::Candidate::Ross, election::Candidate::ConstaBob);
+		v.getCount(election::Candidate::Ross);
+		v.countVote(election::Candidate::Andrew);
+		v.countVote(election::Candidate::Ross);
+		v.countVote(election::Candidate::Nate);
+		v.countVote(election::Candidate::Ross);
+		std::cout << v.FinalTally() << std::endl;
+	}
 }

@@ -14,14 +14,16 @@ namespace backend {
 		
 		template<Level L, typename T>
 		DataStore::Handle<cid,L,HandleAccess::all, T>
-		gethandle_internal(DataStore::HandleImpl<T> &underlying){
-			auto &copy = master.hndls[underlying.id].second;
-			assert(local.hndls[underlying.id].first.get() == nullptr );
-			auto &&new_obj = copy(underlying,local);
-			DataStore::HandleImpl<T>& ret = (DataStore::HandleImpl<T>&) (*new_obj);
-			auto &&h = DataStore::HandlePair(std::move(new_obj),copy);
-			local.hndls[h.first->id] = std::move(h);
-			return DataStore::Handle<cid,L,HandleAccess::all,T>(ret);
+		gethandle_internal(const DataStore::HandleImpl<T> &underlying){
+			assert(local.hndls[underlying.id].get() == nullptr );
+			assert(master.hndls[underlying.id].get() != nullptr );
+			assert(master.hndls[underlying.id]->rid == underlying.rid );
+			std::unique_ptr <DataStore::HandlePrime> &&ret = master.hndls[underlying.id]->clone(local);
+			auto* ptr = dynamic_cast<DataStore::HandleImpl<T>* >(ret.get());
+			assert(ptr);
+			auto &h = *ptr;
+			local.hndls[ret->id] = std::move(ret);
+			return DataStore::Handle<cid,L,HandleAccess::all,T>(h);
 		}
 
 		
@@ -92,7 +94,7 @@ namespace backend {
 		DataStore::Handle<cid,l,ha,T> get_access(DataStore::Handle<cid_old,l,ha,T> &hndl, Client<cid_old> &o) {
 			static_assert(cid != cid_old, "You already have access to this handle.");
 			assert (&master == &o.master);
-			return gethandle_internal<l>((DataStore::HandleImpl<T>&) *master.hndls[hndl.hi().id].first);
+			return gethandle_internal<l>((DataStore::HandleImpl<T>&) *master.hndls[hndl.hi().id]);
 		}
 
 		
@@ -183,12 +185,11 @@ namespace backend {
 		
 		void waitForSync(){
 			static const copy_hndls_f copy_hndls = [](DataStore& from, DataStore &to){
-				for (auto& ptr_copy : to.hndls) {
-					auto& ptr = ptr_copy.second.first;
-					auto& copy = ptr_copy.second.second;
-					auto &m_ptr = from.hndls[ptr->id].first;
+				for (auto& ptr_p : to.hndls) {
+					auto &ptr = ptr_p.second;
+					auto &m_ptr = from.hndls[ptr->id];
 					if (m_ptr->rid == ptr->rid) {
-						ptr.operator=(copy(*m_ptr, to));
+						ptr.operator=(m_ptr->clone(to));
 					}
 				}
 			};

@@ -1,77 +1,70 @@
 #pragma once
 
-public:
-
-template<typename T>
-class HandleImpl;
-
 private:
 
-
 		class HandlePrime;
-		typedef std::unique_ptr<HandlePrime> (*copy_h) (const HandlePrime&, DataStore&);
+		template<typename T>
+		class HandleImpl;
 
-		class HandlePair{
-		public:
-			std::unique_ptr<HandlePrime> first;
-			copy_h second;
-			HandlePair():first(nullptr),second([](const HandlePrime&, DataStore&) {
-					assert(false && "There's a bug!");
-					return std::unique_ptr<DataStore::HandlePrime>(nullptr);}){}
-			HandlePair(std::unique_ptr<HandlePrime> &&first, copy_h second):first(std::move(first)),second(second) {}
-
-		};
-
-
-		std::map<uint,HandlePair > hndls;
+		std::map<uint, std::unique_ptr<HandlePrime> > hndls;
 		int get_next_id(){
 			static int id = 0;
 			return ++id;
 		}
 
-		static int get_next_rid(){
+		int get_next_rid(){
 			static int rinit = 0;
 			return ++rinit;
 		}
+
 		class HandlePrime {
 		private: 
 			DataStore& parent;
 			virtual bool is_abstract() = 0;
-		public:
-			const uint id;
-			const uint rid;
-			HandlePrime(DataStore& parent):
-				parent(parent),
-				id(parent.get_next_id()),
-				rid(get_next_rid()){}
+
 
 			HandlePrime(DataStore& newParent, const HandlePrime &old):
 				parent(newParent),
 				id(old.id),
 				rid(old.rid){assert(&old.parent != &parent);}
 
+			HandlePrime(DataStore& parent):
+				parent(parent),
+				id(parent.get_next_id()),
+				rid(parent.get_next_rid()){
+				//most dangerous game
+			}
+
+		public:
+			const uint id;
+			const uint rid;
+
 			HandlePrime(const HandlePrime &old) = delete;
 
+			virtual std::unique_ptr<HandlePrime> clone (DataStore& np) const = 0;
+
+			template<typename T>
+			friend class HandleImpl;
 
 		};
 
-		void place_correctly(std::unique_ptr<HandlePrime> hndl, copy_h f){
-			auto h = HandlePair(std::move(hndl),f);
-			assert (! hndls[h.first->id].first);
-			hndls[h.first->id] = std::move(h);
+		void place_correctly(std::unique_ptr<HandlePrime> h){
+			hndls[h->id] = std::move(h);
 		}
-
-
-	public:
 
 		template<typename T> 
 		class HandleImpl : public HandlePrime {
-		private:
+
+		public:
 			std::unique_ptr<T> stored_obj;
+		private:
 			virtual bool is_abstract()  {return false;}
+		public:
 			operator T& (){ return *(this->stored_obj);}
 			void operator =(std::unique_ptr<T> n) {this->stored_obj = std::move(n);}
 			operator std::unique_ptr<T>() {return std::move(this->stored_obj);}
+
+		private:
 			HandleImpl(DataStore& parent,std::unique_ptr<T> n):HandlePrime(parent),stored_obj(std::move(n)){}
 			HandleImpl(DataStore& parent,const HandleImpl& old):
 				HandlePrime(parent,old),
@@ -81,10 +74,31 @@ private:
 			template<Client_Id>
 			friend class Client;
 			HandleImpl (const HandleImpl&) = delete;
+
+			static HandleImpl<T>& constructAndPlace(DataStore& parent,std::unique_ptr<T> n){
+				HandleImpl<T>* hi = new HandleImpl<T>(parent, std::move(n));
+				HandlePrime* h = hi;
+				parent.hndls[h->id] = std::unique_ptr<HandlePrime>(h);
+				return *hi;
+			}
+
+			static HandleImpl<T>& constructAndPlace(DataStore& parent,const HandleImpl& old) {
+				HandleImpl<T>* hi = new HandleImpl<T>(parent, old);
+				HandlePrime* h = hi;
+				parent.hndls[h->id] = std::unique_ptr<HandlePrime>(h);
+				return *hi;
+			}
+
+			virtual std::unique_ptr<HandlePrime> clone (DataStore& np) const {
+				HandleImpl<T> const &h = *this;
+				return std::unique_ptr<HandlePrime >(new HandleImpl<T>(np,h));
+			}
 			
 			virtual ~HandleImpl() {}
 			
 		};
+
+	public:
 
 		class GenericHandle{
 		private: 
@@ -122,12 +136,7 @@ private:
 		auto newhandle_internal(std::unique_ptr<T> r) {
 			std::unique_ptr<HandleImpl<T> > tmp(new HandleImpl<T>(*this,std::move(r)));
 			auto &ret = *tmp;
-			static const copy_h copyf = [](const HandlePrime &_hp, DataStore& np){
-				auto *_h = static_cast<const HandleImpl<T>* >(&_hp);
-				HandleImpl<T> const &h = *_h;
-				return std::unique_ptr<HandlePrime >(new HandleImpl<T>(np,h));
-			};
-			place_correctly(std::move(tmp), copyf);
+			place_correctly(std::move(tmp));
 			return Handle<id,L,HA,T>(ret);
 		}
 

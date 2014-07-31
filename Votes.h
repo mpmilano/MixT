@@ -7,6 +7,20 @@ namespace election{
 	enum class Candidate : int 
 	{Andrew, Nate, Ross, Dexter, ConstaBob, Count};
 
+
+	class fake_int{
+	public:
+		int i = 0;
+		operator int(){return i;}
+		fake_int(int i):i(i){std::cout << "building" << std::endl;}
+		auto operator ++(int) {return i++;}
+
+		~fake_int(){std::cout << "oh no!" << std::endl;}
+
+	};
+
+	typedef fake_int dType;
+
 	class counts{
 	public:
 		const int andrew;
@@ -46,8 +60,8 @@ namespace election{
 			{}
 	};
 
-	typedef backend::DataStore::Handle<0,backend::Level::strong, backend::HandleAccess::all, int> VoteH_primary;
-	typedef backend::DataStore::Handle<1,backend::Level::strong, backend::HandleAccess::all, int> VoteH_secondary;
+	typedef backend::DataStore::Handle<0,backend::Level::strong, backend::HandleAccess::all, dType> VoteH_primary;
+	typedef backend::DataStore::Handle<1,backend::Level::strong, backend::HandleAccess::all, dType> VoteH_secondary;
 
 
 	class VoteTrackerServer;
