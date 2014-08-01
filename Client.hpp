@@ -9,7 +9,15 @@ namespace backend {
 	private:
 		DataStore& master;
 		DataStore local;
-		std::list<std::function<void ()> > pending_updates;
+
+		typedef std::function<void ()> upfun;
+		std::list<upfun > pending_updates;
+
+		bool pending_locked = false;
+
+		void push_pending(upfun f){
+			if (!pending_locked) pending_updates.push_back(std::move(f));
+		}
 
 		
 		template<Level L, typename T>
@@ -34,6 +42,25 @@ namespace backend {
 			return std::move(ret);
 		}
 
+		uint pending_tracker = 0;
+
+		void lock_pending(){
+			pending_tracker = pending_updates.size();
+			pending_locked = true;
+		}
+
+		void unlock_pending(void){
+			assert(pending_updates.size() == pending_tracker);
+			pending_locked = false;
+		}
+
+		class pending_lock{
+		private:
+			Client& cl;
+		public:
+			pending_lock(Client& cl):cl(cl){cl.lock_pending();}
+			~pending_lock(){cl.unlock_pending();}
+		};
 
 
 	public:
@@ -128,8 +155,8 @@ namespace backend {
 		typename std::enable_if<canWrite(HA), void>::type
 		incr_op(DataStore::Handle<cid, L, HA, T> &h) 
 			{
-				auto f = [&](){(*(h.hi().stored_obj))++;};
-				pending_updates.push_back(f);
+				auto f = [h](){(*(h.hi().stored_obj))++;};
+				push_pending(f);
 				f();				
 			}
 		
@@ -155,7 +182,6 @@ namespace backend {
 			return f(*this, args...);
 		}
 		
-		
 		template < typename R, typename... Args>
 		auto wo_transaction(R &f, Args... args) {
 			static_assert(all_handles<Args...>::value, "Passed non-DataStore::Handles as arguments to function!");
@@ -163,7 +189,13 @@ namespace backend {
 			static_assert(is_stateless<R, Client&, Args...>::value,
 				      "You passed me a non-stateless function, or screwed up your arguments! \n Expected: R f(DataStore&, DataStore::Handles....)");
 			static_assert(all_handles_write<Args...>::value, "Error: passed non-writeable handle into wo_transaction");
-			return f(*this, args...);
+			typename funcptr<R, Client&, Args...>::type f2 = f;
+			static const upfun f3 = [this,f2,args...](){
+				f2(*this,args...);
+			};
+			push_pending(f3);
+			pending_lock l(*this);
+			return f2(*this, args...);
 		}
 		
 		template < typename R, typename... Args>
@@ -173,13 +205,13 @@ namespace backend {
 				      "You passed me a non-stateless function, or screwed up your arguments! \n Expected: R f(DataStore&, DataStore::Handles....)");
 			static_assert(all_handles_write<Args...>::value, "Error: passed non-writeable handle into rw_transaction");
 			static_assert(all_handles_read<Args...>::value, "Error: passed non-readable handle into rw_transaction");
+			pending_lock l(*this);
 			return f(*this, args...);
 		}
-
-		typedef void (*copy_hndls_f) (DataStore& from, DataStore &to);
 		
 		void waitForSync(){
 			//std::cout << "sync requested!" << std::endl;
+			typedef void (*copy_hndls_f) (DataStore& from, DataStore &to);
 			static const copy_hndls_f copy_hndls = [](DataStore& from, DataStore &to){
 				for (auto& ptr_p : to.hndls) {
 					auto &ptr = ptr_p.second;

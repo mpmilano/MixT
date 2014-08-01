@@ -118,12 +118,13 @@ int main (){
 		v.countVote(election::Candidate::Ross);
 		v.countVote(election::Candidate::ConstaBob);
 		v.countVote(election::Candidate::Ross);
-		//v.voteForTwo(election::Candidate::Ross, election::Candidate::ConstaBob);
+		v.voteForTwo(election::Candidate::Ross, election::Candidate::ConstaBob);
 		v.getCount(election::Candidate::Ross);
 		v.countVote(election::Candidate::Andrew);
 		v.countVote(election::Candidate::Ross);
 		v.countVote(election::Candidate::Nate);
 		v.countVote(election::Candidate::Ross);
 		std::cout << v.FinalTally() << std::endl;
+		std::cout << "done" << std::endl;
 	}
 }

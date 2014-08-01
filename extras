@@ -95,3 +95,17 @@ auto make_array(Arg1 a, Args... rest){
 	std::array<Arg1, sizeof...(Args) + 1> &&ret { { a, rest... } };
 	return ret;
 }
+
+
+
+template<typename F>
+void perfect_forward(F &f, ...){
+	f();
+}
+
+template<typename F, typename R>
+typename std::enable_if<!std::is_same<R,void>::value, R>::type
+perfect_forward(F &f, R&& r){
+	f();
+	return std::move(r);
+}
