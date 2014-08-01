@@ -108,11 +108,12 @@ int main (){
 		backend::DataStore ds;
 		election::VoteTrackerServer vs(ds);
 		auto v = vs.spawnClient();
+		auto v2 = vs.spawnClient();
 		v.FinalTally();
 		v.countVote(election::Candidate::Ross);
-		v.countVote(election::Candidate::Dexter);
+		v2.countVote(election::Candidate::Dexter);
 		v.countVote(election::Candidate::Nate);
-		v.countVote(election::Candidate::Ross);
+		v2.countVote(election::Candidate::Ross);
 		v.countVote(election::Candidate::Andrew);
 		std:: cout << v.currentTally() << std::endl;
 		v.countVote(election::Candidate::Ross);
@@ -124,7 +125,14 @@ int main (){
 		v.countVote(election::Candidate::Ross);
 		v.countVote(election::Candidate::Nate);
 		v.countVote(election::Candidate::Ross);
+		v2.FinalTally();
 		std::cout << v.FinalTally() << std::endl;
+		std::cout << v2.FinalTally() << std::endl;
 		std::cout << "done" << std::endl;
+		assert(v.getCount(election::Candidate::Ross) == 7);
+		assert(v.getCount(election::Candidate::Nate) == 2);
+		assert(v.getCount(election::Candidate::Andrew) == 10);
+		assert(v.getCount(election::Candidate::Dexter) == 1);
+		assert(v.getCount(election::Candidate::ConstaBob) == 2);
 	}
 }

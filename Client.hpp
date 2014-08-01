@@ -24,9 +24,14 @@ namespace backend {
 		public:
 			void runAndClear(){
 				if (!locked){
+					auto l = lock();
 					for (auto &up : pending_updates) up();
 					pending_updates.clear();
 				}
+			}
+
+			bool isClear(){
+				return pending_updates.size() == 0;
 			}
 
 			typedef std::function<void (upfun&)> push_f;
@@ -268,6 +273,7 @@ namespace backend {
 			copy_hndls(master,local);
 			pending_updates.runAndClear();
 			copy_hndls(local,master);
+			assert(pending_updates.isClear());
 		}
 
 		template<Client_Id>
