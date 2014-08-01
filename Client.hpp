@@ -136,17 +136,33 @@ namespace backend {
 		
 		template<Level L, typename T, HandleAccess HA>
 		typename std::enable_if<canWrite(HA), void>::type
-		give(DataStore::Handle<cid, L, HA, T> &hndl, std::unique_ptr<T> obj) 
-			{hndl.hi() = std::move(obj);}
+		give(DataStore::Handle<cid, L, HA, T> &hndl, std::unique_ptr<T> obj) {
+			if (!pending_locked){
+				std::shared_ptr<T> cpy(new T(*obj),release_deleter<T>());
+				push_pending([hndl,cpy](){
+						std::get_deleter<release_deleter<T> >(cpy)->release();
+						hndl.hi() = std::unique_ptr<T>(cpy.get());});
+			}
+			hndl.hi() = std::move(obj);
+		}
 		
 		template<Level L, typename T, HandleAccess HA>
 		typename std::enable_if<canWrite(HA), void>::type
-		give(DataStore::Handle<cid, L, HA, T> &hndl, T* obj) 
-			{hndl.hi() = std::unique_ptr<T>(obj);}
+		give(DataStore::Handle<cid, L, HA, T> &hndl, T* obj) {
+			if (!pending_locked){
+				std::shared_ptr<T> cpy(new T(*obj),release_deleter<T>());
+				push_pending([hndl,cpy](){
+						std::get_deleter<release_deleter<T> >(cpy)->release();
+						hndl.hi() = std::unique_ptr<T>(cpy.get());});
+			}
+			hndl.hi() = std::unique_ptr<T>(obj);
+		}
 		
 		template<Level L, typename T>
-		std::unique_ptr<T> take(DataStore::Handle<cid, L,HandleAccess::all,T>& hndl)
-			{ return hndl.hi();}
+		std::unique_ptr<T> take(DataStore::Handle<cid, L,HandleAccess::all,T>& hndl) {
+			push_pending([hndl](){hndl.hi().reset();});
+			return hndl.hi();
+		}
 		
 		//commutative operations
 		
@@ -162,13 +178,20 @@ namespace backend {
 		
 		template<Level L, typename T, HandleAccess HA>
 		typename std::enable_if<canWrite(HA), void>::type
-		incr(DataStore::Handle<cid, L, HA, T> &h) 
-			{h.hi().stored_obj->incr();}
+		incr(DataStore::Handle<cid, L, HA, T> &h) {
+			auto f = [h](){	h.hi().stored_obj->incr(); };
+			push_pending(f);
+			f();
+		}
 		
 		template<Level L, typename T, HandleAccess HA, typename... A>
 		typename std::enable_if<canRead(HA), void>::type
-		add(DataStore::Handle<cid, L, HA, T> &h, A... args) 
-			{h.hi().stored_obj->add(args...);}
+		add(DataStore::Handle<cid, L, HA, T> &h, A... args) {
+			//todo - lifetime of args?
+			auto f = [h,args...](){	h.hi().stored_obj->add(args...);};
+			push_pending(f);
+			f();
+		}
 		
 		//transactions interface
 		

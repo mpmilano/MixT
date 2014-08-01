@@ -1,3 +1,4 @@
+#pragma once
 #include <type_traits>
 
 template <template <typename...> class F, typename P>
@@ -109,3 +110,26 @@ perfect_forward(F &f, R&& r){
 	f();
 	return std::move(r);
 }
+
+
+template <typename T>
+class release_deleter{
+public:
+	release_deleter() : released_(false){}
+	void release() {released_ = true;}
+	void operator()(T* ptr){if(!released_) delete ptr;}
+private:
+	bool released_;
+};
+
+/*
+..
+
+shared_ptr<some_type> ptr(new some_type, release_deleter<some_type>());
+
+..
+
+release_deleter<some_type>* deleter = get_deleter<release_deleter<some_type>>(ptr);
+deleter->release();
+some_type* released_ptr = ptr.get();
+*/
