@@ -41,6 +41,8 @@ private:
 
 			HandlePrime(const HandlePrime &old) = delete;
 
+			virtual ~HandlePrime() {}
+
 			virtual void grab_obj(const HandlePrime &) = 0;
 
 			template<typename T>
@@ -85,19 +87,21 @@ private:
 			}
 
 			auto clone(DataStore& np) const {
+				//std::cout << "cloning!" << std::endl;
 				auto *h = new HandleImpl<T>(np,*this);
 				place(h);
 				return std::ref(*h);
 			}
 
 			virtual void grab_obj(const HandlePrime &hp) {
+				//std::cout << "grabbing object!" << std::endl;
 				assert(rid == hp.rid); 
 				HandleImpl<T> &hi = (HandleImpl<T>&) hp;
 				stored_obj.reset(new T(*hi.stored_obj));
 			}
 
 			
-			virtual ~HandleImpl() {std::cout << "HandleImpl gone!" << std::endl;}
+			virtual ~HandleImpl() {}
 			
 		};
 

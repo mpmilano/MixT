@@ -179,6 +179,7 @@ namespace backend {
 		typedef void (*copy_hndls_f) (DataStore& from, DataStore &to);
 		
 		void waitForSync(){
+			//std::cout << "sync requested!" << std::endl;
 			static const copy_hndls_f copy_hndls = [](DataStore& from, DataStore &to){
 				for (auto& ptr_p : to.hndls) {
 					auto &ptr = ptr_p.second;

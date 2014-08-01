@@ -118,7 +118,7 @@ int main (){
 		v.countVote(election::Candidate::Ross);
 		v.countVote(election::Candidate::ConstaBob);
 		v.countVote(election::Candidate::Ross);
-		v.voteForTwo(election::Candidate::Ross, election::Candidate::ConstaBob);
+		//v.voteForTwo(election::Candidate::Ross, election::Candidate::ConstaBob);
 		v.getCount(election::Candidate::Ross);
 		v.countVote(election::Candidate::Andrew);
 		v.countVote(election::Candidate::Ross);

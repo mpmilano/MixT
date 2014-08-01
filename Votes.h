@@ -12,10 +12,14 @@ namespace election{
 	public:
 		int i = 0;
 		operator int(){return i;}
-		fake_int(int i):i(i){std::cout << "building" << std::endl;}
+		fake_int(int i):i(i){//std::cout << "building" << std::endl;
+		}
+			fake_int(const fake_int& fi):i(fi.i) {//std::cout << "copying!" << std::endl;
+			}
 		auto operator ++(int) {return i++;}
 
-		~fake_int(){std::cout << "oh no!" << std::endl;}
+		~fake_int(){//std::cout << "oh no!" << std::endl;
+		}
 
 	};
 
