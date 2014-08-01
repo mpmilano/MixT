@@ -89,7 +89,7 @@ namespace backend {
 		DataStore::Handle<cid,l,ha,T> get_access(DataStore::Handle<cid_old,l,ha,T> &hndl, Client<cid_old> &o) {
 			static_assert(cid != cid_old, "You already have access to this handle.");
 			assert (&master == &o.master);
-			return gethandle_internal<l>((DataStore::HandleImpl<T>&) *master.hndls[hndl.hi().id]);
+			return gethandle_internal<l>(hndl.hi());
 		}
 
 		
