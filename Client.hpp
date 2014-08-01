@@ -205,8 +205,13 @@ namespace backend {
 				      "You passed me a non-stateless function, or screwed up your arguments! \n Expected: R f(DataStore&, DataStore::Handles....)");
 			static_assert(all_handles_write<Args...>::value, "Error: passed non-writeable handle into rw_transaction");
 			static_assert(all_handles_read<Args...>::value, "Error: passed non-readable handle into rw_transaction");
+			typename funcptr<R, Client&, Args...>::type f2 = f;
+			static const upfun f3 = [this,f2,args...](){
+				f2(*this,args...);
+			};
+			push_pending(f3);
 			pending_lock l(*this);
-			return f(*this, args...);
+			return f2(*this, args...);
 		}
 		
 		void waitForSync(){
