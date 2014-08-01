@@ -30,7 +30,7 @@ namespace election{
 			ds.incr_op(cnd1);
 			ds.incr_op(cnd2);
 		};
-		ds.wo_transaction(transaction, ds.wo_hndl(votes[(int) cnd1]),ds.wo_hndl( votes[(int) cnd2]));
+		ds.transaction().wo(transaction, ds.wo_hndl(votes[(int) cnd1]),ds.wo_hndl( votes[(int) cnd2]));
 	}
 
 	int VoteTrackerClient::getCount(Candidate cnd){
@@ -60,7 +60,7 @@ namespace election{
 				      (interim.constabob * 100) / total,
 				      true);};
 
-		return ds.ro_transaction(transaction,
+		return ds.transaction().ro(transaction,
 					 ds.newConsistency<Level::causal> (votes[0]),
 					 ds.newConsistency<Level::causal> (votes[1]),
 					 ds.newConsistency<Level::causal> (votes[2]),
@@ -79,7 +79,7 @@ namespace election{
 				ds.get(v3),
 				ds.get(v4));
 		};
-		return ds.ro_transaction(transaction,
+		return ds.transaction().ro(transaction,
 					 ds.ro_hndl(votes[0]),
 					 ds.ro_hndl(votes[1]),
 					 ds.ro_hndl(votes[2]),

@@ -22,6 +22,11 @@ namespace backend {
 			std::function<void (upfun&) > push_ = [&](upfun &f){ push(f);};
 
 		public:
+			pending(const pending&) = delete;
+			pending(pending &&p):locked(p.locked),
+					     pending_updates(std::move(p.pending_updates)),
+					     push_(std::move(p.push_)){}
+			pending(){}
 			void runAndClear(){
 				if (!locked){
 					auto l = lock();
@@ -221,48 +226,57 @@ namespace backend {
 		}
 		
 		//transactions interface
+		class transaction_cls {
+		private:
+			Client &c;
+			transaction_cls(Client& c):c(c){}
+		public:
+			
+			template < typename R, typename... Args>
+			auto ro(R &f, Args... args) {
+				static_assert(all_handles<Args...>::value, "Passed non-DataStore::Handles as arguments to function!");
+				static_assert(!exists_write_handle<Args...>::value, "Passed write-enabled handles as argument to ro function!");
+				static_assert(is_stateless<R, Client&, Args...>::value,
+					      "You passed me a non-stateless function, or screwed up your arguments! \n Expected: R f(DataStore&, DataStore::Handles....)");
+				static_assert(all_handles_read<Args...>::value, "Error: passed non-readable handle into ro_transaction");
+				return f(c, args...);
+			}
+			
+			template < typename R, typename... Args>
+			void wo(R &f, Args... args) {
+				static_assert(all_handles<Args...>::value, "Passed non-DataStore::Handles as arguments to function!");
+				static_assert(!exists_read_handle<Args...>::value, "Passed read-enabled handles as argument to wo function!");
+				static_assert(is_stateless<R, Client&, Args...>::value,
+					      "You passed me a non-stateless function, or screwed up your arguments! \n Expected: R f(DataStore&, DataStore::Handles....)");
+				static_assert(all_handles_write<Args...>::value, "Error: passed non-writeable handle into wo_transaction");
+				typename funcptr<R, Client&, Args...>::type f2 = f;
+				static upfun f3 = [this,f2,args...](){
+					f2(c,args...);
+				};
+				c.pending_updates.run([&](typename pending::push_f &push){push(f3);});
+				auto l = c.pending_updates.lock();
+				f2(c, args...);
+			}
+			
+			template < typename R, typename... Args>
+			auto rw(R &f, Args... args) {
+				static_assert(all_handles<Args...>::value, "Passed non-DataStore::Handles as arguments to function!");
+				static_assert(is_stateless<R, Client&, Args...>::value,
+					      "You passed me a non-stateless function, or screwed up your arguments! \n Expected: R f(DataStore&, DataStore::Handles....)");
+				static_assert(all_handles_write<Args...>::value, "Error: passed non-writeable handle into rw_transaction");
+				static_assert(all_handles_read<Args...>::value, "Error: passed non-readable handle into rw_transaction");
+				typename funcptr<R, Client&, Args...>::type f2 = f;
+				static upfun f3 = [this,f2,args...](){
+					f2(c,args...);
+				};
+				c.pending_updates.run([&](typename pending::push_f &push){push(f3);});
+				auto l = c.pending_updates.lock();
+				return f2(c, args...);
+			}
+			friend class Client;
+		};
 		
-		template < typename R, typename... Args>
-		auto ro_transaction(R &f, Args... args) {
-			static_assert(all_handles<Args...>::value, "Passed non-DataStore::Handles as arguments to function!");
-			static_assert(!exists_write_handle<Args...>::value, "Passed write-enabled handles as argument to ro function!");
-			static_assert(is_stateless<R, Client&, Args...>::value,
-				      "You passed me a non-stateless function, or screwed up your arguments! \n Expected: R f(DataStore&, DataStore::Handles....)");
-			static_assert(all_handles_read<Args...>::value, "Error: passed non-readable handle into ro_transaction");
-			return f(*this, args...);
-		}
-		
-		template < typename R, typename... Args>
-		auto wo_transaction(R &f, Args... args) {
-			static_assert(all_handles<Args...>::value, "Passed non-DataStore::Handles as arguments to function!");
-			static_assert(!exists_read_handle<Args...>::value, "Passed read-enabled handles as argument to wo function!");
-			static_assert(is_stateless<R, Client&, Args...>::value,
-				      "You passed me a non-stateless function, or screwed up your arguments! \n Expected: R f(DataStore&, DataStore::Handles....)");
-			static_assert(all_handles_write<Args...>::value, "Error: passed non-writeable handle into wo_transaction");
-			typename funcptr<R, Client&, Args...>::type f2 = f;
-			static upfun f3 = [this,f2,args...](){
-				f2(*this,args...);
-			};
-			pending_updates.run([&](typename pending::push_f &push){push(f3);});
-			auto l = pending_updates.lock();
-			return f2(*this, args...);
-		}
-		
-		template < typename R, typename... Args>
-		auto rw_transaction(R &f, Args... args) {
-			static_assert(all_handles<Args...>::value, "Passed non-DataStore::Handles as arguments to function!");
-			static_assert(is_stateless<R, Client&, Args...>::value,
-				      "You passed me a non-stateless function, or screwed up your arguments! \n Expected: R f(DataStore&, DataStore::Handles....)");
-			static_assert(all_handles_write<Args...>::value, "Error: passed non-writeable handle into rw_transaction");
-			static_assert(all_handles_read<Args...>::value, "Error: passed non-readable handle into rw_transaction");
-			typename funcptr<R, Client&, Args...>::type f2 = f;
-			static upfun f3 = [this,f2,args...](){
-				f2(*this,args...);
-			};
-			pending_updates.run([&](typename pending::push_f &push){push(f3);});
-			auto l = pending_updates.lock();
-			return f2(*this, args...);
-		}
+		transaction_cls transaction(){ return transaction_cls(*this); }
 		
 		void waitForSync(){
 			//std::cout << "sync requested!" << std::endl;
