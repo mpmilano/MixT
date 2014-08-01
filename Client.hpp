@@ -7,19 +7,49 @@ namespace backend {
 	template<Client_Id cid>
 	class Client {
 	private:
+
 		DataStore& master;
 		DataStore local;
-
-		typedef std::function<void ()> upfun;
-		std::list<upfun > pending_updates;
-
-		bool pending_locked = false;
-
-		void push_pending(upfun f){
-			if (!pending_locked) pending_updates.push_back(std::move(f));
-		}
-
 		
+		typedef std::function<void ()> upfun;
+		class pending{
+		private:
+			bool locked = false;
+			std::list<upfun> pending_updates;
+			void push(upfun up){
+				if (!locked) pending_updates.push_back(std::move(up));
+			}
+			std::function<void (upfun&) > push_ = [&](upfun &f){ push(f);};
+
+		public:
+			void runAndClear(){
+				if (!locked){
+					for (auto &up : pending_updates) up();
+					pending_updates.clear();
+				}
+			}
+
+			typedef std::function<void (upfun&)> push_f;
+			
+			void run(std::function<void (push_f&) > &&f){
+				if (!locked) f(push_);
+			}
+
+			class pending_lock{
+				
+			private:
+				pending& cl;
+				pending_lock(pending& cl):cl(cl){cl.locked = true;}
+			public:
+				~pending_lock(){cl.locked = false;}
+				friend class pending;
+			};
+			friend class pending_lock;
+			pending_lock lock(){return pending_lock(*this);}
+		};
+
+		pending pending_updates;
+
 		template<Level L, typename T>
 		DataStore::Handle<cid,L,HandleAccess::all, T>
 		gethandle_internal(const DataStore::HandleImpl<T> &underlying){
@@ -41,27 +71,6 @@ namespace backend {
 			auto &&ret = local.del_internal<L>(hndl);
 			return std::move(ret);
 		}
-
-		uint pending_tracker = 0;
-
-		void lock_pending(){
-			pending_tracker = pending_updates.size();
-			pending_locked = true;
-		}
-
-		void unlock_pending(void){
-			assert(pending_updates.size() == pending_tracker);
-			pending_locked = false;
-		}
-
-		class pending_lock{
-		private:
-			Client& cl;
-		public:
-			pending_lock(Client& cl):cl(cl){cl.lock_pending();}
-			~pending_lock(){cl.unlock_pending();}
-		};
-
 
 	public:
 		
@@ -137,30 +146,31 @@ namespace backend {
 		template<Level L, typename T, HandleAccess HA>
 		typename std::enable_if<canWrite(HA), void>::type
 		give(DataStore::Handle<cid, L, HA, T> &hndl, std::unique_ptr<T> obj) {
-			if (!pending_locked){
-				std::shared_ptr<T> cpy(new T(*obj),release_deleter<T>());
-				push_pending([hndl,cpy](){
-						std::get_deleter<release_deleter<T> >(cpy)->release();
-						hndl.hi() = std::unique_ptr<T>(cpy.get());});
-			}
+			pending_updates.run([&] (typename pending::push_f &push) {
+					std::shared_ptr<T> cpy(new T(*obj),release_deleter<T>());
+					push([hndl,cpy](){
+							std::get_deleter<release_deleter<T> >(cpy)->release();
+							hndl.hi() = std::unique_ptr<T>(cpy.get());});	
+				});
 			hndl.hi() = std::move(obj);
 		}
 		
 		template<Level L, typename T, HandleAccess HA>
 		typename std::enable_if<canWrite(HA), void>::type
 		give(DataStore::Handle<cid, L, HA, T> &hndl, T* obj) {
-			if (!pending_locked){
-				std::shared_ptr<T> cpy(new T(*obj),release_deleter<T>());
-				push_pending([hndl,cpy](){
-						std::get_deleter<release_deleter<T> >(cpy)->release();
-						hndl.hi() = std::unique_ptr<T>(cpy.get());});
-			}
+			pending_updates.run([&] (typename pending::push_f &push ){
+					std::shared_ptr<T> cpy(new T(*obj),release_deleter<T>());
+					push([hndl,cpy](){
+							std::get_deleter<release_deleter<T> >(cpy)->release();
+							hndl.hi() = std::unique_ptr<T>(cpy.get());});
+				});
 			hndl.hi() = std::unique_ptr<T>(obj);
 		}
 		
 		template<Level L, typename T>
 		std::unique_ptr<T> take(DataStore::Handle<cid, L,HandleAccess::all,T>& hndl) {
-			push_pending([hndl](){hndl.hi().reset();});
+			pending_updates.run([&hndl](typename pending::push_f &push) {
+					push([hndl](){hndl.hi().reset();});});
 			return hndl.hi();
 		}
 		
@@ -171,16 +181,20 @@ namespace backend {
 		typename std::enable_if<canWrite(HA), void>::type
 		incr_op(DataStore::Handle<cid, L, HA, T> &h) 
 			{
-				auto f = [h](){(*(h.hi().stored_obj))++;};
-				push_pending(f);
+				upfun f = [h](){(*(h.hi().stored_obj))++;};
+				std::function<void (typename pending::push_f&)> pf = 
+					[&f](typename pending::push_f &push){push(f);};
+				pending_updates.run(std::move(pf));
 				f();				
 			}
 		
 		template<Level L, typename T, HandleAccess HA>
 		typename std::enable_if<canWrite(HA), void>::type
 		incr(DataStore::Handle<cid, L, HA, T> &h) {
-			auto f = [h](){	h.hi().stored_obj->incr(); };
-			push_pending(f);
+			upfun f = [h](){ h.hi().stored_obj->incr(); };
+			pending_updates.run([&f](typename pending::push_f &push){
+					push(f);
+				});
 			f();
 		}
 		
@@ -188,8 +202,10 @@ namespace backend {
 		typename std::enable_if<canRead(HA), void>::type
 		add(DataStore::Handle<cid, L, HA, T> &h, A... args) {
 			//todo - lifetime of args?
-			auto f = [h,args...](){	h.hi().stored_obj->add(args...);};
-			push_pending(f);
+			upfun f = [h,args...](){ h.hi().stored_obj->add(args...);};
+			pending_updates.run([&f](typename pending::push_f &push){
+					push(f);
+				});
 			f();
 		}
 		
@@ -213,11 +229,11 @@ namespace backend {
 				      "You passed me a non-stateless function, or screwed up your arguments! \n Expected: R f(DataStore&, DataStore::Handles....)");
 			static_assert(all_handles_write<Args...>::value, "Error: passed non-writeable handle into wo_transaction");
 			typename funcptr<R, Client&, Args...>::type f2 = f;
-			static const upfun f3 = [this,f2,args...](){
+			static upfun f3 = [this,f2,args...](){
 				f2(*this,args...);
 			};
-			push_pending(f3);
-			pending_lock l(*this);
+			pending_updates.run([&](typename pending::push_f &push){push(f3);});
+			auto l = pending_updates.lock();
 			return f2(*this, args...);
 		}
 		
@@ -229,11 +245,11 @@ namespace backend {
 			static_assert(all_handles_write<Args...>::value, "Error: passed non-writeable handle into rw_transaction");
 			static_assert(all_handles_read<Args...>::value, "Error: passed non-readable handle into rw_transaction");
 			typename funcptr<R, Client&, Args...>::type f2 = f;
-			static const upfun f3 = [this,f2,args...](){
+			static upfun f3 = [this,f2,args...](){
 				f2(*this,args...);
 			};
-			push_pending(f3);
-			pending_lock l(*this);
+			pending_updates.run([&](typename pending::push_f &push){push(f3);});
+			auto l = pending_updates.lock();
 			return f2(*this, args...);
 		}
 		
@@ -250,9 +266,8 @@ namespace backend {
 				}
 			};
 			copy_hndls(master,local);
-			for (auto &update : pending_updates) update();
+			pending_updates.runAndClear();
 			copy_hndls(local,master);
-			pending_updates.clear();
 		}
 
 		template<Client_Id>
