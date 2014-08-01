@@ -41,7 +41,7 @@ private:
 
 			HandlePrime(const HandlePrime &old) = delete;
 
-			virtual HandlePrime& clone (DataStore& np) const = 0;
+			virtual void clone (DataStore& np) const = 0;
 
 			template<typename T>
 			friend class HandleImpl;
@@ -66,24 +66,31 @@ private:
 				HandlePrime(parent,old),
 				stored_obj(new T(*old.stored_obj)){}
 
-			static HandleImpl<T>& place(HandleImpl<T>* hi){
+			static std::unique_ptr<HandleImpl<T> >& place(HandleImpl<T>* hi){
 				HandlePrime* h = hi;
+				auto old_addr = &(hi->parent.hndls[h->id]);
 				hi->parent.hndls[h->id] = std::unique_ptr<HandlePrime>(h);
-				return *hi;
+				assert (old_addr == &(hi->parent.hndls[h->id]));
+				//TODO: this doesn't seem safe.
+				return *((std::unique_ptr<HandleImpl<T> >*) (&hi->parent.hndls[h->id]));
 			}
 		public: 
 			HandleImpl (const HandleImpl&) = delete;
 
-			static HandleImpl<T>& constructAndPlace(DataStore& parent,std::unique_ptr<T> n){
+			static std::unique_ptr<HandleImpl<T> >& constructAndPlace(DataStore& parent,std::unique_ptr<T> n){
 				return place(new HandleImpl<T>(parent, std::move(n)));
 			}
 
-			static HandleImpl<T>& constructAndPlace(DataStore& parent,const HandleImpl& old) {
+			static std::unique_ptr<HandleImpl<T> >& constructAndPlace(DataStore& parent,const HandleImpl& old) {
 				return place(new HandleImpl<T>(parent, old));
 			}
 
-			virtual HandlePrime& clone (DataStore& np) const {
+			std::unique_ptr<HandleImpl<T> >& clone_impl(DataStore& np) const {
 				return place(new HandleImpl<T>(np,*this));
+			}
+
+			virtual void clone (DataStore& np) const {
+				place(new HandleImpl<T>(np,*this));
 			}
 			
 			virtual ~HandleImpl() {}
@@ -101,10 +108,11 @@ private:
 		class TypedHandle : public GenericHandle{
 		private: 
 			virtual bool is_virtual() = 0;
-			HandleImpl<T> &h_i;
-			HandleImpl<T> &hi() const {return h_i;}
+			std::unique_ptr<HandleImpl<T> > &h_i;
+			HandleImpl<T> &hi() const {return *h_i;}
+			std::unique_ptr<HandleImpl<T> > &hi_ptr() const {return h_i;}
 		public:
-			TypedHandle(HandleImpl<T> &hi):h_i(hi){}
+			TypedHandle(std::unique_ptr<HandleImpl<T> > &hi):h_i(hi){}
 			friend class DataStore;
 			template<Client_Id>
 			friend class Client;
@@ -115,7 +123,7 @@ private:
 		private:
 			virtual bool is_virtual() {return false;}
 		public: 
-			Handle(HandleImpl<T> &hi):TypedHandle<T>(hi){}
+			Handle(std::unique_ptr<HandleImpl<T> > &hi):TypedHandle<T>(hi){}
 			static constexpr Level level = L;
 			static constexpr HandleAccess ha = HA;
 			typedef T stored_type;

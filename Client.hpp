@@ -18,10 +18,7 @@ namespace backend {
 			assert(local.hndls[underlying.id].get() == nullptr );
 			assert(master.hndls[underlying.id].get() != nullptr );
 			assert(master.hndls[underlying.id]->rid == underlying.rid);
-			auto* ptr = dynamic_cast<DataStore::HandleImpl<T>* >(
-				&(master.hndls[underlying.id]->clone(local)));
-			assert(ptr);
-			return DataStore::Handle<cid,L,HandleAccess::all,T>(*ptr);
+			return DataStore::Handle<cid,L,HandleAccess::all,T>(underlying.clone_impl(local));
 		}
 
 		
@@ -71,12 +68,12 @@ namespace backend {
 		
 		template<Level L, typename T>
 		auto ro_hndl(DataStore::Handle<cid, L,HandleAccess::all,T> &old){
-			return DataStore::Handle<cid, L,HandleAccess::read,T>(old.hi());
+			return DataStore::Handle<cid, L,HandleAccess::read,T>(old.hi_ptr());
 		}
 		
 		template<Level L, typename T>
 		auto wo_hndl(DataStore::Handle<cid, L,HandleAccess::all,T> &old){
-			return DataStore::Handle<cid, L,HandleAccess::write,T>(old.hi());
+			return DataStore::Handle<cid, L,HandleAccess::write,T>(old.hi_ptr());
 		}	
 
 		template<Level Lnew, Level Lold, typename T>
@@ -85,7 +82,7 @@ namespace backend {
 						 (Lold == Level::strong ? 
 						  HandleAccess::read : 
 						  HandleAccess::write),
-						 T> (old.hi());
+						 T> (old.hi_ptr());
 		}
 
 		template<Client_Id cid_old, Level l, HandleAccess ha, typename T>
