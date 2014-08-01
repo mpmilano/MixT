@@ -228,6 +228,7 @@ namespace backend {
 		//transactions interface
 		class transaction_cls {
 		private:
+			bool sync = false;
 			Client &c;
 			transaction_cls(Client& c):c(c){}
 		public:
@@ -273,6 +274,7 @@ namespace backend {
 				auto l = c.pending_updates.lock();
 				return f2(c, args...);
 			}
+			~transaction_cls(){ if (sync) c.waitForSync();}
 			friend class Client;
 		};
 		
