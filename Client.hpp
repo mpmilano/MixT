@@ -104,8 +104,9 @@ namespace backend {
 			{return newHandle_internal<L>(std::unique_ptr<T>(r));}
 		
 		template<Level L, typename T>
-		std::unique_ptr<T> del(DataStore::Handle<cid, L,HandleAccess::all,T>& hndl)
-			{return del_internal(hndl);}
+		std::unique_ptr<T> del(DataStore::Handle<cid, L,HandleAccess::all,T>& hndl){
+			if (L == Level::strong) waitForSync();
+			return del_internal(hndl);}
 		
 		template<Level L, typename T>
 		auto ro_hndl(DataStore::Handle<cid, L,HandleAccess::all,T> &old){
@@ -158,6 +159,7 @@ namespace backend {
 							hndl.hi() = std::unique_ptr<T>(cpy.get());});	
 				});
 			hndl.hi() = std::move(obj);
+			if (L == Level::strong) waitForSync();
 		}
 		
 		template<Level L, typename T, HandleAccess HA>
@@ -170,10 +172,12 @@ namespace backend {
 							hndl.hi() = std::unique_ptr<T>(cpy.get());});
 				});
 			hndl.hi() = std::unique_ptr<T>(obj);
+			if (L == Level::strong) waitForSync();
 		}
 		
 		template<Level L, typename T>
 		std::unique_ptr<T> take(DataStore::Handle<cid, L,HandleAccess::all,T>& hndl) {
+			if (L == Level::strong) waitForSync();
 			pending_updates.run([&hndl](typename pending::push_f &push) {
 					push([hndl](){hndl.hi().reset();});});
 			return hndl.hi();
@@ -190,7 +194,8 @@ namespace backend {
 				std::function<void (typename pending::push_f&)> pf = 
 					[&f](typename pending::push_f &push){push(f);};
 				pending_updates.run(std::move(pf));
-				f();				
+				f();
+				if (L == Level::strong) waitForSync();		
 			}
 		
 		template<Level L, typename T, HandleAccess HA>
@@ -212,6 +217,7 @@ namespace backend {
 					push(f);
 				});
 			f();
+			if (L == Level::strong) waitForSync();
 		}
 		
 		//transactions interface
