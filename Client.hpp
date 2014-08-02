@@ -11,6 +11,8 @@ namespace backend {
 		DataStore& master;
 		DataStore local;
 		
+		bool sync_enabled = true;
+
 		typedef std::function<void ()> upfun;
 		class pending{
 		private:
@@ -225,12 +227,21 @@ namespace backend {
 			if (L == Level::strong) waitForSync();
 		}
 		
+		friend class transaction_cls;
 		//transactions interface
 		class transaction_cls {
 		private:
 			bool sync = false;
 			Client &c;
-			transaction_cls(Client& c):c(c){}
+			transaction_cls(Client& c):c(c){
+				c.sync_enabled = false;
+			}
+
+			void waitForSync(){
+				c.sync_enabled = true;
+				c.waitForSync();
+				c.sync_enabled = false;
+			}
 		public:
 			
 			template < typename R, typename... Args>
@@ -240,6 +251,7 @@ namespace backend {
 				static_assert(is_stateless<R, Client&, Args...>::value,
 					      "You passed me a non-stateless function, or screwed up your arguments! \n Expected: R f(DataStore&, DataStore::Handles....)");
 				static_assert(all_handles_read<Args...>::value, "Error: passed non-readable handle into ro_transaction");
+				if (any_required_sync<Args...>::value) waitForSync();
 				return f(c, args...);
 			}
 			
@@ -254,6 +266,7 @@ namespace backend {
 				static upfun f3 = [this,f2,args...](){
 					f2(c,args...);
 				};
+				if (any_required_sync<Args...>::value) sync = true;
 				c.pending_updates.run([&](typename pending::push_f &push){push(f3);});
 				auto l = c.pending_updates.lock();
 				f2(c, args...);
@@ -270,17 +283,25 @@ namespace backend {
 				static upfun f3 = [this,f2,args...](){
 					f2(c,args...);
 				};
+				if (any_required_sync<Args...>::value) {
+					sync = true;
+					waitForSync();
+				}
 				c.pending_updates.run([&](typename pending::push_f &push){push(f3);});
 				auto l = c.pending_updates.lock();
 				return f2(c, args...);
 			}
-			~transaction_cls(){ if (sync) c.waitForSync();}
+			~transaction_cls(){ 
+				c.sync_enabled = true;
+				if (sync) c.waitForSync();
+			}
 			friend class Client;
 		};
 		
 		transaction_cls transaction(){ return transaction_cls(*this); }
 		
 		void waitForSync(){
+			if (!sync_enabled) return;
 			//std::cout << "sync requested!" << std::endl;
 			typedef void (*copy_hndls_f) (DataStore& from, DataStore &to);
 			static const copy_hndls_f copy_hndls = [](DataStore& from, DataStore &to){

@@ -65,5 +65,19 @@ namespace backend {
 	
 	template<typename... Args>
 	struct exists_read_handle : any <handle_read, pack<Args...> > {};
+
+	template <typename C>
+	static constexpr std::integral_constant<bool,false> handle_requires_sync_f(C*)
+	{return std::integral_constant<bool,false>();}
+	
+	template < Client_Id cid, HandleAccess HA, typename T>
+	static constexpr std::integral_constant<bool,true> handle_requires_sync_f(DataStore::Handle<cid,Level::strong,HA,T>*)
+	{return std::integral_constant<bool,true>();}
+
+	template<typename T>
+	struct handle_requires_sync : decltype( handle_requires_sync_f ( (T*) nullptr) ) {};
+
+	template<typename... Args>
+	struct any_required_sync : any <handle_requires_sync, pack<Args...> > {};
 	
 }
