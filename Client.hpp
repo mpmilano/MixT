@@ -51,9 +51,13 @@ namespace backend {
 				
 			private:
 				pending& cl;
-				pending_lock(pending& cl):cl(cl){cl.locked = true;}
+				pending_lock(pending& cl):cl(cl){
+					cl.locked = true;
+				}
 			public:
-				~pending_lock(){cl.locked = false;}
+				~pending_lock(){
+					cl.locked = false;
+				}
 				friend class pending;
 			};
 			friend class pending_lock;
@@ -291,7 +295,7 @@ namespace backend {
 				auto l = c.pending_updates.lock();
 				return f2(c, args...);
 			}
-			~transaction_cls(){ 
+			~transaction_cls(){
 				c.sync_enabled = true;
 				if (sync) c.waitForSync();
 			}
@@ -302,6 +306,7 @@ namespace backend {
 		
 		void waitForSync(){
 			if (!sync_enabled) return;
+			sync_enabled = false;
 			//std::cout << "sync requested!" << std::endl;
 			typedef void (*copy_hndls_f) (DataStore& from, DataStore &to);
 			static const copy_hndls_f copy_hndls = [](DataStore& from, DataStore &to){
@@ -317,14 +322,10 @@ namespace backend {
 			pending_updates.runAndClear();
 			copy_hndls(local,master);
 			assert(pending_updates.isClear());
+			sync_enabled = true;
 		}
 
 		template<Client_Id>
 		friend class Client;
-
-
 	};
-	
-	
-
-};
+}
