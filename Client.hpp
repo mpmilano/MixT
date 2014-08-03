@@ -6,6 +6,8 @@ namespace backend {
 	
 	template<Client_Id cid>
 	class Client {
+
+		//BEGIN INTERNALS
 	private:
 
 		DataStore& master;
@@ -88,6 +90,7 @@ namespace backend {
 			return std::move(ret);
 		}
 
+		//END INTERNALS
 	public:
 		
 		Client(DataStore& master):master(master){
