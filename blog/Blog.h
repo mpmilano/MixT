@@ -28,8 +28,12 @@ public:
 	Comments(Client &c, CHandle h):
 		c(c),
 		comments(std::move(h)){}
-	void postComment(Comment c);
-	const std::list<Comment>& currentComments();
+	void postComment(Comment cmnt){
+		c.add(comments,[](std::list<Comment>* l, Comment c){l->push_back(c);},cmnt);
+	}
+	const std::list<Comment>& currentComments(){
+		return c.get(comments);
+	}
 	friend class Blog;
 };
 

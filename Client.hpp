@@ -222,11 +222,11 @@ namespace backend {
 			f();
 		}
 		
-		template<Level L, typename T, HandleAccess HA, typename... A>
+		template<Level L, typename T, HandleAccess HA, typename F, typename... A>
 		typename std::enable_if<canRead(HA), void>::type
-		add(DataStore::Handle<cid, L, HA, T> &h, A... args) {
+		add(DataStore::Handle<cid, L, HA, T> &h, F f2, A... args) {
 			//todo - lifetime of args?
-			upfun f = [h,args...](){ h.hi().stored_obj->add(args...);};
+			upfun f = [h,f2,args...](){ f2(h.hi().stored_obj.get(),args...);};
 			pending_updates.run([&f](typename pending::push_f &push){
 					push(f);
 				});
