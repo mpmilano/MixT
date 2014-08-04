@@ -311,20 +311,9 @@ namespace backend {
 			if (!sync_enabled) return;
 			if (l != Level::strong) return;
 			sync_enabled = false;
-			//std::cout << "sync requested!" << std::endl;
-			typedef void (*copy_hndls_f) (DataStore& from, DataStore &to);
-			static const copy_hndls_f copy_hndls = [](DataStore& from, DataStore &to){
-				for (auto& ptr_p : to.hndls) {
-					auto &ptr = ptr_p.second;
-					auto &m_ptr = from.hndls[ptr->id];
-					if (m_ptr->rid == ptr->rid) {
-						ptr->grab_obj(*m_ptr);
-					}
-				}
-			};
-			copy_hndls(master,local);
+			master.syncClient(local);
 			pending_updates.runAndClear();
-			copy_hndls(local,master);
+			local.syncClient(master);
 			assert(pending_updates.isClear());
 			sync_enabled = true;
 		}

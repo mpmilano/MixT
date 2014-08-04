@@ -60,8 +60,15 @@ namespace backend{
 
 	private:
 
-		void syncClient(DataStore&){
-			
+		void syncClient(DataStore& to) const {
+			DataStore const &from = *this;
+			for (auto& ptr_p : to.hndls) {
+				auto &ptr = ptr_p.second;
+				auto const &m_ptr = from.hndls.at(ptr->id);
+				if (m_ptr->rid == ptr->rid) {
+					ptr->grab_obj(*m_ptr);
+				}
+			}
 		}
 
 //hiding implemntation details here.  
