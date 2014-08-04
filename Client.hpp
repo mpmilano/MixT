@@ -119,7 +119,7 @@ namespace backend {
 		
 		template<Level L, typename T>
 		std::unique_ptr<T> del(DataStore::Handle<cid, L,HandleAccess::all,T>& hndl){
-			if (L == Level::strong) waitForSync();
+			waitForSync<L>();
 			return del_internal(hndl);}
 		
 		template<Level L, typename T>
@@ -142,24 +142,20 @@ namespace backend {
 		}
 
 		template<Client_Id cid_old, Level l, HandleAccess ha, typename T>
-		DataStore::Handle<cid,l,ha,T> get_access(DataStore::Handle<cid_old,l,ha,T> &hndl, Client<cid_old> &o) {
-			static_assert(cid != cid_old, "You already have access to this handle.");
+		DataStore::Handle<cid,l,ha,T> get_access(const DataStore::Handle<cid_old,l,ha,T> &hndl, 
+							 const Client<cid_old> &o) {
+			//static_assert(cid != cid_old, "You already have access to this handle.");
 			assert (&master == &o.master);
 			return gethandle_internal<l>(hndl.hi());
 		}
 
 		
 		//KVstore-style interface
-		
-		template<typename T, HandleAccess HA>
-		typename std::enable_if<canRead(HA), T&>::type
-		get(DataStore::Handle<cid,Level::causal, HA, T> &hndl)
-			{return hndl.hi();}
 
-		template<typename T, HandleAccess HA>
+		template<Level L, typename T, HandleAccess HA>
 		typename std::enable_if<canRead(HA), T&>::type
-		get(DataStore::Handle<cid,Level::strong, HA, T> &hndl) {
-			waitForSync(); return hndl.hi();
+		get(DataStore::Handle<cid,L, HA, T> &hndl) {
+			waitForSync<L>(); return hndl.hi();
 		}
 
 		
@@ -173,7 +169,7 @@ namespace backend {
 							hndl.hi() = std::unique_ptr<T>(cpy.get());});	
 				});
 			hndl.hi() = std::move(obj);
-			if (L == Level::strong) waitForSync();
+			waitForSync<L>();
 		}
 		
 		template<Level L, typename T, HandleAccess HA>
@@ -187,12 +183,12 @@ namespace backend {
 					push(tmp);
 				});
 			hndl.hi() = std::unique_ptr<T>(obj);
-			if (L == Level::strong) waitForSync();
+			waitForSync<L>();
 		}
 		
 		template<Level L, typename T>
 		std::unique_ptr<T> take(DataStore::Handle<cid, L,HandleAccess::all,T>& hndl) {
-			if (L == Level::strong) waitForSync();
+			waitForSync<L>();
 			pending_updates.run([&hndl](typename pending::push_f &push) {
 					push([hndl](){hndl.hi().reset();});});
 			return hndl.hi();
@@ -210,7 +206,7 @@ namespace backend {
 					[&f](typename pending::push_f &push){push(f);};
 				pending_updates.run(std::move(pf));
 				f();
-				if (L == Level::strong) waitForSync();		
+				waitForSync<L>();		
 			}
 		
 		template<Level L, typename T, HandleAccess HA>
@@ -232,7 +228,7 @@ namespace backend {
 					push(f);
 				});
 			f();
-			if (L == Level::strong) waitForSync();
+			waitForSync<L>();
 		}
 		
 		friend class transaction_cls;
@@ -245,9 +241,10 @@ namespace backend {
 				c.sync_enabled = false;
 			}
 
+			template<Level l>
 			void waitForSync(){
 				c.sync_enabled = true;
-				c.waitForSync();
+				c.waitForSync<l>();
 				c.sync_enabled = false;
 			}
 		public:
@@ -259,7 +256,7 @@ namespace backend {
 				static_assert(is_stateless<R, Client&, Args...>::value,
 					      "You passed me a non-stateless function, or screwed up your arguments! \n Expected: R f(DataStore&, DataStore::Handles....)");
 				static_assert(all_handles_read<Args...>::value, "Error: passed non-readable handle into ro_transaction");
-				if (any_required_sync<Args...>::value) waitForSync();
+				waitForSync<any_required_sync<Args...>::value ? Level::strong : Level::causal>();
 				return f(c, args...);
 			}
 			
@@ -293,23 +290,26 @@ namespace backend {
 				};
 				if (any_required_sync<Args...>::value) {
 					sync = true;
-					waitForSync();
-				}
+					waitForSync<Level::strong>();
+				} else waitForSync<Level::causal>();
 				c.pending_updates.run([&](typename pending::push_f &push){push(f3);});
 				auto l = c.pending_updates.lock();
 				return f2(c, args...);
 			}
 			~transaction_cls(){
 				c.sync_enabled = true;
-				if (sync) c.waitForSync();
+				if (sync) c.waitForSync<Level::strong>();
+				else c.waitForSync<Level::causal>();
 			}
 			friend class Client;
 		};
 		
 		transaction_cls transaction(){ return transaction_cls(*this); }
 		
+		template<Level l>
 		void waitForSync(){
 			if (!sync_enabled) return;
+			if (l != Level::strong) return;
 			sync_enabled = false;
 			//std::cout << "sync requested!" << std::endl;
 			typedef void (*copy_hndls_f) (DataStore& from, DataStore &to);
