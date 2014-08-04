@@ -50,8 +50,12 @@ private:
 	PHandle post;
 public:
 	Post(Client &c, PHandle p):c(c),post(std::move(p)){}
-	void postUpdate(std::string);
-	void replaceContent(std::string);
+	void postUpdate(std::string u){
+		c.add(post,[](std::string* s, std::string u){s->append(u);},u);
+	}
+	void replaceContent(std::string s){
+		c.give(post,new std::string(s));
+	}
 	friend class Blog;
 };
 
