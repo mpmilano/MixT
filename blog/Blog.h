@@ -10,6 +10,7 @@ class Comment{
 private:
 	std::string s;
 public:
+	Comment(const char* s):s(s){}
 	Comment(std::string s):s(std::move(s)){}
 	std::string display(){return s;}
 };
@@ -59,17 +60,30 @@ public:
 	friend class Blog;
 };
 
+
 class Blog{
 private:
 	static constexpr backend::Client_Id cid = 0;
 	typedef backend::Client<cid> Client;
+	backend::DataStore &ds;
 	Client c;
+
+	Blog(const Blog& b):
+		ds(b.ds),
+		c(ds),
+		cmnt(c,c.get_access(b.cmnt.comments,c)),
+		post(c,c.get_access(b.post.post,c))
+		{}
+public:
 	Comments cmnt;
 	Post post;
-public:
+
 	Blog(backend::DataStore &ds):
+		ds(ds),
 		c(ds),
 		cmnt(c,c.newHandle<Comments::level>(std::list<Comment>())),
 		post(c,c.newHandle<Post::level>(std::string())){}
-	void spawn();
+	Blog spawn(){
+		return Blog(*this);
+	}
 };
