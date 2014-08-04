@@ -181,9 +181,10 @@ namespace backend {
 		give(DataStore::Handle<cid, L, HA, T> &hndl, T* obj) {
 			pending_updates.run([&] (typename pending::push_f &push ){
 					std::shared_ptr<T> cpy(new T(*obj),release_deleter<T>());
-					push([hndl,cpy](){
-							std::get_deleter<release_deleter<T> >(cpy)->release();
-							hndl.hi() = std::unique_ptr<T>(cpy.get());});
+					upfun &&tmp = [hndl,cpy](){
+						std::get_deleter<release_deleter<T> >(cpy)->release();
+						hndl.hi() = std::unique_ptr<T>(cpy.get());};
+					push(tmp);
 				});
 			hndl.hi() = std::unique_ptr<T>(obj);
 			if (L == Level::strong) waitForSync();
