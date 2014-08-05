@@ -58,16 +58,6 @@ namespace backend{
 
 	private:
 
-		void syncClient(DataStore& to) const {
-			DataStore const &from = *this;
-			for (auto& ptr_p : to.hndls) {
-				auto &ptr = ptr_p.second;
-				auto const &m_ptr = from.hndls.at(ptr->id);
-				if (m_ptr->rid == ptr->rid) {
-					ptr->grab_obj(*m_ptr);
-				}
-			}
-		}
 
 //hiding implemntation details here.  
 #include "Backend-impl.h"
@@ -81,8 +71,8 @@ namespace backend{
 		DataStore (const DataStore &) = delete;
 		
 		friend class HandlePrime;
-		template<Client_Id cid>
-		friend class Client;
+		//template<Client_Id cid>
+		//friend class Client;
 		
 		template<Level L, typename R, typename IR>
 		friend class tester::Fuzz;
@@ -97,6 +87,17 @@ namespace backend{
 			assert(master.hndls[underlying.id].get() != nullptr );
 			assert(master.hndls[underlying.id]->rid == underlying.rid);
 			return DataStore::Handle<cid,L,HandleAccess::all,T>(underlying.clone(local));
+		}
+
+		void syncClient(DataStore& to) const {
+			DataStore const &from = *this;
+			for (auto& ptr_p : to.hndls) {
+				auto &ptr = ptr_p.second;
+				auto const &m_ptr = from.hndls.at(ptr->id);
+				if (m_ptr->rid == ptr->rid) {
+					ptr->grab_obj(*m_ptr);
+				}
+			}
 		}
 
 
