@@ -72,6 +72,7 @@ public:
 		stored_obj(new T(*old.stored_obj)){}
 	
 	static HandleImpl<T>& place(HandleImpl<T>* hi){
+		WriteLock(hi->parent.mut);
 		HandlePrime* h = hi;
 		auto old_addr = &(hi->parent.hndls[h->id]);
 		hi->parent.hndls[h->id] = std::unique_ptr<HandlePrime>(h);
