@@ -108,24 +108,20 @@ namespace backend{
 
 
 		template<Client_Id id, Level L, HandleAccess HA, typename T>	
-		auto newhandle_internal(std::unique_ptr<T> r) {
-			return Handle<id,L,HA,T>
-				(HandleImpl<T>::constructAndPlace(*this,std::move(r)));
-		}
+		Handle<id,L,HA,T> newhandle_internal(std::unique_ptr<T> r);
 
 		template<Client_Id id, Level L, HandleAccess HA, typename T>
-		auto del_internal(Handle<id,L,HA,T> &hndl_i){
-			auto &hndl = hndl_i.hi(); 
-			std::unique_ptr<T> ret = hndl;
-			assert(hndls[hndl.id]->id == hndl.id);
-			hndls[hndl.id].first.reset(nullptr);
-			return ret;
-		}
+		std::unique_ptr<T> del_internal(Handle<id,L,HA,T> &hndl_i);
 
 
 	};
+	
+	
 
 }
+
+//stupid templates and separate compilation
+#include "Backend.cpp"
 
 //template magic in here.
 #include "handle_utils"

@@ -31,7 +31,6 @@ private:
 		parent(parent),
 		id(parent.get_next_id()),
 		rid(parent.get_next_rid()){
-		//most dangerous game
 	}
 
 public:
