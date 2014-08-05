@@ -68,17 +68,17 @@ namespace backend {
 
 		pending pending_updates;
 
-		template<Level L, typename T>
+		template<Level L, typename T, Level _L, HandleAccess _ha, Client_Id _cid>
 		DataStore::Handle<cid,L,HandleAccess::all, T>
-		gethandle_internal(const DataStore::HandleImpl<T> &underlying){
-			return local.get_handle<cid,L>(underlying);
+		gethandle_internal(const DataStore::Handle<_cid,_L,_ha,T> &underlying){
+			return local.get_handle<cid,L>(underlying.hi());
 		}
 
 		
 		template<Level L, typename T>
 		DataStore::Handle<cid,L,HandleAccess::all, T>
 		newHandle_internal(std::unique_ptr<T> r){
-			return gethandle_internal<L,T>(master.newhandle_internal<cid,L,HandleAccess::all>(std::move(r)).hi());
+			return gethandle_internal<L,T>(master.newhandle_internal<cid,L,HandleAccess::all>(std::move(r)));
 		}
 
 		template<Level L, typename T>
@@ -143,7 +143,7 @@ namespace backend {
 							 const Client<cid_old> &o) {
 			//static_assert(cid != cid_old, "You already have access to this handle.");
 			assert (&master == &o.master);
-			return gethandle_internal<l>(hndl.hi());
+			return gethandle_internal<l>(hndl);
 		}
 
 		
