@@ -99,7 +99,7 @@ namespace election{
 		typedef VoteH_primary VoteH;
 		backend::DataStore& upstream_ds;
 		backend::Client<0> ds;
-		std::array<VoteH, (int)Candidate::Count > votes;
+		std::array<std::unique_ptr<VoteH>, (int)Candidate::Count > votes;
 
 	public:
 

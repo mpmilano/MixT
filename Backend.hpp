@@ -6,6 +6,7 @@
 #include <cassert>
 #include <iostream>
 #include <map>
+#include <array>
 #include <mutex>
 #include <shared_mutex>
 #include "extras"

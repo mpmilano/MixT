@@ -10,11 +10,11 @@ namespace election{
 	VoteTrackerServer::VoteTrackerServer(backend::DataStore& _ds):
 		upstream_ds(_ds),
 		ds(_ds),
-		votes(make_array(ds.newHandle<Level::strong>(new fake_int(8)),
-				 ds.newHandle<Level::strong>(new fake_int(0)),
-				 ds.newHandle<Level::strong>(new fake_int(0)),
-				 ds.newHandle<Level::strong>(new fake_int(0)),
-				 ds.newHandle<Level::strong>(new fake_int(0)))) {}
+		votes(make_array_u(ds.newHandle<Level::strong>(new fake_int(8)),
+				   ds.newHandle<Level::strong>(new fake_int(0)),
+				   ds.newHandle<Level::strong>(new fake_int(0)),
+				   ds.newHandle<Level::strong>(new fake_int(0)),
+				   ds.newHandle<Level::strong>(new fake_int(0)))) {}
 
 	
 	void VoteTrackerClient::countVote(Candidate cnd){
@@ -92,11 +92,11 @@ namespace election{
 	}
 
 	VoteTrackerClient::VoteTrackerClient(VoteTrackerServer& s):ds(s.upstream_ds),votes(
-		(make_array_u(ds.get_access(s.votes[0],s.ds),
-			      ds.get_access(s.votes[1],s.ds),
-			      ds.get_access(s.votes[2],s.ds),
-			      ds.get_access(s.votes[3],s.ds),
-			      ds.get_access(s.votes[4],s.ds)))){}
+		(make_array_u(ds.get_access(*s.votes[0],s.ds),
+			      ds.get_access(*s.votes[1],s.ds),
+			      ds.get_access(*s.votes[2],s.ds),
+			      ds.get_access(*s.votes[3],s.ds),
+			      ds.get_access(*s.votes[4],s.ds)))){}
 
 	VoteTrackerClient::VoteTrackerClient(VoteTrackerClient&& s):ds(std::move(s.ds)),votes(std::move(s.votes)){}
 
