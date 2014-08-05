@@ -97,6 +97,17 @@ auto make_array(Arg1 a, Args... rest){
 	return ret;
 }
 
+template<typename T>
+auto make_unique_cpy(T t){
+	return std::unique_ptr<T>(new T(t));
+}
+
+template< typename Arg1, typename... Args>
+auto make_array_u(Arg1 a, Args... rest){
+	return std::array<std::unique_ptr<Arg1>, sizeof...(Args) + 1> 
+	{ { make_unique_cpy(a), make_unique_cpy(rest)... } };
+}
+
 
 
 template<typename F>
