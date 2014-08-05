@@ -52,8 +52,6 @@ namespace backend{
 
 		template<typename T>
 		class TypedHandle; //extends GenericHandle
-		
-
 
 		template<Client_Id cid, Level L, HandleAccess HA, typename T>
 		class Handle; //extends TypedHandle<T>
@@ -88,6 +86,18 @@ namespace backend{
 		
 		template<Level L, typename R, typename IR>
 		friend class tester::Fuzz;
+
+		template<Client_Id cid, Level L, typename T>
+		auto get_handle(const DataStore::HandleImpl<T> &underlying){
+			auto &local = *this;
+			auto &master = underlying.parent;
+			assert(&local != &master);
+			assert(local.hndls[underlying.id].get() == nullptr );
+			assert(master.hndls[underlying.id].get() != nullptr );
+			assert(master.hndls[underlying.id]->rid == underlying.rid);
+			return DataStore::Handle<cid,L,HandleAccess::all,T>(underlying.clone(local));
+		}
+
 	};
 
 }

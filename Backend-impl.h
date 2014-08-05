@@ -18,8 +18,7 @@ int get_next_rid(){
 }
 
 class HandlePrime {
-private: 
-	DataStore& parent;
+private:
 	virtual bool is_abstract() = 0;
 	
 	
@@ -36,6 +35,8 @@ private:
 	}
 
 public:
+
+	DataStore& parent;
 	const uint id;
 	const uint rid;
 	

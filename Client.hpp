@@ -71,10 +71,7 @@ namespace backend {
 		template<Level L, typename T>
 		DataStore::Handle<cid,L,HandleAccess::all, T>
 		gethandle_internal(const DataStore::HandleImpl<T> &underlying){
-			assert(local.hndls[underlying.id].get() == nullptr );
-			assert(master.hndls[underlying.id].get() != nullptr );
-			assert(master.hndls[underlying.id]->rid == underlying.rid);
-			return DataStore::Handle<cid,L,HandleAccess::all,T>(underlying.clone(local));
+			return local.get_handle<cid,L>(underlying);
 		}
 
 		
