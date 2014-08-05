@@ -114,7 +114,9 @@ namespace backend {
 			pending_updates.run([&] (typename pending::push_f &push) {
 					std::shared_ptr<T> cpy(new T(*obj),release_deleter<T>());
 					push([hndl,cpy](){
-							std::get_deleter<release_deleter<T> >(cpy)->release();
+							auto &dltr = std::get_deleter<release_deleter<T> >(cpy);
+							assert(!dltr->released());
+							dltr->release();
 							hndl.hi() = std::unique_ptr<T>(cpy.get());});	
 				});
 			hndl.hi() = std::move(obj);
