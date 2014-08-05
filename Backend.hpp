@@ -69,6 +69,8 @@ namespace backend{
 //hiding implemntation details here.  
 #include "Backend-impl.h"
 
+	public:
+
 		//constructors and destructor
 		DataStore () {}
 
@@ -81,31 +83,9 @@ namespace backend{
 		friend class tester::Fuzz;
 
 		template<Client_Id cid, Level L, typename T, Level _L, HandleAccess _ha, Client_Id _cid>
-		auto get_handle(const DataStore::Handle<_cid,_L,_ha,T> &_underlying){
-			const auto &underlying = _underlying.hi();
-			auto &local = *this;
-			auto &master = underlying.parent;
-			assert(&local != &master);
-			assert(local.hndls[underlying.id].get() == nullptr );
-			assert(master.hndls[underlying.id].get() != nullptr );
-			assert(master.hndls[underlying.id]->rid == underlying.rid);
-			auto &&ret = DataStore::Handle<cid,L,HandleAccess::all,T>(underlying.clone(local));
-			return std::move(ret);
-		}
+		auto get_handle(const Handle<_cid,_L,_ha,T> &_underlying);
 
-		void syncClient(DataStore& to) const {
-			ReadLock(const_cast<DataStore*>(this)->mut);
-			WriteLock(to.mut);
-			DataStore const &from = *this;
-			for (auto& ptr_p : to.hndls) {
-				auto &ptr = ptr_p.second;
-				auto const &m_ptr = from.hndls.at(ptr->id);
-				if (m_ptr->rid == ptr->rid) {
-					ptr->grab_obj(*m_ptr);
-				}
-			}
-		}
-
+		void syncClient(DataStore& to) const;
 
 		template<Client_Id id, Level L, HandleAccess HA, typename T>	
 		Handle<id,L,HA,T> newhandle_internal(std::unique_ptr<T> r);
