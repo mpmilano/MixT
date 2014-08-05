@@ -6,6 +6,7 @@
 #include <cassert>
 #include <iostream>
 #include <map>
+#include <mutex>
 #include "extras"
 
 #define LVALUE(x) typename add_lvalue_reference<x>::type
@@ -57,6 +58,7 @@ namespace backend{
 		class Handle; //extends TypedHandle<T>
 
 	private:
+		std::mutex mut;
 
 
 //hiding implemntation details here.  
@@ -75,6 +77,7 @@ namespace backend{
 
 		template<Client_Id cid, Level L, typename T, Level _L, HandleAccess _ha, Client_Id _cid>
 		auto get_handle(const DataStore::Handle<_cid,_L,_ha,T> &_underlying){
+			mut.lock();
 			const auto &underlying = _underlying.hi();
 			auto &local = *this;
 			auto &master = underlying.parent;
@@ -82,10 +85,13 @@ namespace backend{
 			assert(local.hndls[underlying.id].get() == nullptr );
 			assert(master.hndls[underlying.id].get() != nullptr );
 			assert(master.hndls[underlying.id]->rid == underlying.rid);
-			return DataStore::Handle<cid,L,HandleAccess::all,T>(underlying.clone(local));
+			auto &&ret = DataStore::Handle<cid,L,HandleAccess::all,T>(underlying.clone(local));
+			mut.unlock();
+			return std::move(ret);
 		}
 
 		void syncClient(DataStore& to) const {
+			const_cast<DataStore*>(this)->mut.lock();
 			DataStore const &from = *this;
 			for (auto& ptr_p : to.hndls) {
 				auto &ptr = ptr_p.second;
@@ -94,8 +100,8 @@ namespace backend{
 					ptr->grab_obj(*m_ptr);
 				}
 			}
+			const_cast<DataStore*>(this)->mut.unlock();
 		}
-
 
 	};
 
