@@ -70,10 +70,6 @@ namespace backend{
 
 		DataStore (const DataStore &) = delete;
 		
-		friend class HandlePrime;
-		//template<Client_Id cid>
-		//friend class Client;
-		
 		template<Level L, typename R, typename IR>
 		friend class tester::Fuzz;
 
