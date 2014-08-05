@@ -1,11 +1,14 @@
 #pragma once
 #include "Backend.hpp"
+#include "Pending.hpp"
 #include <execinfo.h>
+
 
 namespace backend {
 	
 	template<Client_Id cid>
 	class Client {
+
 
 		//BEGIN INTERNALS
 	private:
@@ -14,57 +17,6 @@ namespace backend {
 		DataStore local;
 		
 		bool sync_enabled = true;
-
-		typedef std::function<void ()> upfun;
-		class pending{
-		private:
-			bool locked = false;
-			std::list<upfun> pending_updates;
-			void push(upfun up){
-				if (!locked) pending_updates.push_back(std::move(up));
-			}
-			std::function<void (upfun&) > push_ = [&](upfun &f){ push(f);};
-
-		public:
-			pending(const pending&) = delete;
-			pending(pending &&p):locked(p.locked),
-					     pending_updates(std::move(p.pending_updates)),
-					     push_(std::move(p.push_)){}
-			pending(){}
-			void runAndClear(){
-				if (!locked){
-					auto l = lock();
-					for (auto &up : pending_updates) up();
-					pending_updates.clear();
-				}
-			}
-
-			bool isClear(){
-				return pending_updates.size() == 0;
-			}
-
-			typedef std::function<void (upfun&)> push_f;
-			
-			void run(std::function<void (push_f&) > &&f){
-				if (!locked) f(push_);
-			}
-
-			class pending_lock{
-				
-			private:
-				pending& cl;
-				pending_lock(pending& cl):cl(cl){
-					cl.locked = true;
-				}
-			public:
-				~pending_lock(){
-					cl.locked = false;
-				}
-				friend class pending;
-			};
-			friend class pending_lock;
-			pending_lock lock(){return pending_lock(*this);}
-		};
 
 		pending pending_updates;
 
@@ -86,8 +38,8 @@ namespace backend {
 			auto &&ret = local.del_internal<L>(hndl);
 			return std::move(ret);
 		}
-
 		//END INTERNALS
+
 	public:
 		
 		Client(DataStore& master):master(master){
@@ -251,7 +203,9 @@ namespace backend {
 				static_assert(all_handles<Args...>::value, "Passed non-DataStore::Handles as arguments to function!");
 				static_assert(!exists_write_handle<Args...>::value, "Passed write-enabled handles as argument to ro function!");
 				static_assert(is_stateless<R, Client&, Args...>::value,
-					      "You passed me a non-stateless function, or screwed up your arguments! \n Expected: R f(DataStore&, DataStore::Handles....)");
+					      "You passed me a non-stateless function, or screwed up your arguments!");
+				static_assert(is_stateless<R, Client&, Args...>::value,
+					      "Expected: R f(DataStore&, DataStore::Handles....)");
 				static_assert(all_handles_read<Args...>::value, "Error: passed non-readable handle into ro_transaction");
 				waitForSync<any_required_sync<Args...>::value ? Level::strong : Level::causal>();
 				return f(c, args...);
@@ -259,10 +213,14 @@ namespace backend {
 			
 			template < typename R, typename... Args>
 			void wo(R &f, Args... args) {
-				static_assert(all_handles<Args...>::value, "Passed non-DataStore::Handles as arguments to function!");
-				static_assert(!exists_read_handle<Args...>::value, "Passed read-enabled handles as argument to wo function!");
+				static_assert(all_handles<Args...>::value, 
+					      "Passed non-DataStore::Handles as arguments to function!");
+				static_assert(!exists_read_handle<Args...>::value, 
+					      "Passed read-enabled handles as argument to wo function!");
 				static_assert(is_stateless<R, Client&, Args...>::value,
-					      "You passed me a non-stateless function, or screwed up your arguments! \n Expected: R f(DataStore&, DataStore::Handles....)");
+					      "You passed me a non-stateless function, or screwed up your arguments!");
+				static_assert(is_stateless<R, Client&, Args...>::value,
+					      "Expected: R f(DataStore&, DataStore::Handles....)");
 				static_assert(all_handles_write<Args...>::value, "Error: passed non-writeable handle into wo_transaction");
 				typename funcptr<R, Client&, Args...>::type f2 = f;
 				static upfun f3 = [this,f2,args...](){
@@ -278,7 +236,9 @@ namespace backend {
 			auto rw(R &f, Args... args) {
 				static_assert(all_handles<Args...>::value, "Passed non-DataStore::Handles as arguments to function!");
 				static_assert(is_stateless<R, Client&, Args...>::value,
-					      "You passed me a non-stateless function, or screwed up your arguments! \n Expected: R f(DataStore&, DataStore::Handles....)");
+					      "You passed me a non-stateless function, or screwed up your arguments!");
+				static_assert(is_stateless<R, Client&, Args...>::value,
+					      "Expected: R f(DataStore&, DataStore::Handles....)");
 				static_assert(all_handles_write<Args...>::value, "Error: passed non-writeable handle into rw_transaction");
 				static_assert(all_handles_read<Args...>::value, "Error: passed non-readable handle into rw_transaction");
 				typename funcptr<R, Client&, Args...>::type f2 = f;
