@@ -76,7 +76,7 @@ namespace election{
 		typedef VoteH_secondary VoteH;
 		backend::Client<1> ds;
 		VoteTrackerClient(VoteTrackerServer&);
-		std::array<VoteH, (int)Candidate::Count > votes;
+		std::array<std::unique_ptr<VoteH>, (int)Candidate::Count > votes;
 	public :
 
 		void countVote(Candidate);

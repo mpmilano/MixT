@@ -18,7 +18,7 @@ namespace election{
 
 	
 	void VoteTrackerClient::countVote(Candidate cnd){
-		ds.incr_op(votes[(int) cnd]);
+		ds.incr_op(*votes[(int) cnd]);
 	}
 
 	void VoteTrackerClient::voteForTwo(Candidate cnd1, Candidate cnd2){
@@ -30,11 +30,11 @@ namespace election{
 			ds.incr_op(cnd1);
 			ds.incr_op(cnd2);
 		};
-		ds.transaction().wo(transaction, ds.wo_hndl(votes[(int) cnd1]),ds.wo_hndl( votes[(int) cnd2]));
+		ds.transaction().wo(transaction, ds.wo_hndl(*votes[(int) cnd1]),ds.wo_hndl( *votes[(int) cnd2]));
 	}
 
 	int VoteTrackerClient::getCount(Candidate cnd){
-		return ds.get(votes[(int) cnd]);
+		return ds.get(*votes[(int) cnd]);
 	}
 	counts VoteTrackerClient::currentTally(){
 
@@ -61,11 +61,11 @@ namespace election{
 				      true);};
 
 		return ds.transaction().ro(transaction,
-					 ds.newConsistency<Level::causal> (votes[0]),
-					 ds.newConsistency<Level::causal> (votes[1]),
-					 ds.newConsistency<Level::causal> (votes[2]),
-					 ds.newConsistency<Level::causal> (votes[3]),
-					 ds.newConsistency<Level::causal> (votes[4])); 
+					 ds.newConsistency<Level::causal> (*votes[0]),
+					 ds.newConsistency<Level::causal> (*votes[1]),
+					 ds.newConsistency<Level::causal> (*votes[2]),
+					 ds.newConsistency<Level::causal> (*votes[3]),
+					 ds.newConsistency<Level::causal> (*votes[4])); 
 //*/
 	}
 
@@ -80,11 +80,11 @@ namespace election{
 				ds.get(v4));
 		};
 		return ds.transaction().ro(transaction,
-					 ds.ro_hndl(votes[0]),
-					 ds.ro_hndl(votes[1]),
-					 ds.ro_hndl(votes[2]),
-					 ds.ro_hndl(votes[3]),
-					 ds.ro_hndl(votes[4]));
+					 ds.ro_hndl(*votes[0]),
+					 ds.ro_hndl(*votes[1]),
+					 ds.ro_hndl(*votes[2]),
+					 ds.ro_hndl(*votes[3]),
+					 ds.ro_hndl(*votes[4]));
 	}
 
 	VoteTrackerClient VoteTrackerServer::spawnClient(){
@@ -92,11 +92,11 @@ namespace election{
 	}
 
 	VoteTrackerClient::VoteTrackerClient(VoteTrackerServer& s):ds(s.upstream_ds),votes(
-		(make_array(ds.get_access(s.votes[0],s.ds),
-			    ds.get_access(s.votes[1],s.ds),
-			    ds.get_access(s.votes[2],s.ds),
-			    ds.get_access(s.votes[3],s.ds),
-			    ds.get_access(s.votes[4],s.ds)))){}
+		(make_array_u(ds.get_access(s.votes[0],s.ds),
+			      ds.get_access(s.votes[1],s.ds),
+			      ds.get_access(s.votes[2],s.ds),
+			      ds.get_access(s.votes[3],s.ds),
+			      ds.get_access(s.votes[4],s.ds)))){}
 
 	VoteTrackerClient::VoteTrackerClient(VoteTrackerClient&& s):ds(std::move(s.ds)),votes(std::move(s.votes)){}
 
