@@ -87,8 +87,9 @@ namespace backend{
 		template<Level L, typename R, typename IR>
 		friend class tester::Fuzz;
 
-		template<Client_Id cid, Level L, typename T>
-		auto get_handle(const DataStore::HandleImpl<T> &underlying){
+		template<Client_Id cid, Level L, typename T, Level _L, HandleAccess _ha, Client_Id _cid>
+		auto get_handle(const DataStore::Handle<_cid,_L,_ha,T> &_underlying){
+			const auto &underlying = _underlying.hi();
 			auto &local = *this;
 			auto &master = underlying.parent;
 			assert(&local != &master);
@@ -97,6 +98,7 @@ namespace backend{
 			assert(master.hndls[underlying.id]->rid == underlying.rid);
 			return DataStore::Handle<cid,L,HandleAccess::all,T>(underlying.clone(local));
 		}
+
 
 	};
 

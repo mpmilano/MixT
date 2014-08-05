@@ -71,7 +71,7 @@ namespace backend {
 		template<Level L, typename T, Level _L, HandleAccess _ha, Client_Id _cid>
 		DataStore::Handle<cid,L,HandleAccess::all, T>
 		gethandle_internal(const DataStore::Handle<_cid,_L,_ha,T> &underlying){
-			return local.get_handle<cid,L>(underlying.hi());
+			return local.get_handle<cid,L>(underlying);
 		}
 
 		
