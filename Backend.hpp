@@ -46,6 +46,8 @@ namespace backend{
 	template<Client_Id cid>
 	class Client;
 
+	class HandlePrime;
+
 	class DataStore {
 
 	public:
@@ -65,10 +67,10 @@ namespace backend{
 		typedef std::shared_lock<Mutex> ReadLock;
 		Mutex mut;
 
-
-//hiding implemntation details here.  
-#include "Backend-impl.h"
-
+		template<typename T>
+		class HandleImpl;
+		
+		std::map<uint, std::unique_ptr<HandlePrime> > hndls;
 	public:
 
 		//constructors and destructor
@@ -93,7 +95,6 @@ namespace backend{
 		template<Client_Id id, Level L, HandleAccess HA, typename T>
 		std::unique_ptr<T> del_internal(Handle<id,L,HA,T> &hndl_i);
 
-
 	};
 	
 	
@@ -101,6 +102,8 @@ namespace backend{
 }
 
 //stupid templates and separate compilation
+#include "HandleBackend.cpp"
+#include "Handle.cpp"
 #include "Backend.cpp"
 
 //template magic in here.
