@@ -135,6 +135,22 @@ private:
 	bool released_;
 };
 
+template<typename... Args>
+constexpr auto exists (Args...){
+	static_assert(sizeof...(Args) == 0, "got template recursion wrong");
+	return false;
+}
+
+template<typename T, typename... Args>
+constexpr auto exists(T a, Args... b){
+	return (sizeof...(Args) == 1 ? a 
+		: (a ? a 
+		   : exists(b...)));
+}
+
+template<typename T> 
+constexpr auto make_nullptr(){return (T*) nullptr;}
+
 /*
 ..
 
