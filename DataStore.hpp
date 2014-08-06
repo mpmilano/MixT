@@ -16,11 +16,8 @@ namespace backend {
 
 	public:
 
-		template<typename T>
-		class TypedHandle; //extends GenericHandle
-
 		template<Client_Id cid, Level L, HandleAccess HA, typename T>
-		class Handle; //extends TypedHandle<T>
+		class Handle; 
 
 	private:
 		typedef std::shared_timed_mutex Mutex;
