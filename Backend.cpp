@@ -20,8 +20,9 @@ namespace backend {
 	}
 
 	
-	template<Client_Id cid, Level L, typename T, Level _L, HandleAccess _ha, Client_Id _cid>
-	auto DataStore::get_handle(const DataStore::Handle<_cid,_L,_ha,T> &_underlying){
+	template<Client_Id cid, Level L, typename T, Level _L, Client_Id _cid>
+	DataStore::Handle<cid,L,HandleAccess::all, T> 
+	DataStore::get_handle(const DataStore::Handle<_cid,_L,HandleAccess::all,T> &_underlying){
 		const auto &underlying = _underlying.hi();
 		auto &local = *this;
 		auto &master = underlying.parent;

@@ -11,8 +11,6 @@
 #include <shared_mutex>
 #include "extras"
 
-#define LVALUE(x) typename add_lvalue_reference<x>::type
-
 namespace backend {
 	//"strong" is Top here.  Linearizable, + start-time ordered
 	//"causal" is GLUT.
@@ -84,8 +82,8 @@ namespace backend{
 		template<Level L, typename R, typename IR>
 		friend class tester::Fuzz;
 
-		template<Client_Id cid, Level L, typename T, Level _L, HandleAccess _ha, Client_Id _cid>
-		auto get_handle(const Handle<_cid,_L,_ha,T> &_underlying);
+		template<Client_Id cid, Level L, typename T, Level _L, Client_Id _cid>
+		Handle<cid,L,HandleAccess::all, T> get_handle(const Handle<_cid,_L,HandleAccess::all,T> &_underlying);
 
 		void syncClient(DataStore& to) const;
 
@@ -94,7 +92,7 @@ namespace backend{
 
 		template<Client_Id id, Level L, HandleAccess HA, typename T>
 		std::unique_ptr<T> del_internal(Handle<id,L,HA,T> &hndl_i);
-
+    
 	};
 	
 	
