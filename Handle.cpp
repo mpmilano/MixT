@@ -3,13 +3,13 @@
 
 namespace backend {
 
-	class DataStore::GenericHandle{
+	class GenericHandle{
 	private: 
 		virtual bool is_virtual() = 0;
 	};
 	
 	template <typename T>
-	class DataStore::TypedHandle : public DataStore::GenericHandle{
+	class DataStore::TypedHandle : public GenericHandle{
 	private: 
 		virtual bool is_virtual() = 0;
 		DataStore::HandleImpl<T> &h_i;

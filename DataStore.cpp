@@ -1,5 +1,5 @@
 #pragma once
-#include "Backend.hpp"
+#include "DataStore.hpp"
 
 namespace backend {
 	
@@ -7,8 +7,7 @@ namespace backend {
 	DataStore::Handle<id,L,HA,T> DataStore::newhandle_internal(std::unique_ptr<T> r) {
 		return Handle<id,L,HA,T>
 			(HandleImpl<T>::constructAndPlace(*this,std::move(r)));
-	}
-	
+	}	
 	
 	template<Client_Id id, Level L, HandleAccess HA, typename T>
 	std::unique_ptr<T> DataStore::del_internal(Handle<id,L,HA,T> &hndl_i){
@@ -18,7 +17,6 @@ namespace backend {
 		hndls[hndl.id].first.reset(nullptr);
 		return ret;
 	}
-
 	
 	template<Client_Id cid, Level L, typename T, Level _L, Client_Id _cid>
 	DataStore::Handle<cid,L,HandleAccess::all, T> 
@@ -34,7 +32,6 @@ namespace backend {
 		return std::move(ret);
 	}
 
-
 	void DataStore::syncClient(DataStore& to) const {
 		ReadLock(const_cast<DataStore*>(this)->mut);
 		WriteLock(to.mut);
@@ -47,6 +44,5 @@ namespace backend {
 			}
 		}
 	}
-
 }
 
