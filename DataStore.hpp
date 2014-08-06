@@ -15,16 +15,13 @@ namespace backend {
 	class DataStore {
 
 	public:
-
 		template<Client_Id cid, Level L, HandleAccess HA, typename T>
-		class Handle; 
-
+		class Handle;
 	private:
 		typedef std::shared_timed_mutex Mutex;
 		typedef std::unique_lock<Mutex> WriteLock;
 		typedef std::shared_lock<Mutex> ReadLock;
 		Mutex mut;
-
 		template<typename T>
 		class HandleImpl;
 		
