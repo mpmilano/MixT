@@ -79,5 +79,19 @@ namespace backend {
 
 	template<typename... Args>
 	struct any_required_sync : any <handle_requires_sync, pack<Args...> > {};
+
+	template <typename C>
+	static constexpr auto handle_rw_f(C*)
+	{return std::integral_constant<bool,false>();}
 	
+	template < Client_Id cid, Level L, typename T>
+	static constexpr auto handle_rw_f(DataStore::Handle<cid, L,HandleAccess::all,T>*)
+	{return std::integral_constant<bool,true>();}
+	
+	template<typename T>
+	struct handle_rw : decltype( handle_rw_f ( (T*) nullptr) ) {};
+
+	template<typename... Args>
+	struct exists_rw_handle : any <handle_rw, pack<Args...> > {};
+
 }
