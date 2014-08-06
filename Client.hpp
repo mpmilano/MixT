@@ -198,6 +198,23 @@ namespace backend {
 				c.waitForSync<l>();
 				c.sync_enabled = false;
 			}
+
+			template<Level Lmatch, typename T>
+			static constexpr auto matches(DataStore::Handle<cid, Lmatch, HandleAccess::read, T> *){
+				return true;
+			}
+			
+			template<Level, typename C>
+			static constexpr auto matches(C *){
+				return false;
+			}
+
+			template<Level l, typename... Args>
+			static constexpr bool matches_any(){
+				return exists(matches<l>(make_nullptr<Args>())...);
+			}
+
+
 		public:
 			
 			template < typename R, typename... Args>
@@ -209,7 +226,7 @@ namespace backend {
 				static_assert(is_stateless<R, Client&, Args...>::value,
 					      "Expected: R f(DataStore&, DataStore::Handles....)");
 				static_assert(all_handles_read<Args...>::value, "Error: passed non-readable handle into ro_transaction");
-				waitForSync<any_required_sync<Args...>::value ? Level::strong : Level::causal>();
+				waitForSync<matches_any<Level::causal, Args...>() ? Level::strong : Level::causal>();
 				return f(c, args...);
 			}
 			
@@ -241,16 +258,18 @@ namespace backend {
 					      "You passed me a non-stateless function, or screwed up your arguments!");
 				static_assert(is_stateless<R, Client&, Args...>::value,
 					      "Expected: R f(DataStore&, DataStore::Handles....)");
-				static_assert(all_handles_write<Args...>::value, "Error: passed non-writeable handle into rw_transaction");
-				static_assert(all_handles_read<Args...>::value, "Error: passed non-readable handle into rw_transaction");
+				static_assert(!exists_rw_handle<Args...>::value, 
+					      "ro and wo handles only please!");
 				typename funcptr<R, Client&, Args...>::type f2 = f;
 				static upfun f3 = [this,f2,args...](){
 					f2(c,args...);
 				};
-				if (any_required_sync<Args...>::value) {
-					sync = true;
-					waitForSync<Level::strong>();
-				} else waitForSync<Level::causal>();
+				//read-sync at beginning if necessary (weakest)
+				waitForSync<matches_any<Level::causal, Args...>() ? Level::strong : Level::causal>();
+
+				//write-sync at the end if necessary (strongest)
+				if (any_required_sync<Args...>::value) sync = true;
+				
 				c.pending_updates.run([&](typename pending::push_f &push){push(f3);});
 				auto l = c.pending_updates.lock();
 				return f2(c, args...);
