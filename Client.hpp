@@ -1,7 +1,6 @@
 #pragma once
 #include "Backend.hpp"
 #include "Pending.hpp"
-#include <execinfo.h>
 
 
 namespace backend {
