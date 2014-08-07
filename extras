@@ -148,6 +148,21 @@ constexpr auto exists(T a, Args... b){
 		   : exists(b...)));
 }
 
+
+template<typename... Args>
+static constexpr auto forall (Args...){
+	static_assert(sizeof...(Args) == 0, "got template recursion wrong");
+	return true;
+}
+
+template<typename T, typename... Args>
+static constexpr auto forall(T a, Args... b){
+	return (sizeof...(Args) == 0 ? a 
+		: (a ? forall(b...) 
+		   : false));
+}
+
+
 template<typename T> 
 constexpr auto make_nullptr(){return (T*) nullptr;}
 
