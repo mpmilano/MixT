@@ -1,14 +1,19 @@
 #pragma once
+#include "Client.hpp"
+
+	namespace backend {
+		//KVstore-style interface
+		template<Client_Id cid>
 		template<Level L, typename T, HandleAccess HA>
 		typename std::enable_if<canRead(HA), T&>::type
-		get(DataStore::Handle<cid,L, HA, T> &hndl) {
+		Client<cid>::get(DataStore::Handle<cid,L, HA, T> &hndl) {
 			waitForSync<L>(); return hndl.hi();
 		}
 
-		
+		template<Client_Id cid>		
 		template<Level L, typename T, HandleAccess HA>
 		typename std::enable_if<canWrite(HA), void>::type
-		give(DataStore::Handle<cid, L, HA, T> &hndl, std::unique_ptr<T> obj) {
+		Client<cid>::give(DataStore::Handle<cid, L, HA, T> &hndl, std::unique_ptr<T> obj) {
 			pending_updates.run([&] (typename pending::push_f &push) {
 					std::shared_ptr<T> cpy(new T(*obj),release_deleter<T>());
 					push([hndl,cpy](){
@@ -20,10 +25,11 @@
 			hndl.hi() = std::move(obj);
 			waitForSync<L>();
 		}
-		
+
+		template<Client_Id cid>		
 		template<Level L, typename T, HandleAccess HA>
 		typename std::enable_if<canWrite(HA), void>::type
-		give(DataStore::Handle<cid, L, HA, T> &hndl, T* obj) {
+		Client<cid>::give(DataStore::Handle<cid, L, HA, T> &hndl, T* obj) {
 			pending_updates.run([&] (typename pending::push_f &push ){
 					std::shared_ptr<T> cpy(new T(*obj),release_deleter<T>());
 					upfun &&tmp = [hndl,cpy](){
@@ -34,11 +40,13 @@
 			hndl.hi() = std::unique_ptr<T>(obj);
 			waitForSync<L>();
 		}
-		
+
+		template<Client_Id cid>		
 		template<Level L, typename T>
-		std::unique_ptr<T> take(DataStore::Handle<cid, L,HandleAccess::all,T>& hndl) {
+		std::unique_ptr<T> Client<cid>::take(DataStore::Handle<cid, L,HandleAccess::all,T>& hndl) {
 			waitForSync<L>();
 			pending_updates.run([&hndl](typename pending::push_f &push) {
 					push([hndl](){hndl.hi().reset();});});
 			return hndl.hi();
 		}
+	}
