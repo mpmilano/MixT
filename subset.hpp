@@ -5,7 +5,7 @@
 //determines subsets of packs of POD.
 template<typename FOO>
 class subset{
-public:
+private:
 	template<typename... Args>
 	static constexpr auto exists (Args...){
 		static_assert(sizeof...(Args) == 0, "got template recursion wrong");
@@ -32,9 +32,11 @@ public:
 				   : false));
 	}
 
+public:
 	template<FOO... FOOs>
 	struct pack{};
 
+private:
 	template <typename C>
 	static constexpr auto is_pack_f(C*)
 		{return std::integral_constant<bool,false>();}
@@ -56,6 +58,7 @@ public:
 		return exists(equal<a>(b)...);
 	}
 
+public:
 	template<typename B, FOO... a>
 	static constexpr bool f(pack<a...>, B){
 		return forall(is_in<a>(B())... );
