@@ -143,7 +143,7 @@ constexpr auto exists (Args...){
 
 template<typename T, typename... Args>
 constexpr auto exists(T a, Args... b){
-	return (sizeof...(Args) == 1 ? a 
+	return (sizeof...(Args) == 0 ? a 
 		: (a ? a 
 		   : exists(b...)));
 }
