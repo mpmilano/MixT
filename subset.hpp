@@ -31,7 +31,3 @@ public:
 
 template<bool b> auto mbool(){return b;}
 
-
-int main(){
-	return mbool<subset<int>::f(subset<int>::pack<1,2,3>(), subset<int>::pack<1,2>())>();
-}
