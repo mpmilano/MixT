@@ -46,7 +46,7 @@ namespace backend {
 		static_assert(is_stateless<R, Client&, Args...>::value,
 			      "Expected: R f(DataStore&, DataStore::Handles....)");
 		static_assert(all_handles_read<Args...>::value, "Error: passed non-readable handle into ro_transaction");
-		waitForSync<matches_any<Level::causal, Args...>() ? Level::strong : Level::causal>();
+		waitForSync<matches_any<Level::causal, Args...>() ? Level::causal : Level::strong>();
 		return f(c, args...);
 	}
 
@@ -87,7 +87,7 @@ namespace backend {
 			f2(c,args...);
 		};
 		//read-sync at beginning if necessary (weakest)
-		waitForSync<matches_any<Level::causal, Args...>() ? Level::strong : Level::causal>();
+		waitForSync<matches_any<Level::causal, Args...>() ? Level::causal : Level::strong>();
 		
 		//write-sync at the end if necessary (strongest)
 		if (any_required_sync<Args...>::value) sync = true;
