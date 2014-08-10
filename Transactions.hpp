@@ -1,4 +1,6 @@
 #pragma once
+#include "subset.hpp"
+#include <type_traits>
 
 namespace backend {
 
@@ -23,6 +25,33 @@ namespace backend {
 		
 	public:
 		
+		typedef int Tid;
+
+		template<Level L, typename T, Tid... depends>
+		class ReadRes{
+		public:
+			template<typename F, Tid... deps2>
+			//we can also change the level here.
+			ReadRes<L,T,depends..., deps2...> a(F f, ReadRes<T,deps2...> gnu);
+		};
+		
+		template<Level L, Tid... allowed>
+		class TransWrite{
+		public:
+			template<Level L_, typename F, typename T, Tid... depends>
+			typename std::enable_if<subset<Tid>::f(subset<Tid>::pack<depends...>(), subset<Tid>::pack<allowed...>()) >::type
+			//note - we can enforce a predicate on level here!
+			//We're not going to though.
+			write(F f, ReadRes<L_,T,depends...>);
+
+		};
+
+		template<Level L, typename T, Tid from>
+		class TransRead{
+		public:
+			operator ReadRes<L,T,from> ();
+		};
+
 		template < typename R, typename... Args>
 		auto ro(R &f, Args... args);
 		
