@@ -65,6 +65,8 @@ namespace backend {
 			//We're not going to though.
 			write(F f, ReadRes<L_,T,depends...> rr) {
 				t.waitForSync<L_>(); //<-- what's the correctness condition on when this happens?
+				//wait for READ sync.
+				//acquire warranty on read value.
 				
 				//if (L == Level::strong) t.sync = true; <-- you don't need to do this here if the rw transaction itself is doing it.
 				f((*rr.thunk)());
