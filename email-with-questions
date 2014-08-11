@@ -1,0 +1,29 @@
+Hi Andrew,
+
+I'm trying to shore up my transactions story, and I'm making a few design decisions which I'm confident with, but I don't believe are obvious.  I've outlined them below - if you could take a quick peek and make sure they make sense to you, I'd appreciate it. 
+
+Programmer intent in r/w transactions: 
+As you correctly pointed out when we were discussing my original transactions story, having all reads which occur in a transction downgrade to the level of the least-consistent read is a bad call - it would likely be "surprising" behavior for programmers' strong read handles to be treated as less than strong.  We briefly discussed tracking reads and grouping them based on how they interact - if one group of reads didn't interact with another, we could get away with running the groups at different consistency levels without violating isolation.  There's a few questions this raises:
+
+ - does this actually still violate isolation?  Or does it not matter, because the lack of connectedness means the programmer can't have made any assumptions about the transactions' isolation properties?   Currently I believe it's correct to use multiple levels when the reads don't interact, but I'm not 100% convinced that this doesn't violate isolation assumptions in some edge case or another.
+
+Regardless of whether we can use multiple read levels in a transaction, we still have the problem of programmer intent to deal with.  There are a few things we can do here:
+ - Programmer-supplied annotations on writes specifying the allowable consistency level of data flowing to these writes.
+ - Programmer-supplied annotations on reads which should not be allowed to downgrade.
+ - Programmer-supplied annotations on writes specifying exactly which handles' values can flow into that write.
+
+I've decided that the most natural thing for programmers would be to implement the first two of these and not implement the third.  I could also implement the third, but make it optional. 
+
+Semantics of mixed-mode transactions:
+The model of causal consistency makes mixed-mode transactions a little strange - here's how I intend to implemented mixed-mode r/w transactions.
+ 1 - Caclulate join/meet of read/write clumps.  
+ 2 - Find all reads which retain strong consistency (the ones that came in strong, and were never tainted by non-strong reads).  
+ 3 - Acquire warranties/timed-locks on all reads which retain strong consistency.  
+ 4 - Grab current state from master.  
+ 5 - Execute the transaction locally.
+ 6 - if any write or read handle is "strong", push current state to master.
+ 7 - release locks
+
+The most surprising thing is point 6 - having _any_ strong read causes an "upgrade" of writes.  This is because it doesn't make sense to have a strong read and a weak write in a transaction.  Strong read says to me "transaction doesn't commit if read value has changed in the interim" and weak write says to me "don't commit to master until convenient," the combination of which says "lock some data for a _really_ long time, or never be able to commit this transaction."
+
+You'll also note that _all_ state is being pulled from master before a transaction, not just the state required by the reads on which we have warranties.  This is necessary due to the current phrasing of causal consistency.
