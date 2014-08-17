@@ -5,6 +5,31 @@
 #include "Transactions.hpp"
 
 namespace backend {
+
+	template<bool (*Lmatch) (Level), Level L, Client_Id cid, typename T>
+	static constexpr 
+	typename std::enable_if<Lmatch(L),bool>::type
+	matches(DataStore::Handle<cid, L, HandleAccess::read, T> *){
+			return true;
+	}
+	
+	template<bool (*) (Level), typename C>
+	static constexpr bool matches(C *){
+		return false;
+	}
+	
+	template<typename... Args>
+	static constexpr Level handle_meet(){
+		return exists(matches<is_causal> (make_nullptr<Args>())...) ? 
+			Level::causal : Level::strong;
+	}
+		
+	template<typename... Args>
+	static constexpr Level handle_join(){
+		return exists(matches<is_strong> (make_nullptr<Args>())...) ? 
+			Level::strong : Level::causal;
+	}
+
 	template<Client_Id cid>
 	Client<cid>::transaction_cls::transaction_cls(Client& c):c(c){
 		c.sync_enabled = false;
@@ -18,20 +43,6 @@ namespace backend {
 		c.sync_enabled = false;
 	}	
 	
-	template<Client_Id cid>
-	template<typename... Args>
-	constexpr Level Client<cid>::transaction_cls::handle_meet(){
-		return exists(matches<is_causal> (make_nullptr<Args>())...) ? 
-			Level::causal : Level::strong;
-	}
-
-	template<Client_Id cid>
-	template<typename... Args>
-	constexpr Level Client<cid>::transaction_cls::handle_join(){
-		return exists(matches<is_strong> (make_nullptr<Args>())...) ? 
-			Level::strong : Level::causal;
-	}
-
 	template<Client_Id cid>
 	template < typename R, typename... Args>
 	auto Client<cid>::transaction_cls::ro(R &f, Args... args) {
@@ -68,36 +79,13 @@ namespace backend {
 		f2(c, args...);
 	}
 
-	template<Client_Id cid>	
-	template < typename R, typename... Args>
-	auto Client<cid>::transaction_cls::rw(R &f, Args... args) {
-		static_assert(all_handles<Args...>::value, "Passed non-DataStore::Handles as arguments to function!");
-		static_assert(is_stateless<R, Client&, Args...>::value,
-			      "You passed me a non-stateless function, or screwed up your arguments!");
-		static_assert(is_stateless<R, Client&, Args...>::value,
-			      "Expected: R f(DataStore&, DataStore::Handles....)");
-		static_assert(!exists_rw_handle<Args...>::value, 
-			      "ro and wo handles only please!");
-		typename funcptr<R, Client&, Args...>::type f2 = f;
-		static upfun f3 = [this,f2,args...](){
-			f2(c,args...);
-		};
-		//read-sync at beginning if necessary (weakest)
-		waitForSync<handle_meet<Args...>()>();
-		
-		//write-sync at the end if necessary (strongest)
-		if (is_strong(handle_join<Args...>())) sync = true;
-		
-		c.pending_updates.run([&](typename pending::push_f &push){push(f3);});
-		auto l = c.pending_updates.lock();
-		return f2(c, args...);
-	}
 
 	template<Client_Id cid>
 	Client<cid>::transaction_cls::~transaction_cls(){
 		c.sync_enabled = true;
 		if (sync) c.waitForSync<Level::strong>();
 		else c.waitForSync<Level::causal>();
+		c.all_final = false;
 	}
 
 

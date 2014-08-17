@@ -16,6 +16,7 @@ namespace backend {
 		DataStore local;
 		
 		bool sync_enabled = true;
+		bool all_final = false;
 
 		pending pending_updates;
 
@@ -108,6 +109,7 @@ namespace backend {
 }
 
 #include "Transactions.cpp"
+#include "RWTransaction.cpp"
 #include "Client.cpp"
 #include "ClientKV.cpp"
 #include "ClientCreate.cpp"

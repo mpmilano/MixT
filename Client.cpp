@@ -40,13 +40,14 @@ namespace backend{
 	template<Level l>
 	void Client<cid>::waitForSync(){
 		if (!sync_enabled) return;
-		if (!is_strong(l)) return;
-		sync_enabled = false;
-		master.syncClient(local);
-		pending_updates.runAndClear();
-		local.syncClient(master);
-		assert(pending_updates.isClear());
-		sync_enabled = true;
+		if (is_strong(l) || all_final) {
+			sync_enabled = false;
+			master.syncClient(local);
+			pending_updates.runAndClear();
+			local.syncClient(master);
+			assert(pending_updates.isClear());
+			sync_enabled = true;
+		}
 	}
 
 }
