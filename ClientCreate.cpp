@@ -40,10 +40,10 @@ namespace backend{
 		template<Level Lnew, Level Lold, typename T>
 		auto Client<cid>::newConsistency (DataStore::Handle<cid, Lold,HandleAccess::all,T> &old) {
 			return DataStore::Handle<cid, Lnew,
-						 (Lold == Level::strong ? 
-						  HandleAccess::read : 
-						  HandleAccess::write),
-						 T> (old.hi());
+									 (is_strong(Lold) ? 
+									  HandleAccess::read : 
+									  HandleAccess::write),
+									 T> (old.hi());
 		}
 
 		template<Client_Id cid>

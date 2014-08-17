@@ -5,6 +5,15 @@ namespace backend {
 	//"strong" is Top here.  Linearizable, + start-time ordered
 	//"causal" is GLUT.
 	enum class Level { causal, strong};
+	
+	constexpr bool is_strong(Level l){
+		return l == Level::strong;
+	}
+
+	constexpr bool is_causal(Level l){
+		return l == Level::causal;
+	}
+
 }
 
 namespace tester{	

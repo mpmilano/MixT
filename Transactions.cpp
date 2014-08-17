@@ -16,24 +16,20 @@ namespace backend {
 		c.sync_enabled = true;
 		c.waitForSync<l>();
 		c.sync_enabled = false;
-	}
+	}	
 	
 	template<Client_Id cid>
-	template<Level Lmatch, typename T>
-	constexpr auto Client<cid>::transaction_cls::matches(DataStore::Handle<cid, Lmatch, HandleAccess::read, T> *){
-		return true;
+	template<typename... Args>
+	constexpr Level Client<cid>::transaction_cls::handle_meet(){
+		return exists(matches<is_causal> (make_nullptr<Args>())...) ? 
+			Level::causal : Level::strong;
 	}
 
 	template<Client_Id cid>
-	template<Level, typename C>
-	constexpr auto Client<cid>::transaction_cls::matches(C *){
-		return false;
-	}
-	
-	template<Client_Id cid>
-	template<Level l, typename... Args>
-	constexpr bool Client<cid>::transaction_cls::matches_any(){
-		return exists(matches<l>(make_nullptr<Args>())...);
+	template<typename... Args>
+	constexpr Level Client<cid>::transaction_cls::handle_join(){
+		return exists(matches<is_strong> (make_nullptr<Args>())...) ? 
+			Level::strong : Level::causal;
 	}
 
 	template<Client_Id cid>
@@ -46,7 +42,7 @@ namespace backend {
 		static_assert(is_stateless<R, Client&, Args...>::value,
 			      "Expected: R f(DataStore&, DataStore::Handles....)");
 		static_assert(all_handles_read<Args...>::value, "Error: passed non-readable handle into ro_transaction");
-		waitForSync<matches_any<Level::causal, Args...>() ? Level::causal : Level::strong>();
+		waitForSync<handle_meet<Args...>()>();
 		return f(c, args...);
 	}
 
@@ -66,7 +62,7 @@ namespace backend {
 		static upfun f3 = [this,f2,args...](){
 			f2(c,args...);
 		};
-		if (any_required_sync<Args...>::value) sync = true;
+		if (is_strong(handle_join<Args...>())) sync = true;
 		c.pending_updates.run([&](typename pending::push_f &push){push(f3);});
 		auto l = c.pending_updates.lock();
 		f2(c, args...);
@@ -87,10 +83,10 @@ namespace backend {
 			f2(c,args...);
 		};
 		//read-sync at beginning if necessary (weakest)
-		waitForSync<matches_any<Level::causal, Args...>() ? Level::causal : Level::strong>();
+		waitForSync<handle_meet<Args...>()>();
 		
 		//write-sync at the end if necessary (strongest)
-		if (any_required_sync<Args...>::value) sync = true;
+		if (is_strong(handle_join<Args...>())) sync = true;
 		
 		c.pending_updates.run([&](typename pending::push_f &push){push(f3);});
 		auto l = c.pending_updates.lock();

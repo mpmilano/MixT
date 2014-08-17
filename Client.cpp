@@ -40,7 +40,7 @@ namespace backend{
 	template<Level l>
 	void Client<cid>::waitForSync(){
 		if (!sync_enabled) return;
-		if (l != Level::strong) return;
+		if (!is_strong(l)) return;
 		sync_enabled = false;
 		master.syncClient(local);
 		pending_updates.runAndClear();

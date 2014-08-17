@@ -15,15 +15,53 @@ namespace backend {
 		
 		template<Level l>
 		void waitForSync();
+			
+		template<bool (*Lmatch) (Level), Level L, typename T>
+		static constexpr 
+		typename std::enable_if<Lmatch(L),bool>::type
+		matches(DataStore::Handle<cid, L, HandleAccess::read, T> *){
+			return true;
+		}
+
+		template<bool (*) (Level), typename C>
+		static constexpr bool matches(C *){
+			return false;
+		}
 		
-		template<Level Lmatch, typename T>
-		static constexpr auto matches(DataStore::Handle<cid, Lmatch, HandleAccess::read, T> *);
-		
-		template<Level, typename C>
-		static constexpr auto matches(C *); 
-		
-		template<Level l, typename... Args>
-		static constexpr bool matches_any(); 	
+		template<typename... Args>
+		static constexpr Level handle_meet();
+
+		template<typename... Args>
+		static constexpr Level handle_join();
+
+		template<typename... T>
+		static constexpr typename std::enable_if<sizeof...(T) == 0, Level>::type 
+		meet(Level l1, T...){
+			return l1;
+		}
+
+		template<typename... T>
+		static constexpr typename std::enable_if< (sizeof...(T) > 0), Level>::type 
+		meet(Level l1, T... args){
+			return (is_causal(l1) ? Level::causal : 
+					meet(args...)
+				);
+		}
+
+		template<typename... T>
+		static constexpr typename std::enable_if<sizeof...(T) == 0, Level>::type 
+		join(Level l1, T...){
+			return l1;
+		}
+
+		template<typename... T>
+		static constexpr typename std::enable_if< (sizeof...(T) > 0), Level>::type 
+		join(Level l1, T... args){
+			return (is_strong(l1) ? Level::strong : 
+					join(args...)
+				);
+		}
+
 		
 	public:
 		
@@ -40,10 +78,10 @@ namespace backend {
 			template<Level L_, typename F, Tid... deps2>
 			//we can also change the level here.
 			//right now we're just deflating it when needed.
-			ReadRes<L == L_ ? L : Level::causal,T,depends..., deps2...>
+			ReadRes<meet(L,L_),T,depends..., deps2...>
 			a(F f, ReadRes<L_,T,deps2...> gnu){
 				auto thunk = this->thunk;
-				return ReadRes<L == L_ ? L : Level::causal,T,depends..., deps2...> (
+				return ReadRes<meet(L,L_),T,depends..., deps2...> (
 					[f,thunk,gnu](){
 						return f((*thunk)(), gnu.thunk()); 
 					});
