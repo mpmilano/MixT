@@ -22,6 +22,7 @@ namespace election{
 	}
 
 	void VoteTrackerClient::voteForTwo(Candidate cnd1, Candidate cnd2){
+		std::cout << "danger!" << std::endl;
 
 		typedef DataStore::Handle<1,VoteH::level, HandleAccess::write, dType> hndl;
 
@@ -31,6 +32,7 @@ namespace election{
 			ds.incr_op(cnd2);
 		};
 		ds.transaction().wo(transaction, ds.wo_hndl(*votes[(int) cnd1]),ds.wo_hndl( *votes[(int) cnd2]));
+		std::cout << "passed." << std::endl;
 	}
 
 	int VoteTrackerClient::getCount(Candidate cnd){
@@ -119,6 +121,7 @@ int main (){
 		v.countVote(election::Candidate::Ross);
 		v.countVote(election::Candidate::ConstaBob);
 		v.countVote(election::Candidate::Ross);
+		v.getCount(election::Candidate::Ross);
 		v.voteForTwo(election::Candidate::Ross, election::Candidate::ConstaBob);
 		v.getCount(election::Candidate::Ross);
 		v.countVote(election::Candidate::Andrew);
