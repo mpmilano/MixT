@@ -1,8 +1,11 @@
 #pragma once
-#include <cmath>
+#include <memory>
+#include <iostream>
+#include "../extras"
 
-constexpr int sieve(int ind){
+constexpr int sieve(int ind0){
 	constexpr int limit = 10000;
+	int ind = ind0 % limit;
 	int primes[limit] = {};
 	int z = 1;
 
@@ -35,6 +38,7 @@ namespace Tracking {
 	constexpr TrackingSet combine(TrackingSet a, TrackingId b){
 		return a * b;
 	}
+
 	constexpr bool contains(TrackingSet set, TrackingId member){
 		return (set % member) == 0;
 	}
@@ -50,12 +54,68 @@ namespace Tracking {
 	constexpr TrackingSet singleton (TrackingId tt){
 		return tt;
 	}
+
+	constexpr TrackingSet sub (TrackingSet big, TrackingSet small){
+		auto v = intersect(big,small);
+		return big/v;
+	}
 };
 
 template<typename T, Tracking::TrackingId tid>
-class TReadVal{
+class TReadVal;
+
+template<typename T, Tracking::TrackingSet s>
+class IntermVal{
+private:
+	T internal;
+	IntermVal(T &&t):internal(t){}
+
 public:
+
+	template<Tracking::TrackingSet s_>
+	auto touch(IntermVal<T, s_> &&t){
+		using namespace Tracking;
+		constexpr auto v = combine(s, sub(s_,s));
+		return (IntermVal<T, v>) std::move(t);
+	}
+
+	template<Tracking::TrackingId id>
+	IntermVal(const IntermVal<T,id> &rv):internal(rv.internal){}
+
+	template<Tracking::TrackingSet s_>
+	IntermVal<T,Tracking::combine(s,s_)> operator+=(IntermVal<T,s_> v){
+		return std::move(internal += v.internal);
+	}
+
+	template<typename F, typename G, typename... Args>
+	//typename std::enable_if <is_stateless<F, Args...>::value && is_stateless<G, Args...>::value >::type
+	void
+	ifTrue(F f, G g, Args... rest) {
+		//rest should be exact items we wish to use in the subsequent computation.
+		//will just cast them all to themselves + this type
+		if (internal) f(touch(std::move(rest))...);
+		else g(touch(std::move(rest))...);
+	}
+
+	template<typename T_, Tracking::TrackingId tid>
+	friend class TReadVal;
+
+	template<typename T_, Tracking::TrackingSet s_>
+	friend class IntermVal;
+
+	void display(){
+		std::cout << internal << std::endl;
+	}
+
+};
+
+template<typename T, Tracking::TrackingId tid>
+class TReadVal : public IntermVal<T, tid>{
+
+public:
+	TReadVal(T t):IntermVal<T,tid>(std::move(t)){}
 	static Tracking::TrackingId id() { return tid;}
 };
+
 
 #define ReadVal(a) TReadVal<a, gen_id()>
