@@ -1,6 +1,8 @@
 #pragma once
 #include <memory>
 #include <iostream>
+#include <list>
+#include <cassert>
 #include "../extras"
 
 constexpr int sieve(int ind0){
@@ -28,12 +30,15 @@ constexpr int gcd(int a, int b){
 		(gcd(b, a % b) );
 }
 
-#define gen_id() sieve(__LINE__)
+namespace {
+	constexpr int zero = __COUNTER__;
+}
+#define gen_id() sieve(__COUNTER__)
 
 namespace Tracking {
 
-	typedef int TrackingSet;
-	typedef int TrackingId;
+	typedef long long TrackingSet;
+	typedef long long TrackingId;
 
 	constexpr TrackingSet combine(TrackingSet a, TrackingId b){
 		return a * b;
@@ -59,16 +64,32 @@ namespace Tracking {
 		auto v = intersect(big,small);
 		return big/v;
 	}
+
+	std::list<TrackingId> asList(TrackingSet s){
+		//really slow
+		TrackingSet curr = s;
+		std::list<TrackingId> ret;
+		for (int i = 1; curr != 1; ++i){
+			auto s = sieve(i);
+			if (contains(curr, s)){
+				ret.push_back(s);
+				curr /= s;
+				while (contains(curr,s)) curr /= s;
+			}
+		}
+		return ret;
+	}
 };
 
 template<typename T, Tracking::TrackingId tid>
 class TReadVal;
 
-template<typename T, Tracking::TrackingSet s>
+template<typename T, Tracking::TrackingSet st>
 class IntermVal{
 private:
 	T internal;
 	IntermVal(T &&t):internal(t){}
+	static constexpr long long s = st;
 
 public:
 
@@ -83,8 +104,8 @@ public:
 	IntermVal(const IntermVal<T,id> &rv):internal(rv.internal){}
 
 	template<Tracking::TrackingSet s_>
-	IntermVal<T,Tracking::combine(s,s_)> operator+=(IntermVal<T,s_> v){
-		return std::move(internal += v.internal);
+	IntermVal<T,Tracking::combine(s,s_)> operator+(IntermVal<T,s_> v){
+		return std::move(internal + v.internal);
 	}
 
 	template<typename F, typename G, typename... Args>
@@ -107,6 +128,12 @@ public:
 		std::cout << internal << std::endl;
 	}
 
+	static void displaySources(){
+		for (auto e : Tracking::asList(s))
+			std::cout << e << ",";
+		std::cout << std::endl;
+	}
+
 };
 
 template<typename T, Tracking::TrackingId tid>
@@ -119,3 +146,11 @@ public:
 
 
 #define ReadVal(a) TReadVal<a, gen_id()>
+
+#define TIF3(a,f,g,b, c, d) {						\
+		a.ifTrue([](decltype(a.touch(std::move(b))) b, \
+			    decltype(a.touch(std::move(d))) d,		\
+			    decltype(a.touch(std::move(c))) c) {f}	\
+			 ,[](decltype(a.touch(std::move(b))) b, \
+			     decltype(a.touch(std::move(d))) d, \
+			     decltype(a.touch(std::move(c))) c) {g}, b, d, c ); }
