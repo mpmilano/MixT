@@ -40,9 +40,15 @@ namespace Tracking {
 	typedef long long TrackingSet;
 	typedef long long TrackingId;
 
-	constexpr TrackingSet combine(TrackingSet a, TrackingId b){
-		return a * b;
+	constexpr TrackingSet combine(TrackingSet a){
+		return a;
 	}
+
+	template<typename... Args>
+	constexpr typename std::enable_if<sizeof...(Args) != 0, TrackingSet>::type combine(TrackingSet a, Args... b){
+		return a * combine(b...);
+	}	
+	
 
 	constexpr bool contains(TrackingSet set, TrackingId member){
 		return (set % member) == 0;
@@ -93,11 +99,11 @@ private:
 
 public:
 
-	template<Tracking::TrackingSet s_>
-	auto touch(IntermVal<T, s_> &&t){
+	template<typename T_, Tracking::TrackingSet s_>
+	auto touch(IntermVal<T_, s_> &&t){
 		using namespace Tracking;
 		constexpr auto v = combine(s, sub(s_,s));
-		return (IntermVal<T, v>) std::move(t);
+		return (IntermVal<T_, v>) std::move(t);
 	}
 
 	template<Tracking::TrackingId id>
@@ -108,8 +114,30 @@ public:
 		return std::move(internal + v.internal);
 	}
 
+	template<Tracking::TrackingSet s_>
+	IntermVal<T,Tracking::combine(s,s_)> operator-(IntermVal<T,s_> v){
+		return std::move(internal - v.internal);
+	}
+
+	template<Tracking::TrackingSet s_>
+	IntermVal<T,Tracking::combine(s,s_)> operator*(IntermVal<T,s_> v){
+		return std::move(internal * v.internal);
+	}
+
+	template<Tracking::TrackingSet s_>
+	IntermVal<T,Tracking::combine(s,s_)> operator/(IntermVal<T,s_> v){
+		return std::move(internal / v.internal);
+	}
+
+	template<Tracking::TrackingSet s_>
+	IntermVal<bool,Tracking::combine(s,s_)> operator==(IntermVal<T,s_> v){
+		return std::move(internal == v.internal);
+	}
+
+
+
 	template<typename F, typename G, typename... Args>
-	//typename std::enable_if <is_stateless<F, Args...>::value && is_stateless<G, Args...>::value >::type
+	//typename std::enable_if <is_stateless<F, strouch<Args>::type...>::value && is_stateless<G, stouch<Args>::type...>::value >::type
 	void
 	ifTrue(F f, G g, Args... rest) {
 		//rest should be exact items we wish to use in the subsequent computation.
@@ -141,7 +169,23 @@ class TReadVal : public IntermVal<T, tid>{
 
 public:
 	TReadVal(T t):IntermVal<T,tid>(std::move(t)){}
-	static Tracking::TrackingId id() { return tid;}
+	static constexpr Tracking::TrackingId id() { return tid;}
+};
+
+template<typename T, Tracking::TrackingSet... permitted>
+class WriteVal {
+private:
+	static constexpr Tracking::TrackingSet permset = Tracking::combine(permitted...);
+public:
+	template<Tracking::TrackingSet cnds>
+	void add(IntermVal<T, cnds>){
+		static_assert(Tracking::subset(permset,cnds), "Error: id not allowed!");
+	}
+	template<Tracking::TrackingSet cnds>
+	void put(IntermVal<T, cnds>){
+		static_assert(Tracking::subset(permset,cnds), "Error: id not allowed!");
+	}
+	void incr(){}
 };
 
 

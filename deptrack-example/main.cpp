@@ -11,11 +11,14 @@ int main(){
 
 	ReadVal(int) a(1);
 	ReadVal(int) b(2);
+	ReadVal(int) b2(123);
 	ReadVal(int) c(3);
 	assert (gcd(35,49) == 7);
 	assert (a.id() != b.id());
 	assert (b.id() != c.id());
 	assert (a.id() != c.id());
+
+	WriteVal<int,a.id(),b.id()> sink;
 
 	a.display();
 	b.display();
@@ -47,8 +50,7 @@ int main(){
 		// void (*g)(A, B) = [](A b, B c){ c += b; assert(false);};
 		// a.ifTrue(f,g,b,c);
 		
-#define RHM ,
-		TIF3(a, 
+		TIF3((a == b), 
 		     //then
 		     {
 			     auto b_ = b + a + c;
@@ -58,12 +60,22 @@ int main(){
 		     }, 
 		     //else
 		     {
+			     c.displaySources();
 			     auto c_ = c + b;
 			     cout << "false branch" << endl;
 			     c_.display();
+			     c_.displaySources();
 		     }, 
 		     //params
 		     a, b, c);
+		
+		//fails - incorporates c, which wasn't on allowed list
+		//sink.put(a);
+		
+		//succeeds - allows a and b
+		sink.put(b);
+
+		
 		
 		cout <<  integral_constant<int, sieve(80)>::value << endl;
 		return 0;
