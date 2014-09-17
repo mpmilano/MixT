@@ -97,6 +97,15 @@ private:
 	IntermVal(T &&t):internal(t){}
 	static constexpr long long s = st;
 
+	template<typename T_, Tracking::TrackingSet s>
+	static constexpr bool not_intermval_f(IntermVal<T_,s>*) { return false; }
+
+	template<typename T_>
+	static constexpr bool not_intermval_f(T_*) { return true; }
+
+	template<typename T_>
+	struct not_intermval : public std::integral_constant<bool,not_intermval_f( (T_*) nullptr )>::type {};
+
 public:
 
 	template<typename T_, Tracking::TrackingSet s_>
@@ -109,29 +118,33 @@ public:
 	template<Tracking::TrackingId id>
 	IntermVal(const IntermVal<T,id> &rv):internal(rv.internal){}
 
-	template<Tracking::TrackingSet s_>
-	IntermVal<T,Tracking::combine(s,s_)> operator+(IntermVal<T,s_> v){
-		return std::move(internal + v.internal);
-	}
+#define allow_op(op) \
+	template<Tracking::TrackingSet s_> \
+	auto operator op (IntermVal<T,s_> v){ \
+		auto tmp = internal  op  v.internal; \
+		return IntermVal<decltype(tmp), Tracking::combine(s,s_)> (std::move(tmp)); \
+	} \
+\
+	template<typename T_> \
+	auto operator op (T_ v){ \
+		static_assert(not_intermval<T_>::value, "Hey!  that's cheating!"); \
+		auto tmpres = internal  op  v; \
+		return IntermVal<decltype(tmpres),s> (std::move(tmpres)); \
+	} \
 
-	template<Tracking::TrackingSet s_>
-	IntermVal<T,Tracking::combine(s,s_)> operator-(IntermVal<T,s_> v){
-		return std::move(internal - v.internal);
-	}
+	allow_op(-)
+	allow_op(+)
+	allow_op(*)
+	allow_op(/)
+	allow_op(==)
+	allow_op(<)
+	allow_op(>)
 
-	template<Tracking::TrackingSet s_>
-	IntermVal<T,Tracking::combine(s,s_)> operator*(IntermVal<T,s_> v){
-		return std::move(internal * v.internal);
-	}
-
-	template<Tracking::TrackingSet s_>
-	IntermVal<T,Tracking::combine(s,s_)> operator/(IntermVal<T,s_> v){
-		return std::move(internal / v.internal);
-	}
-
-	template<Tracking::TrackingSet s_>
-	IntermVal<bool,Tracking::combine(s,s_)> operator==(IntermVal<T,s_> v){
-		return std::move(internal == v.internal);
+	template<typename F>
+	auto f(F g){
+		static_assert(is_stateless<F, T>::value, "No cheating!");
+		auto res = g(internal);
+		return IntermVal<decltype(res), s>(std::move(res));
 	}
 
 
@@ -177,6 +190,7 @@ class WriteVal {
 private:
 	static constexpr Tracking::TrackingSet permset = Tracking::combine(permitted...);
 public:
+
 	template<Tracking::TrackingSet cnds>
 	void add(IntermVal<T, cnds>){
 		static_assert(Tracking::subset(permset,cnds), "Error: id not allowed!");
@@ -198,3 +212,10 @@ public:
 			 ,[](decltype(a.touch(std::move(b))) b, \
 			     decltype(a.touch(std::move(d))) d, \
 			     decltype(a.touch(std::move(c))) c) {g}, b, d, c ); }
+
+
+#define TIF2(a,f,g,b, c) {						\
+		a.ifTrue([](decltype(a.touch(std::move(b))) b, \
+			    decltype(a.touch(std::move(c))) c) {f}	\
+			 ,[](decltype(a.touch(std::move(b))) b, \
+			     decltype(a.touch(std::move(c))) c) {g}, b, c ); }

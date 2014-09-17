@@ -3,8 +3,6 @@
 #include <cassert>
 #include <iostream>
 
-#define lambda(args...)
-
 using namespace std;
 
 int main(){
