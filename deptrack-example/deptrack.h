@@ -90,6 +90,9 @@ namespace Tracking {
 template<typename T, Tracking::TrackingId tid>
 class TReadVal;
 
+template<typename T, Tracking::TrackingSet... permitted>
+class WriteVal;
+
 template<typename T, Tracking::TrackingSet st>
 class IntermVal{
 private:
@@ -113,6 +116,13 @@ public:
 		using namespace Tracking;
 		constexpr auto v = combine(s, sub(s_,s));
 		return (IntermVal<T_, v>) std::move(t);
+	}
+
+	template<typename T_, Tracking::TrackingId... ids>
+	auto touch(WriteVal<T_,ids...> &&t) {
+		using namespace Tracking;
+		static_assert(contains(combine(ids...),st), "Invalid indirect flow detected!");
+		return t;
 	}
 
 	template<Tracking::TrackingId id>
@@ -187,23 +197,28 @@ public:
 
 template<typename T, Tracking::TrackingSet... permitted>
 class WriteVal {
-private:
-	static constexpr Tracking::TrackingSet permset = Tracking::combine(permitted...);
 public:
+	static constexpr Tracking::TrackingSet permset = Tracking::combine(permitted...);
 
 	template<Tracking::TrackingSet cnds>
 	void add(IntermVal<T, cnds>){
-		static_assert(Tracking::subset(permset,cnds), "Error: id not allowed!");
+		static_assert(Tracking::subset(permset,cnds), "Error: id not allowed! Invalid Flow!");
 	}
 	template<Tracking::TrackingSet cnds>
 	void put(IntermVal<T, cnds>){
-		static_assert(Tracking::subset(permset,cnds), "Error: id not allowed!");
+		static_assert(Tracking::subset(permset,cnds), "Error: id not allowed! Invalid Flow!");
 	}
 	void incr(){}
 };
 
 
 #define ReadVal(a) TReadVal<a, gen_id()>
+
+#define IDof(a) decltype(a)::id()
+
+#define TranVals(int, a_balance, ids...) ReadVal(int) a_balance##_R = decltype(a_balance##_R)(100); \
+	WriteVal<int,IDof(a_balance##_R), ##ids> a_balance##_W
+
 
 #define TIF3(a,f,g,b, c, d) {						\
 		a.ifTrue([](decltype(a.touch(std::move(b))) b, \
