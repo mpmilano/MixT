@@ -150,19 +150,45 @@ public:
 template<typename T, Tracking::TrackingId s, Tracking::TrackingSet... sets>
 struct TransVals : public std::pair<ReadVal<T,s>, WriteVal<T,s,sets...> > {
 	static constexpr Tracking::TrackingId id() {return s;};
-	ReadVal<T,id()> &r;
-	WriteVal<T,id(),sets...> &w;
+	ReadVal<T,id()>& r() {return this->first;}
+	WriteVal<T,id(),sets...>& w() {return this->second;}
 
 	TransVals(int init_val):
 		std::pair<ReadVal<T,id()>, WriteVal<T,id(),sets...> >(
 			ReadVal<T,id()>(init_val),
-			WriteVal<T,id(),sets...>()
-			),
-		r(this->first),w(this->second){}
+			WriteVal<T,id(),sets...>()){}
+
+	operator ReadVal<T,id()>& () {return this->first;}
+	operator WriteVal<T,id(),sets...>& () {return this->second;}
+
+#define forward_read(op)			   \
+	template<typename T_>			     \
+	auto op (T_ v){return r().op(v);}
+
+#define op_read(op) forward_read(operator op)
+
+#define forward_write(op)			   \
+	template<typename T_>			     \
+	auto op (T_ v){return w().op(v);}
+
+#define op_write(op) forward_write(operator op)
+
+	op_read(>)
+	op_read(+)
+	op_read(-)
+	op_read(/)
+	op_read(*)
+	op_read(<)
+	op_read(==)
+	forward_write(put)
+	forward_write(add)
+
 };
 
 #define TranVals(T, ids...) TransVals<T,gen_id(), ##ids>
 
+//so it would be really cool to hack clang and all, but I think that
+//these macros will work fine for the prototype stages.
 
 #define TIF3(a,f,g,b, c, d) {						\
 		a.ifTrue([](decltype(a.touch(std::move(b))) b, \

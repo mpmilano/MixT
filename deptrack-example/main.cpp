@@ -20,11 +20,11 @@ public:
 
 	template<Tracking::TrackingSet s>
 		void applyInterest(IntermVal<double,s> v){
-		a_balance.w.add(v.f(truncate));
+		a_balance.add(v.f(truncate));
 	}
 	
 	void calcInterest(){
-		applyInterest(a_balance.r * 0.3);
+		applyInterest(a_balance * 0.3);
 	}
 
 	//note - do we even need to touch intermediate values used in the computation?
@@ -32,15 +32,15 @@ public:
 	//escape the if-statement except through write-sources.
 
 	void withDraw(){
-		TIF((a_balance.r > 50),
+		TIF((a_balance > 50),
 		     {
-			     auto tmp = a_balance.r - 50;
-			     a_balance.w.put(tmp);
+			     auto tmp = a_balance - 50;
+			     a_balance.put(tmp);
 		     },
 		     {
 			     //compiler will warn if we don't
 			     //use available handles in both branches
-			     ignore(a_balance.w);
+			     ignore(a_balance);
 		     },
 		     a_balance);
 	}
