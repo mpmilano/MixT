@@ -147,7 +147,6 @@ public:
 
 #define IDof(a) decltype(a)::id()
 
-/*
 template<typename T, Tracking::TrackingId s, Tracking::TrackingSet... sets>
 struct TransVals : public std::pair<ReadVal<T,s>, WriteVal<T,s,sets...> > {
 	static constexpr Tracking::TrackingId id() {return s;};
@@ -156,21 +155,10 @@ struct TransVals : public std::pair<ReadVal<T,s>, WriteVal<T,s,sets...> > {
 
 	TransVals(int init_val):
 		std::pair<ReadVal<T,id()>, WriteVal<T,id(),sets...> >(
-			ReadVal<T,id()>(100),
+			ReadVal<T,id()>(init_val),
 			WriteVal<T,id(),sets...>()
 			),
 		r(this->first),w(this->second){}
-}; //*/
-
-
-template<typename T, Tracking::TrackingId s, Tracking::TrackingSet... sets>
-struct TransVals {
-	static constexpr Tracking::TrackingId id() {return s;};
-	ReadVal<T,id()> r;
-	WriteVal<T,id(),sets...> w;
-
-	TransVals(int init_val):r(ReadVal<T,id()>(init_val)),w(WriteVal<T,id(),sets...>()){}
-
 };
 
 #define TranVals(T, ids...) TransVals<T,gen_id(), ##ids>
