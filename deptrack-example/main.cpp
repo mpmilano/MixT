@@ -49,6 +49,29 @@ public:
 
 };
 
+template<typename T>
+class ListNode {
+public:
+
+	TransVals(ListNode) me;
+	TransVals(ListNode) next;
+	TransVals(T) value;
+	
+	ListNode(T value, ListNode prev, ListNode next)
+		:me(*this),next(next),value(value){
+		//local stuff
+		prev.next = me;
+		//transaction
+		prev.me.put(prev);
+	}
+
+}
+
+class LinkedList {
+	
+
+}
+
 
 int main(){
 	
