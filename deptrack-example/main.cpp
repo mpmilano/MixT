@@ -18,38 +18,41 @@ public:
 	banking():b_balance(100),a_balance(100){}
 
 
-	template<Tracking::TrackingSet s>
-		void applyInterest(IntermVal<double,s> v){
-		a_balance.add(v.f(truncate));
+	template<Tracking::TrackingSet s, TVparams>
+	void applyInterest(TransValsA balance, IntermVal<double,s> v){
+		balance.add(v.f(truncate));
 	}
 	
-	void calcInterest(){
-		applyInterest(a_balance * 0.3);
+	template<TVparams>
+	void calcInterest(TransValsA balance){
+		applyInterest(balance, balance * 0.3);
 	}
 
 	//note - do we even need to touch intermediate values used in the computation?
 	//we're going to touch any write-sources, and we're not allowing any values to 
 	//escape the if-statement except through write-sources.
 
-	void withDraw(){
-		TIF((a_balance > 50),
+	template<TVparams>
+	void withDraw(TransValsA balance){
+		TIF((balance > 50),
 		     {
-			     auto tmp = a_balance - 50;
-			     a_balance.put(tmp);
+			     auto tmp = balance - 50;
+			     balance.put(tmp);
 		     },
 		     {
 			     //compiler will warn if we don't
 			     //use available handles in both branches
-			     ignore(a_balance);
+			     ignore(balance);
 		     },
-		     a_balance);
+		     balance);
 	}
 
 };
 
 
 int main(){
-
-	banking().calcInterest();
+	
+	auto tmp = banking();
+	tmp.calcInterest(tmp.a_balance);
 
 }

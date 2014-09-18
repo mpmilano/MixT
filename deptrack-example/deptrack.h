@@ -160,6 +160,9 @@ struct TransVals : public ReadVal<T,s>, public WriteVal<T,s,sets...>,
 		std::pair<ReadVal<T,s>&, WriteVal<T,s,sets...>& >(*this,*this){}
 };
 
+#define TVparams typename __T___, Tracking::TrackingId __s___, Tracking::TrackingSet... __sets___
+#define TransValsA TransVals<__T___,__s___,__sets___...>
+
 #define TranVals(T, ids...) TransVals<T,gen_id(), ##ids>
 
 //so it would be really cool to hack clang and all, but I think that
