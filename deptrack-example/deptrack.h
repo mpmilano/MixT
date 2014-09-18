@@ -148,41 +148,16 @@ public:
 #define IDof(a) decltype(a)::id()
 
 template<typename T, Tracking::TrackingId s, Tracking::TrackingSet... sets>
-struct TransVals : public std::pair<ReadVal<T,s>, WriteVal<T,s,sets...> > {
-	static constexpr Tracking::TrackingId id() {return s;};
-	ReadVal<T,id()>& r() {return this->first;}
-	WriteVal<T,id(),sets...>& w() {return this->second;}
+struct TransVals : public ReadVal<T,s>, public WriteVal<T,s,sets...>, 
+		   public std::pair<ReadVal<T,s>&, WriteVal<T,s,sets...>& >
+{
+	ReadVal<T,s>& r() {return this->first;}
+	WriteVal<T,s,sets...>& w() {return this->second;}
 
 	TransVals(int init_val):
-		std::pair<ReadVal<T,id()>, WriteVal<T,id(),sets...> >(
-			ReadVal<T,id()>(init_val),
-			WriteVal<T,id(),sets...>()){}
-
-	operator ReadVal<T,id()>& () {return this->first;}
-	operator WriteVal<T,id(),sets...>& () {return this->second;}
-
-#define forward_read(op)			   \
-	template<typename T_>			     \
-	auto op (T_ v){return r().op(v);}
-
-#define op_read(op) forward_read(operator op)
-
-#define forward_write(op)			   \
-	template<typename T_>			     \
-	auto op (T_ v){return w().op(v);}
-
-#define op_write(op) forward_write(operator op)
-
-	op_read(>)
-	op_read(+)
-	op_read(-)
-	op_read(/)
-	op_read(*)
-	op_read(<)
-	op_read(==)
-	forward_write(put)
-	forward_write(add)
-
+		ReadVal<T,s>(init_val),
+		WriteVal<T,s,sets...>(),
+		std::pair<ReadVal<T,s>&, WriteVal<T,s,sets...>& >(*this,*this){}
 };
 
 #define TranVals(T, ids...) TransVals<T,gen_id(), ##ids>
