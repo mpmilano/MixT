@@ -11,18 +11,20 @@ class banking {
 
 public:
 	
-	TranVals(int,b_balance);
+	TranVals(int) b_balance;
 
-	TranVals(int,a_balance, IDof(b_balance_R) );
+	TranVals(int, IDof(b_balance) ) a_balance;
+
+	banking():b_balance(100),a_balance(100){}
 
 
 	template<Tracking::TrackingSet s>
 		void applyInterest(IntermVal<double,s> v){
-		a_balance_W.add(v.f(truncate));
+		a_balance.w.add(v.f(truncate));
 	}
 	
 	void calcInterest(){
-		applyInterest(a_balance_R * 0.3);
+		applyInterest(a_balance.r * 0.3);
 	}
 
 	//note - do we even need to touch intermediate values used in the computation?
@@ -30,20 +32,21 @@ public:
 	//escape the if-statement except through write-sources.
 
 	void withDraw(){
-		TIF2((a_balance_R > 50),
+		TIF((a_balance.r > 50),
 		     {
-			     auto tmp = a_balance_R - 50;
-			     a_balance_W.put(tmp);
+			     auto tmp = a_balance.r - 50;
+			     a_balance.w.put(tmp);
 		     },
 		     {
 			     //compiler will warn if we don't
 			     //use available handles in both branches
-			     ignore(a_balance_W);
+			     ignore(a_balance.w);
 		     },
-		     a_balance_R, a_balance_W);
+		     a_balance);
 	}
 
 };
+
 
 int main(){
 

@@ -3,101 +3,24 @@
 #include <iostream>
 #include <list>
 #include <cassert>
+#include <utility>
+#include "tracking.h"
 #include "../extras"
 
-constexpr int sieve(int ind0){
-	constexpr int limit = 10000;
-	int ind = ind0 % limit;
-	int primes[limit] = {};
-	int z = 1;
-
-	for (unsigned long long int i=2;i<limit;i++)
-		primes[i]=1;
-
-	for (unsigned long long int i=2;i<limit;i++)
-		if (primes[i])
-			for (unsigned long long int j=i;i*j<limit;j++)
-				primes[i*j]=0;
-
-	for (unsigned long long int i=2;i<limit;i++) 
-		if (primes[i] && (z++ == ind) )
-			return i;
-	return 0;
-}
-
-constexpr int gcd(int a, int b){
-	return b == 0 ? a : 
-		(gcd(b, a % b) );
-}
-
-namespace {
-	constexpr int zero = __COUNTER__;
-}
-#define gen_id() sieve(__COUNTER__)
-
-namespace Tracking {
-
-	typedef long long TrackingSet;
-	typedef long long TrackingId;
-
-	constexpr TrackingSet combine(TrackingSet a){
-		return a;
-	}
-
-	template<typename... Args>
-	constexpr typename std::enable_if<sizeof...(Args) != 0, TrackingSet>::type combine(TrackingSet a, Args... b){
-		return a * combine(b...);
-	}	
-	
-
-	constexpr bool contains(TrackingSet set, TrackingId member){
-		return (set % member) == 0;
-	}
-	constexpr bool subset (TrackingSet super, TrackingSet sub){
-		return (super % sub) == 0;
-	}
-	constexpr TrackingSet intersect (TrackingSet a, TrackingSet b){
-		return gcd(a,b);
-	}
-	constexpr TrackingSet empty(){
-		return 1;
-	}
-	constexpr TrackingSet singleton (TrackingId tt){
-		return tt;
-	}
-
-	constexpr TrackingSet sub (TrackingSet big, TrackingSet small){
-		auto v = intersect(big,small);
-		return big/v;
-	}
-
-	std::list<TrackingId> asList(TrackingSet s){
-		//really slow
-		TrackingSet curr = s;
-		std::list<TrackingId> ret;
-		for (int i = 1; curr != 1; ++i){
-			auto s = sieve(i);
-			if (contains(curr, s)){
-				ret.push_back(s);
-				curr /= s;
-				while (contains(curr,s)) curr /= s;
-			}
-		}
-		return ret;
-	}
-};
-
 template<typename T, Tracking::TrackingId tid>
-class TReadVal;
+class ReadVal;
 
 template<typename T, Tracking::TrackingSet... permitted>
 class WriteVal;
+
+template<typename T, Tracking::TrackingId s, Tracking::TrackingSet... sets>
+struct TransVals;
 
 template<typename T, Tracking::TrackingSet st>
 class IntermVal{
 private:
 	T internal;
-	IntermVal(T &&t):internal(t){}
+	IntermVal(T &&t):internal(t),r(*this){}
 	static constexpr long long s = st;
 
 	template<typename T_, Tracking::TrackingSet s>
@@ -110,6 +33,8 @@ private:
 	struct not_intermval : public std::integral_constant<bool,not_intermval_f( (T_*) nullptr )>::type {};
 
 public:
+
+	IntermVal &r;
 
 	template<typename T_, Tracking::TrackingSet s_>
 	auto touch(IntermVal<T_, s_> &&t){
@@ -125,8 +50,16 @@ public:
 		return t;
 	}
 
+	template<typename T_, Tracking::TrackingId id, Tracking::TrackingId... ids>
+	auto touch(TransVals<T_,id,ids...> &&t) {
+		using namespace Tracking;
+		static_assert(contains(combine(id,ids...),st), "Invalid indirect flow detected!");
+		return t;
+	}
+
+
 	template<Tracking::TrackingId id>
-	IntermVal(const IntermVal<T,id> &rv):internal(rv.internal){}
+	IntermVal(const IntermVal<T,id> &rv):internal(rv.internal),r(*this){}
 
 #define allow_op(op) \
 	template<Tracking::TrackingSet s_> \
@@ -170,7 +103,7 @@ public:
 	}
 
 	template<typename T_, Tracking::TrackingId tid>
-	friend class TReadVal;
+	friend class ReadVal;
 
 	template<typename T_, Tracking::TrackingSet s_>
 	friend class IntermVal;
@@ -188,10 +121,10 @@ public:
 };
 
 template<typename T, Tracking::TrackingId tid>
-class TReadVal : public IntermVal<T, tid>{
+class ReadVal : public IntermVal<T, tid>{
 
 public:
-	TReadVal(T t):IntermVal<T,tid>(std::move(t)){}
+	ReadVal(T t):IntermVal<T,tid>(std::move(t)){}
 	static constexpr Tracking::TrackingId id() { return tid;}
 };
 
@@ -212,12 +145,35 @@ public:
 };
 
 
-#define ReadVal(a) TReadVal<a, gen_id()>
-
 #define IDof(a) decltype(a)::id()
 
-#define TranVals(int, a_balance, ids...) ReadVal(int) a_balance##_R = decltype(a_balance##_R)(100); \
-	WriteVal<int,IDof(a_balance##_R), ##ids> a_balance##_W
+/*
+template<typename T, Tracking::TrackingId s, Tracking::TrackingSet... sets>
+struct TransVals : public std::pair<ReadVal<T,s>, WriteVal<T,s,sets...> > {
+	static constexpr Tracking::TrackingId id() {return s;};
+	ReadVal<T,id()> &r;
+	WriteVal<T,id(),sets...> &w;
+
+	TransVals(int init_val):
+		std::pair<ReadVal<T,id()>, WriteVal<T,id(),sets...> >(
+			ReadVal<T,id()>(100),
+			WriteVal<T,id(),sets...>()
+			),
+		r(this->first),w(this->second){}
+}; //*/
+
+
+template<typename T, Tracking::TrackingId s, Tracking::TrackingSet... sets>
+struct TransVals {
+	static constexpr Tracking::TrackingId id() {return s;};
+	ReadVal<T,id()> r;
+	WriteVal<T,id(),sets...> w;
+
+	TransVals(int init_val):r(ReadVal<T,id()>(init_val)),w(WriteVal<T,id(),sets...>()){}
+
+};
+
+#define TranVals(T, ids...) TransVals<T,gen_id(), ##ids>
 
 
 #define TIF3(a,f,g,b, c, d) {						\
@@ -234,3 +190,7 @@ public:
 			    decltype(a.touch(std::move(c))) c) {f}	\
 			 ,[](decltype(a.touch(std::move(b))) b, \
 			     decltype(a.touch(std::move(c))) c) {g}, b, c ); }
+
+#define TIF(a,f,g,b) {						\
+		a.ifTrue([](decltype(a.touch(std::move(b))) b) {f},	\
+			 [](decltype(a.touch(std::move(b))) b) {g}, b); }
