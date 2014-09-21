@@ -51,11 +51,13 @@ public:
 
 };
 
+constexpr Tracking::TrackingId insert_id = gen_id();
+
 template<typename T>
 class ListNode {
 public:
 	TranVals(T) value;
-	TranVals(std::unique_ptr<ListNode<T> >, IDof(value) ) next;
+	TranVals(std::unique_ptr<ListNode<T> >, IDof(value),insert_id ) next;
 	
 	ListNode(T value):value(std::move(value)),next(nullptr){}
 
@@ -67,14 +69,14 @@ std::unique_ptr<T> unique_new (Args... a){ return std::unique_ptr<T>(new T(a...)
 template<typename T>
 class LinkedList {
 public:
-	TranVals(ListNode<T>) hd;
+	TranVals(ListNode<T>, insert_id) hd;
 
 	LinkedList(T value):hd(value){}
 
 	template<Tracking::TrackingId s, Tracking::TrackingSet... set>
 	void insert(T value, TransVals<ListNode<T>,s,set...> &prev){
 		//local stuff
-		TranVals(std::unique_ptr<ListNode<T> >) curr(unique_new<ListNode<T> >(value));
+		TransVals<std::unique_ptr<ListNode<T> >, insert_id, IDof(prev)> curr(unique_new<ListNode<T> >(value));
 		//transaction
 		typedef typename std::decay<decltype(curr)>::type::t currt;
 		typedef typename std::decay<decltype(prev)>::type::t prevt;

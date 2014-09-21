@@ -176,7 +176,7 @@ public:
 };
 
 
-#define IDof(a) decltype(a)::id()
+#define IDof(a) std::decay<decltype(a)>::type::id()
 
 template<typename T, Tracking::TrackingId s, Tracking::TrackingSet... sets>
 struct TransVals : public ReadVal<T,s>, public WriteVal<T,s,sets...>, 
