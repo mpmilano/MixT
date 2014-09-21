@@ -1,4 +1,6 @@
+#include <memory>
 #include "deptrack.h"
+
 
 template<typename T>
 void ignore(T){}
@@ -52,30 +54,45 @@ public:
 template<typename T>
 class ListNode {
 public:
-
-	TransVals(ListNode) me;
-	TransVals(ListNode) next;
-	TransVals(T) value;
+	TranVals(T) value;
+	TranVals(std::unique_ptr<ListNode<T> >, IDof(value) ) next;
 	
-	ListNode(T value, ListNode prev, ListNode next)
-		:me(*this),next(next),value(value){
-		//local stuff
-		prev.next = me;
-		//transaction
-		prev.me.put(prev);
-	}
+	ListNode(T value):value(std::move(value)),next(nullptr){}
 
-}
+};
 
+template<typename T, typename... Args>
+std::unique_ptr<T> unique_new (Args... a){ return std::unique_ptr<T>(new T(a...)); }
+
+template<typename T>
 class LinkedList {
-	
+public:
+	TranVals(ListNode<T>) hd;
 
-}
+	LinkedList(T value):hd(value){}
+
+	template<Tracking::TrackingId s, Tracking::TrackingSet... set>
+	void insert(T value, TransVals<ListNode<T>,s,set...> &prev){
+		//local stuff
+		TranVals(std::unique_ptr<ListNode<T> >) curr(unique_new<ListNode<T> >(value));
+		//transaction
+		typedef typename std::decay<decltype(curr)>::type::t currt;
+		typedef typename std::decay<decltype(prev)>::type::t prevt;
+		curr.c([](currt& curr, prevt& prev){curr->next.put(std::move(prev.next));}, prev);
+		prev.c([&](prevt& prev, currt&){prev.next.put(std::move(curr.i()));}, curr);
+		} //*/
+
+};
 
 
 int main(){
 	
 	auto tmp = banking();
 	tmp.calcInterest(tmp.a_balance);
+
+	LinkedList<int> ll(22);
+	ll.insert(12,ll.hd);
+	//ll.hd.value.display();
+	
 
 }

@@ -16,11 +16,15 @@ class WriteVal;
 template<typename T, Tracking::TrackingId s, Tracking::TrackingSet... sets>
 struct TransVals;
 
+
+
 template<typename T, Tracking::TrackingSet st>
 class IntermVal{
 private:
+	
 	T internal;
-	IntermVal(T &&t):internal(t),r(*this){}
+	
+	IntermVal(T &&t):internal(std::move(t)),r(*this){}
 	static constexpr long long s = st;
 
 	template<typename T_, Tracking::TrackingSet s>
@@ -64,14 +68,14 @@ public:
 #define allow_op(op) \
 	template<Tracking::TrackingSet s_> \
 	auto operator op (IntermVal<T,s_> v){ \
-		auto tmp = internal  op  v.internal; \
+		auto tmp = this->internal  op  v.internal; \
 		return IntermVal<decltype(tmp), Tracking::combine(s,s_)> (std::move(tmp)); \
 	} \
 \
 	template<typename T_> \
 	auto operator op (T_ v){ \
 		static_assert(not_intermval<T_>::value, "Hey!  that's cheating!"); \
-		auto tmpres = internal  op  v; \
+		auto tmpres = this->internal  op  v; \
 		return IntermVal<decltype(tmpres),s> (std::move(tmpres)); \
 	} \
 
@@ -86,7 +90,7 @@ public:
 	template<typename F>
 	auto f(F g){
 		static_assert(is_stateless<F, T>::value, "No cheating!");
-		auto res = g(internal);
+		auto res = g(this->internal);
 		return IntermVal<decltype(res), s>(std::move(res));
 	}
 
@@ -98,7 +102,7 @@ public:
 	ifTrue(F f, G g, Args... rest) {
 		//rest should be exact items we wish to use in the subsequent computation.
 		//will just cast them all to themselves + this type
-		if (internal) f(touch(std::move(rest))...);
+		if (this->internal) f(touch(std::move(rest))...);
 		else g(touch(std::move(rest))...);
 	}
 
@@ -108,8 +112,18 @@ public:
 	template<typename T_, Tracking::TrackingSet s_>
 	friend class IntermVal;
 
+	template<typename T_, Tracking::TrackingSet... s_>
+	friend class WriteVal;
+
+	template<typename T_, Tracking::TrackingId s_, Tracking::TrackingSet... >
+	friend struct TransVals;
+
+	//LOCAL ONLY.  FOR PROTOTYPING.
+	
+	T localVal(){ return this->internal;}
+
 	void display(){
-		std::cout << internal << std::endl;
+		std::cout << this->internal << std::endl;
 	}
 
 	static void displaySources(){
@@ -124,13 +138,19 @@ template<typename T, Tracking::TrackingId tid>
 class ReadVal : public IntermVal<T, tid>{
 
 public:
-	ReadVal(T t):IntermVal<T,tid>(std::move(t)){}
+	ReadVal(T &&t):IntermVal<T,tid>(std::move(t)){}
 	static constexpr Tracking::TrackingId id() { return tid;}
+	operator IntermVal<T,tid> () {return *this;}
 };
 
 template<typename T, Tracking::TrackingSet... permitted>
 class WriteVal {
+private:
+	T& internal;
 public:
+
+	WriteVal(T &t):internal(t){}
+
 	static constexpr Tracking::TrackingSet permset = Tracking::combine(permitted...);
 
 	template<Tracking::TrackingSet cnds>
@@ -138,10 +158,21 @@ public:
 		static_assert(Tracking::subset(permset,cnds), "Error: id not allowed! Invalid Flow!");
 	}
 	template<Tracking::TrackingSet cnds>
-	void put(IntermVal<T, cnds>){
+	void put(IntermVal<T, cnds>&){
 		static_assert(Tracking::subset(permset,cnds), "Error: id not allowed! Invalid Flow!");
 	}
+	template<Tracking::TrackingSet cnds>
+	void put(IntermVal<T, cnds>&&){
+		static_assert(Tracking::subset(permset,cnds), "Error: id not allowed! Invalid Flow!");
+	}
+
 	void incr(){}
+
+	template<typename F, typename T_, Tracking::TrackingSet cnds>
+	void c(F g, IntermVal<T_, cnds> &iv){
+		static_assert(Tracking::subset(permset,cnds), "invalid flow");
+		g(this->internal, iv.internal);
+	}
 };
 
 
@@ -151,12 +182,15 @@ template<typename T, Tracking::TrackingId s, Tracking::TrackingSet... sets>
 struct TransVals : public ReadVal<T,s>, public WriteVal<T,s,sets...>, 
 		   public std::pair<ReadVal<T,s>&, WriteVal<T,s,sets...>& >
 {
+
+	typedef T t;
 	ReadVal<T,s>& r() {return this->first;}
 	WriteVal<T,s,sets...>& w() {return this->second;}
+	IntermVal<T,s>& i() {return r();}
 
-	TransVals(int init_val):
-		ReadVal<T,s>(init_val),
-		WriteVal<T,s,sets...>(),
+	TransVals(T &&init_val):
+		ReadVal<T,s>(std::move(init_val)),
+		WriteVal<T,s,sets...>(this->ReadVal<T,s>::internal),
 		std::pair<ReadVal<T,s>&, WriteVal<T,s,sets...>& >(*this,*this){}
 };
 
