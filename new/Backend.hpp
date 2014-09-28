@@ -9,19 +9,19 @@ namespace Access{
 enum class Access {read, write, both, admin};
 
 	constexpr bool read(Access a){
-		return a != write;
+		return a != Access::write;
 	}
 
 	constexpr bool write(Access a){
-		return a != read;
+		return a != Access::read;
 	}
 
 	constexpr bool noread(Access a){
-		return a == write;
+		return a == Access::write;
 	}
 
 	constexpr bool nowrite(Access a){
-		return a == read;
+		return a == Access::read;
 	}
 
 }

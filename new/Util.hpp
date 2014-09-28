@@ -1,4 +1,5 @@
 #pragma once
+#include <type_traits>
 
 template<typename... Args>
 constexpr auto exists (Args...){
@@ -27,18 +28,10 @@ constexpr auto forall(T a, Args... b){
 		   : false));
 }
 
-template<typename T>
-constexpr bool bool_cast(T t){
-	return t;
-}
-
-template<typename Expr, typename... T>
-struct forall : std::integral_constant <bool, forall(bool_cast(Expr<T>)...)> {};
-
 
 template<typename T, typename Maybe>
 class is_T_helper{
-	static constexpr bool test(T* t){return true;}
+	static constexpr bool test(T* ){return true;}
 	template<typename _t>
 	static constexpr bool test(_t ){return false;}
 

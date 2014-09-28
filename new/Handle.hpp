@@ -3,27 +3,28 @@
 #include "Instance.hpp"
 
 template<location l>
-Instance<l>::class GenericHandle {
+class Instance<l>::GenericHandle {
 public:
 	typedef int HandleID;
-	const HandleID id() = 0;
-	
-	template<typename T, Level l2, Access::Access a>
-	bool is_type(Handle<T,l2,a>*) = 0;
-
+	virtual HandleID id() const = 0;
 };
-
 
 
 template<location l1>
 template<typename T>
-Instance<l1>::class TypedHandle : GenericHandle{
+class Instance<l1>::TypedHandle : GenericHandle{
 private:
 	StoredObject<T> &obj;
+public:
+	TypedHandle(StoredObject<T> &o):obj(o){}
+	
 };
 
 template<location l1>
 template<typename T, Level l, Access::Access a>
-Instance<l1>::class Handle : TypedHandle<T>{
+class Instance<l1>::Handle : TypedHandle<T>{
+	
+public:
+	Handle(StoredObject<T> &o):TypedHandle<T>(o){}
 	
 };
