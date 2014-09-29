@@ -6,6 +6,7 @@
 
 template<location l>
 class Instance<l>::StoredBlob{
+public:
 	typedef int ObjectID;
 	virtual ObjectID id() = 0;
 	virtual void reset() = 0;
@@ -18,9 +19,10 @@ class Instance<l>::StoredObject : public StoredBlob {
 private:
 	T orig;
 	T curr;
-	StoredBlob::ObjectID _id;
+	typename StoredBlob::ObjectID _id;
 public:
 	StoredObject(T &t):orig(t),curr(t),_id(gensym()){}
+	StoredObject(T &&t):orig(t),curr(orig),_id(gensym()){}
 
 	StoredObject(const StoredObject&) = delete;
 	
@@ -35,7 +37,6 @@ public:
 	virtual void checkpoint(){
 		orig = curr;
 	}
-	
-	template<LSWhen>
+
 	friend class LogStore;
 };

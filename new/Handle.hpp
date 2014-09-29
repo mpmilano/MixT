@@ -41,9 +41,8 @@ private:
 public:
 	TypedHandle(StoredObject<T> &o):obj(o){}
 	virtual typename StoredBlob::ObjectID id() const {
-		return o.id();
+		return obj.id();
 	}
-	template<LSWhen when>
 	friend class LogStore;
 	
 };
