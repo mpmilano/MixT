@@ -41,28 +41,13 @@ private:
 		return h.obj.curr;
 	}
 
-	static bool containsHandle(const typename StoredBlob::ObjectID){
-		return false;
+	StoredBlob& get_obj(typename StoredBlob::ObjectID id){
+		for (auto &o : objs){
+			if (o->id() == id)
+				return *o;
+		}
+		assert(false && "get_obj called on absent object!");
 	}
-
-	template<typename... Args>
-	static bool containsHandle(const typename StoredBlob::ObjectID hid, const GenericHandle& h, Args... a){
-		return h.id() == hid || containsHandle(hid,a...);
-	}
-
-	static std::unique_ptr<GenericHandle> findHandle(const typename StoredBlob::ObjectID){
-		assert(false && "Recursion bottomed out!");
-		return std::unique_ptr<GenericHandle>(nullptr);
-	}
-
-
-	template<typename T_, typename... Args>
-	static std::unique_ptr<GenericHandle> findHandle(const typename StoredBlob::ObjectID hid, const TypedHandle<T_> h, Args... hrest){
-		return 
-			hid == h.id() ? std::unique_ptr<GenericHandle>(new TypedHandle<T_>(h))
-			: findHandle(hid,hrest...);
-	}
-
 	
 public:
 
@@ -89,7 +74,11 @@ public:
 		return *( (typename Instance<l2>::LogStore*) nullptr);
 	}
 
-	void take_objs(std::list<std::unique_ptr<StoredBlob > > &){
+	void take_objs(const LogStore &from){
+		for (auto &o : objs){
+			if (from.contains_obj(o->id()))
+				o->overwrite(from.get_obj(o->id()));
+		}
 		assert(false && "todo");
 		//needs to overwrite all objects that are applicable, keep
 		//the objects which aren't. Assuming we're overwriting from
@@ -106,7 +95,7 @@ public:
 		for (auto &o : objs){
 			o.reset();
 		}
-		take_objs(ls.objs);
+		take_objs(ls);
 
 		for (auto& f : deltas) f();
 		deltas.clear();
@@ -116,14 +105,11 @@ public:
 		
 	}
 
-	//THIS DOES NOT CONSTITUTE AN 
-	//OWNERSHIP CHANGE.  IT'S JUST
-//TO CONVERT TO A MONOID.
 	template<typename T>
 	T* get (TypedHandle<T> h, T* init){
 		if (contains_obj(h.id()) ){
 			assert(obj_matches(h));
-			return &(h.obj.curr);
+			return new T(h.obj.curr);
 		}
 		else return init;
 	}
