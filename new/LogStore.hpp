@@ -79,12 +79,6 @@ public:
 			if (from.contains_obj(o->id()))
 				o->overwrite(from.get_obj(o->id()));
 		}
-		assert(false && "todo");
-		//needs to overwrite all objects that are applicable, keep
-		//the objects which aren't. Assuming we're overwriting from
-		//the original list anyway.
-		//make sure you don't do this in a way that invalidates the 
-		//existing handles!
 	}
 
 	template<location l2>
