@@ -55,7 +55,7 @@ private:
 	T& get_obj(TypedHandle<T> h){
 		assert(contains_obj(h.id()));
 		assert(obj_matches(h));
-		return *(h.obj.t);
+		return *(h.obj.curr);
 	}
 
 	static bool containsHandle(const typename GenericHandle::HandleID){
@@ -91,13 +91,6 @@ public:
 		objs.push_back(std::unique_ptr<StoredBlob>(tmp));
 		return TypedHandle<T>(*tmp);
 	}
-
-	template<typename T>
-	TypedHandle<T> takeObj(StoredObject<T> b) {
-		auto tmp = new StoredObject<T>(std::move(b));
-		objs.push_back(std::unique_ptr<StoredBlob>(tmp));
-		return TypedHandle<T>(*tmp);
-	}
 	
 	template<typename F, typename... Args>
 	void add(F f, Args... params){
@@ -117,25 +110,43 @@ public:
 		else deltas.push_back(update);
 	}
 
-	template<location l>
-	flush(Instance<l>::LogStore &to){
-		auto idmap = [&](typename GenericHandle::HandleID id){
-			auto tmp = to.idmap(id);
+	template<location l2>
+	Instance<l2>::LogStore&& sendTo() const{
+		assert(false && "todo");
+		return *((Instance<l2>::LogStore*)nullptr)
+	}
+
+	void take_objs(std::list<std::unique_ptr<StoredBlob b> > &l){
+		assert(false && "todo");
+		//needs to overwrite all objects that are applicable, keep
+		//the objects which aren't. Assuming we're overwriting from
+		//the original list anyway.
+	}
+
+	template<location l2>
+	fill_in(const Instance<l2>::LogStore &from){
+		static_assert(l2 != l, "This was intended for replacing local state with remote state.");
+		assert(from.deltas.empty());
+		LogStore ls = from.sendTo<l>();
+		for (auto &o : objs){
+			o.reset();
+		}
+		take_objs(ls.objs);
+		auto lsid = ls.idmap;
+		auto oldid = this->idmap;
+		auto idmap = [oldid, lsid](typename GenericHandle::HandleID id){
+			auto tmp = lsid(id);
 			if (tmp) return tmp;
-			else assert(false && "TODO");
+			else return oldid(id);
 		};
 		this->idmap = idmap;
 
 		for (auto& f : deltas) f();
 		deltas.clear();
-		idmap = init_idmap;
-	}
-
-	template<location l2>
-	typename std::enable_if<when == LSWhen::immediate>::type
-	replaceWith(typename Instance<l2>::template LogStore<LSWhen::immediate> &){
-		static_assert(l2 != l, "This was intended for replacing local state with remote state.");
-		//TODO body here
+		for (auto &o : objs){
+			o.checkpoint();
+		}
+		
 	}
 
 	//THIS DOES NOT CONSTITUTE AN 
@@ -145,7 +156,8 @@ public:
 	T* get (TypedHandle<T> h, T* init){
 		if (contains_obj(h.id()) ){
 			assert(obj_matches(h));
-			return h.obj.t.get();
+			return h.obj.curr.get();
 		}
+		else return init;
 	}
 };
