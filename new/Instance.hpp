@@ -1,6 +1,7 @@
 #pragma once
 #include "Backend.hpp"
 #include "Util.hpp"
+#include <memory>
 
 
 typedef int location;
@@ -8,10 +9,10 @@ typedef int location;
 
 template<location l>
 class Instance{
+public:
 
-	enum class LSWhen {deferred, immediate};
-	template<LSWhen when>
 	class LogStore;
+
 
 	class StoredBlob;
 	template<typename T> 
@@ -22,7 +23,10 @@ class Instance{
 	class TypedHandle;
 	template<typename T, Level l2, Access::Access a>
 	class Handle;
+
 	template<typename T>
-	struct is_handle : public is_T<GenericHandle,T> {};
+	struct is_handle;
+
+
 
 };

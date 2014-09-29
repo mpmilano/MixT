@@ -29,16 +29,9 @@ constexpr auto forall(T a, Args... b){
 }
 
 
-template<typename T, typename Maybe>
-class is_T_helper{
-	static constexpr bool test(T* ){return true;}
-	template<typename _t>
-	static constexpr bool test(_t ){return false;}
+int gensym(){
+	static int counter = 0;
+	return counter++;
+}
 
-	static constexpr bool value = test( (Maybe*) nullptr);
-
-};
-
-template<typename T, typename Maybe>
-struct is_T : public std::integral_constant <bool,is_T_helper<T,Maybe>::value > {};
 
