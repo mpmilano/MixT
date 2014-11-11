@@ -35,3 +35,8 @@ int gensym(){
 }
 
 
+#define catchall(name) template<typename.... Args> name (Args...)
+
+#define cerror(test, message) static_assert(test, message); if (test) std::cerr << message << std::endl; ::exit(1)
+
+#define carity(arity) cerror(sizeof...(Args) == (arity), "Error: function arity mismatch!")
