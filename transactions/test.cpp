@@ -1,9 +1,9 @@
 #include "Transactions.hpp"
 
 int main(){
-	ConStatement<strong> a("a");
-	ConStatement<weak> b("b");
+	ConStatement<strong> a;
+	ConStatement<weak> b;
 	
-	Seq<2,1> f(a);
+	Seq<1,0> f(a);
 	f,b;
 }
