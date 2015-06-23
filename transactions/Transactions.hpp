@@ -3,18 +3,19 @@
 #include "utils.hpp"
 #include <string>
 #include <memory>
+#include <tuple>
 
 typedef backend::Level Level;
 
 template<Level l>
-class ConStatement {
-public:
-	virtual bool operator==(const ConStatement&) const = 0;
+struct ConStatement {
+
 };
 
 template<Level l>
-class Noop : public ConStatement<l>, std::true_type{
+class Noop : public ConStatement<l> {
 public:
+	Noop(){}
 	bool operator==(const Noop &) const {return true;}
 	bool operator==(const ConStatement<l>& c) const {
 		if (Noop* n = dynamic_cast<Noop>(&c)) return true;
@@ -22,50 +23,84 @@ public:
 	}
 };
 
-constexpr Level strong = Level::strong;
-constexpr Level weak = Level::causal;
+const Noop<Level::strong> dummy1;
+const Noop<Level::causal> dummy2;
 
-const ConStatement<strong> dummy1 = Noop<strong>();
-const ConStatement<weak> dummy2 = Noop<weak>();
+template<typename T, Level level, typename StrongNext, typename WeakNext>
+class Seq;
 
-template<std::size_t size_strong, std::size_t size_weak>
+template<Level l, typename T>
+static auto make_seq(const T &stm){
+	auto d1 = std::make_tuple(dummy1);
+	auto d2 = std::make_tuple(dummy2);
+	return Seq<T,l, decltype(d1),decltype(d2)>(stm,d1,d2);
+}
+
+
+//StrongNext and WeakNext are tuples of operations.
+template<typename T, Level level, typename StrongNext, typename WeakNext>
 class Seq {
 private:
-	const std::array<ConStatement<strong>, size_strong + 1> strong_statements;
-	const std::array<ConStatement<weak>, size_weak + 1> weak_statements;
+	const T member;
+	const StrongNext strong;
+	const WeakNext weak;	
+
+public:
+	Seq(const T &mem,
+		const StrongNext &sn,
+		const WeakNext &wn):
+		member(mem),
+		strong(sn),
+		weak(wn){}
+	
+private:
+	
+	template<typename T1, typename other1_strong, typename other1_weak,
+			 typename T2, typename other2_strong, typename other2_weak, Level l>
+	static auto build_seq(const Seq<T1, l, other1_strong, other1_weak> &o1,
+						  const Seq<T2, Level::strong, other2_strong, other2_weak>
+						  &o2){
+			auto sn =
+				std::tuple_cat(o1.strong,
+							   std::make_tuple(o2.member),
+							   o2.strong);
+			auto wn =
+				std::tuple_cat(o1.weak,
+							   o2.weak);
+			return Seq<T1, l, decltype(sn), decltype(wn)>(o1.member,sn,wn);
+	}
+
+	template<typename T1, typename other1_strong, typename other1_weak,
+			 typename T2, typename other2_strong, typename other2_weak, Level l>
+	static auto build_seq(const Seq<T1, l, other1_strong, other1_weak> &o1,
+						  const Seq<T2, Level::causal, other2_strong, other2_weak>
+						  &o2){
+			auto sn =
+				std::tuple_cat(o1.strong,o2.strong);
+			auto wn =
+				std::tuple_cat(o1.weak,
+							   std::make_tuple(o2.member),
+							   o2.weak);
+			return Seq<T1, l, decltype(sn), decltype(wn)>(o1.member,sn,wn);
+	}
+	
 public:
 
-	template<std::size_t othersize1_strong, std::size_t othersize1_weak,
-			 std::size_t othersize2_strong, std::size_t othersize2_weak >
-	Seq(const Seq<othersize1_strong, othersize1_weak> &a,
-		const Seq<othersize2_strong, othersize2_weak> &b):
-		strong_statements(
-			prefix_array(a.strong_statements,b.strong_statements,dummy1)),
-		weak_statements(
-			prefix_array(a.weak_statements, b.weak_statements,dummy2))
-		{}
+
 	
-	template<std::size_t othersize_strong, std::size_t othersize_weak>
-	auto operator,(const Seq<othersize_strong, othersize_weak> &s2) const {
-		return Seq<size_strong + othersize_strong,size_weak + othersize_weak>
-			(*this,s2);
-	}
-	
-	auto operator,(const ConStatement<strong> &stm) const{
-		Seq<1,0> tmp(stm);
-		return Seq<size_strong + 1, size_weak>(*this,tmp);
+	template<typename T2, Level l, typename other_strong, typename other_weak>
+	auto operator,(const Seq<T2, l, other_strong, other_weak> &s2) const {
+		return build_seq(*this,s2);
 	}
 
-	auto operator,(const ConStatement<weak> &stm) const{
-		Seq<0,1> tmp(stm);
-		return Seq<size_strong, size_weak + 1>(*this,tmp);
+	template<typename T2>
+	auto operator,(const T2 &stm) const{
+		return build_seq(*this,make_seq<Level::causal>(stm));
 	}
 
-	Seq(const ConStatement<strong> &stm):strong_statements({{dummy1,stm}}),weak_statements{{dummy2}}{}
-	
-	Seq(const ConStatement<weak> &stm):strong_statements{{dummy1}},weak_statements{{dummy2,stm}}{}
-
-	template<std::size_t ss, std::size_t sw>
+	template<typename T2, Level l, typename StrongNext2, typename WeakNext2>
 	friend class Seq;
 };
+
+
 
