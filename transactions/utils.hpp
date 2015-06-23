@@ -1,6 +1,7 @@
 #pragma once
 #include <type_traits>
 #include <cassert>
+#include <tuple>
 
 template<typename T, std::size_t size1, std::size_t size2>
 auto prefix_array(const std::array<T,size1>& t,
@@ -20,5 +21,6 @@ auto prefix_array(const std::array<T,size1>& t,
 	}
 	return ret;
 }
+
 
 #define restrict(x) typename ignore = typename std::enable_if<x>::type

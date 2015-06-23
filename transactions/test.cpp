@@ -2,6 +2,6 @@
 
 int main(){
 	
-	auto a = make_seq<Level::strong>(0);
-	a,1;
+	auto a = make_seq<Level::strong>(CSInt<Level::strong,0>());
+	a,CSInt<Level::causal,1>();
 }

@@ -4,6 +4,7 @@
 #include <string>
 #include <memory>
 #include <tuple>
+#include "../extras"
 
 typedef backend::Level Level;
 
@@ -23,6 +24,13 @@ public:
 	}
 };
 
+
+template<Level l, int i>
+class CSInt : public ConStatement<l>, std::integral_constant<int,i>::type {
+public:
+	CSInt(){}
+};
+
 const Noop<Level::strong> dummy1;
 const Noop<Level::causal> dummy2;
 
@@ -36,10 +44,36 @@ static auto make_seq(const T &stm){
 	return Seq<T,l, decltype(d1),decltype(d2)>(stm,d1,d2);
 }
 
+template<typename A>
+constexpr bool is_tuple_f(A*){
+	return false;
+}
+
+template<typename Cls>
+struct is_ConStatement : 
+	std::integral_constant<bool, 
+						   std::is_base_of<ConStatement<Level::causal>,Cls>::value ||
+						   std::is_base_of<ConStatement<Level::strong>,Cls>::value
+						   >::type {};
+
+template<typename... Args>
+constexpr bool is_tuple_f(std::tuple<Args...>*){
+	return forall(is_ConStatement<Args>::value...);
+}
+
+template<typename F>
+struct is_cs_tuple : std::integral_constant<bool,
+										 is_tuple_f((F*) nullptr)
+										 >::type {};
+
+
 
 //StrongNext and WeakNext are tuples of operations.
 template<typename T, Level level, typename StrongNext, typename WeakNext>
-class Seq {
+class Seq : public ConStatement<level> {
+	static_assert(is_cs_tuple<StrongNext>::value,"Need to be a CS tuple!");
+	static_assert(is_cs_tuple<WeakNext>::value,"Need to be a CS tuple!");
+	
 private:
 	const T member;
 	const StrongNext strong;
