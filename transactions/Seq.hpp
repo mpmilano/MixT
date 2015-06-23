@@ -8,10 +8,9 @@ class Seq;
 
 template<typename T,
 		 restrict(is_base_CS<T>::value)>
-static
-Seq<T,get_level<T>::value,
-	decltype(std::make_tuple(dummy1)),
-	decltype(std::make_tuple(dummy2))>
+static Seq<T,get_level<T>::value,
+		   decltype(std::make_tuple(dummy1)),
+		   decltype(std::make_tuple(dummy2))>
 make_seq(const T &stm){
 	static_assert(is_base_CS<T>::value,"ugh restrict is broken");
 	auto d1 = std::make_tuple(dummy1);
@@ -75,8 +74,6 @@ private:
 	}
 	
 public:
-
-
 	
 	template<typename T2, Level l, typename other_strong, typename other_weak>
 	auto operator,(const Seq<T2, l, other_strong, other_weak> &s2) const {
