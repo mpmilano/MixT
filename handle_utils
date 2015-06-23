@@ -36,6 +36,15 @@ namespace backend {
 	template<typename T>
 	struct handle_read : neg<handle_no_read<T>::value> {};
 
+	template < Client_Id cid, Level L, HandleAccess HA, typename T>
+	static constexpr std::integral_constant<Level,L>
+	handle_level_f (DataStore::Handle<cid, L,HA,T>*)
+	{return std::integral_constant<Level,L>();}
+
+	template<typename T>
+	struct handle_level : decltype( handle_level_f ( (T*) nullptr) ) {
+		static_assert(is_handle<T>::value, "Not a handle!");
+	};
 	
 	template <typename C>
 	static constexpr std::integral_constant<bool,true> handle_no_write_f(C*)

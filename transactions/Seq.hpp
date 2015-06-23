@@ -96,5 +96,3 @@ public:
 	make_seq(const T2&);
 };
 
-
-
