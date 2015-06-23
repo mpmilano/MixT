@@ -66,7 +66,13 @@ struct is_cs_tuple : std::integral_constant<bool,
 										 is_tuple_f((F*) nullptr)
 										 >::type {};
 
+template<Level l>
+constexpr Level get_level_f(const ConStatement<l>*){
+	return l;
+}
 
+template<typename T>
+struct get_level : std::integral_constant<Level, get_level_f((T*) nullptr)>::type {};
 
 //StrongNext and WeakNext are tuples of operations.
 template<typename T, Level level, typename StrongNext, typename WeakNext>
