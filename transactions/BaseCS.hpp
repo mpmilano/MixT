@@ -11,17 +11,34 @@ public:
 		if (Noop* n = dynamic_cast<Noop>(&c)) return true;
 		else return false;
 	}
+
+	template<Level l2>
+	friend std::ostream & operator<<(std::ostream &os, const Noop<l2>&);
 };
+
+template<Level l>
+std::ostream & operator<<(std::ostream &os, const Noop<l>&){
+	
+	return os << "Noop@" << (l == Level::strong ? "strong" : "weak");
+}
 
 const Noop<Level::strong> dummy1;
 const Noop<Level::causal> dummy2;
 
 
 template<Level l, int i>
-class CSInt : public ConStatement<l>, std::integral_constant<int,i>::type {
+class CSInt : public ConStatement<l>, public std::integral_constant<int,i>::type {
 public:
 	CSInt(){}
+
+	template<Level l2, int i2>
+	friend std::ostream & operator<<(std::ostream &os, const CSInt<l2,i2>&);
 };
+
+template<Level l, int i>
+std::ostream & operator<<(std::ostream &os, const CSInt<l,i>&){
+	return os << i;
+}
 
 template<Level l, int i>
 constexpr bool is_base_CS_f(const CSInt<l,i>* ){
