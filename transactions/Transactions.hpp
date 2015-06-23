@@ -37,13 +37,6 @@ const Noop<Level::causal> dummy2;
 template<typename T, Level level, typename StrongNext, typename WeakNext>
 class Seq;
 
-template<Level l, typename T>
-static auto make_seq(const T &stm){
-	auto d1 = std::make_tuple(dummy1);
-	auto d2 = std::make_tuple(dummy2);
-	return Seq<T,l, decltype(d1),decltype(d2)>(stm,d1,d2);
-}
-
 template<typename A>
 constexpr bool is_tuple_f(A*){
 	return false;
@@ -73,6 +66,15 @@ constexpr Level get_level_f(const ConStatement<l>*){
 
 template<typename T>
 struct get_level : std::integral_constant<Level, get_level_f((T*) nullptr)>::type {};
+
+
+template<typename T>
+static auto make_seq(const T &stm){
+	auto d1 = std::make_tuple(dummy1);
+	auto d2 = std::make_tuple(dummy2);
+	return Seq<T,get_level<T>::value, decltype(d1),decltype(d2)>(stm,d1,d2);
+}
+
 
 //StrongNext and WeakNext are tuples of operations.
 template<typename T, Level level, typename StrongNext, typename WeakNext>
@@ -135,7 +137,7 @@ public:
 
 	template<typename T2>
 	auto operator,(const T2 &stm) const{
-		return build_seq(*this,make_seq<Level::causal>(stm));
+		return build_seq(*this,make_seq(stm));
 	}
 
 	template<typename T2, Level l, typename StrongNext2, typename WeakNext2>

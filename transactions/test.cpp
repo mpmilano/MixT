@@ -2,6 +2,7 @@
 
 int main(){
 	
-	auto a = make_seq<Level::strong>(CSInt<Level::strong,0>());
+	auto a = make_seq(CSInt<Level::strong,0>());
 	a,CSInt<Level::causal,1>();
+	assert(get_level<decltype(a)>::value == Level::strong);
 }
