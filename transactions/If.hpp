@@ -54,33 +54,14 @@ private:
 	If(const Cond& cond, const Then& then, const Els &els):
 		cond(cond),then(then),els(els)
 		{
-			static_assert(if_concept(Cond,Then,Els),"Bad types got to constructor");
-		}
-
-private:
-
-	template<typename Next, restrict((get_level<Next>::value == level
-									  || get_level<Next>::value == Level::causal)
-									 && is_ConStatement<Next>::value)>
-	auto comma_op(const Next& n,
-				  const ConStatement<get_level<Next>::value>&) const{
-		return make_if(cond, (make_seq(then),n), (make_seq(els),n));
-	}
-
-	template<typename Next, restrict(get_level<Next>::value != level
-									 && get_level<Next>::value == Level::strong
-									 && is_ConStatement<Next>::value)>
-	auto comma_op(const Next& n, const ConStatement<Level::strong>& ) const{
-		return make_seq(n);
-	}
-
-	static_assert(!is_base_CS<If>::value, "something is very wrong");
-	
+			static_assert(if_concept(Cond,Then,Els) && if_concept_2(Cond,Then,Els),
+						  "Bad types got to constructor");
+		}		
 public:
 
 	template<typename Next>
 	auto operator,(const Next &n) const {
-		return comma_op(n,n);
+		return make_seq(*this).operator,(n);
 	}
 	
 	template<typename Cond2, typename Then2, typename Els2, typename ignore>

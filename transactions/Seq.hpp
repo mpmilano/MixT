@@ -98,5 +98,5 @@ const Seq<std::tuple<>,std::tuple<> > & empty_seq(){
 template<typename StrongNext2, typename WeakNext2>
 std::ostream & operator<<(std::ostream &os,
 						  const Seq<StrongNext2,WeakNext2>& i){
-	return os << i.strong << "; WEAK: " << i.weak;
+	return os << "Strong: " << i.strong << "; WEAK: " << i.weak <<";";
 }
