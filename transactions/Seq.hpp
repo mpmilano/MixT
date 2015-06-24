@@ -2,111 +2,101 @@
 #include "ConStatement.hpp"
 #include "BaseCS.hpp"
 
-template<typename T, Level level, typename StrongNext, typename WeakNext>
+template<typename StrongNext, typename WeakNext>
 class Seq;
 
 
 template<typename T,
-		 restrict(is_base_CS<T>::value)>
-static Seq<T,get_level<T>::value,
-		   decltype(std::make_tuple(dummy1)),
-		   decltype(std::make_tuple(dummy2))>
-make_seq(const T &stm){
-	static_assert(is_base_CS<T>::value,"ugh restrict is broken");
-	assert(is_base_CS<T>::value);
-	auto d1 = std::make_tuple(dummy1);
-	auto d2 = std::make_tuple(dummy2);
-	return Seq<T,get_level<T>::value, decltype(d1),decltype(d2)>(stm,d1,d2);
+		 restrict(is_ConStatement<T>::value && get_level<T>::value == Level::strong)>
+Seq<std::tuple<T>, std::tuple<> > make_seq(const T &stm){
+	static_assert(is_ConStatement<T>::value,"ugh restrict is broken");
+	assert(is_ConStatement<T>::value);
+	return Seq<std::tuple<T>, std::tuple<> >(std::tuple<T>(stm), std::make_tuple());
 }
 
-template<typename T, Level level, typename StrongNext, typename WeakNext>
-static auto make_seq(const Seq<T,level,StrongNext, WeakNext> &stm) {
-	return Seq<T,level,StrongNext, WeakNext>(stm);
+template<typename T,
+		 restrict(is_ConStatement<T>::value && get_level<T>::value == Level::causal)>
+Seq<std::tuple<>, std::tuple<T> > make_seq(const T &stm){
+	static_assert(is_ConStatement<T>::value,"ugh restrict is broken");
+	assert(is_ConStatement<T>::value);
+	return Seq<std::tuple<>, std::tuple<T> >(std::make_tuple(), std::make_tuple(stm));
+}
+
+
+template<typename StrongNext, typename WeakNext>
+auto make_seq(const Seq<StrongNext, WeakNext> &stm) {
+	return Seq<StrongNext, WeakNext>(stm);
 }
 
 
 //StrongNext and WeakNext are tuples of operations.
-template<typename T, Level level, typename StrongNext, typename WeakNext>
-class Seq : public ConStatement<level> {
+template<typename StrongNext, typename WeakNext>
+class Seq {
 	static_assert(is_cs_tuple<StrongNext>::value,"Need to be a CS tuple!");
 	static_assert(is_cs_tuple<WeakNext>::value,"Need to be a CS tuple!");
 	
-private:
-	const T member;
+public:
 	const StrongNext strong;
 	const WeakNext weak;
 	
-	Seq(const T &mem,
-		const StrongNext &sn,
+private:
+	
+	Seq(const StrongNext &sn,
 		const WeakNext &wn):
-		member(mem),
 		strong(sn),
 		weak(wn){}
 	
 
 	
-	template<typename T1, typename other1_strong, typename other1_weak,
-			 typename T2, typename other2_strong, typename other2_weak, Level l>
-	static auto build_seq(const Seq<T1, l, other1_strong, other1_weak> &o1,
-						  const Seq<T2, Level::strong, other2_strong, other2_weak>
-						  &o2){
+	template<typename other1_strong, typename other1_weak,
+			 typename other2_strong, typename other2_weak>
+	static auto build_seq(const Seq<other1_strong, other1_weak> &o1,
+						  const Seq<other2_strong, other2_weak> &o2){
 			auto sn =
-				std::tuple_cat(o1.strong,
-							   std::make_tuple(o2.member),
-							   o2.strong);
+				std::tuple_cat(o1.strong, o2.strong);
 			auto wn =
-				std::tuple_cat(o1.weak,
-							   o2.weak);
-			return Seq<T1, l, decltype(sn), decltype(wn)>(o1.member,sn,wn);
-	}
-
-	template<typename T1, typename other1_strong, typename other1_weak,
-			 typename T2, typename other2_strong, typename other2_weak, Level l>
-	static auto build_seq(const Seq<T1, l, other1_strong, other1_weak> &o1,
-						  const Seq<T2, Level::causal, other2_strong, other2_weak>
-						  &o2){
-			auto sn =
-				std::tuple_cat(o1.strong,o2.strong);
-			auto wn =
-				std::tuple_cat(o1.weak,
-							   std::make_tuple(o2.member),
-							   o2.weak);
-			return Seq<T1, l, decltype(sn), decltype(wn)>(o1.member,sn,wn);
+				std::tuple_cat(o1.weak, o2.weak);
+			return Seq<decltype(sn), decltype(wn)>(sn,wn);
 	}
 	
 public:
 	
-	template<typename T2, Level l, typename other_strong, typename other_weak>
-	auto operator,(const Seq<T2, l, other_strong, other_weak> &s2) const {
+	template<typename other_strong, typename other_weak>
+	auto operator,(const Seq<other_strong, other_weak> &s2) const {
 		return build_seq(*this,s2);
 	}
 
 	template<typename T2,
-			 restrict(is_base_CS<T2>::value)>
+			 restrict(is_ConStatement<T2>::value)>
 	auto operator,(const T2 &stm) const{
-		assert(is_base_CS<T2>::value);
+		assert(is_ConStatement<T2>::value);
 		return build_seq(*this,make_seq(stm));
 	}
 
-	template<typename T2, Level l, typename StrongNext2, typename WeakNext2>
+	template<typename StrongNext2, typename WeakNext2>
 	friend class Seq;
 
-	template<typename T2, Level l, typename StrongNext2, typename WeakNext2>
+	template<typename StrongNext2, typename WeakNext2>
 	friend std::ostream & operator<<(std::ostream &os,
-									 const Seq<T2,l,StrongNext2,WeakNext2>& i);
+									 const Seq<StrongNext2,WeakNext2>& i);
 	
-	template<typename T2, typename ignore>
-	friend Seq<T2,get_level<T2>::value,
-			   decltype(std::make_tuple(dummy1)),
-			   decltype(std::make_tuple(dummy2))>
-	make_seq(const T2&);
+	template<typename T, typename ig>
+	friend Seq<std::tuple<>, std::tuple<T> > make_seq(const T &);
+	template<typename T, typename ig>
+	friend Seq<std::tuple<T>, std::tuple<> > make_seq(const T &);
+		
+	friend const Seq<std::tuple<>,std::tuple<> > & empty_seq();
 };
 
-template<typename T2, Level l, typename StrongNext2, typename WeakNext2>
+
+const Seq<std::tuple<>,std::tuple<> > & empty_seq(){
+	static Seq<std::tuple<>,std::tuple<> > ret(std::make_tuple(), std::make_tuple());
+	return ret;
+}
+
+
+template<typename StrongNext2, typename WeakNext2>
 std::ostream & operator<<(std::ostream &os,
-								 const Seq<T2,l,StrongNext2,WeakNext2>& i){
-	if (l == Level::strong)
-		return os << i.member << i.strong << "; WEAK: " << i.weak;
-	else if (l == Level::causal)
-		return os << i.strong << "; WEAK: " << i.member << i.weak;
+						  const Seq<StrongNext2,WeakNext2>& i){
+	return os << i.strong << "; WEAK: " << i.weak;
 }

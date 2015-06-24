@@ -12,22 +12,33 @@ class If;
 #define handle_level backend::handle_level
 
 #define if_concept(Cond,Then,Els) ( \
-\
-			 is_ConStatement<Then>::value && is_ConStatement<Els>::value \
-			 && is_ConExpr<Cond>::value  \
-			 && \
-\
-			 ((get_level<Cond>::value == Level::causal && \
-			   get_level<Then>::value == Level::causal && \
-			   get_level<Els>::value == Level::causal) \
-			  || \
-			  (get_level<Cond>::value == Level::strong)) \
-			 )
+																		\
+		is_ConStatement<Then>::value && is_ConStatement<Els>::value		\
+		&& is_ConExpr<Cond>::value										\
+																		\
+		)
+
+#define if_concept_2(Cond,Then,Els) \
+	((get_level<Cond>::value == Level::causal &&						\
+	  get_level<Then>::value == Level::causal &&						\
+	  get_level<Els>::value == Level::causal)							\
+	 ||																	\
+	 (get_level<Cond>::value == Level::strong))
 
 template<typename Cond, typename Then, typename Els,
 		 restrict(if_concept(Cond,Then,Els))>
 If<Cond, Then, Els> make_if(const Cond& c, const Then &t, const Els &e){
+	static_assert(if_concept_2(Cond,Then,Els), "Failure: consistency violation.");
 	return If<Cond,Then,Els>(c,t,e);
+}
+
+template<typename Cond, typename Then1, typename Then2, typename Els1, typename Els2>
+auto make_if(const Cond& c, const Seq<Then1, Then2> &t, const Seq<Els1, Els2> &e){
+	return tuple_2fold(
+		[&](const auto &a, const auto &b, const auto &acc){
+			auto acc2 = acc.operator,(make_if(c,a,b));
+			return acc2;
+		},t.strong,e.strong,empty_seq());
 }
 
 
