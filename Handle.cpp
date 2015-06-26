@@ -28,6 +28,13 @@ namespace backend {
 		void put(const T& t) {
 			hi().stored_obj.reset(new T(t));
 		}
-	};
 
+		template<typename T2, typename... RS>
+		auto o(RS...){
+			return T2(this)();
+		}
+	};
 }
+
+
+
