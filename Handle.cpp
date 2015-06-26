@@ -17,6 +17,17 @@ namespace backend {
 		friend class DataStore;
 		template<Client_Id>
 		friend class Client;
+		const T& get() const {
+			return *hi().stored_obj;
+		}
+
+		Handle clone() const {
+			return *this;
+		}
+
+		void put(const T& t) {
+			hi().stored_obj.reset(new T(t));
+		}
 	};
 
 }

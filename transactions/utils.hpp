@@ -75,7 +75,7 @@ auto tuple_2fold_impl(const F& fun, const Tuple1 &t1, const Tuple2 &t2, const Ac
 	
 template<int index, int max, typename Acc, typename F, typename Tuple1, typename Tuple2,
 			 restrict(index == max)>
-auto tuple_2fold_impl(const F& fun, const Tuple1 &t1, const Tuple2 &t2, const Acc &acc, const std::false_type::type*){
+auto tuple_2fold_impl(const F& , const Tuple1 &, const Tuple2 &, const Acc &acc, const std::false_type::type*){
 	return acc;
 }
 
@@ -91,3 +91,48 @@ auto tuple_2fold(const F& f, const Tuple1 &t1, const Tuple2 &t2, const Acc &acc)
 		(f,t1,t2,acc,
 		 (typename std::integral_constant<bool,(size > 0)>::type*) nullptr);
 }
+
+template<backend::Level l>
+struct ConStatement;
+
+
+template<typename Cls>
+struct is_ConStatement : 
+	std::integral_constant<bool, 
+						   std::is_base_of<ConStatement<backend::Level::causal>,Cls>::value ||
+						   std::is_base_of<ConStatement<backend::Level::strong>,Cls>::value
+						   >::type {};
+
+
+template<backend::Level l>
+constexpr backend::Level get_level_f(const ConStatement<l>*){
+	return l;
+}
+
+template<backend::Client_Id id, backend::Level l, backend::HandleAccess ha, typename T>
+constexpr backend::Level get_level_f(const backend::DataStore::Handle<id,l,ha,T>*){
+	return l;
+}
+
+template<typename T, restrict(!is_ConStatement<T>::value)>
+constexpr backend::Level get_level_f(const T*){
+	return backend::Level::strong;
+}
+
+template<typename T>
+struct get_level : std::integral_constant<backend::Level, get_level_f((T*) nullptr)>::type {};
+
+template<typename... T>
+struct min_level : std::integral_constant<backend::Level,
+										  (exists(is_causal(get_level<T>::value)...) ?
+										   backend::Level::causal :
+										   backend::Level::strong)>::type {};
+
+
+template<backend::Client_Id id, backend::Level l, backend::HandleAccess ha, typename T>
+T extract_type_f(const backend::DataStore::Handle<id,l,ha,T>*);
+
+template<typename T>
+struct extract_type {
+	typedef decltype(extract_type_f((typename std::decay<T>::type*) nullptr)) type;
+};

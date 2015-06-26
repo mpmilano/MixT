@@ -2,6 +2,8 @@
 #include "ConStatement.hpp"
 #include "BaseCS.hpp"
 
+
+//holes; for filling in variables. 
 template<typename StrongNext, typename WeakNext>
 class Seq;
 
