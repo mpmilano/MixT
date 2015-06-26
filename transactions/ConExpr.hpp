@@ -32,7 +32,7 @@ public:
 	std::function<T ()> f;
 	
 	FreeExpr(int, std::function<T (const typename extract_type<Handles>::type & ... )> f, Handles... h)
-		:f([f,h...](){return f(h.get()...);}) {}
+		:f([&,f,h...](){return f(h.get()...);}) {}
 
 	T operator()(){
 		return f();
