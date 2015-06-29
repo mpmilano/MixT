@@ -49,6 +49,7 @@ auto operator<<(std::basic_ostream<Ch, Tr>& os, std::tuple<Args...> const& t)
 
 
 #define restrict(x) typename ignore = typename std::enable_if<x>::type
+#define restrict2(x) typename ignore2 = typename std::enable_if<x>::type
 
 
 template<typename... T>
