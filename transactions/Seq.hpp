@@ -4,7 +4,7 @@
 
 
 //holes; for filling in variables. 
-template<typename StrongNext, typename WeakNext, typename... ReadSet>
+template<typename StrongNext, typename WeakNext>
 class Seq;
 
 
@@ -32,7 +32,7 @@ auto make_seq(const Seq<StrongNext, WeakNext> &stm) {
 
 
 //StrongNext and WeakNext are tuples of operations.
-template<typename StrongNext, typename WeakNext, typename... ReadSet>
+template<typename StrongNext, typename WeakNext>
 class Seq {
 	static_assert(is_cs_tuple<StrongNext>::value,"Need to be a CS tuple!");
 	static_assert(is_cs_tuple<WeakNext>::value,"Need to be a CS tuple!");
@@ -40,43 +40,13 @@ class Seq {
 public:
 	const StrongNext strong;
 	const WeakNext weak;
-	const std::tuple<ReadSet...> readSet;
 	
 private:
-
-#define grs(x)								   \
-	auto get_readset(const ConStatement<x> &){ \
-		return 0;							   \
-	}										   \
-
-	grs(Level::strong)
-
-	grs(Level::causal)
-
-	
-	
-	template<int curr, int size, restrict(curr < size), typename... Members>
-	auto get_readset(const std::tuple<Members...> &m, std::true_type*){
-		typename std::integral_constant<bool,(curr + 1 < size)>::type* dummy = nullptr;
-		return std::tuple_cat(std::make_tuple(get_readset(std::get<curr>(m))),get_readset<curr+1,size>(m,dummy));
-	}
-		
-	template<int curr, int size, restrict2(curr == size), typename... Members>
-	auto get_readset(const std::tuple<Members...> &, std::false_type*){
-		return std::make_tuple();
-	}
-	
-	auto get_readset(const StrongNext &sn){
-		typename std::integral_constant<bool,(0 < std::tuple_size<StrongNext>::value)>::type* dummy = nullptr;
-		return get_readset<0,std::tuple_size<StrongNext>::value>(sn,dummy);
-	}
 	
 	Seq(const StrongNext &sn,
 		const WeakNext &wn):
 		strong(sn),
-		weak(wn),
-		readSet(std::tuple_cat(get_readset(sn)))
-		{}
+		weak(wn){}
 	
 
 	
@@ -105,12 +75,12 @@ public:
 		return build_seq(*this,make_seq(stm));
 	}
 
-	template<typename StrongNext2, typename WeakNext2, typename... ReadSet2>
+	template<typename StrongNext2, typename WeakNext2>
 	friend class Seq;
 
-	template<typename StrongNext2, typename WeakNext2, typename... ReadSet2>
+	template<typename StrongNext2, typename WeakNext2>
 	friend std::ostream & operator<<(std::ostream &os,
-									 const Seq<StrongNext2,WeakNext2,ReadSet2...>& i);
+									 const Seq<StrongNext2,WeakNext2>& i);
 	
 	template<typename T, typename ig>
 	friend Seq<std::tuple<>, std::tuple<T> > make_seq(const T &);
@@ -127,8 +97,8 @@ const Seq<std::tuple<>,std::tuple<> > & empty_seq(){
 }
 
 
-template<typename StrongNext2, typename WeakNext2, typename... ReadSet2>
+template<typename StrongNext2, typename WeakNext2>
 std::ostream & operator<<(std::ostream &os,
-						  const Seq<StrongNext2,WeakNext2,ReadSet2...>& i){
+						  const Seq<StrongNext2,WeakNext2>& i){
 	return os << "Strong: " << i.strong << "; WEAK: " << i.weak <<";";
 }
