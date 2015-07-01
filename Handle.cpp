@@ -3,6 +3,18 @@
 
 namespace backend {
 
+	class HandleAbbrev{
+	public:
+
+		template<Client_Id id, Level L, HandleAccess HA, typename T>
+		friend class DataStore::Handle;
+
+		bool operator<(const HandleAbbrev&) const {
+			return false;
+		}
+		//idea; we use this for tracking the ReadSet.
+	};
+	
 	template<Client_Id id, Level L, HandleAccess HA, typename T>
 	class DataStore::Handle {
 	private:
@@ -32,6 +44,9 @@ namespace backend {
 		template<typename T2, typename... RS>
 		auto o(RS...){
 			return T2(this)();
+		}
+
+		operator HandleAbbrev(){
 		}
 	};
 }

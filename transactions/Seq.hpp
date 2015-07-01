@@ -1,6 +1,7 @@
 #pragma once
 #include "ConStatement.hpp"
 #include "BaseCS.hpp"
+#include <set>
 
 
 //holes; for filling in variables. 
@@ -42,11 +43,20 @@ public:
 	const WeakNext weak;
 	
 private:
+
+	std::set<backend::HandleAbbrev> strongReadSet;
+	decltype(strongReadSet) weakReadSet;
 	
-	Seq(const StrongNext &sn,
-		const WeakNext &wn):
-		strong(sn),
-		weak(wn){}
+	Seq(const StrongNext &sn, const WeakNext &wn)
+		:strong(sn), weak(wn),
+		 strongReadSet(fold(strong,[&]
+							(const auto &, const auto &acc){
+								return acc; //todo
+							},decltype(strongReadSet)())),
+		 weakReadSet(fold(weak,[&](const auto &, const auto &acc){
+					 return acc; //todo
+				 },decltype(weakReadSet)()))
+		{}
 	
 
 	

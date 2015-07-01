@@ -136,3 +136,20 @@ template<typename T>
 struct extract_type {
 	typedef decltype(extract_type_f((typename std::decay<T>::type*) nullptr)) type;
 };
+
+template<int ind, int stop, typename Acc, typename F, typename... Args, restrict(ind < stop)>
+auto fold_recr(const std::tuple<Args...> &vec, const F &f, const Acc &acc){
+	return fold_recr<ind+1,stop>(vec,f,f(std::get<ind>(vec),acc));
+}
+	
+template<int ind, int stop, typename Acc, typename F, typename... Args>
+typename std::enable_if<ind == stop,Acc>::type
+fold_recr(const std::tuple<Args...> &, const F &, const Acc &acc){
+	return acc;
+}
+
+template<typename Acc, typename F, typename... Args>
+auto fold(const std::tuple<Args...> &vec, const F &f, const Acc & acc){
+	return fold_recr<0,sizeof...(Args)>(vec,f,acc);
+}
+

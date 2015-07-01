@@ -25,6 +25,8 @@ struct is_ConExpr :
 
 template<typename T, typename... Handles>
 struct FreeExpr : public ConExpr<min_level<Handles...>::value > {
+private:
+	std::unique_ptr<const T> sto;
 public:
 
 	//todo: idea here is that only read-only things can be done to the handles
@@ -35,7 +37,8 @@ public:
 		:f([&,f,h...](){return f(h.get()...);}) {}
 
 	T operator()(){
-		return f();
+		if (!sto) sto.reset(new T(f()));
+		return *sto;
 	}
 	
 	template<typename F>
