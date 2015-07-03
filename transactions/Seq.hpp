@@ -43,15 +43,6 @@ public:
 	const WeakNext weak;
 	
 private:
-
-		//TODO: this is a placeholder
-#define grs(x)											\
-	static auto get_readset(const ConStatement<x>&){	\
-		static backend::HandleAbbrev hb;				\
-		return hb;										\
-	}
-	grs(Level::strong)
-	grs(Level::causal)
 	
 	std::set<backend::HandleAbbrev> strongReadSet;
 	decltype(strongReadSet) weakReadSet;
@@ -60,9 +51,7 @@ private:
 		static auto ret = [](const auto& e, const decltype(strongReadSet) &acc)
 			-> decltype(strongReadSet)
 			{
-				auto nw = cpy(acc);
-				nw.insert(get_readset(e));
-				return nw;
+				return set_union(acc,e.getReadSet());
 			};
 		return ret;
 	}
