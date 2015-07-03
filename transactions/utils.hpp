@@ -2,6 +2,7 @@
 #include <type_traits>
 #include <cassert>
 #include <tuple>
+#include <set>
 
 template<typename T, std::size_t size1, std::size_t size2>
 auto prefix_array(const std::array<T,size1>& t,
@@ -153,3 +154,49 @@ auto fold(const std::tuple<Args...> &vec, const F &f, const Acc & acc){
 	return fold_recr<0,sizeof...(Args)>(vec,f,acc);
 }
 
+template<typename T>
+constexpr auto mke(){
+	return *((T*) nullptr);
+}
+
+template<typename Ret, typename Acc, typename F, typename Vec,
+		 typename Actual_Return = decltype(fold<Acc,F>(mke<Vec>(),mke<F>(),mke<Acc>()))>
+Ret fold_(const Vec &vec, const F &f, const Acc & acc){
+	Actual_Return ret = fold<Acc,F>(vec,f,acc);
+	static_assert(std::is_same<Actual_Return,Ret>::value,
+				  "Error: this doesn't return what you thought it did.");
+	return ret;
+}
+
+template<typename T, typename O>
+auto set_union(const std::set<T> &a, const O &b){
+	std::set<T> ret;
+	ret.insert(std::begin(a),std::end(a));
+	ret.insert(std::begin(b),std::end(b));
+	return ret;
+}
+
+template<typename T, typename A, typename B>
+auto set_union(const std::set<T> &a, const A &b, const B &c){
+	return set_union(a,set_union(b,c));
+}
+
+template<typename T1>
+auto setify(const T1 &only){
+	std::set<T1> ret;
+	ret.insert(only);
+	return ret;
+}
+
+template<typename T1, typename... T>
+auto setify(const T1 &first, const T & ... rest){
+	std::set<T1> ret;
+	ret.insert(first);
+	return set_union(ret,setify(rest...));
+}
+
+
+template<typename T>
+T cpy(const T& t){
+	return T(t);
+}

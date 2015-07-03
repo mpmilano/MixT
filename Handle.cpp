@@ -46,7 +46,14 @@ namespace backend {
 			return T2(this)();
 		}
 
-		operator HandleAbbrev(){
+		//TODO: this whole HandleAbbrev thing.
+		operator HandleAbbrev() const {
+			HandleAbbrev ha;
+			return ha;
+		}
+
+		HandleAbbrev abbrev() const {
+			return *this;
 		}
 	};
 }

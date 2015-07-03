@@ -63,6 +63,11 @@ public:
 	auto operator,(const Next &n) const {
 		return make_seq(*this).operator,(n);
 	}
+
+	std::set<backend::HandleAbbrev> getReadSet() const {
+		return set_union(get_ReadSet(cond),then.getReadSet(),els.getReadSet());
+	}
+
 	
 	template<typename Cond2, typename Then2, typename Els2, typename ignore>
 	friend If<Cond2,Then2,Els2> make_if(const Cond2& , const Then2 &, const Els2 &);

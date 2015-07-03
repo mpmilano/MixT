@@ -16,12 +16,21 @@ class Assignment : ConStatement<get_level<Expr>::value> {
 public:
 
 	const std::function<void ()> thunk;
+	std::set<backend::HandleAbbrev> rs;
 	
 	template<Client_Id id, Level l, HandleAccess HA, typename T>
-	Assignment(DataStore::Handle<id,l,HA,T> h, Expr e):thunk([=](){return h.clone().put(e);}){
+	Assignment(DataStore::Handle<id,l,HA,T> h, Expr e)
+		:thunk([=](){return h.clone().put(e);}),
+		 rs(get_ReadSet(e))
+		{
 		static_assert(canWrite(HA),"Error: needs writeable handle!");
 		static_assert(l == Level::causal || level == Level::strong,"Error: flow violation");
 	}
+	
+	decltype(rs) getReadSet() const {
+		return rs;
+	}
+
 
 	void operator()(){
 		thunk();

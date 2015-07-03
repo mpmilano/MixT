@@ -12,6 +12,10 @@ public:
 		else return false;
 	}
 
+	std::set<backend::HandleAbbrev> getReadSet() const {
+		return std::set<backend::HandleAbbrev>();
+	}
+
 	template<Level l2>
 	friend std::ostream & operator<<(std::ostream &os, const Noop<l2>&);
 };
@@ -31,6 +35,10 @@ class CSInt : public ConStatement<l>, public std::integral_constant<int,i>::type
 public:
 	CSInt(){}
 
+	std::set<backend::HandleAbbrev> getReadSet() const {
+		return std::set<backend::HandleAbbrev>();
+	}
+	
 	template<Level l2, int i2>
 	friend std::ostream & operator<<(std::ostream &os, const CSInt<l2,i2>&);
 };

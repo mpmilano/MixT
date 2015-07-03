@@ -5,6 +5,7 @@
 #include <string>
 #include <memory>
 #include <tuple>
+#include <set>
 #include "../extras"
 
 
@@ -12,7 +13,7 @@ typedef backend::Level Level;
 
 template<Level l>
 struct ConStatement {
-
+	virtual std::set<backend::HandleAbbrev> getReadSet() const = 0;
 };
 
 template<typename A>

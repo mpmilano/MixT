@@ -44,18 +44,33 @@ public:
 	
 private:
 
+		//TODO: this is a placeholder
+#define grs(x)											\
+	static auto get_readset(const ConStatement<x>&){	\
+		static backend::HandleAbbrev hb;				\
+		return hb;										\
+	}
+	grs(Level::strong)
+	grs(Level::causal)
+	
 	std::set<backend::HandleAbbrev> strongReadSet;
 	decltype(strongReadSet) weakReadSet;
+
+	const static auto& accum(){
+		static auto ret = [](const auto& e, const decltype(strongReadSet) &acc)
+			-> decltype(strongReadSet)
+			{
+				auto nw = cpy(acc);
+				nw.insert(get_readset(e));
+				return nw;
+			};
+		return ret;
+	}
 	
 	Seq(const StrongNext &sn, const WeakNext &wn)
 		:strong(sn), weak(wn),
-		 strongReadSet(fold(strong,[&]
-							(const auto &, const auto &acc){
-								return acc; //todo
-							},decltype(strongReadSet)())),
-		 weakReadSet(fold(weak,[&](const auto &, const auto &acc){
-					 return acc; //todo
-				 },decltype(weakReadSet)()))
+		 strongReadSet(fold(strong,accum(),decltype(strongReadSet)())),
+		 weakReadSet(fold(weak,accum(),decltype(weakReadSet)()))
 		{}
 	
 

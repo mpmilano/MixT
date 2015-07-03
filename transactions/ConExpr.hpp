@@ -14,6 +14,12 @@ typedef backend::Level Level;
 template<Level l>
 struct ConExpr : public ConStatement<l> {};
 
+template<Level l>
+struct DummyConExpr : public ConExpr<l> {
+	std::set<backend::HandleAbbrev> getReadSet() const {
+		return std::set<backend::HandleAbbrev>();
+	}
+};
 
 template<typename Cls>
 struct is_ConExpr : 
@@ -22,6 +28,18 @@ struct is_ConExpr :
 						   std::is_base_of<ConExpr<Level::strong>,Cls>::value ||
 						   std::is_pod<Cls>::value
 						   >::type {};
+
+template<typename Expr, restrict(is_ConExpr<Expr>::value && std::is_pod<Expr>::value)>
+auto get_ReadSet(const Expr &){
+	return std::set<backend::HandleAbbrev>();
+}
+
+template<Level l>
+auto get_ReadSet(const ConExpr<l> &ce){
+	return ce.getReadSet();
+}
+
+
 
 template<typename T, typename... Handles>
 struct FreeExpr : public ConExpr<min_level<Handles...>::value > {
@@ -32,14 +50,22 @@ public:
 	//todo: idea here is that only read-only things can be done to the handles
 	//in this context.  Try to make that a reality please.
 	std::function<T ()> f;
+	const std::set<backend::HandleAbbrev> rs;
 	
 	FreeExpr(int, std::function<T (const typename extract_type<Handles>::type & ... )> f, Handles... h)
-		:f([&,f,h...](){return f(h.get()...);}) {}
+		:f([&,f,h...](){return f(h.get()...);}),
+		 rs(setify(h.abbrev()...))
+		{}
 
 	T operator()(){
 		if (!sto) sto.reset(new T(f()));
 		return *sto;
 	}
+
+	std::set<backend::HandleAbbrev> getReadSet() const {
+		return rs;
+	}
+
 	
 	template<typename F>
 	FreeExpr(F f, Handles... h):FreeExpr(0, convert(f), h...){}
