@@ -5,7 +5,7 @@
 #include <string>
 #include <memory>
 #include <tuple>
-#include <set>
+#include "../BitSet.hpp"
 #include "../extras"
 
 
@@ -13,7 +13,7 @@ typedef backend::Level Level;
 
 template<Level l>
 struct ConStatement {
-	virtual std::set<backend::HandleAbbrev> getReadSet() const = 0;
+	virtual BitSet<backend::HandleAbbrev> getReadSet() const = 0;
 };
 
 template<typename A>

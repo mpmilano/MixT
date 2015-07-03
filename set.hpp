@@ -25,7 +25,8 @@ private:
 		
 		static SetNode_p create(Elem_p &e, SetNode_p &l, SetNode_p &r){
 			SetNode_p ret;
-			ret.reset(new SetNode{e,l,r,ret,l->balanced});
+			assert(!l ? r && (!r->left) && !r->right : true);
+			ret.reset(new SetNode{e,l,r,ret,(l ? l->balanced : false)});
 			return ret;
 		}
 

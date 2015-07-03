@@ -64,7 +64,7 @@ public:
 		return make_seq(*this).operator,(n);
 	}
 
-	std::set<backend::HandleAbbrev> getReadSet() const {
+	BitSet<backend::HandleAbbrev> getReadSet() const {
 		return set_union(get_ReadSet(cond),then.getReadSet(),els.getReadSet());
 	}
 

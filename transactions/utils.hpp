@@ -50,6 +50,7 @@ auto operator<<(std::basic_ostream<Ch, Tr>& os, std::tuple<Args...> const& t)
 
 
 #define restrict(x) typename ignore = typename std::enable_if<x>::type
+#define restrict2(x) typename ignore2 = typename std::enable_if<x>::type
 
 
 template<typename... T>
@@ -168,6 +169,19 @@ Ret fold_(const Vec &vec, const F &f, const Acc & acc){
 	return ret;
 }
 
+#define has_member(x) template<typename T, typename = void> \
+	struct has_ ## x : std::false_type {};					\
+															\
+	template<typename T>									\
+	struct has_ ## x <T, decltype(std::declval<T>().  x, void())> : std::true_type { }
+
+has_member(CompatibleWithBitset);
+
+template<typename T>
+static constexpr bool can_bitset(){
+	return has_CompatibleWithBitset<T>::value;
+}
+
 template<typename T, typename O>
 auto set_union(const std::set<T> &a, const O &b){
 	std::set<T> ret;
@@ -181,7 +195,7 @@ auto set_union(const std::set<T> &a, const A &b, const B &c){
 	return set_union(a,set_union(b,c));
 }
 
-template<typename T1>
+template<typename T1, restrict(!can_bitset<T1>())>
 auto setify(const T1 &only){
 	std::set<T1> ret;
 	ret.insert(only);
@@ -189,7 +203,8 @@ auto setify(const T1 &only){
 }
 
 template<typename T1, typename... T>
-auto setify(const T1 &first, const T & ... rest){
+typename std::enable_if<!can_bitset<T1>(),std::set<T1> >::type
+setify(const T1 &first, const T & ... rest){
 	std::set<T1> ret;
 	ret.insert(first);
 	return set_union(ret,setify(rest...));
@@ -200,3 +215,4 @@ template<typename T>
 T cpy(const T& t){
 	return T(t);
 }
+

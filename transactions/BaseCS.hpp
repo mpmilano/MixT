@@ -12,8 +12,8 @@ public:
 		else return false;
 	}
 
-	std::set<backend::HandleAbbrev> getReadSet() const {
-		return std::set<backend::HandleAbbrev>();
+	BitSet<backend::HandleAbbrev> getReadSet() const {
+		return BitSet<backend::HandleAbbrev>();
 	}
 
 	template<Level l2>
@@ -35,8 +35,8 @@ class CSInt : public ConStatement<l>, public std::integral_constant<int,i>::type
 public:
 	CSInt(){}
 
-	std::set<backend::HandleAbbrev> getReadSet() const {
-		return std::set<backend::HandleAbbrev>();
+	BitSet<backend::HandleAbbrev> getReadSet() const {
+		return BitSet<backend::HandleAbbrev>();
 	}
 	
 	template<Level l2, int i2>

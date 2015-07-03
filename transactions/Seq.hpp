@@ -1,7 +1,7 @@
 #pragma once
 #include "ConStatement.hpp"
 #include "BaseCS.hpp"
-#include <set>
+#include "../BitSet.hpp"
 
 
 //holes; for filling in variables. 
@@ -44,7 +44,7 @@ public:
 	
 private:
 	
-	std::set<backend::HandleAbbrev> strongReadSet;
+	BitSet<backend::HandleAbbrev> strongReadSet;
 	decltype(strongReadSet) weakReadSet;
 
 	const static auto& accum(){

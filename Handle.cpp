@@ -1,16 +1,29 @@
 #pragma once
 #include "Backend.hpp"
+#include "BitSet.hpp"
 
 namespace backend {
 
 	class HandleAbbrev{
 	public:
 
+		static constexpr std::true_type* CompatibleWithBitset = nullptr;
+		const BitSet<HandleAbbrev>::member_t value;
+		typedef decltype(value) itype;
+		
+		//dear programmer; it's on you to make sure that this is true.
+		static constexpr int numbits = sizeof(decltype(value));
 		template<Client_Id id, Level L, HandleAccess HA, typename T>
 		friend class DataStore::Handle;
 
-		bool operator<(const HandleAbbrev&) const {
-			return false;
+		operator decltype(value)() const {
+			return value;
+		}
+		HandleAbbrev(decltype(value) v):value(v){}
+		
+		
+		bool operator<(const HandleAbbrev& o) const {
+			return value < o.value;
 		}
 		//idea; we use this for tracking the ReadSet.
 	};
@@ -48,8 +61,9 @@ namespace backend {
 
 		//TODO: this whole HandleAbbrev thing.
 		operator HandleAbbrev() const {
-			HandleAbbrev ha;
-			return ha;
+			assert(hi().rid < HandleAbbrev::numbits);
+			HandleAbbrev::itype i = 1;
+			return i << hi().rid;
 		}
 
 		HandleAbbrev abbrev() const {

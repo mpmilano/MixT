@@ -16,8 +16,8 @@ struct ConExpr : public ConStatement<l> {};
 
 template<Level l>
 struct DummyConExpr : public ConExpr<l> {
-	std::set<backend::HandleAbbrev> getReadSet() const {
-		return std::set<backend::HandleAbbrev>();
+	BitSet<backend::HandleAbbrev> getReadSet() const {
+		return BitSet<backend::HandleAbbrev>();
 	}
 };
 
@@ -31,7 +31,7 @@ struct is_ConExpr :
 
 template<typename Expr, restrict(is_ConExpr<Expr>::value && std::is_pod<Expr>::value)>
 auto get_ReadSet(const Expr &){
-	return std::set<backend::HandleAbbrev>();
+	return BitSet<backend::HandleAbbrev>();
 }
 
 template<Level l>
@@ -50,7 +50,7 @@ public:
 	//todo: idea here is that only read-only things can be done to the handles
 	//in this context.  Try to make that a reality please.
 	std::function<T ()> f;
-	const std::set<backend::HandleAbbrev> rs;
+	const BitSet<backend::HandleAbbrev> rs;
 	
 	FreeExpr(int, std::function<T (const typename extract_type<Handles>::type & ... )> f, Handles... h)
 		:f([&,f,h...](){return f(h.get()...);}),
@@ -62,7 +62,7 @@ public:
 		return *sto;
 	}
 
-	std::set<backend::HandleAbbrev> getReadSet() const {
+	BitSet<backend::HandleAbbrev> getReadSet() const {
 		return rs;
 	}
 

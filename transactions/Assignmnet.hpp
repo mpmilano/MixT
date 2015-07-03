@@ -16,7 +16,7 @@ class Assignment : ConStatement<get_level<Expr>::value> {
 public:
 
 	const std::function<void ()> thunk;
-	std::set<backend::HandleAbbrev> rs;
+	BitSet<backend::HandleAbbrev> rs;
 	
 	template<Client_Id id, Level l, HandleAccess HA, typename T>
 	Assignment(DataStore::Handle<id,l,HA,T> h, Expr e)
