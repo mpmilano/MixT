@@ -59,7 +59,6 @@ namespace backend {
 			return T2(this)();
 		}
 
-		//TODO: this whole HandleAbbrev thing.
 		operator HandleAbbrev() const {
 			assert(hi().rid < HandleAbbrev::numbits);
 			HandleAbbrev::itype i = 1;
