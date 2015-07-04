@@ -47,19 +47,21 @@ private:
 	BitSet<backend::HandleAbbrev> strongReadSet;
 	decltype(strongReadSet) weakReadSet;
 
-	const static auto& accum(){
-		static auto ret = [](const auto& e, const decltype(strongReadSet) &acc)
-			-> decltype(strongReadSet)
-			{
-				return set_union(acc,e.getReadSet());
-			};
-		return ret;
+	static decltype(strongReadSet) accumS(const ConStatement<backend::Level::strong> &e,
+								   const decltype(strongReadSet) &acc){
+		return set_union(acc,e.getReadSet());
 	}
+
+	static decltype(strongReadSet) accumW(const ConStatement<backend::Level::causal> &e,
+								   const decltype(strongReadSet) &acc){
+		return set_union(acc,e.getReadSet());
+	}
+
 	
 	Seq(const StrongNext &sn, const WeakNext &wn)
 		:strong(sn), weak(wn),
-		 strongReadSet(fold(strong,accum(),decltype(strongReadSet)())),
-		 weakReadSet(fold(weak,accum(),decltype(weakReadSet)()))
+		 strongReadSet(fold(strong,accumS,decltype(strongReadSet)())),
+		 weakReadSet(fold(weak,accumW,decltype(weakReadSet)()))
 		{}
 	
 

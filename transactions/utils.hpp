@@ -149,8 +149,18 @@ fold_recr(const std::tuple<Args...> &, const F &, const Acc &acc){
 }
 
 template<typename Acc, typename F, typename... Args>
-auto fold(const std::tuple<Args...> &vec, const F &f, const Acc & acc){
+auto fold_(const std::tuple<Args...> &vec, const F &f, const Acc & acc){
 	return fold_recr<0,sizeof...(Args)>(vec,f,acc);
+}
+
+template<typename Acc, typename F, typename Tuple, restrict(!std::is_function<F>::value)>
+auto fold(const Tuple &vec, const F &f, const Acc & acc){
+	return fold_(vec,f,acc);
+}
+
+template<typename Acc, typename Ret, typename Tuple, typename... Args>
+auto fold(const Tuple &vec, Ret (*f)(Args...), const Acc & acc){
+	return fold_(vec,convert(f),acc);
 }
 
 template<typename T>
