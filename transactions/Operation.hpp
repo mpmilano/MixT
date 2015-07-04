@@ -2,6 +2,7 @@
 #include "../Backend.hpp"
 #include "utils.hpp"
 #include "../handle_utils"
+#include "args-finder.hpp"
 
 //"Self" should always be the bottom of the inheritance.
 template<backend::Level l, backend::HandleAccess ha, typename Self>
@@ -22,7 +23,8 @@ public:
 		auto concat = std::tuple_cat(h,o);
 		constexpr int numparams = std::tuple_size<Handles>::value +
 			std::tuple_size<OtherArgs>::value;
-		return callFunc<Self>(Self::build,concat,gens<numparams>::build());
+		//auto f = convert(Self::build);
+		return callFunc(Self::build,concat,gens<numparams>::build());
 	}
 	
 private:
@@ -51,13 +53,3 @@ public:
 
 };
 
-struct dummy_operation : public Operation<backend::Level::strong, backend::HandleAccess::all, dummy_operation>
-{
-	template<typename H,restrict(backend::is_handle<H>::value)>
-	dummy_operation(const H&){}
-
-	template<typename H,restrict(backend::is_handle<H>::value)>
-	static dummy_operation build(H r){
-		return r;
-	}
-};

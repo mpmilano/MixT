@@ -1,6 +1,9 @@
+#pragma once
+
 #include <type_traits>
 #include <tuple>
 #include <functional>
+#include "restrict.hpp"
 
 using namespace std;
 
@@ -44,8 +47,15 @@ struct function_traits<ReturnType(ClassType::*)() const>
 	}
 };
 
-template<typename F>
-auto convert(F f) -> decltype(function_traits<F>::as_function(f))
+template<typename R, typename... Args>
+std::function<R (Args...)> convert(R (*f)(Args...))
+{
+	return f;
+}
+
+
+template<typename F, restrict(!std::is_function<F>::value)>
+auto convert(F f) 
 {
 	return function_traits<F>::as_function(f);
 }

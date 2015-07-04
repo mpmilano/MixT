@@ -2,7 +2,8 @@
 #include "Seq.hpp"
 #include "If.hpp"
 #include "Assignmnet.hpp"
-#include"Operate.hpp"
+#include "Operate.hpp"
+#include "Operation.hpp"
 #include <iostream>
 
 template<typename T>
@@ -10,11 +11,17 @@ constexpr T& id(const T& t){
 	return t;
 }
 
-struct dummyOP{
-	dummyOP(DataStore::Handle<1, Level::strong, HandleAccess::all, int>*){}
+struct dummy_operation : public Operation<backend::Level::strong, backend::HandleAccess::all, dummy_operation>
+{
+	typedef backend::DataStore::Handle<1,backend::Level::strong,backend::HandleAccess::all,int> H;
+	
+	dummy_operation(const H&){}
 
-	void operator()(){}
+	static dummy_operation build(const H& r){
+		return r;
+	}
 };
+
 
 int main(){
 
@@ -41,14 +48,12 @@ int main(){
 
 	hndl << 5 + 12;
 
-	op<dummyOP>(hndl);
-	
 	auto hndl2 = *(DataStore::Handle<1, Level::causal, HandleAccess::all, int>*) nullptr;
 
 	int tmp = 14;
 
 	//call an operation. 
-	hndl.o<dummyOP>();
+	hndl.o<dummy_operation>(0);
 	
 	auto fe = free_expr2(bool, hndl, hndl2, return hndl + hndl2 + tmp;);
 	bool b = fe();

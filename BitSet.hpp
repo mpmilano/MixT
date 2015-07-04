@@ -1,6 +1,21 @@
 #pragma once
 #include <bitset>
-#include "transactions/utils.hpp"
+#include <cassert>
+//#include "transactions/utils.hpp"
+
+#define has_member(x) template<typename T, typename = void> \
+	struct has_ ## x : std::false_type {};					\
+															\
+	template<typename T>									\
+	struct has_ ## x <T, decltype(std::declval<T>().  x, void())> : std::true_type { }
+
+has_member(CompatibleWithBitset);
+
+template<typename T>
+static constexpr bool can_bitset(){
+	return has_CompatibleWithBitset<T>::value;
+}
+
 
 template<typename T>
 struct BitSet {

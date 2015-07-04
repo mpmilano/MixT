@@ -1,33 +1,9 @@
 #pragma once
 #include "Backend.hpp"
-#include "BitSet.hpp"
+#include "transactions/Operation.hpp"
 
 namespace backend {
 
-	class HandleAbbrev{
-	public:
-
-		static constexpr std::true_type* CompatibleWithBitset = nullptr;
-		const BitSet<HandleAbbrev>::member_t value;
-		typedef decltype(value) itype;
-		
-		//dear programmer; it's on you to make sure that this is true.
-		static constexpr int numbits = sizeof(decltype(value));
-		template<Client_Id id, Level L, HandleAccess HA, typename T>
-		friend class DataStore::Handle;
-
-		operator decltype(value)() const {
-			return value;
-		}
-		HandleAbbrev(decltype(value) v):value(v){}
-		
-		
-		bool operator<(const HandleAbbrev& o) const {
-			return value < o.value;
-		}
-		//idea; we use this for tracking the ReadSet.
-	};
-	
 	template<Client_Id id, Level L, HandleAccess HA, typename T>
 	class DataStore::Handle {
 	private:
@@ -54,9 +30,11 @@ namespace backend {
 			hi().stored_obj.reset(new T(t));
 		}
 
-		template<typename T2, typename... RS>
-		auto o(RS...){
-			return T2(this)();
+		template<typename Operate, typename... OtherArgs>
+		auto o(const BitSet<HandleAbbrev> &rs, const OtherArgs & ... oa){
+			typedef Operation<Operate::level,Operate::access,Operate> Op;
+			auto tuples = Op::make_tuples(*this, oa..., rs);
+			return Op::operate(std::get<0>(tuples), std::get<1>(tuples), std::get<2>(tuples));
 		}
 
 		operator HandleAbbrev() const {

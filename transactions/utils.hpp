@@ -1,4 +1,6 @@
 #pragma once
+#include "restrict.hpp"
+#include "args-finder.hpp"
 #include <type_traits>
 #include <cassert>
 #include <tuple>
@@ -47,10 +49,6 @@ auto operator<<(std::basic_ostream<Ch, Tr>& os, std::tuple<Args...> const& t)
 	aux::print_tuple(os, t, aux::gen_seq<sizeof...(Args)>());
 	return os << ")";
 }
-
-
-#define restrict(x) typename ignore = typename std::enable_if<x>::type
-#define restrict2(x) typename ignore2 = typename std::enable_if<x>::type
 
 
 template<typename... T>
@@ -169,6 +167,7 @@ Ret fold_(const Vec &vec, const F &f, const Acc & acc){
 	return ret;
 }
 
+/*
 #define has_member(x) template<typename T, typename = void> \
 	struct has_ ## x : std::false_type {};					\
 															\
@@ -181,6 +180,7 @@ template<typename T>
 static constexpr bool can_bitset(){
 	return has_CompatibleWithBitset<T>::value;
 }
+*/
 
 template<typename T, typename O>
 auto set_union(const std::set<T> &a, const O &b){
@@ -216,3 +216,46 @@ T cpy(const T& t){
 	return T(t);
 }
 
+template<int ...>
+struct seq { };
+
+template<int N, int ...S>
+struct gens : gens<N-1, N-1, S...> { };
+
+template<int ...S>
+struct gens<0, S...> {
+	typedef seq<S...> type;
+	static type build(){ return type();}
+};
+
+
+template<typename F, typename Tuple, int ...S>
+auto __callFunc(const F& f, const Tuple &t, seq<S...>) {
+	return f(std::get<S>(t)...);
+}
+
+
+template<typename F, typename Tuple, typename Pack, restrict(!std::is_function<F>::value)>
+auto callFunc(const F &f, const Tuple &t, Pack p) {
+	return __callFunc(f,t,p);
+}
+
+template<typename Ret, typename Tuple, typename Pack, typename... Args>
+Ret callFunc(Ret (*f) (Args...), const Tuple &t, Pack p) {
+	return __callFunc(convert(f),t,p);
+}
+
+
+/*
+template<typename Ret, typename Tuple, int ...S>
+Ret callFunc_cr(Ret (*f) (typename std::add_const<
+					     typename std::add_lvalue_reference<
+					       typename std::decay<
+					         decltype(std::get<S>(mke<Tuple>()))
+					       >::type
+					     >::type
+					   >::type...),
+			 const Tuple &t, seq<S...>) {
+	return f(std::get<S>(t)...);
+}
+*/

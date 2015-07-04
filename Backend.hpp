@@ -1,5 +1,6 @@
 #pragma once
 #include "extras"
+#include "BitSet.hpp"
 
 namespace backend {
 	//"strong" is Top here.  Linearizable, + start-time ordered
@@ -44,10 +45,34 @@ namespace backend{
 	class Client;
 
 	class HandlePrime;
-
+	
 	//So that you can store lists of these things, if you want.
+	
 	class GenericHandle;
+	
+		class HandleAbbrev{
+		public:
+			
+			static constexpr std::true_type* CompatibleWithBitset = nullptr;
+			const BitSet<HandleAbbrev>::member_t value;
+			typedef decltype(value) itype;
+			
+			//dear programmer; it's on you to make sure that this is true.
+			static constexpr int numbits = sizeof(decltype(value));
+			
+			operator decltype(value)() const {
+				return value;
+			}
+			HandleAbbrev(decltype(value) v):value(v){}
+			
+			
+			bool operator<(const HandleAbbrev& o) const {
+				return value < o.value;
+			}
+			//idea; we use this for tracking the ReadSet.
+		};
 
+	
 }
 
 

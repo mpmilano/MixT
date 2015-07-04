@@ -19,7 +19,7 @@ namespace backend {
 	struct is_not_handle : decltype( is_not_handle_f ( (T*) nullptr) ) {};
 	
 	template<typename T>
-	struct is_handle : neg<is_not_handle<T>::value> {};
+	struct is_handle : neg<is_not_handle<typename std::decay<T>::type>::value> {};
 	
 
 	template <typename C>
