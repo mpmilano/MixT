@@ -52,7 +52,7 @@ public:
 	std::function<T ()> f;
 	const BitSet<backend::HandleAbbrev> rs;
 	
-	FreeExpr(int, std::function<T (const typename extract_type<Handles>::type & ... )> f, Handles... h)
+	FreeExpr(int, std::function<T (const typename backend::extract_type<Handles>::type & ... )> f, Handles... h)
 		:f([&,f,h...](){return f(h.get()...);}),
 		 rs(setify(h.abbrev()...))
 		{}

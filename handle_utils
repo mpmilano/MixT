@@ -88,5 +88,15 @@ namespace backend {
 
 	template<typename... Args>
 	struct exists_rw_handle : any <handle_rw, pack<Args...> > {};
+	
+	
+	template<backend::Client_Id id, backend::Level l, backend::HandleAccess ha, typename T>
+	T extract_type_f(const backend::DataStore::Handle<id,l,ha,T>*);
+	
+	template<typename T>
+	struct extract_type {
+		typedef decltype(extract_type_f((typename std::decay<T>::type*) nullptr)) type;
+	};
+
 
 }

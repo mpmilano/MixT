@@ -35,7 +35,7 @@ int main(){
 	auto a = make_seq(CSInt<Level::strong,0>());
 	a,CSInt<Level::causal,1>();
 
-	
+	make_if(*((DummyConExpr<Level::strong>*) nullptr), a, a);
 
 	std::cout << (CSInt<Level::causal,2>()) << std::endl<< std::endl;
 
