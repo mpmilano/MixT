@@ -13,8 +13,8 @@ constexpr T& id(const T& t){
 
 struct dummy_operation : public Operation<backend::Level::strong, backend::HandleAccess::all, dummy_operation>
 {
-	typedef backend::DataStore::Handle<1,backend::Level::strong,backend::HandleAccess::all,int> H;
-	
+
+	template<typename H>
 	dummy_operation(const H&){}
 
 	//todo, maybe: it looks like build can't be templated.
