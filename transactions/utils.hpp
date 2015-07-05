@@ -64,6 +64,12 @@ Ret callFunc(Ret (*f) (Args...), const Tuple &t, Pack p) {
 	return __callFunc(convert(f),t,p);
 }
 
+template<typename Ret, typename Tuple, int ...S>
+Ret callConstructor(const Tuple &t, seq<S...>) {
+	return Ret(std::get<S>(t)...);
+}
+
+
 
 /*
 template<typename Ret, typename Tuple, int ...S>

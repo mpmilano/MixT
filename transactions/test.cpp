@@ -22,9 +22,6 @@ struct dummy_operation : public Operation<backend::Level::strong, backend::Handl
 	//to a stored function, which doesn't work if some of the template
 	//arguments are left unfilled.
 	
-	static dummy_operation build(const H& r){
-		return r;
-	}
 };
 
 

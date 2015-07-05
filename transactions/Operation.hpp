@@ -25,7 +25,8 @@ public:
 		constexpr int numparams = std::tuple_size<Handles>::value +
 			std::tuple_size<OtherArgs>::value;
 		//auto f = convert(Self::build);
-		return callFunc(Self::build,concat,gens<numparams>::build());
+		//return callFunc(Self::build,concat,gens<numparams>::build());
+		return callConstructor<Self>(concat,gens<numparams>::build());
 	}
 	
 private:
