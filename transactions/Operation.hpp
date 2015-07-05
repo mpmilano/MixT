@@ -56,3 +56,15 @@ public:
 
 };
 
+
+
+#define make_operation(Name, x) struct Name : public Operation<backend::Level::strong, backend::HandleAccess::all, Name> { \
+		const backend::DataStore::Handle<1,backend::Level::strong, backend::HandleAccess::all, int> &h; \
+		Name(decltype(h) h):h(h){}										\
+																		\
+		auto operator()(){												\
+			static const decltype(convert(x)) f = convert(x);			\
+			return f(h);												\
+		}																\
+																		\
+	}

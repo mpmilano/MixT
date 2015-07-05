@@ -72,3 +72,9 @@ int main(){
 //*/
 	std::cout << "all working" << std::endl;
 }
+
+auto fooFight(const backend::DataStore::Handle<1,backend::Level::strong, backend::HandleAccess::all, int>&){
+	return 0;
+}
+
+make_operation(FooFight, fooFight);
