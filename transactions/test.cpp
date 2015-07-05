@@ -35,25 +35,32 @@ int main(){
 	auto a = make_seq(CSInt<Level::strong,0>());
 	a,CSInt<Level::causal,1>();
 
-	make_if(*((DummyConExpr<Level::strong>*) nullptr), a, a);
+	DataStore ds;
+	backend::Client<1> interface(ds);
+
+
+	DummyConExpr<Level::strong> dummyExprStrong;
+	DummyConExpr<Level::causal> dummyExprCausal;
+
+	make_if(dummyExprStrong, a, a);
 
 	std::cout << (CSInt<Level::causal,2>()) << std::endl<< std::endl;
 
-	std::cout << make_if(*((DummyConExpr<Level::strong>*) nullptr), dummy2, dummy2).operator,
+	std::cout << make_if(dummyExprStrong, dummy2, dummy2).operator,
 		(CSInt<Level::causal,2>()) << std::endl<< std::endl;
 	
-	std::cout << make_if(*((DummyConExpr<Level::strong>*) nullptr), dummy2, dummy2).operator,(
+	std::cout << make_if(dummyExprStrong, dummy2, dummy2).operator,(
 		CSInt<Level::strong,3>()) << std::endl<< std::endl;
 
-	std::cout << make_if(*((DummyConExpr<Level::causal>*) nullptr), dummy2, dummy2).operator,(
+	std::cout << make_if(dummyExprCausal, dummy2, dummy2).operator,(
 		CSInt<Level::strong,3>()) << std::endl<< std::endl;
 
 	//wooo dereferencing null right off the bat!
-	auto hndl = *(DataStore::Handle<1, Level::strong, HandleAccess::all, int>*) nullptr;
+	auto hndl = interface.newHandle<Level::strong>(13);
 
 	hndl << 5 + 12;
 
-	auto hndl2 = *(DataStore::Handle<1, Level::causal, HandleAccess::all, int>*) nullptr;
+	auto hndl2 = interface.newHandle<Level::causal>(17);
 
 	int tmp = 14;
 
