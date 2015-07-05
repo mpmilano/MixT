@@ -5,8 +5,6 @@
 #include <functional>
 #include "restrict.hpp"
 
-using namespace std;
-
 template <typename T>
 struct function_traits
     : public function_traits<decltype(&T::operator())>
