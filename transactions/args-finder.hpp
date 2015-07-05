@@ -30,8 +30,14 @@ struct function_traits<ReturnType(ClassType::*)(Args...) const>
 
 	template<typename T>
 	static std::function<ReturnType (Args...)> as_function(T t){
-		return std::function<ReturnType (Args...)>(t);
+		return t;
 	}
+
+	template<typename T>	
+	static ReturnType (*as_fp(T t)) (Args...) {
+		return t;
+	}
+
 };
 
 template <typename ClassType, typename ReturnType>
@@ -41,7 +47,12 @@ struct function_traits<ReturnType(ClassType::*)() const>
 	typedef ReturnType result_type;
 	template<typename T>
 	static std::function<ReturnType ()> as_function(T t){
-		return std::function<ReturnType ()>(t);
+		return t;
+	}
+
+	template<typename T>	
+	static ReturnType (*as_fp(T t)) () {
+		return t;
 	}
 };
 
@@ -56,4 +67,19 @@ template<typename F, restrict(!std::is_function<F>::value)>
 auto convert(F f) 
 {
 	return function_traits<F>::as_function(f);
+}
+
+
+
+template<typename R, typename... Args>
+constexpr R (*convert_fp(R (*f)(Args...)))(Args...) 
+{
+	return f;
+}
+
+
+template<typename F, restrict(!std::is_function<F>::value)>
+auto convert_fp(F f) 
+{
+	return function_traits<F>::as_fp(f);
 }

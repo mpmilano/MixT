@@ -64,6 +64,10 @@ int main(){
 	static_assert(get_level<decltype(fe)>::value == Level::causal,"");
 	assert(b);
 
+	auto fp = convert_fp([](int i, int j){return i + j;});
+	fp(12,13);
+	static_assert(std::is_same<decltype(fp),int (*) (int, int)>::value,"convert_fp lies!");
+
 
 //*/
 	std::cout << "all working" << std::endl;
