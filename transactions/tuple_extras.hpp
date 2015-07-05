@@ -3,6 +3,7 @@
 #include <type_traits>
 #include <cassert>
 #include <tuple>
+#include "utils.hpp"
 
 namespace aux{
 	template<std::size_t...> struct seq{};
@@ -96,3 +97,11 @@ template<typename Acc, typename Ret, typename Tuple, typename... Args>
 auto constexpr fold(const Tuple &vec, Ret (*f)(Args...), const Acc & acc){
 	return fold_(vec,convert(f),acc);
 }
+
+template<template<typename> typename Pred, typename... Args>
+constexpr bool forall_types_f(const std::tuple<Args...>*){
+	return forall(Pred<Args>::value...);
+}
+
+template<template<typename> typename Pred, typename T>
+struct forall_types : std::integral_constant<bool,forall_types_f<Pred>(mke_p<T>())> {};

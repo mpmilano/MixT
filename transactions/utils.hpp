@@ -31,6 +31,12 @@ constexpr auto mke(){
 }
 
 template<typename T>
+constexpr auto mke_p(){
+	return ((T*) nullptr);
+}
+
+
+template<typename T>
 T cpy(const T& t){
 	return T(t);
 }

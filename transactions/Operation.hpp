@@ -20,6 +20,7 @@ public:
 	static Self operate(const Handles &h,
 						const OtherArgs &o,
 						const BitSet<backend::HandleAbbrev> &){
+		static_assert(forall_types<backend::is_handle, Handles>::value,"Error: must pass handles as initial arguments!");
 		//TODO: read validation
 		auto concat = std::tuple_cat(h,o);
 		constexpr int numparams = std::tuple_size<Handles>::value +

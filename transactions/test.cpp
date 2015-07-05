@@ -16,11 +16,6 @@ struct dummy_operation : public Operation<backend::Level::strong, backend::Handl
 
 	template<typename H>
 	dummy_operation(const H&){}
-
-	//todo, maybe: it looks like build can't be templated.
-	//this makes sense, because we're trying to convert it
-	//to a stored function, which doesn't work if some of the template
-	//arguments are left unfilled.
 	
 };
 
