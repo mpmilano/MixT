@@ -81,6 +81,8 @@ constexpr backend::Level oper_level(Ret (*) (Args...) ){
 
 template<typename Ret, typename... Args>
 BitSet<backend::HandleAbbrev> oper_readset(Ret (*) (Args...) ){
+	//we actually *do* have access to the handles at this point.
+	//if we can find out how to use them, we're in the clear.
 	//return fold_types<Func, filter<Args...>::type, std::integral_constant<int,0> >::value
 	return 0;
 }
