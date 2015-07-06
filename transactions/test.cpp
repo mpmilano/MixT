@@ -15,7 +15,7 @@ struct dummy_operation : public Operation<backend::Level::strong, dummy_operatio
 {
 
 	template<typename H>
-	dummy_operation(const H&){}
+	dummy_operation(const H&):Operation(0){}
 	
 };
 

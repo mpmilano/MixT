@@ -76,17 +76,3 @@ Ret callConstructor(const Tuple &t, seq<S...>) {
 }
 
 
-
-/*
-template<typename Ret, typename Tuple, int ...S>
-Ret callFunc_cr(Ret (*f) (typename std::add_const<
-					     typename std::add_lvalue_reference<
-					       typename std::decay<
-					         decltype(std::get<S>(mke<Tuple>()))
-					       >::type
-					     >::type
-					   >::type...),
-			 const Tuple &t, seq<S...>) {
-	return f(std::get<S>(t)...);
-}
-*/

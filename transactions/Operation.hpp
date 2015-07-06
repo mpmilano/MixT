@@ -5,16 +5,26 @@
 #include "../handle_utils"
 #include "args-finder.hpp"
 #include "ConStatement.hpp"
+#include "fiter-varargs.hpp"
+
+template<backend::Level l>
+struct ConStatement;
 
 //"Self" should always be the bottom of the inheritance.
 template<backend::Level l, typename Self>
-class Operation {
+class Operation : public ConStatement<l>{
 public:
 
 	//Must have a static function "build" which creates the operation.
 	//it should take first all handles, then all other arguments.
 
 	static constexpr backend::Level level = l;
+
+	BitSet<backend::HandleAbbrev> rs;
+	
+	Operation(const decltype(rs) &rs):rs(rs){}
+
+	decltype(rs) getReadSet() const {return rs;}
 
 	template<typename Handles, typename OtherArgs>
 	static Self operate(const Handles &h,
@@ -67,10 +77,18 @@ constexpr backend::Level oper_level(Ret (*) (Args...) ){
 	return min_level<typename std::decay<Args>::type...>::value;
 }
 
+
+
+template<typename Ret, typename... Args>
+BitSet<backend::HandleAbbrev> oper_readset(Ret (*) (Args...) ){
+	//return fold_types<Func, filter<Args...>::type, std::integral_constant<int,0> >::value
+	return 0;
+}
+
 //TODO: make this work when name of function isn't provided as x.
 #define make_operation(Name, x) struct Name : public Operation<oper_level(x), Name> { \
 		const backend::DataStore::Handle<1,Name::level, backend::HandleAccess::all, int> &h; \
-		Name(decltype(h) h):h(h){}										\
+		Name(decltype(h) h):Operation(oper_readset(x)),h(h){}			\
 																		\
 		auto operator()(){												\
 			static const decltype(convert(x)) f = convert(x);			\
