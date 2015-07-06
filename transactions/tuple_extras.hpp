@@ -120,5 +120,5 @@ template <typename, typename> struct Cons;
 
 template <typename  T, typename ...Args>
 struct Cons<T, std::tuple<Args...> >{
-	using type = std::tuple<T, Args...>;
+	typedef std::tuple<T, Args...> type;
 };

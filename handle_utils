@@ -16,7 +16,7 @@ namespace backend {
 	{return std::integral_constant<bool,false>();}
 	
 	template<typename T>
-	struct is_not_handle : decltype( is_not_handle_f ( (T*) nullptr) ) {};
+	struct is_not_handle : decltype( is_not_handle_f ( (typename std::decay<T>::type*) nullptr) ) {};
 	
 	template<typename T>
 	struct is_handle : neg<is_not_handle<typename std::decay<T>::type>::value> {};

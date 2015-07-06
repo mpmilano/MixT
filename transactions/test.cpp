@@ -14,10 +14,16 @@ constexpr T& id(const T& t){
 struct dummy_operation : public Operation<backend::Level::strong, dummy_operation>
 {
 
-	template<typename H>
-	dummy_operation(const H&):Operation(0){}
+	template<typename H, typename O>
+	dummy_operation(const H&, const O&, BitSet<HandleAbbrev> bs):Operation(bs){}
 	
 };
+
+auto fooFight(const backend::DataStore::Handle<1,backend::Level::strong, backend::HandleAccess::all, int>&){
+	return 0;
+}
+
+make_operation(FooFight, fooFight);
 
 
 int main(){
@@ -58,6 +64,7 @@ int main(){
 
 	//call an operation. 
 	hndl.o<dummy_operation>(0);
+	hndl.o<FooFight>(0);
 	
 	auto fe = free_expr2(bool, hndl, hndl2, return hndl + hndl2 + tmp;);
 	bool b = fe();
@@ -73,8 +80,3 @@ int main(){
 	std::cout << "all working" << std::endl;
 }
 
-auto fooFight(const backend::DataStore::Handle<1,backend::Level::strong, backend::HandleAccess::all, int>&){
-	return 0;
-}
-
-make_operation(FooFight, fooFight);

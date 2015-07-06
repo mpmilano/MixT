@@ -5,7 +5,7 @@
 #include "../handle_utils"
 #include "args-finder.hpp"
 #include "ConStatement.hpp"
-#include "fiter-varargs.hpp"
+#include "filter-varargs.hpp"
 
 template<backend::Level l>
 struct ConStatement;
@@ -29,15 +29,16 @@ public:
 	template<typename Handles, typename OtherArgs>
 	static Self operate(const Handles &h,
 						const OtherArgs &o,
-						const BitSet<backend::HandleAbbrev> &){
+						const BitSet<backend::HandleAbbrev> &bs){
 		static_assert(forall_types<backend::is_handle, Handles>::value,"Error: must pass handles as initial arguments!");
 		//TODO: read validation
+		return Self(h,o,bs); /*
 		auto concat = std::tuple_cat(h,o);
 		constexpr int numparams = std::tuple_size<Handles>::value +
 			std::tuple_size<OtherArgs>::value;
 		//auto f = convert(Self::build);
 		//return callFunc(Self::build,concat,gens<numparams>::build());
-		return callConstructor<Self>(concat,gens<numparams>::build());
+		return callConstructor<Self>(concat,gens<numparams>::build()); //*/
 	}
 	
 private:
@@ -79,22 +80,43 @@ constexpr backend::Level oper_level(Ret (*) (Args...) ){
 
 
 
-template<typename Ret, typename... Args>
-BitSet<backend::HandleAbbrev> oper_readset(Ret (*) (Args...) ){
-	//we actually *do* have access to the handles at this point.
-	//if we can find out how to use them, we're in the clear.
-	//return fold_types<Func, filter<Args...>::type, std::integral_constant<int,0> >::value
-	return 0;
+template<typename... Handles>
+BitSet<backend::HandleAbbrev> oper_readset(const std::tuple<Handles...> &h){
+	return fold<BitSet<backend::HandleAbbrev> >
+		(h,
+		 [](const auto &h1, auto bs){
+			return (canRead(h1.ha) ? bs.insert(h1.abbrev()) : bs);
+		},0);
 }
+
+template<typename Ret, typename... Args>
+constexpr auto oper_handles_f(Ret (*) (Args...) ){
+	return mke<typename filter<backend::is_handle,Args...>::type>();
+}
+
+template<typename Ret, typename... Args>
+constexpr auto oper_other_f(Ret (*) (Args...) ){
+	return mke<typename filter<backend::is_not_handle,Args...>::type>();
+}
+
+template<typename T>
+struct oper_handles : decltype(oper_handles_f(mke_p<T>())) {};
 
 //TODO: make this work when name of function isn't provided as x.
 #define make_operation(Name, x) struct Name : public Operation<oper_level(x), Name> { \
-		const backend::DataStore::Handle<1,Name::level, backend::HandleAccess::all, int> &h; \
-		Name(decltype(h) h):Operation(oper_readset(x)),h(h){}			\
+		decltype(oper_handles_f(x)) hndls;								\
+		decltype(oper_other_f(x)) other;								\
+																		\
+		Name(const decltype(hndls) &h, const decltype(other) &o, BitSet<HandleAbbrev> bs): \
+			Operation(oper_readset(h).addAll(bs)),hndls(h),other(o){}	\
 																		\
 		auto operator()(){												\
 			static const decltype(convert(x)) f = convert(x);			\
-			return f(h);												\
+			auto concat = std::tuple_cat(hndls,other);					\
+			constexpr int numparams = std::tuple_size<decltype(hndls)>::value + \
+				std::tuple_size<decltype(other)>::value;				\
+			return callFunc(f,concat,gens<numparams>::build());			\
+																		\
 		}																\
 																		\
 	}
