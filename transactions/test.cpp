@@ -19,8 +19,8 @@ struct dummy_operation : public Operation<backend::Level::strong, dummy_operatio
 	
 };
 
-auto fooFight(const backend::DataStore::Handle<1,backend::Level::strong, backend::HandleAccess::all, int>&){
-	return 0;
+void fooFight(const backend::DataStore::Handle<1,backend::Level::strong, backend::HandleAccess::all, int>&){
+
 }
 
 make_operation(FooFight, fooFight);
