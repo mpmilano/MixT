@@ -34,7 +34,7 @@ constexpr backend::Level get_level_f(const backend::DataStore::Handle<id,l,ha,T>
 	return l;
 }
 
-template<typename T, restrict(!is_ConStatement<T>::value)>
+template<typename T, restrict(! (is_ConStatement<T>::value || backend::is_handle<T>::value))>
 constexpr backend::Level get_level_f(const T*){
 	return backend::Level::strong;
 }

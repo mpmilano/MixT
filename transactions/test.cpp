@@ -11,7 +11,7 @@ constexpr T& id(const T& t){
 	return t;
 }
 
-struct dummy_operation : public Operation<backend::Level::strong, backend::HandleAccess::all, dummy_operation>
+struct dummy_operation : public Operation<backend::Level::strong, dummy_operation>
 {
 
 	template<typename H>

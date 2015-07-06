@@ -32,7 +32,7 @@ namespace backend {
 
 		template<typename Operate, typename... OtherArgs>
 		auto o(const BitSet<HandleAbbrev> &rs, const OtherArgs & ... oa){
-			typedef Operation<Operate::level,Operate::access,Operate> Op;
+			typedef Operation<Operate::level,Operate> Op;
 			auto tuples = Op::make_tuples(*this, oa..., rs);
 			return Op::operate(std::get<0>(tuples), std::get<1>(tuples), std::get<2>(tuples));
 		}

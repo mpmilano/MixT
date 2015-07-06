@@ -4,9 +4,10 @@
 #include "utils.hpp"
 #include "../handle_utils"
 #include "args-finder.hpp"
+#include "ConStatement.hpp"
 
 //"Self" should always be the bottom of the inheritance.
-template<backend::Level l, backend::HandleAccess ha, typename Self>
+template<backend::Level l, typename Self>
 class Operation {
 public:
 
@@ -14,7 +15,6 @@ public:
 	//it should take first all handles, then all other arguments.
 
 	static constexpr backend::Level level = l;
-	static constexpr backend::HandleAccess access = ha;
 
 	template<typename Handles, typename OtherArgs>
 	static Self operate(const Handles &h,
@@ -56,10 +56,20 @@ public:
 
 };
 
+template<typename... T>
+struct min_level;
 
+//TODO: this is just supposed to be the min_level of the *sources*
+//but right now it's the min level of all handles.  this is certainly
+//"safe," but maybe I need to do something else?
+template<typename Ret, typename... Args>
+constexpr backend::Level oper_level(Ret (*) (Args...) ){
+	return min_level<typename std::decay<Args>::type...>::value;
+}
 
-#define make_operation(Name, x) struct Name : public Operation<backend::Level::strong, backend::HandleAccess::all, Name> { \
-		const backend::DataStore::Handle<1,backend::Level::strong, backend::HandleAccess::all, int> &h; \
+//TODO: make this work when name of function isn't provided as x.
+#define make_operation(Name, x) struct Name : public Operation<oper_level(x), Name> { \
+		const backend::DataStore::Handle<1,Name::level, backend::HandleAccess::all, int> &h; \
 		Name(decltype(h) h):h(h){}										\
 																		\
 		auto operator()(){												\
