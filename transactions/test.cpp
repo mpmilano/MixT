@@ -11,15 +11,21 @@ constexpr T& id(const T& t){
 	return t;
 }
 
-struct dummy_operation : public Operation<backend::Level::strong, dummy_operation>
+template<backend::Level l>
+struct dummy_operation : public Operation<l, dummy_operation<l> >
 {
 
 	template<typename H, typename O>
-	dummy_operation(const H&, const O&, BitSet<HandleAbbrev> bs):Operation(bs){}
+	dummy_operation(const H&, const O&, BitSet<HandleAbbrev> bs):Operation<l, dummy_operation<l> >(bs){}
+
+	void operator()(){
+		
+	}
 	
 };
 
-void fooFight(const backend::DataStore::Handle<1,backend::Level::strong, backend::HandleAccess::all, int>&){
+template<Level l>
+void fooFight(const backend::DataStore::Handle<1,l, backend::HandleAccess::all, int>&){
 
 }
 

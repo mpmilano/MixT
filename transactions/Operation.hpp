@@ -26,6 +26,8 @@ public:
 
 	decltype(rs) getReadSet() const {return rs;}
 
+	virtual void operator()() = 0;
+
 	template<typename Handles, typename OtherArgs>
 	static Self operate(const Handles &h,
 						const OtherArgs &o,
@@ -78,7 +80,11 @@ constexpr backend::Level oper_level(Ret (*) (Args...) ){
 	return min_level<typename std::decay<Args>::type...>::value;
 }
 
-
+template<typename T,restrict(!std::is_function<T>::value)>
+constexpr backend::Level oper_level(const T&){
+	static_assert(!std::is_function<T>::value,"Error: oper_level only functions on function pointers!");
+	return backend::Level::strong;
+}
 
 template<typename... Handles>
 BitSet<backend::HandleAbbrev> oper_readset(const std::tuple<Handles...> &h){
@@ -94,29 +100,40 @@ constexpr auto oper_handles_f(Ret (*) (Args...) ){
 	return mke<typename filter<backend::is_handle,Args...>::type>();
 }
 
+template<typename T>
+constexpr std::tuple<> oper_handles_f(const T& ){
+	return mke<std::tuple<> >();
+}
+
 template<typename Ret, typename... Args>
 constexpr auto oper_other_f(Ret (*) (Args...) ){
 	return mke<typename filter<backend::is_not_handle,Args...>::type>();
 }
 
-template<typename T>
-struct oper_handles : decltype(oper_handles_f(mke_p<T>())) {};
-
 //TODO: make this work when name of function isn't provided as x.
-#define make_operation(Name, x) struct Name : public Operation<oper_level(x), Name> { \
+//TODO: now assumes that consistency level will be a template parameter.
+//this is probably a weirdly specific assumption.
+
+#define make_operation_lvl(Name,x) struct Name : public Operation<oper_level(x), Name> { \
 		decltype(oper_handles_f(x)) hndls;								\
 		decltype(oper_other_f(x)) other;								\
 																		\
 		Name(const decltype(hndls) &h, const decltype(other) &o, BitSet<HandleAbbrev> bs): \
 			Operation(oper_readset(h).addAll(bs)),hndls(h),other(o){}	\
 																		\
-		auto operator()(){												\
-			static const decltype(convert(x)) f = convert(x);			\
+		void operator()(){												\
+			static const decltype(convert(x)) f = convert(x);	\
 			auto concat = std::tuple_cat(hndls,other);					\
 			constexpr int numparams = std::tuple_size<decltype(hndls)>::value + \
 				std::tuple_size<decltype(other)>::value;				\
-			return callFunc(f,concat,gens<numparams>::build());			\
+			callFunc(f,concat,gens<numparams>::build());				\
 																		\
 		}																\
 																		\
 	}
+
+#define make_operation(Name, x) make_operation_lvl(Name ## _strong,x<backend::Level::strong>); \
+	make_operation_lvl(Name ## _causal,x<backend::Level::causal>);		\
+	template<backend::Level l>											\
+	using Name = typename std::conditional<l == backend::Level::causal, Name ## _causal, Name ## _strong >::type
+

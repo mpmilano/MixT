@@ -30,9 +30,9 @@ namespace backend {
 			hi().stored_obj.reset(new T(t));
 		}
 
-		template<typename Operate, typename... OtherArgs>
+		template<template<Level> class Operate, typename... OtherArgs>
 		auto o(const BitSet<HandleAbbrev> &rs, const OtherArgs & ... oa){
-			typedef Operation<Operate::level,Operate> Op;
+			typedef Operation<Operate<L>::level,Operate<L> > Op;
 			auto tuples = Op::make_tuples(*this, oa..., rs);
 			return Op::operate(std::get<0>(tuples), std::get<1>(tuples), std::get<2>(tuples));
 		}
