@@ -34,7 +34,7 @@ constexpr backend::Level get_level_f(const backend::DataStore::Handle<id,l,ha,T>
 	return l;
 }
 
-template<typename T, restrict(! (is_ConStatement<T>::value || backend::is_handle<T>::value))>
+template<typename T, restrict(! (is_ConStatement<T>::value || backend::is_handle<T>::value || is_tuple<T>::value))>
 constexpr backend::Level get_level_f(const T*){
 	return backend::Level::strong;
 }
@@ -47,6 +47,9 @@ struct min_level : std::integral_constant<backend::Level,
 										  (exists(is_causal(get_level<T>::value)...) ?
 										   backend::Level::causal :
 										   backend::Level::strong)>::type {};
+
+template<typename... T>
+struct min_level<std::tuple<T...> > : min_level<T...> {};
 
 template<typename A>
 constexpr bool is_tuple_f(A*){

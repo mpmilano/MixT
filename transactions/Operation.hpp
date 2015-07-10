@@ -10,6 +10,10 @@
 template<backend::Level l>
 struct ConStatement;
 
+
+template<typename... T>
+struct min_level;
+
 //"Self" should always be the bottom of the inheritance.
 template<backend::Level l, typename Self>
 class Operation : public ConStatement<l>{
@@ -33,14 +37,10 @@ public:
 						const OtherArgs &o,
 						const BitSet<backend::HandleAbbrev> &bs){
 		static_assert(forall_types<backend::is_handle, Handles>::value,"Error: must pass handles as initial arguments!");
+		static_assert(forall_types<backend::is_not_handle, OtherArgs>::value,"Error: 'other arguments' for operation contains a handle!");
+		static_assert(min_level<Handles>::value == l, "Error: attempt to declare operation at level incompatible with handle arguments!");
 		//TODO: read validation
-		return Self(h,o,bs); /*
-		auto concat = std::tuple_cat(h,o);
-		constexpr int numparams = std::tuple_size<Handles>::value +
-			std::tuple_size<OtherArgs>::value;
-		//auto f = convert(Self::build);
-		//return callFunc(Self::build,concat,gens<numparams>::build());
-		return callConstructor<Self>(concat,gens<numparams>::build()); //*/
+		return Self(h,o,bs); 
 	}
 	
 private:
@@ -68,9 +68,6 @@ public:
 
 
 };
-
-template<typename... T>
-struct min_level;
 
 //TODO: this is just supposed to be the min_level of the *sources*
 //but right now it's the min level of all handles.  this is certainly
