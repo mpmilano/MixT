@@ -36,7 +36,7 @@ template<typename Cond, typename Then1, typename Then2, typename Els1, typename 
 auto make_if(const Cond& c, const Seq<Then1, Then2> &t, const Seq<Els1, Els2> &e){
 	return tuple_2fold(
 		[&](const auto &a, const auto &b, const auto &acc){
-			auto acc2 = acc.operator,(make_if(c,a,b));
+			auto acc2 = acc.operator+(make_if(c,a,b));
 			return acc2;
 		},t.strong,e.strong,empty_seq());
 }
@@ -60,8 +60,8 @@ private:
 public:
 
 	template<typename Next>
-	auto operator,(const Next &n) const {
-		return make_seq(*this).operator,(n);
+	auto operator+(const Next &n) const {
+		return make_seq(*this).operator+(n);
 	}
 
 	BitSet<backend::HandleAbbrev> getReadSet() const {

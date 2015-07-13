@@ -9,17 +9,17 @@ template<typename StrongNext, typename WeakNext>
 class Seq;
 
 
-template<typename T,
-		 restrict(is_ConStatement<T>::value && get_level<T>::value == Level::strong)>
+template<typename T,backend::Level l,typename>
 Seq<std::tuple<T>, std::tuple<> > make_seq(const T &stm){
+	static_assert(l == Level::strong);
 	static_assert(is_ConStatement<T>::value,"ugh restrict is broken");
 	assert(is_ConStatement<T>::value);
 	return Seq<std::tuple<T>, std::tuple<> >(std::tuple<T>(stm), std::make_tuple());
 }
 
-template<typename T,
-		 restrict(is_ConStatement<T>::value && get_level<T>::value == Level::causal)>
+template<typename T,backend::Level l,typename>
 Seq<std::tuple<>, std::tuple<T> > make_seq(const T &stm){
+	static_assert(l == Level::causal);
 	static_assert(is_ConStatement<T>::value,"ugh restrict is broken");
 	assert(is_ConStatement<T>::value);
 	return Seq<std::tuple<>, std::tuple<T> >(std::make_tuple(), std::make_tuple(stm));
@@ -72,15 +72,33 @@ private:
 public:
 	
 	template<typename other_strong, typename other_weak>
-	auto operator,(const Seq<other_strong, other_weak> &s2) const {
+	auto operator+(const Seq<other_strong, other_weak> &s2) const {
 		return build_seq(*this,s2);
 	}
 
 	template<typename T2,
-			 restrict(is_ConStatement<T2>::value)>
-	auto operator,(const T2 &stm) const{
+			 restrict(is_ConStatement<T2>::value  && !is_Noop<T2>::value)>
+	auto operator+(const T2 &stm) const{
 		assert(is_ConStatement<T2>::value);
 		return build_seq(*this,make_seq(stm));
+	}
+
+	template<typename T2,
+			 restrict(is_Noop<T2>::value)>
+	auto operator+(T2) const{
+		return *this;
+	}
+
+	//const here means that it doesn't
+	//modify the underlying structure
+	//of the transaction, I think.
+	//Const w.r.t the AST.
+	bool operator()() const {
+		//TODO: I assume there's something fancier I need
+		//to do here based on backing stores and such,
+		//using the accumulated readsets.
+		auto fun = [](const auto &s, const auto &acc){return s() && acc;};
+		return fold(strong,fun,true) && fold(weak,fun,true);
 	}
 
 	template<typename StrongNext2, typename WeakNext2>
@@ -90,9 +108,9 @@ public:
 	friend std::ostream & operator<<(std::ostream &os,
 									 const Seq<StrongNext2,WeakNext2>& i);
 	
-	template<typename T, typename ig>
+	template<typename T, backend::Level, typename ig>
 	friend Seq<std::tuple<>, std::tuple<T> > make_seq(const T &);
-	template<typename T, typename ig>
+	template<typename T, backend::Level, typename ig>
 	friend Seq<std::tuple<T>, std::tuple<> > make_seq(const T &);
 		
 	friend const Seq<std::tuple<>,std::tuple<> > & empty_seq();

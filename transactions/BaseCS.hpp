@@ -1,7 +1,6 @@
 #pragma once
 #include "ConStatement.hpp"
 
-
 template<Level l>
 class Noop : public ConStatement<l> {
 public:
@@ -10,6 +9,11 @@ public:
 	bool operator==(const ConStatement<l>& c) const {
 		if (Noop* n = dynamic_cast<Noop>(&c)) return true;
 		else return false;
+	}
+
+	template<typename T>
+	T operator+(const T& t) const {
+		return t;
 	}
 
 	BitSet<backend::HandleAbbrev> getReadSet() const {
@@ -29,6 +33,23 @@ std::ostream & operator<<(std::ostream &os, const Noop<l>&){
 const Noop<Level::strong> dummy1;
 const Noop<Level::causal> dummy2;
 
+template<typename T>
+struct is_Noop : std::integral_constant<
+	bool,
+	std::is_same<T,Noop<backend::Level::strong> >::value ||
+	std::is_same<T,Noop<backend::Level::causal> >::value>::type {};
+							
+template<typename StrongNext, typename WeakNext>
+class Seq;
+
+template<typename T,backend::Level l = get_level<T>::value,
+		 restrict(is_ConStatement<T>::value && l == Level::causal)>
+Seq<std::tuple<>, std::tuple<T> > make_seq(const T &);
+
+template<typename T,backend::Level l = get_level<T>::value,
+		 restrict(is_ConStatement<T>::value && l == Level::strong)>
+Seq<std::tuple<T>, std::tuple<> > make_seq(const T &);
+
 
 template<Level l, int i>
 class CSInt : public ConStatement<l>, public std::integral_constant<int,i>::type {
@@ -37,6 +58,13 @@ public:
 
 	BitSet<backend::HandleAbbrev> getReadSet() const {
 		return BitSet<backend::HandleAbbrev>();
+	}
+
+	template<typename T>
+	auto operator+(const T &t) const {
+		static_assert(is_ConStatement<CSInt<l,i> >::value,"um...");
+		static_assert(get_level<CSInt<l,i> >::value == l,"..um...");
+		return (make_seq<CSInt<l,i>,l >(CSInt<l,i>())).operator+(t);
 	}
 	
 	template<Level l2, int i2>

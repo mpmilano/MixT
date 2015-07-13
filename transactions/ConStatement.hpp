@@ -8,6 +8,8 @@
 #include "../BitSet.hpp"
 #include "../extras"
 
+#define BEGIN_TRANSACTION { auto ____transaction = Noop<backend::Level::strong>() + 
+#define END_TRANSACTION Noop<backend::Level::strong>(); ____transaction(); }
 
 typedef backend::Level Level;
 

@@ -31,13 +31,22 @@ void fooFight(const backend::DataStore::Handle<1,l, backend::HandleAccess::all, 
 
 make_operation(FooFight, fooFight);
 
-
 int main(){
 
 	using namespace backend;
 
+	{ auto ____transaction = (Noop<backend::Level::strong>().operator+(
+								  CSInt<Level::causal,1>().operator+(
+									  CSInt<Level::strong,0>().operator+(
+										  Noop<backend::Level::strong>())))); ____transaction(); }
+
+	BEGIN_TRANSACTION
+		CSInt<Level::causal,1>() + 
+		CSInt<Level::causal,0>() + 
+		END_TRANSACTION;
+	
 	auto a = make_seq(CSInt<Level::strong,0>());
-	a,CSInt<Level::causal,1>();
+	a + CSInt<Level::causal,1>();
 
 	DataStore ds;
 	backend::Client<1> interface(ds);
@@ -50,13 +59,13 @@ int main(){
 
 	std::cout << (CSInt<Level::causal,2>()) << std::endl<< std::endl;
 
-	std::cout << make_if(dummyExprStrong, dummy2, dummy2).operator,
+	std::cout << make_if(dummyExprStrong, dummy2, dummy2).operator+
 		(CSInt<Level::causal,2>()) << std::endl<< std::endl;
 	
-	std::cout << make_if(dummyExprStrong, dummy2, dummy2).operator,(
+	std::cout << make_if(dummyExprStrong, dummy2, dummy2).operator+(
 		CSInt<Level::strong,3>()) << std::endl<< std::endl;
 
-	std::cout << make_if(dummyExprCausal, dummy2, dummy2).operator,(
+	std::cout << make_if(dummyExprCausal, dummy2, dummy2).operator+(
 		CSInt<Level::strong,3>()) << std::endl<< std::endl;
 
 	//wooo dereferencing null right off the bat!

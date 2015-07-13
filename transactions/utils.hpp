@@ -26,7 +26,7 @@ auto prefix_array(const std::array<T,size1>& t,
 }
 
 template<typename T>
-constexpr auto mke(){
+constexpr T mke(){
 	return *((T*) nullptr);
 }
 
