@@ -65,11 +65,13 @@ auto tuple_2fold(const F& f, const Tuple1 &t1, const Tuple2 &t2, const Acc &acc)
 	static_assert(is_tuple<Tuple1>::value && is_tuple<Tuple2>::value, "These are not tuples.  Try again");
 	static_assert(std::tuple_size<Tuple1>::value == std::tuple_size<Tuple2>::value,"Please only double-fold equal-length things");
 
-	constexpr int size = std::tuple_size<Tuple1>::value;
+	constexpr int size1 = std::tuple_size<Tuple1>::value;
+	constexpr int size2 = std::tuple_size<Tuple2>::value;
+	assert(size1 == size2);
 	
-	return tuple_2fold_impl<0,size,Acc,F,Tuple1,Tuple2>
+	return tuple_2fold_impl<0,size1,Acc,F,Tuple1,Tuple2>
 		(f,t1,t2,acc,
-		 (typename std::integral_constant<bool,(size > 0)>::type*) nullptr);
+		 (typename std::integral_constant<bool,(size1 > 0)>::type*) nullptr);
 }
 
 template<int ind, int stop, typename Acc, typename F, typename... Args, restrict(ind < stop)>

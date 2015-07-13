@@ -89,6 +89,11 @@ public:
 		return *this;
 	}
 
+	static constexpr auto size() {
+		return std::tuple_size<StrongNext>::value +
+			std::tuple_size<WeakNext>::value;
+	}
+
 	//const here means that it doesn't
 	//modify the underlying structure
 	//of the transaction, I think.
