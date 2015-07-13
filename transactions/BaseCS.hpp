@@ -59,6 +59,10 @@ Seq<std::tuple<T>, std::tuple<> > make_seq(const T &);
 	}																 \
 	auto operator/(const decltype(dummy2)&) const {					 \
 		return *this;												 \
+	}																 \
+	template<typename T2>											 \
+	auto operator,(const T2& t) const {								 \
+		return operator/(t);										 \
 	}
 
 template<Level l>
