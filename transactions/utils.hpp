@@ -75,4 +75,14 @@ Ret callConstructor(const Tuple &t, seq<S...>) {
 	return Ret(std::get<S>(t)...);
 }
 
+template<typename T, typename... T2>
+struct last_of {
+	using type = typename std::conditional<sizeof...(T2) == 0, T,
+								  typename last_of<T2...>::type>::type;
+};
+
+template<>
+struct last_of<void>{
+	using type = void;
+};
 

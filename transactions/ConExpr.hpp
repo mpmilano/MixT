@@ -65,7 +65,21 @@ auto get_ReadSet(const ConExpr<l> &ce){
 	return ce.getReadSet();
 }
 
+template<typename T>
+struct Not : public ConExpr<get_level<T>::value> {
 
+	static_assert(is_ConExpr<T>::value,"Error: cannot negate non-expression");
+	
+	const T& v;
+	
+	auto operator()() const {
+		return !v();
+	}
+
+	BitSet<backend::HandleAbbrev> getReadSet() const {
+		return v.getReadSet();
+	}
+};
 
 template<typename T, typename... Handles>
 struct FreeExpr : public ConExpr<min_level<Handles...>::value > {

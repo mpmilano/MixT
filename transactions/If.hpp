@@ -6,91 +6,120 @@
 #include <iostream>
 
 
-template<typename Cond, typename Then, typename Els>
+template<typename Cond, typename Then>
 class If;
 
 #define handle_level backend::handle_level
 
-#define if_concept(Cond,Then,Els) ( \
+#define if_concept(Cond,Then) ( \
 																		\
-		is_ConStatement<Then>::value && is_ConStatement<Els>::value		\
+		is_ConStatement<Then>::value									\
 		&& is_ConExpr<Cond>::value										\
 																		\
 		)
 
-#define if_concept_2(Cond,Then,Els) \
+#define if_concept_2(Cond,Then) \
 	((get_level<Cond>::value == Level::causal &&						\
-	  get_level<Then>::value == Level::causal &&						\
-	  get_level<Els>::value == Level::causal)							\
+	  get_level<Then>::value == Level::causal)							\
 	 ||																	\
 	 (get_level<Cond>::value == Level::strong))
 
-template<typename Cond, typename Then, typename Els,
-		 restrict(if_concept(Cond,Then,Els))>
-If<Cond, Then, Els> make_if(const Cond& c, const Then &t, const Els &e){
-	static_assert(if_concept_2(Cond,Then,Els), "Failure: consistency violation.");
-	return If<Cond,Then,Els>(c,t,e);
+template<typename Cond, typename Then,
+		 restrict(if_concept(Cond,Then))>
+If<Cond, Then> make_if(const Cond& c, const Then &t){
+	static_assert(if_concept_2(Cond,Then), "Failure: consistency violation.");
+	return If<Cond,Then>(c,t);
 }
 
-template<typename Cond, typename Then1, typename Then2, typename Els1, typename Els2>
-auto make_if(const Cond& c, const Seq<Then1, Then2> &t, const Seq<Els1, Els2> &e){
-	return tuple_2fold(
-		[&](const auto &a, const auto &b, const auto &acc){
-			auto acc2 = acc.operator/(make_if(c,a,b));
-			return acc2;
-		},t.strong,e.strong,empty_seq());
+template<typename Cond, typename Then1, typename Then2>
+auto make_if(const Cond& c, const Seq<Then1, Then2> &t){
+	return fold(t.strong,
+				[&](const auto &a, const auto &acc){
+					auto acc2 = acc.operator/(make_if(c,a));
+					return acc2;
+				},empty_seq()) /
+		fold(t.weak,
+			 [&](const auto &a, const auto &acc){
+				 auto acc2 = acc.operator/(make_if(c,a));
+				 return acc2;
+			 },empty_seq());
 }
 
-template<typename Cond2, typename Then1, typename Then2, typename Els2,
-		 restrict2(!if_concept(Cond2,Then2,Els2))>
+
+template<typename Cond2, typename Then1, typename Then2>
 auto make_if(const Cond2& c,
-			 const std::initializer_list<Seq<Then1, Then2> > &t,
-			 const Els2 &e){
-	return make_if(c,*(t.begin()),e);
+			 const std::initializer_list<Seq<Then1, Then2> > &t){
+	return make_if(c,*(t.begin()));
+}
+
+template<typename Els>
+struct Else {
+	const Els &e;
+};
+
+template<typename Els>
+auto make_else(const Els &e){
+	Else<Els> ret{e};
+	return ret;
+}
+
+template<typename Els, typename Str, typename... Stuff>
+auto operator/(const Seq<Str, std::tuple<Stuff...> > &s, const Else<Els> & e){
+	typedef typename last_of<Stuff...>::type LastIf;
+	static constexpr int last_index = sizeof...(Stuff) - 1;
+	return s / make_if(
+		Not<typename LastIf::Cond_t>(
+			std::get<last_index>(s.weak).cond)
+		,e);
 }
 
 
-template<typename Cond, typename Then, typename Els>
-class If : public ConStatement<get_level<Cond>::value> {
+
+template<typename Cond, typename Then>
+class If : public ConStatement<get_level<Then>::value> {
 public:
-	static constexpr Level level = get_level<Cond>::value;
-private:
+	static constexpr Level level = get_level<Then>::value;
+	typedef Cond Cond_t;
 	const Cond cond;
 	const Then then;
-	const Els els;
-	
-	If(const Cond& cond, const Then& then, const Els &els):
-		cond(cond),then(then),els(els)
+private:
+	If(const Cond& cond, const Then& then):
+		cond(cond),then(then)
 		{
-			static_assert(if_concept(Cond,Then,Els) && if_concept_2(Cond,Then,Els),
+			static_assert(if_concept(Cond,Then) && if_concept_2(Cond,Then),
 						  "Bad types got to constructor");
 		}		
 public:
 
 	CONNECTOR_OP
 
+	template<typename Els>
+	auto operator/(const Else<Els> &e) const {
+		return make_seq(*this) / make_if(Not<Cond>(cond),e);
+	}
+
 	BitSet<backend::HandleAbbrev> getReadSet() const {
-		return set_union(get_ReadSet(cond),then.getReadSet(),els.getReadSet());
+		return set_union(get_ReadSet(cond),then.getReadSet());
 	}
 
 	auto operator()() const {
-		return (cond() ? then() : els());
+		return (cond() ? then() : Noop<level>().operator()());
 	}
 
 	
-	template<typename Cond2, typename Then2, typename Els2, typename ignore>
-	friend If<Cond2,Then2,Els2> make_if(const Cond2& , const Then2 &, const Els2 &);
+	template<typename Cond2, typename Then2, typename ignore>
+	friend If<Cond2,Then2> make_if(const Cond2& , const Then2 &);
 
-	template<typename Cond2, typename Then2, typename Els2>
-	friend std::ostream & operator<<(std::ostream &os, const If<Cond2,Then2,Els2>& i);
+	template<typename Cond2, typename Then2>
+	friend std::ostream & operator<<(std::ostream &os, const If<Cond2,Then2>& i);
 };
 
-template<typename Cond, typename Then, typename Els>
-std::ostream & operator<<(std::ostream &os, const If<Cond,Then,Els>& i){
-	return os << "(condition ? " << i.then << ":" << i.els << ")";
+template<typename Cond, typename Then>
+std::ostream & operator<<(std::ostream &os, const If<Cond,Then>& i){
+	return os << "(condition ? " << i.then << ")";
 }
 
 #define IF make_if(
 #define THEN ,
-#define ELSE ,
+#define ELSE ) / make_else(
 #define FI ) /
