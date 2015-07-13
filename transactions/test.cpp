@@ -36,9 +36,17 @@ int main(){
 	using namespace backend;
 
 	BEGIN_TRANSACTION
-		CSInt<Level::causal,1>() / 
+		CSInt<Level::causal,1>() /
+		IF CSInt<Level::causal,1>() /
+		THEN CSInt<Level::causal,2>() /
+		CSInt<Level::causal,2>() /
+		CSInt<Level::causal,2>() /
+		ELSE CSInt<Level::causal,3>() /
+		FI
 		CSInt<Level::causal,0>() / 
 		END_TRANSACTION;
+
+	std::cout << "building transactions with macros and such" << std::endl;
 	
 	auto a = make_seq(CSInt<Level::strong,0>());
 	a / CSInt<Level::causal,1>();

@@ -59,13 +59,14 @@ private:
 		}		
 public:
 
-	template<typename Next>
-	auto operator/(const Next &n) const {
-		return make_seq(*this).operator/(n);
-	}
+	CONNECTOR_OP
 
 	BitSet<backend::HandleAbbrev> getReadSet() const {
 		return set_union(get_ReadSet(cond),then.getReadSet(),els.getReadSet());
+	}
+
+	auto operator()() const {
+		return (cond() ? then() : els());
 	}
 
 	
@@ -80,3 +81,8 @@ template<typename Cond, typename Then, typename Els>
 std::ostream & operator<<(std::ostream &os, const If<Cond,Then,Els>& i){
 	return os << "(condition ? " << i.then << ":" << i.els << ")";
 }
+
+#define IF make_if(
+#define THEN dummy1,
+#define ELSE dummy1,
+#define FI dummy1) /

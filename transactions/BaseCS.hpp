@@ -50,36 +50,16 @@ template<typename T,backend::Level l = get_level<T>::value,
 		 restrict(is_ConStatement<T>::value && l == Level::strong)>
 Seq<std::tuple<T>, std::tuple<> > make_seq(const T &);
 
-
-template<Level l, int i>
-class CSInt : public ConStatement<l>, public std::integral_constant<int,i>::type {
-public:
-	CSInt(){}
-
-	BitSet<backend::HandleAbbrev> getReadSet() const {
-		return BitSet<backend::HandleAbbrev>();
+#define CONNECTOR_OP	template<typename T2>						 \
+	auto operator/(const T2 &t) const {								 \
+		return (make_seq(*this)).operator/(t);						 \
+	}																 \
+	auto operator/(const decltype(dummy1)&) const {					 \
+		return *this;												 \
+	}																 \
+	auto operator/(const decltype(dummy2)&) const {					 \
+		return *this;												 \
 	}
-
-	template<typename T>
-	auto operator/(const T &t) const {
-		static_assert(is_ConStatement<CSInt<l,i> >::value,"um...");
-		static_assert(get_level<CSInt<l,i> >::value == l,"..um...");
-		return (make_seq<CSInt<l,i>,l >(CSInt<l,i>())).operator/(t);
-	}
-	
-	template<Level l2, int i2>
-	friend std::ostream & operator<<(std::ostream &os, const CSInt<l2,i2>&);
-};
-
-template<Level l, int i>
-std::ostream & operator<<(std::ostream &os, const CSInt<l,i>&){
-	return os << i;
-}
-
-template<Level l, int i>
-constexpr bool is_base_CS_f(const CSInt<l,i>* ){
-	return true;
-}
 
 template<Level l>
 constexpr bool is_base_CS_f(const Noop<l>* ){
