@@ -41,6 +41,14 @@ auto make_if(const Cond& c, const Seq<Then1, Then2> &t, const Seq<Els1, Els2> &e
 		},t.strong,e.strong,empty_seq());
 }
 
+template<typename Cond2, typename Then1, typename Then2, typename Els2,
+		 restrict2(!if_concept(Cond2,Then2,Els2))>
+auto make_if(const Cond2& c,
+			 const std::initializer_list<Seq<Then1, Then2> > &t,
+			 const Els2 &e){
+	return make_if(c,*(t.begin()),e);
+}
+
 
 template<typename Cond, typename Then, typename Els>
 class If : public ConStatement<get_level<Cond>::value> {
@@ -83,6 +91,6 @@ std::ostream & operator<<(std::ostream &os, const If<Cond,Then,Els>& i){
 }
 
 #define IF make_if(
-#define THEN dummy1,
-#define ELSE dummy1,
-#define FI dummy1) /
+#define THEN ,
+#define ELSE ,
+#define FI ) /

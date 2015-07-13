@@ -37,14 +37,15 @@ int main(){
 
 	BEGIN_TRANSACTION
 		CSInt<Level::causal,1>() /
-		IF CSInt<Level::causal,1>() /
-		THEN CSInt<Level::causal,2>() /
-		CSInt<Level::causal,2>() /
-		CSInt<Level::causal,2>() /
-		ELSE CSInt<Level::causal,3>() /
+		IF (CSInt<Level::causal,1>()) 
+		THEN { CSInt<Level::causal,2>() /
+			CSInt<Level::causal,3>() /
+			CSInt<Level::causal,4>()
+			}
+		ELSE CSInt<Level::causal,3>()
 		FI
 		CSInt<Level::causal,0>() / 
-		END_TRANSACTION;
+	END_TRANSACTION;
 
 	std::cout << "building transactions with macros and such" << std::endl;
 	
