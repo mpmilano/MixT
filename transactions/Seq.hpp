@@ -72,20 +72,20 @@ private:
 public:
 	
 	template<typename other_strong, typename other_weak>
-	auto operator+(const Seq<other_strong, other_weak> &s2) const {
+	auto operator/(const Seq<other_strong, other_weak> &s2) const {
 		return build_seq(*this,s2);
 	}
 
 	template<typename T2,
 			 restrict(is_ConStatement<T2>::value  && !is_Noop<T2>::value)>
-	auto operator+(const T2 &stm) const{
+	auto operator/(const T2 &stm) const{
 		assert(is_ConStatement<T2>::value);
 		return build_seq(*this,make_seq(stm));
 	}
 
 	template<typename T2,
 			 restrict(is_Noop<T2>::value)>
-	auto operator+(T2) const{
+	auto operator/(T2) const{
 		return *this;
 	}
 

@@ -12,7 +12,7 @@ public:
 	}
 
 	template<typename T>
-	T operator+(const T& t) const {
+	T operator/(const T& t) const {
 		return t;
 	}
 
@@ -61,10 +61,10 @@ public:
 	}
 
 	template<typename T>
-	auto operator+(const T &t) const {
+	auto operator/(const T &t) const {
 		static_assert(is_ConStatement<CSInt<l,i> >::value,"um...");
 		static_assert(get_level<CSInt<l,i> >::value == l,"..um...");
-		return (make_seq<CSInt<l,i>,l >(CSInt<l,i>())).operator+(t);
+		return (make_seq<CSInt<l,i>,l >(CSInt<l,i>())).operator/(t);
 	}
 	
 	template<Level l2, int i2>
