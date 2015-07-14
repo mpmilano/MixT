@@ -20,6 +20,10 @@ public:
 		return BitSet<backend::HandleAbbrev>();
 	}
 
+	constexpr bool operator()() const {
+		return true;
+	}
+
 	template<Level l2>
 	friend std::ostream & operator<<(std::ostream &os, const Noop<l2>&);
 };

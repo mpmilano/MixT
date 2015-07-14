@@ -110,6 +110,8 @@ constexpr auto oper_other_f(Ret (*) (Args...) ){
 //TODO: make this work when name of function isn't provided as x.
 //TODO: now assumes that consistency level will be a template parameter.
 //this is probably a weirdly specific assumption.
+//TODO: operator() always returns true now.  Should theoretically
+//expose some mechanism to propogate failure up to this boolean.
 
 #define make_operation_lvl(Name,x) struct Name : public Operation<oper_level(x), Name> { \
 		decltype(oper_handles_f(x)) hndls;								\
@@ -118,13 +120,13 @@ constexpr auto oper_other_f(Ret (*) (Args...) ){
 		Name(const decltype(hndls) &h, const decltype(other) &o, BitSet<HandleAbbrev> bs): \
 			Operation(oper_readset(h).addAll(bs)),hndls(h),other(o){}	\
 																		\
-		void operator()(){												\
-			static const decltype(convert(x)) f = convert(x);	\
+		bool operator()(){												\
+			static const decltype(convert(x)) f = convert(x);			\
 			auto concat = std::tuple_cat(hndls,other);					\
 			constexpr int numparams = std::tuple_size<decltype(hndls)>::value + \
 				std::tuple_size<decltype(other)>::value;				\
 			callFunc(f,concat,gens<numparams>::build());				\
-																		\
+			return true;												\
 		}																\
 																		\
 	}

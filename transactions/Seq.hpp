@@ -81,14 +81,14 @@ public:
 		return *this;
 	}
 
-	auto getStrongReadSet(){
+	auto getStrongReadSet() const {
 		return fold(strong,
 					[](const auto &e, const auto &acc)
 					{return acc.addAll(e.getReadSet());},
 					BitSet<backend::HandleAbbrev>());
 	}
 	
-	auto getWeakReadSet(){
+	auto getWeakReadSet() const {
 		return fold(weak,
 					[](const auto &e, const auto &acc)
 					{return acc.addAll(e.getReadSet());},
