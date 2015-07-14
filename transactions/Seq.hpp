@@ -44,16 +44,8 @@ public:
 	
 private:
 	
-	BitSet<backend::HandleAbbrev> strongReadSet;
-	decltype(strongReadSet) weakReadSet;
-
-	
 	Seq(const StrongNext &sn, const WeakNext &wn)
-		:strong(sn), weak(wn),
-		 strongReadSet(fold(strong,[](const auto &e, const auto &acc){return acc.addAll(e.getReadSet());},
-							decltype(strongReadSet)())),
-		 weakReadSet(fold(weak,[](const auto &e, const auto &acc){return acc.addAll(e.getReadSet());},
-						  decltype(weakReadSet)()))
+		:strong(sn), weak(wn)
 		{}
 	
 
@@ -87,6 +79,20 @@ public:
 			 restrict(is_Noop<T2>::value)>
 	auto operator/(T2) const{
 		return *this;
+	}
+
+	auto getStrongReadSet(){
+		return fold(strong,
+					[](const auto &e, const auto &acc)
+					{return acc.addAll(e.getReadSet());},
+					BitSet<backend::HandleAbbrev>());
+	}
+	
+	auto getWeakReadSet(){
+		return fold(weak,
+					[](const auto &e, const auto &acc)
+					{return acc.addAll(e.getReadSet());},
+					BitSet<backend::HandleAbbrev>());
 	}
 
 	static constexpr auto size() {

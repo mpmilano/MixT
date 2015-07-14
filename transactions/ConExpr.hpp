@@ -92,21 +92,21 @@ public:
 
 	//todo: idea here is that only read-only things can be done to the handles
 	//in this context.  Try to make that a reality please.
-	std::function<T ()> f;
-	const BitSet<backend::HandleAbbrev> rs;
+	std::unique_ptr<std::function<T ()> > f;
+	std::unique_ptr<const BitSet<backend::HandleAbbrev> > rs;
 	
 	FreeExpr(int, std::function<T (const typename backend::extract_type<Handles>::type & ... )> f, Handles... h)
-		:f([&,f,h...](){return f(h.get()...);}),
-		 rs(setify(h.abbrev()...))
+		:f(new std::function<T ()>([&,f,h...](){return f(h.get()...);})),
+		 rs(new BitSet<backend::HandleAbbrev>(setify(h.abbrev()...)))
 		{}
 
 	T operator()(){
-		if (!sto) sto.reset(new T(f()));
+		if (!sto) sto.reset(new T((*f)()));
 		return *sto;
 	}
 
 	BitSet<backend::HandleAbbrev> getReadSet() const {
-		return rs;
+		return *rs;
 	}
 
 	
