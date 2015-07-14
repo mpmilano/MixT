@@ -9,13 +9,13 @@
 #include "../extras"
 
 #define BEGIN_TRANSACTION { auto ____transaction = Noop<backend::Level::strong>() / 
-#define END_TRANSACTION Noop<backend::Level::strong>(); std::cout << ____transaction << std::endl;}
+#define END_TRANSACTION Noop<backend::Level::strong>(); std::cout << sizeof(____transaction) << ":  " << ____transaction << std::endl;}
 
 typedef backend::Level Level;
 
 template<Level l>
 struct ConStatement {
-	virtual BitSet<backend::HandleAbbrev> getReadSet() const = 0;
+	//virtual BitSet<backend::HandleAbbrev> getReadSet() const = 0;
 };
 
 template<typename Cls>

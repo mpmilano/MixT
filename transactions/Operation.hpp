@@ -30,7 +30,7 @@ public:
 
 	decltype(rs) getReadSet() const {return rs;}
 
-	virtual void operator()() = 0;
+	//virtual void operator()() = 0;
 
 	template<typename Handles, typename OtherArgs>
 	static Self operate(const Handles &h,

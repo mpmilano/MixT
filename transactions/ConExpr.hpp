@@ -60,8 +60,9 @@ auto get_ReadSet(const Expr &){
 	return BitSet<backend::HandleAbbrev>();
 }
 
-template<Level l>
-auto get_ReadSet(const ConExpr<l> &ce){
+template<typename T>
+typename std::enable_if<is_ConExpr<T>::value && !std::is_pod<T>::value,
+						BitSet<backend::HandleAbbrev> >::type get_ReadSet(const T &ce){
 	assert(&ce != nullptr);
 	return ce.getReadSet();
 }
