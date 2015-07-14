@@ -71,6 +71,7 @@ struct Not : public ConExpr<get_level<T>::value> {
 	static_assert(is_ConExpr<T>::value,"Error: cannot negate non-expression");
 	
 	const T& v;
+	Not(const T& t):v(t){}
 	
 	auto operator()() const {
 		return !v();

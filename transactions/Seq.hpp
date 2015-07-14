@@ -127,6 +127,21 @@ const Seq<std::tuple<>,std::tuple<> > & empty_seq(){
 	return ret;
 }
 
+template<typename T>
+auto strip_seq(const Seq<std::tuple<T>,std::tuple<> > &s){
+	return std::get<0>(s.strong);
+}
+
+template<typename T>
+auto strip_seq(const Seq<std::tuple<>,std::tuple<T> > &s){
+	return std::get<0>(s.weak);
+}
+
+template<typename T>
+auto strip_seq(const T &s){
+	return s;
+}
+
 
 template<typename StrongNext2, typename WeakNext2>
 std::ostream & operator<<(std::ostream &os,

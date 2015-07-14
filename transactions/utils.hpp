@@ -75,14 +75,20 @@ Ret callConstructor(const Tuple &t, seq<S...>) {
 	return Ret(std::get<S>(t)...);
 }
 
-template<typename T, typename... T2>
-struct last_of {
-	using type = typename std::conditional<sizeof...(T2) == 0, T,
-								  typename last_of<T2...>::type>::type;
-};
+template<typename Arg>
+constexpr Arg last_of_f(const std::tuple<Arg>*){
+	return mke<Arg>();
+}
 
-template<>
-struct last_of<void>{
-	using type = void;
+template<typename Arg1, typename... Args>
+constexpr decltype(last_of_f(mke_p<std::tuple<Args...> >()))
+	last_of_f(const std::tuple<Arg1, Args...>*){
+	return last_of_f(mke_p<std::tuple<Args...> >());
+}
+
+template<typename... T>
+struct last_of {
+	static_assert(sizeof...(T) > 0, "Error: cannot call last_of on empty packs");
+	using type = decltype(last_of_f(mke_p<std::tuple<typename std::decay<T>::type...> >()));
 };
 

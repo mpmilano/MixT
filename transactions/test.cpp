@@ -42,7 +42,7 @@ int main(){
 			CSInt<Level::causal,3>() /
 			CSInt<Level::causal,4>()
 			}
-		ELSE CSInt<Level::causal,3>()
+		ELSE(causal) CSInt<Level::causal,3>()
 		FI
 		CSInt<Level::causal,0>() / 
 	END_TRANSACTION;

@@ -52,27 +52,68 @@ auto make_if(const Cond2& c,
 	return make_if(c,*(t.begin()));
 }
 
-template<typename Els>
+template<backend::Level, typename Els>
 struct Else {
 	const Els &e;
 };
 
-template<typename Els>
+template<backend::Level l,typename Els>
 auto make_else(const Els &e){
-	Else<Els> ret{e};
+	Else<l,Els> ret{e};
 	return ret;
 }
 
+template<typename T1, typename T2, typename T3>
+auto make_if(const T1& t1, const T2 &t2, const T3 &t3){
+	auto ret1 = make_if(t1,strip_seq(t2));
+	return ret1 / make_else<decltype(ret1)::level>(t3);
+}
+
 template<typename Els, typename Str, typename... Stuff>
-auto operator/(const Seq<Str, std::tuple<Stuff...> > &s, const Else<Els> & e){
+auto operator_append_impl(const Seq<Str, std::tuple<Stuff...> > &s,
+						  const Else<backend::Level::causal,Els> & e){
+	static_assert(sizeof...(Stuff) > 0);
 	typedef typename last_of<Stuff...>::type LastIf;
 	static constexpr int last_index = sizeof...(Stuff) - 1;
 	return s / make_if(
 		Not<typename LastIf::Cond_t>(
 			std::get<last_index>(s.weak).cond)
-		,e);
+		,e.e);
 }
 
+
+template<typename Els, typename Wk, typename... Stuff>
+auto operator_append_impl(const Seq<std::tuple<Stuff...>, Wk> &s,
+						  const Else<backend::Level::strong,Els> & e){
+	static_assert(sizeof...(Stuff) > 0);
+	typedef typename last_of<Stuff...>::type LastIf;
+	static constexpr int last_index = sizeof...(Stuff) - 1;
+	return s / make_if(
+		Not<typename LastIf::Cond_t>(
+			std::get<last_index>(s.strong).cond)
+		,e.e);
+}
+
+template<typename Els, typename Str, typename... Stuff> /*
+typename std::enable_if<sizeof...(Stuff) != 0,
+	decltype(operator_append_impl(mke<Seq<Str,std::tuple<Stuff...> > >(),
+								  mke<Else<backend::Level::causal, Els> > ))>::type
+//*/auto
+operator/(const Seq<Str, std::tuple<Stuff...> > &s,
+		  const Else<backend::Level::causal,Els> & e){
+	return operator_append_impl(s,e);
+}
+
+template<typename Els, typename Wk, typename... Stuff> /*
+typename std::enable_if<sizeof...(Stuff) != 0,
+						decltype(operator_append_impl
+								 (mke<Seq<std::tuple<Stuff...>, Wk > >(),
+								  mke<Else<backend::Level::strong, Els> > ))>::type
+//*/auto
+operator/(const Seq<std::tuple<Stuff...>, Wk> &s,
+		  const Else<backend::Level::strong,Els> & e){
+	return operator_append_impl(s,e);
+}
 
 
 template<typename Cond, typename Then>
@@ -94,8 +135,8 @@ public:
 	CONNECTOR_OP
 
 	template<typename Els>
-	auto operator/(const Else<Els> &e) const {
-		return make_seq(*this) / make_if(Not<Cond>(cond),e);
+	auto operator/(const Else<level,Els> &e) const {
+		return make_seq(*this) / make_if(Not<Cond>(cond),e.e);
 	}
 
 	BitSet<backend::HandleAbbrev> getReadSet() const {
@@ -121,5 +162,5 @@ std::ostream & operator<<(std::ostream &os, const If<Cond,Then>& i){
 
 #define IF make_if(
 #define THEN ,
-#define ELSE ) / make_else(
+#define ELSE(x) ) / make_else<backend::Level::x>(
 #define FI ) /
