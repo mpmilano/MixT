@@ -62,6 +62,7 @@ auto get_ReadSet(const Expr &){
 
 template<Level l>
 auto get_ReadSet(const ConExpr<l> &ce){
+	assert(&ce != nullptr);
 	return ce.getReadSet();
 }
 
@@ -70,7 +71,7 @@ struct Not : public ConExpr<get_level<T>::value> {
 
 	static_assert(is_ConExpr<T>::value,"Error: cannot negate non-expression");
 	
-	const T& v;
+	T v;
 	Not(const T& t):v(t){}
 	
 	auto operator()() const {
