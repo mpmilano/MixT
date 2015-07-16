@@ -75,7 +75,7 @@ struct RefTemporary : public ConExpr<l> {
 	auto getReadSet() const {
 		return t.getReadSet();
 	}
-	auto operator()(){
+	auto operator()() const{
 		return *t.res;
 	}
 };
@@ -84,6 +84,15 @@ template<backend::Level l, typename T>
 auto ref_temp(const Temporary<l,T> &t){
 	return RefTemporary<l,T>(t);
 }
+
+template<backend::Level l, typename T>
+bool is_reftemp(const RefTemporary<l,T> *){
+	return true;
+}
+
+template<typename T>
+struct is_RefTemporary : std::integral_constant<bool,is_reftemp(mke_p<T>())>::type
+{};
 
 template<typename T>
 auto isValid(const T &t){

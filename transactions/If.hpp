@@ -8,7 +8,7 @@
 
 
 template<typename Cond, typename Then>
-class If;
+struct If;
 
 #define handle_level backend::handle_level
 
@@ -25,23 +25,38 @@ class If;
 	 ||																	\
 	 (get_level<Cond>::value == Level::strong))
 
+
+
+template<backend::Level l, typename T, typename Then>
+auto make_if(const RefTemporary<l,T>& c, const Then &t){
+	return If<RefTemporary<l,T>,Then> (c,t);
+}
+
+
 template<typename Cond, typename Then,
 		 restrict(if_concept(Cond,Then))>
-If<Cond, Then> make_if(const Cond& c, const Then &t){
+auto make_if(const Cond& c, const Then &t){
 	static_assert(if_concept_2(Cond,Then), "Failure: consistency violation.");
-	return If<Cond,Then>(c,t);
+	static_assert(!is_RefTemporary<Cond>::value,"Failure: I got overloading wrong");
+	
+	auto temp = make_temp<get_level<Then>::value>(c);
+	return make_seq(temp) / make_if(temp,t);
 }
 
 template<typename Cond, typename Then1, typename Then2>
 auto make_if(const Cond& c, const Seq<Then1, Then2> &t){
-	return fold(t.strong,
-				[&](const auto &a, const auto &acc){
-					auto acc2 = acc.operator/(make_if(c,a));
-					return acc2;
-				},empty_seq()) /
+	auto temp_strong = make_temp<backend::Level::strong>(c);
+	auto temp_weak = make_temp<backend::Level::causal>(ref_temp(temp_strong));
+	return make_seq(temp_strong) /
+		temp_weak /
+		fold(t.strong,
+			 [&](const auto &a, const auto &acc){
+				 auto acc2 = acc.operator/(make_if(ref_temp(temp_strong),a));
+				 return acc2;
+			 },empty_seq()) /
 		fold(t.weak,
 			 [&](const auto &a, const auto &acc){
-				 auto acc2 = acc.operator/(make_if(c,a));
+				 auto acc2 = acc.operator/(make_if(ref_temp(temp_weak),a));
 				 return acc2;
 			 },empty_seq());
 }
@@ -66,7 +81,7 @@ auto make_else(const Els &e){
 
 template<typename T1, typename T2, typename T3>
 auto make_if(const T1& t1, const T2 &t2, const T3 &t3){
-	auto ret1 = make_if(t1,strip_seq(t2));
+	auto ret1 = make_if(t1,t2);
 	return ret1 / make_else<decltype(ret1)::level>(t3);
 }
 
@@ -76,10 +91,10 @@ auto operator_append_impl(const Seq<Str, std::tuple<Stuff...> > &s,
 	static_assert(sizeof...(Stuff) > 0);
 	typedef typename last_of<Stuff...>::type LastIf;
 	static constexpr int last_index = sizeof...(Stuff) - 1;
-	return s / make_if(
+	auto not_temp = make_temp<backend::Level::causal>(
 		Not<typename LastIf::Cond_t>(
-			std::get<last_index>(s.weak).cond)
-		,e.e);
+			std::get<last_index>(s.weak).cond));
+	return s / not_temp / make_if(ref_temp(not_temp),e.e);
 }
 
 
@@ -89,10 +104,10 @@ auto operator_append_impl(const Seq<std::tuple<Stuff...>, Wk> &s,
 	static_assert(sizeof...(Stuff) > 0);
 	typedef typename last_of<Stuff...>::type LastIf;
 	static constexpr int last_index = sizeof...(Stuff) - 1;
-	return s / make_if(
+	auto not_temp = make_temp<backend::Level::strong>(
 		Not<typename LastIf::Cond_t>(
-			std::get<last_index>(s.strong).cond)
-		,e.e);
+			std::get<last_index>(s.strong).cond));
+	return s / not_temp / make_if(ref_temp(not_temp),e.e);
 }
 
 template<typename Els, typename Str, typename... Stuff> /*
@@ -118,20 +133,19 @@ operator/(const Seq<std::tuple<Stuff...>, Wk> &s,
 
 
 template<typename Cond, typename Then>
-class If : public ConStatement<get_level<Then>::value> {
-public:
+struct If : public ConStatement<get_level<Then>::value> {
+
 	static constexpr Level level = get_level<Then>::value;
 	typedef Cond Cond_t;
 	const Cond cond;
 	const Then then;
-private:
+
 	If(const Cond& cond, const Then& then):
 		cond(cond),then(then)
 		{
 			static_assert(if_concept(Cond,Then) && if_concept_2(Cond,Then),
 						  "Bad types got to constructor");
-		}		
-public:
+		}
 
 	CONNECTOR_OP
 

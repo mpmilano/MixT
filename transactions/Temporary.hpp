@@ -6,8 +6,11 @@
 template<backend::Level l, typename T>
 struct Temporary : public ConStatement<get_level<T>::value> {
 	static_assert(is_ConExpr<T>::value,"Error: can only assign temporary the result of expressions");
+	static_assert(l == backend::Level::causal ||
+				  get_level<T>::value == backend::Level::strong,
+		"Error: flow violation");
 	const std::shared_ptr<const T> t;
-	std::shared_ptr<const decltype(t->operator())> res;
+	std::shared_ptr<const decltype((*t)())> res;
 	Temporary(const T& t):t(new T(t)){}
 
 	auto getReadSet() const {
