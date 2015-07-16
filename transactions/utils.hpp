@@ -92,3 +92,22 @@ struct last_of {
 	using type = decltype(last_of_f(mke_p<std::tuple<typename std::decay<T>::type...> >()));
 };
 
+//TODO: define this better and move it.
+struct Store {
+
+	struct storepair_sup {
+	};
+	
+	template<typename T, typename U>
+	struct storepair : storepair_sup{
+		const T t;
+		U u;
+	};
+
+	std::map<>
+	
+	template<typename T>
+	auto operator[](const T &t){
+
+	}
+};

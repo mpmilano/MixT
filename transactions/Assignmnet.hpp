@@ -32,7 +32,7 @@ public:
 	}
 
 
-	void operator()(){
+	void operator()(Store s){
 		thunk();
 	}
 

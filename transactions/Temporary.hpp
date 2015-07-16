@@ -9,17 +9,17 @@ struct Temporary : public ConStatement<get_level<T>::value> {
 	static_assert(l == backend::Level::causal ||
 				  get_level<T>::value == backend::Level::strong,
 		"Error: flow violation");
-	const std::shared_ptr<const T> t;
-	std::shared_ptr<const decltype((*t)())> res;
-	Temporary(const T& t):t(new T(t)){}
+	const T t;
+	Temporary(const T& t):t(t){}
 
 	auto getReadSet() const {
-		return t->getReadSet();
+		return t.getReadSet();
 	}
 
-	auto operator()() const {
-		if (!res) res.reset((*t)());
-		return true;
+	auto operator()(Store &s) const {
+		if (!s.contains(t /* TODO: uniqueness*/))
+			s[t/*...*/] = t();
+		return s.at(t /*again uniqueness */);
 	}
 };
 
@@ -28,3 +28,9 @@ template<backend::Level l, typename T>
 auto make_temp(const T& t){
 	return Temporary<l,T>(t);
 }
+
+template<backend::Level, backend::Level l>
+auto make_temp(const DummyConExpr<l>& r){
+	return r;
+}
+

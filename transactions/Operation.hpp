@@ -30,7 +30,7 @@ public:
 
 	decltype(rs) getReadSet() const {return rs;}
 
-	//virtual void operator()() = 0;
+	//virtual void operator()(Store s) = 0;
 
 	template<typename Handles, typename OtherArgs>
 	static Self operate(const Handles &h,
@@ -120,7 +120,7 @@ constexpr auto oper_other_f(Ret (*) (Args...) ){
 		Name(const decltype(hndls) &h, const decltype(other) &o, BitSet<HandleAbbrev> bs): \
 			Operation(oper_readset(h).addAll(bs)),hndls(h),other(o){}	\
 																		\
-		bool operator()(){												\
+		bool operator()(Store s){												\
 			static const decltype(convert(x)) f = convert(x);			\
 			auto concat = std::tuple_cat(hndls,other);					\
 			constexpr int numparams = std::tuple_size<decltype(hndls)>::value + \

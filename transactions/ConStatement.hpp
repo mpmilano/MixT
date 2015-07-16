@@ -51,6 +51,17 @@ struct min_level : std::integral_constant<backend::Level,
 template<typename... T>
 struct min_level<std::tuple<T...> > : min_level<T...> {};
 
+
+template<typename... T>
+struct max_level : std::integral_constant<backend::Level,
+										  (exists(is_strong(get_level<T>::value)...) ?
+										   backend::Level::strong :
+										   backend::Level::causal)>::type {};
+
+template<typename... T>
+struct max_level<std::tuple<T...> > : max_level<T...> {};
+
+
 template<typename A>
 constexpr bool is_tuple_f(A*){
 	return false;

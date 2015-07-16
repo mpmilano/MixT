@@ -20,7 +20,7 @@ struct dummy_operation : public Operation<l, dummy_operation<l> >
 	template<typename H, typename O>
 	dummy_operation(const H&, const O&, BitSet<HandleAbbrev> bs):Operation<l, dummy_operation<l> >(bs){}
 
-	void operator()(){
+	void operator()(Store s){
 		
 	}
 	

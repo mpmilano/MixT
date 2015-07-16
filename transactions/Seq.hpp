@@ -104,7 +104,7 @@ public:
 	//modify the underlying structure
 	//of the transaction, I think.
 	//Const w.r.t the AST.
-	bool operator()() const {
+	bool operator()(Store s) const {
 		//TODO: I assume there's something fancier I need
 		//to do here based on backing stores and such,
 		//using the accumulated readsets.

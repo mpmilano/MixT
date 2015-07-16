@@ -35,7 +35,7 @@ struct Not : public ConExpr<get_level<T>::value> {
 	T v;
 	Not(const T& t):v(t){}
 	
-	auto operator()() const {
+	auto operator()(Store s) const {
 		return !v();
 	}
 
@@ -45,6 +45,16 @@ struct Not : public ConExpr<get_level<T>::value> {
 };
 
 template<typename T>
+Not<T> make_not(const T& t){
+	return Not<T>(t);
+}
+
+template<backend::Level l>
+DummyConExpr<l> make_not(const DummyConExpr<l>& e){
+	return e;
+}
+
+template<typename T>
 struct IsValid : public ConExpr<get_level<T>::value> {
 	static_assert(backend::is_handle<T>::value,"error: IsValid designed for referential integrity of handles.");
 
@@ -52,7 +62,7 @@ struct IsValid : public ConExpr<get_level<T>::value> {
 	
 	IsValid(const T &t):t(t){}
 	
-	bool operator()() const {
+	bool operator()(Store s) const {
 		//TODO: when handles re-design happens,
 		//this should be one of the basic things
 		//exposed at the handle level.
@@ -75,7 +85,7 @@ struct RefTemporary : public ConExpr<l> {
 	auto getReadSet() const {
 		return t.getReadSet();
 	}
-	auto operator()() const{
+	auto operator()(Store s) const{
 		return *t.res;
 	}
 };
@@ -83,6 +93,11 @@ struct RefTemporary : public ConExpr<l> {
 template<backend::Level l, typename T>
 auto ref_temp(const Temporary<l,T> &t){
 	return RefTemporary<l,T>(t);
+}
+
+template<backend::Level l>
+auto ref_temp(const DummyConExpr<l> &r){
+	return r;
 }
 
 template<backend::Level l, typename T>
@@ -110,12 +125,14 @@ public:
 	std::unique_ptr<std::function<T ()> > f;
 	std::unique_ptr<const BitSet<backend::HandleAbbrev> > rs;
 	
-	FreeExpr(int, std::function<T (const typename backend::extract_type<Handles>::type & ... )> f, Handles... h)
+	FreeExpr(int,
+			 std::function<T (const typename backend::extract_type<Handles>::type & ... )> f,
+			 Handles... h)
 		:f(new std::function<T ()>([&,f,h...](){return f(h.get()...);})),
 		 rs(new BitSet<backend::HandleAbbrev>(setify(h.abbrev()...)))
 		{}
 
-	T operator()(){
+	T operator()(Store s){
 		if (!sto) sto.reset(new T((*f)()));
 		return *sto;
 	}

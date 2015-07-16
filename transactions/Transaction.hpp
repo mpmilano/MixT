@@ -20,7 +20,7 @@ struct Transaction{
 
 	Transaction(const Transaction&) = delete;
 
-	bool operator()(){ return action(); }
+	bool operator()(Store s){ return action(); }
 };
 
 std::ostream & operator<<(std::ostream &os, Transaction& t){

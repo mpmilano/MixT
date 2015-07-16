@@ -32,6 +32,10 @@ auto make_if(const RefTemporary<l,T>& c, const Then &t){
 	return If<RefTemporary<l,T>,Then> (c,t);
 }
 
+template<backend::Level l, typename Then>
+Then make_if(const DummyConExpr<l>&, const Then &t){
+	return t;
+}
 
 template<typename Cond, typename Then,
 		 restrict(if_concept(Cond,Then))>
@@ -41,6 +45,11 @@ auto make_if(const Cond& c, const Then &t){
 	
 	auto temp = make_temp<get_level<Then>::value>(c);
 	return make_seq(temp) / make_if(temp,t);
+}
+
+template<backend::Level l, typename Then1, typename Then2>
+Seq<Then1,Then2> make_if(const DummyConExpr<l>& , const Seq<Then1, Then2> &t){
+	return t;
 }
 
 template<typename Cond, typename Then1, typename Then2>
@@ -79,10 +88,15 @@ auto make_else(const Els &e){
 	return ret;
 }
 
+template<backend::Level l>
+DummyConExpr<l> make_else(const DummyConExpr<l> &e){
+	return e;
+}
+
 template<typename T1, typename T2, typename T3>
 auto make_if(const T1& t1, const T2 &t2, const T3 &t3){
-	auto ret1 = make_if(t1,t2);
-	return ret1 / make_else<decltype(ret1)::level>(t3);
+	auto temp = make_temp<max_level<T3>::value>(t1);
+	return make_if(ref_temp(t1),t2) / make_if(make_not(ref_temp(temp)),t3);
 }
 
 template<typename Els, typename Str, typename... Stuff>
@@ -92,7 +106,7 @@ auto operator_append_impl(const Seq<Str, std::tuple<Stuff...> > &s,
 	typedef typename last_of<Stuff...>::type LastIf;
 	static constexpr int last_index = sizeof...(Stuff) - 1;
 	auto not_temp = make_temp<backend::Level::causal>(
-		Not<typename LastIf::Cond_t>(
+		make_not(
 			std::get<last_index>(s.weak).cond));
 	return s / not_temp / make_if(ref_temp(not_temp),e.e);
 }
@@ -105,7 +119,7 @@ auto operator_append_impl(const Seq<std::tuple<Stuff...>, Wk> &s,
 	typedef typename last_of<Stuff...>::type LastIf;
 	static constexpr int last_index = sizeof...(Stuff) - 1;
 	auto not_temp = make_temp<backend::Level::strong>(
-		Not<typename LastIf::Cond_t>(
+		make_not(
 			std::get<last_index>(s.strong).cond));
 	return s / not_temp / make_if(ref_temp(not_temp),e.e);
 }
@@ -151,15 +165,15 @@ struct If : public ConStatement<get_level<Then>::value> {
 
 	template<typename Els>
 	auto operator/(const Else<level,Els> &e) const {
-		return make_seq(*this) / make_if(Not<Cond>(cond),e.e);
+		return make_seq(*this) / make_if(make_not(cond),e.e);
 	}
 
 	BitSet<backend::HandleAbbrev> getReadSet() const {
 		return set_union(get_ReadSet(cond),then.getReadSet());
 	}
 
-	auto operator()() const {
-		return (cond() ? then() : Noop<level>().operator()());
+	auto operator()(Store s) const {
+		return (cond() ? then() : Noop<level>().operator()(Store s));
 	}
 
 	
