@@ -67,6 +67,30 @@ struct IsValid : public ConExpr<get_level<T>::value> {
 };
 
 template<typename T>
+struct Temporary : public ConExpr<get_level<T>::value> {
+	static_assert(is_ConExpr<T>::value,"Error: can only assign temporary the result of expressions");
+	const std::shared_ptr<const T> t;
+	std::shared_ptr<const decltype(t->operator())> res;
+	Temporary(const T& t):t(new T(t)){}
+
+	auto getReadSet() const {
+		return t->getReadSet();
+	}
+
+	auto operator()() const {
+		if (res) return *res;
+		else res.reset((*t)());
+		return *res;
+	}
+	
+};
+
+template<typename T>
+auto make_temp(const T& t){
+	return Temporary<T>(t);
+}
+
+template<typename T>
 auto isValid(const T &t){
 	return IsValid<T>(t);
 }
