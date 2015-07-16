@@ -18,6 +18,8 @@ struct Transaction{
 		strong(s.getStrongReadSet()),
 		weak(s.getWeakReadSet()) {}
 
+	Transaction(const Transaction&) = delete;
+
 	bool operator()(){ return action(); }
 };
 

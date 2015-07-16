@@ -5,6 +5,7 @@
 #include "Operate.hpp"
 #include "Operation.hpp"
 #include "Transaction.hpp"
+#include "CommonOps.hpp"
 #include <iostream>
 
 template<typename T>
@@ -36,9 +37,23 @@ int main(){
 
 	using namespace backend;
 
+	DataStore ds;
+	backend::Client<1> interface(ds);
+
+	auto thirteen = interface.newHandle<Level::strong>(13);
+
+	//TODO: hybrids like the if-test.
+	//Should be sufficient to extract test as strong -> casual
+	//asignment to temp var, and use temp var for subsequent,
+	//but need to make sure strong->causal readset dependency
+	//is captured.  When to do the extraction?
+	//can either defer both unpacking and extraction to
+	//final pass during Transaction conversion, or can
+	//try and add extraction to If-construction.
+	
 	BEGIN_TRANSACTION
 		CSInt<Level::causal,1>() /
-		IF (CSInt<Level::causal,1>()) 
+		IF (isValid(thirteen)) 
 		THEN { CSInt<Level::causal,2>() /
 			CSInt<Level::causal,3>() /
 			CSInt<Level::causal,4>()
@@ -49,12 +64,12 @@ int main(){
 	END_TRANSACTION;
 
 	std::cout << "building transactions with macros and such" << std::endl;
+
+	auto hndl = thirteen;
 	
 	auto a = make_seq(CSInt<Level::strong,0>());
 	a / CSInt<Level::causal,1>();
 
-	DataStore ds;
-	backend::Client<1> interface(ds);
 
 
 	DummyConExpr<Level::strong> dummyExprStrong;
@@ -72,9 +87,6 @@ int main(){
 
 	std::cout << make_if(dummyExprCausal, dummy2, dummy2).operator/(
 		CSInt<Level::strong,3>()) << std::endl<< std::endl;
-
-	//wooo dereferencing null right off the bat!
-	auto hndl = interface.newHandle<Level::strong>(13);
 
 	hndl << 5 + 12;
 

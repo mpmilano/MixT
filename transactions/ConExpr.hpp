@@ -84,6 +84,34 @@ struct Not : public ConExpr<get_level<T>::value> {
 	}
 };
 
+template<typename T>
+struct IsValid : public ConExpr<get_level<T>::value> {
+	static_assert(backend::is_handle<T>::value,"error: IsValid designed for referential integrity of handles.");
+
+	const T t;
+	
+	IsValid(const T &t):t(t){}
+	
+	bool operator()() const {
+		//TODO: when handles re-design happens,
+		//this should be one of the basic things
+		//exposed at the handle level.
+		return true;
+	}
+
+	auto getReadSet() const {
+		backend::HandleAbbrev hb = t;
+		BitSet<backend::HandleAbbrev> ret(hb);
+		return ret;
+	}
+	
+};
+
+template<typename T>
+auto isValid(const T &t){
+	return IsValid<T>(t);
+}
+	
 template<typename T, typename... Handles>
 struct FreeExpr : public ConExpr<min_level<Handles...>::value > {
 private:

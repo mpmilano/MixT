@@ -4,6 +4,15 @@
 
 namespace backend {
 
+	template<Client_Id id, Level L, HandleAccess HA>
+	class OpaqueHandle {
+	public:
+		std::unique_ptr<void> hndl;
+		template<typename T>
+		OpaqueHandle(DataStore::Handle<id,L,HA,T> hndl)
+			:hndl(new DataStore::Handle<id,L,HA,T>(hndl)){}
+	};
+
 	template<Client_Id id, Level L, HandleAccess HA, typename T>
 	class DataStore::Handle {
 	private:
