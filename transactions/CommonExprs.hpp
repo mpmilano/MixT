@@ -1,5 +1,6 @@
 #pragma once
 #include "ConExpr.hpp"
+#include "Temporary.hpp"
 
 template<Level l, int i>
 class CSInt : public ConExpr<l>, public std::integral_constant<int,i>::type {
@@ -66,28 +67,22 @@ struct IsValid : public ConExpr<get_level<T>::value> {
 	
 };
 
-template<typename T>
-struct Temporary : public ConExpr<get_level<T>::value> {
-	static_assert(is_ConExpr<T>::value,"Error: can only assign temporary the result of expressions");
-	const std::shared_ptr<const T> t;
-	std::shared_ptr<const decltype(t->operator())> res;
-	Temporary(const T& t):t(new T(t)){}
+template<backend::Level l, typename T>
+struct RefTemporary : public ConExpr<l> {
+	const Temporary<l,T> t;
+	RefTemporary(const Temporary<l,T> &t):t(t){}
 
 	auto getReadSet() const {
-		return t->getReadSet();
+		return t.getReadSet();
 	}
-
-	auto operator()() const {
-		if (res) return *res;
-		else res.reset((*t)());
-		return *res;
+	auto operator()(){
+		return *t.res;
 	}
-	
 };
 
-template<typename T>
-auto make_temp(const T& t){
-	return Temporary<T>(t);
+template<backend::Level l, typename T>
+auto ref_temp(const Temporary<l,T> &t){
+	return RefTemporary<l,T>(t);
 }
 
 template<typename T>
