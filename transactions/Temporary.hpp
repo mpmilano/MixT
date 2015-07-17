@@ -44,3 +44,29 @@ std::ostream & operator<<(std::ostream &os, const Temporary<l2,i2>& t){
 	return os << "x" << t.id << "<" << levelStr<l2>() << ">" <<  " = " << t.t;
 }
 
+template<backend::Level l, typename T>
+struct MutableTemporary : public Temporary<l,T> {
+	MutableTemporary(const T& t):Temporary<l,T>(t){}
+
+	CONNECTOR_OP;
+};
+
+template<backend::Level l, typename T>
+auto make_mut_temp(const T& t){
+	return MutableTemporary<l,T>(t);
+}
+
+template<backend::Level, backend::Level l>
+auto make_mut_temp(const DummyConExpr<l>& r){
+	return r;
+}
+
+template<backend::Level l, typename T>
+auto temp(){
+	struct unassigned_temp {
+		MutableTemporary<l,T> operator=(const T& t){
+			return make_mut_temp<l,T>(t);
+		}
+	} r;
+	return r;
+}

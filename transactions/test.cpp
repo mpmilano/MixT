@@ -52,7 +52,7 @@ int main(){
 	//try and add extraction to If-construction.
 	
 	BEGIN_TRANSACTION
-		CSInt<Level::causal,1>() /
+		(temp<Level::causal, CSInt<Level::causal,1> >() = CSInt<Level::causal,1>()) /
 		IF (isValid(thirteen)) 
 		THEN { CSInt<Level::causal,2>() /
 			CSInt<Level::causal,3>() /
