@@ -40,7 +40,7 @@ constexpr backend::Level get_level_f(const T*){
 }
 
 template<typename T>
-struct get_level : std::integral_constant<backend::Level, get_level_f((T*) nullptr)>::type {};
+struct get_level : std::integral_constant<backend::Level, get_level_f(mke_p<T>())>::type {};
 
 template<typename... T>
 struct min_level : std::integral_constant<backend::Level,

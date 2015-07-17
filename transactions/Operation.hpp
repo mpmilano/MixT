@@ -30,8 +30,6 @@ public:
 
 	decltype(rs) getReadSet() const {return rs;}
 
-	//virtual void operator()(Store s) = 0;
-
 	template<typename Handles, typename OtherArgs>
 	static Self operate(const Handles &h,
 						const OtherArgs &o,
@@ -112,15 +110,18 @@ constexpr auto oper_other_f(Ret (*) (Args...) ){
 //this is probably a weirdly specific assumption.
 //TODO: operator() always returns true now.  Should theoretically
 //expose some mechanism to propogate failure up to this boolean.
+//TODO: not exposing access to the temporary store here.
+//If I choose to track handle modifications via it, then this is bad.
 
 #define make_operation_lvl(Name,x) struct Name : public Operation<oper_level(x), Name> { \
-		decltype(oper_handles_f(x)) hndls;								\
-		decltype(oper_other_f(x)) other;								\
+		const decltype(oper_handles_f(x)) hndls;						\
+		const decltype(oper_other_f(x)) other;							\
 																		\
-		Name(const decltype(hndls) &h, const decltype(other) &o, BitSet<HandleAbbrev> bs): \
+		Name(const decltype(hndls) &h,									\
+			 const decltype(other) &o, BitSet<HandleAbbrev> bs):		\
 			Operation(oper_readset(h).addAll(bs)),hndls(h),other(o){}	\
 																		\
-		bool operator()(Store s){												\
+		bool operator()(Store &) const{									\
 			static const decltype(convert(x)) f = convert(x);			\
 			auto concat = std::tuple_cat(hndls,other);					\
 			constexpr int numparams = std::tuple_size<decltype(hndls)>::value + \

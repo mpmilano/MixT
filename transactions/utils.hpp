@@ -5,6 +5,7 @@
 #include <cassert>
 #include <tuple>
 #include <set>
+#include <map>
 
 template<typename T, std::size_t size1, std::size_t size2>
 auto prefix_array(const std::array<T,size1>& t,
@@ -27,12 +28,12 @@ auto prefix_array(const std::array<T,size1>& t,
 
 template<typename T>
 constexpr T mke(){
-	return *((T*) nullptr);
+	return *((typename std::decay<T>::type*) nullptr);
 }
 
 template<typename T>
 constexpr auto mke_p(){
-	return ((T*) nullptr);
+	return ((typename std::decay<T>::type*) nullptr);
 }
 
 
@@ -93,21 +94,14 @@ struct last_of {
 };
 
 //TODO: define this better and move it.
-struct Store {
-
-	struct storepair_sup {
-	};
-	
-	template<typename T, typename U>
-	struct storepair : storepair_sup{
-		const T t;
-		U u;
-	};
-
-	std::map<>
-	
-	template<typename T>
-	auto operator[](const T &t){
-
+struct Store : std::map<int,std::unique_ptr<void*> >{
+	bool contains(int i) const{
+		return this->find(i) != this->end();
 	}
+
+	typedef void** stored;
+
+	Store(){}
+
+	Store(const Store&) = delete;
 };

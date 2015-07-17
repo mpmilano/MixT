@@ -6,10 +6,10 @@
 #include "../BitSet.hpp"
 
 struct Transaction{
-	std::function<bool ()> action;
-	std::function<std::ostream & (std::ostream &os)> print;
-	BitSet<backend::HandleAbbrev> strong;
-	BitSet<backend::HandleAbbrev> weak;
+	const std::function<bool (Store &)> action;
+	const std::function<std::ostream & (std::ostream &os)> print;
+	const BitSet<backend::HandleAbbrev> strong;
+	const BitSet<backend::HandleAbbrev> weak;
 
 	template<typename S, typename W>
 	Transaction(const Seq<S,W> &s):
@@ -20,7 +20,10 @@ struct Transaction{
 
 	Transaction(const Transaction&) = delete;
 
-	bool operator()(Store s){ return action(); }
+	bool operator()() const {
+		Store s;
+		return action(s);
+	}
 };
 
 std::ostream & operator<<(std::ostream &os, Transaction& t){

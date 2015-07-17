@@ -20,7 +20,7 @@ struct dummy_operation : public Operation<l, dummy_operation<l> >
 	template<typename H, typename O>
 	dummy_operation(const H&, const O&, BitSet<HandleAbbrev> bs):Operation<l, dummy_operation<l> >(bs){}
 
-	void operator()(Store s){
+	void operator()(Store &){
 		
 	}
 	
@@ -97,9 +97,11 @@ int main(){
 	//call an operation. 
 	hndl.o<dummy_operation>(0);
 	hndl.o<FooFight>(0);
-	
-	auto fe = free_expr2(bool, hndl, hndl2, return hndl + hndl2 + tmp;);
-	bool b = fe();
+
+
+	Store s;
+	const auto &fe = free_expr2(bool, hndl, hndl2, return hndl + hndl2 + tmp;);
+	bool b = fe(s);
 	static_assert(get_level<decltype(fe)>::value == Level::causal,"");
 	assert(b);
 

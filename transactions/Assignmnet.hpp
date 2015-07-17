@@ -32,7 +32,10 @@ public:
 	}
 
 
-	void operator()(Store s){
+	void operator()(Store &) const {
+		//TODO: do we want to track
+		//modifications to handles
+		//through the store as well?
 		thunk();
 	}
 

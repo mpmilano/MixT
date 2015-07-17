@@ -20,7 +20,7 @@ public:
 		return BitSet<backend::HandleAbbrev>();
 	}
 
-	constexpr bool operator()(Store s) const {
+	constexpr bool operator()(Store&) const {
 		return true;
 	}
 

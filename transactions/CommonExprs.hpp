@@ -1,6 +1,7 @@
 #pragma once
 #include "ConExpr.hpp"
 #include "Temporary.hpp"
+#include "../BitSet.hpp"
 
 template<Level l, int i>
 class CSInt : public ConExpr<l>, public std::integral_constant<int,i>::type {
@@ -12,6 +13,10 @@ public:
 	}
 
 	CONNECTOR_OP
+
+	constexpr auto operator()(Store &) const {
+		return i;
+	}
 	
 	template<Level l2, int i2>
 	friend std::ostream & operator<<(std::ostream &os, const CSInt<l2,i2>&);
@@ -35,14 +40,23 @@ struct Not : public ConExpr<get_level<T>::value> {
 	T v;
 	Not(const T& t):v(t){}
 	
-	auto operator()(Store s) const {
-		return !v();
+	auto operator()(Store &s) const {
+		return !v(s);
 	}
 
 	BitSet<backend::HandleAbbrev> getReadSet() const {
 		return v.getReadSet();
 	}
+
+	template<typename i2>
+	friend std::ostream & operator<<(std::ostream &os, const Not<i2>&);
 };
+
+template<typename i2>
+std::ostream & operator<<(std::ostream &os, const Not<i2>& n){
+	return os << "!" << n.v;
+}
+
 
 template<typename T>
 Not<T> make_not(const T& t){
@@ -62,7 +76,7 @@ struct IsValid : public ConExpr<get_level<T>::value> {
 	
 	IsValid(const T &t):t(t){}
 	
-	bool operator()(Store s) const {
+	bool operator()(const Store &) const {
 		//TODO: when handles re-design happens,
 		//this should be one of the basic things
 		//exposed at the handle level.
@@ -74,8 +88,18 @@ struct IsValid : public ConExpr<get_level<T>::value> {
 		BitSet<backend::HandleAbbrev> ret(hb);
 		return ret;
 	}
-	
+
+	template<typename T2>
+	friend std::ostream & operator<<(std::ostream &os, const IsValid<T2>&);
 };
+
+template<typename T2>
+std::ostream & operator<<(std::ostream &os, const IsValid<T2> &t){
+	backend::HandleAbbrev ha = t.t;
+	BitSet<backend::HandleAbbrev>::member_t pr = ha;
+	unsigned long long pr2 = pr;
+	return os << "isValid(" << pr2 << ")";
+}
 
 template<backend::Level l, typename T>
 struct RefTemporary : public ConExpr<l> {
@@ -85,10 +109,27 @@ struct RefTemporary : public ConExpr<l> {
 	auto getReadSet() const {
 		return t.getReadSet();
 	}
-	auto operator()(Store s) const{
-		return *t.res;
+	auto operator()(const Store &s) const{
+		return call(s,t);
 	}
+
+private:
+	static auto call(const Store &s, const Temporary<l,T> &t){
+		typedef decltype(t.t(*mke_p<Store>())) R;
+		return *((R*) s.at(t.id).get());
+	}
+
+	static_assert(!is_ConStatement<decltype(
+					  call(*mke_p<Store>(),*mke_p<Temporary<l,T> >())
+					  )>::value);
+	template<backend::Level l2, typename T2>
+	friend std::ostream & operator<<(std::ostream &os, const RefTemporary<l2,T2>&);
 };
+
+template<backend::Level l2, typename T2>
+std::ostream & operator<<(std::ostream &os, const RefTemporary<l2,T2>& t){
+	return os << "RefTemp: " << t.t;
+}
 
 template<backend::Level l, typename T>
 auto ref_temp(const Temporary<l,T> &t){
@@ -116,9 +157,6 @@ auto isValid(const T &t){
 	
 template<typename T, typename... Handles>
 struct FreeExpr : public ConExpr<min_level<Handles...>::value > {
-private:
-	std::unique_ptr<const T> sto;
-public:
 
 	//todo: idea here is that only read-only things can be done to the handles
 	//in this context.  Try to make that a reality please.
@@ -132,9 +170,10 @@ public:
 		 rs(new BitSet<backend::HandleAbbrev>(setify(h.abbrev()...)))
 		{}
 
-	T operator()(Store s){
-		if (!sto) sto.reset(new T((*f)()));
-		return *sto;
+	FreeExpr(const FreeExpr&) = delete;
+
+	T operator()(Store &) const {
+		return (*f)();
 	}
 
 	BitSet<backend::HandleAbbrev> getReadSet() const {

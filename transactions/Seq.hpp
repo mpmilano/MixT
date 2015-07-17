@@ -100,15 +100,11 @@ public:
 			std::tuple_size<WeakNext>::value;
 	}
 
-	//const here means that it doesn't
-	//modify the underlying structure
-	//of the transaction, I think.
-	//Const w.r.t the AST.
-	bool operator()(Store s) const {
+	bool operator()(Store &st) const {
 		//TODO: I assume there's something fancier I need
 		//to do here based on backing stores and such,
 		//using the accumulated readsets.
-		auto fun = [](const auto &s, const auto &acc){return s() && acc;};
+		auto fun = [&st](const auto &s, const auto &acc){return s(st) && acc;};
 		return fold(strong,fun,true) && fold(weak,fun,true);
 	}
 

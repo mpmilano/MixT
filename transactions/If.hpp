@@ -172,8 +172,10 @@ struct If : public ConStatement<get_level<Then>::value> {
 		return set_union(get_ReadSet(cond),then.getReadSet());
 	}
 
-	auto operator()(Store s) const {
-		return (cond() ? then() : Noop<level>().operator()(Store s));
+	auto operator()(Store &s) const {
+		static_assert(!is_ConStatement<decltype(cond(s))>::value);
+		static_assert(!is_ConStatement<decltype(then(s))>::value);
+		return (cond(s) ? then(s) : Noop<level>().operator()(s));
 	}
 
 	
