@@ -95,10 +95,7 @@ struct IsValid : public ConExpr<get_level<T>::value> {
 
 template<typename T2>
 std::ostream & operator<<(std::ostream &os, const IsValid<T2> &t){
-	backend::HandleAbbrev ha = t.t;
-	BitSet<backend::HandleAbbrev>::member_t pr = ha;
-	unsigned long long pr2 = pr;
-	return os << "isValid(" << pr2 << ")";
+	return os << "isValid(" << t.t << ")";
 }
 
 template<backend::Level l, typename T>
@@ -128,7 +125,7 @@ private:
 
 template<backend::Level l2, typename T2>
 std::ostream & operator<<(std::ostream &os, const RefTemporary<l2,T2>& t){
-	return os << "RefTemp: " << t.t;
+	return os << "x" << t.t.id << "<" << levelStr<l2>() << ">";
 }
 
 template<backend::Level l, typename T>

@@ -41,6 +41,6 @@ auto make_temp(const DummyConExpr<l>& r){
 }
 template<Level l2, typename i2>
 std::ostream & operator<<(std::ostream &os, const Temporary<l2,i2>& t){
-	return os << t.t;
+	return os << "x" << t.id << "<" << levelStr<l2>() << ">" <<  " = " << t.t;
 }
 

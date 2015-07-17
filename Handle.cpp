@@ -1,6 +1,7 @@
 #pragma once
 #include "Backend.hpp"
 #include "transactions/Operation.hpp"
+#include "transactions/utils.hpp"
 
 namespace backend {
 
@@ -55,8 +56,16 @@ namespace backend {
 		HandleAbbrev abbrev() const {
 			return *this;
 		}
+
+		//template<Client_Id id2, Level L2, HandleAccess HA2, typename T2>
+		//friend std::ostream & operator<<(std::ostream &os, const Handle<id2,L2,HA2, T2>&);
 	};
 }
 
+template<backend::Client_Id id2, backend::Level L2, backend::HandleAccess HA2, typename T2>
+std::ostream & operator<<(std::ostream &os,
+						  const backend::DataStore::Handle<id2,L2,HA2, T2>& ){
+	return os << "Handle<" << levelStr<L2>() << ">";
+}
 
 

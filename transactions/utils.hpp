@@ -105,3 +105,9 @@ struct Store : std::map<int,std::unique_ptr<void*> >{
 
 	Store(const Store&) = delete;
 };
+
+template<backend::Level l>
+std::string levelStr(){
+	const static std::string ret = (l == backend::Level::strong ? "strong" : "weak");
+	return ret;
+}

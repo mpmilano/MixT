@@ -31,4 +31,4 @@ std::ostream & operator<<(std::ostream &os, Transaction& t){
 }
 
 #define BEGIN_TRANSACTION { Transaction ____transaction(Noop<backend::Level::strong>() / 
-#define END_TRANSACTION Noop<backend::Level::strong>()); std::cout << sizeof(____transaction) << ":  " << ____transaction << std::endl;}
+#define END_TRANSACTION Noop<backend::Level::strong>()); std::cout << ____transaction << std::endl;}

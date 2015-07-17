@@ -188,7 +188,7 @@ struct If : public ConStatement<get_level<Then>::value> {
 
 template<typename Cond, typename Then>
 std::ostream & operator<<(std::ostream &os, const If<Cond,Then>& i){
-	return os << "(condition ? " << i.then << ")";
+	return os << "(" << i.cond <<" ? " << i.then << ")";
 }
 
 #define IF make_if(

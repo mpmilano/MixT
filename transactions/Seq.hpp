@@ -148,5 +148,13 @@ auto strip_seq(const T &s){
 template<typename StrongNext2, typename WeakNext2>
 std::ostream & operator<<(std::ostream &os,
 						  const Seq<StrongNext2,WeakNext2>& i){
-	return os << "Strong: " << i.strong << "; WEAK: " << i.weak <<";";
+
+	auto f = [&](const auto &e, const auto& ){
+		os << "   " << e << ";" << std::endl;
+		return 0;
+	};
+
+	fold(i.strong,f,os << "Strong: {" << std::endl);
+	fold(i.weak, f, os << "}" << std::endl << "Weak: {" << std::endl);
+	return os << "}";
 }
