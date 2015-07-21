@@ -72,7 +72,6 @@ public:
 			 restrict(is_ConStatement<T2>::value  && !is_Noop<T2>::value)>
 	auto operator/(const T2 &stm) const{
 		assert(is_ConStatement<T2>::value);
-		std::cout << "encorporating " << stm << "into the seq." << std::endl;
 		return build_seq(*this,make_seq(stm));
 	}
 
