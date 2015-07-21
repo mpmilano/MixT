@@ -25,6 +25,10 @@ struct If;
 	 ||																	\
 	 (get_level<Cond>::value == Level::strong))
 
+template<typename A, typename B, typename C, typename D>
+auto operator/(const Seq<A,B>& a, const If<C,D> &i){
+	return a/(i);
+}
 
 
 template<backend::Level l, typename T, typename Then>
@@ -60,12 +64,12 @@ auto make_if(const Cond& c, const Seq<Then1, Then2> &t){
 		temp_weak /
 		fold(t.strong,
 			 [&](const auto &a, const auto &acc){
-				 auto acc2 = acc.operator/(make_if(ref_temp(temp_strong),a));
+				 auto acc2 = acc /(make_if(ref_temp(temp_strong),a));
 				 return acc2;
 			 },empty_seq()) /
 		fold(t.weak,
 			 [&](const auto &a, const auto &acc){
-				 auto acc2 = acc.operator/(make_if(ref_temp(temp_weak),a));
+				 auto acc2 = acc /(make_if(ref_temp(temp_weak),a));
 				 return acc2;
 			 },empty_seq());
 }
@@ -185,6 +189,20 @@ struct If : public ConStatement<get_level<Then>::value> {
 	template<typename Cond2, typename Then2>
 	friend std::ostream & operator<<(std::ostream &os, const If<Cond2,Then2>& i);
 };
+
+template<typename A, typename B>
+constexpr bool is_If_f(const If<A,B>*){
+	return true;
+}
+
+template<typename A>
+constexpr bool is_If_f(const A*){
+	return false;
+}
+
+template<typename T>
+struct is_If : std::integral_constant<bool,is_If_f(mke_p<T>())>::type {};
+
 
 template<typename Cond, typename Then>
 std::ostream & operator<<(std::ostream &os, const If<Cond,Then>& i){

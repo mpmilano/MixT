@@ -56,7 +56,7 @@ Seq<std::tuple<T>, std::tuple<> > make_seq(const T &);
 
 #define CONNECTOR_OP	template<typename T2>						 \
 	auto operator/(const T2 &t) const {								 \
-		return (make_seq(*this)).operator/(t);						 \
+		return (make_seq(*this)) / t;								 \
 	}																 \
 	auto operator/(const decltype(dummy1)&) const {					 \
 		return *this;												 \

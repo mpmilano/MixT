@@ -60,13 +60,12 @@ int main(){
 	//try and add extraction to If-construction.
 
 	BEGIN_TRANSACTION
-		(_temp<Level::causal, int,decltype("x"),unique_id(1,"x")>("x") = 4) /
 		(temp(Level::causal,int,"f") = 6)/
 		IF (isValid(thirteen)) 
 		THEN { CSInt<Level::causal,2>() /
 			CSInt<Level::causal,3>() /
 			CSInt<Level::causal,4>() /
-			ref("x")
+			ref("f")
 			}
 		ELSE(causal) CSInt<Level::causal,3>()
 		FI

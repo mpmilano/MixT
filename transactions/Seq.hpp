@@ -31,6 +31,8 @@ auto make_seq(const Seq<StrongNext, WeakNext> &stm) {
 	return Seq<StrongNext, WeakNext>(stm);
 }
 
+template<typename>
+struct is_If;
 
 //StrongNext and WeakNext are tuples of operations.
 template<typename StrongNext, typename WeakNext>
@@ -69,7 +71,9 @@ public:
 	}
 
 	template<typename T2,
-			 restrict(is_ConStatement<T2>::value  && !is_Noop<T2>::value)>
+			 restrict(is_ConStatement<T2>::value  && 
+					  !is_Noop<T2>::value &&
+					  !is_If<T2>::value)>
 	auto operator/(const T2 &stm) const{
 		assert(is_ConStatement<T2>::value);
 		return build_seq(*this,make_seq(stm));

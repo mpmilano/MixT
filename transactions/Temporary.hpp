@@ -202,9 +202,6 @@ std::ostream & operator<<(std::ostream &os, const DeferSubst<i>&){
 template<typename S, typename W, unsigned long long id>
 auto operator/(const Seq<S,W> &s, const refstr<id> &){
 	
-	std::cout << "at ref point: ";
-	std::cout << s << std::endl;
-	std::cout << ": done: " << std::endl;
 	auto try1 = fold(s.strong,
 					 [](const auto &e, const auto &acc){
 						 return _ref<id>(e,acc);
