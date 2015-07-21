@@ -5,7 +5,7 @@
 
 namespace ct {
 
-	template<typename A, typename... B>
+	template<typename... B>
 	struct tuple;
 
 	template<int i, typename A, typename... B>
@@ -25,7 +25,7 @@ namespace ct {
 	}
 
 	template<typename A, typename... B>
-	struct tuple {
+	struct tuple<A,B...> {
 		const A a;
 		const tuple<B...> rest;
 
@@ -34,6 +34,8 @@ namespace ct {
 			static_assert(i < (sizeof...(B) + 1),"Error: index out of range!");
 			return ct::get<i,A,B...>(*this);
 		}
+
+		const int size = sizeof...(B) + 1;
 	};
 
 	template<typename A>
@@ -43,6 +45,16 @@ namespace ct {
 		constexpr A get(){
 			static_assert(i == 0,"Error: index out of range!");
 			return a;
+		}
+	};
+
+	template<>
+	struct tuple<> {
+		
+		template<int i>
+		constexpr int get(){
+			static_assert(i > -17,"Error: index out of range!");
+			return 0;
 		}
 	};
 
@@ -56,6 +68,18 @@ namespace ct {
 	make_tuple(const A &a, const B & ... b){
 		return tuple<A,B...>{a, make_tuple(b...)};
 	}
+	
+	template<typename A, typename... B>
+	constexpr typename std::enable_if<sizeof...(B) != 0, tuple<A,B...> >::type
+	cons(A a, tuple<B...> b){
+		return tuple<A,B...>{a,b};
+	}
+
+	template<typename A>
+	constexpr auto cons(A a, tuple<>){
+		return tuple<A>{a};
+	}
+
 }
 
 

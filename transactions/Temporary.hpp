@@ -1,5 +1,6 @@
 #pragma once
 #include "ConExpr.hpp"
+#include <string>
 
 	static int temporary_class_19837491_id_pool = 0;
 	
@@ -16,6 +17,7 @@
 		const int id;
 		const T t;
 		Temporary(const T& t):id(++temporary_class_19837491_id_pool),t(t){}
+		Temporary(const int id, const T& t):id(id),t(t){}
 		
 		auto getReadSet() const {
 			return t.getReadSet();
@@ -41,32 +43,62 @@ auto make_temp(const DummyConExpr<l>& r){
 }
 template<Level l2, typename i2>
 std::ostream & operator<<(std::ostream &os, const Temporary<l2,i2>& t){
-	return os << "x" << t.id << "<" << levelStr<l2>() << ">" <<  " = " << t.t;
+	return os << "__x" << t.id << "<" << levelStr<l2>() << ">" <<  " = " << t.t;
 }
 
-template<backend::Level l, typename T>
+template<unsigned long long ID, backend::Level l, typename T>
 struct MutableTemporary : public Temporary<l,T> {
-	MutableTemporary(const T& t):Temporary<l,T>(t){}
+	const std::string &name;
+	MutableTemporary(const std::string& name, const T& t):
+		Temporary<l,T>(std::hash<std::string>()(name),t),
+		name(name){}
 
+	bool operator()(Store &s) const {
+		typedef typename std::decay<decltype(this->t(s))>::type R;
+		s[this->id].reset((Store::stored) new R(this->t(s)));
+		return true;
+	}
+
+	typedef typename std::integral_constant<backend::Level,l>::type level;
+	typedef T type;
+	typedef std::true_type found;
+	typedef typename std::integral_constant<unsigned long long, ID>::type key;
+	
 	CONNECTOR_OP;
 };
 
-template<backend::Level l, typename T>
-auto make_mut_temp(const T& t){
-	return MutableTemporary<l,T>(t);
+template<unsigned long long id, backend::Level l, typename T>
+auto make_mut_temp(const std::string& name, const T& t){
+	return MutableTemporary<id,l,T>(name,t);
 }
 
-template<backend::Level, backend::Level l>
-auto make_mut_temp(const DummyConExpr<l>& r){
+template<unsigned long long, backend::Level, backend::Level l>
+auto make_mut_temp(const std::string& , const DummyConExpr<l>& r){
 	return r;
 }
 
-template<backend::Level l, typename T>
-auto temp(){
+template<unsigned long long id, Level l2, typename i2>
+std::ostream & operator<<(std::ostream &os, const MutableTemporary<id,l2,i2>& t){
+	return os << t.name << "<" << levelStr<l2>() << ">" <<  " = " << t.t;
+}
+
+template<Level l, typename T>
+class CSConstant;
+
+#define temp(a,b,c) _temp<a,b,decltype(c),unique_id((sizeof(c) / sizeof(char)) - 1,c)>(c)
+
+
+//todo: now it looks like we know how to stick the identifier in the type.
+//we still need to figure out how to retrieve the type and level when referencing
+//the variable later in the program.
+
+template<backend::Level l, typename T, typename Str, unsigned long long id>
+auto _temp(const Str &str){
 	struct unassigned_temp {
-		MutableTemporary<l,T> operator=(const T& t){
-			return make_mut_temp<l,T>(t);
+		const std::string s;
+		MutableTemporary<id,l,CSConstant<l,T> > operator=(const T& t){
+			return make_mut_temp<id,l,CSConstant<l,T> >(s, CSConstant<l,T>(t));
 		}
-	} r;
+	} r{str};
 	return r;
 }

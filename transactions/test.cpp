@@ -6,6 +6,7 @@
 #include "Operation.hpp"
 #include "Transaction.hpp"
 #include "CommonExprs.hpp"
+#include "TypeMap.hpp"
 #include <iostream>
 
 template<typename T>
@@ -33,6 +34,13 @@ void fooFight(const backend::DataStore::Handle<1,l, backend::HandleAccess::all, 
 
 make_operation(FooFight, fooFight);
 
+struct test_entry{
+	unsigned long long key = 12;
+	typedef int v1;
+	static constexpr int v2 = 0;
+}; 
+
+
 int main(){
 
 	using namespace backend;
@@ -50,13 +58,15 @@ int main(){
 	//can either defer both unpacking and extraction to
 	//final pass during Transaction conversion, or can
 	//try and add extraction to If-construction.
-	
+
 	BEGIN_TRANSACTION
-		(temp<Level::causal, CSInt<Level::causal,1> >() = CSInt<Level::causal,1>()) /
+		(_temp<Level::causal, int,decltype("x"),unique_id(1,"x")>("x") = 4) /
+		(temp(Level::causal,int,"f") = 6)/
 		IF (isValid(thirteen)) 
 		THEN { CSInt<Level::causal,2>() /
 			CSInt<Level::causal,3>() /
-			CSInt<Level::causal,4>()
+			CSInt<Level::causal,4>() /
+			ref("x")
 			}
 		ELSE(causal) CSInt<Level::causal,3>()
 		FI
@@ -108,6 +118,19 @@ int main(){
 	auto fp = convert_fp([](int i, int j){return i + j;});
 	fp(12,13);
 	static_assert(std::is_same<decltype(fp),int (*) (int, int)>::value,"convert_fp lies!");
+
+	typedef ctm::insert<12,
+						int,
+						typename std::integral_constant<int, 6>::type,
+						ctm::empty_map> map2;
+
+	typedef ctm::find<12,map2> found;
+	std::cout << type_name<found>() << std::endl;
+	
+	static_assert(found::v2::value == 6);
+
+	static_assert(found::found::value);
+	static_assert(!ctm::find<13,map2>::found::value);
 
 
 //*/

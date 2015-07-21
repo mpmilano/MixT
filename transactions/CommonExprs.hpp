@@ -27,6 +27,32 @@ std::ostream & operator<<(std::ostream &os, const CSInt<l,i>&){
 	return os << i;
 }
 
+template<Level l, typename T>
+class CSConstant : public ConExpr<l> {
+public:
+
+	const T val;
+	
+	CSConstant(const T& t):val(t){}
+
+	BitSet<backend::HandleAbbrev> getReadSet() const {
+		return BitSet<backend::HandleAbbrev>();
+	}
+
+	CONNECTOR_OP
+
+	constexpr auto operator()(Store &) const {
+		return val;
+	}
+	
+};
+
+template<Level l, typename i>
+std::ostream & operator<<(std::ostream &os, const CSConstant<l,i>& c){
+	return os << c.val;
+}
+
+
 template<Level l, int i>
 constexpr bool is_base_CS_f(const CSInt<l,i>* ){
 	return true;
@@ -136,6 +162,57 @@ auto ref_temp(const Temporary<l,T> &t){
 template<backend::Level l>
 auto ref_temp(const DummyConExpr<l> &r){
 	return r;
+}
+
+template<unsigned long long id>
+struct refstr{
+};
+
+#define ref(c) refstr<unique_id((sizeof(c) / sizeof(char)) - 1,c)>()
+
+struct nope{
+	typedef std::false_type found;
+};
+
+template<unsigned long long id, typename T>
+auto _ref(const T&, const nope&){
+	return nope();
+}
+
+template<unsigned long long id, backend::Level l, typename T>
+auto _ref(const MutableTemporary<id,l,T> &mt, const nope&){
+	return RefTemporary<l,T>(mt);
+}
+
+template<unsigned long long id, unsigned long long id2, backend::Level l, typename T>
+typename std::enable_if<id != id2,nope>::type
+_ref(const MutableTemporary<id2,l,T> &mt, const nope&){
+	return RefTemporary<l,T>(mt);
+	//return nope();
+}
+
+template<unsigned long long, backend::Level l, typename T1, typename T2>
+RefTemporary<l,T2> _ref(const T1&, const RefTemporary<l,T2>& r){
+	return r;
+}
+
+template<typename S, typename W, unsigned long long id>
+auto operator/(const Seq<S,W> &s, const refstr<id> &){
+	std::cout << "at ref point: ";
+	std::cout << s << std::endl;
+	std::cout << ": done: " << std::endl;
+	auto try1 = fold(s.strong,
+					 [](const auto &e, const auto &acc){
+						 return _ref<id>(e,acc);
+					 },
+					 nope());
+
+	auto try2 = fold(s.weak,[&](const auto &e, const auto &acc){
+			return _ref<id>(e,acc);
+		},try1);
+
+	return conditional<std::is_same<decltype(try2),nope>::value>
+		(s,try2);
 }
 
 template<backend::Level l, typename T>

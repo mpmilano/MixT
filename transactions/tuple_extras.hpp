@@ -116,7 +116,7 @@ decltype(fold_types_f<Func,Func<Arg1,Accum> >(mke_p<std::tuple<Args...> >())) fo
 
 
 template<template<typename, typename> typename Func, typename T, typename Accum>
-struct fold_types : decltype(fold_types_f<Func,Accum>(mke_p<T>())) {};
+using fold_types = decltype(fold_types_f<Func,Accum>(mke_p<T>()));
 
 template <typename, typename> struct Cons;
 

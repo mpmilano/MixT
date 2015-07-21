@@ -111,3 +111,64 @@ std::string levelStr(){
 	const static std::string ret = (l == backend::Level::strong ? "strong" : "weak");
 	return ret;
 }
+
+
+constexpr unsigned long long unique_id(const int i, const char str[i]){
+	return (i == 0 ? 0 : (str[0] << sizeof(char)*i ) + unique_id(i-1,str+1));
+}
+
+
+
+#include <type_traits>
+#include <typeinfo>
+#ifndef _MSC_VER
+#   include <cxxabi.h>
+#endif
+#include <memory>
+#include <string>
+#include <cstdlib>
+
+template <class T>
+std::string
+type_name()
+{
+	typedef typename std::remove_reference<T>::type TR;
+	std::unique_ptr<char, void(*)(void*)> own
+		(
+			#ifndef _MSC_VER
+			abi::__cxa_demangle(typeid(TR).name(), nullptr,
+								nullptr, nullptr),
+			#else
+			nullptr,
+			#endif
+			std::free
+			);
+	std::string r = own != nullptr ? own.get() : typeid(TR).name();
+	if (std::is_const<TR>::value)
+		r += " const";
+	if (std::is_volatile<TR>::value)
+		r += " volatile";
+	if (std::is_lvalue_reference<T>::value)
+		r += "&";
+	else if (std::is_rvalue_reference<T>::value)
+		r += "&&";
+	return r;
+}
+
+
+template<typename A, typename B>
+constexpr auto conditional(std::true_type*, const A a, const B &){
+	return a;
+}
+
+template<typename A, typename B>
+constexpr auto conditional(std::false_type*, const A &, const B b2){
+	return b2;
+}
+
+template<bool b, typename A, typename B>
+constexpr auto conditional(const A &a, const B &b2){
+	typedef typename std::integral_constant<bool,b>::type ptr;
+	ptr* p = nullptr;
+	return conditional(p,a,b2);
+}
