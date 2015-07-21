@@ -6,7 +6,7 @@
 
 //holes; for filling in variables. 
 template<typename StrongNext, typename WeakNext>
-class Seq;
+struct Seq;
 
 
 template<typename T,backend::Level l,typename>
@@ -34,40 +34,40 @@ auto make_seq(const Seq<StrongNext, WeakNext> &stm) {
 template<typename>
 struct is_If;
 
+template<typename other1_strong, typename other1_weak,
+		 typename other2_strong, typename other2_weak>
+auto seq_cat(const Seq<other1_strong, other1_weak> &o1,
+					const Seq<other2_strong, other2_weak> &o2){
+	auto sn =
+		std::tuple_cat(o1.strong, o2.strong);
+	auto wn =
+		std::tuple_cat(o1.weak, o2.weak);
+	return Seq<decltype(sn), decltype(wn)>(sn,wn);
+}
+
+
 //StrongNext and WeakNext are tuples of operations.
 template<typename StrongNext, typename WeakNext>
-class Seq {
+struct Seq {
 	static_assert(is_cs_tuple<StrongNext>::value,"Need to be a CS tuple!");
 	static_assert(is_cs_tuple<WeakNext>::value,"Need to be a CS tuple!");
-	
-public:
+
 	const StrongNext strong;
 	const WeakNext weak;
-	
-private:
 	
 	Seq(const StrongNext &sn, const WeakNext &wn)
 		:strong(sn), weak(wn)
 		{}
 	
-
-	
-	template<typename other1_strong, typename other1_weak,
-			 typename other2_strong, typename other2_weak>
-	static auto build_seq(const Seq<other1_strong, other1_weak> &o1,
-						  const Seq<other2_strong, other2_weak> &o2){
-			auto sn =
-				std::tuple_cat(o1.strong, o2.strong);
-			auto wn =
-				std::tuple_cat(o1.weak, o2.weak);
-			return Seq<decltype(sn), decltype(wn)>(sn,wn);
-	}
-	
-public:
-	
 	template<typename other_strong, typename other_weak>
 	auto operator/(const Seq<other_strong, other_weak> &s2) const {
-		return build_seq(*this,s2);
+		auto s = fold(s2.strong,[](const auto &e, const auto &acc){
+				return acc / e;
+			},*this);
+		auto w = fold(s2.weak,[](const auto &e, const auto &acc){
+				return acc / e;
+			},s);
+		return w;
 	}
 
 	template<typename T2,
@@ -76,7 +76,7 @@ public:
 					  !is_If<T2>::value)>
 	auto operator/(const T2 &stm) const{
 		assert(is_ConStatement<T2>::value);
-		return build_seq(*this,make_seq(stm));
+		return seq_cat(*this,make_seq(stm));
 	}
 
 	template<typename T2,
@@ -112,6 +112,8 @@ public:
 		return fold(strong,fun,true) && fold(weak,fun,true);
 	}
 
+/*
+	
 	template<typename StrongNext2, typename WeakNext2>
 	friend class Seq;
 
@@ -125,6 +127,8 @@ public:
 	friend Seq<std::tuple<T>, std::tuple<> > make_seq(const T &);
 		
 	friend const Seq<std::tuple<>,std::tuple<> > & empty_seq();
+
+*/
 };
 
 

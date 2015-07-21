@@ -27,7 +27,11 @@ struct If;
 
 template<typename A, typename B, typename C, typename D>
 auto operator/(const Seq<A,B>& a, const If<C,D> &i){
-	return a/(i);
+	std::cout << "building if: Seq before is this: " << a << std::endl;
+	std::cout << "building if: Specific expr is this: " << i << std::endl;
+
+	std::cout << std::endl << std::endl;
+	return seq_cat(a,make_seq(i));
 }
 
 

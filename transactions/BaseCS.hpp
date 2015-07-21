@@ -44,7 +44,7 @@ struct is_Noop : std::integral_constant<
 	std::is_same<T,Noop<backend::Level::causal> >::value>::type {};
 							
 template<typename StrongNext, typename WeakNext>
-class Seq;
+struct Seq;
 
 template<typename T,backend::Level l = get_level<T>::value,
 		 restrict(is_ConStatement<T>::value && l == Level::causal)>
