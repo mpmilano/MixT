@@ -34,6 +34,7 @@ void fooFight(const backend::DataStore::Handle<1,l, backend::HandleAccess::all, 
 
 make_operation(FooFight, fooFight);
 
+
 struct test_entry{
 	unsigned long long key = 12;
 	typedef int v1;
@@ -48,8 +49,6 @@ int main(){
 	DataStore ds;
 	backend::Client<1> interface(ds);
 
-	auto thirteen = interface.newHandle<Level::strong>(13);
-
 	//TODO: hybrids like the if-test.
 	//Should be sufficient to extract test as strong -> casual
 	//asignment to temp var, and use temp var for subsequent,
@@ -59,13 +58,14 @@ int main(){
 	//final pass during Transaction conversion, or can
 	//try and add extraction to If-construction.
 
+	auto thirteen = interface.newHandle<Level::strong>(13);
+
 	BEGIN_TRANSACTION
 		(temp(Level::causal,int,"f") = 6)/
 		IF (isValid(thirteen)) 
 		THEN { CSInt<Level::causal,2>() /
 			CSInt<Level::causal,3>() /
 			CSInt<Level::causal,4>() /
-			ref("f") /
 			ref("f")
 			}
 		ELSE(causal) CSInt<Level::causal,3>()
