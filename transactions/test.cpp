@@ -65,6 +65,7 @@ int main(){
 		THEN { CSInt<Level::causal,2>() /
 			CSInt<Level::causal,3>() /
 			CSInt<Level::causal,4>() /
+			ref("f") /
 			ref("f")
 			}
 		ELSE(causal) CSInt<Level::causal,3>()

@@ -27,6 +27,10 @@ std::ostream & operator<<(std::ostream &os, const CSInt<l,i>&){
 	return os << i;
 }
 
+template<backend::Level l, int i>
+constexpr bool verify_ReplaceMe(const CSInt<l,i>*)
+{return true; }
+
 template<Level l, typename T>
 class CSConstant : public ConExpr<l> {
 public:
@@ -46,6 +50,8 @@ public:
 	}
 	
 };
+
+REPLACEME_OK(CSConstant)
 
 template<Level l, typename i>
 std::ostream & operator<<(std::ostream &os, const CSConstant<l,i>& c){

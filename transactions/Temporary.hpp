@@ -215,3 +215,7 @@ bool is_reftemp(const RefTemporary<l,T> *){
 template<typename T>
 struct is_RefTemporary : std::integral_constant<bool,is_reftemp(mke_p<T>())>::type
 {};
+
+
+REPLACEME_OK(Temporary);
+REPLACEME_OK(RefTemporary);

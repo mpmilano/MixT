@@ -11,12 +11,21 @@ struct Transaction{
 	const BitSet<backend::HandleAbbrev> strong;
 	const BitSet<backend::HandleAbbrev> weak;
 
+	template<typename Arg, typename Accum>
+	using Verify = typename std::integral_constant<bool,(verify_ReplaceMe(mke_p<Arg>())) && Accum::value >::type;
+	
 	template<typename S, typename W>
 	Transaction(const Seq<S,W> &s):
 		action(convert(s)),
 		print([s](std::ostream &os) -> std::ostream& {return os << s;}),
 		strong(s.getStrongReadSet()),
-		weak(s.getWeakReadSet()) {}
+		weak(s.getWeakReadSet())
+		{
+			static_assert(
+				fold_types<Verify,S,std::true_type>::value,
+				"Error: semantic validation failed. Likely due to an invalid reference.  Check your variables!"
+				);
+		}
 
 	Transaction(const Transaction&) = delete;
 

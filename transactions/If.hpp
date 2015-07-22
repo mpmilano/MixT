@@ -236,3 +236,13 @@ std::ostream & operator<<(std::ostream &os, const If<Cond,Then>& i){
 #define THEN ,
 #define ELSE(x) ) / make_else<backend::Level::x>(
 #define FI ) /
+
+
+template<typename C, typename T>
+constexpr bool verify_ReplaceMe(const If<C,ReplaceMe<T> >*){
+	constexpr bool dummy = get_level<ReplaceMe<T> >::value == backend::Level::causal &&
+		get_level<ReplaceMe<T> >::value == backend::Level::strong;
+	static_assert(dummy || !dummy, "NameError: Failed to replace for reference");
+	return false;
+}
+
