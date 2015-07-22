@@ -86,6 +86,11 @@ struct Seq {
 		return *this;
 	}
 
+	template<typename T>
+	auto operator/(const ReplaceMe<T> &rm) const{
+		return seq_cat (*this, make_seq(replace(*this,rm.t)));
+	}
+
 	auto getStrongReadSet() const {
 		return fold(strong,
 					[](const auto &e, const auto &acc)

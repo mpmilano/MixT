@@ -30,15 +30,29 @@ auto operator/(const Seq<A,B>& a, const If<C,D> &i){
 	return seq_cat(a,make_seq(i));
 }
 
-template<typename A, typename B, typename C, typename D>
-auto operator/(const Seq<A,B>& a, const If<ReplaceMe<C>,D> &i){
-	std::cout << "building if: Seq before is this: " << a << std::endl;
-	std::cout << "building if: Specific expr is this: " << i << std::endl;
-
-	std::cout << std::endl << std::endl;
-	return seq_cat(a,make_seq(i));
+template<backend::Level l, typename T>
+auto level_change(const RefTemporary<l,T> &t){
+	return std::make_pair(Noop<l>(),t);
 }
 
+template<backend::Level l, backend::Level lold, typename T, restrict(get_level<T>::value != l)>
+auto level_change(const RefTemporary<lold,RefTemporary<l,T> > &t){
+	return std::make_pair(Noop<l>(),t.t.t);
+}
+
+template<backend::Level l, backend::Level lold, typename T, restrict(get_level<T>::value != l)>
+auto level_change(const RefTemporary<lold,T> &t){
+	auto tmp = make_temp<l>(t);
+	auto rt = ref_temp(tmp);
+	return std::make_pair(tmp,rt);
+}
+
+template<typename A, typename B, typename C, typename D>
+auto operator/(const Seq<A,B>& a, const If<C,ReplaceMe<D> > &i){
+	auto repl = replace(a,i.then.t);
+	auto nl = level_change<get_level<decltype(repl)>::value>(i.cond);
+	return seq_cat (a / nl.first, make_seq(If<decltype(nl.second),decltype(repl)>(nl.second,repl)));
+}
 
 template<backend::Level l, typename T, typename Then>
 auto make_if(const RefTemporary<l,T>& c, const Then &t){

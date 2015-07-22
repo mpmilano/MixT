@@ -106,7 +106,10 @@ auto _temp(const Str &str){
 template<backend::Level l, typename T>
 struct RefTemporary : public ConExpr<l> {
 	const Temporary<l,T> t;
-	RefTemporary(const Temporary<l,T> &t):t(t){}
+	const std::string name;
+	RefTemporary(const Temporary<l,T> &t):t(t),name(std::string("__x") + std::to_string(t.id)){}
+	template<unsigned long long id>
+	RefTemporary(const MutableTemporary<id,l,T> &t):t(t),name(t.name){}
 
 	auto getReadSet() const {
 		return t.getReadSet();
@@ -130,7 +133,7 @@ private:
 
 template<backend::Level l2, typename T2>
 std::ostream & operator<<(std::ostream &os, const RefTemporary<l2,T2>& t){
-	return os << "x" << t.t.id << "<" << levelStr<l2>() << ">";
+	return os << t.name <<  "<" << levelStr<l2>() << ">";
 }
 
 template<backend::Level l, typename T>
@@ -153,6 +156,11 @@ struct nope{
 	typedef std::false_type found;
 };
 
+std::ostream & operator<<(std::ostream &os, const nope& ){
+	return os << "nope!";
+}
+
+
 template<unsigned long long id, typename T>
 auto _ref(const T&, const nope&){
 	return nope();
@@ -160,14 +168,14 @@ auto _ref(const T&, const nope&){
 
 template<unsigned long long id, backend::Level l, typename T>
 auto _ref(const MutableTemporary<id,l,T> &mt, const nope&){
-	return RefTemporary<l,T>(mt);
+	RefTemporary<l,T> rt(mt);
+	return rt;
 }
 
 template<unsigned long long id, unsigned long long id2, backend::Level l, typename T>
 typename std::enable_if<id != id2,nope>::type
-_ref(const MutableTemporary<id2,l,T> &mt, const nope&){
-	return RefTemporary<l,T>(mt);
-	//return nope();
+_ref(const MutableTemporary<id2,l,T> &, const nope&){
+	return nope();
 }
 
 template<unsigned long long, backend::Level l, typename T1, typename T2>
@@ -189,14 +197,14 @@ auto replace(const Seq &s, const refstr<id> &r){
 		nope());
 
 	ReplaceMe<refstr<id> > rm(r);
-	
+
 	return conditional<std::is_same<decltype(try2),nope>::value>
-		(s / rm, s / try2);
+		(rm, try2);
 }
 
 template<typename S, typename W, unsigned long long id>
 auto operator/(const Seq<S,W> &s, const refstr<id> &r){
-	return replace(s,r);
+	return s / replace(s,r);
 }
 
 template<backend::Level l, typename T>
