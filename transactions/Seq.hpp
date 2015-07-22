@@ -2,6 +2,7 @@
 #include "ConStatement.hpp"
 #include "BaseCS.hpp"
 #include "../BitSet.hpp"
+#include "tuple_extras.hpp"
 
 
 //holes; for filling in variables. 
@@ -102,6 +103,11 @@ struct Seq {
 	static constexpr auto size() {
 		return std::tuple_size<StrongNext>::value +
 			std::tuple_size<WeakNext>::value;
+	}
+
+	template<typename F, typename Acc>
+	auto ifold(const F &f, const Acc &acc) const{
+		return fold(weak,f,fold(strong,f,acc));
 	}
 
 	bool operator()(Store &st) const {

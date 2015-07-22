@@ -76,3 +76,24 @@ template<typename F>
 struct is_cs_tuple : std::integral_constant<bool,
 										 is_tuple_f((F*) nullptr)
 										 >::type {};
+
+template<typename T>
+struct ReplaceMe : public ConStatement<backend::Level::strong>{
+	const T t;
+
+	ReplaceMe(const T& t):t(t){}
+
+	auto operator()(const Store&) const {
+		return false;
+	}
+
+	BitSet<backend::HandleAbbrev> getReadSet() const {
+		return 0;
+	}
+
+};
+
+template<typename T>
+std::ostream & operator<<(std::ostream &os, const ReplaceMe<T>&){
+	return os << "this should have been replaced";
+}

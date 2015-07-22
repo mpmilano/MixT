@@ -180,40 +180,23 @@ auto operator/(const Seq<S,W> &s, const nope&){
 	return s;
 }
 
-template<unsigned long long id>
-struct DeferSubst : public ConExpr<backend::Level::causal> {
-	typedef typename std::integral_constant<unsigned long long, id>::type key;
+template<typename Seq, unsigned long long id>
+auto replace(const Seq &s, const refstr<id> &r){
 
-	auto operator()(const Store&) const {
-		return false;
-	}
+	auto try2 = s.ifold([](const auto &e, const auto &acc){
+			return _ref<id>(e,acc);
+		},
+		nope());
 
-	BitSet<backend::HandleAbbrev> getReadSet() const {
-		return 0;
-	}
-};
-
-template<unsigned long long i>
-std::ostream & operator<<(std::ostream &os, const DeferSubst<i>&){
-	return os << "this should have been replaced";
+	ReplaceMe<refstr<id> > rm(r);
+	
+	return conditional<std::is_same<decltype(try2),nope>::value>
+		(s / rm, s / try2);
 }
 
-
 template<typename S, typename W, unsigned long long id>
-auto operator/(const Seq<S,W> &s, const refstr<id> &){
-	
-	auto try1 = fold(s.strong,
-					 [](const auto &e, const auto &acc){
-						 return _ref<id>(e,acc);
-					 },
-					 nope());
-
-	auto try2 = fold(s.weak,[&](const auto &e, const auto &acc){
-			return _ref<id>(e,acc);
-		},try1);
-
-	return conditional<std::is_same<decltype(try2),nope>::value>
-		(s / DeferSubst<id>(),s / try2);
+auto operator/(const Seq<S,W> &s, const refstr<id> &r){
+	return replace(s,r);
 }
 
 template<backend::Level l, typename T>
