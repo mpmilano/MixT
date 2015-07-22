@@ -10,7 +10,7 @@
 template<typename Cond, typename Then>
 struct If;
 
-#define handle_level backend::handle_level
+#define handle_level handle_level
 
 #define if_concept(Cond,Then) ( \
 																		\
@@ -30,17 +30,17 @@ auto operator/(const Seq<A,B>& a, const If<C,D> &i){
 	return seq_cat(a,make_seq(i));
 }
 
-template<backend::Level l, typename T>
+template<Level l, typename T>
 auto level_change(const RefTemporary<l,T> &t){
 	return std::make_pair(Noop<l>(),t);
 }
 
-template<backend::Level l, backend::Level lold, typename T, restrict(get_level<T>::value != l)>
+template<Level l, Level lold, typename T, restrict(get_level<T>::value != l)>
 auto level_change(const RefTemporary<lold,RefTemporary<l,T> > &t){
 	return std::make_pair(Noop<l>(),t.t.t);
 }
 
-template<backend::Level l, backend::Level lold, typename T, restrict(get_level<T>::value != l)>
+template<Level l, Level lold, typename T, restrict(get_level<T>::value != l)>
 auto level_change(const RefTemporary<lold,T> &t){
 	auto tmp = make_temp<l>(t);
 	auto rt = ref_temp(tmp);
@@ -54,12 +54,12 @@ auto operator/(const Seq<A,B>& a, const If<C,ReplaceMe<D> > &i){
 	return seq_cat (a / nl.first, make_seq(If<decltype(nl.second),decltype(repl)>(nl.second,repl)));
 }
 
-template<backend::Level l, typename T, typename Then>
+template<Level l, typename T, typename Then>
 auto make_if(const RefTemporary<l,T>& c, const Then &t){
 	return If<RefTemporary<l,T>,Then> (c,t);
 }
 
-template<backend::Level l, typename Then>
+template<Level l, typename Then>
 Then make_if(const DummyConExpr<l>&, const Then &t){
 	return t;
 }
@@ -74,15 +74,15 @@ auto make_if(const Cond& c, const Then &t){
 	return make_seq(temp) / make_if(temp,t);
 }
 
-template<backend::Level l, typename Then1, typename Then2>
+template<Level l, typename Then1, typename Then2>
 Seq<Then1,Then2> make_if(const DummyConExpr<l>& , const Seq<Then1, Then2> &t){
 	return t;
 }
 
 template<typename Cond, typename Then1, typename Then2>
 auto make_if(const Cond& c, const Seq<Then1, Then2> &t){
-	auto temp_strong = make_temp<backend::Level::strong>(c);
-	auto temp_weak = make_temp<backend::Level::causal>(ref_temp(temp_strong));
+	auto temp_strong = make_temp<Level::strong>(c);
+	auto temp_weak = make_temp<Level::causal>(ref_temp(temp_strong));
 	return make_seq(temp_strong) /
 		temp_weak /
 		fold(t.strong,
@@ -104,18 +104,18 @@ auto make_if(const Cond2& c,
 	return make_if(c,*(t.begin()));
 }
 
-template<backend::Level, typename Els>
+template<Level, typename Els>
 struct Else {
 	const Els &e;
 };
 
-template<backend::Level l,typename Els>
+template<Level l,typename Els>
 auto make_else(const Els &e){
 	Else<l,Els> ret{e};
 	return ret;
 }
 
-template<backend::Level l>
+template<Level l>
 DummyConExpr<l> make_else(const DummyConExpr<l> &e){
 	return e;
 }
@@ -128,11 +128,11 @@ auto make_if(const T1& t1, const T2 &t2, const T3 &t3){
 
 template<typename Els, typename Str, typename... Stuff>
 auto operator_append_impl(const Seq<Str, std::tuple<Stuff...> > &s,
-						  const Else<backend::Level::causal,Els> & e){
+						  const Else<Level::causal,Els> & e){
 	static_assert(sizeof...(Stuff) > 0);
 	typedef typename last_of<Stuff...>::type LastIf;
 	static constexpr int last_index = sizeof...(Stuff) - 1;
-	auto not_temp = make_temp<backend::Level::causal>(
+	auto not_temp = make_temp<Level::causal>(
 		make_not(
 			std::get<last_index>(s.weak).cond));
 	return s / not_temp / make_if(ref_temp(not_temp),e.e);
@@ -141,11 +141,11 @@ auto operator_append_impl(const Seq<Str, std::tuple<Stuff...> > &s,
 
 template<typename Els, typename Wk, typename... Stuff>
 auto operator_append_impl(const Seq<std::tuple<Stuff...>, Wk> &s,
-						  const Else<backend::Level::strong,Els> & e){
+						  const Else<Level::strong,Els> & e){
 	static_assert(sizeof...(Stuff) > 0);
 	typedef typename last_of<Stuff...>::type LastIf;
 	static constexpr int last_index = sizeof...(Stuff) - 1;
-	auto not_temp = make_temp<backend::Level::strong>(
+	auto not_temp = make_temp<Level::strong>(
 		make_not(
 			std::get<last_index>(s.strong).cond));
 	return s / not_temp / make_if(ref_temp(not_temp),e.e);
@@ -154,10 +154,10 @@ auto operator_append_impl(const Seq<std::tuple<Stuff...>, Wk> &s,
 template<typename Els, typename Str, typename... Stuff> /*
 typename std::enable_if<sizeof...(Stuff) != 0,
 	decltype(operator_append_impl(mke<Seq<Str,std::tuple<Stuff...> > >(),
-								  mke<Else<backend::Level::causal, Els> > ))>::type
+								  mke<Else<Level::causal, Els> > ))>::type
 //*/auto
 operator/(const Seq<Str, std::tuple<Stuff...> > &s,
-		  const Else<backend::Level::causal,Els> & e){
+		  const Else<Level::causal,Els> & e){
 	return operator_append_impl(s,e);
 }
 
@@ -165,10 +165,10 @@ template<typename Els, typename Wk, typename... Stuff> /*
 typename std::enable_if<sizeof...(Stuff) != 0,
 						decltype(operator_append_impl
 								 (mke<Seq<std::tuple<Stuff...>, Wk > >(),
-								  mke<Else<backend::Level::strong, Els> > ))>::type
+								  mke<Else<Level::strong, Els> > ))>::type
 //*/auto
 operator/(const Seq<std::tuple<Stuff...>, Wk> &s,
-		  const Else<backend::Level::strong,Els> & e){
+		  const Else<Level::strong,Els> & e){
 	return operator_append_impl(s,e);
 }
 
@@ -195,7 +195,7 @@ struct If : public ConStatement<get_level<Then>::value> {
 		return make_seq(*this) / make_if(make_not(cond),e.e);
 	}
 
-	BitSet<backend::HandleAbbrev> getReadSet() const {
+	BitSet<HandleAbbrev> getReadSet() const {
 		return set_union(get_ReadSet(cond),then.getReadSet());
 	}
 
@@ -234,14 +234,14 @@ std::ostream & operator<<(std::ostream &os, const If<Cond,Then>& i){
 
 #define IF make_if(
 #define THEN ,
-#define ELSE(x) ) / make_else<backend::Level::x>(
+#define ELSE(x) ) / make_else<Level::x>(
 #define FI ) /
 
 
 template<typename C, typename T>
 constexpr bool verify_ReplaceMe(const If<C,ReplaceMe<T> >*){
-	constexpr bool dummy = get_level<ReplaceMe<T> >::value == backend::Level::causal &&
-		get_level<ReplaceMe<T> >::value == backend::Level::strong;
+	constexpr bool dummy = get_level<ReplaceMe<T> >::value == Level::causal &&
+		get_level<ReplaceMe<T> >::value == Level::strong;
 	static_assert(dummy || !dummy, "NameError: Failed to replace for reference");
 	return false;
 }

@@ -10,7 +10,7 @@ template<typename StrongNext, typename WeakNext>
 struct Seq;
 
 
-template<typename T,backend::Level l,typename>
+template<typename T,Level l,typename>
 Seq<std::tuple<T>, std::tuple<> > make_seq(const T &stm){
 	static_assert(l == Level::strong);
 	static_assert(is_ConStatement<T>::value,"ugh restrict is broken");
@@ -18,7 +18,7 @@ Seq<std::tuple<T>, std::tuple<> > make_seq(const T &stm){
 	return Seq<std::tuple<T>, std::tuple<> >(std::tuple<T>(stm), std::make_tuple());
 }
 
-template<typename T,backend::Level l,typename>
+template<typename T,Level l,typename>
 Seq<std::tuple<>, std::tuple<T> > make_seq(const T &stm){
 	static_assert(l == Level::causal);
 	static_assert(is_ConStatement<T>::value,"ugh restrict is broken");
@@ -95,14 +95,14 @@ struct Seq {
 		return fold(strong,
 					[](const auto &e, const auto &acc)
 					{return acc.addAll(e.getReadSet());},
-					BitSet<backend::HandleAbbrev>());
+					BitSet<HandleAbbrev>());
 	}
 	
 	auto getWeakReadSet() const {
 		return fold(weak,
 					[](const auto &e, const auto &acc)
 					{return acc.addAll(e.getReadSet());},
-					BitSet<backend::HandleAbbrev>());
+					BitSet<HandleAbbrev>());
 	}
 
 	static constexpr auto size() {
@@ -132,9 +132,9 @@ struct Seq {
 	friend std::ostream & operator<<(std::ostream &os,
 									 const Seq<StrongNext2,WeakNext2>& i);
 	
-	template<typename T, backend::Level, typename ig>
+	template<typename T, Level, typename ig>
 	friend Seq<std::tuple<>, std::tuple<T> > make_seq(const T &);
-	template<typename T, backend::Level, typename ig>
+	template<typename T, Level, typename ig>
 	friend Seq<std::tuple<T>, std::tuple<> > make_seq(const T &);
 		
 	friend const Seq<std::tuple<>,std::tuple<> > & empty_seq();

@@ -9,7 +9,7 @@
 template<typename Arg, typename Strong, typename Weak>
 class Fun;
 
-#define handle_level backend::handle_level
+#define handle_level handle_level
 
 #define fun_concept(Arg,Strong,Weak) ( \
 																		\

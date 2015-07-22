@@ -16,8 +16,8 @@ public:
 		return t;
 	}
 
-	BitSet<backend::HandleAbbrev> getReadSet() const {
-		return BitSet<backend::HandleAbbrev>();
+	BitSet<HandleAbbrev> getReadSet() const {
+		return BitSet<HandleAbbrev>();
 	}
 
 	constexpr bool operator()(Store&) const {
@@ -40,17 +40,17 @@ const Noop<Level::causal> dummy2;
 template<typename T>
 struct is_Noop : std::integral_constant<
 	bool,
-	std::is_same<T,Noop<backend::Level::strong> >::value ||
-	std::is_same<T,Noop<backend::Level::causal> >::value>::type {};
+	std::is_same<T,Noop<Level::strong> >::value ||
+	std::is_same<T,Noop<Level::causal> >::value>::type {};
 							
 template<typename StrongNext, typename WeakNext>
 struct Seq;
 
-template<typename T,backend::Level l = get_level<T>::value,
+template<typename T,Level l = get_level<T>::value,
 		 restrict(is_ConStatement<T>::value && l == Level::causal)>
 Seq<std::tuple<>, std::tuple<T> > make_seq(const T &);
 
-template<typename T,backend::Level l = get_level<T>::value,
+template<typename T,Level l = get_level<T>::value,
 		 restrict(is_ConStatement<T>::value && l == Level::strong)>
 Seq<std::tuple<T>, std::tuple<> > make_seq(const T &);
 

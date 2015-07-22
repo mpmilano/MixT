@@ -1,13 +1,11 @@
 #pragma once
 #include "tuple_extras.hpp"
-#include "../Backend.hpp"
 #include "utils.hpp"
-#include "../handle_utils"
 #include "args-finder.hpp"
 #include "ConStatement.hpp"
 #include "filter-varargs.hpp"
 
-template<backend::Level l>
+template<Level l>
 struct ConStatement;
 
 
@@ -15,16 +13,16 @@ template<typename... T>
 struct min_level;
 
 //"Self" should always be the bottom of the inheritance.
-template<backend::Level l, typename Self>
+template<Level l, typename Self>
 class Operation : public ConStatement<l>{
 public:
 
 	//Must have a static function "build" which creates the operation.
 	//it should take first all handles, then all other arguments.
 
-	static constexpr backend::Level level = l;
+	static constexpr Level level = l;
 
-	BitSet<backend::HandleAbbrev> rs;
+	BitSet<HandleAbbrev> rs;
 	
 	Operation(const decltype(rs) &rs):rs(rs){}
 
@@ -33,9 +31,9 @@ public:
 	template<typename Handles, typename OtherArgs>
 	static Self operate(const Handles &h,
 						const OtherArgs &o,
-						const BitSet<backend::HandleAbbrev> &bs){
-		static_assert(forall_types<backend::is_handle, Handles>::value,"Error: must pass handles as initial arguments!");
-		static_assert(forall_types<backend::is_not_handle, OtherArgs>::value,"Error: 'other arguments' for operation contains a handle!");
+						const BitSet<HandleAbbrev> &bs){
+		static_assert(forall_types<is_handle, Handles>::value,"Error: must pass handles as initial arguments!");
+		static_assert(forall_types<is_not_handle, OtherArgs>::value,"Error: 'other arguments' for operation contains a handle!");
 		static_assert(min_level<Handles>::value == l, "Error: attempt to declare operation at level incompatible with handle arguments!");
 		//TODO: read validation
 		return Self(h,o,bs); 
@@ -43,15 +41,15 @@ public:
 	
 private:
 	template<typename TupleSoFar>
-	static auto make_tuples_(const TupleSoFar &ht, const BitSet<backend::HandleAbbrev> &bs){
+	static auto make_tuples_(const TupleSoFar &ht, const BitSet<HandleAbbrev> &bs){
 		static_assert(is_tuple<TupleSoFar>::value,"Error! This isn't a tuple! bugs!");
 		return std::make_tuple(std::get<0>(ht),std::get<1>(ht),bs);
 	}
 	
-	template<typename TupleSoFar, backend::Client_Id id, backend::Level l2,
-			 backend::HandleAccess ha2, typename T, typename... Rest>
+	template<typename TupleSoFar,  Level l2,
+			 HandleAccess ha2, typename T, typename... Rest>
 	static auto make_tuples_(const TupleSoFar &ht,
-							const backend::DataStore::Handle<id,l2,ha2,T> &fst, const Rest & ... r){
+							const Handle<l2,ha2,T> &fst, const Rest & ... r){
 		static_assert(is_tuple<TupleSoFar>::value,"Error! This isn't a tuple! bugs!");
 		using namespace std;
 		auto next = make_tuple(tuple_cat(get<0>(ht),make_tuple(fst)),get<1>(ht),get<2>(ht));
@@ -71,19 +69,19 @@ public:
 //but right now it's the min level of all handles.  this is certainly
 //"safe," but maybe I need to do something else?
 template<typename Ret, typename... Args>
-constexpr backend::Level oper_level(Ret (*) (Args...) ){
+constexpr Level oper_level(Ret (*) (Args...) ){
 	return min_level<typename std::decay<Args>::type...>::value;
 }
 
 template<typename T,restrict(!std::is_function<T>::value)>
-constexpr backend::Level oper_level(const T&){
+constexpr Level oper_level(const T&){
 	static_assert(!std::is_function<T>::value,"Error: oper_level only functions on function pointers!");
-	return backend::Level::strong;
+	return Level::strong;
 }
 
 template<typename... Handles>
-BitSet<backend::HandleAbbrev> oper_readset(const std::tuple<Handles...> &h){
-	return fold<BitSet<backend::HandleAbbrev> >
+BitSet<HandleAbbrev> oper_readset(const std::tuple<Handles...> &h){
+	return fold<BitSet<HandleAbbrev> >
 		(h,
 		 [](const auto &h1, auto bs){
 			return (canRead(h1.ha) ? bs.insert(h1.abbrev()) : bs);
@@ -92,7 +90,7 @@ BitSet<backend::HandleAbbrev> oper_readset(const std::tuple<Handles...> &h){
 
 template<typename Ret, typename... Args>
 constexpr auto oper_handles_f(Ret (*) (Args...) ){
-	return mke<typename filter<backend::is_handle,Args...>::type>();
+	return mke<typename filter<is_handle,Args...>::type>();
 }
 
 template<typename T>
@@ -102,7 +100,7 @@ constexpr std::tuple<> oper_handles_f(const T& ){
 
 template<typename Ret, typename... Args>
 constexpr auto oper_other_f(Ret (*) (Args...) ){
-	return mke<typename filter<backend::is_not_handle,Args...>::type>();
+	return mke<typename filter<is_not_handle,Args...>::type>();
 }
 
 //TODO: make this work when name of function isn't provided as x.
@@ -132,8 +130,8 @@ constexpr auto oper_other_f(Ret (*) (Args...) ){
 																		\
 	}
 
-#define make_operation(Name, x) make_operation_lvl(Name ## _strong,x<backend::Level::strong>); \
-	make_operation_lvl(Name ## _causal,x<backend::Level::causal>);		\
-	template<backend::Level l>											\
-	using Name = typename std::conditional<l == backend::Level::causal, Name ## _causal, Name ## _strong >::type
+#define make_operation(Name, x) make_operation_lvl(Name ## _strong,x<Level::strong>); \
+	make_operation_lvl(Name ## _causal,x<Level::causal>);		\
+	template<Level l>											\
+	using Name = typename std::conditional<l == Level::causal, Name ## _causal, Name ## _strong >::type
 

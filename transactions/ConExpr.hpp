@@ -1,23 +1,22 @@
 #pragma once
 
-#include "../Backend.hpp"
+
 #include "utils.hpp"
 #include <string>
 #include <memory>
 #include <tuple>
-#include "../extras"
 #include "ConStatement.hpp"
 #include "args-finder.hpp"
 
-typedef backend::Level Level;
+typedef Level Level;
 
 template<Level l>
 struct ConExpr : public ConStatement<l> {};
 
 template<Level l>
 struct DummyConExpr : public ConExpr<l> {
-	BitSet<backend::HandleAbbrev> getReadSet() const {
-		return BitSet<backend::HandleAbbrev>();
+	BitSet<HandleAbbrev> getReadSet() const {
+		return BitSet<HandleAbbrev>();
 	}
 };
 
@@ -31,12 +30,12 @@ struct is_ConExpr :
 
 template<typename Expr, restrict(is_ConExpr<Expr>::value && std::is_pod<Expr>::value)>
 auto get_ReadSet(const Expr &){
-	return BitSet<backend::HandleAbbrev>();
+	return BitSet<HandleAbbrev>();
 }
 
 template<typename T>
 typename std::enable_if<is_ConExpr<T>::value && !std::is_pod<T>::value,
-						BitSet<backend::HandleAbbrev> >::type get_ReadSet(const T &ce){
+						BitSet<HandleAbbrev> >::type get_ReadSet(const T &ce){
 	assert(&ce != nullptr);
 	return ce.getReadSet();
 }

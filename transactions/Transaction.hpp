@@ -2,14 +2,13 @@
 
 #include "Seq.hpp"
 #include "args-finder.hpp"
-#include "../Backend.hpp"
 #include "../BitSet.hpp"
 
 struct Transaction{
 	const std::function<bool (Store &)> action;
 	const std::function<std::ostream & (std::ostream &os)> print;
-	const BitSet<backend::HandleAbbrev> strong;
-	const BitSet<backend::HandleAbbrev> weak;
+	const BitSet<HandleAbbrev> strong;
+	const BitSet<HandleAbbrev> weak;
 
 	template<typename Arg, typename Accum>
 	using Verify = typename std::integral_constant<bool,(verify_ReplaceMe(mke_p<Arg>())) && Accum::value >::type;
@@ -39,5 +38,5 @@ std::ostream & operator<<(std::ostream &os, Transaction& t){
 	return t.print(os);
 }
 
-#define BEGIN_TRANSACTION { Transaction ____transaction(Noop<backend::Level::strong>() / 
-#define END_TRANSACTION Noop<backend::Level::strong>()); std::cout << ____transaction << std::endl;}
+#define BEGIN_TRANSACTION { Transaction ____transaction(Noop<Level::strong>() / 
+#define END_TRANSACTION Noop<Level::strong>()); std::cout << ____transaction << std::endl;}

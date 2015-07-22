@@ -3,10 +3,8 @@
 #include "BaseCS.hpp"
 #include "ConExpr.hpp"
 #include "Seq.hpp"
-#include "../Backend.hpp"
 #include <iostream>
 
-using namespace backend;
 
 template<typename Expr>
 class Assignment : ConStatement<get_level<Expr>::value> {
@@ -16,10 +14,10 @@ class Assignment : ConStatement<get_level<Expr>::value> {
 public:
 
 	const std::function<void ()> thunk;
-	BitSet<backend::HandleAbbrev> rs;
+	BitSet<HandleAbbrev> rs;
 	
-	template<Client_Id id, Level l, HandleAccess HA, typename T>
-	Assignment(DataStore::Handle<id,l,HA,T> h, Expr e)
+	template< Level l, HandleAccess HA, typename T>
+	Assignment(Handle<l,HA,T> h, Expr e)
 		:thunk([=](){return h.clone().put(e);}),
 		 rs(get_ReadSet(e))
 		{
@@ -41,7 +39,7 @@ public:
 
 };
 
-template<Level l, Client_Id id, HandleAccess HA, typename T, typename Expr>
-Assignment<Expr> operator<<(DataStore::Handle<id,l,HA,T> &sink, Expr source) {
+template<Level l,  HandleAccess HA, typename T, typename Expr>
+Assignment<Expr> operator<<(Handle<l,HA,T> &sink, Expr source) {
 	return Assignment<Expr>(sink,source);
 }

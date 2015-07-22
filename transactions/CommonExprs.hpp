@@ -8,8 +8,8 @@ class CSInt : public ConExpr<l>, public std::integral_constant<int,i>::type {
 public:
 	CSInt(){}
 
-	BitSet<backend::HandleAbbrev> getReadSet() const {
-		return BitSet<backend::HandleAbbrev>();
+	BitSet<HandleAbbrev> getReadSet() const {
+		return BitSet<HandleAbbrev>();
 	}
 
 	CONNECTOR_OP
@@ -27,7 +27,7 @@ std::ostream & operator<<(std::ostream &os, const CSInt<l,i>&){
 	return os << i;
 }
 
-template<backend::Level l, int i>
+template<Level l, int i>
 constexpr bool verify_ReplaceMe(const CSInt<l,i>*)
 {return true; }
 
@@ -39,8 +39,8 @@ public:
 	
 	CSConstant(const T& t):val(t){}
 
-	BitSet<backend::HandleAbbrev> getReadSet() const {
-		return BitSet<backend::HandleAbbrev>();
+	BitSet<HandleAbbrev> getReadSet() const {
+		return BitSet<HandleAbbrev>();
 	}
 
 	CONNECTOR_OP
@@ -76,7 +76,7 @@ struct Not : public ConExpr<get_level<T>::value> {
 		return !v(s);
 	}
 
-	BitSet<backend::HandleAbbrev> getReadSet() const {
+	BitSet<HandleAbbrev> getReadSet() const {
 		return v.getReadSet();
 	}
 
@@ -95,14 +95,14 @@ Not<T> make_not(const T& t){
 	return Not<T>(t);
 }
 
-template<backend::Level l>
+template<Level l>
 DummyConExpr<l> make_not(const DummyConExpr<l>& e){
 	return e;
 }
 
 template<typename T>
 struct IsValid : public ConExpr<get_level<T>::value> {
-	static_assert(backend::is_handle<T>::value,"error: IsValid designed for referential integrity of handles.");
+	static_assert(is_handle<T>::value,"error: IsValid designed for referential integrity of handles.");
 
 	const T t;
 	
@@ -116,8 +116,8 @@ struct IsValid : public ConExpr<get_level<T>::value> {
 	}
 
 	auto getReadSet() const {
-		backend::HandleAbbrev hb = t;
-		BitSet<backend::HandleAbbrev> ret(hb);
+		HandleAbbrev hb = t;
+		BitSet<HandleAbbrev> ret(hb);
 		return ret;
 	}
 
@@ -142,13 +142,13 @@ struct FreeExpr : public ConExpr<min_level<Handles...>::value > {
 	//todo: idea here is that only read-only things can be done to the handles
 	//in this context.  Try to make that a reality please.
 	std::unique_ptr<std::function<T ()> > f;
-	std::unique_ptr<const BitSet<backend::HandleAbbrev> > rs;
+	std::unique_ptr<const BitSet<HandleAbbrev> > rs;
 	
 	FreeExpr(int,
-			 std::function<T (const typename backend::extract_type<Handles>::type & ... )> f,
+			 std::function<T (const typename extract_type<Handles>::type & ... )> f,
 			 Handles... h)
 		:f(new std::function<T ()>([&,f,h...](){return f(h.get()...);})),
-		 rs(new BitSet<backend::HandleAbbrev>(setify(h.abbrev()...)))
+		 rs(new BitSet<HandleAbbrev>(setify(h.abbrev()...)))
 		{}
 
 	FreeExpr(const FreeExpr&) = delete;
@@ -157,7 +157,7 @@ struct FreeExpr : public ConExpr<min_level<Handles...>::value > {
 		return (*f)();
 	}
 
-	BitSet<backend::HandleAbbrev> getReadSet() const {
+	BitSet<HandleAbbrev> getReadSet() const {
 		return *rs;
 	}
 

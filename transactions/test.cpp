@@ -14,7 +14,7 @@ constexpr T& id(const T& t){
 	return t;
 }
 
-template<backend::Level l>
+template<Level l>
 struct dummy_operation : public Operation<l, dummy_operation<l> >
 {
 
@@ -28,7 +28,7 @@ struct dummy_operation : public Operation<l, dummy_operation<l> >
 };
 
 template<Level l>
-void fooFight(const backend::DataStore::Handle<1,l, backend::HandleAccess::all, int>&){
+void fooFight(const Handle<l, HandleAccess::all, int>&){
 
 }
 
@@ -44,11 +44,6 @@ struct test_entry{
 
 int main(){
 
-	using namespace backend;
-
-	DataStore ds;
-	backend::Client<1> interface(ds);
-
 	//TODO: hybrids like the if-test.
 	//Should be sufficient to extract test as strong -> casual
 	//asignment to temp var, and use temp var for subsequent,
@@ -58,7 +53,7 @@ int main(){
 	//final pass during Transaction conversion, or can
 	//try and add extraction to If-construction.
 
-	auto thirteen = interface.newHandle<Level::strong>(13);
+	auto thirteen = mke<Handle<Level::strong, HandleAccess::all,int> >();
 
 	BEGIN_TRANSACTION
 		(temp(Level::causal,int,"f") = 6)/
@@ -100,13 +95,9 @@ int main(){
 
 	hndl << 5 + 12;
 
-	auto hndl2 = interface.newHandle<Level::causal>(17);
+	auto hndl2 = mke<Handle<Level::causal, HandleAccess::all, int> >();
 
 	int tmp = 14;
-
-	//call an operation. 
-	hndl.o<dummy_operation>(0);
-	hndl.o<FooFight>(0);
 
 
 	Store s;

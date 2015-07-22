@@ -1,11 +1,13 @@
 #pragma once
 #include "restrict.hpp"
 #include "args-finder.hpp"
+#include "Basics.hpp"
 #include <type_traits>
 #include <cassert>
 #include <tuple>
 #include <set>
 #include <map>
+#include "../extras"
 
 template<typename T, std::size_t size1, std::size_t size2>
 auto prefix_array(const std::array<T,size1>& t,
@@ -105,12 +107,6 @@ struct Store : std::map<int,std::unique_ptr<void*> >{
 
 	Store(const Store&) = delete;
 };
-
-template<backend::Level l>
-std::string levelStr(){
-	const static std::string ret = (l == backend::Level::strong ? "strong" : "weak");
-	return ret;
-}
 
 
 constexpr unsigned long long unique_id(const int i, const char str[i]){

@@ -6,12 +6,12 @@
 	
 //the level here is for referencing the temporary later.
 //it's the endorsement check!
-	template<backend::Level l, typename T>
+	template<Level l, typename T>
 	struct Temporary : public ConStatement<get_level<T>::value> {
 		static_assert(is_ConExpr<T>::value,
 					  "Error: can only assign temporary the result of expressions");
-		static_assert(l == backend::Level::causal ||
-					  get_level<T>::value == backend::Level::strong,
+		static_assert(l == Level::causal ||
+					  get_level<T>::value == Level::strong,
 					  "Error: flow violation");
 	public:
 		const int id;
@@ -32,12 +32,12 @@
 			friend std::ostream & operator<<(std::ostream &os, const Temporary<l2,i2>&);
 };	
 
-template<backend::Level l, typename T>
+template<Level l, typename T>
 auto make_temp(const T& t){
 	return Temporary<l,T>(t);
 }
 
-template<backend::Level, backend::Level l>
+template<Level, Level l>
 auto make_temp(const DummyConExpr<l>& r){
 	return r;
 }
@@ -46,7 +46,7 @@ std::ostream & operator<<(std::ostream &os, const Temporary<l2,i2>& t){
 	return os << "__x" << t.id << "<" << levelStr<l2>() << ">" <<  " = " << t.t;
 }
 
-template<unsigned long long ID, backend::Level l, typename T>
+template<unsigned long long ID, Level l, typename T>
 struct MutableTemporary : public Temporary<l,T> {
 	const std::string &name;
 	MutableTemporary(const std::string& name, const T& t):
@@ -59,7 +59,7 @@ struct MutableTemporary : public Temporary<l,T> {
 		return true;
 	}
 
-	typedef typename std::integral_constant<backend::Level,l>::type level;
+	typedef typename std::integral_constant<Level,l>::type level;
 	typedef T type;
 	typedef std::true_type found;
 	typedef typename std::integral_constant<unsigned long long, ID>::type key;
@@ -67,12 +67,12 @@ struct MutableTemporary : public Temporary<l,T> {
 	CONNECTOR_OP;
 };
 
-template<unsigned long long id, backend::Level l, typename T>
+template<unsigned long long id, Level l, typename T>
 auto make_mut_temp(const std::string& name, const T& t){
 	return MutableTemporary<id,l,T>(name,t);
 }
 
-template<unsigned long long, backend::Level, backend::Level l>
+template<unsigned long long, Level, Level l>
 auto make_mut_temp(const std::string& , const DummyConExpr<l>& r){
 	return r;
 }
@@ -92,7 +92,7 @@ class CSConstant;
 //we still need to figure out how to retrieve the type and level when referencing
 //the variable later in the program.
 
-template<backend::Level l, typename T, typename Str, unsigned long long id>
+template<Level l, typename T, typename Str, unsigned long long id>
 auto _temp(const Str &str){
 	struct unassigned_temp {
 		const std::string s;
@@ -103,7 +103,7 @@ auto _temp(const Str &str){
 	return r;
 }
 
-template<backend::Level l, typename T>
+template<Level l, typename T>
 struct RefTemporary : public ConExpr<l> {
 	const Temporary<l,T> t;
 	const std::string name;
@@ -127,21 +127,21 @@ private:
 	static_assert(!is_ConStatement<decltype(
 					  call(*mke_p<Store>(),*mke_p<Temporary<l,T> >())
 					  )>::value);
-	template<backend::Level l2, typename T2>
+	template<Level l2, typename T2>
 	friend std::ostream & operator<<(std::ostream &os, const RefTemporary<l2,T2>&);
 };
 
-template<backend::Level l2, typename T2>
+template<Level l2, typename T2>
 std::ostream & operator<<(std::ostream &os, const RefTemporary<l2,T2>& t){
 	return os << t.name <<  "<" << levelStr<l2>() << ">";
 }
 
-template<backend::Level l, typename T>
+template<Level l, typename T>
 auto ref_temp(const Temporary<l,T> &t){
 	return RefTemporary<l,T>(t);
 }
 
-template<backend::Level l>
+template<Level l>
 auto ref_temp(const DummyConExpr<l> &r){
 	return r;
 }
@@ -166,19 +166,19 @@ auto _ref(const T&, const nope&){
 	return nope();
 }
 
-template<unsigned long long id, backend::Level l, typename T>
+template<unsigned long long id, Level l, typename T>
 auto _ref(const MutableTemporary<id,l,T> &mt, const nope&){
 	RefTemporary<l,T> rt(mt);
 	return rt;
 }
 
-template<unsigned long long id, unsigned long long id2, backend::Level l, typename T>
+template<unsigned long long id, unsigned long long id2, Level l, typename T>
 typename std::enable_if<id != id2,nope>::type
 _ref(const MutableTemporary<id2,l,T> &, const nope&){
 	return nope();
 }
 
-template<unsigned long long, backend::Level l, typename T1, typename T2>
+template<unsigned long long, Level l, typename T1, typename T2>
 RefTemporary<l,T2> _ref(const T1&, const RefTemporary<l,T2>& r){
 	return r;
 }
@@ -207,7 +207,7 @@ auto operator/(const Seq<S,W> &s, const refstr<id> &r){
 	return s / replace(s,r);
 }
 
-template<backend::Level l, typename T>
+template<Level l, typename T>
 bool is_reftemp(const RefTemporary<l,T> *){
 	return true;
 }
