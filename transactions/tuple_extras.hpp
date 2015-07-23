@@ -124,3 +124,9 @@ template <typename  T, typename ...Args>
 struct Cons<T, std::tuple<Args...> >{
 	typedef std::tuple<T, Args...> type;
 };
+
+template<typename T, typename... Args>
+typename Cons<T,std::tuple<Args...> >::type
+tuple_cons(const std::tuple<Args..> &a, const T &t){
+	return std::tuple_cat(std::make_tuple(t),a);
+}

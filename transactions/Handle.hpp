@@ -2,6 +2,7 @@
 #pragma once
 #include "../BitSet.hpp"
 #include "Basics.hpp"
+#include <memory>
 
 
 struct HandleAbbrev{
@@ -25,21 +26,27 @@ struct HandleAbbrev{
 	//idea; we use this for tracking the ReadSet.
 };
 
+template<Level l, HandleAccess HA>
+struct GenericHandle {};
+
 template<Level l, HandleAccess HA, typename T>
-struct Handle {
+struct Handle : public GenericHandle {
+
+	const std::unique_ptr<const RemoteObject<T> > ro;
+	
 	static constexpr Level level = l;
 	static constexpr HandleAccess ha = HA;
 	typedef T stored_type;
 	const T& get() const {
-		assert(false && "unimplemented");
+		return ro->get();
 	}
 	
 	Handle clone() const {
 		return *this;
 	}
 	
-	void put(const T& ) {
-		assert(false && "unimplemented");
+	void put(const T& t) {
+		ro->put(t);
 	}
 	
 	operator HandleAbbrev() const {
