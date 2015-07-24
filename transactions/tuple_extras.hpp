@@ -118,6 +118,7 @@ decltype(fold_types_f<Func,Func<Arg1,Accum> >(mke_p<std::tuple<Args...> >())) fo
 template<template<typename, typename> typename Func, typename T, typename Accum>
 using fold_types = decltype(fold_types_f<Func,Accum>(mke_p<T>()));
 
+
 template <typename, typename> struct Cons;
 
 template <typename  T, typename ...Args>
@@ -125,8 +126,43 @@ struct Cons<T, std::tuple<Args...> >{
 	typedef std::tuple<T, Args...> type;
 };
 
+template<typename> struct _Rest;
+
+template<typename A, typename Contents...>
+struct _Rest<std::tuple<A, Contents...> >{
+	typedef std::tuple<Contents...> type;
+};
+
+template<typename T>
+using Rest = typename _Rest<T>::type;
+
+template<typename> struct _First;
+
+template<typename A, typename Contents...>
+struct _First<std::tuple<A, Contents...> >{
+	typedef A type;
+};
+
+template<typename T>
+using First = typename _First<T>::type;
+
 template<typename T, typename... Args>
 typename Cons<T,std::tuple<Args...> >::type
 tuple_cons(const std::tuple<Args..> &a, const T &t){
 	return std::tuple_cat(std::make_tuple(t),a);
 }
+
+
+template<typename> struct _Left;
+template<typedef A, typename B> struct _Left<std::pair<A,B> >{
+	typedef A type;
+};
+template<typename T>
+using Left = typename _Left<T>::type;
+
+template<typename> struct _Right;
+template<typedef A, typename B> struct _Right<std::pair<A,B> >{
+	typedef B type;
+};
+template<typename T>
+using Right = typename _Right<T>::type;

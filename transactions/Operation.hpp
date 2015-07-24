@@ -41,6 +41,7 @@ using collect_RemoteObjs = typename std::conditional<
 				  Acc>::type
 	>::type;
 
+
 //Idea: you can have template<...> above this and it will work!
 #define OPERATION(Name, args...) auto Name(args) { \
 	static constexpr auto fun = STATIC_LAMBDA(args)
@@ -48,14 +49,23 @@ using collect_RemoteObjs = typename std::conditional<
 #define END_OPERATION ;											\
 	typedef function_traits<decltype(fun)>	ft;					\
 																		\
-	struct ret { template<typename... Args>								\
+	struct ret {														\
+	template<typename T, typename Acc>									\
+	using type_check = std::pair<Rest<Left<Acc> >,						\
+								 std::integral_constant					\
+								 <bool,									\
+								  (std::is_same<T,First<Left<Acc> > > || \
+								   (is_handle<T> &&						\
+									is_RemoteObj_ptr<First<Left<Acc> > >)) && \
+								  Right<Acc>::value						\
+								  > > ;									\
+																		\
+	template<typename... Args>											\
 	auto operator()(Args... args) const {								\
 		static_assert(sizeof...(Args) == ft::arity, "Error: arity violation"); \
-		typedef fold_types<handle_loc_check,std::tuple<Args...>,		\
-						   fold_types<collect_RemoteObjs,				\
-									  typename ft::args_tuple,std::tuple<> > > \
-		ft_res;															\
-		static_assert(ft_res::value, "Error: Handles in the wrong place!");	\
+		typedef fold_types<type_check,std::tuple<Args...>,typename ft::args_tuple> \
+			ft_res;														\
+		static_assert(Right<ft_res>::value, "Error: TypeError calling operation!"); \
 		static_assert(													\
 			can_flow(min_level<filter<is_readable_handle,Args...> >::value, \
 					 max_level<filter<is_writeable_handle,Args...> >::value), \

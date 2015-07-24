@@ -76,8 +76,27 @@ struct is_handle : std::false_type {};
 template<typename T>
 struct is_not_handle : std::integral_constant<bool, !is_handle<T>::value >::type {};
 
+template<typename T>
+struct is_readable_handle :
+	std::integral_constant<bool,
+						   is_handle<T> &&
+						   canRead(extract_access<T>::value) >::type {};
+
+template<typename T>
+struct is_writeable_handle :
+	std::integral_constant<bool,
+						   is_handle<T> &&
+						   canWrite(extract_access<T>::value) >::type {};
+
 template<typename H>
 struct extract_type;
 
 template<Level l, HandleAccess ha, typename T>
 struct extract_type<Handle<l,ha,T> > {typedef T type;};
+
+template<typename H>
+struct extract_access;
+
+template<Level l, HandleAccess ha, typename T>
+struct extract_access<Handle<l,ha,T> > :
+	std::integral_constant<HandleAccess, ha>::type {};
