@@ -21,6 +21,38 @@ struct test_entry{
 	static constexpr int v2 = 0;
 }; 
 
+template<typename T>
+auto Test(RemoteObject<T>*) {
+	static constexpr auto fun = STATIC_LAMBDA(RemoteObject<T>*) {}
+	 ;
+	 typedef function_traits<decltype(fun)>	ft;
+	 struct ret {
+		 template<typename ___T, typename Acc>
+		 using type_check = std::pair<Rest<Left<Acc> >,
+									  std::integral_constant
+									  <bool,
+									   (std::is_same<___T,First<Left<Acc> > >::value ||
+										(is_handle<___T>::value &&
+										 is_RemoteObj_ptr<First<Left<Acc> > >::value)) &&
+									   Right<Acc>::value
+									   > > ;
+		 template<typename... Args>
+		 auto operator()(Args... args) const {
+			 static_assert(sizeof...(Args) == ft::arity, "Error: arity violation");
+			 typedef fold_types<type_check,std::tuple<Args...>,
+								typename ft::args_tuple>
+				 ft_res;
+			 static_assert(Right<ft_res>::value,
+						   "Error: TypeError calling operation!");
+			 static_assert(
+				 can_flow(min_level<filter<is_readable_handle,Args...> >::value,
+						  max_level<filter<is_writeable_handle,Args...> >::value),
+				 "Error: potential flow violation!");
+			 return fun(extract_robj_p(args)...);
+		 }
+	 } r;
+	 return r;
+ }
 
 int main(){
 

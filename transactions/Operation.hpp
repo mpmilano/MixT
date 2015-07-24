@@ -28,13 +28,13 @@
 	typedef function_traits<decltype(fun)>	ft;					\
 																		\
 	struct ret {														\
-	template<typename T, typename Acc>									\
+	template<typename ___T, typename Acc>									\
 	using type_check = std::pair<Rest<Left<Acc> >,						\
 								 std::integral_constant					\
 								 <bool,									\
-								  (std::is_same<T,First<Left<Acc> > > || \
-								   (is_handle<T> &&						\
-									is_RemoteObj_ptr<First<Left<Acc> > >)) && \
+								  (std::is_same<___T,First<Left<Acc> > >::value || \
+								   (is_handle<___T>::value &&			\
+									is_RemoteObj_ptr<First<Left<Acc> > >::value)) && \
 								  Right<Acc>::value						\
 								  > > ;									\
 																		\
