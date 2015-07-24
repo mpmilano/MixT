@@ -1,5 +1,18 @@
 #pragma once
 
+namespace ct_lambda{
+
+template<class F>
+struct wrapper
+{
+	static_assert(std::is_empty<F>(), "Lambdas must be empty");
+	template<class... Ts>
+	decltype(auto) operator()(Ts&&... xs) const
+		{
+			return reinterpret_cast<const F&>(*this)(std::forward<Ts>(xs)...);
+		}
+};
+
 struct wrapper_factor
 {
 	template<class F>
@@ -18,5 +31,8 @@ struct addr_add
 		}
 };
 
-#define STATIC_LAMBDA wrapper_factor() += true ? nullptr : addr_add() + []
+}
+#define STATIC_LAMBDA ct_lambda::wrapper_factor() += true ? \
+		nullptr :											\
+		ct_lambda::addr_add() + []
 

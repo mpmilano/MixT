@@ -21,9 +21,10 @@ public:
 		:thunk([=](){return h.clone().put(e);}),
 		 rs(get_ReadSet(e))
 		{
-		static_assert(canWrite(HA),"Error: needs writeable handle!");
-		static_assert(l == Level::causal || level == Level::strong,"Error: flow violation");
-	}
+			static_assert(canWrite<HA>::value,"Error: needs writeable handle!");
+			static_assert(l == Level::causal || level == Level::strong,
+						  "Error: flow violation");
+		}
 	
 	decltype(rs) getReadSet() const {
 		return rs;

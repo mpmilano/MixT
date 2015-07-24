@@ -19,28 +19,6 @@
 //we only allow write-enabled handles into which *all* read-enabled handles are
 //permitted to flow.
 
-template<int i>
-auto get_value_oper(const std::integral_constant<int, i>&){
-	return i;
-}
-
-template<typename T, int i>
-auto get_value_oper(const std::pair<std::integral_constant<int, i>, T>&){
-	return i;
-}
-	
-template<typename T, typename Acc>
-using collect_RemoteObjs = typename std::conditional<
-	is_RemoteObj_ptr<T>::value,
-	typename Cons<
-		std::pair<
-			std::integral_constant<int,
-								   get_value_oper(std::get<0>(mke<Acc>))>
-			T,Acc>::type,
-	typename Cons<std::integral_constant<int, get_value_oper(std::get<0>(mke<Acc>)) >,
-				  Acc>::type
-	>::type;
-
 
 //Idea: you can have template<...> above this and it will work!
 #define OPERATION(Name, args...) auto Name(args) { \
@@ -71,7 +49,7 @@ using collect_RemoteObjs = typename std::conditional<
 					 max_level<filter<is_writeable_handle,Args...> >::value), \
 			"Error: potential flow violation!");						\
 		return fun(extract_robj_p(args)...);							\
-	}
+	}																	\
 } r;															\
 return r;														\
 }

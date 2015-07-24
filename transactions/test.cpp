@@ -14,26 +14,6 @@ constexpr T& id(const T& t){
 	return t;
 }
 
-template<Level l>
-struct dummy_operation : public Operation<l, dummy_operation<l> >
-{
-
-	template<typename H, typename O>
-	dummy_operation(const H&, const O&, BitSet<HandleAbbrev> bs):Operation<l, dummy_operation<l> >(bs){}
-
-	void operator()(Store &){
-		
-	}
-	
-};
-
-template<Level l>
-void fooFight(const Handle<l, HandleAccess::all, int>&){
-
-}
-
-make_operation(FooFight, fooFight);
-
 
 struct test_entry{
 	unsigned long long key = 12;

@@ -19,16 +19,14 @@ std::string levelStr(){
 }
 
 enum class HandleAccess {read, write, all};
-	
-static constexpr bool canWrite(HandleAccess ha){
-	return ha == HandleAccess::write ? true 
-		: (ha == HandleAccess::all ? 
-		   true : false);
-}
 
-static constexpr bool canRead(HandleAccess ha){
-	return ha == HandleAccess::read ? true
+template<HandleAccess ha>
+using canWrite = std::integral_constant<bool,ha == HandleAccess::write ? true 
 		: (ha == HandleAccess::all ? 
-		   true : false);
-}
+		   true : false)>;
 
+template<HandleAccess ha>
+using canRead = std::integral_constant<bool,
+									   ha == HandleAccess::read ? true
+									   : (ha == HandleAccess::all ? 
+										  true : false)>;

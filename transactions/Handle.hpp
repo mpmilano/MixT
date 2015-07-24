@@ -2,6 +2,7 @@
 #pragma once
 #include "../BitSet.hpp"
 #include "Basics.hpp"
+#include "RemoteObject.hpp"
 #include <memory>
 
 
@@ -30,9 +31,9 @@ template<Level l, HandleAccess HA>
 struct GenericHandle {};
 
 template<Level l, HandleAccess HA, typename T>
-struct Handle : public GenericHandle {
+struct Handle : public GenericHandle<l,HA> {
 
-	const std::unique_ptr<const RemoteObject<T> > ro;
+	const std::shared_ptr<const RemoteObject<T> > ro;
 	
 	static constexpr Level level = l;
 	static constexpr HandleAccess ha = HA;
@@ -76,18 +77,6 @@ struct is_handle : std::false_type {};
 template<typename T>
 struct is_not_handle : std::integral_constant<bool, !is_handle<T>::value >::type {};
 
-template<typename T>
-struct is_readable_handle :
-	std::integral_constant<bool,
-						   is_handle<T> &&
-						   canRead(extract_access<T>::value) >::type {};
-
-template<typename T>
-struct is_writeable_handle :
-	std::integral_constant<bool,
-						   is_handle<T> &&
-						   canWrite(extract_access<T>::value) >::type {};
-
 template<typename H>
 struct extract_type;
 
@@ -100,3 +89,16 @@ struct extract_access;
 template<Level l, HandleAccess ha, typename T>
 struct extract_access<Handle<l,ha,T> > :
 	std::integral_constant<HandleAccess, ha>::type {};
+
+
+template<typename T>
+struct is_readable_handle :
+	std::integral_constant<bool,
+						   is_handle<T>::value &&
+						   canRead<extract_access<T>::value>::value >::type {};
+
+template<typename T>
+struct is_writeable_handle :
+	std::integral_constant<bool,
+						   is_handle<T>::value &&
+						   canWrite<extract_access<T>::value>::value >::type {};
