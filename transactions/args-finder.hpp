@@ -33,6 +33,10 @@ struct function_traits<ReturnType(ClassType::*)(Args...) const>
 		return t;
 	}
 
+	typedef ReturnType (*fp_t(T t)) (Args...);
+
+	typedef std:tuple<Args...> args_tuple;
+
 	template<typename T>	
 	static ReturnType (*as_fp(T t)) (Args...) {
 		return t;
