@@ -12,19 +12,29 @@
 
 
 //Idea: you can have template<...> above this and it will work!
-#define OPERATION(Name, args...) auto Name(args) { \
-	static constexpr auto fun = STATIC_LAMBDA(args)
+#define OPERATION(Name, args...) auto Name(args) {	\
+	struct r { static auto f(args)
 
-#define END_OPERATION ;											\
-	typedef function_traits<decltype(fun)>	ft;					\
-	return Operation<ft>();												\
+#define END_OPERATION };								\
+	auto fp = r::f;										\
+	return Operation<decltype(fp)>(fp);					\
 	}
 
 
 //TODO: extract_robj_p actually should worry about perfect forwarding, probably.
 
-template<typename ft>
-struct Operation {
+template<typename>
+struct Operation;
+
+template<typename Ret, typename... A>
+struct Operation<Ret (*) (A...)> {
+	static constexpr int arity = sizeof...(A);
+	typedef std::tuple<A...> args_tuple;
+
+	std::function<Ret (A...)> fun;
+	
+	Operation(Ret (*fun) (A...)):fun(fun) {}
+
 	template<typename ___T, typename Acc>
 	using type_check = std::pair<Rest<Left<Acc> >,
 								 std::integral_constant
@@ -36,9 +46,9 @@ struct Operation {
 								  > > ;
 	template<typename... Args>
 	auto operator()(Args... args) const {
-		static_assert(sizeof...(Args) == ft::arity, "Error: arity violation");
+		static_assert(sizeof...(Args) == arity, "Error: arity violation");
 		typedef fold_types<type_check,std::tuple<Args...>,
-						   typename ft::args_tuple>
+						   args_tuple>
 			ft_res;
 		static_assert(Right<ft_res>::value,
 					  "Error: TypeError calling operation!");

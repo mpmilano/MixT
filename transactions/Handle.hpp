@@ -33,7 +33,11 @@ struct GenericHandle {};
 template<Level l, HandleAccess HA, typename T>
 struct Handle : public GenericHandle<l,HA> {
 
-	const std::shared_ptr<const RemoteObject<T> > ro;
+	const std::shared_ptr<
+		typename std::conditional<
+			canWrite<HA>::value,
+			RemoteObject<T>,
+			const RemoteObject<T> >::type > ro;
 	
 	static constexpr Level level = l;
 	static constexpr HandleAccess ha = HA;

@@ -40,6 +40,8 @@ int main(){
 
 	Handle<Level::strong, HandleAccess::all,int> thirteen;
 
+	TestOp(thirteen.ro.get())(thirteen);
+
 	BEGIN_TRANSACTION
 		(temp(Level::causal,int,"f") = 6)/
 		IF (isValid(thirteen)) 
