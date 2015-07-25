@@ -50,8 +50,10 @@ int main(){
 	Handle<Level::strong, HandleAccess::all,int> thirteen;
 	Handle<Level::causal, HandleAccess::all,int> five;
 
-	//do_op(TestOp,thirteen);
-	do_op(TestOp2, thirteen, five);
+	do_op(TestOp,thirteen);
+
+	//This fails; flow violation!
+	//do_op(TestOp2, thirteen, five);
 
 	BEGIN_TRANSACTION
 		(temp(Level::causal,int,"f") = 6)/
