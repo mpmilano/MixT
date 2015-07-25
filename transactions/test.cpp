@@ -24,6 +24,7 @@ struct test_entry{
 template<typename T>
 OPERATION(TestOp, RemoteObject<T>* ro){
 	std::cout << ro << std::endl;
+	return true;
 }
 END_OPERATION
 
@@ -41,6 +42,8 @@ int main(){
 	Handle<Level::strong, HandleAccess::all,int> thirteen;
 
 	TestOp(thirteen.ro.get())(thirteen);
+
+	do_op(TestOp,thirteen);
 
 	BEGIN_TRANSACTION
 		(temp(Level::causal,int,"f") = 6)/

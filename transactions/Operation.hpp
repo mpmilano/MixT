@@ -13,7 +13,7 @@
 
 //Idea: you can have template<...> above this and it will work!
 #define OPERATION(Name, args...) auto Name(args) {	\
-	struct r { static auto f(args)
+	struct r { static bool f(args)
 
 #define END_OPERATION };								\
 	auto fp = r::f;										\
@@ -25,6 +25,22 @@
 
 template<typename>
 struct Operation;
+
+//TODO: perfect forwarding? 
+template<typename T, restrict(!is_handle<T>::value)>
+ auto extract_robj_p(const T& t) {
+		return t;
+}
+
+template<typename T, restrict2(!is_handle<T>::value)>
+ auto extract_robj_p(T& t)  {
+	return t;
+}
+
+template<HandleAccess ha, Level l, typename T>
+ auto extract_robj_p(const Handle<l,ha,T>& t)  {
+	return t.ro.get();
+}
 
 template<typename Ret, typename... A>
 struct Operation<Ret (*) (A...)> {
@@ -44,22 +60,6 @@ struct Operation<Ret (*) (A...)> {
 									is_RemoteObj_ptr<First<Left<Acc> > >::value)) &&
 								  Right<Acc>::value
 								  > > ;
-
-	//TODO: perfect forwarding? 
-	template<typename T, restrict(!is_handle<T>::value)>
-	auto extract_robj_p(const T& t) const {
-		return t;
-	}
-
-	template<typename T, restrict2(!is_handle<T>::value)>
-	auto extract_robj_p(T& t) const {
-		return t;
-	}
-
-	template<HandleAccess ha, Level l, typename T>
-	auto extract_robj_p(const Handle<l,ha,T>& t) const {
-		return t.ro.get();
-	}
 	
 	template<typename... Args>
 	auto operator()(Args & ... args) const {

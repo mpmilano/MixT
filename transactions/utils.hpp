@@ -183,3 +183,7 @@ template<typename A, typename B> struct _Right<std::pair<A,B> >{
 };
 template<typename T>
 using Right = typename _Right<T>::type;
+
+
+#define VA_NARGS_IMPL(_1, _2, _3, _4, _5, N, ...) N
+#define VA_NARGS(...) VA_NARGS_IMPL(__VA_ARGS__, 5, 4, 3, 2, 1)
