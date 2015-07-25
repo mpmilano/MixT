@@ -23,10 +23,18 @@ struct test_entry{
 
 template<typename T>
 OPERATION(TestOp, RemoteObject<T>* ro){
-	std::cout << ro << std::endl;
+	std::cout << "test op " << ro << std::endl;
 	return true;
 }
 END_OPERATION
+
+template<typename T>
+OPERATION(TestOp2, RemoteObject<T>* ro1, RemoteObject<T>* ro2){
+	std::cout << "test op2 " << ro1 << std::endl;
+	return true;
+}
+END_OPERATION
+
 
 int main(){
 
@@ -40,10 +48,10 @@ int main(){
 	//try and add extraction to If-construction.
 
 	Handle<Level::strong, HandleAccess::all,int> thirteen;
+	Handle<Level::causal, HandleAccess::all,int> five;
 
-	TestOp(thirteen.ro.get())(thirteen);
-
-	do_op(TestOp,thirteen);
+	//do_op(TestOp,thirteen);
+	do_op(TestOp2, thirteen, five);
 
 	BEGIN_TRANSACTION
 		(temp(Level::causal,int,"f") = 6)/

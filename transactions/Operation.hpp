@@ -4,7 +4,6 @@
 #include "args-finder.hpp"
 #include "ConStatement.hpp"
 #include "filter-varargs.hpp"
-#include "compile-time-lambda.hpp"
 
 //because we don't have a lot of inspection abilities into this function,
 //we only allow write-enabled handles into which *all* read-enabled handles are
@@ -12,6 +11,7 @@
 
 
 //Idea: you can have template<...> above this and it will work!
+
 #define OPERATION(Name, args...) auto Name(args) {	\
 	struct r { static bool f(args)
 
@@ -69,10 +69,15 @@ struct Operation<Ret (*) (A...)> {
 			ft_res;
 		static_assert(Right<ft_res>::value,
 					  "Error: TypeError calling operation!");
-		static_assert(
-			can_flow(min_level<filter<is_readable_handle,Args...> >::value,
-					 max_level<filter<is_writeable_handle,Args...> >::value),
-			"Error: potential flow violation!");
+		constexpr Level min = min_level<typename
+										filter<is_readable_handle,Args...>::type
+										>::value;
+		constexpr Level max = max_level<typename
+										filter<is_writeable_handle,Args...>::type
+										>::value;
+		static_assert(can_flow(min,max),"Error: potential flow violation!");
+		assert(can_flow(min,max));
+		
 		return fun(extract_robj_p(args)...);
 	}
 };
