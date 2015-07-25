@@ -30,3 +30,7 @@ using canRead = std::integral_constant<bool,
 									   ha == HandleAccess::read ? true
 									   : (ha == HandleAccess::all ? 
 										  true : false)>;
+
+constexpr bool can_flow(Level from, Level to){
+	return to == Level::causal || from == Level::strong;
+}

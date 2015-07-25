@@ -168,3 +168,18 @@ constexpr auto conditional(const A &a, const B &b2){
 	ptr* p = nullptr;
 	return conditional(p,a,b2);
 }
+
+
+template<typename> struct _Left;
+template<typename A, typename B> struct _Left<std::pair<A,B> >{
+	typedef A type;
+};
+template<typename T>
+using Left = typename _Left<T>::type;
+
+template<typename> struct _Right;
+template<typename A, typename B> struct _Right<std::pair<A,B> >{
+	typedef B type;
+};
+template<typename T>
+using Right = typename _Right<T>::type;

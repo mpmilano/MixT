@@ -44,11 +44,28 @@ struct Operation<Ret (*) (A...)> {
 									is_RemoteObj_ptr<First<Left<Acc> > >::value)) &&
 								  Right<Acc>::value
 								  > > ;
+
+	//TODO: perfect forwarding? 
+	template<typename T, restrict(!is_handle<T>::value)>
+	auto extract_robj_p(const T& t) const {
+		return t;
+	}
+
+	template<typename T, restrict2(!is_handle<T>::value)>
+	auto extract_robj_p(T& t) const {
+		return t;
+	}
+
+	template<HandleAccess ha, Level l, typename T>
+	auto extract_robj_p(const Handle<l,ha,T>& t) const {
+		return t.ro.get();
+	}
+	
 	template<typename... Args>
-	auto operator()(Args... args) const {
+	auto operator()(Args & ... args) const {
 		static_assert(sizeof...(Args) == arity, "Error: arity violation");
 		typedef fold_types<type_check,std::tuple<Args...>,
-						   args_tuple>
+						   std::pair<args_tuple, std::true_type> >
 			ft_res;
 		static_assert(Right<ft_res>::value,
 					  "Error: TypeError calling operation!");
