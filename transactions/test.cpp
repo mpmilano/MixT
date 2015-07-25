@@ -22,7 +22,9 @@ struct test_entry{
 }; 
 
 template<typename T>
-OPERATION(TestOp, RemoteObject<T>*){ }
+OPERATION(TestOp, RemoteObject<T>* ro){
+	std::cout << ro << std::endl;
+}
 END_OPERATION
 
 int main(){
@@ -36,7 +38,7 @@ int main(){
 	//final pass during Transaction conversion, or can
 	//try and add extraction to If-construction.
 
-	auto thirteen = mke<Handle<Level::strong, HandleAccess::all,int> >();
+	Handle<Level::strong, HandleAccess::all,int> thirteen;
 
 	BEGIN_TRANSACTION
 		(temp(Level::causal,int,"f") = 6)/
@@ -78,7 +80,7 @@ int main(){
 
 	hndl << 5 + 12;
 
-	auto hndl2 = mke<Handle<Level::causal, HandleAccess::all, int> >();
+	Handle<Level::causal, HandleAccess::all, int> hndl2;
 
 	int tmp = 14;
 
