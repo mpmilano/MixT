@@ -31,7 +31,7 @@ OPERATION(TestOp, RemoteObject<T>* ro){
 END_OPERATION
 
 template<typename T>
-OPERATION(TestOp2, const RemoteObject<T>* ro1, RemoteObject<T>* ro2){
+OPERATION(TestOp2, const RemoteObject<T>* ro1, RemoteObject<T>* ){
 	std::cout << "test op2 " << ro1 << std::endl;
 	return true;
 }

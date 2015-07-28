@@ -5,6 +5,8 @@
 #include "RemoteObject.hpp"
 #include <memory>
 
+template<typename>
+struct Operation;
 
 struct HandleAbbrev{
 	
@@ -102,6 +104,13 @@ public:
 		std::shared_ptr<RemoteObject<T> > sp(rop);
 		Handle<l,HA,T> ret(sp);
 		return ret;
+	}
+
+
+	//TODO: same treatment as in Operate
+	template<typename... Args>
+	auto op(Operation<bool(*) (RemoteObject<T>*, Args...)> (*fp) (RemoteObject<T>*, Args...), Args && ... a){
+		return fp(&remote_object(),a...)(a...);
 	}
 
 };

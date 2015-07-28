@@ -12,26 +12,80 @@ template<Level l>
 struct FileStore {
 	template<typename T>
 	struct FSObject : public RemoteObject<T> {
-		T t;
+		std::unique_ptr<T> t;
 		const std::string filename;
 		
 		FSObject(const std::string &name, bool exists = false):filename(name){
 			if (!exists){
 				std::ofstream ofs(filename);
 				boost::archive::text_oarchive oa(ofs);
-				oa << *this;
+				FSObject<T> &ths = *this;
+				oa << ths;
 			}
+		}
+		
+		FSObject(const std::string &name, const T &init):t(heap_copy(init)),filename(name) {
+			std::ofstream ofs(filename);
+			boost::archive::text_oarchive oa(ofs);
+			static_assert(!std::is_const<decltype(this)>::value);
+			FSObject<T> &ths = *this;
+			oa << ths;
+		}
+
+		struct StupidWrapper{
+			typename std::conditional<std::is_default_constructible<T>::value, T, T*>::type val;
+
+			template<typename T2, restrict(std::is_same<decltype(val) CMA T2>::value)>
+			StupidWrapper(const T2 &t):val(t) {}
+
+			template<typename T2, restrict2(!std::is_same<decltype(val) CMA T2>::value)>
+			StupidWrapper(const T2 &t):val(*t) {}
+
+			StupidWrapper(){}
+
+			template<typename T2>
+			static const auto& deref(const T2 *t2) {
+				return *t2;
+			}
+
+			template<typename T2, restrict(!std::is_pointer<T2>::value)>
+			static const auto& deref(const T2 &t2) {
+				return t2;
+			}
+
+			auto deref() const {
+				return deref(val);
+			}
+
+		};
+
+		template<class Archive> typename std::enable_if<std::is_pod<T>::value &&
+		!std::is_pod<Archive>::value >::type
+		save(Archive &ar, const uint) const {
+			StupidWrapper stupid(t.get());
+			ar & stupid.val;
 		}
 
 		template<class Archive> typename std::enable_if<std::is_pod<T>::value &&
 		!std::is_pod<Archive>::value >::type
-		serialize(Archive &ar, const uint){
-			ar & t;
+		load(Archive &ar, const uint){
+			StupidWrapper stupid;
+			ar & stupid.val;
+			t.reset(heap_copy(stupid.deref()));
 		}
+		
+		BOOST_SERIALIZATION_SPLIT_MEMBER()
 
 		template<class Archive> typename std::enable_if<!std::is_pod<T>::value &&
 		!std::is_pod<Archive>::value>::type
-		serialize(Archive &ar, const uint){
+		save(Archive &, const uint) const {
+			assert(false && "unimplemented");
+		}
+
+		
+		template<class Archive> typename std::enable_if<!std::is_pod<T>::value &&
+		!std::is_pod<Archive>::value>::type
+		load(Archive &, const uint) const {
 			assert(false && "unimplemented");
 		}
 
@@ -39,13 +93,13 @@ struct FileStore {
 			std::ifstream ifs(filename);
 			boost::archive::text_iarchive ia(ifs);
 			ia >> *const_cast<FSObject<T>*>(this);
-			return t;
+			return *t;
 		}
 
 		virtual void put(const T& t) {
 			std::ofstream ofs(filename);
 			boost::archive::text_oarchive oa(ofs);
-			this->t = t;
+			this->t.reset(heap_copy(t));
 			oa << *this;
 		}
 	};
@@ -57,7 +111,7 @@ struct FileStore {
 		}
 
 		template<class Archive>
-		void serialize(Archive &ar, const uint){
+		void serialize(Archive &, const uint){
 			assert(false && "this should not be serialized");
 		}
 
@@ -93,6 +147,13 @@ struct FileStore {
 			<l,ha,std::set<T>,FSDir<T>>
 			(std::string("/tmp/fsstore/") + std::to_string(gensym()) + "/");
 	}
+
+	template<HandleAccess ha, typename T>
+	auto newObject(const T &t){
+		return make_handle
+			<l,ha,T,FSObject<T>>
+			(std::string("/tmp/fsstore/") + std::to_string(gensym()),t);
+	}
 	
 };
 
@@ -100,13 +161,11 @@ template<typename T, typename E>
 OPERATION(Insert, RemoteObject<std::set<T> >* ro, E t){
 
 	if (FileStore<Level::causal>::FSDir<T>* dir = dynamic_cast<FileStore<Level::causal>::FSDir<T>*>(ro)) {
-		FileStore<Level::causal>::FSObject<T> obj(dir->filename + std::to_string(gensym()));
-		obj.put(t);
+		FileStore<Level::causal>::FSObject<T> obj(dir->filename + std::to_string(gensym()),t);
 		return true;
 	}
 	else if (FileStore<Level::strong>::FSDir<T>* dir = dynamic_cast<FileStore<Level::strong>::FSDir<T>*>(ro)) {
-		FileStore<Level::strong>::FSObject<T> obj(dir->filename + std::to_string(gensym()));
-		obj.put(t);
+		FileStore<Level::strong>::FSObject<T> obj(dir->filename + std::to_string(gensym()),t);
 		return true;		
 	}
 
