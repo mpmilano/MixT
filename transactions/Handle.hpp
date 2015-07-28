@@ -42,7 +42,10 @@ public:
 	typename std::conditional<canWrite<HA>::value,
 							  RemoteObject<T>&,
 							  const RemoteObject<T>& >::type
-	remote_object() const { return *_ro; }
+	remote_object() const {
+		assert(_ro);
+		return *_ro;
+	}
 
 	Handle() {}
 		
@@ -51,6 +54,7 @@ public:
 	typedef T stored_type;
 	
 	const T& get() const {
+		assert(_ro);
 		return _ro->get();
 	}
 	
@@ -59,6 +63,7 @@ public:
 	}
 	
 	void put(const T& t) {
+		assert(_ro);
 		_ro->put(t);
 	}
 	
@@ -89,9 +94,15 @@ public:
 	template<Level l2, HandleAccess ha2, typename T2>
 	friend struct Handle;
 
-	template<Level l2, HandleAccess HA2, typename T2,
-			 template<typename> typename RO, typename... Args>
-	friend Handle<l,HA,T> make_handle(Args && ... ca);
+	template<template<typename> typename RO, typename... Args>
+	static Handle<l,HA,T> make_handle(Args && ... ca){
+		static_assert(std::is_base_of<RemoteObject<T>,RO<T> >::value,
+					  "Error: must template on valid RemoteObject extender");
+		RemoteObject<T> *rop = new RO<T>(std::forward<Args>(ca)...);
+		std::shared_ptr<RemoteObject<T> > sp(rop);
+		Handle<l,HA,T> ret(sp);
+		return ret;
+	}
 
 };
 
@@ -99,10 +110,7 @@ template<Level l, HandleAccess HA, typename T,
 		 template<typename> typename RO, typename... Args>
 Handle<l,HA,T> make_handle(Args && ... ca)
 {
-	static_assert(std::is_base_of<RemoteObject<T>,RO<T> >::value,
-				  "Error: must template on valid RemoteObject extender");
-	return Handle<l,HA,T>(std::shared_ptr<RO<T> >
-						  (new RO<T>(std::forward<Args>(ca)...)));
+	return Handle<l,HA,T>::template make_handle<RO, Args...>(std::forward<Args>(ca)...);
 }
 
 template<Level l, HandleAccess ha, typename T>

@@ -83,7 +83,7 @@ std::ostream & operator<<(std::ostream &os, const MutableTemporary<id,l2,i2>& t)
 template<Level l, typename T>
 class CSConstant;
 
-#define temp(a,b,c) _temp<a,b,decltype(c),unique_id((sizeof(c) / sizeof(char)) - 1,c)>(c)
+#define temp(a,b,c) _temp<a,b,decltype(c),unique_id<(sizeof(c) / sizeof(char)) - 1>(c)>(c)
 
 
 //todo: now it looks like we know how to stick the identifier in the type.
@@ -148,7 +148,7 @@ template<unsigned long long id>
 struct refstr{
 };
 
-#define ref(c) refstr<unique_id((sizeof(c) / sizeof(char)) - 1,c)>()
+#define ref(c) refstr<unique_id<(sizeof(c) / sizeof(char)) - 1>(c)>()
 
 struct nope{
 	typedef std::false_type found;

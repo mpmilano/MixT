@@ -48,8 +48,10 @@ int main(){
 	//final pass during Transaction conversion, or can
 	//try and add extraction to If-construction.
 
-	Handle<Level::strong, HandleAccess::all,int> thirteen;
-	Handle<Level::causal, HandleAccess::all,int> five;
+	FileStore fs;
+
+	auto thirteen = fs.newObject<Level::strong, HandleAccess::all,int>();
+	auto five = fs.newObject<Level::causal, HandleAccess::all,int>();
 
 	auto ro_thirteen = thirteen.readOnly();
 
@@ -87,8 +89,6 @@ int main(){
 	auto a = make_seq(CSInt<Level::strong,0>());
 	a / CSInt<Level::causal,1>();
 
-	FileStore fs;
-
 	DummyConExpr<Level::strong> dummyExprStrong;
 	DummyConExpr<Level::causal> dummyExprCausal;
 
@@ -107,7 +107,7 @@ int main(){
 
 	hndl << 5 + 12;
 
-	Handle<Level::causal, HandleAccess::all, int> hndl2;
+	auto hndl2 = fs.newObject<Level::causal, HandleAccess::all, int>();
 
 	int tmp = 14;
 

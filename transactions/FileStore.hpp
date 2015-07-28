@@ -9,10 +9,10 @@
 class FileStore {
 private:
 	template<typename T>
-	class FSObject : RemoteObject<T> {
+	class FSObject : public RemoteObject<T> {
 	private:
 		T t;
-		std::string filename;
+		const std::string filename;
 	public:
 
 		FSObject(const std::string &name):filename(name){}
@@ -26,7 +26,8 @@ private:
 			std::ifstream ifs(filename);
 			boost::archive::text_iarchive ia(ifs);
 			// read class state from archive
-			ia >> *this;
+			std::cout << "getting value!" << std::endl;
+			//ia >> *this;
 			return t;
 		}
 
@@ -34,13 +35,14 @@ private:
 			std::ofstream ofs(filename);
 			boost::archive::text_oarchive oa(ofs);
 			this->t = t;
-			oa << *this;
+			//oa << *this;
+			std::cout << "putting value!" << std::endl;
 		}
 	};
 public:
 
 	template<Level l, HandleAccess ha, typename T>
-	auto newObject(const T &t){
+	auto newObject(){
 		return make_handle
 			<l,ha,T,FSObject>
 			(std::string("/tmp/fsstore/") + std::to_string(gensym()));

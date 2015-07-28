@@ -133,9 +133,16 @@ struct Store : std::map<int,std::unique_ptr<void*> >{
 	}
 };
 
+template<const int i,restrict(i <= 0)>
+constexpr unsigned long long unique_id(const char*){
+	return 0;
+}
+	
 
-constexpr unsigned long long unique_id(const int i, const char str[i]){
-	return (i == 0 ? 0 : (str[0] << sizeof(char)*i ) + unique_id(i-1,str+1));
+template<const int i>
+constexpr typename std::enable_if<(i > 0), unsigned long long>::type
+unique_id(const char str[i]){
+	return (i == 0 ? 0 : (str[0] << sizeof(char)*i ) + unique_id<i-1>(str+1));
 }
 
 

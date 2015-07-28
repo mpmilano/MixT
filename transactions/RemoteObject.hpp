@@ -13,9 +13,10 @@ class RemoteObject {
 
 
 	//TODO: delete these when you're done hacking around.
-	RemoteObject() = delete;
 	RemoteObject(const RemoteObject&) = delete;
 
+public:
+	RemoteObject(){}
 	template<Level l, HandleAccess HA, typename T2>
 	friend struct Handle;
 
