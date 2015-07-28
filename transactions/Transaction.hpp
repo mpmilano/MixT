@@ -43,4 +43,4 @@ std::ostream & operator<<(std::ostream &os, Transaction& t){
 }
 
 #define BEGIN_TRANSACTION { Transaction ____transaction(Noop<Level::strong>() / 
-#define END_TRANSACTION Noop<Level::strong>()); std::cout << ____transaction << std::endl;}
+#define END_TRANSACTION Noop<Level::strong>()); ____transaction(); std::cout << ____transaction << std::endl;}

@@ -96,12 +96,22 @@ struct FileStore {
 	
 };
 
-template<typename T>
-OPERATION(Insert, RemoteObject<std::set<T> >* ro, T t){
-	FileStore<Level::causal>::FSDir<T>* dir = dynamic_cast<FileStore<Level::causal>::FSDir<T>*>(ro);
-	assert(dir);
-	FileStore<Level::causal>::FSObject<T> obj(dir->filename);
-	//obj.put(t);
-	return true;
+template<typename T, typename E>
+OPERATION(Insert, RemoteObject<std::set<T> >* ro, E t){
+
+	if (FileStore<Level::causal>::FSDir<T>* dir = dynamic_cast<FileStore<Level::causal>::FSDir<T>*>(ro)) {
+		FileStore<Level::causal>::FSObject<T> obj(dir->filename + std::to_string(gensym()));
+		obj.put(t);
+		return true;
+	}
+	else if (FileStore<Level::strong>::FSDir<T>* dir = dynamic_cast<FileStore<Level::strong>::FSDir<T>*>(ro)) {
+		FileStore<Level::strong>::FSObject<T> obj(dir->filename + std::to_string(gensym()));
+		obj.put(t);
+		return true;		
+	}
+
+	assert(false && "didn't pass me an FSDIR!");
+	return false;
+
 }
 END_OPERATION
