@@ -110,7 +110,7 @@ public:
 	//TODO: same treatment as in Operate
 	template<typename... Args>
 	auto op(Operation<bool(*) (RemoteObject<T>*, Args...)> (*fp) (RemoteObject<T>*, Args...), Args && ... a){
-		return fp(&remote_object(),a...)(*this, std::forward<Args>(a)...);
+		return fp(&remote_object(),std::forward<Args>(a)...)(*this, std::forward<Args>(a)...);
 	}
 
 };

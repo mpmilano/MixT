@@ -157,8 +157,28 @@ struct FileStore {
 	
 };
 
+/*
 template<typename T, typename E>
 OPERATION(Insert, RemoteObject<std::set<T> >* ro, E t){
+
+	if (FileStore<Level::causal>::FSDir<T>* dir = dynamic_cast<FileStore<Level::causal>::FSDir<T>*>(ro)) {
+		FileStore<Level::causal>::FSObject<T> obj(dir->filename + std::to_string(gensym()),t);
+		return true;
+	}
+	else if (FileStore<Level::strong>::FSDir<T>* dir = dynamic_cast<FileStore<Level::strong>::FSDir<T>*>(ro)) {
+		FileStore<Level::strong>::FSObject<T> obj(dir->filename + std::to_string(gensym()),t);
+		return true;		
+	}
+
+	assert(false && "didn't pass me an FSDIR!");
+	return false;
+
+}
+END_OPERATION
+*/
+
+template<typename T, typename E>
+OPERATION(Insert, RemoteObject<std::set<T> >* ro, const E& t){
 
 	if (FileStore<Level::causal>::FSDir<T>* dir = dynamic_cast<FileStore<Level::causal>::FSDir<T>*>(ro)) {
 		FileStore<Level::causal>::FSObject<T> obj(dir->filename + std::to_string(gensym()),t);

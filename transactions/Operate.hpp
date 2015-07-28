@@ -60,13 +60,16 @@ struct PreOp {
 	}
 };
 
+template<typename T>
+using cr_add = typename std::conditional<is_RemoteObj_ptr<T>::value, T, const T&>::type;
+
 //TODO - need to handle AST nodes in the argument list for this.
 
 //if you really really want the error messages to be pretty, you
 //can write a version of this that's overloaded up the wazoo on const
 //vs non-const.
 template<typename... Args>
-auto _do_op(Operation<bool(*) (Args...)> (*fp) (Args...), Args... a){
+auto _do_op(Operation<bool(*) (cr_add<Args>...)> (*fp) (cr_add<Args>...), Args... a){
 	auto tmp = fp(a...);
 	PreOp<decltype(tmp)> ret{tmp};
 	return ret;
