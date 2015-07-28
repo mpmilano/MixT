@@ -6,9 +6,10 @@ template<typename T>
 class RemoteObject {
 	//extend this plz!
 
-	virtual T& get() const = 0;
-	virtual void put(const T&) const = 0;
+	const int id = gensym();
 
+	virtual const T& get() const = 0;
+	virtual void put(const T&) = 0;
 
 
 	//TODO: delete these when you're done hacking around.

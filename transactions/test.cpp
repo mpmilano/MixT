@@ -7,6 +7,7 @@
 #include "Transaction.hpp"
 #include "CommonExprs.hpp"
 #include "TypeMap.hpp"
+#include "FileStore.hpp"
 #include <iostream>
 
 template<typename T>
@@ -86,7 +87,7 @@ int main(){
 	auto a = make_seq(CSInt<Level::strong,0>());
 	a / CSInt<Level::causal,1>();
 
-
+	FileStore fs;
 
 	DummyConExpr<Level::strong> dummyExprStrong;
 	DummyConExpr<Level::causal> dummyExprCausal;

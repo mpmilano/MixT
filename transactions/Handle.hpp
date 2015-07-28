@@ -37,6 +37,8 @@ private:
 	const std::shared_ptr<RemoteObject<T> > _ro;
 	Handle(std::shared_ptr<RemoteObject<T> > _ro):_ro(_ro){}
 public:
+	
+	
 	typename std::conditional<canWrite<HA>::value,
 							  RemoteObject<T>&,
 							  const RemoteObject<T>& >::type
@@ -61,7 +63,8 @@ public:
 	}
 	
 	operator HandleAbbrev() const {
-		assert(false && "unimplemented");
+		HandleAbbrev::itype i = 1;
+		return i << _ro->id;
 	}
 	
 	HandleAbbrev abbrev() const {
@@ -86,7 +89,21 @@ public:
 	template<Level l2, HandleAccess ha2, typename T2>
 	friend struct Handle;
 
+	template<Level l2, HandleAccess HA2, typename T2,
+			 template<typename> typename RO, typename... Args>
+	friend Handle<l,HA,T> make_handle(Args && ... ca);
+
 };
+
+template<Level l, HandleAccess HA, typename T,
+		 template<typename> typename RO, typename... Args>
+Handle<l,HA,T> make_handle(Args && ... ca)
+{
+	static_assert(std::is_base_of<RemoteObject<T>,RO<T> >::value,
+				  "Error: must template on valid RemoteObject extender");
+	return Handle<l,HA,T>(std::shared_ptr<RO<T> >
+						  (new RO<T>(std::forward<Args>(ca)...)));
+}
 
 template<Level l, HandleAccess ha, typename T>
 auto get_ReadSet(const Handle<l,ha,T> &h){
