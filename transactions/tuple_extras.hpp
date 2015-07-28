@@ -100,22 +100,22 @@ auto constexpr fold(const Tuple &vec, Ret (*f)(Args...), const Acc & acc){
 	return fold_(vec,convert(f),acc);
 }
 
-template<template<typename> typename Pred, typename... Args>
+template<template<typename> class Pred, typename... Args>
 constexpr bool forall_types_f(const std::tuple<Args...>*){
 	return forall(Pred<Args>::value...);
 }
 
-template<template<typename> typename Pred, typename T>
+template<template<typename> class Pred, typename T>
 struct forall_types : std::integral_constant<bool,forall_types_f<Pred>(mke_p<T>())> {};
 
-template<template<typename, typename> typename Func, typename Accum>
+template<template<typename, typename> class Func, typename Accum>
 Accum fold_types_f (std::tuple<>*);
 
-template<template<typename, typename> typename Func, typename Accum, typename Arg1, typename... Args>
+template<template<typename, typename> class Func, typename Accum, typename Arg1, typename... Args>
 decltype(fold_types_f<Func,Func<Arg1,Accum> >(mke_p<std::tuple<Args...> >())) fold_types_f (std::tuple<Arg1, Args...>*);
 
 
-template<template<typename, typename> typename Func, typename T, typename Accum>
+template<template<typename, typename> class Func, typename T, typename Accum>
 using fold_types = decltype(fold_types_f<Func,Accum>(mke_p<T>()));
 
 
