@@ -60,9 +60,6 @@ struct PreOp {
 	}
 };
 
-template<typename T>
-using cr_add = typename std::conditional<is_RemoteObj_ptr<T>::value, T, const T&>::type;
-
 //TODO - need to handle AST nodes in the argument list for this.
 
 //if you really really want the error messages to be pretty, you

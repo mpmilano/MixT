@@ -1,5 +1,6 @@
 #pragma once
 
+#include "type_utils.hpp"
 
 
 template<typename T>
@@ -36,3 +37,6 @@ struct is_RemoteObj_ptr : std::false_type{};
 
 template<typename T>
 struct is_not_RemoteObj_ptr : std::integral_constant<bool,!is_RemoteObj_ptr<T>::value >::type {};
+
+template<typename T>
+using cr_add = typename std::conditional<is_RemoteObj_ptr<T>::value, T, const decay<T>&>::type;
