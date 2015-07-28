@@ -4,15 +4,25 @@
 struct Comment {
 	const int timestamp;
 	const std::string content;
+
+	bool operator<(const Comment& be) const {
+		return timestamp < be.timestamp;
+	}
 };
+
 
 struct BlogEntry {
 	const std::string content;
 	Handle<Level::causal,HandleAccess::all,std::set<Comment> > comments;
+	const int timestamp = gensym();
 
 	auto postComment(const std::string &cmnt){
 		Comment c{gensym(),cmnt};
 		comments.op(Insert,c);
+	}
+
+	bool operator<(const BlogEntry& be) const {
+		return timestamp < be.timestamp;
 	}
 };
 
@@ -22,7 +32,8 @@ struct Blog {
 	Handle<Level::causal, HandleAccess::all,std::set<BlogEntry> > entries;
 
 	auto postEntry(const std::string &entry){
-		BlogEntry bo{entry,s.newCollection<HandleAccess::all,Comment>()};
+		auto col = s.template newCollection<HandleAccess::all,Comment>();
+		BlogEntry bo{entry,col};
 		entries.op(Insert,bo);
 	}
 };
@@ -30,6 +41,6 @@ struct Blog {
 int main(){
 	FileStore<Level::causal> store;
 	Blog<FileStore<Level::causal> > b{store,
-			causalStore.newCollection<HandleAccess::all,BlogEntry>()};
+			store.template newCollection<HandleAccess::all,BlogEntry>()};
 	b.postEntry("hi!");
 }
