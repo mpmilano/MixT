@@ -3,6 +3,7 @@
 #include "Seq.hpp"
 #include "args-finder.hpp"
 #include "../BitSet.hpp"
+#include "Operate.hpp"
 
 struct Transaction{
 	const std::function<bool (Store &)> action;
@@ -11,7 +12,10 @@ struct Transaction{
 	const BitSet<HandleAbbrev> weak;
 
 	template<typename Arg, typename Accum>
-	using Verify = typename std::integral_constant<bool,(verify_ReplaceMe(mke_p<Arg>())) && Accum::value >::type;
+	using Verify =
+		typename std::integral_constant
+		<bool,(verify_compilation_complete(mke_p<Arg>())) &&
+		 Accum::value >::type;
 	
 	template<typename S, typename W>
 	Transaction(const Seq<S,W> &s):

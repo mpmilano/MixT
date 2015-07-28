@@ -28,7 +28,7 @@ std::ostream & operator<<(std::ostream &os, const CSInt<l,i>&){
 }
 
 template<Level l, int i>
-constexpr bool verify_ReplaceMe(const CSInt<l,i>*)
+constexpr bool verify_compilation_complete(const CSInt<l,i>*)
 {return true; }
 
 template<Level l, typename T>

@@ -33,17 +33,23 @@ struct GenericHandle {};
 template<Level l, HandleAccess HA, typename T>
 struct Handle : public GenericHandle<l,HA> {
 
-	const std::shared_ptr<
-		typename std::conditional<
-			canWrite<HA>::value,
-			RemoteObject<T>,
-			const RemoteObject<T> >::type > ro;
-	
+private:
+	const std::shared_ptr<RemoteObject<T> > _ro;
+	Handle(std::shared_ptr<RemoteObject<T> > _ro):_ro(_ro){}
+public:
+	typename std::conditional<canWrite<HA>::value,
+							  RemoteObject<T>&,
+							  const RemoteObject<T>& >::type
+	remote_object() const { return *_ro; }
+
+	Handle() {}
+		
 	static constexpr Level level = l;
 	static constexpr HandleAccess ha = HA;
 	typedef T stored_type;
+	
 	const T& get() const {
-		return ro->get();
+		return _ro->get();
 	}
 	
 	Handle clone() const {
@@ -51,7 +57,7 @@ struct Handle : public GenericHandle<l,HA> {
 	}
 	
 	void put(const T& t) {
-		ro->put(t);
+		_ro->put(t);
 	}
 	
 	operator HandleAbbrev() const {
@@ -62,7 +68,30 @@ struct Handle : public GenericHandle<l,HA> {
 		return *this;
 	}
 
+	template<Level lnew = l>
+	Handle<lnew,HandleAccess::read,T> readOnly() const {
+		static_assert(lnew == l || l == Level::strong,
+					  "Error: request for strong read handle from causal base!");
+		return Handle<lnew,HandleAccess::read,T>{_ro};
+	}
+
+	template<Level lnew = l>
+	Handle<lnew,HandleAccess::write,T> writeOnly() const {
+		static_assert(lnew == l || l == Level::causal,
+					  "Error: request for causal write handle from strong base!");
+		Handle<lnew,HandleAccess::write,T> r{_ro};
+		return r;
+	}
+
+	template<Level l2, HandleAccess ha2, typename T2>
+	friend struct Handle;
+
 };
+
+template<Level l, HandleAccess ha, typename T>
+auto get_ReadSet(const Handle<l,ha,T> &h){
+	return BitSet<HandleAbbrev>(h.abbrev());
+}
 
 template<Level l, HandleAccess ha, typename T>
 std::ostream & operator<<(std::ostream &os, const Handle<l,ha,T>&){

@@ -98,7 +98,7 @@ std::ostream & operator<<(std::ostream &os, const ReplaceMe<T>&){
 }
 
 template<typename T>
-constexpr bool verify_ReplaceMe(const ReplaceMe<T>*){
+constexpr bool verify_compilation_complete(const ReplaceMe<T>*){
 	constexpr bool dummy = get_level<ReplaceMe<T> >::value == Level::causal &&
 		get_level<ReplaceMe<T> >::value == Level::strong;
 	static_assert(dummy || !dummy, "NameError: Failed to replace for reference");
@@ -106,5 +106,5 @@ constexpr bool verify_ReplaceMe(const ReplaceMe<T>*){
 }
 
 #define REPLACEME_OK(x) template<Level l, typename... T>	\
-	constexpr bool verify_ReplaceMe(const x<l,T...>*)				\
+	constexpr bool verify_compilation_complete(const x<l,T...>*)				\
 	{return true; }

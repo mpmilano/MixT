@@ -39,11 +39,12 @@ template<typename T, restrict2(!is_handle<T>::value)>
 
 template<HandleAccess ha, Level l, typename T>
  auto extract_robj_p(const Handle<l,ha,T>& t)  {
-	return t.ro.get();
+	return &t.remote_object();
 }
 
 template<typename Ret, typename... A>
 struct Operation<Ret (*) (A...)> {
+	typedef Ret (*F) (A...);
 	static constexpr int arity = sizeof...(A);
 	typedef std::tuple<A...> args_tuple;
 

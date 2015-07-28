@@ -46,6 +46,16 @@ struct BitSet {
 	BitSet remove(const T& t) const{
 		return (contains(t) ? members - t : *this);
 	}
+
+	template<typename... U>
+	static BitSet<T> big_union(const U & ... u){
+		return fold(std::make_tuple(u...),
+					[](const auto &e,const BitSet<T> &bs){
+						return bs.addAll(e);
+					},
+					0
+			);
+	}
 };
 
 template<typename T1>

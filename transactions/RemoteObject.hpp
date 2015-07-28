@@ -26,6 +26,9 @@ struct is_RemoteObj_ptr;
 template<template<typename> class C, typename T>
 struct is_RemoteObj_ptr<C<T>*> : std::is_base_of<RemoteObject<T>,C<T> >::type {};
 
+template<template<typename> class C, typename T>
+struct is_RemoteObj_ptr<const C<T>*> : std::is_base_of<RemoteObject<T>,C<T> >::type {};
+
 template<typename T>
 struct is_RemoteObj_ptr : std::false_type{};
 

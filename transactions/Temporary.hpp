@@ -1,8 +1,6 @@
 #pragma once
 #include "ConExpr.hpp"
 #include <string>
-
-	static int temporary_class_19837491_id_pool = 0;
 	
 //the level here is for referencing the temporary later.
 //it's the endorsement check!
@@ -16,7 +14,7 @@
 	public:
 		const int id;
 		const T t;
-		Temporary(const T& t):id(++temporary_class_19837491_id_pool),t(t){}
+		Temporary(const T& t):id(gensym()),t(t){}
 		Temporary(const int id, const T& t):id(id),t(t){}
 		
 		auto getReadSet() const {

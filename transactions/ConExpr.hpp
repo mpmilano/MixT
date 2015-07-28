@@ -34,7 +34,7 @@ auto get_ReadSet(const Expr &){
 }
 
 template<typename T>
-typename std::enable_if<is_ConExpr<T>::value && !std::is_pod<T>::value,
+typename std::enable_if<is_ConStatement<T>::value && !std::is_pod<T>::value,
 						BitSet<HandleAbbrev> >::type get_ReadSet(const T &ce){
 	assert(&ce != nullptr);
 	return ce.getReadSet();

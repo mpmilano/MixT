@@ -239,7 +239,7 @@ std::ostream & operator<<(std::ostream &os, const If<Cond,Then>& i){
 
 
 template<typename C, typename T>
-constexpr bool verify_ReplaceMe(const If<C,ReplaceMe<T> >*){
+constexpr bool verify_compilation_complete(const If<C,ReplaceMe<T> >*){
 	constexpr bool dummy = get_level<ReplaceMe<T> >::value == Level::causal &&
 		get_level<ReplaceMe<T> >::value == Level::strong;
 	static_assert(dummy || !dummy, "NameError: Failed to replace for reference");

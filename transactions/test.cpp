@@ -29,7 +29,7 @@ OPERATION(TestOp, RemoteObject<T>* ro){
 END_OPERATION
 
 template<typename T>
-OPERATION(TestOp2, RemoteObject<T>* ro1, RemoteObject<T>* ro2){
+OPERATION(TestOp2, const RemoteObject<T>* ro1, RemoteObject<T>* ro2){
 	std::cout << "test op2 " << ro1 << std::endl;
 	return true;
 }
@@ -50,13 +50,24 @@ int main(){
 	Handle<Level::strong, HandleAccess::all,int> thirteen;
 	Handle<Level::causal, HandleAccess::all,int> five;
 
-	do_op(TestOp,thirteen);
+	auto ro_thirteen = thirteen.readOnly();
 
-	//This fails; flow violation!
+	auto testop1 = do_op(TestOp,thirteen);
+	std::cout << type_name<decltype(testop1)>() << std::endl;
+
+	//This fails; flow violation! Though you wouldn't know it from the error =_=
 	//do_op(TestOp2, thirteen, five);
+
+	//Here's an unpacked call which fails with the error you wanted
+	//const RemoteObject<int>  * thirteen_rop = &thirteen.remote_object();
+	//_do_op(TestOp2, thirteen_rop, &five.remote_object())(thirteen,five);
+
+	//This is fine, because strong is read-only
+	do_op(TestOp2, ro_thirteen, five);
 
 	BEGIN_TRANSACTION
 		(temp(Level::causal,int,"f") = 6)/
+		do_op(TestOp, thirteen) /
 		IF (isValid(thirteen)) 
 		THEN { CSInt<Level::causal,2>() /
 			CSInt<Level::causal,3>() /
