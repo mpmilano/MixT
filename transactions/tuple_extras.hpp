@@ -108,15 +108,20 @@ constexpr bool forall_types_f(const std::tuple<Args...>*){
 template<template<typename> class Pred, typename T>
 struct forall_types : std::integral_constant<bool,forall_types_f<Pred>(mke_p<T>())> {};
 
+template<template<typename, typename> class Func, typename Accum, typename Arg>
+struct fold_types_str;
+
 template<template<typename, typename> class Func, typename Accum>
-Accum fold_types_f (std::tuple<>*);
+struct fold_types_str<Func,Accum,std::tuple<> >{
+	typedef Accum type;
+};
 
 template<template<typename, typename> class Func, typename Accum, typename Arg1, typename... Args>
-decltype(fold_types_f<Func,Func<Arg1,Accum> >(mke_p<std::tuple<Args...> >())) fold_types_f (std::tuple<Arg1, Args...>*);
-
+struct fold_types_str<Func,Accum,std::tuple<Arg1, Args...> > :
+	fold_types_str<Func,Func<Arg1,Accum>, std::tuple<Args...> > {};
 
 template<template<typename, typename> class Func, typename T, typename Accum>
-using fold_types = decltype(fold_types_f<Func,Accum>(mke_p<T>()));
+using fold_types = typename fold_types_str<Func,Accum,T>::type;
 
 
 template <typename, typename> struct Cons;

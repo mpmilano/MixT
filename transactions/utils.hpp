@@ -6,7 +6,11 @@
 #include <cassert>
 #include <tuple>
 #include <set>
+#include <vector>
 #include <map>
+#include <dirent.h>
+#include <string>
+#include <iostream>
 #include "../extras"
 
 template<typename T, std::size_t size1, std::size_t size2>
@@ -224,3 +228,25 @@ int gensym() {
 	return ++counter;
 }
 
+std::vector<std::string> read_dir(const std::string &name){
+
+	std::vector<std::string> ret;
+	
+	DIR *dir;
+	struct dirent *ent;
+	if ((dir = opendir (name.c_str()))) {
+		/* print all the files and directories within directory */
+		while ((ent = readdir (dir))) {
+			std::string maybe(ent->d_name);
+			if (maybe == "." || maybe == "..") continue;
+			ret.push_back(std::string(maybe));
+		}
+		closedir (dir);
+	} else {
+		/* could not open directory */
+		perror ("");
+		assert(false && "Could not open dir.");
+	}
+
+	return ret;
+}

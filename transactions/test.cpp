@@ -8,6 +8,7 @@
 #include "CommonExprs.hpp"
 #include "TypeMap.hpp"
 #include "FileStore.hpp"
+#include "FreeExpr.hpp"
 #include <iostream>
 
 template<typename T>
@@ -50,8 +51,18 @@ int main(){
 
 	FileStore fs;
 
+	auto num_dir = fs.newCollection<Level::strong, HandleAccess::all, int>();
+
+	std::set<int> test;
+	test.insert(13);
+	num_dir.put(test);
+
+	num_dir.get();
+
 	auto thirteen = fs.newObject<Level::strong, HandleAccess::all,int>();
+	thirteen.put(13);
 	auto five = fs.newObject<Level::causal, HandleAccess::all,int>();
+	five.put(5);
 
 	auto ro_thirteen = thirteen.readOnly();
 
@@ -71,6 +82,7 @@ int main(){
 	BEGIN_TRANSACTION
 		(temp(Level::causal,int,"f") = 6)/
 		do_op(TestOp, thirteen) /
+		do_op(Insert,num_dir,42) /
 		IF (isValid(thirteen)) 
 		THEN { CSInt<Level::causal,2>() /
 			CSInt<Level::causal,3>() /
@@ -113,7 +125,7 @@ int main(){
 
 
 	Store s;
-	const auto &fe = free_expr2(bool, hndl, hndl2, return hndl + hndl2 + tmp;);
+	const auto &fe = free_expr(bool, hndl, hndl2, return hndl + hndl2 + tmp;);
 	bool b = fe(s);
 	static_assert(get_level<decltype(fe)>::value == Level::causal,"");
 	assert(b);

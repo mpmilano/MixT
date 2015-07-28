@@ -94,11 +94,11 @@ public:
 	template<Level l2, HandleAccess ha2, typename T2>
 	friend struct Handle;
 
-	template<template<typename> class RO, typename... Args>
+	template<typename RO, typename... Args>
 	static Handle<l,HA,T> make_handle(Args && ... ca){
-		static_assert(std::is_base_of<RemoteObject<T>,RO<T> >::value,
+		static_assert(std::is_base_of<RemoteObject<T>,RO >::value,
 					  "Error: must template on valid RemoteObject extender");
-		RemoteObject<T> *rop = new RO<T>(std::forward<Args>(ca)...);
+		RemoteObject<T> *rop = new RO(std::forward<Args>(ca)...);
 		std::shared_ptr<RemoteObject<T> > sp(rop);
 		Handle<l,HA,T> ret(sp);
 		return ret;
@@ -107,7 +107,7 @@ public:
 };
 
 template<Level l, HandleAccess HA, typename T,
-		 template<typename> class RO, typename... Args>
+		 typename RO, typename... Args>
 Handle<l,HA,T> make_handle(Args && ... ca)
 {
 	return Handle<l,HA,T>::template make_handle<RO, Args...>(std::forward<Args>(ca)...);
@@ -147,6 +147,9 @@ struct extract_access;
 template<Level l, HandleAccess ha, typename T>
 struct extract_access<Handle<l,ha,T> > :
 	std::integral_constant<HandleAccess, ha>::type {};
+
+template<typename T>
+struct extract_access : std::integral_constant<HandleAccess, HandleAccess::all>::type {};
 
 
 template<typename T>

@@ -5,47 +5,102 @@
 #include <boost/archive/text_iarchive.hpp>
 #include <iostream>
 #include <fstream>
+#include <set>
+#include <cstdlib>
 
-class FileStore {
-private:
+struct FileStore {
 	template<typename T>
-	class FSObject : public RemoteObject<T> {
-	private:
+	struct FSObject : public RemoteObject<T> {
 		T t;
 		const std::string filename;
-	public:
+		
+		FSObject(const std::string &name, bool exists = false):filename(name){
+			if (!exists){
+				std::ofstream ofs(filename);
+				boost::archive::text_oarchive oa(ofs);
+				oa << *this;
+			}
+		}
 
-		FSObject(const std::string &name):filename(name){}
-
-		template<class Archive>
-		void serialize(Archive &ar, const uint){
+		template<class Archive> typename std::enable_if<std::is_pod<T>::value &&
+		!std::is_pod<Archive>::value >::type
+		serialize(Archive &ar, const uint){
 			ar & t;
 		}
 
-		const T& get() const {
+		template<class Archive> typename std::enable_if<!std::is_pod<T>::value &&
+		!std::is_pod<Archive>::value>::type
+		serialize(Archive &ar, const uint){
+			assert(false && "unimplemented");
+		}
+
+		virtual const T& get() const {
 			std::ifstream ifs(filename);
 			boost::archive::text_iarchive ia(ifs);
-			// read class state from archive
-			std::cout << "getting value!" << std::endl;
-			//ia >> *this;
+			ia >> *const_cast<FSObject<T>*>(this);
 			return t;
 		}
 
-		void put(const T& t) {
+		virtual void put(const T& t) {
 			std::ofstream ofs(filename);
 			boost::archive::text_oarchive oa(ofs);
 			this->t = t;
-			//oa << *this;
-			std::cout << "putting value!" << std::endl;
+			oa << *this;
 		}
 	};
-public:
+	
+	template<typename T>
+	struct FSDir : public FSObject<std::set<T> > {
+		FSDir(const std::string &name):FSObject<std::set<T> >(name,true){
+			system(("exec mkdir -p " + name).c_str());
+		}
+
+		template<class Archive>
+		void serialize(Archive &ar, const uint){
+			assert(false && "this should not be serialized");
+		}
+
+		const std::set<T>& get() const {
+			static std::set<T> ret;
+			ret.clear();
+			for (const auto &str : read_dir(this->filename)){
+				FSObject<T> obj(this->filename + str,true);
+				ret.insert(obj.get() );
+			}
+			return ret;
+		}
+
+		virtual void put(const std::set<T> &s) {
+			std::system(("exec rm -r " + this->filename + "*").c_str());
+			for (const auto &e : s){
+				FSObject<T> obj(this->filename + std::to_string(gensym()) );
+				obj.put(e);
+			}
+		}
+	};
 
 	template<Level l, HandleAccess ha, typename T>
 	auto newObject(){
 		return make_handle
-			<l,ha,T,FSObject>
+			<l,ha,T,FSObject<T>>
 			(std::string("/tmp/fsstore/") + std::to_string(gensym()));
+	}
+
+	template<Level l, HandleAccess ha, typename T>
+	auto newCollection(){
+		return make_handle
+			<l,ha,std::set<T>,FSDir<T>>
+			(std::string("/tmp/fsstore/") + std::to_string(gensym()) + "/");
 	}
 	
 };
+
+template<typename T>
+OPERATION(Insert, RemoteObject<std::set<T> >* ro, T t){
+	FileStore::FSDir<T>* dir = dynamic_cast<FileStore::FSDir<T>*>(ro);
+	assert(dir);
+	FileStore::FSObject<T> obj(dir->filename);
+	//obj.put(t);
+	return true;
+}
+END_OPERATION
