@@ -49,9 +49,10 @@ int main(){
 	//final pass during Transaction conversion, or can
 	//try and add extraction to If-construction.
 
-	FileStore fs;
+	FileStore<Level::causal> fsc;
+	FileStore<Level::strong> fss;
 
-	auto num_dir = fs.newCollection<Level::strong, HandleAccess::all, int>();
+	auto num_dir = fss.newCollection<HandleAccess::all, int>();
 
 	std::set<int> test;
 	test.insert(13);
@@ -59,9 +60,9 @@ int main(){
 
 	num_dir.get();
 
-	auto thirteen = fs.newObject<Level::strong, HandleAccess::all,int>();
+	auto thirteen = fss.newObject<HandleAccess::all,int>();
 	thirteen.put(13);
-	auto five = fs.newObject<Level::causal, HandleAccess::all,int>();
+	auto five = fsc.newObject<HandleAccess::all,int>();
 	five.put(5);
 
 	auto ro_thirteen = thirteen.readOnly();
@@ -119,7 +120,7 @@ int main(){
 
 	hndl << 5 + 12;
 
-	auto hndl2 = fs.newObject<Level::causal, HandleAccess::all, int>();
+	auto hndl2 = fsc.newObject<HandleAccess::all, int>();
 
 	int tmp = 14;
 

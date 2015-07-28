@@ -8,6 +8,7 @@
 #include <set>
 #include <cstdlib>
 
+template<Level l>
 struct FileStore {
 	template<typename T>
 	struct FSObject : public RemoteObject<T> {
@@ -79,14 +80,14 @@ struct FileStore {
 		}
 	};
 
-	template<Level l, HandleAccess ha, typename T>
+	template<HandleAccess ha, typename T>
 	auto newObject(){
 		return make_handle
 			<l,ha,T,FSObject<T>>
 			(std::string("/tmp/fsstore/") + std::to_string(gensym()));
 	}
 
-	template<Level l, HandleAccess ha, typename T>
+	template<HandleAccess ha, typename T>
 	auto newCollection(){
 		return make_handle
 			<l,ha,std::set<T>,FSDir<T>>
@@ -97,9 +98,9 @@ struct FileStore {
 
 template<typename T>
 OPERATION(Insert, RemoteObject<std::set<T> >* ro, T t){
-	FileStore::FSDir<T>* dir = dynamic_cast<FileStore::FSDir<T>*>(ro);
+	FileStore<Level::causal>::FSDir<T>* dir = dynamic_cast<FileStore<Level::causal>::FSDir<T>*>(ro);
 	assert(dir);
-	FileStore::FSObject<T> obj(dir->filename);
+	FileStore<Level::causal>::FSObject<T> obj(dir->filename);
 	//obj.put(t);
 	return true;
 }
