@@ -29,7 +29,7 @@ struct BlogEntry {
 template<typename Store>
 struct Blog {
 	Store s;
-	Handle<Level::causal, HandleAccess::all,std::set<BlogEntry> > entries;
+	Handle<Level::strong, HandleAccess::all,std::set<BlogEntry> > entries;
 
 	auto postEntry(const std::string &entry){
 		auto col = s.template newCollection<HandleAccess::all,Comment>();
@@ -40,7 +40,8 @@ struct Blog {
 
 int main(){
 	FileStore<Level::causal> store;
+	FileStore<Level::strong> sstore;
 	Blog<FileStore<Level::causal> > b{store,
-			store.template newCollection<HandleAccess::all,BlogEntry>()};
+			sstore.template newCollection<HandleAccess::all,BlogEntry>()};
 	b.postEntry("hi!");
 }
