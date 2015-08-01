@@ -75,3 +75,46 @@ struct Operation<Ret (*) (A...)> {
 		return fun(extract_robj_p(args)...);
 	}
 };
+
+
+#define DOBODY1													\
+	//auto Name(args...)										\
+//to-do: limit recursion. Hidden boolean argument or something. \
+	auto *first_try =											\
+		fold(mke<std::tuple<STORE_LIST> >(),					\
+		[&](const auto &arg, const auto *accum){				\
+		if (!accum){											\
+		try {															\
+			typedef decay<decltype(arg)> Store;							\
+			return heap_copy(
+                //Name(args...);
+#define DOBODY2 ) ;														\
+		}																\
+		catch (ClassCastException e){									\
+			return accum;												\
+		}}},nullptr);													\
+	if (first_try){														\
+		std::unique_ptr<decltype(*first_try)> ret(first_try);			\
+		return ret;														\
+	}																	\
+	else {																\
+		struct Name ## OperationNotSupported {};						\
+		throw Name ## OperationNotSupported();							\
+	}																	\
+}
+				
+#define DECLARE_OPERATION2(Name, arg)			\
+	auto Name (arg a) { DOBODY1					\
+	Name(Store::tryCast(a))						\
+		DOBODY2
+
+#define DECLARE_OPERATION3(Name,Arg1, Arg2)	 	\
+	auto Name (Arg1 a, Arg2 b) { DOBODY1		\
+	Name(Store::tryCast(a),Store::tryCast(b))	\
+		DOBODY2				
+
+
+#define DECLARE_OPERATION_IMPL2(count, ...) DECLARE_OPERATION ## count (__VA_ARGS__)
+#define DECLARE_OPERATION_IMPL(count, ...) DECLARE_OPERATION_IMPL2(count, __VA_ARGS__)
+#define DECLARE_OPERATION(...) DECLARE_OPERATION_IMPL(VA_NARGS(__VA_ARGS__), __VA_ARGS__)
+

@@ -36,7 +36,11 @@ struct Transaction{
 		Store s;
 		return action(s);
 	}
+
+	struct CannotProceedError {};
 };
+
+
 
 std::ostream & operator<<(std::ostream &os, Transaction& t){
 	return t.print(os);
