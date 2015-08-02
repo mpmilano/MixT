@@ -1,2 +1,2 @@
 all:
-	clang++ test.cpp -stdlib=libc++ --std=c++1z -lboost_serialization -lboost_serialization-mt -Wall -o test -ferror-limit=1
+	clang++ test.cpp -stdlib=libc++ --std=c++1z -lboost_serialization -lboost_serialization-mt -Wall -o test -ferror-limit=2 -DSTORE_LIST='FileStore<Level::causal>,FileStore<Level::strong>'

@@ -78,8 +78,8 @@ struct Operation<Ret (*) (A...)> {
 
 
 #define DOBODY1													\
-	//auto Name(args...)										\
-//to-do: limit recursion. Hidden boolean argument or something. \
+	/*auto Name(args...)*/										\
+	/*to-do: limit recursion. Hidden boolean argument or something.*/	\
 	auto *first_try =											\
 		fold(mke<std::tuple<STORE_LIST> >(),					\
 		[&](const auto &arg, const auto *accum){				\
@@ -87,10 +87,10 @@ struct Operation<Ret (*) (A...)> {
 		try {															\
 			typedef decay<decltype(arg)> Store;							\
 			return heap_copy(
-                //Name(args...);
+                /*Name(args...);*/
 #define DOBODY2 ) ;														\
-		}																\
-		catch (ClassCastException e){									\
+	}																	\
+	catch (Transaction::ClassCastException e){							\
 			return accum;												\
 		}}},nullptr);													\
 	if (first_try){														\

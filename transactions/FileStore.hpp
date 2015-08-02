@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Transaction.hpp"
 #include "Operation.hpp"
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/archive/text_iarchive.hpp>
@@ -154,17 +155,33 @@ struct FileStore {
 			<l,ha,T,FSObject<T>>
 			(std::string("/tmp/fsstore/") + std::to_string(gensym()),t);
 	}
+
+	template<typename T>
+	static auto tryCast(RemoteObject<T>* r){
+		if(auto *ret = dynamic_cast<FSObject<T> >(r))
+			return ret;
+		else throw Transaction::ClassCastException();
+	}
 	
 };
 
+typedef FileStore<Level::strong> StrongFileStore;
+typedef FileStore<Level::causal> WeakFileStore;
+
+template<Level l, typename T>
+using FSObject = typename FileStore<l>::template FSObject<T>;
+
+template<Level l, typename T>
+using FSDir = typename FileStore<l>::template FSDir<T>;
+	
 template<typename T, typename E>
 DECLARE_OPERATION(Insert, RemoteObject<std::set<T> >*, const E& );
 
 template<typename T, typename E, Level l>
-OPERATION(Insert, FileStore<l>::FSObject<std::set<T> >* ro, const E& t){
+	OPERATION(Insert, FSObject<l,std::set<T> >* ro, const E& t){
 
-	if (FileStore<l>::FSDir<T>* dir = dynamic_cast<FileStore<l>::FSDir<T>*>(ro)) {
-		FileStore<l>::FSObject<T> obj(dir->filename + std::to_string(gensym()),t);
+	if (FSDir<l,T>* dir = dynamic_cast<FSDir<l,T>*>(ro)) {
+		FSObject<l,T> obj(dir->filename + std::to_string(gensym()),t);
 		return true;
 	}
 

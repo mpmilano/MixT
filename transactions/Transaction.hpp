@@ -38,8 +38,8 @@ struct Transaction{
 	}
 
 	struct CannotProceedError {};
+	struct ClassCastException{};
 };
-
 
 
 std::ostream & operator<<(std::ostream &os, Transaction& t){
