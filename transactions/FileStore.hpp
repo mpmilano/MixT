@@ -158,9 +158,14 @@ struct FileStore {
 
 	template<typename T>
 	static auto tryCast(RemoteObject<T>* r){
-		if(auto *ret = dynamic_cast<FSObject<T> >(r))
+		if(auto *ret = dynamic_cast<FSObject<T>* >(r))
 			return ret;
 		else throw Transaction::ClassCastException();
+	}
+
+	template<typename T, restrict(!is_RemoteObj_ptr<T>::value)>
+	static auto tryCast(T && r){
+		return std::forward<T>(r);
 	}
 	
 };
@@ -175,7 +180,7 @@ template<Level l, typename T>
 using FSDir = typename FileStore<l>::template FSDir<T>;
 	
 template<typename T, typename E>
-DECLARE_OPERATION(Insert, RemoteObject<std::set<T> >*, const E& );
+DECLARE_OPERATION(Insert, RemoteObject<std::set<T> >*, const E& )
 
 template<typename T, typename E, Level l>
 	OPERATION(Insert, FSObject<l,std::set<T> >* ro, const E& t){

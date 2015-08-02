@@ -13,7 +13,7 @@
 
 //Idea: you can have template<...> above this and it will work!
 
-#define OPERATION(Name, args...) auto Name(args) {	\
+#define OPERATION(Name, args...) auto Name(args, std::false_type* = nullptr) { \
 	struct r { static bool f(args)
 
 #define END_OPERATION };								\
@@ -77,18 +77,20 @@ struct Operation<Ret (*) (A...)> {
 };
 
 
-#define DOBODY1													\
-	/*auto Name(args...)*/										\
+#define DOBODY1(decl)													\
+	decl {																\
+	struct r { 															\
+	static decl {														\
 	/*to-do: limit recursion. Hidden boolean argument or something.*/	\
 	auto *first_try =											\
 		fold(mke<std::tuple<STORE_LIST> >(),					\
-		[&](const auto &arg, const auto *accum){				\
+		[&](const auto &arg, const auto &accum){				\
 		if (!accum){											\
 		try {															\
 			typedef decay<decltype(arg)> Store;							\
 			return heap_copy(
                 /*Name(args...);*/
-#define DOBODY2 ) ;														\
+#define DOBODY2(Name,args...) ) ;										\
 	}																	\
 	catch (Transaction::ClassCastException e){							\
 			return accum;												\
@@ -101,17 +103,23 @@ struct Operation<Ret (*) (A...)> {
 		struct Name ## OperationNotSupported {};						\
 		throw Name ## OperationNotSupported();							\
 	}																	\
-}
+	}																	\
+	};																	\
+	  static_assert(!std::is_same<decltype(r::Name(args)),std::nullptr_t>::value, \
+					"Error: Declared operation has no implementing Stores!"	\
+		  );															\
+	  return r::Name(args);												\
+	  }
 				
-#define DECLARE_OPERATION2(Name, arg)			\
-	auto Name (arg a) { DOBODY1					\
-	Name(Store::tryCast(a))						\
-		DOBODY2
+#define DECLARE_OPERATION2(Name, arg)					\
+	DOBODY1(auto Name (arg a))							\
+	Name(Store::tryCast(a),mke_p<std::false_type>())	\
+		DOBODY2(Name,a)
 
-#define DECLARE_OPERATION3(Name,Arg1, Arg2)	 	\
-	auto Name (Arg1 a, Arg2 b) { DOBODY1		\
-	Name(Store::tryCast(a),Store::tryCast(b))	\
-		DOBODY2				
+#define DECLARE_OPERATION3(Name,Arg1, Arg2)								\
+	DOBODY1(auto Name (Arg1 a, Arg2 b))									\
+	Name(Store::tryCast(a),Store::tryCast(b),mke_p<std::false_type>())	\
+	DOBODY2(Name,a,b)				
 
 
 #define DECLARE_OPERATION_IMPL2(count, ...) DECLARE_OPERATION ## count (__VA_ARGS__)

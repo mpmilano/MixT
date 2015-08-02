@@ -24,12 +24,19 @@ struct test_entry{
 }; 
 
 template<typename T>
+DECLARE_OPERATION(TestOp, RemoteObject<T>* )
+
+template<typename T>
 OPERATION(TestOp, RemoteObject<T>* ro){
 	std::cout << "test op " << ro << std::endl;
 	return true;
 }
 END_OPERATION
 
+template<typename T>
+DECLARE_OPERATION(TestOp2, const RemoteObject<T>* , RemoteObject<T>* )
+
+	
 template<typename T>
 OPERATION(TestOp2, const RemoteObject<T>* ro1, RemoteObject<T>* ){
 	std::cout << "test op2 " << ro1 << std::endl;
