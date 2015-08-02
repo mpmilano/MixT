@@ -23,6 +23,7 @@ struct test_entry{
 	static constexpr int v2 = 0;
 }; 
 
+/*
 template<typename T>
 DECLARE_OPERATION(TestOp, RemoteObject<T>* )
 
@@ -43,7 +44,7 @@ OPERATION(TestOp2, const RemoteObject<T>* ro1, RemoteObject<T>* ){
 	return true;
 }
 END_OPERATION
-
+*/
 
 int main(){
 
@@ -74,8 +75,8 @@ int main(){
 
 	auto ro_thirteen = thirteen.readOnly();
 
-	auto testop1 = do_op(TestOp,thirteen);
-	std::cout << type_name<decltype(testop1)>() << std::endl;
+	//auto testop1 = do_op(TestOp,thirteen);
+	//std::cout << type_name<decltype(testop1)>() << std::endl;
 
 	//This fails; flow violation! Though you wouldn't know it from the error =_=
 	//do_op(TestOp2, thirteen, five);
@@ -85,11 +86,10 @@ int main(){
 	//_do_op(TestOp2, thirteen_rop, &five.remote_object())(thirteen,five);
 
 	//This is fine, because strong is read-only
-	do_op(TestOp2, ro_thirteen, five);
+	//do_op(TestOp2, ro_thirteen, five);
 
 	BEGIN_TRANSACTION
 		(temp(Level::causal,int,"f") = 6)/
-		do_op(TestOp, thirteen) /
 		do_op(Insert,num_dir,42) /
 		IF (isValid(thirteen)) 
 		THEN { CSInt<Level::causal,2>() /

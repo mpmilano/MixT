@@ -177,10 +177,7 @@ template<Level l, typename T>
 using FSObject = typename FileStore<l>::template FSObject<T>;
 
 template<Level l, typename T>
-using FSDir = typename FileStore<l>::template FSDir<T>;
-	
-template<typename T, typename E>
-DECLARE_OPERATION(Insert, RemoteObject<std::set<T> >*, const E& )
+using FSDir = typename FileStore<l>::template FSDir<T>;	
 
 template<typename T, typename E, Level l>
 	OPERATION(Insert, FSObject<l,std::set<T> >* ro, const E& t){
@@ -195,3 +192,6 @@ template<typename T, typename E, Level l>
 
 }
 END_OPERATION
+
+template<typename T, typename E>
+DECLARE_OPERATION(Insert, RemoteObject<std::set<T> >*, const E& )

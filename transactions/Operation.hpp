@@ -13,7 +13,7 @@
 
 //Idea: you can have template<...> above this and it will work!
 
-#define OPERATION(Name, args...) auto Name(args, std::false_type* = nullptr) { \
+#define OPERATION(Name, args...) auto Name ## _impl (args) { \
 	struct r { static bool f(args)
 
 #define END_OPERATION };								\
@@ -76,6 +76,10 @@ struct Operation<Ret (*) (A...)> {
 	}
 };
 
+template<typename... Args>
+auto _run_op(Operation<bool(*) (cr_add<Args>...)> (*fp) (cr_add<Args>...), Args... a){
+	return fp(a...);
+}
 
 #define DOBODY1(decl)													\
 	decl {																\
@@ -113,12 +117,12 @@ struct Operation<Ret (*) (A...)> {
 				
 #define DECLARE_OPERATION2(Name, arg)					\
 	DOBODY1(auto Name (arg a))							\
-	Name(Store::tryCast(a),mke_p<std::false_type>())	\
+	_run_op(Name ## _impl, Store::tryCast(a))	\
 		DOBODY2(Name,a)
 
 #define DECLARE_OPERATION3(Name,Arg1, Arg2)								\
 	DOBODY1(auto Name (Arg1 a, Arg2 b))									\
-	Name(Store::tryCast(a),Store::tryCast(b),mke_p<std::false_type>())	\
+	_run_op(Name ## _impl, Store::tryCast(a),Store::tryCast(b)) \
 	DOBODY2(Name,a,b)				
 
 
