@@ -83,11 +83,11 @@ auto _run_op(Operation<bool (*) (cr_add<Args>...)> (*fp) (cr_add<Args>...), Args
 
 #define DOBODY1(decl,Name,args...)										\
 	decl {																\
-	auto *first_try =													\
+	auto first_try =													\
 		fold(mke<std::tuple<STORE_LIST> >(),							\
 		[&](const auto &arg, const auto &accum){						\
 		typedef decay<decltype(arg)> Store;								\
-		typedef decltype(heap_copy(_run_op(Name ## _impl,args))) ret_t;	\
+		typedef decltype(heap_copy(Name ## _impl(args))) ret_t;			\
 		ret_t def = nullptr;											\
 		if (!exists(accum)){											\
 		try {															\
@@ -102,7 +102,7 @@ auto _run_op(Operation<bool (*) (cr_add<Args>...)> (*fp) (cr_add<Args>...), Args
 	},std::tuple<>());													\
 	if (exists(first_try)){												\
 		return fold(first_try,[&](const auto &e, const auto &accum){	\
-				return tuple_cat(std::make_unique(e),accum);			\
+				return tuple_cons(make_unique(e),accum);			\
 			},std::tuple<>());											\
 	}																	\
 	else {																\
@@ -111,15 +111,15 @@ auto _run_op(Operation<bool (*) (cr_add<Args>...)> (*fp) (cr_add<Args>...), Args
 	}																	\
 	}
 				
-#define DECLARE_OPERATION2(Name, arg)					\
-				DOBODY1(auto Name (arg a),Name,Store::tryCast(a))	\
-	_run_op(Name ## _impl, Store::tryCast(a))	\
-		DOBODY2(Name,a)
+#define DECLARE_OPERATION2(Name, arg)								\
+	DOBODY1(auto Name (arg a),Name,Store::tryCast(a))				\
+	Name ## _impl(Store::tryCast(a))								\
+	DOBODY2(Name,a)
 
 #define DECLARE_OPERATION3(Name,Arg1, Arg2)								\
-				DOBODY1(auto Name (Arg1 a, Arg2 b),Name,Store::tryCast(a),Store::tryCast(b)) \
-	_run_op(Name ## _impl, Store::tryCast(a),Store::tryCast(b)) \
-	DOBODY2(Name,a,b)				
+	DOBODY1(auto Name (Arg1 a, Arg2 b),Name,Store::tryCast(a),Store::tryCast(b)) \
+	Name ## _impl (Store::tryCast(a),Store::tryCast(b))					\
+	DOBODY2(Name,a,b)
 
 
 #define DECLARE_OPERATION_IMPL2(count, ...) DECLARE_OPERATION ## count (__VA_ARGS__)

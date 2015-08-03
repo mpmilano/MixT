@@ -250,3 +250,8 @@ std::vector<std::string> read_dir(const std::string &name){
 
 	return ret;
 }
+
+template<typename T>
+std::unique_ptr<T> make_unique(T *t){
+	return std::unique_ptr<T>(t);
+}

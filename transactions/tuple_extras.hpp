@@ -177,7 +177,7 @@ using First = typename _First<T>::type;
 
 template<typename T, typename... Args>
 typename Cons<T,std::tuple<Args...> >::type
-tuple_cons(const std::tuple<Args...> &a, const T &t){
+tuple_cons(const T &t, const std::tuple<Args...> &a){
 	return std::tuple_cat(std::make_tuple(t),a);
 }
 

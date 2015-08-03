@@ -180,11 +180,11 @@ template<Level l, typename T>
 using FSDir = typename FileStore<l>::template FSDir<T>;	
 
 
-/*template<typename T, typename E, Level l> 
-	OPERATION(Insert, FSObject<l,std::set<T> >* ro, const E& t){
+template<typename T> 
+OPERATION(Insert, FSObject<Level::causal,std::set<T> >* ro, const T& t){
 
-	if (FSDir<l,T>* dir = dynamic_cast<FSDir<l,T>*>(ro)) {
-		FSObject<l,T> obj(dir->filename + std::to_string(gensym()),t);
+	if (FSDir<Level::causal,T>* dir = dynamic_cast<FSDir<Level::causal,T>*>(ro)) {
+		FSObject<Level::causal,T> obj(dir->filename + std::to_string(gensym()),t);
 		return true;
 	}
 
@@ -193,26 +193,20 @@ using FSDir = typename FileStore<l>::template FSDir<T>;
 
 }
 END_OPERATION
-*/
 
-Operation<bool (*) (cr_add<FSObject<Level::causal,std::set<int> > *>, cr_add<int>)>
-Insert_impl (cr_add<FSObject<Level::causal,std::set<int> >*> ro, cr_add<int>) {
-	struct r {
-		static bool f(FSObject<Level::causal,std::set<int> >* ro, const int& t){
+template<typename T> 
+OPERATION(Insert, FSObject<Level::strong,std::set<T> >* ro, const T& t){
 
-			if (FSDir<Level::causal,int>* dir = dynamic_cast<FSDir<Level::causal,int>*>(ro)) {
-				FSObject<Level::causal,int> obj(dir->filename + std::to_string(gensym()),t);
-				return true;
-			}
-			
-			assert(false && "didn't pass me an FSDIR!");
-			return false;
-			
-		}
-	};
-	auto fp = r::f;
-	return Operation<decltype(fp)>(fp);
+	if (FSDir<Level::strong,T>* dir = dynamic_cast<FSDir<Level::strong,T>*>(ro)) {
+		FSObject<Level::strong,T> obj(dir->filename + std::to_string(gensym()),t);
+		return true;
+	}
+
+	assert(false && "didn't pass me an FSDIR!");
+	return false;
+
 }
+END_OPERATION
 
-template<typename T, typename E>
-DECLARE_OPERATION(Insert, RemoteObject<std::set<T> >*, const E& )
+template<typename T>
+DECLARE_OPERATION(Insert, RemoteObject<std::set<T> >*, const T& )

@@ -136,13 +136,14 @@ private:
 };
 
 template<typename... Args>
-constexpr auto exists (Args...){
+constexpr bool exists (Args...){
 	static_assert(sizeof...(Args) == 0, "got template recursion wrong");
 	return false;
 }
 
 template<typename T, typename... Args>
-constexpr auto exists(T a, Args... b){
+constexpr bool exists(const T& _a, Args... b){
+	bool a = _a;
 	return (sizeof...(Args) == 0 ? a 
 		: (a ? a 
 		   : exists(b...)));
