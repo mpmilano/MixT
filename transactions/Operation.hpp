@@ -102,7 +102,7 @@ auto _run_op(Operation<bool (*) (cr_add<Args>...)> (*fp) (cr_add<Args>...), Args
 	},std::tuple<>());													\
 	if (exists(first_try)){												\
 		return fold(first_try,[&](const auto &e, const auto &accum){	\
-				return tuple_cons(make_unique(e),accum);			\
+				return tuple_cons(make_shared(e),accum);			\
 			},std::tuple<>());											\
 	}																	\
 	else {																\

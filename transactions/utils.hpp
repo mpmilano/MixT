@@ -255,3 +255,8 @@ template<typename T>
 std::unique_ptr<T> make_unique(T *t){
 	return std::unique_ptr<T>(t);
 }
+
+template<typename T>
+std::shared_ptr<T> make_shared(T *t){
+	return std::shared_ptr<T>(t);
+}
