@@ -67,9 +67,9 @@ auto __callFunc(const F& f, const Tuple &t, seq<S...>) {
 }
 
 
-template<typename F, typename Tuple, typename Pack, restrict(!std::is_function<F>::value)>
-auto callFunc(const F &f, const Tuple &t, Pack p) {
-	return __callFunc(f,t,p);
+template<typename F, typename Tuple, restrict(!std::is_function<F>::value)>
+auto callFunc(const F &f, const Tuple &t) {
+	return __callFunc(f,t,gens<std::tuple_size<Tuple>::value >::build() );
 }
 
 template<typename Ret, typename Tuple, typename Pack, typename... Args>

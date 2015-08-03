@@ -108,6 +108,30 @@ constexpr bool forall_types_f(const std::tuple<Args...>*){
 template<template<typename> class Pred, typename T>
 struct forall_types : std::integral_constant<bool,forall_types_f<Pred>(mke_p<T>())> {};
 
+
+template<typename tuple, int... S>
+constexpr bool _forall(const tuple &t, const seq<S...>&){
+	return forall(std::get<S>(t)...);
+}
+
+
+template<typename... Args>
+constexpr bool forall(const std::tuple<Args...> &t){
+	return _forall(t,gens<sizeof...(Args)>::build());
+}
+
+template<typename tuple, int... S>
+constexpr bool _exists(const tuple &t, const seq<S...>&){
+	return exists(std::get<S>(t)...);
+}
+
+
+template<typename... Args>
+constexpr bool exists(const std::tuple<Args...> &t){
+	return _exists(t,gens<sizeof...(Args)>::build());
+}
+
+
 template<template<typename, typename> class Func, typename Accum, typename Arg>
 struct fold_types_str;
 

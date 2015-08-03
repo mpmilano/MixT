@@ -77,51 +77,47 @@ struct Operation<Ret (*) (A...)> {
 };
 
 template<typename... Args>
-auto _run_op(Operation<bool(*) (cr_add<Args>...)> (*fp) (cr_add<Args>...), Args... a){
+auto _run_op(Operation<bool (*) (cr_add<Args>...)> (*fp) (cr_add<Args>...), Args... a){
 	return fp(a...);
 }
 
-#define DOBODY1(decl)													\
+#define DOBODY1(decl,Name,args...)										\
 	decl {																\
-	struct r { 															\
-	static decl {														\
-	/*to-do: limit recursion. Hidden boolean argument or something.*/	\
-	auto *first_try =											\
-		fold(mke<std::tuple<STORE_LIST> >(),					\
-		[&](const auto &arg, const auto &accum){				\
-		if (!accum){											\
+	auto *first_try =													\
+		fold(mke<std::tuple<STORE_LIST> >(),							\
+		[&](const auto &arg, const auto &accum){						\
+		typedef decay<decltype(arg)> Store;								\
+		typedef decltype(heap_copy(_run_op(Name ## _impl,args))) ret_t;	\
+		ret_t def = nullptr;											\
+		if (!exists(accum)){											\
 		try {															\
-			typedef decay<decltype(arg)> Store;							\
-			return heap_copy(
+		return tuple_cons(heap_copy(
                 /*Name(args...);*/
-#define DOBODY2(Name,args...) ) ;										\
+#define DOBODY2(Name,args...) ),accum) ;								\
 	}																	\
 	catch (Transaction::ClassCastException e){							\
-			return accum;												\
-		}}},nullptr);													\
-	if (first_try){														\
-		std::unique_ptr<decltype(*first_try)> ret(first_try);			\
-		return ret;														\
+		return tuple_cons(def,accum);									\
+	}}																	\
+	else return tuple_cons(def,accum);									\
+	},std::tuple<>());													\
+	if (exists(first_try)){												\
+		return fold(first_try,[&](const auto &e, const auto &accum){	\
+				return tuple_cat(std::make_unique(e),accum);			\
+			},std::tuple<>());											\
 	}																	\
 	else {																\
 		struct Name ## OperationNotSupported {};						\
 		throw Name ## OperationNotSupported();							\
 	}																	\
-	}																	\
-	};																	\
-	  static_assert(!std::is_same<decltype(r::Name(args)),std::nullptr_t>::value, \
-					"Error: Declared operation has no implementing Stores!"	\
-		  );															\
-	  return r::Name(args);												\
-	  }
+	}
 				
 #define DECLARE_OPERATION2(Name, arg)					\
-	DOBODY1(auto Name (arg a))							\
+				DOBODY1(auto Name (arg a),Name,Store::tryCast(a))	\
 	_run_op(Name ## _impl, Store::tryCast(a))	\
 		DOBODY2(Name,a)
 
 #define DECLARE_OPERATION3(Name,Arg1, Arg2)								\
-	DOBODY1(auto Name (Arg1 a, Arg2 b))									\
+				DOBODY1(auto Name (Arg1 a, Arg2 b),Name,Store::tryCast(a),Store::tryCast(b)) \
 	_run_op(Name ## _impl, Store::tryCast(a),Store::tryCast(b)) \
 	DOBODY2(Name,a,b)				
 
@@ -129,4 +125,3 @@ auto _run_op(Operation<bool(*) (cr_add<Args>...)> (*fp) (cr_add<Args>...), Args.
 #define DECLARE_OPERATION_IMPL2(count, ...) DECLARE_OPERATION ## count (__VA_ARGS__)
 #define DECLARE_OPERATION_IMPL(count, ...) DECLARE_OPERATION_IMPL2(count, __VA_ARGS__)
 #define DECLARE_OPERATION(...) DECLARE_OPERATION_IMPL(VA_NARGS(__VA_ARGS__), __VA_ARGS__)
-

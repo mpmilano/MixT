@@ -41,8 +41,6 @@ std::ostream & operator<<(std::ostream &os, const Operate<l,i>& op){
 	return os << op.name;
 }
 
-
-
 template<typename T>
 struct PreOp {
 	const T t;
@@ -60,22 +58,39 @@ struct PreOp {
 	}
 };
 
-//TODO - need to handle AST nodes in the argument list for this.
+template<typename... J>
+struct PreOp<std::tuple<J...> > {
+	const std::tuple<J...> t;
 
-//if you really really want the error messages to be pretty, you
-//can write a version of this that's overloaded up the wazoo on const
-//vs non-const.
-template<typename... Args>
-auto _do_op(Operation<bool(*) (cr_add<Args>...)> (*fp) (cr_add<Args>...), Args... a){
-	auto tmp = fp(a...);
-	PreOp<decltype(tmp)> ret{tmp};
+	template<typename... Args>
+	auto operator()(Args && ... args) const {
+		//TODO: I'm sure there's some rationale behind
+		//how exactly to measure this which is better.
+		static constexpr Level l = min_level<Args...>::value;
+		return Operate<l,decltype((*std::get<0>(t))(args...))>
+			([=]() mutable {
+				return fold(t,[&](const auto &e, const auto &acc){
+						if (acc.first || !e) return acc;
+						else return std::pair<bool,bool>(true,*e(args...));
+					},std::pair<bool,bool>(false,false)).second;
+			},
+			 BitSet<HandleAbbrev>::big_union(get_ReadSet(args)...),
+			 "This came from a tuple, so I don't know what to print"
+				);
+	}
+};
+
+template<typename T>
+auto make_PreOp(const T &t){
+	PreOp<T> ret{t};
 	return ret;
 }
 
-#define do_op2(Name, arg) _do_op(Name,extract_robj_p(arg))(arg)
-#define do_op3(Name, arg1,arg2) _do_op(Name,extract_robj_p(arg1),extract_robj_p(arg2))(arg1,arg2)
-#define do_op4(Name, arg1,arg2,arg3) _do_op(Name,extract_robj_p(arg1),extract_robj_p(arg2),extract_robj_p(arg3))(arg1,arg2,arg3)
-#define do_op5(Name, arg1,arg2,arg3,arg4) _do_op(Name,extract_robj_p(arg1),extract_robj_p(arg2),extract_robj_p(arg3),extract_robj_p(arg4))(arg1,arg2,arg3,arg4)
+//TODO - need to handle AST nodes in the argument list for this.
+#define op_arg(x) extract_robj_p(x)
+
+#define do_op2(Name, arg) make_PreOp(Name(op_arg(arg)))(arg)
+#define do_op3(Name, arg1,arg2) make_PreOp(Name(op_arg(arg1),op_arg(arg2)))(arg1,arg2)
 
 #define do_op_IMPL2(count, ...) do_op ## count (__VA_ARGS__)
 #define do_op_IMPL(count, ...) do_op_IMPL2(count, __VA_ARGS__)

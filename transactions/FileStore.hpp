@@ -157,7 +157,7 @@ struct FileStore {
 	}
 
 	template<typename T>
-	static auto tryCast(RemoteObject<T>* r){
+	static FSObject<T>* tryCast(RemoteObject<T>* r){
 		if(auto *ret = dynamic_cast<FSObject<T>* >(r))
 			return ret;
 		else throw Transaction::ClassCastException();
@@ -179,7 +179,8 @@ using FSObject = typename FileStore<l>::template FSObject<T>;
 template<Level l, typename T>
 using FSDir = typename FileStore<l>::template FSDir<T>;	
 
-template<typename T, typename E, Level l>
+
+/*template<typename T, typename E, Level l> 
 	OPERATION(Insert, FSObject<l,std::set<T> >* ro, const E& t){
 
 	if (FSDir<l,T>* dir = dynamic_cast<FSDir<l,T>*>(ro)) {
@@ -192,6 +193,26 @@ template<typename T, typename E, Level l>
 
 }
 END_OPERATION
+*/
+
+Operation<bool (*) (cr_add<FSObject<Level::causal,std::set<int> > *>, cr_add<int>)>
+Insert_impl (cr_add<FSObject<Level::causal,std::set<int> >*> ro, cr_add<int>) {
+	struct r {
+		static bool f(FSObject<Level::causal,std::set<int> >* ro, const int& t){
+
+			if (FSDir<Level::causal,int>* dir = dynamic_cast<FSDir<Level::causal,int>*>(ro)) {
+				FSObject<Level::causal,int> obj(dir->filename + std::to_string(gensym()),t);
+				return true;
+			}
+			
+			assert(false && "didn't pass me an FSDIR!");
+			return false;
+			
+		}
+	};
+	auto fp = r::f;
+	return Operation<decltype(fp)>(fp);
+}
 
 template<typename T, typename E>
 DECLARE_OPERATION(Insert, RemoteObject<std::set<T> >*, const E& )
