@@ -68,6 +68,10 @@ public:
 		assert(_ro);
 		_ro->put(t);
 	}
+
+	bool isValid() const {
+		return _ro->isValid();
+	}
 	
 	operator HandleAbbrev() const {
 		HandleAbbrev::itype i = 1;

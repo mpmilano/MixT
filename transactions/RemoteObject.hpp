@@ -12,6 +12,7 @@ class RemoteObject : public GeneralRemoteObject {
 
 	virtual const T& get() const = 0;
 	virtual void put(const T&) = 0;
+	virtual bool isValid() const = 0;
 
 
 	//TODO: delete these when you're done hacking around.

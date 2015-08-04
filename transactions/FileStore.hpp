@@ -36,6 +36,8 @@ struct FileStore : public DataStore<l>{
 			oa << ths;
 		}
 
+		bool isValid() const {return true;}
+
 		struct StupidWrapper{
 			typename std::conditional<std::is_default_constructible<T>::value, T, T*>::type val;
 

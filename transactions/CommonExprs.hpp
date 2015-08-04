@@ -117,11 +117,7 @@ struct IsValid : public ConExpr<bool, get_level<T>::value> {
 	IsValid(const T &t):t(t){}
 	
 	bool operator()(const Store &) const {
-		//TODO: when handles re-design happens,
-		//this should be one of the basic things
-		//exposed at the handle level.
-		assert(false && "unimplemented");
-		return true;
+		return t.isValid();
 	}
 
 	auto getReadSet() const {
