@@ -65,6 +65,7 @@ T run_ast(Store &s, const ConExpr<T,l>& expr) {
 }
 
 template<typename T>
-T run_ast(Store &, const T& e) {
-	return run_expr(e);
+typename std::enable_if<std::is_pod<decay<T > >::value,T>::type
+run_ast(Store &, const T& e) {
+	return e;
 }

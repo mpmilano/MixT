@@ -56,6 +56,7 @@ int main(){
 	BEGIN_TRANSACTION
 		(temp(Level::causal,int,"f") = 6)/
 		do_op(Insert,num_dir,42) /
+		do_op(Insert,num_dir,(CSInt<Level::strong,42>())) /
 		IF (isValid(thirteen)) 
 		THEN { CSInt<Level::causal,2>() /
 			CSInt<Level::causal,3>() /

@@ -60,7 +60,7 @@ struct PreOp<std::tuple<J...> > {
 		//TODO: I'm sure there's some rationale behind
 		//how exactly to measure this which is better.
 		static constexpr Level l = min_level<Args...>::value;
-		return Operate<l,decltype(std::get<0>(t)(args...))>
+		return Operate<l,decltype(std::get<0>(t)(run_ast(*mke_p<Store>(),args)...))>
 			([=](Store &s) mutable {
 				std::pair<bool,bool> result =
 					fold(t,[&](const auto &e, const std::pair<bool,bool> &acc){
@@ -88,9 +88,11 @@ auto make_PreOp(const T &t){
 	return ret;
 }
 
+#define trans_op_arg(x) *mke_p<decltype(run_ast(*mke_p<Store>(), op_arg(x)))>()
+
 //TODO - need to handle AST nodes in the argument list for this.
-#define do_op2(Name, arg) make_PreOp(Name(op_arg(arg)))(arg)
-#define do_op3(Name, arg1,arg2) make_PreOp(Name(op_arg(arg1),op_arg(arg2)))(arg1,arg2)
+#define do_op2(Name, arg) make_PreOp(Name(trans_op_arg(arg)))(arg)
+#define do_op3(Name, arg1,arg2) make_PreOp(Name(trans_op_arg(arg1),trans_op_arg(arg2)))(arg1,arg2)
 
 #define do_op_IMPL2(count, ...) do_op ## count (__VA_ARGS__)
 #define do_op_IMPL(count, ...) do_op_IMPL2(count, __VA_ARGS__)
