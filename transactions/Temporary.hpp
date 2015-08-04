@@ -112,7 +112,7 @@ struct RefTemporary : public ConExpr<decltype(mke<T>()(mke_store())),l> {
 	auto getReadSet() const {
 		return t.getReadSet();
 	}
-	decltype(mke<T>()(mke_store())) operator()(Store &s) const{
+	decltype(mke<T>()(mke_store())) operator()(const Store &s) const{
 		return call(s,t);
 	}
 

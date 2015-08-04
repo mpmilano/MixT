@@ -12,13 +12,13 @@ typedef Level Level;
 
 template<typename T, Level l>
 struct ConExpr : public ConStatement<l> {
-	virtual T operator()(Store &s) const = 0;
+	virtual T operator()(const Store &s) const = 0;
 };
 
 template<Level l>
 struct DummyConExpr : public ConExpr<void,l> {
 
-	void operator()(Store &) const {}
+	void operator()(const Store &) const {}
 	
 	BitSet<HandleAbbrev> getReadSet() const {
 		return BitSet<HandleAbbrev>();

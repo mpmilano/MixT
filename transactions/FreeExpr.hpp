@@ -17,7 +17,7 @@ struct FreeExpr : public ConExpr<T, min_level<Handles...>::value > {
 
 	FreeExpr(const FreeExpr&) = delete;
 
-	T operator()(Store &) const {
+	T operator()(const Store &) const {
 		return (*f)();
 	}
 
