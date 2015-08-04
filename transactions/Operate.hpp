@@ -7,10 +7,10 @@
 template<Level l, typename R>
 struct Operate : ConStatement<l> {
 	const int id;
-	const std::function<R ()> f;
+	const std::function<R (Store &)> f;
 	const BitSet<HandleAbbrev> bs;
 	const std::string name;
-	Operate(const std::function<R ()>& f,
+	Operate(const std::function<R (Store &)>& f,
 			const BitSet<HandleAbbrev> &bs,
 			const std::string name):
 		id(gensym()),
@@ -24,7 +24,7 @@ struct Operate : ConStatement<l> {
 
 	auto operator()(Store &s) const {
 		s.insert(id,f);
-		s.get<std::function<R ()> >(id)();
+		s.get<std::function<R (Store &)> >(id)(s);
 
 		//TODO: expose failure chances? 
 		return true;
@@ -51,7 +51,7 @@ struct PreOp {
 		//how exactly to measure this which is better.
 		static constexpr Level l = min_level<Args...>::value;
 		return Operate<l,decltype(t(args...))>
-			([=]() mutable {return t(args...);},
+			([=](Store &) mutable {return t(args...);},
 			 BitSet<HandleAbbrev>::big_union(get_ReadSet(args)...),
 			 type_name<typename T::F>()
 				);
@@ -68,7 +68,7 @@ struct PreOp<std::tuple<J...> > {
 		//how exactly to measure this which is better.
 		static constexpr Level l = min_level<Args...>::value;
 		return Operate<l,decltype(std::get<0>(t)(args...))>
-			([=]() mutable {
+			([=](Store &) mutable {
 				std::pair<bool,bool> result =
 					fold(t,[&](const auto &e, const std::pair<bool,bool> &acc){
 							if (acc.first || !e.built_well) {
