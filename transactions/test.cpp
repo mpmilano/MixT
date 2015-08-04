@@ -52,18 +52,6 @@ int main(){
 
 	auto ro_thirteen = thirteen.readOnly();
 
-	//auto testop1 = do_op(TestOp,thirteen);
-	//std::cout << type_name<decltype(testop1)>() << std::endl;
-
-	//This fails; flow violation! Though you wouldn't know it from the error =_=
-	//do_op(TestOp2, thirteen, five);
-
-	//Here's an unpacked call which fails with the error you wanted
-	//const RemoteObject<int>  * thirteen_rop = &thirteen.remote_object();
-	//_do_op(TestOp2, thirteen_rop, &five.remote_object())(thirteen,five);
-
-	//This is fine, because strong is read-only
-	//do_op(TestOp2, ro_thirteen, five);
 
 	BEGIN_TRANSACTION
 		(temp(Level::causal,int,"f") = 6)/

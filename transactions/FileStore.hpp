@@ -187,32 +187,27 @@ using FSObject = typename FileStore<l>::template FSObject<T>;
 template<Level l, typename T>
 using FSDir = typename FileStore<l>::template FSDir<T>;	
 
-
-template<typename T> 
-OPERATION(Insert, FSObject<Level::causal,std::set<T> >* ro, const T& t){
-
-	if (FSDir<Level::causal,T>* dir = dynamic_cast<FSDir<Level::causal,T>*>(ro)) {
-		FSObject<Level::causal,T> obj(dir->filename + std::to_string(gensym()),t);
+template<Level l, typename T>
+auto insert_helper(FSObject<l,std::set<T> >* ro, const T& t){
+	std::cout << "DOING INSERT!" << std::endl;
+	if (FSDir<l,T>* dir = dynamic_cast<FSDir<l,T>*>(ro)) {
+		FSObject<l,T> obj(dir->filename + std::to_string(gensym()),t);
 		return true;
 	}
 
 	assert(false && "didn't pass me an FSDIR!");
 	return false;
+}
 
+template<typename T> 
+OPERATION(Insert, FSObject<Level::causal,std::set<T> >* ro, const T& t){
+	return insert_helper<Level::causal,T>(ro,t);
 }
 END_OPERATION
 
 template<typename T> 
 OPERATION(Insert, FSObject<Level::strong,std::set<T> >* ro, const T& t){
-
-	if (FSDir<Level::strong,T>* dir = dynamic_cast<FSDir<Level::strong,T>*>(ro)) {
-		FSObject<Level::strong,T> obj(dir->filename + std::to_string(gensym()),t);
-		return true;
-	}
-
-	assert(false && "didn't pass me an FSDIR!");
-	return false;
-
+		return insert_helper<Level::strong,T>(ro,t);
 }
 END_OPERATION
 

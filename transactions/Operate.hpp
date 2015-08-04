@@ -69,13 +69,16 @@ struct PreOp<std::tuple<J...> > {
 		static constexpr Level l = min_level<Args...>::value;
 		return Operate<l,decltype((*std::get<0>(t))(args...))>
 			([=]() mutable {
-				return fold(t,[&](const auto &e, const auto &acc){
-						if (acc.first || !e) return acc;
-						else {
-							assert(e);
+				std::pair<bool,bool> result =
+					fold(t,[&](const auto &e, const std::pair<bool,bool> &acc){
+							if (acc.first || !e->built_well) return acc;
+							else {
+								assert(e);
 							return std::pair<bool,bool>(true,(*e)(args...));
-						}
-					},std::pair<bool,bool>(false,false)).second;
+							}
+						},std::pair<bool,bool>(false,false));
+				assert(result.first && "Error: found no function to call");
+				return result.second;
 			},
 			 BitSet<HandleAbbrev>::big_union(get_ReadSet(args)...),
 			 "This came from a tuple, so I don't know what to print"

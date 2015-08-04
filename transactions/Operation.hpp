@@ -48,6 +48,7 @@ using extract_store = typename extract_store_str<T>::type;
 
 template<typename Store, typename Ret, typename... A>
 struct Operation<Store, Ret (*) (A...)> {
+	const bool built_well = false;
 	typedef Ret (*F) (A...);
 	typedef Ret result_t;
 	static constexpr int arity = sizeof...(A);
@@ -55,7 +56,8 @@ struct Operation<Store, Ret (*) (A...)> {
 
 	std::function<Ret (A...)> fun;
 	
-	Operation(Ret (*fun) (A...)):fun(fun) {}
+	Operation(Ret (*fun) (A...)):built_well(true),fun(fun) {}
+	Operation():fun([](A...) -> Ret{assert(false && "Operation built on sand!");}) {}
 
 	template<typename ___T, typename Acc>
 	using type_check = std::pair<Rest<Left<Acc> >,
@@ -71,6 +73,7 @@ struct Operation<Store, Ret (*) (A...)> {
 	template<typename... Args>
 	auto operator()(Args && ... args) const {
 		assert(this);
+		assert(built_well && "Calling operation constructed with default constructor is evil!");
 		static_assert(sizeof...(Args) == arity, "Error: arity violation");
 		typedef fold_types<type_check,std::tuple<Args...>,
 						   std::pair<args_tuple, std::true_type> >
@@ -90,16 +93,6 @@ struct Operation<Store, Ret (*) (A...)> {
 	}
 };
 
-struct CallIsError {
-	
-	template<typename... A>
-	bool operator()(A && ...) const {
-		struct CallError {};
-		throw CallError();
-	}
-};
-
-
 #define DOBODY1(decl,Name,args...)										\
 	decl {																\
 	auto first_try =													\
@@ -107,7 +100,7 @@ struct CallIsError {
 		[&](const auto &arg, const auto &accum){						\
 		typedef decay<decltype(arg)> Store;								\
 		typedef decltype(heap_copy(Name ## _impl(args))) ret_t;			\
-		ret_t def = nullptr;											\
+		ret_t def = heap_copy(typename std::remove_pointer<ret_t>::type());	\
 		if (!exists(accum)){											\
 		try {															\
 		return tuple_cons(heap_copy(
