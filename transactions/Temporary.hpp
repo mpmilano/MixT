@@ -102,7 +102,7 @@ auto _temp(const Str &str){
 }
 
 template<Level l, typename T>
-struct RefTemporary : public ConExpr<l> {
+struct RefTemporary : public ConExpr<T,l> {
 	const Temporary<l,T> t;
 	const std::string name;
 	RefTemporary(const Temporary<l,T> &t):t(t),name(std::string("__x") + std::to_string(t.id)){}
@@ -128,6 +128,11 @@ private:
 	template<Level l2, typename T2>
 	friend std::ostream & operator<<(std::ostream &os, const RefTemporary<l2,T2>&);
 };
+
+//TODO: figure out why this needs to be here
+template<Level l, typename T>
+struct is_ConExpr<RefTemporary<l,T> > : std::true_type {};
+
 
 template<Level l2, typename T2>
 std::ostream & operator<<(std::ostream &os, const RefTemporary<l2,T2>& t){

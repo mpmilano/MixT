@@ -10,23 +10,29 @@
 
 typedef Level Level;
 
-template<Level l>
+template<typename T, Level l>
 struct ConExpr : public ConStatement<l> {};
 
 template<Level l>
-struct DummyConExpr : public ConExpr<l> {
+struct DummyConExpr : public ConExpr<void,l> {
 	BitSet<HandleAbbrev> getReadSet() const {
 		return BitSet<HandleAbbrev>();
 	}
 };
 
+template<typename T, Level l>
+constexpr bool is_ConExpr_f(const ConExpr<T,l>*){
+	return true;
+}
+
+template<typename T>
+constexpr bool is_ConExpr_f(const T*){
+	return false;
+}
+
 template<typename Cls>
 struct is_ConExpr : 
-	std::integral_constant<bool, 
-						   std::is_base_of<ConExpr<Level::causal>,Cls>::value ||
-						   std::is_base_of<ConExpr<Level::strong>,Cls>::value ||
-						   std::is_pod<Cls>::value
-						   >::type {};
+	std::integral_constant<bool, is_ConExpr_f(mke_p<Cls>()) || std::is_pod<decay<Cls> >::value>::type {};
 
 template<typename Expr, restrict(is_ConExpr<Expr>::value && std::is_pod<Expr>::value)>
 auto get_ReadSet(const Expr &){

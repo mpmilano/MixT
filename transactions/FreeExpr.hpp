@@ -1,7 +1,7 @@
 #pragma once
 
 template<typename T, typename... Handles>
-struct FreeExpr : public ConExpr<min_level<Handles...>::value > {
+struct FreeExpr : public ConExpr<T, min_level<Handles...>::value > {
 
 	//todo: idea here is that only read-only things can be done to the handles
 	//in this context.  Try to make that a reality please.

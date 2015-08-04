@@ -4,7 +4,7 @@
 #include "../BitSet.hpp"
 
 template<Level l, int i>
-class CSInt : public ConExpr<l>, public std::integral_constant<int,i>::type {
+class CSInt : public ConExpr<int,l>, public std::integral_constant<int,i>::type {
 public:
 	CSInt(){}
 
@@ -32,7 +32,7 @@ constexpr bool verify_compilation_complete(const CSInt<l,i>*)
 {return true; }
 
 template<Level l, typename T>
-class CSConstant : public ConExpr<l> {
+class CSConstant : public ConExpr<T,l> {
 public:
 
 	const T val;
@@ -53,6 +53,10 @@ public:
 
 REPLACEME_OK(CSConstant)
 
+//TODO: figure out why this needs to be here
+template<Level l, typename T>
+struct is_ConExpr<CSConstant<l,T> > : std::true_type {};
+
 template<Level l, typename i>
 std::ostream & operator<<(std::ostream &os, const CSConstant<l,i>& c){
 	return os << c.val;
@@ -65,7 +69,7 @@ constexpr bool is_base_CS_f(const CSInt<l,i>* ){
 }
 
 template<typename T>
-struct Not : public ConExpr<get_level<T>::value> {
+struct Not : public ConExpr<bool, get_level<T>::value> {
 
 	static_assert(is_ConExpr<T>::value,"Error: cannot negate non-expression");
 	
@@ -84,6 +88,10 @@ struct Not : public ConExpr<get_level<T>::value> {
 	friend std::ostream & operator<<(std::ostream &os, const Not<i2>&);
 };
 
+//TODO: figure out why this needs to be here
+template<typename T>
+struct is_ConExpr<Not<T> > : std::true_type {};
+
 template<typename i2>
 std::ostream & operator<<(std::ostream &os, const Not<i2>& n){
 	return os << "!" << n.v;
@@ -101,7 +109,7 @@ DummyConExpr<l> make_not(const DummyConExpr<l>& e){
 }
 
 template<typename T>
-struct IsValid : public ConExpr<get_level<T>::value> {
+struct IsValid : public ConExpr<bool, get_level<T>::value> {
 	static_assert(is_handle<T>::value,"error: IsValid designed for referential integrity of handles.");
 
 	const T t;
@@ -137,3 +145,6 @@ auto isValid(const T &t){
 }
 	
 
+//TODO: figure out why this needs to be here
+template<typename T>
+struct is_ConExpr<IsValid<T> > : std::true_type {};
