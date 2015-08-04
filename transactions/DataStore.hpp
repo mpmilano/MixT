@@ -5,7 +5,6 @@
 template<Level>
 class DataStore {
 public:
-	template<typename T>
-	DECLARE_OPERATION(Insert, RemoteObject<std::set<T> >*, const T& );
+	DECLARED_OPERATIONS
 
 };
