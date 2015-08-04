@@ -46,7 +46,7 @@ struct PreOp;
 
 
 template<typename T, restrict(is_handle<decay<T> >::value)>
-auto run_ast(Store &, T && t) {
+auto run_ast(const Store &, T && t) {
 	return std::forward<T>(t);
 }
 

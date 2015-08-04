@@ -137,8 +137,8 @@ struct Store : std::map<int,std::unique_ptr<void*> >{
 	}
 };
 
-Store& mke_store(){
-	static Store s;
+const Store& mke_store(){
+	static const Store s;
 	return s;
 }
 

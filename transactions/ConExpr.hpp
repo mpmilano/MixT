@@ -60,12 +60,12 @@ T run_expr(const T& t){
 
 //TODO: this is redundant with the older run_expr?
 template<Level l, typename T>
-T run_ast(Store &s, const ConExpr<T,l>& expr) {
+T run_ast(const Store &s, const ConExpr<T,l>& expr) {
 	return expr(s);
 }
 
 template<typename T>
 typename std::enable_if<std::is_pod<decay<T > >::value,T>::type
-run_ast(Store &, const T& e) {
+run_ast(const Store &, const T& e) {
 	return e;
 }
