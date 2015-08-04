@@ -18,10 +18,10 @@
 
 #define END_OPERATION };								\
 	auto fp = r::f;										\
-	return Operation<decltype(fp)>(fp);					\
+	return Operation<extract_store<decltype(fp)>,decltype(fp)>(fp);	\
 	}
 
-template<typename>
+template<typename, typename>
 struct Operation;
 
 template<typename T, restrict(!is_handle<decay<T> >::value)>
@@ -34,8 +34,20 @@ template<HandleAccess ha, Level l, typename T>
 	return &t.remote_object();
 }
 
-template<typename Ret, typename... A>
-struct Operation<Ret (*) (A...)> {
+template<typename>
+struct extract_store_str;
+
+template<typename Ret, typename... Args>
+struct extract_store_str<Ret (*) (Args...)> {
+	typedef extract_match<is_RemoteObj_ptr,Args...> match;
+	using type = typename std::remove_pointer<decay<match> >::type::Store;
+};
+
+template<typename T>
+using extract_store = typename extract_store_str<T>::type;
+
+template<typename Store, typename Ret, typename... A>
+struct Operation<Store, Ret (*) (A...)> {
 	typedef Ret (*F) (A...);
 	static constexpr int arity = sizeof...(A);
 	typedef std::tuple<A...> args_tuple;
@@ -72,14 +84,10 @@ struct Operation<Ret (*) (A...)> {
 		static_assert(can_flow(min,max),"Error: potential flow violation!");
 		assert(can_flow(min,max));
 		
-		return fun(extract_robj_p(args)...);
+		return fun(Store::tryCast(extract_robj_p(args))...);
 	}
 };
 
-template<typename... Args>
-auto _run_op(Operation<bool (*) (cr_add<Args>...)> (*fp) (cr_add<Args>...), Args... a){
-	return fp(a...);
-}
 
 #define DOBODY1(decl,Name,args...)										\
 	decl {																\

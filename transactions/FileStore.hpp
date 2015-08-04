@@ -15,6 +15,8 @@ struct FileStore {
 	struct FSObject : public RemoteObject<T> {
 		std::unique_ptr<T> t;
 		const std::string filename;
+
+		typedef FileStore<l> Store;
 		
 		FSObject(const std::string &name, bool exists = false):filename(name){
 			if (!exists){

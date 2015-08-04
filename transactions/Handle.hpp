@@ -5,7 +5,7 @@
 #include "RemoteObject.hpp"
 #include <memory>
 
-template<typename>
+template<typename,typename>
 struct Operation;
 
 struct HandleAbbrev{
@@ -106,13 +106,13 @@ public:
 		return ret;
 	}
 
-
+/*
 	//TODO: same treatment as in Operate
 	template<typename... Args>
 	auto op(Operation<bool(*) (RemoteObject<T>*, cr_add<Args>...)> (*fp) (RemoteObject<T>*, cr_add<Args>...), Args && ... a){
 		return fp(&remote_object(),std::forward<Args>(a)...)(*this, std::forward<Args>(a)...);
 	}
-
+*/
 };
 
 template<Level l, HandleAccess HA, typename T,

@@ -181,3 +181,21 @@ tuple_cons(const T &t, const std::tuple<Args...> &a){
 	return std::tuple_cat(std::make_tuple(t),a);
 }
 
+template<template<typename> class, typename>
+struct extract_match_str;
+
+template<template<typename> class Pred, typename Fst, typename... Rst>
+struct extract_match_str<Pred,std::tuple<Fst,Rst...> >{
+	using type = typename std::conditional<
+		Pred<Fst>::value,
+		Fst,
+		typename extract_match_str<Pred,std::tuple<Rst...> >::type>::type;
+};
+
+template<template<typename> class Pred, typename Fst>
+struct extract_match_str<Pred,std::tuple<Fst> >{
+	using type = Fst;
+};
+
+template<template<typename> class Pred, typename... T>
+using extract_match = typename extract_match_str<Pred,std::tuple<T...> >::type;

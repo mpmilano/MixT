@@ -71,7 +71,7 @@ struct PreOp<std::tuple<J...> > {
 			([=]() mutable {
 				return fold(t,[&](const auto &e, const auto &acc){
 						if (acc.first || !e) return acc;
-						else return std::pair<bool,bool>(true,*e(args...));
+						else return std::pair<bool,bool>(true,(*e)(args...));
 					},std::pair<bool,bool>(false,false)).second;
 			},
 			 BitSet<HandleAbbrev>::big_union(get_ReadSet(args)...),
