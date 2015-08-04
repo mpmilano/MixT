@@ -102,7 +102,7 @@ auto _temp(const Str &str){
 }
 
 template<Level l, typename T>
-struct RefTemporary : public ConExpr<decltype(mke<T>()(*mke_p<Store>())),l> {
+struct RefTemporary : public ConExpr<decltype(mke<T>()(mke_store())),l> {
 	const Temporary<l,T> t;
 	const std::string name;
 	RefTemporary(const Temporary<l,T> &t):t(t),name(std::string("__x") + std::to_string(t.id)){}
@@ -112,18 +112,18 @@ struct RefTemporary : public ConExpr<decltype(mke<T>()(*mke_p<Store>())),l> {
 	auto getReadSet() const {
 		return t.getReadSet();
 	}
-	decltype(mke<T>()(*mke_p<Store>())) operator()(Store &s) const{
+	decltype(mke<T>()(mke_store())) operator()(Store &s) const{
 		return call(s,t);
 	}
 
 private:
 	static auto call(const Store &s, const Temporary<l,T> &t){
-		typedef decltype(t.t(*mke_p<Store>())) R;
+		typedef decltype(t.t(mke_store())) R;
 		return *((R*) s.at(t.id).get());
 	}
 
 	static_assert(!is_ConStatement<decltype(
-					  call(*mke_p<Store>(),*mke_p<Temporary<l,T> >())
+					  call(mke_store(),*mke_p<Temporary<l,T> >())
 					  )>::value);
 	template<Level l2, typename T2>
 	friend std::ostream & operator<<(std::ostream &os, const RefTemporary<l2,T2>&);

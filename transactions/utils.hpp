@@ -137,6 +137,11 @@ struct Store : std::map<int,std::unique_ptr<void*> >{
 	}
 };
 
+Store& mke_store(){
+	static Store s;
+	return s;
+}
+
 template<const int i,restrict(i <= 0)>
 constexpr unsigned long long unique_id(const char*){
 	return 0;
@@ -259,4 +264,15 @@ std::unique_ptr<T> make_unique(T *t){
 template<typename T>
 std::shared_ptr<T> make_shared(T *t){
 	return std::shared_ptr<T>(t);
+}
+
+template<typename T>
+T& realmke(){
+	static T t;
+	return t;
+}
+
+template<typename T>
+const T& constify(const T& t){
+	return t;
 }
