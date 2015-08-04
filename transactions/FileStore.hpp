@@ -199,6 +199,9 @@ auto insert_helper(FSObject<l,std::set<T> >* ro, const T& t){
 	return false;
 }
 
+template<typename T>
+DECLARE_OPERATION(Insert, RemoteObject<std::set<T> >*, const T& )
+
 template<typename T> 
 OPERATION(Insert, FSObject<Level::causal,std::set<T> >* ro, const T& t){
 	return insert_helper<Level::causal,T>(ro,t);
@@ -207,9 +210,10 @@ END_OPERATION
 
 template<typename T> 
 OPERATION(Insert, FSObject<Level::strong,std::set<T> >* ro, const T& t){
-		return insert_helper<Level::strong,T>(ro,t);
+	return insert_helper<Level::strong,T>(ro,t);
 }
 END_OPERATION
 
+
 template<typename T>
-DECLARE_OPERATION(Insert, RemoteObject<std::set<T> >*, const T& )
+FINALIZE_OPERATION(Insert, RemoteObject<std::set<T> >*, const T& )

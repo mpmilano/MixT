@@ -2,12 +2,13 @@
 
 #include "type_utils.hpp"
 
+struct GeneralRemoteObject {
+	const int id = gensym();
+};
 
 template<typename T>
-class RemoteObject {
+class RemoteObject : public GeneralRemoteObject {
 	//extend this plz!
-
-	const int id = gensym();
 
 	virtual const T& get() const = 0;
 	virtual void put(const T&) = 0;
@@ -22,6 +23,7 @@ public:
 	friend struct Handle;
 
 };
+
 
 template<typename T>
 struct is_RemoteObj_ptr;
@@ -40,3 +42,6 @@ struct is_not_RemoteObj_ptr : std::integral_constant<bool,!is_RemoteObj_ptr<T>::
 
 template<typename T>
 using cr_add = typename std::conditional<is_RemoteObj_ptr<T>::value, T, const decay<T>&>::type;
+
+template<typename T>
+using generalize_ro = typename std::conditional<is_RemoteObj_ptr<T>::value, const GeneralRemoteObject*,  T>::type;

@@ -93,6 +93,28 @@ struct Operation<Store, Ret (*) (A...)> {
 	}
 };
 
+struct OperationNotFoundError {};
+
+struct NoOperation {
+	static constexpr bool built_well = false;
+
+	typedef NoOperation F;
+
+	template<typename... Args>
+	bool operator()(Args && ...) const {
+		throw OperationNotFoundError ();
+		return false;
+	}
+};
+
+#define DECLARE_OPERATION3(Name, arg1, arg2) NoOperation Name(generalize_ro<arg1>,generalize_ro<arg2>){return NoOperation();}
+#define DECLARE_OPERATION2(Name, arg1) NoOperation Name(generalize_ro<arg1>){return NoOperation();}
+#define DECLARE_OPERATION_IMPL2(count, ...) DECLARE_OPERATION ## count (__VA_ARGS__)
+#define DECLARE_OPERATION_IMPL(count, ...) DECLARE_OPERATION_IMPL2(count, __VA_ARGS__)
+#define DECLARE_OPERATION(...) DECLARE_OPERATION_IMPL(VA_NARGS(__VA_ARGS__), __VA_ARGS__)
+
+
+
 #define DOBODY1(decl,Name,args...)										\
 	decl {																\
 	return																\
@@ -114,20 +136,22 @@ struct Operation<Store, Ret (*) (A...)> {
 	},std::tuple<>());													\
 	}
 				
-#define DECLARE_OPERATION2(Name, arg)								\
+#define FINALIZE_OPERATION2(Name, arg)								\
 	DOBODY1(auto Name (arg a),Name,Store::tryCast(a))				\
 	Name ## _impl(Store::tryCast(a))								\
 	DOBODY2(Name,a)
 
-#define DECLARE_OPERATION3(Name,Arg1, Arg2)								\
+	
+
+#define FINALIZE_OPERATION3(Name,Arg1, Arg2)								\
 	DOBODY1(auto Name (Arg1 a, Arg2 b),Name,Store::tryCast(a),Store::tryCast(b)) \
 	Name ## _impl (Store::tryCast(a),Store::tryCast(b))					\
 	DOBODY2(Name,a,b)
 
 
-#define DECLARE_OPERATION_IMPL2(count, ...) DECLARE_OPERATION ## count (__VA_ARGS__)
-#define DECLARE_OPERATION_IMPL(count, ...) DECLARE_OPERATION_IMPL2(count, __VA_ARGS__)
-#define DECLARE_OPERATION(...) DECLARE_OPERATION_IMPL(VA_NARGS(__VA_ARGS__), __VA_ARGS__)
+#define FINALIZE_OPERATION_IMPL2(count, ...) FINALIZE_OPERATION ## count (__VA_ARGS__)
+#define FINALIZE_OPERATION_IMPL(count, ...) FINALIZE_OPERATION_IMPL2(count, __VA_ARGS__)
+#define FINALIZE_OPERATION(...) FINALIZE_OPERATION_IMPL(VA_NARGS(__VA_ARGS__), __VA_ARGS__)
 
 
 #define op_arg(x) extract_robj_p(x)
