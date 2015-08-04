@@ -42,21 +42,7 @@ std::ostream & operator<<(std::ostream &os, const Operate<l,i>& op){
 }
 
 template<typename T>
-struct PreOp {
-	const T t;
-
-	template<typename... Args>
-	auto operator()(Args && ... args) const {
-		//TODO: I'm sure there's some rationale behind
-		//how exactly to measure this which is better.
-		static constexpr Level l = min_level<Args...>::value;
-		return Operate<l,decltype(t(args...))>
-			([=](Store &) mutable {return t(args...);},
-			 BitSet<HandleAbbrev>::big_union(get_ReadSet(args)...),
-			 type_name<typename T::F>()
-				);
-	}
-};
+struct PreOp;
 
 template<typename... J>
 struct PreOp<std::tuple<J...> > {
