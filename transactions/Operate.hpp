@@ -44,6 +44,13 @@ std::ostream & operator<<(std::ostream &os, const Operate<l,i>& op){
 template<typename T>
 struct PreOp;
 
+
+template<typename T, restrict(is_handle<decay<T> >::value)>
+auto run_ast(Store &, T && t) {
+	return std::forward<T>(t);
+}
+
+
 template<typename... J>
 struct PreOp<std::tuple<J...> > {
 	const std::tuple<J...> t;
@@ -54,7 +61,7 @@ struct PreOp<std::tuple<J...> > {
 		//how exactly to measure this which is better.
 		static constexpr Level l = min_level<Args...>::value;
 		return Operate<l,decltype(std::get<0>(t)(args...))>
-			([=](Store &) mutable {
+			([=](Store &s) mutable {
 				std::pair<bool,bool> result =
 					fold(t,[&](const auto &e, const std::pair<bool,bool> &acc){
 							if (acc.first || !e.built_well) {
@@ -62,7 +69,8 @@ struct PreOp<std::tuple<J...> > {
 							}
 							else {
 								assert(e.built_well);
-								return std::pair<bool,bool>(true,e(args...));
+								//static auto _run_ast = [&](auto && e){return run_ast(s,e);};
+								return std::pair<bool,bool>(true,e(run_ast(s,args)...));
 							}
 						},std::pair<bool,bool>(false,false));
 				assert(result.first && "Error: found no function to call");

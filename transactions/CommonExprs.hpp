@@ -14,7 +14,7 @@ public:
 
 	CONNECTOR_OP
 
-	constexpr auto operator()(Store &) const {
+	constexpr int operator()(Store &) const {
 		return i;
 	}
 	
@@ -45,7 +45,7 @@ public:
 
 	CONNECTOR_OP
 
-	constexpr auto operator()(Store &) const {
+	constexpr T operator()(Store &) const {
 		return val;
 	}
 	
@@ -76,7 +76,7 @@ struct Not : public ConExpr<bool, get_level<T>::value> {
 	T v;
 	Not(const T& t):v(t){}
 	
-	auto operator()(Store &s) const {
+	bool operator()(Store &s) const {
 		return !v(s);
 	}
 
@@ -116,7 +116,7 @@ struct IsValid : public ConExpr<bool, get_level<T>::value> {
 	
 	IsValid(const T &t):t(t){}
 	
-	bool operator()(const Store &) const {
+	bool operator()(Store &) const {
 		//TODO: when handles re-design happens,
 		//this should be one of the basic things
 		//exposed at the handle level.

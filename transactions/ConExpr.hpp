@@ -11,10 +11,15 @@
 typedef Level Level;
 
 template<typename T, Level l>
-struct ConExpr : public ConStatement<l> {};
+struct ConExpr : public ConStatement<l> {
+	virtual T operator()(Store &s) const = 0;
+};
 
 template<Level l>
 struct DummyConExpr : public ConExpr<void,l> {
+
+	void operator()(Store &) const {}
+	
 	BitSet<HandleAbbrev> getReadSet() const {
 		return BitSet<HandleAbbrev>();
 	}
@@ -53,3 +58,13 @@ T run_expr(const T& t){
 	return t;
 }
 
+//TODO: this is redundant with the older run_expr?
+template<Level l, typename T>
+T run_ast(Store &s, const ConExpr<T,l>& expr) {
+	return expr(s);
+}
+
+template<typename T>
+T run_ast(Store &, const T& e) {
+	return run_expr(e);
+}

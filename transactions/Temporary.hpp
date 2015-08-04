@@ -102,7 +102,7 @@ auto _temp(const Str &str){
 }
 
 template<Level l, typename T>
-struct RefTemporary : public ConExpr<T,l> {
+struct RefTemporary : public ConExpr<decltype(mke<T>()(*mke_p<Store>())),l> {
 	const Temporary<l,T> t;
 	const std::string name;
 	RefTemporary(const Temporary<l,T> &t):t(t),name(std::string("__x") + std::to_string(t.id)){}
@@ -112,7 +112,7 @@ struct RefTemporary : public ConExpr<T,l> {
 	auto getReadSet() const {
 		return t.getReadSet();
 	}
-	auto operator()(const Store &s) const{
+	decltype(mke<T>()(*mke_p<Store>())) operator()(Store &s) const{
 		return call(s,t);
 	}
 
