@@ -49,6 +49,7 @@ using extract_store = typename extract_store_str<T>::type;
 template<typename Store, typename Ret, typename... A>
 struct Operation<Store, Ret (*) (A...)> {
 	typedef Ret (*F) (A...);
+	typedef Ret result_t;
 	static constexpr int arity = sizeof...(A);
 	typedef std::tuple<A...> args_tuple;
 
@@ -69,6 +70,7 @@ struct Operation<Store, Ret (*) (A...)> {
 	
 	template<typename... Args>
 	auto operator()(Args && ... args) const {
+		assert(this);
 		static_assert(sizeof...(Args) == arity, "Error: arity violation");
 		typedef fold_types<type_check,std::tuple<Args...>,
 						   std::pair<args_tuple, std::true_type> >
@@ -85,6 +87,15 @@ struct Operation<Store, Ret (*) (A...)> {
 		assert(can_flow(min,max));
 		
 		return fun(Store::tryCast(extract_robj_p(args))...);
+	}
+};
+
+struct CallIsError {
+	
+	template<typename... A>
+	bool operator()(A && ...) const {
+		struct CallError {};
+		throw CallError();
 	}
 };
 

@@ -65,8 +65,14 @@ struct FileStore {
 		template<class Archive> typename std::enable_if<std::is_pod<T>::value &&
 		!std::is_pod<Archive>::value >::type
 		save(Archive &ar, const uint) const {
-			StupidWrapper stupid(t.get());
-			ar & stupid.val;
+			if (t.get()){
+				StupidWrapper stupid(t.get());
+				ar & stupid.val;
+			}
+			else {
+				T t;
+				ar & t;
+			}
 		}
 
 		template<class Archive> typename std::enable_if<std::is_pod<T>::value &&
