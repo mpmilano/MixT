@@ -18,7 +18,7 @@ struct BlogEntry {
 
 	auto postComment(const std::string &cmnt){
 		Comment c{gensym(),cmnt};
-		comments.op(Insert,c);
+		op(Insert,comments,c);
 	}
 
 	bool operator<(const BlogEntry& be) const {
@@ -34,7 +34,7 @@ struct Blog {
 	auto postEntry(const std::string &entry){
 		auto col = s.template newCollection<HandleAccess::all,Comment>();
 		BlogEntry bo{entry,col};
-		entries.op(Insert,bo);
+		op(Insert,entries,bo);
 	}
 };
 

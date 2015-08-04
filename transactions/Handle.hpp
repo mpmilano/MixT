@@ -105,7 +105,7 @@ public:
 		Handle<l,HA,T> ret(sp);
 		return ret;
 	}
-
+	
 /*
 	//TODO: same treatment as in Operate
 	template<typename... Args>

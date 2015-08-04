@@ -95,8 +95,6 @@ auto make_PreOp(const T &t){
 }
 
 //TODO - need to handle AST nodes in the argument list for this.
-#define op_arg(x) extract_robj_p(x)
-
 #define do_op2(Name, arg) make_PreOp(Name(op_arg(arg)))(arg)
 #define do_op3(Name, arg1,arg2) make_PreOp(Name(op_arg(arg1),op_arg(arg2)))(arg1,arg2)
 

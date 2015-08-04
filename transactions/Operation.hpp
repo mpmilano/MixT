@@ -128,3 +128,42 @@ struct Operation<Store, Ret (*) (A...)> {
 #define DECLARE_OPERATION_IMPL2(count, ...) DECLARE_OPERATION ## count (__VA_ARGS__)
 #define DECLARE_OPERATION_IMPL(count, ...) DECLARE_OPERATION_IMPL2(count, __VA_ARGS__)
 #define DECLARE_OPERATION(...) DECLARE_OPERATION_IMPL(VA_NARGS(__VA_ARGS__), __VA_ARGS__)
+
+
+#define op_arg(x) extract_robj_p(x)
+
+#define op2(Name, arg) make_DoOp(Name(op_arg(arg)))(arg)
+#define op3(Name, arg1,arg2) make_DoOp(Name(op_arg(arg1),op_arg(arg2)))(arg1,arg2)
+
+#define op_IMPL2(count, ...) op ## count (__VA_ARGS__)
+#define op_IMPL(count, ...) op_IMPL2(count, __VA_ARGS__)
+#define op(...) op_IMPL(VA_NARGS(__VA_ARGS__), __VA_ARGS__)
+
+template<typename>
+struct DoOp;
+
+template<typename... J>
+struct DoOp<std::tuple<J...> > {
+	const std::tuple<J...> t;
+	template<typename... Args>
+	auto operator()(Args && ... args) const {
+		std::pair<bool,bool> result =
+					fold(t,[&](const auto &e, const std::pair<bool,bool> &acc){
+							if (acc.first || !e.built_well) {
+								return acc;
+							}
+							else {
+								assert(e.built_well);
+								return std::pair<bool,bool>(true,e(args...));
+							}
+						},std::pair<bool,bool>(false,false));
+				assert(result.first && "Error: found no function to call");
+				return result.second;
+	}
+};
+
+template<typename T>
+auto make_DoOp(const T &t){
+	DoOp<T> ret{t};
+	return ret;
+}
