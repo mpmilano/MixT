@@ -2,6 +2,7 @@
 
 #include "Transaction.hpp"
 #include "Operation.hpp"
+#include "DataStore.hpp"
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/archive/text_iarchive.hpp>
 #include <iostream>
@@ -10,7 +11,7 @@
 #include <cstdlib>
 
 template<Level l>
-struct FileStore {
+struct FileStore : public DataStore<l>{
 	template<typename T>
 	struct FSObject : public RemoteObject<T> {
 		std::unique_ptr<T> t;
@@ -175,6 +176,19 @@ struct FileStore {
 	static auto tryCast(T && r){
 		return std::forward<T>(r);
 	}
+
+	template<typename T> 
+	OPERATION(Insert, FSObject<std::set<T> >* ro, const T& t){
+				std::cout << "DOING INSERT!" << std::endl;
+		if (FSDir<T>* dir = dynamic_cast<FSDir<T>*>(ro)) {
+			FSObject<T> obj(dir->filename + std::to_string(gensym()),t);
+			return true;
+		}
+		
+		assert(false && "didn't pass me an FSDIR!");
+		return false;
+	}
+	END_OPERATION
 	
 };
 
@@ -186,33 +200,6 @@ using FSObject = typename FileStore<l>::template FSObject<T>;
 
 template<Level l, typename T>
 using FSDir = typename FileStore<l>::template FSDir<T>;	
-
-template<Level l, typename T>
-auto insert_helper(FSObject<l,std::set<T> >* ro, const T& t){
-	std::cout << "DOING INSERT!" << std::endl;
-	if (FSDir<l,T>* dir = dynamic_cast<FSDir<l,T>*>(ro)) {
-		FSObject<l,T> obj(dir->filename + std::to_string(gensym()),t);
-		return true;
-	}
-
-	assert(false && "didn't pass me an FSDIR!");
-	return false;
-}
-
-template<typename T>
-DECLARE_OPERATION(Insert, RemoteObject<std::set<T> >*, const T& )
-
-template<typename T> 
-OPERATION(Insert, FSObject<Level::causal,std::set<T> >* ro, const T& t){
-	return insert_helper<Level::causal,T>(ro,t);
-}
-END_OPERATION
-
-template<typename T> 
-OPERATION(Insert, FSObject<Level::strong,std::set<T> >* ro, const T& t){
-	return insert_helper<Level::strong,T>(ro,t);
-}
-END_OPERATION
 
 
 template<typename T>

@@ -13,7 +13,7 @@
 
 //Idea: you can have template<...> above this and it will work!
 
-#define OPERATION(Name, args...) auto Name ## _impl (args) { \
+#define OPERATION(Name, args...) static auto Name ## _impl (args) { \
 	struct r { static bool f(args)
 
 #define END_OPERATION };								\
@@ -107,8 +107,8 @@ struct NoOperation {
 	}
 };
 
-#define DECLARE_OPERATION3(Name, arg1, arg2) NoOperation Name(generalize_ro<arg1>,generalize_ro<arg2>){return NoOperation();}
-#define DECLARE_OPERATION2(Name, arg1) NoOperation Name(generalize_ro<arg1>){return NoOperation();}
+#define DECLARE_OPERATION3(Name, arg1, arg2) static NoOperation Name ## _impl(arg1,arg2){return NoOperation();}
+#define DECLARE_OPERATION2(Name, arg1) static NoOperation Name ## _impl(arg1){return NoOperation();}
 #define DECLARE_OPERATION_IMPL2(count, ...) DECLARE_OPERATION ## count (__VA_ARGS__)
 #define DECLARE_OPERATION_IMPL(count, ...) DECLARE_OPERATION_IMPL2(count, __VA_ARGS__)
 #define DECLARE_OPERATION(...) DECLARE_OPERATION_IMPL(VA_NARGS(__VA_ARGS__), __VA_ARGS__)
@@ -121,7 +121,7 @@ struct NoOperation {
 		fold(mke<std::tuple<STORE_LIST> >(),							\
 		[&](const auto &arg, const auto &accum){						\
 		typedef decay<decltype(arg)> Store;								\
-		typedef decltype(Name ## _impl(args)) ret_t;					\
+		typedef decltype(Store::Name ## _impl(args)) ret_t;				\
 		ret_t def;														\
 		try {															\
 		auto ret = tuple_cons(
@@ -138,14 +138,14 @@ struct NoOperation {
 				
 #define FINALIZE_OPERATION2(Name, arg)								\
 	DOBODY1(auto Name (arg a),Name,Store::tryCast(a))				\
-	Name ## _impl(Store::tryCast(a))								\
+	Store::Name ## _impl(Store::tryCast(a))							\
 	DOBODY2(Name,a)
 
 	
 
 #define FINALIZE_OPERATION3(Name,Arg1, Arg2)								\
 	DOBODY1(auto Name (Arg1 a, Arg2 b),Name,Store::tryCast(a),Store::tryCast(b)) \
-	Name ## _impl (Store::tryCast(a),Store::tryCast(b))					\
+	Store::Name ## _impl (Store::tryCast(a),Store::tryCast(b))			\
 	DOBODY2(Name,a,b)
 
 
