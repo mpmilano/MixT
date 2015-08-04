@@ -53,8 +53,8 @@ struct Operation<Store, Ret (*) (A...)> {
 	typedef Ret result_t;
 	static constexpr int arity = sizeof...(A);
 	typedef std::tuple<A...> args_tuple;
-
-	std::function<Ret (A...)> fun;
+	
+	Ret (*fun) (A...);
 	
 	Operation(Ret (*fun) (A...)):built_well(true),fun(fun) {}
 	Operation():fun([](A...) -> Ret{assert(false && "Operation built on sand!");}) {}
@@ -95,32 +95,23 @@ struct Operation<Store, Ret (*) (A...)> {
 
 #define DOBODY1(decl,Name,args...)										\
 	decl {																\
-	auto first_try =													\
+	return																\
 		fold(mke<std::tuple<STORE_LIST> >(),							\
 		[&](const auto &arg, const auto &accum){						\
 		typedef decay<decltype(arg)> Store;								\
-		typedef decltype(heap_copy(Name ## _impl(args))) ret_t;			\
-		ret_t def = heap_copy(typename std::remove_pointer<ret_t>::type());	\
-		if (!exists(accum)){											\
+		typedef decltype(Name ## _impl(args)) ret_t;					\
+		ret_t def;														\
 		try {															\
-		return tuple_cons(heap_copy(
+		auto ret = tuple_cons(
                 /*Name(args...);*/
-#define DOBODY2(Name,args...) ),accum) ;								\
+#define DOBODY2(Name,args...) ,accum) ;									\
+	assert(std::get<0>(ret).built_well);								\
+	return ret;															\
 	}																	\
 	catch (Transaction::ClassCastException e){							\
 		return tuple_cons(def,accum);									\
-	}}																	\
-	else return tuple_cons(def,accum);									\
+	}																	\
 	},std::tuple<>());													\
-	if (exists(first_try)){												\
-		return fold(first_try,[&](const auto &e, const auto &accum){	\
-				return tuple_cons(make_shared(e),accum);			\
-			},std::tuple<>());											\
-	}																	\
-	else {																\
-		struct Name ## OperationNotSupported {};						\
-		throw Name ## OperationNotSupported();							\
-	}																	\
 	}
 				
 #define DECLARE_OPERATION2(Name, arg)								\

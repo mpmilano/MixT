@@ -67,14 +67,16 @@ struct PreOp<std::tuple<J...> > {
 		//TODO: I'm sure there's some rationale behind
 		//how exactly to measure this which is better.
 		static constexpr Level l = min_level<Args...>::value;
-		return Operate<l,decltype((*std::get<0>(t))(args...))>
+		return Operate<l,decltype(std::get<0>(t)(args...))>
 			([=]() mutable {
 				std::pair<bool,bool> result =
 					fold(t,[&](const auto &e, const std::pair<bool,bool> &acc){
-							if (acc.first || !e->built_well) return acc;
+							if (acc.first || !e.built_well) {
+								return acc;
+							}
 							else {
-								assert(e);
-							return std::pair<bool,bool>(true,(*e)(args...));
+								assert(e.built_well);
+								return std::pair<bool,bool>(true,e(args...));
 							}
 						},std::pair<bool,bool>(false,false));
 				assert(result.first && "Error: found no function to call");
