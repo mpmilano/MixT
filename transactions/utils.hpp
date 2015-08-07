@@ -12,6 +12,7 @@
 #include <string>
 #include <iostream>
 #include "../extras"
+#include "macro_utils.hpp"
 
 template<typename T, std::size_t size1, std::size_t size2>
 auto prefix_array(const std::array<T,size1>& t,
@@ -225,8 +226,7 @@ template<typename A, typename B> struct _Right<std::pair<A,B> >{
 template<typename T>
 using Right = typename _Right<T>::type;
 
-#define VA_NARGS_IMPL(_1, _2, _3, _4, _5, N, ...) N
-#define VA_NARGS(...) VA_NARGS_IMPL(__VA_ARGS__, 5, 4, 3, 2, 1)
+
 
 int gensym() {
 	static int counter = 0;

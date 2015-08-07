@@ -4,6 +4,7 @@
 #include "args-finder.hpp"
 #include "../BitSet.hpp"
 #include "Operate.hpp"
+#include "Transaction_macros.hpp"
 
 struct Transaction{
 	const std::function<bool (Store &)> action;
@@ -45,6 +46,3 @@ struct Transaction{
 std::ostream & operator<<(std::ostream &os, Transaction& t){
 	return t.print(os);
 }
-
-#define BEGIN_TRANSACTION { Transaction ____transaction(Noop<Level::strong>() / 
-#define END_TRANSACTION Noop<Level::strong>()); ____transaction(); std::cout << ____transaction << std::endl;}
