@@ -3,7 +3,7 @@
 
 #define CMA ,
 
-#define TRANS_CONS(x...) {x { auto prev = prev.append(curr);
+#define TRANS_CONS(x...) {x { auto prev = append(prev,curr);
 #define STANDARD_BEGIN(x...) auto curr = (x);
 
 #define END_TRANSACTION Transaction ____transaction(prev); std::cout << ____transaction << std::endl; ____transaction();

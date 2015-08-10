@@ -12,19 +12,6 @@ struct If;
 
 #define handle_level handle_level
 
-#define if_concept(Cond,Then) ( \
-																		\
-		is_ConStatement<Then>::value									\
-		&& is_ConExpr<Cond>::value										\
-																		\
-		)
-
-#define if_concept_2(Cond,Then) \
-	((get_level<Cond>::value == Level::causal &&						\
-	  get_level<Then>::value == Level::causal)							\
-	 ||																	\
-	 (get_level<Cond>::value == Level::strong))
-
 template<typename A, typename B, typename C, typename D>
 auto operator/(const Seq<A,B>& a, const If<C,D> &i){
 	return seq_cat(a,make_seq(i));
@@ -174,64 +161,6 @@ operator/(const Seq<std::tuple<Stuff...>, Wk> &s,
 
 //TODO: conditionals need to be monotonic!
 
-template<typename Cond, typename Then>
-struct If : public ConStatement<get_level<Then>::value> {
-
-	static constexpr Level level = get_level<Then>::value;
-	typedef Cond Cond_t;
-	const Cond cond;
-	const Then then;
-
-	If(const Cond& cond, const Then& then):
-		cond(cond),then(then)
-		{
-			static_assert(if_concept(Cond,Then) && if_concept_2(Cond,Then),
-						  "Bad types got to constructor");
-		}
-
-	CONNECTOR_OP
-
-	template<typename Els>
-	auto operator/(const Else<level,Els> &e) const {
-		return make_seq(*this) / make_if(make_not(cond),e.e);
-	}
-
-	BitSet<HandleAbbrev> getReadSet() const {
-		return set_union(get_ReadSet(cond),then.getReadSet());
-	}
-
-	auto operator()(Store &s) const {
-		static_assert(!is_ConStatement<decltype(cond(s))>::value);
-		static_assert(!is_ConStatement<decltype(then(s))>::value);
-		return (cond(s) ? then(s) : Noop<level>().operator()(s));
-	}
-
-	
-	template<typename Cond2, typename Then2, typename ignore>
-	friend If<Cond2,Then2> make_if(const Cond2& , const Then2 &);
-
-	template<typename Cond2, typename Then2>
-	friend std::ostream & operator<<(std::ostream &os, const If<Cond2,Then2>& i);
-};
-
-template<typename A, typename B>
-constexpr bool is_If_f(const If<A,B>*){
-	return true;
-}
-
-template<typename A>
-constexpr bool is_If_f(const A*){
-	return false;
-}
-
-template<typename T>
-struct is_If : std::integral_constant<bool,is_If_f(mke_p<T>())>::type {};
-
-
-template<typename Cond, typename Then>
-std::ostream & operator<<(std::ostream &os, const If<Cond,Then>& i){
-	return os << "(" << i.cond <<" ? " << i.then << ")";
-}
 
 #define IF make_if(
 #define THEN ,
@@ -239,11 +168,4 @@ std::ostream & operator<<(std::ostream &os, const If<Cond,Then>& i){
 #define FI ) /
 
 
-template<typename C, typename T>
-constexpr bool verify_compilation_complete(const If<C,ReplaceMe<T> >*){
-	constexpr bool dummy = get_level<ReplaceMe<T> >::value == Level::causal &&
-		get_level<ReplaceMe<T> >::value == Level::strong;
-	static_assert(dummy && !dummy, "NameError: Failed to replace for reference");
-	return false;
-}
 

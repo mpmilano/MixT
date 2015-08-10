@@ -155,6 +155,19 @@ struct Cons<T, std::tuple<Args...> >{
 	typedef std::tuple<T, Args...> type;
 };
 
+template<typename, typename> struct _Cat;
+template<typename A, typename... Args>
+struct _Cat<A, std::tuple<Args...> > : public __Cat<A, std::tuple<Args...> > {};
+
+template<typename, typename> struct __Cat;
+template<typename B, typename... Args>
+struct __Cat<std::tuple<Args...>, B>
+{using type = decltype(std::tuple_cat(*mke_p<std::tuple<Args...> >(), *mke_p<B>()));};
+
+template<typename A, typename B>
+using Cat = typename _Cat<A,B>::type;
+
+
 template<typename> struct _Rest;
 
 template<typename A, typename... Contents>
