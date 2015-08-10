@@ -1,5 +1,6 @@
 #pragma once
 #include "ConExpr.hpp"
+#include "TempBuilder.hpp"
 #include <string>
 	
 //the level here is for referencing the temporary later.
@@ -61,26 +62,6 @@ std::ostream & operator<<(std::ostream &os, const MutableTemporary<id,l2,i2>& t)
 template<Level l, typename T>
 class CSConstant;
 
-template<unsigned long long ID>
-struct Declaration : public ConStatement<Level::strong>{
-	const std::string &name;
-	Declaration(const std::string &name):name(name){}
-	BitSet<HandleAbbrev> getReadSet(){return 0;}
-};
-
-template<unsigned long long ID>
-struct all_declarations_str<Declaration<ID> > {
-	typedef std::tuple<std::integral_constant<unsigned long long, ID> > type;
-};
-
-template<unsigned long long ID>
-std::ostream & operator<<(std::ostream &os, const Declaration<ID> &t){
-	return os << t.name ;
-}
-
-
-#define MutDeclaration(c) Declaration<unique_id<(sizeof(c) / sizeof(char)) - 1>(c)>{c}
-#define ImmutDeclaration(c) MutDeclaration(c)
 
 #define MutAssigner(c) MutCreator<unique_id<(sizeof(c) / sizeof(char)) - 1>(c)>{c}
 #define ImmutAssigner(c) ImmutCreator<unique_id<(sizeof(c) / sizeof(char)) - 1>(c)>{c}

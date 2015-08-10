@@ -111,11 +111,16 @@ struct ThenBuilder : IfBuilder<PrevBuilder,Cond,Then,std::tuple<>, Vars>{
 
 	template<typename T>
 	auto operator/(const T &t) const {
-		static_assert(is_ConStatement<T>::value, "Error: non-statement in Then clause of If.");
+		static_assert(is_ConStatement<T>::value,
+					  "Error: non-statement in Then clause of If.");
 		typedef Cat<Then,std::tuple<T> > newThen;
 		If<Cond,newThen,std::tuple<> >
-			new_if(this->this_if.cond,std::tuple_cat(this->this_if.then, std::make_tuple(t)),std::tuple<>());
-		ThenBuilder<PrevBuilder,Cond,newThen,Cat<Vars,all_declarations<T> > > r(this->prevBuilder,new_if);
+			new_if(this->this_if.cond,
+				   std::tuple_cat(this->this_if.then,
+								  std::make_tuple(t)),
+				   std::tuple<>());
+		ThenBuilder<PrevBuilder,Cond,newThen,Cat<Vars,all_declarations<T> > >
+			r(this->prevBuilder,new_if);
 		return r;
 	}
 };
