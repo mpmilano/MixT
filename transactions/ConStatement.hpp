@@ -22,6 +22,12 @@ struct all_declarations_str;
 template<typename T>
 using all_declarations = typename all_declarations_str<T>::type;
 
+template<typename... T>
+struct all_declarations_str<std::tuple<T...> > {
+	using type = Cat<all_declarations<T>... > ;
+};
+
+
 template<typename Cls>
 struct is_ConStatement : 
 	std::integral_constant<bool, 

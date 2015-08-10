@@ -1,9 +1,7 @@
 #pragma once
 
-#include "Seq.hpp"
 #include "args-finder.hpp"
 #include "../BitSet.hpp"
-#include "Operate.hpp"
 #include "Transaction_macros.hpp"
 
 struct Transaction{
@@ -31,7 +29,7 @@ struct Transaction{
 			   [](const auto &e, const auto &bs)
 			   {return (e.level == Level::causal ?
 						bs.addAll(e.getReadSet()) : bs);},
-			   BitSet<HandleAbbrev>()),
+			   BitSet<HandleAbbrev>())
 		{}
 
 	Transaction(const Transaction&) = delete;

@@ -51,6 +51,11 @@ struct If : public ConStatement<min_level<typename min_level<Then>::type,
 	}
 };
 
+template<typename Cond, typename Then, typename Els>
+struct all_declarations_str<If<Cond,Then,Els> > {
+	typedef Cat<all_declarations<Then>, all_declarations<Els> > type;
+};
+
 template<typename A, typename B, typename C>
 constexpr bool is_If_f(const If<A,B,C>*){
 	return true;
@@ -82,7 +87,7 @@ struct IfBuilder {
 		:prevBuilder(pb),this_if(to){
 		static_assert(is_ConExpr<Cond>::value,
 					  "Error: If condition is not an expression.");
-		static_assert(can_flow(PrevBuilder::pc,get_level<Cond>::value),
+		static_assert(can_flow(PrevBuilder::pc::value,get_level<Cond>::value),
 					  "Error: Flow violation in declaration of If."
 			);
 		//Note to self: the if_concept takes care of flows from
@@ -96,10 +101,6 @@ constexpr bool is_IfBuilder_f(const IfBuilder<PrevBuilder, Cond, Then, Els, Vars
 	return true;
 }
 
-template<typename T>
-constexpr bool is_IfBuilder_f(T*) {
-	return false;
-}
 
 template<typename T>
 struct is_IfBuilder : std::integral_constant<bool, is_IfBuilder_f(mke_p<T>()) >::type {};

@@ -19,7 +19,7 @@ struct TransactionBuilder {
 	typename std::enable_if<is_ConStatement<T>::value ,
 							TransactionBuilder<Cat<Statements, std::tuple<T> >,
 											   Cat<Vars,all_declarations<T> > > >::type
-	operator/(const T &t){
+	operator/(const T &t) const {
 		TransactionBuilder<Cat<Statements, std::tuple<T> >,
 						   Cat<Vars,all_declarations<T> > >
 			r{std::tuple_cat(curr,std::make_tuple(t))};
