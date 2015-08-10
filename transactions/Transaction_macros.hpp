@@ -3,7 +3,7 @@
 
 #define CMA ,
 
-#define TRANS_CONS(x...) {x { auto prev = append(prev,curr);
+#define TRANS_CONS(x...) {x { auto prev2 = append(prev,curr); { auto prev = prev2;
 #define STANDARD_BEGIN(x...) auto curr = (x);
 
 #define END_TRANSACTION Transaction ____transaction(prev); std::cout << ____transaction << std::endl; ____transaction();
@@ -15,7 +15,7 @@
 #define TRANS_SEQ(...) TRANS_SEQ_IMPL(VA_NARGS(__VA_ARGS__), __VA_ARGS__)
 
 
-#define TRANSACTION(args...) { TransactionBuilder prev; TRANS_SEQ(args)}
+#define TRANSACTION(args...) { TransactionBuilder<std::tuple<>, std::tuple<> > prev; TRANS_SEQ(args)}
 
 
 #define mutable(x) STANDARD_BEGIN(MutDeclaration(#x)) auto x = (MutAssigner(#x)

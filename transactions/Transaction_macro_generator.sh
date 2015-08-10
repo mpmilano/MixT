@@ -9,8 +9,8 @@ do echo;
    echo -n 'TRANS_CONS(a'$[j]')';
    echo -n ' END_TRANSACTION';
    for ((i = 1; i < $j; i = i + 1));
-   do echo -n '}}';
+   do echo -n '}}}';
    done;
-   echo -n '}}';
+   echo -n '}}}';
 done;
 								     

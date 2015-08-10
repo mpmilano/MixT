@@ -141,7 +141,7 @@ struct IfBegin {
 	const Cond c;
 };
 
-struct IfEnd {};
+struct IfEnd { constexpr IfEnd(){} };
 	
 template<typename PrevBuilder, typename Cond>
 auto append(const PrevBuilder &pb, const IfBegin<Cond> &ib){
@@ -156,7 +156,7 @@ auto append(const PrevBuilder &pb, const IfBegin<Cond> &ib){
 //continue the if.  Else, behave exactly as if_end.
 
 template<typename CurrBuilder>
-auto append(const CurrBuilder &pb, const IfEnd<Cond>&){
+auto append(const CurrBuilder &pb, const IfEnd&){
 	static_assert(is_IfBuilder<CurrBuilder>::value,
 				  "Error: attempt to end If when not in if context! This is a framework bug, please file.");
 	return append(pb.prevBuilder, pb.this_if);
