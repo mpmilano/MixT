@@ -69,11 +69,6 @@ std::ostream & operator<<(std::ostream &os, const If<Cond,Then,Els>& i){
 	return os << "(" << i.cond <<" ? " << i.then << ")";
 }
 
-template<typename Cond>
-struct IfBegin {
-	const Cond c;
-};
-
 template<typename PrevBuilder, typename Cond, typename Then, typename Els, typename Vars>
 struct IfBuilder {
 	const PrevBuilder prevBuilder;
@@ -94,6 +89,19 @@ struct IfBuilder {
 		//that *can* be moved here if we want (weak TODO).
 	}
 };
+
+template<typename PrevBuilder, typename Cond, typename Then, typename Els, typename Vars>
+constexpr bool is_IfBuilder_f(const IfBuilder<PrevBuilder, Cond, Then, Els, Vars>*) {
+	return true;
+}
+
+template<typename T>
+constexpr bool is_IfBuilder_f(T*) {
+	return false;
+}
+
+template<typename T>
+struct is_IfBuilder : std::integral_constant<bool, is_ifBuilder_f(mke_p<T>()) >::type {};
 
 
 template<typename PrevBuilder, typename Cond, typename Then, typename Vars>
@@ -128,6 +136,13 @@ struct ElseBuilder : IfBuilder<PrevBuilder,Cond,Els, Vars>{
 	}
 }
 
+template<typename Cond>
+struct IfBegin {
+	const Cond c;
+};
+
+struct IfEnd {};
+	
 template<typename PrevBuilder, typename Cond>
 auto append(const PrevBuilder &pb, const IfBegin<Cond> &ib){
 	NAME_CHECK(PrevBuilder::vars, Cond);
@@ -136,8 +151,21 @@ auto append(const PrevBuilder &pb, const IfBegin<Cond> &ib){
 	return r;
 }
 
+template<typename CurrBuilder>
+auto append(const CurrBuilder &pb, const IfEnd<Cond> &){
+	static_assert(is_IfBuilder<CurrBuilder>::value,
+				  "Error: attempt to end If when not in if context! This is a framework bug, please file.");
+	return append(pb.prevBuilder, pb.this_if);
+}
+
 template<typename Cons>
 auto make_if_begin(const Cons &s){
 	IfBegin<Cons> r{s};
 	return r;
+}
+
+template<typename Cons>
+const IfEnd& make_if_end(const Cons &s){
+	static constexpr IfEnd e;
+	return e;
 }
