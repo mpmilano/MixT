@@ -13,12 +13,13 @@ struct Transaction{
 	template<typename Cmds, typename Vars>
 	Transaction(const TransactionBuilder<Cmds,Vars> &s):
 		action([s](Store &st) -> bool{
-				fold(s.curr,[&st](const auto &e, bool b)
-					 {return b && e(st);},true);
+				return fold(s.curr,[&st](const auto &e, bool b)
+							{return b && e(st);},true);
 			}),
 		print([s](std::ostream &os) -> std::ostream& {
-				return fold(s.curr,[&os](const auto &e, int)
-							{os << e << std::endl; },0);
+				fold(s.curr,[&os](const auto &e, int) -> int
+					 {os << e << std::endl; return 0; },0);
+				return os;
 			}),
 		strong(fold(s.curr),
 			   [](const auto &e, const auto &bs)
