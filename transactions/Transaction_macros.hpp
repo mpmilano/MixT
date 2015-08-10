@@ -21,10 +21,10 @@
 #define TRANSACTION(args...) { TransactionBuilder<std::tuple<>, std::tuple<> > prev; TRANS_SEQ(args, END_TRANSACTION)}
 
 
-#define let_mutable(x) [&]() { auto x = (MutAssigner(#x)
+#define let_mutable(x) [&]() { auto decl = MutDeclaration(#x); auto x = (MutAssigner(#x)
 
-#define let_ifValid(x)  [&]() { auto x = (ImmutAssigner(#x)
-#define IN(args...) ); (TRANS_SEQ(args, return clobber(prev);));  }(); 
+#define let_ifValid(x)  [&]() { auto decl = ImmutDeclaration(#x); auto x = (ImmutAssigner(#x)
+#define IN(args...) ); (TRANS_SEQ(STANDARD_BEGIN(decl),args, STANDARD_BEGIN(end_var_scope()), return clobber(prev);));  }(); 
 
 #define raw(x...) STANDARD_BEGIN(x)
 
