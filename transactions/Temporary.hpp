@@ -135,6 +135,16 @@ struct RefTemporary : public ConExpr<decltype(run_ast(mke_store(), *mke_p<T>()))
 		return r;
 	}
 
+	template<typename E>
+	enable_if<std::is_same<Temporary<l,T>, Temp>::value, TemporaryMutation<E> >
+	operator=(const E &e) const {
+		static_assert(is_ConExpr<E>::value,"Error: attempt to assign non-Expr");
+		static_assert(!is_ConExpr<E>::value,"Error: attempt to mutate immutable temporary.");
+		TemporaryMutation<E> r{name,t.id,e};
+		return r;
+	}
+
+
 
 private:
 	static auto call(const Store &s, const Temporary<l,T> &t){

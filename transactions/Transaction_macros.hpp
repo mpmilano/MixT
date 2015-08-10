@@ -23,7 +23,7 @@
 
 #define let_mutable(x) [&]() { auto x = (MutAssigner(#x)
 
-//#define let_ifValid(x) STANDARD_BEGIN(ImmutDeclaration(#x)) auto x = (ImmutAssigner(#x)
+#define let_ifValid(x)  [&]() { auto x = (ImmutAssigner(#x)
 #define IN(args...) ); (TRANS_SEQ(args, return clobber(prev);));  }(); 
 
 #define raw(x...) STANDARD_BEGIN(x)
