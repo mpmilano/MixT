@@ -43,9 +43,9 @@ struct If : public ConStatement<min_level<typename min_level<Then>::type,
 	}
 
 	bool operator()(Store &s) const {
-		static_assert(!is_ConStatement<decltype(cond(s))>::value);
-		static_assert(!is_ConStatement<decltype(then(s))>::value);
-		return (cond(s) ? then(s) : els(s));
+		static_assert(!is_ConStatement<decltype(run_ast(s,cond))>::value);
+		static_assert(!is_ConStatement<decltype(call_all(s,then))>::value);
+		return (run_ast(s,cond) ? call_all(s,then) : call_all(s,els));
 	}
 };
 

@@ -13,24 +13,23 @@ struct Transaction{
 	template<typename Cmds, typename Vars>
 	Transaction(const TransactionBuilder<Cmds,Vars> &s):
 		action([s](Store &st) -> bool{
-				return fold(s.curr,[&st](const auto &e, bool b)
-							{return b && e(st);},true);
+				return call_all(st,s.curr);
 			}),
 		print([s](std::ostream &os) -> std::ostream& {
 				fold(s.curr,[&os](const auto &e, int) -> int
 					 {os << e << std::endl; return 0; },0);
 				return os;
 			}),
-		strong(fold(s.curr),
-			   [](const auto &e, const auto &bs)
-			   {return (e.level == Level::strong ?
-						bs.addAll(e.getReadSet()) : bs);},
-			   BitSet<HandleAbbrev>()),
-		weak(fold(s.curr),
-			   [](const auto &e, const auto &bs)
-			   {return (e.level == Level::causal ?
-						bs.addAll(e.getReadSet()) : bs);},
-			   BitSet<HandleAbbrev>())
+		strong(fold(s.curr,
+					[](const auto &e, const auto &bs)
+					{return (e.level == Level::strong ?
+							 bs.addAll(e.getReadSet()) : bs);},
+					BitSet<HandleAbbrev>())),
+		weak(fold(s.curr,
+				  [](const auto &e, const auto &bs)
+				  {return (e.level == Level::causal ?
+						   bs.addAll(e.getReadSet()) : bs);},
+				  BitSet<HandleAbbrev>()))
 		{}
 
 	Transaction(const Transaction&) = delete;

@@ -94,3 +94,9 @@ struct is_cs_tuple : std::integral_constant<bool,
 										 is_tuple_f((F*) nullptr)
 										 >::type {};
 
+
+template<typename... CS>
+auto call_all(Store &st, const std::tuple<CS...> &t){
+	return fold(t,[&st](const auto &e, bool b)
+				{return b && e(st);},true);
+}
