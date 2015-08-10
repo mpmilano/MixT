@@ -51,8 +51,6 @@ public:
 	
 };
 
-REPLACEME_OK(CSConstant)
-
 //TODO: figure out why this needs to be here
 template<Level l, typename T>
 struct is_ConExpr<CSConstant<l,T> > : std::true_type {};

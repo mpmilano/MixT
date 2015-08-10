@@ -17,7 +17,7 @@ struct TransactionBuilder {
 	template<typename T>
 	auto operator/(const type_check<is_ConStatement, T> &t){
 		TransactionBuilder<Cat<Statements, std::tuple<T> >,
-						   cat<Vars,all_declarations<T> > >
+						   Cat<Vars,all_declarations<T> > >
 			r{std::tuple_cat(curr,std::make_tuple(t))};
 		return r;
 	}
