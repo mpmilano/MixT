@@ -73,7 +73,6 @@ template<typename PrevBuilder, typename Cond, typename Then, typename Els, typen
 struct IfBuilder {
 	const PrevBuilder prevBuilder;
 	const If<Cond,Then,Els > this_if;
-	typedef Vars declarations;
 	typedef Cat<prevBuilder::vars,Vars> vars;
 	static constexpr Level pc =
 		min_level<PrevBuilder::pc,get_level<Cond>::value>::value;
