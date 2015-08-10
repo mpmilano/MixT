@@ -64,7 +64,7 @@ class CSConstant;
 template<unsigned long long ID>
 struct Declaration : public ConStatement<Level::strong>{
 	const std::string &name;
-
+	Declaration(const std::string &name):name(name){}
 	BitSet<HandleAbbrev> getReadSet(){return 0;}
 };
 
@@ -92,7 +92,7 @@ std::ostream & operator<<(std::ostream &os, const Declaration<ID> &t){
 
 
 template<Level l, typename T>
-struct RefTemporary : public ConExpr<decltype(mke<T>()(mke_store())),l> {
+struct RefTemporary : public ConExpr<decltype(run_ast(mke_store(), *mke_p<T>())),l> {
 	const Temporary<l,T> t;
 	const std::string name;
 	RefTemporary(const Temporary<l,T> &t):t(t),name(std::string("__x") + std::to_string(t.id)){}
@@ -102,13 +102,13 @@ struct RefTemporary : public ConExpr<decltype(mke<T>()(mke_store())),l> {
 	auto getReadSet() const {
 		return t.getReadSet();
 	}
-	decltype(mke<T>()(mke_store())) operator()(const Store &s) const{
+	decltype(run_ast(mke_store(),*mke_p<T>())) operator()(const Store &s) const{
 		return call(s,t);
 	}
 
 private:
 	static auto call(const Store &s, const Temporary<l,T> &t){
-		typedef decltype(t.t(mke_store())) R;
+		typedef decltype(run_ast(mke_store(),t.t)) R;
 		return *((R*) s.at(t.id).get());
 	}
 
@@ -125,7 +125,8 @@ struct MutCreator {
 	const std::string &name;
 
 	template<typename T>
-	auto operator=(const type_check<is_ConExpr, T>& t) const {
+	auto operator=(const T& t) const {
+		static_assert(is_ConExpr<T>::value, "Error: cannot assign non-expression");
 		static constexpr Level l = get_level<T>::value;
 		RefTemporary<l,T> rt(MutableTemporary<ID,l,T >(name,t));
 		return rt;
@@ -137,7 +138,8 @@ struct ImmutCreator {
 	const std::string &name;
 
 	template<typename T>
-	auto operator=(const type_check<is_ConExpr, T>& t) const {
+	auto operator=(const T& t) const {
+		static_assert(is_ConExpr<T>::value, "Error: cannot assign non-expression");
 		static constexpr Level l = get_level<T>::value;
 		RefTemporary<l,T> rt(Temporary<l,T >(std::hash<std::string>()(name),t));
 		return rt;

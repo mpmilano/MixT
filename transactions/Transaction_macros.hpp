@@ -18,9 +18,9 @@
 #define TRANSACTION(args...) { TransactionBuilder<std::tuple<>, std::tuple<> > prev; TRANS_SEQ(args)}
 
 
-#define mutable(x) STANDARD_BEGIN(MutDeclaration(#x)) auto x = (MutAssigner(#x)
-#define ifValid(x) STANDARD_BEGIN(ImmutDeclaration(#x)) auto x = (ImmutAssigner(#x)
-#define IN(args...) ); args, STANDARD_BEGIN(end_var_scope())
+#define let_mutable(x) STANDARD_BEGIN(MutDeclaration(#x)) auto x = (MutAssigner(#x)
+#define let_ifValid(x) STANDARD_BEGIN(ImmutDeclaration(#x)) auto x = (ImmutAssigner(#x)
+#define IN(args...) );, args, STANDARD_BEGIN(end_var_scope())
 
 #define raw(x...) STANDARD_BEGIN(x)
 
