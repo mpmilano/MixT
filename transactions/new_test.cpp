@@ -22,9 +22,8 @@ int main(){
 	TRANSACTION(
 		let_mutable(tmp) = true IN (
 			IF(tmp) THEN(
-				do_op(Insert,num_dir,42);
+				raw(dummy1) //do_op(Insert,num_dir,42);
 				)
 			)
 		);
-	
 }
