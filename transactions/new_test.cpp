@@ -4,6 +4,7 @@
 #include "BaseCS.hpp"
 #include "FileStore.hpp"
 #include "Operate.hpp"
+#include "TempBuilder.hpp"
 #include "Transaction_macros.hpp"
 
 int main(){

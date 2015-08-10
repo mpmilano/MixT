@@ -1,12 +1,13 @@
 #pragma once
 #include "ConExpr.hpp"
-#include "TempBuilder.hpp"
 #include <string>
-	
+
+struct GeneralTemp {};
+
 //the level here is for referencing the temporary later.
 //it's the endorsement check!
 template<Level l, typename T>
-struct Temporary : public ConStatement<get_level<T>::value> {
+struct Temporary : public GeneralTemp, public ConStatement<get_level<T>::value> {
 	static_assert(is_ConExpr<T>::value,
 				  "Error: can only assign temporary the result of expressions");
 	static_assert(l == Level::causal ||
