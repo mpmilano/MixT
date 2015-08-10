@@ -37,9 +37,9 @@ T run_expr(FreeExpr<T, Handles...> fe){
 }
 
 
-#define free_expr3(T,a,e) FreeExpr<T,decltype(a)>([&](const typename extract_type<decltype(a)>::type &a){e},a)
+#define free_expr3(T,a,e) FreeExpr<T,decltype(a)>([&](const typename extract_type<decltype(a)>::type &a){return e;},a)
 #define free_expr4(T,a,b,e) FreeExpr<T,decltype(a),decltype(b)>([&](const typename extract_type<decltype(a)>::type &a, \
-																	const typename extract_type<decltype(b)>::type &b){e},a,b)
+																	const typename extract_type<decltype(b)>::type &b){return e;},a,b)
 
 
 #define free_expr_IMPL2(count, ...) free_expr ## count (__VA_ARGS__)
