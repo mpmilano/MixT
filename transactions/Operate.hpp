@@ -31,9 +31,9 @@ struct Operate : ConStatement<l> {
 };
 
 template<Level l, typename R>
-constexpr bool verify_compilation_complete(const Operate<l,R>*){
-	return true;
-}
+struct all_declarations_str<Operate<l,R> > {
+	typedef std::tuple<> type;
+};
 
 template<Level l, typename i>
 std::ostream & operator<<(std::ostream &os, const Operate<l,i>& op){

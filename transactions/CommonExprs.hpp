@@ -97,13 +97,18 @@ std::ostream & operator<<(std::ostream &os, const Not<i2>& n){
 
 
 template<typename T>
-Not<T> make_not(const T& t){
+Not<T> neg(const T& t){
 	return Not<T>(t);
 }
 
 template<Level l>
-DummyConExpr<l> make_not(const DummyConExpr<l>& e){
+DummyConExpr<l> neg(const DummyConExpr<l>& e){
 	return e;
+}
+
+template<typename T>
+enable_if<is_ConExpr<T>::value, Not<T> >  operator!(const T &t){
+	return neg(t);
 }
 
 template<typename T>

@@ -2,7 +2,6 @@
 #include "ConStatement.hpp"
 #include "BaseCS.hpp"
 #include "ConExpr.hpp"
-#include "Seq.hpp"
 #include <iostream>
 
 

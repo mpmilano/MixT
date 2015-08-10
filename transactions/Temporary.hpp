@@ -35,6 +35,38 @@ std::ostream & operator<<(std::ostream &os, const Temporary<l2,i2>& t){
 	return os << "__x" << t.id << "<" << levelStr<l2>() << ">" <<  " = " << t.t;
 }
 
+template<typename T>
+struct TemporaryMutation : public ConStatement<get_level<T>::value> {
+	const std::string name;
+	const int id;
+	const T t;
+
+	TemporaryMutation(const std::string &name, int id, const T& t)
+		:name(name),id(id),t(t) {}
+	
+	bool operator()(Store &s) const {
+		typedef typename std::decay<decltype(run_ast(s,t))>::type R;
+		s[id].reset((Store::stored) new R(run_ast(s,t)));
+		return true;
+	}
+
+	auto getReadSet() const {
+		return get_ReadSet(t);
+	}
+	
+};
+
+template<typename T>
+struct all_declarations_str<TemporaryMutation<T> > {
+	typedef std::tuple<> type;
+};
+
+
+template<typename T>
+std::ostream & operator<<(std::ostream &os, const TemporaryMutation<T>& t){
+	return os << t.name << " := " << t.t;
+}
+
 template<unsigned long long ID, Level l, typename T>
 struct MutableTemporary : public Temporary<l,T> {
 	const std::string &name;
@@ -52,12 +84,15 @@ struct MutableTemporary : public Temporary<l,T> {
 	typedef T type;
 	typedef std::true_type found;
 	typedef typename std::integral_constant<unsigned long long, ID>::type key;
+	
 };
+
 
 template<unsigned long long id, Level l2, typename i2>
 std::ostream & operator<<(std::ostream &os, const MutableTemporary<id,l2,i2>& t){
 	return os << t.name << "<" << levelStr<l2>() << ">" <<  " = " << t.t;
 }
+
 
 template<Level l, typename T>
 class CSConstant;
@@ -72,13 +107,18 @@ class CSConstant;
 //the variable later in the program.
 
 
-template<Level l, typename T>
+template<Level l, typename T, typename Temp>
 struct RefTemporary : public ConExpr<decltype(run_ast(mke_store(), *mke_p<T>())),l> {
-	const Temporary<l,T> t;
+	const Temp t;
 	const std::string name;
-	RefTemporary(const Temporary<l,T> &t):t(t),name(std::string("__x") + std::to_string(t.id)){}
+	RefTemporary(const Temporary<l,T> &t):t(t),name(std::string("__x") + std::to_string(t.id))
+		{static_assert(std::is_same<Temporary<l,T>, Temp>::value,
+					   "Error: wrong constructor used for RT");}
+	
 	template<unsigned long long id>
-	RefTemporary(const MutableTemporary<id,l,T> &t):t(t),name(t.name){}
+	RefTemporary(const MutableTemporary<id,l,T> &t):t(t),name(t.name)
+		{static_assert(std::is_same<MutableTemporary<id,l,T>, Temp>::value,
+					   "Error: wrong constructor used for RT");}
 
 	auto getReadSet() const {
 		return t.getReadSet();
@@ -86,6 +126,15 @@ struct RefTemporary : public ConExpr<decltype(run_ast(mke_store(), *mke_p<T>()))
 	decltype(run_ast(mke_store(),*mke_p<T>())) operator()(const Store &s) const{
 		return call(s,t);
 	}
+
+	template<typename E>
+	enable_if<!std::is_same<Temporary<l,T>, Temp>::value, TemporaryMutation<E> >
+	operator=(const E &e) const {
+		static_assert(is_ConExpr<E>::value,"Error: attempt to assign non-Expr");
+		TemporaryMutation<E> r{name,t.id,e};
+		return r;
+	}
+
 
 private:
 	static auto call(const Store &s, const Temporary<l,T> &t){
@@ -96,8 +145,6 @@ private:
 	static_assert(!is_ConStatement<decltype(
 					  call(mke_store(),*mke_p<Temporary<l,T> >())
 					  )>::value);
-	template<Level l2, typename T2>
-	friend std::ostream & operator<<(std::ostream &os, const RefTemporary<l2,T2>&);
 };
 
 
@@ -109,7 +156,8 @@ struct MutCreator {
 	auto operator=(const T& t) const {
 		static_assert(is_ConExpr<T>::value, "Error: cannot assign non-expression");
 		static constexpr Level l = get_level<T>::value;
-		RefTemporary<l,T> rt(MutableTemporary<ID,l,T >(name,t));
+		RefTemporary<l,T,MutableTemporary<ID,l,T > >
+			rt(MutableTemporary<ID,l,T >(name,t));
 		return rt;
 	}
 };
@@ -122,7 +170,8 @@ struct ImmutCreator {
 	auto operator=(const T& t) const {
 		static_assert(is_ConExpr<T>::value, "Error: cannot assign non-expression");
 		static constexpr Level l = get_level<T>::value;
-		RefTemporary<l,T> rt(Temporary<l,T >(std::hash<std::string>()(name),t));
+		RefTemporary<l,T,Temporary<l,T > >
+			rt(Temporary<l,T >(std::hash<std::string>()(name),t));
 		return rt;
 	}
 
@@ -130,30 +179,15 @@ struct ImmutCreator {
 
 
 //TODO: figure out why this needs to be here
-template<Level l, typename T>
-struct is_ConExpr<RefTemporary<l,T> > : std::true_type {};
+template<Level l, typename T, typename E>
+struct is_ConExpr<RefTemporary<l,T, E> > : std::true_type {};
 
 
-template<Level l2, typename T2>
-std::ostream & operator<<(std::ostream &os, const RefTemporary<l2,T2>& t){
+template<Level l2, typename T2, typename E>
+std::ostream & operator<<(std::ostream &os, const RefTemporary<l2,T2, E>& t){
 	return os << t.name <<  "<" << levelStr<l2>() << ">";
 }
 
-template<Level l, typename T>
-auto ref_temp(const Temporary<l,T> &t){
-	return RefTemporary<l,T>(t);
-}
-
-template<Level l>
-auto ref_temp(const DummyConExpr<l> &r){
-	return r;
-}
-
-template<unsigned long long id>
-struct refstr{
-};
-
-#define ref(c) refstr<unique_id<(sizeof(c) / sizeof(char)) - 1>(c)>()
 
 struct nope{
 	typedef std::false_type found;
@@ -163,9 +197,8 @@ std::ostream & operator<<(std::ostream &os, const nope& ){
 	return os << "nope!";
 }
 
-
-template<Level l, typename T>
-bool is_reftemp(const RefTemporary<l,T> *){
+template<Level l, typename T, typename E>
+bool is_reftemp(const RefTemporary<l,T, E> *){
 	return true;
 }
 
