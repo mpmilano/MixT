@@ -62,8 +62,15 @@ template<Level l, typename T>
 class CSConstant;
 
 template<unsigned long long ID>
-struct Declaration {
+struct Declaration : public ConStatement<Level::strong>{
 	const std::string &name;
+
+	BitSet<HandleAbbrev> getReadSet(){return 0;}
+};
+
+template<unsigned long long ID>
+struct all_declarations_str<Declaration<ID> > {
+	typedef std::tuple<std::integral_constant<unsigned long long, ID> > type;
 };
 
 template<unsigned long long ID>

@@ -73,9 +73,10 @@ template<typename PrevBuilder, typename Cond, typename Then, typename Els, typen
 struct IfBuilder {
 	const PrevBuilder prevBuilder;
 	const If<Cond,Then,Els > this_if;
-	typedef Cat<prevBuilder::vars,Vars> vars;
-	static constexpr Level pc =
-		min_level<PrevBuilder::pc,get_level<Cond>::value>::value;
+	typedef Cat<typename PrevBuilder::vars,Vars> vars;
+	typedef typename PrevBuilder::pc old_pc;
+	typedef std::integral_constant<
+		Level, min_level<old_pc,Cond>::value> pc;
 	IfBuilder(const PrevBuilder &pb, const If<Cond,Then,Els> &to)
 		:prevBuilder(pb),this_if(to){
 		static_assert(is_ConExpr<Cond>::value,
@@ -106,34 +107,34 @@ struct is_IfBuilder : std::integral_constant<bool, is_ifBuilder_f(mke_p<T>()) >:
 template<typename PrevBuilder, typename Cond, typename Then, typename Vars>
 struct ThenBuilder : IfBuilder<PrevBuilder,Cond,Then,std::tuple<>, Vars>{
 	ThenBuilder(const PrevBuilder &pb, const If<Cond,Then,std::tuple<>> &to)
-		:IfBuilder(pb,to) {}
+		:IfBuilder<PrevBuilder,Cond,Then,std::tuple<>, Vars>(pb,to) {}
 
 	template<typename T>
 	auto operator/(const T &t) const {
 		static_assert(is_ConStatement<T>::value, "Error: non-statement in Then clause of If.");
 		typedef Cat<Then,std::tuple<T> > newThen;
 		If<Cond,newThen,std::tuple<> >
-			new_if(this_if.cond,std::tuple_cat(this_if.then, std::make_tuple(t)),std::tuple<>());
+			new_if(this->this_if.cond,std::tuple_cat(this->this_if.then, std::make_tuple(t)),std::tuple<>());
 		ThenBuilder<PrevBuilder,Cond,newThen,Cat<Vars,all_declarations<T> > > r(this->pb,new_if);
 		return r;
 	}
 };
 
 template<typename PrevBuilder, typename Cond, typename Then, typename Els, typename Vars>
-struct ElseBuilder : IfBuilder<PrevBuilder,Cond,Els, Vars>{
+struct ElseBuilder : IfBuilder<PrevBuilder,Cond,Then, Els, Vars>{
 	ElseBuilder(const PrevBuilder &pb, const If<Cond,Then,Els> &to)
-		:IfBuilder(pb,to) {}
+		:IfBuilder<PrevBuilder,Cond,Then,Els, Vars>(pb,to) {}
 
 	template<typename T>
 	auto operator/(const T &t) const {
 		static_assert(is_ConStatement<T>::value, "Error: non-statement in Else clause of If.");
 		typedef Cat<Els,std::tuple<T> > newEls;
 		If<Cond,Then,newEls >
-			new_if(this_if.cond,this_if.then, std::tuple_cat(this_if.els, std::make_tuple(t)));
+			new_if(this->this_if.cond,this->this_if.then, std::tuple_cat(this->this_if.els, std::make_tuple(t)));
 		ElseBuilder<PrevBuilder,Cond,Then,newEls,Cat<Vars,all_declarations<T> > > r(this->pb,new_if);
 		return r;
 	}
-}
+};
 
 template<typename Cond>
 struct IfBegin {
@@ -155,7 +156,7 @@ auto append(const PrevBuilder &pb, const IfBegin<Cond> &ib){
 //continue the if.  Else, behave exactly as if_end.
 
 template<typename CurrBuilder>
-auto append(const CurrBuilder &pb, const IfEnd<Cond> &){
+auto append(const CurrBuilder &pb, const IfEnd<Cond>&){
 	static_assert(is_IfBuilder<CurrBuilder>::value,
 				  "Error: attempt to end If when not in if context! This is a framework bug, please file.");
 	return append(pb.prevBuilder, pb.this_if);

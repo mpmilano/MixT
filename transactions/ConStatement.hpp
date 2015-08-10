@@ -15,6 +15,12 @@ struct ConStatement {
 	//virtual BitSet<HandleAbbrev> getReadSet() const = 0;
 };
 
+template<typename>
+struct all_declarations_str;
+
+template<typename T>
+using all_declarations = typename all_declarations_str<T>::type;
+
 template<typename Cls>
 struct is_ConStatement : 
 	std::integral_constant<bool, 
@@ -25,6 +31,11 @@ struct is_ConStatement :
 
 template<Level l>
 constexpr Level get_level_f(const ConStatement<l>*){
+	return l;
+}
+
+template<Level l>
+constexpr Level get_level_f(const std::integral_constant<Level, l>*){
 	return l;
 }
 
