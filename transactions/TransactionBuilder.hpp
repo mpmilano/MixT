@@ -34,3 +34,19 @@ auto append(const CurrBuilder &pb, const T &t){
 	NAME_CHECK(CurrBuilder::vars,T);
 	return pb / t;
 }
+
+template<typename T>
+struct Clobber {
+	const T t;
+};
+
+template<typename T>
+auto clobber(const T &t){
+	Clobber<T> r{t};
+	return r;
+}
+
+template<typename CurrBuilder, typename T>
+auto append(const CurrBuilder &pb, const Clobber<T> &ct){
+	return ct.t;
+}

@@ -3,6 +3,9 @@
 
 #define CMA ,
 
+/*#define TRANS_CONS(x...) { auto prev2 = append(prev, curr);	\
+	{ auto prev = prev2; { x } } }
+*/
 #define TRANS_CONS(x...) {x { auto prev2 = append(prev,curr); { auto prev = prev2;
 #define STANDARD_BEGIN(x...) auto curr = (x);
 
@@ -15,12 +18,13 @@
 #define TRANS_SEQ(...) TRANS_SEQ_IMPL(VA_NARGS(__VA_ARGS__), __VA_ARGS__)
 
 
-#define TRANSACTION(args...) { TransactionBuilder<std::tuple<>, std::tuple<> > prev; TRANS_SEQ(args)}
+#define TRANSACTION(args...) { TransactionBuilder<std::tuple<>, std::tuple<> > prev; TRANS_SEQ(args, END_TRANSACTION)}
 
 
-#define let_mutable(x) STANDARD_BEGIN(MutDeclaration(#x)) auto x = (MutAssigner(#x)
-#define let_ifValid(x) STANDARD_BEGIN(ImmutDeclaration(#x)) auto x = (ImmutAssigner(#x)
-#define IN(args...) );, args, STANDARD_BEGIN(end_var_scope())
+#define let_mutable(x) auto curr = [&](){ auto decl = (MutDeclaration(#x)); auto x = (MutAssigner(#x)
+
+//#define let_ifValid(x) STANDARD_BEGIN(ImmutDeclaration(#x)) auto x = (ImmutAssigner(#x)
+#define IN(args...) ); (TRANS_SEQ(args, STANDARD_BEGIN(end_var_scope()),return clobber(prev);));  }(); 
 
 #define raw(x...) STANDARD_BEGIN(x)
 

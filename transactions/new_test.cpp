@@ -3,11 +3,12 @@
 #include "Transaction.hpp"
 #include "BaseCS.hpp"
 #include "FileStore.hpp"
+#include "Operate.hpp"
 #include "Transaction_macros.hpp"
 
 int main(){
 
-	FileStore<Level::causal> fsc;
+	//FileStore<Level::causal> fsc;
 	FileStore<Level::strong> fss;
 
 	auto num_dir = fss.newCollection<HandleAccess::all, int>();
@@ -20,10 +21,10 @@ int main(){
 
 	TRANSACTION(
 		let_mutable(tmp) = true IN (
-			IF(true) THEN(
-				raw(dummy1);
+			IF(tmp) THEN(
+				do_op(Insert,num_dir,42);
 				)
 			)
 		);
-
+	
 }

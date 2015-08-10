@@ -1,7 +1,6 @@
 
 #pragma once
 #include "Operation.hpp"
-#include "Seq.hpp"
 #include "Operate_macros.hpp"
 
 template<Level l, typename R>
