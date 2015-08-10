@@ -76,35 +76,3 @@ struct is_cs_tuple : std::integral_constant<bool,
 										 is_tuple_f((F*) nullptr)
 										 >::type {};
 
-template<typename T>
-struct ReplaceMe : public ConStatement<Level::strong>{
-	const T t;
-
-	ReplaceMe(const T& t):t(t){}
-
-	auto operator()(const Store&) const {
-		return false;
-	}
-
-	BitSet<HandleAbbrev> getReadSet() const {
-		return 0;
-	}
-
-};
-
-template<typename T>
-std::ostream & operator<<(std::ostream &os, const ReplaceMe<T>&){
-	return os << "this should have been replaced";
-}
-
-template<typename T>
-constexpr bool verify_compilation_complete(const ReplaceMe<T>*){
-	constexpr bool dummy = get_level<ReplaceMe<T> >::value == Level::causal &&
-		get_level<ReplaceMe<T> >::value == Level::strong;
-	static_assert(dummy || !dummy, "NameError: Failed to replace for reference");
-	return false;
-}
-
-#define REPLACEME_OK(x) template<Level l, typename... T>	\
-	constexpr bool verify_compilation_complete(const x<l,T...>*)				\
-	{return true; }

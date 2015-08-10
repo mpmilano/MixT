@@ -1,10 +1,12 @@
 #pragma once
 #include "Basics.hpp"
+#include "type_utils.hpp"
+#include "ConStatement.hpp"
 
 //this makes sure the expression (expr)
 //only references temporaries defined in the tuple
 //Names
-#define NAME_CHECK(Names,expr) ?
+#define NAME_CHECK(Names,expr) 
 
 template<typename Statements, typename Vars>
 struct TransactionBuilder {

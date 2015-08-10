@@ -150,6 +150,10 @@ auto append(const PrevBuilder &pb, const IfBegin<Cond> &ib){
 	return r;
 }
 
+//TODO: else. Support doesn't even exist in the macros right now.
+//TODO: else "watcher:" if the next thing in sequence is an else_begin,
+//continue the if.  Else, behave exactly as if_end.
+
 template<typename CurrBuilder>
 auto append(const CurrBuilder &pb, const IfEnd<Cond> &){
 	static_assert(is_IfBuilder<CurrBuilder>::value,

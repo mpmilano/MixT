@@ -15,12 +15,12 @@
 #define TRANS_SEQ(...) TRANS_SEQ_IMPL(VA_NARGS(__VA_ARGS__), __VA_ARGS__)
 
 
-#define TRANSACTION(args...) { TransactionAst prev; TRANS_SEQ(args)}
+#define TRANSACTION(args...) { TransactionBuilder prev; TRANS_SEQ(args)}
 
 
 #define mutable(x) STANDARD_BEGIN(MutDeclaration(#x)) auto x = (MutAssigner(#x)
 #define ifValid(x) STANDARD_BEGIN(ImmutDeclaration(#x)) auto x = (ImmutAssigner(#x)
-#define in(args...) ); args, STANDARD_BEGIN(end_var_scope())
+#define IN(args...) ); args, STANDARD_BEGIN(end_var_scope())
 
 #define raw(x...) STANDARD_BEGIN(x)
 

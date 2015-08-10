@@ -17,8 +17,8 @@ constexpr bool failOn(){
 template<typename T>
 using decay = typename std::decay<T>::type;
 
-template<typename T, typename V = void>
-using enable_if = typename std::enable_if<T,V>::type;
+template<bool B, typename V = void>
+using enable_if = typename std::enable_if<B,V>::type;
 
 template<template<typename> typename Pred, typename Arg>
 using type_check = enable_if<Pred<Arg>::value, Arg>;
