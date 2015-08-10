@@ -12,6 +12,7 @@
 
 template<Level l>
 struct ConStatement {
+	static constexpr Level level = l;
 	//virtual BitSet<HandleAbbrev> getReadSet() const = 0;
 };
 

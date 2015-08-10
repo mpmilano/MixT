@@ -12,10 +12,14 @@ template<typename Statements, typename Vars>
 struct TransactionBuilder {
 	const Statements curr;
 	typedef Vars vars;
-	static constexpr Level pc = Level::strong;
+	typedef std::integral_constant<Level, Level::strong> pc;
 
+	
 	template<typename T>
-	auto operator/(const type_check<is_ConStatement, T> &t){
+	typename std::enable_if<is_ConStatement<T>::value ,
+							TransactionBuilder<Cat<Statements, std::tuple<T> >,
+											   Cat<Vars,all_declarations<T> > > >::type
+	operator/(const T &t){
 		TransactionBuilder<Cat<Statements, std::tuple<T> >,
 						   Cat<Vars,all_declarations<T> > >
 			r{std::tuple_cat(curr,std::make_tuple(t))};
@@ -24,8 +28,9 @@ struct TransactionBuilder {
 };
 
 //the default append function.
+//T typecheck is handled by operator/
 template<typename CurrBuilder, typename T>
-auto append(const CurrBuilder &pb, const type_check<is_ConStatement, T> &t){
+auto append(const CurrBuilder &pb, const T &t){
 	NAME_CHECK(CurrBuilder::vars,T);
 	return pb / t;
 }

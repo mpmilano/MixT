@@ -17,16 +17,16 @@
 
 #define if_concept_2(Cond,Then,Els)										\
 	((get_level<Cond>::value == Level::causal &&						\
-	  get_level<Then>::value == Level::causal &&						\
-	  get_level<Els>::value == Level::causal)							\
+	  max_level<Then>::value == Level::causal &&						\
+	  max_level<Els>::value == Level::causal)							\
 	 ||																	\
 	 (get_level<Cond>::value == Level::strong))
 
 
 template<typename Cond, typename Then, typename Els>
-struct If : public ConStatement<min_level<Then,Els>::value> {
+struct If : public ConStatement<min_level<typename min_level<Then>::type,
+										  typename min_level<Els>::type >::value> {
 
-	static constexpr Level level = min_level<Then,Els>::value;
 	typedef Cond Cond_t;
 	const Cond cond;
 	const Then then;
@@ -40,7 +40,8 @@ struct If : public ConStatement<min_level<Then,Els>::value> {
 		}
 
 	BitSet<HandleAbbrev> getReadSet() const {
-		return set_union(get_ReadSet(cond),then.getReadSet(),els.getReadSet());
+		assert(false && "TODO: split into strong + weak? ");
+		//return set_union(get_ReadSet(cond),then.getReadSet(),els.getReadSet());
 	}
 
 	bool operator()(Store &s) const {
@@ -101,7 +102,7 @@ constexpr bool is_IfBuilder_f(T*) {
 }
 
 template<typename T>
-struct is_IfBuilder : std::integral_constant<bool, is_ifBuilder_f(mke_p<T>()) >::type {};
+struct is_IfBuilder : std::integral_constant<bool, is_IfBuilder_f(mke_p<T>()) >::type {};
 
 
 template<typename PrevBuilder, typename Cond, typename Then, typename Vars>
@@ -115,7 +116,7 @@ struct ThenBuilder : IfBuilder<PrevBuilder,Cond,Then,std::tuple<>, Vars>{
 		typedef Cat<Then,std::tuple<T> > newThen;
 		If<Cond,newThen,std::tuple<> >
 			new_if(this->this_if.cond,std::tuple_cat(this->this_if.then, std::make_tuple(t)),std::tuple<>());
-		ThenBuilder<PrevBuilder,Cond,newThen,Cat<Vars,all_declarations<T> > > r(this->pb,new_if);
+		ThenBuilder<PrevBuilder,Cond,newThen,Cat<Vars,all_declarations<T> > > r(this->prevBuilder,new_if);
 		return r;
 	}
 };
@@ -131,7 +132,7 @@ struct ElseBuilder : IfBuilder<PrevBuilder,Cond,Then, Els, Vars>{
 		typedef Cat<Els,std::tuple<T> > newEls;
 		If<Cond,Then,newEls >
 			new_if(this->this_if.cond,this->this_if.then, std::tuple_cat(this->this_if.els, std::make_tuple(t)));
-		ElseBuilder<PrevBuilder,Cond,Then,newEls,Cat<Vars,all_declarations<T> > > r(this->pb,new_if);
+		ElseBuilder<PrevBuilder,Cond,Then,newEls,Cat<Vars,all_declarations<T> > > r(this->prevBuilder,new_if);
 		return r;
 	}
 };
@@ -168,8 +169,7 @@ auto make_if_begin(const Cons &s){
 	return r;
 }
 
-template<typename Cons>
-const IfEnd& make_if_end(const Cons &s){
+const IfEnd& make_if_end(){
 	static constexpr IfEnd e;
 	return e;
 }
