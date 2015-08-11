@@ -24,6 +24,23 @@ struct DeclarationScope : public ConStatement<Level::strong>{
 	}
 };
 
+template<unsigned long long ID, typename CS>
+auto find_usage(const DeclarationScope<ID,CS>&){
+	//we have been shadowed!
+	return nullptr;
+}
+
+template<unsigned long long ID, unsigned long long ID2, typename CS, restrict(ID != ID2)>
+auto find_usage(const DeclarationScope<ID2,CS>& ds){
+	return fold(ds.cs,
+				[](const auto &e, const auto &acc){
+					if (!acc){
+						return find_usage<ID>(e);
+					}
+					else return acc;
+				}
+				, nullptr);
+}
 
 template<unsigned long long ID,typename CS>
 std::ostream & operator<<(std::ostream &os, const DeclarationScope<ID,CS> &t){
@@ -46,7 +63,7 @@ struct DeclarationBuilder {
 					  "Error: non-ConStatement found in IN.");
 		auto new_cs = std::tuple_cat(this_decl.cs,std::tuple<T>(t));
 		DeclarationScope<ID, decltype(new_cs)> new_decl(this_decl.name,find_usage<ID>(t), new_cs);
-		DeclarationBuilder<PrevBuilder, ID, decltype(new_cs), contains_temporary<ID>::value>
+		DeclarationBuilder<PrevBuilder, ID, decltype(new_cs), contains_temporary<ID,T>::value>
 			r(prevBuilder,new_decl);
 		return r;
 	}

@@ -16,6 +16,9 @@ struct ConStatement {
 	//virtual BitSet<HandleAbbrev> getReadSet() const = 0;
 };
 
+template<unsigned long long, typename>
+struct contains_temporary;
+
 template<typename Cls>
 struct is_ConStatement : 
 	std::integral_constant<bool, 

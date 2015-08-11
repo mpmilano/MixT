@@ -18,7 +18,7 @@
 #define TRANS_SEQ(...) TRANS_SEQ_IMPL(VA_NARGS(__VA_ARGS__), __VA_ARGS__)
 
 
-#define TRANSACTION(args...) { TransactionBuilder<std::tuple<>, std::tuple<> > prev; TRANS_SEQ(args, END_TRANSACTION)}
+#define TRANSACTION(args...) { TransactionBuilder<std::tuple<> > prev; TRANS_SEQ(args, END_TRANSACTION)}
 
 
 #define let_mutable(x) [&]() { auto decl = MutDeclaration(#x); auto x = (MutAssigner(#x)
