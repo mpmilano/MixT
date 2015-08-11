@@ -37,10 +37,6 @@ std::ostream & operator<<(std::ostream &os, const Noop<l>&){
 const Noop<Level::strong> dummy1;
 const Noop<Level::causal> dummy2;
 
-template<Level l>
-struct all_declarations_str<Noop<l> > {
-	typedef std::tuple<> type;
-};
 
 template<typename T>
 struct is_Noop : std::integral_constant<

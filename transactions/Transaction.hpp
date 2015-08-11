@@ -10,8 +10,8 @@ struct Transaction{
 	const BitSet<HandleAbbrev> strong;
 	const BitSet<HandleAbbrev> weak;
 	
-	template<typename Cmds, typename Vars>
-	Transaction(const TransactionBuilder<Cmds,Vars> &s):
+	template<typename Cmds>
+	Transaction(const TransactionBuilder<Cmds> &s):
 		action([s](Store &st) -> bool{
 				return call_all(st,s.curr);
 			}),

@@ -49,10 +49,6 @@ struct If : public ConStatement<min_level<typename min_level<Then>::type,
 	}
 };
 
-template<typename Cond, typename Then, typename Els>
-struct all_declarations_str<If<Cond,Then,Els> > {
-	typedef Cat<all_declarations<Then>, all_declarations<Els> > type;
-};
 
 template<typename A, typename B, typename C>
 constexpr bool is_If_f(const If<A,B,C>*){
@@ -73,11 +69,10 @@ std::ostream & operator<<(std::ostream &os, const If<Cond,Then,Els>& i){
 	return os << "(" << i.cond <<" ? " << i.then << ")";
 }
 
-template<typename PrevBuilder, typename Cond, typename Then, typename Els, typename Vars>
+template<typename PrevBuilder, typename Cond, typename Then, typename Els>
 struct IfBuilder {
 	const PrevBuilder prevBuilder;
 	const If<Cond,Then,Els > this_if;
-	typedef Cat<typename PrevBuilder::vars,Vars> vars;
 	typedef typename PrevBuilder::pc old_pc;
 	typedef std::integral_constant<
 		Level, min_level<old_pc,Cond>::value> pc;
@@ -94,8 +89,8 @@ struct IfBuilder {
 	}
 };
 
-template<typename PrevBuilder, typename Cond, typename Then, typename Els, typename Vars>
-constexpr bool is_IfBuilder_f(const IfBuilder<PrevBuilder, Cond, Then, Els, Vars>*) {
+template<typename PrevBuilder, typename Cond, typename Then, typename Els>
+constexpr bool is_IfBuilder_f(const IfBuilder<PrevBuilder, Cond, Then, Els>*) {
 	return true;
 }
 
@@ -104,10 +99,10 @@ template<typename T>
 struct is_IfBuilder : std::integral_constant<bool, is_IfBuilder_f(mke_p<T>()) >::type {};
 
 
-template<typename PrevBuilder, typename Cond, typename Then, typename Vars>
-struct ThenBuilder : IfBuilder<PrevBuilder,Cond,Then,std::tuple<>, Vars>{
+template<typename PrevBuilder, typename Cond, typename Then>
+struct ThenBuilder : IfBuilder<PrevBuilder,Cond,Then,std::tuple<> >{
 	ThenBuilder(const PrevBuilder &pb, const If<Cond,Then,std::tuple<>> &to)
-		:IfBuilder<PrevBuilder,Cond,Then,std::tuple<>, Vars>(pb,to) {}
+		:IfBuilder<PrevBuilder,Cond,Then,std::tuple<> >(pb,to) {}
 
 	template<typename T>
 	auto operator/(const T &t) const {
@@ -119,16 +114,16 @@ struct ThenBuilder : IfBuilder<PrevBuilder,Cond,Then,std::tuple<>, Vars>{
 				   std::tuple_cat(this->this_if.then,
 								  std::make_tuple(t)),
 				   std::tuple<>());
-		ThenBuilder<PrevBuilder,Cond,newThen,Cat<Vars,all_declarations<T> > >
+		ThenBuilder<PrevBuilder,Cond,newThen >
 			r(this->prevBuilder,new_if);
 		return r;
 	}
 };
 
-template<typename PrevBuilder, typename Cond, typename Then, typename Els, typename Vars>
-struct ElseBuilder : IfBuilder<PrevBuilder,Cond,Then, Els, Vars>{
+template<typename PrevBuilder, typename Cond, typename Then, typename Els>
+struct ElseBuilder : IfBuilder<PrevBuilder,Cond,Then, Els>{
 	ElseBuilder(const PrevBuilder &pb, const If<Cond,Then,Els> &to)
-		:IfBuilder<PrevBuilder,Cond,Then,Els, Vars>(pb,to) {}
+		:IfBuilder<PrevBuilder,Cond,Then,Els>(pb,to) {}
 
 	template<typename T>
 	auto operator/(const T &t) const {
@@ -136,7 +131,7 @@ struct ElseBuilder : IfBuilder<PrevBuilder,Cond,Then, Els, Vars>{
 		typedef Cat<Els,std::tuple<T> > newEls;
 		If<Cond,Then,newEls >
 			new_if(this->this_if.cond,this->this_if.then, std::tuple_cat(this->this_if.els, std::make_tuple(t)));
-		ElseBuilder<PrevBuilder,Cond,Then,newEls,Cat<Vars,all_declarations<T> > > r(this->prevBuilder,new_if);
+		ElseBuilder<PrevBuilder,Cond,Then,newEls > r(this->prevBuilder,new_if);
 		return r;
 	}
 };
@@ -150,9 +145,8 @@ struct IfEnd { constexpr IfEnd(){} };
 	
 template<typename PrevBuilder, typename Cond>
 auto append(const PrevBuilder &pb, const IfBegin<Cond> &ib){
-	NAME_CHECK(PrevBuilder::vars, Cond);
 	If<Cond,std::tuple<>,std::tuple<> > if_elem(ib.c,std::tuple<>(),std::tuple<>());
-	ThenBuilder<PrevBuilder, Cond, std::tuple<>, std::tuple<> > r(pb,if_elem);
+	ThenBuilder<PrevBuilder, Cond, std::tuple<> > r(pb,if_elem);
 	return r;
 }
 

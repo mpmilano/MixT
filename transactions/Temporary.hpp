@@ -58,12 +58,6 @@ struct TemporaryMutation : public ConStatement<get_level<T>::value> {
 };
 
 template<typename T>
-struct all_declarations_str<TemporaryMutation<T> > {
-	typedef std::tuple<> type;
-};
-
-
-template<typename T>
 std::ostream & operator<<(std::ostream &os, const TemporaryMutation<T>& t){
 	return os << t.name << " := " << t.t;
 }

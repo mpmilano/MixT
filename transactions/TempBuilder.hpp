@@ -24,10 +24,6 @@ struct DeclarationScope : public ConStatement<Level::strong>{
 	}
 };
 
-template<unsigned long long ID, typename CS>
-struct all_declarations_str<DeclarationScope<ID,CS> > {
-	typedef std::tuple<> type;
-};
 
 template<unsigned long long ID,typename CS>
 std::ostream & operator<<(std::ostream &os, const DeclarationScope<ID,CS> &t){
@@ -38,8 +34,6 @@ template<typename PrevBuilder, unsigned long long ID, typename CS, bool>
 struct DeclarationBuilder {
 	const PrevBuilder prevBuilder;
 	const DeclarationScope<ID,CS> this_decl;
-	typedef typename Cons<std::integral_constant<unsigned long long, ID>,
-						  typename PrevBuilder::vars>::type vars;
 	//TODO: should declarations modify PC label?
 	typedef typename PrevBuilder::pc pc;
 

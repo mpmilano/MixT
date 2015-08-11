@@ -30,11 +30,6 @@ struct Operate : ConStatement<l> {
 	}
 };
 
-template<Level l, typename R>
-struct all_declarations_str<Operate<l,R> > {
-	typedef std::tuple<> type;
-};
-
 template<Level l, typename i>
 std::ostream & operator<<(std::ostream &os, const Operate<l,i>& op){
 	return os << op.name;
