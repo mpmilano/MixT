@@ -63,7 +63,7 @@ struct DeclarationBuilder {
 		static_assert(is_ConStatement<T>::value,
 					  "Error: non-ConStatement found in IN.");
 		auto new_cs = std::tuple_cat(this_decl.cs,std::tuple<T>(t));
-		DeclarationScope<ID, decltype(new_cs)> new_decl(this_decl.name,find_usage<ID>(t), new_cs);
+		DeclarationScope<ID, decltype(new_cs)> new_decl(this_decl.name,pick_useful(find_usage<ID>(t), this_decl.gt), new_cs);
 		DeclarationBuilder<PrevBuilder, ID, decltype(new_cs), contains_temporary<ID,T>::value || oldb>
 			r(prevBuilder,new_decl);
 		return r;

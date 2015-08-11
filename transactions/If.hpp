@@ -48,25 +48,6 @@ struct If : public ConStatement<min_level<typename min_level<Then>::type,
 	}
 };
 
-template<typename T>
-T pick_useful(const T &t, std::nullptr_t){
-	return t;
-}
-
-std::nullptr_t pick_useful(std::nullptr_t, std::nullptr_t){
-	return nullptr;
-}
-
-template<typename T>
-T pick_useful(std::nullptr_t, const T& t){
-	return t;
-}
-
-template<typename T, typename U>
-T pick_useful(const U& u, const T& t){
-	return t;
-}
-
 template<unsigned long long ID, typename Cond, typename Then, typename Els>
 auto find_usage(const If<Cond,Then,Els>& _if){
 	return fold(std::tuple_cat(std::make_tuple(_if.cond), _if.then, _if.els),

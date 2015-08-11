@@ -276,3 +276,23 @@ template<typename T>
 const T& constify(const T& t){
 	return t;
 }
+
+
+template<typename T>
+T pick_useful(const T &t, std::nullptr_t){
+	return t;
+}
+
+std::nullptr_t pick_useful(std::nullptr_t, std::nullptr_t){
+	return nullptr;
+}
+
+template<typename T>
+T pick_useful(std::nullptr_t, const T& t){
+	return t;
+}
+
+template<typename T, typename U>
+T pick_useful(const U& u, const T& t){
+	return t;
+}
