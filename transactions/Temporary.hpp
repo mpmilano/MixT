@@ -35,6 +35,8 @@ auto find_usage(const Temporary<ID,l,T> &rt){
 	return heap_copy(rt);
 }
 
+template<unsigned long long ID, unsigned long long ID2, Level l, typename T>
+struct contains_temporary<ID, Temporary<ID2,l,T> > : std::integral_constant<bool, ID == ID2> {};
 
 template<Level l2, typename i2, unsigned long long id>
 std::ostream & operator<<(std::ostream &os, const Temporary<id,l2,i2>& t){
@@ -62,9 +64,14 @@ struct TemporaryMutation : public ConStatement<get_level<T>::value> {
 	
 };
 
+
 template<unsigned long long ID, typename T>
-auto find_usage(const TemporaryMutation<T> &){
-	return nullptr;
+struct contains_temporary<ID, TemporaryMutation<T> > : contains_temporary<ID,T> {};
+
+
+template<unsigned long long ID, typename T>
+auto find_usage(const TemporaryMutation<T> &t){
+	return find_usage<ID>(t.t);
 }
 
 template<typename T>
@@ -96,6 +103,13 @@ template<unsigned long long ID, Level l, typename T>
 auto find_usage(const MutableTemporary<ID,l,T> &rt){
 	return heap_copy(rt);
 }
+
+template<unsigned long long ID, Level l, typename T>
+struct contains_temporary<ID, MutableTemporary<ID,l,T> > : std::true_type {};
+
+template<unsigned long long ID, unsigned long long ID2, Level l, typename T>
+struct contains_temporary<ID, MutableTemporary<ID2,l,T> > : std::integral_constant<bool, ID == ID2> {};
+
 
 template<unsigned long long ID, unsigned long long ID2, Level l, typename T>
 enable_if<ID != ID2,std::nullptr_t> find_usage(const MutableTemporary<ID2,l,T> &rt){
@@ -179,6 +193,9 @@ template<unsigned long long ID, unsigned long long ID2, Level l, typename T, typ
 enable_if<ID != ID2, std::nullptr_t> find_usage(const RefTemporary<ID,l,T,Temp> &rt){
 	return nullptr;
 }
+
+template<unsigned long long ID, unsigned long long ID2, Level l, typename T, typename Temp>
+struct contains_temporary<ID, RefTemporary<ID2,l,T,Temp> > : std::integral_constant<bool, ID == ID2> {};
 
 
 template<unsigned long long ID>

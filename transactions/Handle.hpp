@@ -37,7 +37,6 @@ std::nullptr_t find_usage(const GenericHandle<l,ha>&){
 	return nullptr;
 }
 
-
 template<Level l, HandleAccess HA, typename T>
 struct Handle : public GenericHandle<l,HA> {
 
@@ -124,6 +123,12 @@ public:
 	}
 */
 };
+
+template<unsigned long long, typename>
+struct contains_temporary;
+
+template<unsigned long long id, Level l, HandleAccess ha, typename T>
+struct contains_temporary<id,  Handle<l,ha,T> > : std::false_type {};
 
 template<Level l, HandleAccess HA, typename T,
 		 typename RO, typename... Args>

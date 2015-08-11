@@ -86,6 +86,16 @@ struct Not : public ConExpr<bool, get_level<T>::value> {
 	friend std::ostream & operator<<(std::ostream &os, const Not<i2>&);
 };
 
+template<unsigned long long ID, typename T>
+struct contains_temporary<ID, Not<T> > : contains_temporary<ID,T> {};
+
+
+template<unsigned long long ID, typename T>
+auto find_usage(const Not<T> &t){
+	return find_usage<ID>(t.v);
+}
+
+
 //TODO: figure out why this needs to be here
 template<typename T>
 struct is_ConExpr<Not<T> > : std::true_type {};
@@ -132,6 +142,17 @@ struct IsValid : public ConExpr<bool, get_level<T>::value> {
 	template<typename T2>
 	friend std::ostream & operator<<(std::ostream &os, const IsValid<T2>&);
 };
+
+
+template<unsigned long long ID, typename T>
+struct contains_temporary<ID, IsValid<T> > : contains_temporary<ID,T> {};
+
+
+template<unsigned long long ID, typename T>
+auto find_usage(const IsValid<T> &t){
+	return find_usage<ID>(t.t);
+}
+
 
 template<typename T2>
 std::ostream & operator<<(std::ostream &os, const IsValid<T2> &t){

@@ -28,6 +28,15 @@ public:
 	friend std::ostream & operator<<(std::ostream &os, const Noop<l2>&);
 };
 
+template<unsigned long long ID, Level l>
+struct contains_temporary<ID, Noop<l> > : std::false_type {};
+
+template<unsigned long long ID, Level l>
+auto find_usage(const Noop<l>&){
+	return nullptr;
+}
+
+
 template<Level l>
 std::ostream & operator<<(std::ostream &os, const Noop<l>&){
 	

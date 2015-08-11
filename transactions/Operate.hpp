@@ -46,6 +46,9 @@ auto find_usage(const Operate<l,T,Vars> &op){
 				, nullptr);
 }
 
+template<unsigned long long ID, Level l, typename R, typename Exprs>
+struct contains_temporary<ID, Operate<l,R,Exprs> > : contains_temp_fold<ID,Exprs > {};
+
 template<Level l, typename i, typename E>
 std::ostream & operator<<(std::ostream &os, const Operate<l,i,E>& op){
 	return os << op.name;

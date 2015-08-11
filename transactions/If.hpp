@@ -3,6 +3,7 @@
 #include "BaseCS.hpp"
 #include "ConExpr.hpp"
 #include "CommonExprs.hpp"
+#include "Operate.hpp"
 #include <iostream>
 
 #define if_concept(Cond,Then,Els)										\
@@ -75,7 +76,22 @@ auto find_usage(const If<Cond,Then,Els>& _if){
 				, nullptr);
 }
 
+template<unsigned long long ID, typename Cond, typename Then, typename Els>
+struct contains_temporary<ID, If<Cons<Cond, std::tuple<> >,Then,Els> > : contains_temp_fold<ID,Cat<Cond,Then,Els> > {};
 
+//debugging...
+template<unsigned long long ID>
+struct contains_temporary<ID, If<RefTemporary<ID, Level::strong, bool, MutableTemporary<ID, Level::strong, bool> >,
+						  std::tuple<Operate<Level::strong, bool, std::tuple<Handle<Level::strong, HandleAccess::all, std::set<int, std::less<int>, std::allocator<int> > >, int> > >, std::tuple<> > >
+: std::true_type {};
+
+template<unsigned long long ID>
+struct contains_temporary<ID, If<Not<RefTemporary<ID, Level::strong, bool, MutableTemporary<ID, Level::strong, bool> > >,
+						  std::tuple<Noop<Level::strong> >, std::tuple<> > > : std::true_type {};
+
+template<unsigned long long ID>
+struct contains_temporary<ID, If<IsValid<Handle<Level::strong, HandleAccess::all, std::set<int, std::less<int>,
+																						   std::allocator<int> > > >, std::tuple<Noop<Level::strong> >, std::tuple<> > > : std::false_type {};
 
 template<typename A, typename B, typename C>
 constexpr bool is_If_f(const If<A,B,C>*){

@@ -1,6 +1,7 @@
 #pragma once
 #include "ConStatement.hpp"
 #include "Temporary.hpp"
+#include "If.hpp"
 
 template<unsigned long long ID, typename CS>
 struct DeclarationScope : public ConStatement<Level::strong>{
@@ -47,7 +48,7 @@ std::ostream & operator<<(std::ostream &os, const DeclarationScope<ID,CS> &t){
 	return os << t.name ;
 }
 
-template<typename PrevBuilder, unsigned long long ID, typename CS, bool>
+template<typename PrevBuilder, unsigned long long ID, typename CS, bool oldb>
 struct DeclarationBuilder {
 	const PrevBuilder prevBuilder;
 	const DeclarationScope<ID,CS> this_decl;
@@ -63,7 +64,7 @@ struct DeclarationBuilder {
 					  "Error: non-ConStatement found in IN.");
 		auto new_cs = std::tuple_cat(this_decl.cs,std::tuple<T>(t));
 		DeclarationScope<ID, decltype(new_cs)> new_decl(this_decl.name,find_usage<ID>(t), new_cs);
-		DeclarationBuilder<PrevBuilder, ID, decltype(new_cs), contains_temporary<ID,T>::value>
+		DeclarationBuilder<PrevBuilder, ID, decltype(new_cs), contains_temporary<ID,T>::value || oldb>
 			r(prevBuilder,new_decl);
 		return r;
 	}

@@ -75,3 +75,16 @@ template<unsigned long long id, typename T>
 enable_if<std::is_scalar<T>::value, std::nullptr_t> find_usage(const T&){
 	return nullptr;
 }
+
+/*
+template<unsigned long long id, typename T>
+struct contains_temporary : std::false_type {
+	static_assert(std::is_scalar<T>::value,"Error: you apparently didn't finish defining enough contains_temporaries");
+};
+*/
+
+template<unsigned long long id>
+struct contains_temporary<id,int> : std::false_type {};
+
+template<unsigned long long id>
+struct contains_temporary<id,bool> : std::false_type {};

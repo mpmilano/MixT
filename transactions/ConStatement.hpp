@@ -16,8 +16,15 @@ struct ConStatement {
 	//virtual BitSet<HandleAbbrev> getReadSet() const = 0;
 };
 
-template<unsigned long long, typename>
-struct contains_temporary;
+template<typename Arg, typename Acc>
+using contains_temporary_aggr = 
+	std::pair<Left<Acc>, std::integral_constant<bool, (contains_temporary<Left<Acc>::value, Arg>::value || Right<Acc>::value) > >;
+
+template<unsigned long long key, typename Lst>
+using contains_temp_fold = 
+	Right<fold_types<contains_temporary_aggr, Lst,
+					 std::pair<std::integral_constant<unsigned long long, key>,
+							   std::true_type> > >;
 
 template<typename Cls>
 struct is_ConStatement : 
