@@ -30,6 +30,12 @@ struct Operate : ConStatement<l> {
 	}
 };
 
+template<Level l, typename T>
+auto find_usage(const Operate<l,T> &){
+	assert(false && "this needs to be available in operate? geez.");
+	return nullptr;
+}
+
 template<Level l, typename i>
 std::ostream & operator<<(std::ostream &os, const Operate<l,i>& op){
 	return os << op.name;
