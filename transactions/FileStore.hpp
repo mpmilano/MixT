@@ -11,7 +11,7 @@
 #include <cstdlib>
 
 template<Level l>
-struct FileStore : public DataStore<l>{
+struct FileStore : public DataStore<l> {
 	template<typename T>
 	struct FSObject : public RemoteObject<T> {
 		std::unique_ptr<T> t;

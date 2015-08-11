@@ -22,12 +22,12 @@ int main(){
 
 	TRANSACTION(
 		let_mutable(tmp) = true IN (
-			IF(tmp) THEN(
+			IF (tmp) THEN(
 				do_op(Insert,num_dir,42)
 				),
 			tmp = false;,
-			WHILE(!tmp) DO (dummy1;),
-			IF(isValid(num_dir)) THEN (dummy1;)
+			WHILE (!tmp) DO (dummy1;),
+			IF (isValid(num_dir)) THEN (dummy1;)
 			)
 		);
 

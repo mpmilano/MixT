@@ -39,10 +39,15 @@ constexpr T mke(){
 }
 
 template<typename T>
-constexpr auto mke_p(){
-	return ((typename std::decay<T>::type*) nullptr);
+constexpr typename std::enable_if<!std::is_pointer<T>::value,typename std::decay<T>::type*>::type
+mke_p(){
+	return (typename std::decay<T>::type*) nullptr;
 }
 
+template<typename T, restrict(std::is_pointer<T>::value)>
+constexpr T mke_p(){
+	return (T) nullptr;
+}
 
 template<typename T>
 T cpy(const T& t){
