@@ -26,7 +26,7 @@ int main(){
 				do_op(Insert,num_dir,42)
 				),
 			tmp = false;,
-			IF(!tmp) THEN (dummy1;),
+			WHILE(!tmp) DO (dummy1;),
 			IF(isValid(num_dir)) THEN (dummy1;)
 			)
 		);
