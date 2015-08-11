@@ -9,7 +9,7 @@
 #define TRANS_CONS(x...) {auto curr = x { auto prev2 = append(prev,curr); { auto prev = prev2;
 #define STANDARD_BEGIN(x...) (x);
 
-#define END_TRANSACTION Transaction ____transaction(prev); std::cout << ____transaction << std::endl; ____transaction();
+#define END_TRANSACTION Transaction ____transaction(prev); std::cout << ____transaction << std::endl << "all done printing" << std::endl; ____transaction();
 
 #include "trans_seq_generated.hpp"
 

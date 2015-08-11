@@ -14,7 +14,8 @@ struct DeclarationScope : public ConStatement<Level::strong>{
 		:name(name),gt(gt),cs(cs){}
 	
 	BitSet<HandleAbbrev> getReadSet() const {
-		assert(false && "again, separation?");
+		std::cerr << "TODO: splitting, still" << std::endl;
+		return 0;
 	}
 
 	bool operator()(Store &s) const{
@@ -45,7 +46,11 @@ auto find_usage(const DeclarationScope<ID2,CS>& ds){
 
 template<unsigned long long ID,typename CS>
 std::ostream & operator<<(std::ostream &os, const DeclarationScope<ID,CS> &t){
-	return os << t.name ;
+	assert(t.gt);
+	os << t.name << " = " << t.gt->name;
+	fold(t.cs,[&os](const auto &e, int) -> int
+		 {os << "  " << e << std::endl; return 0; },0);
+	return os;
 }
 
 template<typename PrevBuilder, unsigned long long ID, typename CS, bool oldb>

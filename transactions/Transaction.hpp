@@ -16,8 +16,10 @@ struct Transaction{
 				return call_all(st,s.curr);
 			}),
 		print([s](std::ostream &os) -> std::ostream& {
+				os << "printing AST!" << std::endl;
 				fold(s.curr,[&os](const auto &e, int) -> int
 					 {os << e << std::endl; return 0; },0);
+				os << "done printing AST!" << std::endl;
 				return os;
 			}),
 		strong(fold(s.curr,

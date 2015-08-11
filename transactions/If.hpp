@@ -37,8 +37,9 @@ struct If : public ConStatement<min_level<typename min_level<Then>::type,
 		}
 
 	BitSet<HandleAbbrev> getReadSet() const {
-		assert(false && "TODO: split into strong + weak? ");
+		std::cerr << "TODO: split into strong + weak? " << std::endl;
 		//return set_union(get_ReadSet(cond),then.getReadSet(),els.getReadSet());
+		return 0;
 	}
 
 	bool operator()(Store &s) const {

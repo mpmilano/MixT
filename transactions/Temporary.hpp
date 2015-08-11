@@ -2,7 +2,10 @@
 #include "ConExpr.hpp"
 #include <string>
 
-struct GeneralTemp {};
+struct GeneralTemp {
+	const std::string name;
+	GeneralTemp(const std::string &n):name(n) {}
+};
 
 //the level here is for referencing the temporary later.
 //it's the endorsement check!
@@ -14,10 +17,10 @@ struct Temporary : public GeneralTemp, public ConStatement<get_level<T>::value> 
 				  get_level<T>::value == Level::strong,
 				  "Error: flow violation");
 
-	const int id;
 	const T t;
-	Temporary(const T& t):id(gensym()),t(t){}
-	Temporary(const int id, const T& t):id(id),t(t){}
+	const int id;
+	Temporary(const T& t):GeneralTemp(std::to_string(gensym())),t(t),id(std::hash<std::string>()(this->name)){}
+	Temporary(const std::string name, const T& t):GeneralTemp(name),t(t),id(std::hash<std::string>()(name)){}
 	
 	auto getReadSet() const {
 		return t.getReadSet();
@@ -40,7 +43,7 @@ struct contains_temporary<ID, Temporary<ID2,l,T> > : std::integral_constant<bool
 
 template<Level l2, typename i2, unsigned long long id>
 std::ostream & operator<<(std::ostream &os, const Temporary<id,l2,i2>& t){
-	return os << "__x" << t.id << "<" << levelStr<l2>() << ">" <<  " = " << t.t;
+	return os << t.name << "<" << levelStr<l2>() << ">" <<  " = " << t.t;
 }
 
 template<typename T>
@@ -81,10 +84,8 @@ std::ostream & operator<<(std::ostream &os, const TemporaryMutation<T>& t){
 
 template<unsigned long long ID, Level l, typename T>
 struct MutableTemporary : public Temporary<ID, l,T> {
-	const std::string &name;
 	MutableTemporary(const std::string& name, const T& t):
-		Temporary<ID,l,T>(std::hash<std::string>()(name),t),
-		name(name){}
+		Temporary<ID,l,T>(name,t){}
 
 	bool operator()(Store &s) const {
 		typedef typename std::decay<decltype(this->t(s))>::type R;
