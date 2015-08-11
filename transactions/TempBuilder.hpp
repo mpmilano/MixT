@@ -47,7 +47,7 @@ auto find_usage(const DeclarationScope<ID2,CS>& ds){
 template<unsigned long long ID,typename CS>
 std::ostream & operator<<(std::ostream &os, const DeclarationScope<ID,CS> &t){
 	assert(t.gt);
-	os << t.name << " = " << t.gt->name;
+	os << t.name << " = " << t.gt->gets;
 	fold(t.cs,[&os](const auto &e, int) -> int
 		 {os << "  " << e << std::endl; return 0; },0);
 	return os;
@@ -68,7 +68,13 @@ struct DeclarationBuilder {
 		static_assert(is_ConStatement<T>::value,
 					  "Error: non-ConStatement found in IN.");
 		auto new_cs = std::tuple_cat(this_decl.cs,std::tuple<T>(t));
-		DeclarationScope<ID, decltype(new_cs)> new_decl(this_decl.name,pick_useful(find_usage<ID>(t), this_decl.gt), new_cs);
+		
+		DeclarationScope<ID, decltype(new_cs)>
+			new_decl(this_decl.name,
+					 (this_decl.gt ?
+					  this_decl.gt :
+					  make_shared<GeneralTemp>(find_usage<ID>(t))),
+					 new_cs);
 		DeclarationBuilder<PrevBuilder, ID, decltype(new_cs), contains_temporary<ID,T>::value || oldb>
 			r(prevBuilder,new_decl);
 		return r;

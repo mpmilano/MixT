@@ -4,7 +4,8 @@
 
 struct GeneralTemp {
 	const std::string name;
-	GeneralTemp(const std::string &n):name(n) {}
+	const std::string gets;
+	GeneralTemp(const std::string &n, const std::string &g):name(n),gets(g) {}
 };
 
 //the level here is for referencing the temporary later.
@@ -19,8 +20,8 @@ struct Temporary : public GeneralTemp, public ConStatement<get_level<T>::value> 
 
 	const T t;
 	const int id;
-	Temporary(const T& t):GeneralTemp(std::to_string(gensym())),t(t),id(std::hash<std::string>()(this->name)){}
-	Temporary(const std::string name, const T& t):GeneralTemp(name),t(t),id(std::hash<std::string>()(name)){}
+	Temporary(const T& t):GeneralTemp(std::to_string(gensym()),std::to_string(t)),t(t),id(std::hash<std::string>()(this->name)){}
+	Temporary(const std::string name, const T& t):GeneralTemp(name,std::to_string(t)),t(t),id(std::hash<std::string>()(name)){}
 	
 	auto getReadSet() const {
 		return t.getReadSet();

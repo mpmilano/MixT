@@ -267,6 +267,12 @@ std::shared_ptr<T> make_shared(T *t){
 }
 
 template<typename T>
+std::shared_ptr<T> make_shared(std::nullptr_t){
+	return std::shared_ptr<T>();
+}
+
+
+template<typename T>
 T& realmke(){
 	static T t;
 	return t;
@@ -292,7 +298,10 @@ T pick_useful(std::nullptr_t, const T& t){
 	return t;
 }
 
+/*
 template<typename T, typename U>
-T pick_useful(const U& u, const T& t){
+typename std::enable_if<!(std::is_same<T,std::nullptr_t>::value || std::is_same<T,std::nullptr_t>::value), T>::type
+	pick_useful(const U& u, const T& t){
 	return t;
 }
+//*/
