@@ -2,6 +2,7 @@
 #include "Basics.hpp"
 #include "type_utils.hpp"
 #include "ConStatement.hpp"
+#include "WhileBuilder.hpp"
 
 //this makes sure the expression (expr)
 //only references temporaries defined in the tuple

@@ -9,7 +9,7 @@
 #define if_concept(Cond,Then,Els)										\
 	{static_assert(is_ConExpr<Cond>::value, "Error: if-condition not a condition"); \
 	static_assert(is_cs_tuple<Then>::value, "Error: then-branch not a tuple of statements"); \
-	static_assert(is_cs_tuple<Then>::value, "Error: else-branch not a tuple of statements");} \
+	static_assert(is_cs_tuple<Els>::value, "Error: else-branch not a tuple of statements");} \
 
 #define if_concept_2(Cond,Then,Els)										\
 	static_assert((get_level<Cond>::value == Level::causal &&			\
