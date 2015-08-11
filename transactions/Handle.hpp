@@ -32,6 +32,12 @@ struct HandleAbbrev{
 template<Level l, HandleAccess HA>
 struct GenericHandle {};
 
+template<unsigned long long id, Level l, HandleAccess ha>
+std::nullptr_t find_usage(const GenericHandle<l,ha>&){
+	return nullptr;
+}
+
+
 template<Level l, HandleAccess HA, typename T>
 struct Handle : public GenericHandle<l,HA> {
 

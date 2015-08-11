@@ -37,15 +37,15 @@ constexpr bool is_ConExpr_f(const T*){
 
 template<typename Cls>
 struct is_ConExpr : 
-	std::integral_constant<bool, is_ConExpr_f(mke_p<Cls>()) || std::is_pod<decay<Cls> >::value>::type {};
+	std::integral_constant<bool, is_ConExpr_f(mke_p<Cls>()) || std::is_scalar<decay<Cls> >::value>::type {};
 
-template<typename Expr, restrict(is_ConExpr<Expr>::value && std::is_pod<Expr>::value)>
+template<typename Expr, restrict(is_ConExpr<Expr>::value && std::is_scalar<Expr>::value)>
 auto get_ReadSet(const Expr &){
 	return BitSet<HandleAbbrev>();
 }
 
 template<typename T>
-typename std::enable_if<is_ConStatement<T>::value && !std::is_pod<T>::value,
+typename std::enable_if<is_ConStatement<T>::value && !std::is_scalar<T>::value,
 						BitSet<HandleAbbrev> >::type get_ReadSet(const T &ce){
 	assert(&ce != nullptr);
 	return ce.getReadSet();
@@ -54,7 +54,7 @@ typename std::enable_if<is_ConStatement<T>::value && !std::is_pod<T>::value,
 
 template<typename T>
 T run_expr(const T& t){
-	static_assert(std::is_pod<T>::value,"Error: running non-POD not yet supported.  Store simpler things.");
+	static_assert(std::is_scalar<T>::value,"Error: running non-POD not yet supported.  Store simpler things.");
 	return t;
 }
 
@@ -65,7 +65,13 @@ T run_ast(const Store &s, const ConExpr<T,l>& expr) {
 }
 
 template<typename T>
-typename std::enable_if<std::is_pod<decay<T > >::value,T>::type
+typename std::enable_if<std::is_scalar<decay<T > >::value,T>::type
 run_ast(const Store &, const T& e) {
 	return e;
+}
+
+
+template<unsigned long long id, typename T>
+enable_if<std::is_scalar<T>::value, std::nullptr_t> find_usage(const T&){
+	return nullptr;
 }

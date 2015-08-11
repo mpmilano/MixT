@@ -3,25 +3,29 @@
 #include "Operation.hpp"
 #include "Operate_macros.hpp"
 
-template<Level l, typename R>
+template<Level l, typename R, typename Exprs>
 struct Operate : ConStatement<l> {
 	const int id;
 	const std::function<R (Store &)> f;
 	const BitSet<HandleAbbrev> bs;
 	const std::string name;
+	const Exprs exprs;
 	Operate(const std::function<R (Store &)>& f,
 			const BitSet<HandleAbbrev> &bs,
-			const std::string name):
+			const std::string &name,
+			const Exprs &exprs
+		):
 		id(gensym()),
 		f(f),
 		bs(bs),
-		name(name){}
+		name(name),
+		exprs(exprs){}
 
 	auto getReadSet() const {
 		return bs;
 	}
 
-	auto operator()(Store &s) const {
+	R operator()(Store &s) const {
 		s.insert(id,f);
 		s.get<std::function<R (Store &)> >(id)(s);
 
@@ -30,14 +34,20 @@ struct Operate : ConStatement<l> {
 	}
 };
 
-template<Level l, typename T>
-auto find_usage(const Operate<l,T> &){
-	assert(false && "this needs to be available in operate? geez.");
-	return nullptr;
+template<unsigned long long ID, Level l, typename T, typename Vars>
+auto find_usage(const Operate<l,T,Vars> &op){
+	return fold(op.exprs,
+				[](const auto &e, const auto &acc){
+					if (!acc){
+						return find_usage<ID>(e);
+					}
+					else return acc;
+				}
+				, nullptr);
 }
 
-template<Level l, typename i>
-std::ostream & operator<<(std::ostream &os, const Operate<l,i>& op){
+template<Level l, typename i, typename E>
+std::ostream & operator<<(std::ostream &os, const Operate<l,i,E>& op){
 	return os << op.name;
 }
 
@@ -60,7 +70,7 @@ struct PreOp<std::tuple<J...> > {
 		//TODO: I'm sure there's some rationale behind
 		//how exactly to measure this which is better.
 		static constexpr Level l = min_level<Args...>::value;
-		return Operate<l,decltype(std::get<0>(t)(run_ast(mke_store(),args)...))>
+		return Operate<l,decltype(std::get<0>(t)(run_ast(mke_store(),args)...)),decltype(std::make_tuple(args...)) >
 			([=](Store &s) mutable {
 				std::pair<bool,bool> result =
 					fold(t,[&](const auto &e, const std::pair<bool,bool> &acc){
@@ -77,7 +87,8 @@ struct PreOp<std::tuple<J...> > {
 				return result.second;
 			},
 			 BitSet<HandleAbbrev>::big_union(get_ReadSet(args)...),
-			 "This came from a tuple, so I don't know what to print"
+				"This came from a tuple, so I don't know what to print",
+				std::make_tuple(args...)
 				);
 	}
 };
