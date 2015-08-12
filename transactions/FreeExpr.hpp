@@ -4,24 +4,80 @@
 #include "type_utils.hpp"
 #include "ConExpr.hpp"
 
-template<typename T, typename... Handles>
-struct FreeExpr : public ConExpr<T, min_level<Handles...>::value > {
+template<typename T>
+struct getsT {
+	virtual T get(const Store &) = 0;
+};
 
-	//todo: idea here is that only read-only things can be done to the handles
-	//in this context.  Try to make that a reality please.
-	const std::shared_ptr<const std::tuple<Handles...> > exprs;
-	const std::shared_ptr<const std::function<T ()> > f;
+template<typename T, typename H>
+struct putT;
+
+template<typename T, typename H, HandleAccess ha, Level l>
+struct putT<T,Handle<l,ha,H> > : public getsT<T> {
+	const Handle<l,ha,H> h;
+
+	putT(const Handle<l,ha,H>&h):h(h){}
+	
+	T get(const Store &){
+		return h.get();
+	};
+};
+
+template<typename T>
+struct putT<T,T > : public getsT<T> {
+	const T t;
+
+	putT(const T&t):t(t){}
+	
+	T get(const Store &){
+		return t;
+	};
+};
+
+
+template<typename T>
+auto make_gets(const T &t){
+	auto* p = new putT<typename extract_type<T>::type, T>{t};
+	return p;
+}
+
+template<typename T>
+using gets_transform = const std::shared_ptr<const getsT<typename extract_type<T>::type > >;
+
+template<typename T, typename... Exprs>
+struct FreeExpr : public ConExpr<T, min_level<Exprs...>::value > {
+
+	//this one is just for temp-var-finding
+	const std::tuple<Exprs...> params;
+	
+	const std::tuple<gets_transform<Exprs>...> exprs;
+	const std::shared_ptr<const std::function<T (const std::tuple<gets_transform<Exprs> ...>& )> > f;
 	const std::shared_ptr<const BitSet<HandleAbbrev> > rs;
 	
 	FreeExpr(int,
-			 std::function<T (const typename extract_type<Handles>::type & ... )> f,
-			 Handles... h)
-		:exprs(heap_copy(std::make_tuple(h...))),f(new std::function<T ()>([&,f,h...](){return f(h.get()...);})),
+			 std::function<T (const typename extract_type<Exprs>::type & ... )> f,
+			 Exprs... h)
+		:params(std::make_tuple(h...)),
+		 exprs(std::make_tuple(make_gets(h)...)),
+		 f(heap_copy([=](const std::tuple<gets_transform<Exprs> ...> &t){
+					 return callFunc(f,t);
+				 })),
 		 rs(new BitSet<HandleAbbrev>(setify(h.abbrev()...)))
 		{}
 
-	T operator()(const Store &) const {
-		return (*f)();
+	T operator()(Store &s) const {
+		decltype(exprs) new_exprs =
+			fold(exprs,
+				 [&s](const auto &e, const auto &acc){
+					 typedef decltype(e->gets(s)) T2;
+					 typedef const std::shared_ptr<const getsT<T2> > nt;
+					 nt n = putT<T2,T2>{e->gets(s)};
+					 return tuple_cons(n ,acc);
+				 },
+				 std::tuple<>()
+				);
+		assert(false);
+
 	}
 
 	BitSet<HandleAbbrev> getReadSet() const {
@@ -29,7 +85,7 @@ struct FreeExpr : public ConExpr<T, min_level<Handles...>::value > {
 	}
 	
 	template<typename F>
-	FreeExpr(F f, Handles... h):FreeExpr(0, convert(f), h...){}
+	FreeExpr(F f, Exprs... h):FreeExpr(0, convert(f), h...){}
 };
 
 template<typename T, typename... H>
@@ -37,7 +93,7 @@ struct is_ConExpr<FreeExpr<T,H...> > : std::true_type {};
 
 template<unsigned long long ID, typename T, typename... Vars>
 auto find_usage(const FreeExpr<T,Vars...> &op){
-	return fold(*op.exprs,
+	return fold(op.params,
 				[](const auto &e, const auto &acc){
 					if (!acc){
 						return find_usage<ID>(e);

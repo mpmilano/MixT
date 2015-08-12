@@ -12,7 +12,7 @@ typedef Level Level;
 
 template<typename T, Level l>
 struct ConExpr : public ConStatement<l> {
-	virtual T operator()(const Store &s) const = 0;
+	const int id = gensym();
 };
 
 template<Level l>
