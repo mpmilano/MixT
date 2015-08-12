@@ -25,6 +25,7 @@ struct While : public ConStatement<min_level<Then>::value> {
 	typedef Cond Cond_t;
 	const Cond cond;
 	const Then then;
+	const int id = gensym();
 
 	While(const Cond& cond, const Then& then):
 		cond(cond),then(then)

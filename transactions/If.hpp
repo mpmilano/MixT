@@ -28,6 +28,7 @@ struct If : public ConStatement<min_level<typename min_level<Then>::type,
 	const Cond cond;
 	const Then then;
 	const Els els;
+	const int id = gensym();
 
 	If(const Cond& cond, const Then& then, const Els &els):
 		cond(cond),then(then),els(els)

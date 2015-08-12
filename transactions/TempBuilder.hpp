@@ -8,6 +8,7 @@ struct DeclarationScope : public ConStatement<l>{
 	const std::string name;
 	const std::shared_ptr<const GeneralTemp > gt;
 	const CS cs;
+	const int id = gensym();
 	
 	template<typename Ptr>
 	DeclarationScope(const std::string &name, const Ptr &gt, const CS &cs)
