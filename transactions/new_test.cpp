@@ -5,6 +5,7 @@
 #include "FileStore.hpp"
 #include "Operate.hpp"
 #include "TempBuilder.hpp"
+#include "FreeExpr.hpp"
 #include "Transaction_macros.hpp"
 
 int main(){
@@ -25,7 +26,7 @@ int main(){
 			IF (tmp) THEN(
 				do_op(Insert,num_dir,42)
 				),
-			tmp = false;,
+			tmp = free_expr(bool,num_dir, num_dir.empty());,
 			WHILE (!tmp) DO (dummy1;),
 			IF (isValid(num_dir)) THEN (dummy1;)
 			)

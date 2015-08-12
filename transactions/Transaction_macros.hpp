@@ -6,7 +6,7 @@
 /*#define TRANS_CONS(x...) { auto prev2 = append(prev, curr);	\
 	{ auto prev = prev2; { x } } }
 */
-#define TRANS_CONS(x...) {auto curr = x { auto prev2 = append(prev,curr); { auto prev = prev2;
+#define TRANS_CONS(x...) {auto curr = x ;{ auto prev2 = append(prev,curr); { auto prev = prev2;
 #define STANDARD_BEGIN(x...) (x);
 
 #define END_TRANSACTION Transaction ____transaction(prev); std::cout << ____transaction << std::endl << "all done printing" << std::endl; ____transaction();
