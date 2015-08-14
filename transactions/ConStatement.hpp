@@ -94,7 +94,18 @@ struct is_cs_tuple : std::integral_constant<bool,
 
 
 template<typename... CS>
-auto call_all(Store &st, const std::tuple<CS...> &t){
-	return fold(t,[&st](const auto &e, bool b)
-				{return b && e(st);},true);
+auto call_all_causal(Store &cache, Store &st, const std::tuple<CS...> &t){
+	bool check = fold(t,[&cache,&st](const auto &e, bool b)
+					  {return b && e.causalCall(cache,st);},true);
+	assert(check);
+	return check;
+}
+
+
+template<typename... CS>
+auto call_all_strong(Store &cache, Store &st, const std::tuple<CS...> &t){
+	bool check = fold(t,[&cache,&st](const auto &e, bool b)
+					  {return b && e.strongCall(cache,st);},true);
+	assert(check);
+	return check;
 }

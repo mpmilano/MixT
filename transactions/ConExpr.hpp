@@ -13,12 +13,17 @@ typedef Level Level;
 template<typename T, Level l>
 struct ConExpr : public ConStatement<l> {
 	const int id = gensym();
+	typename std::conditional<l == Level::strong, T, void>::type
+	strongCall(Store&, const Store&) const = 0;
+	T causalCall(Store&, const Store&) const = 0;
 };
 
 template<Level l>
 struct DummyConExpr : public ConExpr<void,l> {
 
-	void operator()(const Store &) const {}
+	void strongCall()(Store&, const Store &) const {}
+
+	void causalCall()(Store&, const Store &) const {}
 	
 	BitSet<HandleAbbrev> getReadSet() const {
 		return BitSet<HandleAbbrev>();
@@ -51,22 +56,25 @@ typename std::enable_if<is_ConStatement<T>::value && !std::is_scalar<T>::value,
 	return ce.getReadSet();
 }
 
-
-template<typename T>
-T run_expr(const T& t){
-	static_assert(std::is_scalar<T>::value,"Error: running non-POD not yet supported.  Store simpler things.");
-	return t;
-}
-
-//TODO: this is redundant with the older run_expr?
 template<Level l, typename T>
-T run_ast(const Store &s, const ConExpr<T,l>& expr) {
-	return expr(s);
+T run_ast_strong(Store &c, const Store &s, const ConExpr<T,l>& expr) {
+	return expr.strongCall(c,s);
 }
 
 template<typename T>
 typename std::enable_if<std::is_scalar<decay<T > >::value,T>::type
-run_ast(const Store &, const T& e) {
+run_ast_strong(const Store &, const T& e) {
+	return e;
+}
+
+template<Level l, typename T>
+T run_ast_causal(Store &c, const Store &s, const ConExpr<T,l>& expr) {
+	return expr.causalCall(c,s);
+}
+
+template<typename T>
+typename std::enable_if<std::is_scalar<decay<T > >::value,T>::type
+run_ast_causal(const Store &, const T& e) {
 	return e;
 }
 

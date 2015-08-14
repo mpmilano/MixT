@@ -43,11 +43,30 @@ struct If : public ConStatement<min_level<typename min_level<Then>::type,
 		return 0;
 	}
 
-	bool operator()(Store &s) const {
+	bool strongCall(Store &c, Store &s) const {
+		std::integral_constant<bool,get_level<Cond>::value == Level::strong>*
+			choice{nullptr};
+		return strongCall(c,s,choice);
+	}
+
+	bool strongCall(Store &c, Store &s, const std::true_type*) const {
 		static_assert(!is_ConStatement<decltype(run_ast(s,cond))>::value);
 		static_assert(!is_ConStatement<decltype(call_all(s,then))>::value);
-		return (run_ast(s,cond) ? call_all(s,then) : call_all(s,els));
+		return (run_ast_strong(s,cond) ? call_all_strong(s,then) : call_all_strong(s,els));
 	}
+
+	//just caching can happen here;
+	//any mutative action would violate information flow.
+	bool strongCall(Store &c, const Store &s, const std::false_type*) const {
+		run_ast_strong(s,cond);
+		return (call_all_strong(s,then) &&
+				call_all_strong(s,els));
+	}
+	
+	bool causalCall(Store &c, Store &s) const {
+		return (run_ast_causal(s,cond) ? call_all_causal(s,then) : call_all_causal(s,els));
+	}
+	
 };
 
 template<unsigned long long ID, typename Cond, typename Then, typename Els>

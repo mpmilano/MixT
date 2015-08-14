@@ -21,11 +21,6 @@ int main(){
 		num_dir.get(); //just to see if it'll crash
 	}
 
-	{
-		Store s;
-		free_expr(bool,num_dir, num_dir.empty())(s);
-	}
-
 	TRANSACTION(
 		let_mutable(tmp) = true IN (
 			IF (tmp) THEN(

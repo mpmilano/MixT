@@ -9,7 +9,7 @@ struct FreeExpr : public ConExpr<T, min_level<Exprs...>::value > {
 
 	//this one is just for temp-var-finding
 	const std::tuple<Exprs...> params;
-	const std::function<T (Store &, const Store&, const std::tuple<Exprs ...>& )> f;
+	const std::function<T (const Store&, const std::tuple<Exprs ...>& )> f;
 	const BitSet<HandleAbbrev> rs;
 	static constexpr Level level = min_level<Exprs...>::value;
 	
@@ -17,9 +17,9 @@ struct FreeExpr : public ConExpr<T, min_level<Exprs...>::value > {
 			 std::function<T (const typename extract_type<Exprs>::type & ... )> f,
 			 Exprs... h)
 		:params(std::make_tuple(h...)),
-		 f([=](Store &c, const Store &s, const std::tuple<Exprs...> &t){
+		 f([=](const Store &c, const std::tuple<Exprs...> &t){
 				 auto retrieved = fold(t,
-									   [&](const auto &e, const auto &acc){return tuple_cons(e(c,s),acc);}
+									   [&](const auto &e, const auto &acc){return tuple_cons(cached(c,e),acc);}
 									   ,std::tuple<>());
 				 return callFunc(f,retrieved);
 			 }),
@@ -32,7 +32,9 @@ struct FreeExpr : public ConExpr<T, min_level<Exprs...>::value > {
 	}	
 
 	T strongCall(Store &cache, const Store &heap, std::true_type*) const{
-		auto ret = f(cache,heap,params);
+		std::false_type* false_t(nullptr);
+		strongCall(false_t);
+		auto ret = f(cache,params);
 		cache.insert(this->id,ret);
 		return ret;
 	}
@@ -43,12 +45,19 @@ struct FreeExpr : public ConExpr<T, min_level<Exprs...>::value > {
 				return false;},false);
 	}
 
-	template<restrict(level == Level::causal)>
-	auto causalCall(Store &cache, const Store &heap) const {
-		return f(cache,heap,params);
+	auto causalCall(Store &cache, const Store &heap){
+		std::integral_constant<bool,level==Level::causal>* choice = nullptr;
+		return causalCall(cache,heap,choice);
+	}	
+
+	auto causalCall(Store &cache, const Store &heap, std::true_type*) const {
+		fold(params,[&](const auto &e, bool){
+				e.causalCall(cache,heap);
+				return false;},false);
+		return f(cache,params);
 	}
 
-	enable_if<level == Level::strong, T> causalCall(Store &cache, const Store &heap) const {
+	T causalCall(Store &cache, const Store &heap, std::false_type*) const {
 		assert(cache.contains(this->id));
 		return cache.get<T>(this->id);
 	}
@@ -90,11 +99,6 @@ struct contains_temporary<ID, FreeExpr<T,Exprs...> > : contains_temp_fold<ID,std
 template<typename i, typename... E>
 std::ostream & operator<<(std::ostream &os, const FreeExpr<i,E...>& op){
 	return os << " apparently you can't print functions ";
-}
-
-template<typename T, typename... Handles>
-T run_expr(FreeExpr<T, Handles...> fe){
-	return fe();
 }
 
 
