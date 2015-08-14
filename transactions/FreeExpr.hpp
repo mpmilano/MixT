@@ -4,16 +4,17 @@
 #include "type_utils.hpp"
 #include "ConExpr.hpp"
 
-template<typename T>
+template<Level l, typename T>
 struct getsT {
 	virtual T get(const Store &) const = 0;
+	static constexpr Level level = l;
 };
 
-template<typename T, typename H>
+template<Level, typename T, typename H>
 struct putT;
 
 template<typename T, typename H, HandleAccess ha, Level l>
-struct putT<T,Handle<l,ha,H> > : public getsT<T> {
+struct putT<l,T,Handle<l,ha,H> > : public getsT<l,T> {
 	const Handle<l,ha,H> h;
 
 	putT(const Handle<l,ha,H>&h):h(h){}
@@ -23,8 +24,8 @@ struct putT<T,Handle<l,ha,H> > : public getsT<T> {
 	};
 };
 
-template<typename T>
-struct putT<T,T > : public getsT<T> {
+template<Level l, typename T>
+struct putT<l,T,T > : public getsT<l,T> {
 	const T t;
 
 	putT(const T&t):t(t){}
@@ -37,12 +38,12 @@ struct putT<T,T > : public getsT<T> {
 
 template<typename T>
 auto make_gets(const T &t){
-	auto* p = new putT<typename extract_type<T>::type, T>{t};
+	auto* p = new putT<get_level<T>::value, typename extract_type<T>::type, T>{t};
 	return p;
 }
 
 template<typename T>
-using gets_transform = const std::shared_ptr<const getsT<typename extract_type<T>::type > >;
+using gets_transform = const std::shared_ptr<const getsT<get_level<T>::value, typename extract_type<T>::type > >;
 
 template<typename T, typename... Exprs>
 struct FreeExpr : public ConExpr<T, min_level<Exprs...>::value > {
@@ -53,6 +54,7 @@ struct FreeExpr : public ConExpr<T, min_level<Exprs...>::value > {
 	const std::tuple<gets_transform<Exprs>...> exprs;
 	const std::shared_ptr<const std::function<T (const Store&, const std::tuple<gets_transform<Exprs> ...>& )> > f;
 	const std::shared_ptr<const BitSet<HandleAbbrev> > rs;
+	const int id = gensym();
 	
 	FreeExpr(int,
 			 std::function<T (const typename extract_type<Exprs>::type & ... )> f,
@@ -69,18 +71,30 @@ struct FreeExpr : public ConExpr<T, min_level<Exprs...>::value > {
 		{}
 
 	T operator()(Store &s) const {
-		decltype(exprs) new_exprs =
-			fold(exprs,
-				 [&s](const auto &e, const auto &acc){
-					 typedef decltype(e->gets(s)) T2;
-					 typedef const std::shared_ptr<const getsT<T2> > nt;
-					 nt n = putT<T2,T2>{e->gets(s)};
-					 return tuple_cons(n ,acc);
-				 },
-				 std::tuple<>()
-				);
-		assert(false);
+		{
+			decltype(exprs) new_exprs =
+				fold(exprs,
+					 [&s](const auto &e, const auto &acc){
+						 if (e->level == Level::strong){
+							 typedef decltype(e->get(s)) T2;
+							 constexpr Level l = decay<decltype(*e)>::level;
+							 typedef const std::shared_ptr<const getsT<l,T2> > nt;
+							 nt n(heap_copy(putT<l,T2,T2>{e->get(s)}));
+							 return tuple_cons(n ,acc);
+						 }
+						 else return tuple_cons(e,acc);
+					 },
+					 std::tuple<>()
+					);
+			s.insert(id,new_exprs);
+		}
 
+		//some time later
+
+		{
+			const decltype(exprs) &new_exprs = s.get<decltype(exprs)>(id);
+			return (*f)(s,new_exprs);
+		}
 	}
 
 	BitSet<HandleAbbrev> getReadSet() const {

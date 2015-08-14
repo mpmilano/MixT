@@ -141,6 +141,7 @@ struct Store : std::map<int,std::unique_ptr<void*> >{
 		assert(ret);
 		return *ret;
 	}
+
 };
 
 const Store& mke_store(){
