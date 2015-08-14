@@ -4,99 +4,63 @@
 #include "type_utils.hpp"
 #include "ConExpr.hpp"
 
-template<Level l, typename T>
-struct getsT {
-	virtual T get(const Store &) const = 0;
-	static constexpr Level level = l;
-};
-
-template<Level, typename T, typename H>
-struct putT;
-
-template<typename T, typename H, HandleAccess ha, Level l>
-struct putT<l,T,Handle<l,ha,H> > : public getsT<l,T> {
-	const Handle<l,ha,H> h;
-
-	putT(const Handle<l,ha,H>&h):h(h){}
-	
-	T get(const Store &) const {
-		return h.get();
-	};
-};
-
-template<Level l, typename T>
-struct putT<l,T,T > : public getsT<l,T> {
-	const T t;
-
-	putT(const T&t):t(t){}
-	
-	T get(const Store &) const {
-		return t;
-	};
-};
-
-
-template<typename T>
-auto make_gets(const T &t){
-	auto* p = new putT<get_level<T>::value, typename extract_type<T>::type, T>{t};
-	return p;
-}
-
-template<typename T>
-using gets_transform = const std::shared_ptr<const getsT<get_level<T>::value, typename extract_type<T>::type > >;
-
 template<typename T, typename... Exprs>
 struct FreeExpr : public ConExpr<T, min_level<Exprs...>::value > {
 
 	//this one is just for temp-var-finding
 	const std::tuple<Exprs...> params;
-	
-	const std::tuple<gets_transform<Exprs>...> exprs;
-	const std::shared_ptr<const std::function<T (const Store&, const std::tuple<gets_transform<Exprs> ...>& )> > f;
-	const std::shared_ptr<const BitSet<HandleAbbrev> > rs;
-	const int id = gensym();
+	const std::function<T (Store &, const Store&, const std::tuple<Exprs ...>& )> f;
+	const BitSet<HandleAbbrev> rs;
+	static constexpr Level level = min_level<Exprs...>::value;
 	
 	FreeExpr(int,
 			 std::function<T (const typename extract_type<Exprs>::type & ... )> f,
 			 Exprs... h)
 		:params(std::make_tuple(h...)),
-		 exprs(std::make_tuple(make_gets(h)...)),
-		 f(heap_copy(convert([=](const Store &s, const std::tuple<gets_transform<Exprs> ...> &t){
-					 auto retrieved = fold(t,
-										   [&s](const auto &e, const auto &acc){return tuple_cons(e->get(s),acc);}
-										   ,std::tuple<>());
-					 return callFunc(f,retrieved);
-					 }))),
-		 rs(new BitSet<HandleAbbrev>(setify(h.abbrev()...)))
+		 f([=](Store &c, const Store &s, const std::tuple<Exprs...> &t){
+				 auto retrieved = fold(t,
+									   [&](const auto &e, const auto &acc){return tuple_cons(e(c,s),acc);}
+									   ,std::tuple<>());
+				 return callFunc(f,retrieved);
+			 }),
+		 rs(setify(h.abbrev()...))
 		{}
 
-	T operator()(Store &s) const {
-		{
-			decltype(exprs) new_exprs =
-				fold(exprs,
-					 [&s](const auto &e, const auto &acc){
-						 if (e->level == Level::strong){
-							 typedef decltype(e->get(s)) T2;
-							 constexpr Level l = decay<decltype(*e)>::level;
-							 typedef const std::shared_ptr<const getsT<l,T2> > nt;
-							 nt n(heap_copy(putT<l,T2,T2>{e->get(s)}));
-							 return tuple_cons(n ,acc);
-						 }
-						 else return tuple_cons(e,acc);
-					 },
-					 std::tuple<>()
-					);
-			s.insert(id,new_exprs);
-		}
+	auto strongCall(Store &cache, const Store &heap){
+		std::integral_constant<bool,level==Level::strong>* choice = nullptr;
+		return strongCall(cache,heap,choice);
+	}	
 
-		//some time later
-
-		{
-			const decltype(exprs) &new_exprs = s.get<decltype(exprs)>(id);
-			return (*f)(s,new_exprs);
-		}
+	T strongCall(Store &cache, const Store &heap, std::true_type*) const{
+		auto ret = f(cache,heap,params);
+		cache.insert(this->id,ret);
+		return ret;
 	}
 
+	void strongCall(Store &cache, const Store &heap,std::false_type*) const{
+		fold(params,[&](const auto &e, bool){
+				e.strongCall(cache,heap);
+				return false;},false);
+	}
+
+	template<restrict(level == Level::causal)>
+	auto causalCall(Store &cache, const Store &heap) const {
+		return f(cache,heap,params);
+	}
+
+	enable_if<level == Level::strong, T> causalCall(Store &cache, const Store &heap) const {
+		assert(cache.contains(this->id));
+		return cache.get<T>(this->id);
+	}
+
+	T operator()(Store &c, const Store &s) const {
+		if (level == Level::strong) return strongCall(c,s);
+		else {
+			strongCall(c,s);
+			return causalCall(c,s);
+		}
+	}
+	
 	BitSet<HandleAbbrev> getReadSet() const {
 		return *rs;
 	}
