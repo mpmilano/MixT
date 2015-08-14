@@ -6,7 +6,7 @@
 
 template<typename T>
 struct getsT {
-	virtual T get(const Store &) = 0;
+	virtual T get(const Store &) const = 0;
 };
 
 template<typename T, typename H>
@@ -18,7 +18,7 @@ struct putT<T,Handle<l,ha,H> > : public getsT<T> {
 
 	putT(const Handle<l,ha,H>&h):h(h){}
 	
-	T get(const Store &){
+	T get(const Store &) const {
 		return h.get();
 	};
 };
@@ -29,7 +29,7 @@ struct putT<T,T > : public getsT<T> {
 
 	putT(const T&t):t(t){}
 	
-	T get(const Store &){
+	T get(const Store &) const {
 		return t;
 	};
 };
@@ -51,7 +51,7 @@ struct FreeExpr : public ConExpr<T, min_level<Exprs...>::value > {
 	const std::tuple<Exprs...> params;
 	
 	const std::tuple<gets_transform<Exprs>...> exprs;
-	const std::shared_ptr<const std::function<T (const std::tuple<gets_transform<Exprs> ...>& )> > f;
+	const std::shared_ptr<const std::function<T (const Store&, const std::tuple<gets_transform<Exprs> ...>& )> > f;
 	const std::shared_ptr<const BitSet<HandleAbbrev> > rs;
 	
 	FreeExpr(int,
@@ -59,9 +59,12 @@ struct FreeExpr : public ConExpr<T, min_level<Exprs...>::value > {
 			 Exprs... h)
 		:params(std::make_tuple(h...)),
 		 exprs(std::make_tuple(make_gets(h)...)),
-		 f(heap_copy([=](const std::tuple<gets_transform<Exprs> ...> &t){
-					 return callFunc(f,t);
-				 })),
+		 f(heap_copy(convert([=](const Store &s, const std::tuple<gets_transform<Exprs> ...> &t){
+					 auto retrieved = fold(t,
+										   [&s](const auto &e, const auto &acc){return tuple_cons(e->get(s),acc);}
+										   ,std::tuple<>());
+					 return callFunc(f,retrieved);
+					 }))),
 		 rs(new BitSet<HandleAbbrev>(setify(h.abbrev()...)))
 		{}
 
