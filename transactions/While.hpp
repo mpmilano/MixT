@@ -50,31 +50,64 @@ struct While : public ConStatement<min_level<Then>::value> {
 		return strongCall(c,s,choice);
 	}
 
-	bool strongCall(Store &c_old, Store &s, const std::true_type*,const std::true_type*) const {
+	bool strongCall(Store &c, Store &s, const std::true_type*,const std::true_type*) const {
 		//nothing causal in this while loop. Do it all at once.
-		while (run_ast_strong(s,cond)) call_all_strong(s,then);
-		
-		return (run_ast_strong(s,cond) ? call_all_strong(s,then) : call_all_strong(s,els));
+		while (run_ast_strong(c,s,cond)) call_all_strong(c,s,then);
+
+		//TODO: error propogation;
+		return true;
 	}
 
-	bool strongCall(Store &c, const Store &s, const std::true_type*, const std::false_type*) const {
+	bool strongCall(Store &c_old, Store &s, const std::true_type*, const std::false_type*) const {
 		//the "hard" case, if you will. a strong condition, but some causal statements inside.
-		Store *c = &c_old;
-		while(run_ast_strong(s,cond)){
-		}		
+		s.emplace<std::list<std::unique_ptr<Store> > >(id);
+		
+		auto &store_stack = s.get<std::list<std::unique_ptr<Store> > >(id);
+		
+		while(run_ast_strong(*store_stack.back(),s,cond)){
+			store_stack.emplace_back(new Store(&c_old));
+			call_all_strong(*store_stack.back(),s,then);
+		}
+
+		//TODO: error propogation
+		return true;
 	}
 
 	bool strongCall(Store &c, const Store &s, const std::false_type*, const std::false_type*) const {
 		//there aren't any strong mutative things in here.
-		//TODO: if I ban anti-dependencies? 
+		//what if there are strong references?
+		//they can't be mutative,
+		//but FreeExprs could be written such that they depend on the iteration of the loops.
+		//example:
+		/*
+		  causal<int> guard = 0;
+		  while(guard < 20){
+		    if (free_expr(strong_handle,guard,strong_handle.get(guard))){
+			  do_op(Log_action,causal_handle);
+			}
+		  }
+		 */
+		//this is fine, however; the FreeExpr itself would be causal, which means
+		//that its strong-execution behaviour would just cache its strong arguments,
+		//which in this case is exactly what we want.
+		run_ast_strong(c,s,cond);
+		return call_all_strong(c,s,then);
 	}
 	
-	bool causalCall(Store &c, Store &s) const {
+	bool causalCall(Store &c_old, Store &s) const {
 		//if there's a cache for this AST node, then
 		//that means we've already run the condition.
 		//look it up!
+		if (c_old.contains(id)){
+			for (auto &c : c_old.get<std::list<std::unique_ptr<Store> > >(id)){
+				call_all_causal(*c,s,then);
+			}
+		}
+		else {
+			//causal condition, so nothing interesting here.
+			while(run_ast_causal(c_old,s,cond)) call_all_causal(c_old,s,then);
+		}
 	}
-
 	
 };
 

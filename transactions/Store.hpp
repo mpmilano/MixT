@@ -23,6 +23,11 @@ struct Store : std::map<int,std::unique_ptr<void*> >{
 	}
 
 	template<typename T>
+	auto emplace(int i){
+		return (*this)[i].reset(new T());
+	}
+
+	template<typename T>
 	T& get(int i){
 		if (!contains(i) && prev_scope)
 			return prev_scope->get(i);
