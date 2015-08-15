@@ -61,14 +61,6 @@ struct FreeExpr : public ConExpr<T, min_level<Exprs...>::value > {
 		assert(cache.contains(this->id));
 		return cache.get<T>(this->id);
 	}
-
-	T operator()(Store &c, const Store &s) const {
-		if (level == Level::strong) return strongCall(c,s);
-		else {
-			strongCall(c,s);
-			return causalCall(c,s);
-		}
-	}
 	
 	BitSet<HandleAbbrev> getReadSet() const {
 		return *rs;

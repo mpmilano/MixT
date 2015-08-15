@@ -15,7 +15,7 @@
 				   max_level<Then>::value == Level::causal)				\
 				  ||													\
 				  (get_level<Cond>::value == Level::strong),			\
-				  "Error: implicit flow found in IF.")
+				  "Error: implicit flow found in While.")
 
 
 template<typename Cond, typename Then>
@@ -39,11 +39,43 @@ struct While : public ConStatement<min_level<Then>::value> {
 		//return set_union(get_ReadSet(cond),then.getReadSet(),els.getReadSet());
 		return 0;
 	}
-
-	bool operator()(Store &s) const {
+	
+	bool strongCall(Store &c, Store &s) const {
 		static_assert(!is_ConStatement<decltype(run_ast(s,cond))>::value);
-		return (false && "TODO");
+		static_assert(!is_ConStatement<decltype(call_all(s,then))>::value);
+		std::integral_constant<bool,get_level<Cond>::value == Level::strong>*
+			choice1{nullptr};
+		std::integral_constant<bool,min_level<Then>::value == Level::strong>*
+			choice2{nullptr};
+		return strongCall(c,s,choice);
 	}
+
+	bool strongCall(Store &c_old, Store &s, const std::true_type*,const std::true_type*) const {
+		//nothing causal in this while loop. Do it all at once.
+		while (run_ast_strong(s,cond)) call_all_strong(s,then);
+		
+		return (run_ast_strong(s,cond) ? call_all_strong(s,then) : call_all_strong(s,els));
+	}
+
+	bool strongCall(Store &c, const Store &s, const std::true_type*, const std::false_type*) const {
+		//the "hard" case, if you will. a strong condition, but some causal statements inside.
+		Store *c = &c_old;
+		while(run_ast_strong(s,cond)){
+		}		
+	}
+
+	bool strongCall(Store &c, const Store &s, const std::false_type*, const std::false_type*) const {
+		//there aren't any strong mutative things in here.
+		//TODO: if I ban anti-dependencies? 
+	}
+	
+	bool causalCall(Store &c, Store &s) const {
+		//if there's a cache for this AST node, then
+		//that means we've already run the condition.
+		//look it up!
+	}
+
+	
 };
 
 template<unsigned long long ID, typename Cond, typename Then>

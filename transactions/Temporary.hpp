@@ -141,13 +141,20 @@ template<unsigned long long id, Level l, typename T, typename Temp>
 struct RefTemporary : public ConExpr<decltype(run_ast(mke_store(), *mke_p<T>())),l> {
 	const Temp t;
 	const std::string name;
+
+	//Note: this ID will change
+	//every time we copy this class.
+	//every copy should have a unique ID.
+	const int local_id = gensym();
 	RefTemporary(const Temporary<id,l,T> &t):t(t),name(std::string("__x") + std::to_string(t.id))
 		{static_assert(std::is_same<Temporary<id,l,T>, Temp>::value,
-					   "Error: wrong constructor used for RT");}	
+					   "Error: wrong constructor used for RT");}
 
 	RefTemporary(const MutableTemporary<id,l,T> &t):t(t),name(t.name)
 		{static_assert(std::is_same<MutableTemporary<id,l,T>, Temp>::value,
 					   "Error: wrong constructor used for RT");}
+
+	RefTemporary(const RefTemporary& rt):t(rt.t),name(rt.name),local_id(gensym()){}
 
 	auto getReadSet() const {
 		return t.getReadSet();

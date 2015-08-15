@@ -8,6 +8,7 @@
 #include <iostream>
 #include "../BitSet.hpp"
 #include "Handle.hpp"
+#include "Store.hpp"
 
 
 template<Level l>
