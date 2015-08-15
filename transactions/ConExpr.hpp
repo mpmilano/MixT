@@ -85,7 +85,7 @@ void run_ast_causal(Store &, const Store &, const Handle<Level::strong,ha,T>& ) 
 template<HandleAccess ha, typename T>
 T run_ast_causal(Store &, const Store &, const Handle<Level::causal,ha,T>& t) {
 	return t.get();
-} 
+}
 
 
 template<Level l, typename T>
