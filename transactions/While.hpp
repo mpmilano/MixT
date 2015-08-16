@@ -12,7 +12,7 @@
 
 #define while_concept_2(Cond,Then)										\
 	static_assert((get_level<Cond>::value == Level::causal &&			\
-				   max_level<Then>::value == Level::causal)				\
+				   max_level<Then>::value == Level::causal && false)	\
 				  ||													\
 				  (get_level<Cond>::value == Level::strong),			\
 				  "Error: implicit flow found in While.")
