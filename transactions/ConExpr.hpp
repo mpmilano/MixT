@@ -21,9 +21,9 @@ struct ConExpr : public ConStatement<l> {
 template<Level l>
 struct DummyConExpr : public ConExpr<void,l> {
 
-	void strongCall()(Store&, const Store &) const {}
+	void strongCall(Store&, const Store &) const {}
 
-	void causalCall()(Store&, const Store &) const {}
+	void causalCall(Store&, const Store &) const {}
 	
 	BitSet<HandleAbbrev> getReadSet() const {
 		return BitSet<HandleAbbrev>();

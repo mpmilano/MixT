@@ -197,6 +197,7 @@ using Right = typename _Right<T>::type;
 
 int gensym() {
 	static int counter = 0;
+	assert(counter < (std::numeric_limits<int>::max() - 1));
 	return ++counter;
 }
 

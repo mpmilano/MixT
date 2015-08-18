@@ -1,4 +1,3 @@
-
 #pragma once
 #include "Operation.hpp"
 #include "Operate_macros.hpp"
@@ -10,7 +9,7 @@ struct Operate : ConStatement<l> {
 	const BitSet<HandleAbbrev> bs;
 	const std::string name;
 	const Exprs exprs;
-	Operate(const std::function<R (Store &)>& f,
+	Operate(const std::function<R (const Store&)>& f,
 			const BitSet<HandleAbbrev> &bs,
 			const std::string &name,
 			const Exprs &exprs
@@ -25,12 +24,46 @@ struct Operate : ConStatement<l> {
 		return bs;
 	}
 
-	R operator()(Store &s) const {
-		s.insert(id,f);
-		s.get<std::function<R (Store &)> >(id)(s);
+	auto strongCall(Store &cache, const Store &){
+		std::integral_constant<bool,l==Level::strong>* choice = nullptr;
+		return strongCall(cache,choice);
+	}
 
-		//TODO: expose failure chances? 
-		return true;
+	R strongCall(Store &cache, std::true_type*){
+		//nothing causal, just do it all at once
+		auto f2 = f; //need mutability, so can't be const copy.
+		auto ret = f2(cache);
+		cache.insert(id,ret);
+		return ret;
+	}
+
+	void strongCall(Store &cache, std::false_type*){
+		//execute the strong expressions now. Remember they are supposed to be
+		//self-caching
+		fold(exprs,[&](const auto &e, bool){
+				e.strongCall(cache,s);
+				return false;},false);
+	}
+
+
+	auto causalCall(Store &cache, const Store &heap){
+		std::integral_constant<bool,l==Level::causal>* choice = nullptr;
+		return causalCall(cache,heap,choice);
+	}	
+
+	auto causalCall(Store &cache, const Store &heap, std::true_type*) const {
+		//the function f assumes that absolutely everything will already be cached.
+		//thus, we cannot call it until that's true.
+		fold(exprs,[&](const auto &e, bool){
+				e.causalCall(cache,heap);
+				return false;},false);
+		return f(cache);
+	}
+
+	R causalCall(Store &cache, const Store &, std::false_type*) const {
+		//we were pure-strong, which means we're also already cached.
+		assert(cache.contains(this->id));
+		return cache.get<R>(this->id);
 	}
 };
 
@@ -57,13 +90,6 @@ std::ostream & operator<<(std::ostream &os, const Operate<l,i,E>& op){
 template<typename T>
 struct PreOp;
 
-
-template<typename T, restrict(is_handle<decay<T> >::value)>
-auto run_ast(const Store &, T && t) {
-	return std::forward<T>(t);
-}
-
-
 template<typename... J>
 struct PreOp<std::tuple<J...> > {
 	const std::tuple<J...> t;
@@ -74,7 +100,7 @@ struct PreOp<std::tuple<J...> > {
 		//how exactly to measure this which is better.
 		static constexpr Level l = min_level<Args...>::value;
 		return Operate<l,decltype(std::get<0>(t)(run_ast(mke_store(),args)...)),decltype(std::make_tuple(args...)) >
-			([=](Store &s) mutable {
+			([=](const Store &c) mutable {
 				std::pair<bool,bool> result =
 					fold(t,[&](const auto &e, const std::pair<bool,bool> &acc){
 							if (acc.first || !e.built_well) {
@@ -82,8 +108,7 @@ struct PreOp<std::tuple<J...> > {
 							}
 							else {
 								assert(e.built_well);
-								//static auto _run_ast = [&](auto && e){return run_ast(s,e);};
-								return std::pair<bool,bool>(true,e(run_ast(s,args)...));
+								return std::pair<bool,bool>(true,e(cached(c,args)...));
 							}
 						},std::pair<bool,bool>(false,false));
 				assert(result.first && "Error: found no function to call");

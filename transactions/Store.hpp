@@ -30,7 +30,7 @@ struct Store : std::map<int,std::unique_ptr<void*> >{
 	template<typename T>
 	T& get(int i){
 		if (!contains(i) && prev_scope)
-			return prev_scope->get(i);
+			return prev_scope->get<T>(i);
 		T* ret = (T*) (this->at(i).get());
 		assert(ret);
 		return *ret;
@@ -39,7 +39,7 @@ struct Store : std::map<int,std::unique_ptr<void*> >{
 	template<typename T>
 	const T& get(int i) const{
 		if (!contains(i) && prev_scope)
-			return prev_scope->get(i);
+			return prev_scope->get<T>(i);
 		T* ret = (T*) (this->at(i).get());
 		assert(ret);
 		return *ret;

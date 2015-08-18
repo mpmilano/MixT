@@ -5,6 +5,7 @@
 #include "CommonExprs.hpp"
 #include "Operate.hpp"
 #include <iostream>
+#include <list>
 
 #define while_concept(Cond,Then)										\
 	{static_assert(is_ConExpr<Cond>::value, "Error: while-condition not a condition"); \
@@ -47,7 +48,7 @@ struct While : public ConStatement<min_level<Then>::value> {
 			choice1{nullptr};
 		std::integral_constant<bool,min_level<Then>::value == Level::strong>*
 			choice2{nullptr};
-		return strongCall(c,s,choice);
+		return strongCall(c,s,choice1,choice2);
 	}
 
 	bool strongCall(Store &c, Store &s, const std::true_type*,const std::true_type*) const {
