@@ -13,9 +13,9 @@ typedef Level Level;
 template<typename T, Level l>
 struct ConExpr : public ConStatement<l> {
 	const int id = gensym();
-	typename std::conditional<l == Level::strong, T, void>::type
-	strongCall(Store&, const Store&) const = 0;
-	T causalCall(Store&, const Store&) const = 0;
+	//typename std::conditional<l == Level::strong, T, void>::type
+	//virtual strongCall(Store&, const Store&) const = 0;
+	//virtual T causalCall(Store&, const Store&) const = 0;
 };
 
 template<Level l>
@@ -95,7 +95,7 @@ T run_ast_causal(Store &c, const Store &s, const ConExpr<T,l>& expr) {
 
 template<typename T>
 typename std::enable_if<std::is_scalar<decay<T > >::value,T>::type
-run_ast_causal(const Store &, const T& e) {
+run_ast_causal(const Store &, const Store&, const T& e) {
 	return e;
 }
 

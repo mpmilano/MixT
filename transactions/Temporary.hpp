@@ -177,14 +177,8 @@ class CSConstant;
 #define MutAssigner(c) MutCreator<unique_id<(sizeof(c) / sizeof(char)) - 1>(c)>{c}
 #define ImmutAssigner(c) ImmutCreator<unique_id<(sizeof(c) / sizeof(char)) - 1>(c)>{c}
 
-
-//todo: now it looks like we know how to stick the identifier in the type.
-//we still need to figure out how to retrieve the type and level when referencing
-//the variable later in the program.
-
-
 template<unsigned long long id, Level l, typename T, typename Temp>
-struct RefTemporary : public ConExpr<decltype(run_ast(mke_store(), *mke_p<T>())),l> {
+struct RefTemporary : public ConExpr<decltype(run_ast_causal(mke_store(), mke_store(), *mke_p<T>())),l> {
 	const Temp t;
 	const std::string name;
 
@@ -205,9 +199,32 @@ struct RefTemporary : public ConExpr<decltype(run_ast(mke_store(), *mke_p<T>()))
 	auto getReadSet() const {
 		return t.getReadSet();
 	}
-	decltype(run_ast(mke_store(),*mke_p<T>())) operator()(const Store &s) const{
-		return call(s,t);
+
+	auto strongCall(Store &cache, const Store &s) const {
+		//TODO - endorsements should happen somewhere around here, right?
+		//todo: did I want the level of the expression which assigned the temporary? 
+		std::integral_constant<bool,get_level<Temp>::value==Level::strong>* choice = nullptr;
+		return strongCall(cache, s,choice);
 	}
+
+	auto strongCall(Store &cache, const Store &s, std::true_type*){
+		auto ret = call(s, t);
+		cache.insert(id,ret);
+		return ret;
+	}
+
+	void strongCall(Store &cache, const Store &s, std::false_type*){
+		//we haven't even done the assignment yet. nothing to see here.
+	}
+
+	auto causalCall(Store &cache, const Store &s) const {
+		typedef decltype(call(s,t)) R;
+		if (cache.contains(this->id)) return cache.get<R>(this->id);
+		else {
+			return call(s,t);
+		}
+	}
+	
 
 	template<typename E>
 	enable_if<!std::is_same<Temporary<id,l,T>, Temp>::value, TemporaryMutation<E> >
@@ -230,7 +247,7 @@ struct RefTemporary : public ConExpr<decltype(run_ast(mke_store(), *mke_p<T>()))
 
 private:
 	static auto call(const Store &s, const Temporary<id,l,T> &t){
-		typedef decltype(run_ast(mke_store(),t.t)) R;
+		typedef decltype(run_ast_causal(mke_store(),mke_store(),t.t)) R;
 		return *((R*) s.at(t.id).get());
 	}
 

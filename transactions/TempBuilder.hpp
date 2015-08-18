@@ -130,6 +130,7 @@ template<typename PrevBuilder, unsigned long long ID, typename CS, Level l, bool
 struct MutableDeclarationBuilder {
 	const PrevBuilder prevBuilder;
 	const MutDeclarationScope<ID,CS,l,Temp> this_decl;
+	typedef typename PrevBuilder::pc pc;
 
 	MutableDeclarationBuilder(const PrevBuilder &pb, const MutDeclarationScope<ID,CS,l,Temp> &d)
 		:prevBuilder(pb),this_decl(d){}
@@ -162,6 +163,7 @@ template<typename PrevBuilder, unsigned long long ID, typename CS, Level l, bool
 struct ImmutableDeclarationBuilder {
 	const PrevBuilder prevBuilder;
 	const ImmutDeclarationScope<ID,CS,l,Temp> this_decl;
+	typedef typename PrevBuilder::pc pc;
 
 	ImmutableDeclarationBuilder(const PrevBuilder &pb, const ImmutDeclarationScope<ID,CS,l,Temp> &d)
 		:prevBuilder(pb),this_decl(d){}
