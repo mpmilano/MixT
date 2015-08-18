@@ -26,12 +26,38 @@ struct Temporary : public GeneralTemp, public ConStatement<get_level<T>::value> 
 	auto getReadSet() const {
 		return t.getReadSet();
 	}
-	
-	bool operator()(Store &s) const {
-		typedef typename std::decay<decltype(t(s))>::type R;
-		if (!s.contains(id)) s[id].reset((Store::stored) new R(t(s)));
+
+	auto strongCall(Store &c, Store &s) const {
+		std::integral_constant<bool,get_level<T>::value==Level::strong>* choice = nullptr;
+		return strongCall(c,s,choice);
+	}
+
+	auto strongCall(Store &c, Store &s, std::true_type*) const {
+		typedef typename std::decay<decltype(t.strongCall(c,s))>::type R;
+		if (!s.contains(id)) s[id].reset((Store::stored) new R(t.strongCall(c,s)));
 		return true;
 	}
+
+	void strongCall(Store &c, const Store &s, std::false_type*) const {
+		t.strongCall(c,s);
+	}
+
+	auto causalCall(Store &c, Store &s) const {
+		std::integral_constant<bool,get_level<T>::value==Level::causal>* choice = nullptr;
+		return causalCall(c,s,choice);
+	}
+
+	auto causalCall(Store &c, Store &s,std::true_type*) const {
+		typedef typename std::decay<decltype(t.strongCall(c,s))>::type R;
+		if (!s.contains(id)) s[id].reset((Store::stored) new R(t.causalCall(c,s)));
+		return true;
+	}
+
+	auto causalCall(Store &c, Store &s,std::false_type*) const {
+		//noop.  We've already executed this instruction.
+		return true;
+	}
+	
 };
 
 template<unsigned long long ID, Level l, typename T, typename Temp>
