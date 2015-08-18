@@ -230,13 +230,13 @@ std::unique_ptr<T> make_unique(T *t){
 }
 
 template<typename T>
-std::shared_ptr<T> make_shared(T *t){
-	return std::shared_ptr<T>(t);
+std::shared_ptr<const T> make_cnst_shared(T *t){
+	return std::shared_ptr<const T>(t);
 }
 
 template<typename T>
-std::shared_ptr<T> make_shared(std::nullptr_t){
-	return std::shared_ptr<T>();
+std::shared_ptr<const T> make_cnst_shared(std::nullptr_t){
+	return std::shared_ptr<const T>();
 }
 
 

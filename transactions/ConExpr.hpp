@@ -78,7 +78,7 @@ T run_ast_strong(Store &, const Store&, const Handle<Level::strong,ha,T>& t) {
 }
 
 template<HandleAccess ha, typename T>
-void run_ast_causal(const Store &, const Store &, const Handle<Level::strong,ha,T>& ) {
+Handle<Level::strong,ha,T> run_ast_causal(const Store &, const Store &, const Handle<Level::strong,ha,T>& ) {
 	assert(false && "sorry, you've got to handle this specially");
 }
 
@@ -97,6 +97,23 @@ template<typename T>
 typename std::enable_if<std::is_scalar<decay<T > >::value,T>::type
 run_ast_causal(const Store &, const Store&, const T& e) {
 	return e;
+}
+
+template<typename T, restrict(is_ConExpr<T>::value && !std::is_scalar<T>::value)>
+auto cached(const Store &cache, const T& ast){
+	using R = decltype(run_ast_causal(mke_store(),cache,ast));
+	return cache.get<R>(ast.id);
+}
+
+template<typename T>
+type_check<std::is_scalar, T> cached(const Store &cache, const T& e){
+	return e;
+}
+
+
+template<typename T, HandleAccess ha, Level l>
+Handle<l,ha,T> cached(const Store &cache, const Handle<l,ha,T>& ast){
+	return ast;
 }
 
 

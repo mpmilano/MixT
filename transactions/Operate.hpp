@@ -1,6 +1,7 @@
 #pragma once
 #include "Operation.hpp"
 #include "Operate_macros.hpp"
+#include "ConExpr.hpp"
 
 template<Level l, typename R, typename Exprs>
 struct Operate : ConStatement<l> {

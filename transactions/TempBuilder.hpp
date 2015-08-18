@@ -102,17 +102,17 @@ template<typename , typename >
 struct _impl_pick_new_type;
 
 template<unsigned long long ID, Level l, typename T>
-struct _impl_pick_new_type<Temporary<ID,l,T>,Temporary<ID,l,T> > {
+struct _impl_pick_new_type<Temporary<ID,l,T>*,Temporary<ID,l,T> > {
 	using type = Temporary<ID,l,T>;
 };
 
 template<unsigned long long ID, Level l, typename T>
-struct _impl_pick_new_type<MutableTemporary<ID,l,T>,MutableTemporary<ID,l,T> > {
+struct _impl_pick_new_type<MutableTemporary<ID,l,T>*,MutableTemporary<ID,l,T> > {
 	using type = MutableTemporary<ID,l,T>;
 };
 
 template<typename T>
-struct _impl_pick_new_type<T, std::nullptr_t > {
+struct _impl_pick_new_type<T*, std::nullptr_t > {
 	using type = T;
 };
 
@@ -125,6 +125,35 @@ template<>
 struct _impl_pick_new_type<std::nullptr_t, std::nullptr_t > {
 	using type = std::nullptr_t;
 };
+
+//ugh truth tables.
+template<unsigned long long id, Level l2, typename T>
+auto choose_gt(const std::shared_ptr<const std::nullptr_t>&, const std::shared_ptr<const MutableTemporary<id,l2,T> >& r){
+	return r;
+}
+template<unsigned long long id, Level l2, typename T>
+auto choose_gt(const std::shared_ptr<const std::nullptr_t>&, const std::shared_ptr<const Temporary<id,l2,T> >& r){
+	return r;
+}
+template<unsigned long long id, Level l2, typename T>
+auto choose_gt(const std::shared_ptr<const MutableTemporary<id,l2,T> >& r,const std::shared_ptr<const std::nullptr_t>&){
+	return r;
+}
+template<unsigned long long id, Level l2, typename T>
+auto choose_gt(const std::shared_ptr<const Temporary<id,l2,T> >& r,const std::shared_ptr<const std::nullptr_t>&){
+	return r;
+}
+
+template<typename T>
+auto choose_gt(const T&, const T& r){
+	return r;
+}
+
+template<typename T, typename R>
+auto choose_gt(const T&, const R& r){
+	static_assert(std::is_same<T CMA T*>::value, "What in the nine hells?");
+	return r;
+}
 
 template<typename PrevBuilder, unsigned long long ID, typename CS, Level l, bool oldb, typename Temp>
 struct MutableDeclarationBuilder {
@@ -142,16 +171,16 @@ struct MutableDeclarationBuilder {
 		auto new_cs = std::tuple_cat(this_decl.cs,std::tuple<T>(t));
 
 		typedef typename _impl_pick_new_type<
-			typename std::decay<decltype(*find_usage<ID>(t))>::type,
-			typename std::decay<decltype(*this_decl.gt)>::type
+			typename std::decay<decltype(find_usage<ID>(t))>::type,
+			typename std::decay<decltype(*this_decl.gt.get())>::type
 			>::type found_type;
 
 		constexpr Level new_level = get_level<found_type>::value;
 		MutDeclarationScope<ID, decltype(new_cs),new_level,found_type>
 			new_decl(this_decl.name,
-					 (this_decl.gt ?
-					  this_decl.gt :
-					  make_shared<found_type>(find_usage<ID>(t))),
+					 choose_gt(
+						 this_decl.gt,
+						 make_cnst_shared<found_type>(find_usage<ID>(t))),
 					 new_cs);
 		::MutableDeclarationBuilder<PrevBuilder, ID, decltype(new_cs), new_level, contains_temporary<ID,T>::value || oldb, found_type>
 			r(prevBuilder,new_decl);
@@ -183,9 +212,9 @@ struct ImmutableDeclarationBuilder {
 		constexpr Level new_level = get_level<found_type>::value;
 		ImmutDeclarationScope<ID, decltype(new_cs),new_level,found_type>
 			new_decl(this_decl.name,
-					 (this_decl.gt ?
-					  this_decl.gt :
-					  make_shared<found_type>(find_usage<ID>(t))),
+					 choose_gt(
+						 this_decl.gt,
+						 make_cnst_shared<found_type>(find_usage<ID>(t))),
 					 new_cs);
 		::ImmutableDeclarationBuilder<PrevBuilder, ID, decltype(new_cs), new_level, contains_temporary<ID,T>::value || oldb, found_type>
 			r(prevBuilder,new_decl);
