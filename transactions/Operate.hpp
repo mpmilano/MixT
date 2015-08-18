@@ -99,7 +99,7 @@ struct PreOp<std::tuple<J...> > {
 		//TODO: I'm sure there's some rationale behind
 		//how exactly to measure this which is better.
 		static constexpr Level l = min_level<Args...>::value;
-		return Operate<l,decltype(std::get<0>(t)(run_ast(mke_store(),args)...)),decltype(std::make_tuple(args...)) >
+		return Operate<l,decltype(std::get<0>(t)(run_ast_causal(mke_store(),mke_store(),args)...)),decltype(std::make_tuple(args...)) >
 			([=](const Store &c) mutable {
 				std::pair<bool,bool> result =
 					fold(t,[&](const auto &e, const std::pair<bool,bool> &acc){

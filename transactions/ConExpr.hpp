@@ -78,7 +78,7 @@ T run_ast_strong(Store &, const Store&, const Handle<Level::strong,ha,T>& t) {
 }
 
 template<HandleAccess ha, typename T>
-void run_ast_causal(Store &, const Store &, const Handle<Level::strong,ha,T>& ) {
+void run_ast_causal(const Store &, const Store &, const Handle<Level::strong,ha,T>& ) {
 	assert(false && "sorry, you've got to handle this specially");
 }
 
