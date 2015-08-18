@@ -48,7 +48,7 @@ struct Temporary : public GeneralTemp, public ConStatement<get_level<T>::value> 
 	}
 
 	auto causalCall(Store &c, Store &s,std::true_type*) const {
-		typedef typename std::decay<decltype(t.strongCall(c,s))>::type R;
+		typedef typename std::decay<decltype(t.causalCall(c,s))>::type R;
 		if (!s.contains(id)) s[id].reset((Store::stored) new R(t.causalCall(c,s)));
 		return true;
 	}
@@ -57,7 +57,7 @@ struct Temporary : public GeneralTemp, public ConStatement<get_level<T>::value> 
 		//noop.  We've already executed this instruction.
 		return true;
 	}
-	
+
 };
 
 template<unsigned long long ID, Level l, typename T, typename Temp>
@@ -81,13 +81,38 @@ struct TemporaryMutation : public ConStatement<get_level<T>::value> {
 
 	TemporaryMutation(const std::string &name, int id, const T& t)
 		:name(name),id(id),t(t) {}
-	
-	bool operator()(Store &s) const {
-		typedef typename std::decay<decltype(run_ast(s,t))>::type R;
-		s[id].reset((Store::stored) new R(run_ast(s,t)));
+
+	auto strongCall(Store &c, Store &s) const {
+		std::integral_constant<bool,get_level<T>::value==Level::strong>* choice = nullptr;
+		return strongCall(c,s,choice);
+	}
+
+	auto strongCall(Store &c, Store &s, std::true_type*) const {
+		typedef typename std::decay<decltype(run_ast_strong(c,s,t))>::type R;
+		s[id].reset((Store::stored) new R(run_ast_strong(c,s,t)));
 		return true;
 	}
 
+	void strongCall(Store &c, const Store &s, std::false_type*) const {
+		t.strongCall(c,s);
+	}
+
+	auto causalCall(Store &c, Store &s) const {
+		std::integral_constant<bool,get_level<T>::value==Level::causal>* choice = nullptr;
+		return causalCall(c,s,choice);
+	}
+
+	auto causalCall(Store &c, Store &s,std::true_type*) const {
+		typedef typename std::decay<decltype(run_ast_causal(c,s,t))>::type R;
+		s[id].reset((Store::stored) new R(run_ast_causal(c,s,t)));
+		return true;
+	}
+
+	auto causalCall(Store &c, Store &s,std::false_type*) const {
+		//noop.  We've already executed this instruction.
+		return true;
+	}
+	
 	auto getReadSet() const {
 		return get_ReadSet(t);
 	}
@@ -114,17 +139,12 @@ struct MutableTemporary : public Temporary<ID, l,T> {
 	MutableTemporary(const std::string& name, const T& t):
 		Temporary<ID,l,T>(name,t){}
 
-	bool operator()(Store &s) const {
-		typedef typename std::decay<decltype(this->t(s))>::type R;
-		s[this->id].reset((Store::stored) new R(this->t(s)));
-		return true;
-	}
-
 	typedef typename std::integral_constant<Level,l>::type level;
 	typedef T type;
 	typedef std::true_type found;
 	typedef typename std::integral_constant<unsigned long long, ID>::type key;
-	
+
+
 };
 
 template<unsigned long long ID, Level l, typename T>

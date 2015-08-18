@@ -50,8 +50,6 @@ struct If : public ConStatement<min_level<typename min_level<Then>::type,
 	}
 
 	bool strongCall(Store &c, Store &s, const std::true_type*) const {
-		static_assert(!is_ConStatement<decltype(run_ast(s,cond))>::value);
-		static_assert(!is_ConStatement<decltype(call_all(s,then))>::value);
 		return (run_ast_strong(s,cond) ? call_all_strong(s,then) : call_all_strong(s,els));
 	}
 
@@ -68,6 +66,11 @@ struct If : public ConStatement<min_level<typename min_level<Then>::type,
 	}
 	
 };
+
+template<typename A, typename B, typename C>
+auto make_if(const A &a, const B &b, const C &c){
+	return If<A,B,C>(a,b,c);
+}
 
 template<unsigned long long ID, typename Cond, typename Then, typename Els>
 auto find_usage(const If<Cond,Then,Els>& _if){

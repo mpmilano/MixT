@@ -143,6 +143,9 @@ struct IsValid : public ConExpr<bool, get_level<T>::value> {
 	friend std::ostream & operator<<(std::ostream &os, const IsValid<T2>&);
 };
 
+template<typename T>
+auto make_isValid(const T&t){ return IsValid<T>{t}; }
+
 
 template<unsigned long long ID, typename T>
 struct contains_temporary<ID, IsValid<T> > : contains_temporary<ID,T> {};
