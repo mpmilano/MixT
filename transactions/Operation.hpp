@@ -56,8 +56,13 @@ struct Operation<Store, Ret (*) (A...)> {
 	
 	Ret (*fun) (A...);
 	
-	Operation(Ret (*fun) (A...)):built_well(true),fun(fun) {}
-	Operation():fun([](A...) -> Ret{assert(false && "Operation built on sand!");}) {}
+	Operation(Ret (*fun) (A...)):built_well(true),fun(fun) {
+	}
+	Operation():fun([](A...) -> Ret{assert(false && "Operation built on sand!");}) {
+	}
+
+	Operation(const Operation<Store, Ret(*) (A...) >& op):built_well(op.built_well),fun(op.fun){
+	}
 
 	template<typename ___T, typename Acc>
 	using type_check = std::pair<Rest<Left<Acc> >,
@@ -131,6 +136,7 @@ struct NoOperation {
 	return ret;															\
 	}																	\
 	catch (Transaction::ClassCastException e){							\
+		std::cerr << "ClassCastException! " << std::endl;				\
 		return tuple_cons(def,accum);									\
 	}																	\
 	},std::tuple<>());													\

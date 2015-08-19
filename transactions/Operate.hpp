@@ -95,15 +95,25 @@ template<typename... J>
 struct PreOp<std::tuple<J...> > {
 	const std::tuple<J...> t;
 
+	PreOp(const std::tuple<J...> &t):t(t){
+		assert(fold(t,[](const auto &e, bool acc){return e.built_well || acc;},false));
+	}
+
 	template<typename... Args>
 	auto operator()(Args && ... args) const {
 		//TODO: I'm sure there's some rationale behind
 		//how exactly to measure this which is better.
+
 		static constexpr Level l = min_level<Args...>::value;
+		assert(fold(t,[](const auto &e, bool acc){return e.built_well || acc;},false));
+		std::shared_ptr<decltype(t)> t_ptr{heap_copy(t)};
+		assert(fold(*t_ptr,[](const auto &e, bool acc){return e.built_well || acc;},false));
+		
 		return Operate<l,decltype(std::get<0>(t)(run_ast_causal(mke_store(),mke_store(),args)...)),decltype(std::make_tuple(args...)) >
-			([=](const Store &c) mutable {
+			([=](const Store &c) {
+				assert(fold(*t_ptr,[](const auto &e, bool acc){return e.built_well || acc;},false));
 				std::pair<bool,bool> result =
-					fold(t,[&](const auto &e, const std::pair<bool,bool> &acc){
+					fold(*t_ptr,[&](const auto &e, const std::pair<bool,bool> &acc){
 							if (acc.first || !e.built_well) {
 								return acc;
 							}
@@ -113,7 +123,6 @@ struct PreOp<std::tuple<J...> > {
 							}
 						},std::pair<bool,bool>(false,false));
 				if (!result.first) throw NoOverloadFoundError{type_name<decltype(t)>()};
-
 				return result.second;
 			},
 			 BitSet<HandleAbbrev>::big_union(get_ReadSet(args)...),
