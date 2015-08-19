@@ -105,8 +105,9 @@ auto call_all_causal(Store &cache, Store &st, const std::tuple<CS...> &t){
 
 template<typename... CS>
 auto call_all_strong(Store &cache, Store &st, const std::tuple<CS...> &t){
+	//TODO: better error propogation please.
 	bool check = fold(t,[&cache,&st](const auto &e, bool b)
-					  {return b && e.strongCall(cache,st);},true);
+					  {e.strongCall(cache,st); return true;},true);
 	assert(check);
 	return check;
 }

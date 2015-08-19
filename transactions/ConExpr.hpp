@@ -67,10 +67,10 @@ run_ast_strong(const Store &, const Store&, const T& e) {
 	return e;
 }
 
-/*
+
 template<HandleAccess ha, typename T>
 void run_ast_strong(Store &, const Store&, const Handle<Level::causal,ha,T>& ) {
-
+	//I think that this one, at least, is okay.
 }
 //*/
 template<HandleAccess ha, typename T>

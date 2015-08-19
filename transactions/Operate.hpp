@@ -42,7 +42,7 @@ struct Operate : ConStatement<l> {
 		//execute the strong expressions now. Remember they are supposed to be
 		//self-caching
 		fold(exprs,[&](const auto &e, bool){
-				e.strongCall(cache,s);
+				run_ast_strong(cache,s,e);
 				return false;},false);
 	}
 
