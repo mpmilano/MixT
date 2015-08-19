@@ -56,8 +56,8 @@ typename std::enable_if<is_ConStatement<T>::value && !std::is_scalar<T>::value,
 	return ce.getReadSet();
 }
 
-template<Level l, typename T>
-T run_ast_strong(Store &c, const Store &s, const ConExpr<T,l>& expr) {
+template<typename T, restrict(is_ConExpr<T>::value && !std::is_scalar<T>::value)>
+T run_ast_strong(Store &c, const Store &s, const T& expr) {
 	return expr.strongCall(c,s);
 }
 
@@ -67,6 +67,7 @@ run_ast_strong(const Store &, const Store&, const T& e) {
 	return e;
 }
 
+/*
 template<HandleAccess ha, typename T>
 void run_ast_strong(Store &, const Store&, const Handle<Level::causal,ha,T>& ) {
 
@@ -76,20 +77,22 @@ template<HandleAccess ha, typename T>
 T run_ast_strong(Store &, const Store&, const Handle<Level::strong,ha,T>& t) {
 	return t.get();
 }
+//*/
 
 template<HandleAccess ha, typename T>
 Handle<Level::strong,ha,T> run_ast_causal(const Store &, const Store &, const Handle<Level::strong,ha,T>& ) {
 	assert(false && "sorry, you've got to handle this specially");
 }
 
+/*
 template<HandleAccess ha, typename T>
 T run_ast_causal(Store &, const Store &, const Handle<Level::causal,ha,T>& t) {
 	return t.get();
 }
+//*/
 
-
-template<Level l, typename T>
-T run_ast_causal(Store &c, const Store &s, const ConExpr<T,l>& expr) {
+template<typename T, restrict(is_ConExpr<T>::value && !std::is_scalar<T>::value)>
+T run_ast_causal(Store &c, const Store &s, const T& expr) {
 	return expr.causalCall(c,s);
 }
 

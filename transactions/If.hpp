@@ -50,7 +50,7 @@ struct If : public ConStatement<min_level<typename min_level<Then>::type,
 	}
 
 	bool strongCall(Store &c, Store &s, const std::true_type*) const {
-		return (run_ast_strong(s,cond) ? call_all_strong(s,then) : call_all_strong(s,els));
+		return (run_ast_strong(c,s,cond) ? call_all_strong(c,s,then) : call_all_strong(c,s,els));
 	}
 
 	//just caching can happen here;
@@ -62,7 +62,7 @@ struct If : public ConStatement<min_level<typename min_level<Then>::type,
 	}
 	
 	bool causalCall(Store &c, Store &s) const {
-		return (run_ast_causal(s,cond) ? call_all_causal(s,then) : call_all_causal(s,els));
+		return (run_ast_causal(c,s,cond) ? call_all_causal(c,s,then) : call_all_causal(c,s,els));
 	}
 	
 };

@@ -1,6 +1,5 @@
 #pragma once
 #include "ConExpr.hpp"
-#include "Temporary.hpp"
 #include "../BitSet.hpp"
 
 template<Level l, int i>
@@ -43,13 +42,28 @@ public:
 		return BitSet<HandleAbbrev>();
 	}
 
-	CONNECTOR_OP
-
-	constexpr T operator()(const Store &) const {
+	constexpr T causalCall(Store&, Store&) const {
 		return val;
 	}
+
+	constexpr T strongCall(Store&, Store&) const {
+		return val;
+	}
+
+	static_assert(!std::is_scalar<CSConstant<l,T> >::value, "AAAH");
 	
 };
+
+
+template<typename T, restrict(std::is_scalar<T>::value)>
+auto wrap_constants(const T &t){
+	return CSConstant<Level::strong,T>{t};
+}
+
+template<typename T>
+enable_if<!std::is_scalar<T>::value, T> wrap_constants(const T& t){
+	return t;
+}
 
 //TODO: figure out why this needs to be here
 template<Level l, typename T>

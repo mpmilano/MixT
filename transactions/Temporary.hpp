@@ -1,5 +1,6 @@
 #pragma once
 #include "ConExpr.hpp"
+#include "CommonExprs.hpp"
 #include <string>
 
 struct GeneralTemp {
@@ -20,8 +21,8 @@ struct Temporary : public GeneralTemp, public ConStatement<get_level<T>::value> 
 
 	const T t;
 	const int id;
-	Temporary(const T& t):GeneralTemp(std::to_string(gensym()),std::to_string(t)),t(t),id(std::hash<std::string>()(this->name)){}
-	Temporary(const std::string name, const T& t):GeneralTemp(name,std::to_string(t)),t(t),id(std::hash<std::string>()(name)){}
+	Temporary(const T& t):GeneralTemp(std::to_string(gensym()),to_string(t)),t(t),id(std::hash<std::string>()(this->name)){}
+	Temporary(const std::string name, const T& t):GeneralTemp(name,to_string(t)),t(t),id(std::hash<std::string>()(name)){}
 	
 	auto getReadSet() const {
 		return t.getReadSet();
@@ -224,13 +225,12 @@ struct RefTemporary : public ConExpr<decltype(run_ast_causal(mke_store(), mke_st
 			return call(s,t);
 		}
 	}
-	
 
 	template<typename E>
 	enable_if<!std::is_same<Temporary<id,l,T>, Temp>::value, TemporaryMutation<E> >
 	operator=(const E &e) const {
 		static_assert(is_ConExpr<E>::value,"Error: attempt to assign non-Expr");
-		TemporaryMutation<E> r{name,t.id,e};
+		TemporaryMutation<E> r{name,t.id,wrap_constants(e)};
 		return r;
 	}
 
@@ -239,7 +239,7 @@ struct RefTemporary : public ConExpr<decltype(run_ast_causal(mke_store(), mke_st
 	operator=(const E &e) const {
 		static_assert(is_ConExpr<E>::value,"Error: attempt to assign non-Expr");
 		static_assert(!is_ConExpr<E>::value,"Error: attempt to mutate immutable temporary.");
-		TemporaryMutation<E> r{name,t.id,e};
+		TemporaryMutation<E> r{name,t.id,wrap_constants(e)};
 		return r;
 	}
 
@@ -251,9 +251,9 @@ private:
 		return *((R*) s.at(t.id).get());
 	}
 
-	static_assert(!is_ConStatement<decltype(
+	static_assert(neg_error_helper<is_ConStatement, decltype(
 					  call(mke_store(),*mke_p<Temporary<id,l,T> >())
-					  )>::value);
+					  ) >::value);
 };
 
 template<unsigned long long ID, Level l, typename T, typename Temp>
@@ -275,11 +275,12 @@ struct MutCreator {
 	const std::string &name;
 
 	template<typename T>
-	auto operator=(const T& t) const {
+	auto operator=(const T& t_) const {
 		static_assert(is_ConExpr<T>::value, "Error: cannot assign non-expression");
+		auto t = wrap_constants(t_);
 		static constexpr Level l = get_level<T>::value;
-		RefTemporary<ID,l,T,MutableTemporary<ID,l,T > >
-			rt(MutableTemporary<ID,l,T >(name,t));
+		RefTemporary<ID,l,decltype(t),MutableTemporary<ID,l,decltype(t) > >
+			rt(MutableTemporary<ID,l,decltype(t) >(name,t));
 		return rt;
 	}
 };
@@ -289,11 +290,12 @@ struct ImmutCreator {
 	const std::string &name;
 
 	template<typename T>
-	auto operator=(const T& t) const {
+	auto operator=(const T& t_) const {
 		static_assert(is_ConExpr<T>::value, "Error: cannot assign non-expression");
+		auto t = wrap_constants(t_);
 		static constexpr Level l = get_level<T>::value;
-		RefTemporary<ID,l,T,Temporary<ID,l,T > >
-			rt(Temporary<ID,l,T >(std::hash<std::string>()(name),t));
+		RefTemporary<ID,l,decltype(t),Temporary<ID,l,decltype(t) > >
+			rt(Temporary<ID,l,decltype(t) >(std::hash<std::string>()(name),t));
 		return rt;
 	}
 

@@ -11,6 +11,7 @@
 #include <dirent.h>
 #include <string>
 #include <iostream>
+#include <sstream>
 #include "../extras"
 #include "macro_utils.hpp"
 
@@ -264,6 +265,13 @@ std::nullptr_t pick_useful(std::nullptr_t, std::nullptr_t){
 template<typename T>
 T pick_useful(std::nullptr_t, const T& t){
 	return t;
+}
+
+template<typename T>
+std::string to_string(const T &t){
+	std::stringstream ss;
+	ss << t;
+	return ss.str();
 }
 
 /*

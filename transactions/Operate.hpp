@@ -30,7 +30,7 @@ struct Operate : ConStatement<l> {
 		return strongCall(cache,s,choice);
 	}
 
-	R strongCall(Store &cache, Store &, std::true_type*) const {
+	R strongCall(Store &cache, const Store &, std::true_type*) const {
 		//nothing causal, just do it all at once
 		auto f2 = f; //need mutability, so can't be const copy.
 		auto ret = f2(cache);
@@ -38,7 +38,7 @@ struct Operate : ConStatement<l> {
 		return ret;
 	}
 
-	void strongCall(Store &cache, Store &s, std::false_type*) const {
+	void strongCall(Store &cache, const Store &s, std::false_type*) const {
 		//execute the strong expressions now. Remember they are supposed to be
 		//self-caching
 		fold(exprs,[&](const auto &e, bool){
