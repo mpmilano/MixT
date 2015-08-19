@@ -55,32 +55,8 @@ struct is_Noop : std::integral_constant<
 	bool,
 	std::is_same<T,Noop<Level::strong> >::value ||
 	std::is_same<T,Noop<Level::causal> >::value>::type {};
-							
-template<typename StrongNext, typename WeakNext>
-struct Seq;
 
-template<typename T,Level l = get_level<T>::value,
-		 restrict(is_ConStatement<T>::value && l == Level::causal)>
-Seq<std::tuple<>, std::tuple<T> > make_seq(const T &);
 
-template<typename T,Level l = get_level<T>::value,
-		 restrict(is_ConStatement<T>::value && l == Level::strong)>
-Seq<std::tuple<T>, std::tuple<> > make_seq(const T &);
-
-#define CONNECTOR_OP	template<typename T2>						 \
-	auto operator/(const T2 &t) const {								 \
-		return (make_seq(*this)) / t;								 \
-	}																 \
-	auto operator/(const decltype(dummy1)&) const {					 \
-		return *this;												 \
-	}																 \
-	auto operator/(const decltype(dummy2)&) const {					 \
-		return *this;												 \
-	}																 \
-	template<typename T2>											 \
-	auto operator,(const T2& t) const {								 \
-		return operator/(t);										 \
-	}
 
 template<Level l>
 constexpr bool is_base_CS_f(const Noop<l>* ){
@@ -94,3 +70,5 @@ constexpr bool is_base_CS_f(const T* ){
 
 template<typename T>
 struct is_base_CS : std::integral_constant<bool, is_base_CS_f((T*)nullptr)> {};
+
+#define CONNECTOR_OP 
