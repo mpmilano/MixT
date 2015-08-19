@@ -84,10 +84,10 @@ Handle<Level::strong,ha,T> run_ast_causal(const Store &, const Store &, const Ha
 	assert(false && "sorry, you've got to handle this specially");
 }
 
-/*
+
 template<HandleAccess ha, typename T>
-T run_ast_causal(Store &, const Store &, const Handle<Level::causal,ha,T>& t) {
-	return t.get();
+Handle<Level::causal,ha,T> run_ast_causal(Store &, const Store &, const Handle<Level::causal,ha,T>& t) {
+	assert(false && "sorry, you've got to handle this specially");
 }
 //*/
 

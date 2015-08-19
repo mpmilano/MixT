@@ -13,8 +13,8 @@
 
 #define if_concept_2(Cond,Then,Els)										\
 	static_assert((get_level<Cond>::value == Level::causal &&			\
-				   max_level<Then>::value == Level::causal &&			\
-				   max_level<Els>::value == Level::causal && false)		\
+				   ((max_level<Then>::value == Level::causal) || (std::tuple_size<Then>::value == 0)) && \
+				   ((max_level<Els>::value == Level::causal) || (std::tuple_size<Els>::value == 0))) \
 				  ||													\
 				  (get_level<Cond>::value == Level::strong),			\
 				  "Error: implicit flow found in IF.")
