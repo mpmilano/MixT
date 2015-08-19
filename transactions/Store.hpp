@@ -24,7 +24,7 @@ struct Store : std::map<int,std::unique_ptr<void*> >{
 
 	template<typename T>
 	auto emplace(int i){
-		return (*this)[i].reset(new T());
+		return (*this)[i].reset((void**)new T());
 	}
 
 	template<typename T>

@@ -64,7 +64,7 @@ struct FreeExpr : public ConExpr<T, min_level<Exprs...>::value > {
 
 	auto causalCall(Store &cache, const Store &heap, std::true_type*) const {
 		fold(params,[&](const auto &e, bool){
-				e.causalCall(cache,heap);
+				run_ast_causal(cache,heap,e);
 				return false;},false);
 		return f(cache,params);
 	}

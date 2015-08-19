@@ -55,10 +55,10 @@ struct If : public ConStatement<min_level<typename min_level<Then>::type,
 
 	//just caching can happen here;
 	//any mutative action would violate information flow.
-	bool strongCall(Store &c, const Store &s, const std::false_type*) const {
-		run_ast_strong(s,cond);
-		return (call_all_strong(s,then) &&
-				call_all_strong(s,els));
+	bool strongCall(Store &c, Store &s, const std::false_type*) const {
+		run_ast_strong(c,s,cond);
+		return (call_all_strong(c,s,then) &&
+				call_all_strong(c,s,els));
 	}
 	
 	bool causalCall(Store &c, Store &s) const {

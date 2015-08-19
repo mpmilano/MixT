@@ -56,7 +56,7 @@ struct Operate : ConStatement<l> {
 		//the function f assumes that absolutely everything will already be cached.
 		//thus, we cannot call it until that's true.
 		fold(exprs,[&](const auto &e, bool){
-				e.causalCall(cache,heap);
+				run_ast_causal(cache,heap,e);
 				return false;},false);
 		return f(cache);
 	}
