@@ -208,13 +208,13 @@ struct RefTemporary : public ConExpr<decltype(run_ast_causal(mke_store(), mke_st
 		return strongCall(cache, s,choice);
 	}
 
-	auto strongCall(Store &cache, const Store &s, std::true_type*){
+	auto strongCall(Store &cache, const Store &s, std::true_type*) const {
 		auto ret = call(s, t);
 		cache.insert(id,ret);
 		return ret;
 	}
 
-	void strongCall(Store &cache, const Store &s, std::false_type*){
+	void strongCall(Store &cache, const Store &s, std::false_type*) const {
 		//we haven't even done the assignment yet. nothing to see here.
 	}
 
@@ -246,14 +246,11 @@ struct RefTemporary : public ConExpr<decltype(run_ast_causal(mke_store(), mke_st
 
 
 private:
-	static auto call(const Store &s, const Temporary<id,l,T> &t){
+	static auto call(const Store &s, const Temporary<id,l,T> &t) -> decltype(run_ast_causal(mke_store(),mke_store(),t.t)) {
 		typedef decltype(run_ast_causal(mke_store(),mke_store(),t.t)) R;
+		static_assert(neg_error_helper<is_ConStatement,R>::value);
 		return *((R*) s.at(t.id).get());
 	}
-
-	static_assert(neg_error_helper<is_ConStatement, decltype(
-					  call(mke_store(),*mke_p<Temporary<id,l,T> >())
-					  ) >::value);
 };
 
 template<unsigned long long ID, Level l, typename T, typename Temp>

@@ -20,7 +20,10 @@ public:
 		return BitSet<HandleAbbrev>();
 	}
 
-	constexpr bool operator()(Store&) const {
+	constexpr bool strongCall(const Store&, const Store&) const {
+		return true;
+	}
+	constexpr bool causalCall(const Store&, const Store&) const {
 		return true;
 	}
 

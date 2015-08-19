@@ -42,8 +42,10 @@ struct FreeExpr : public ConExpr<T, min_level<Exprs...>::value > {
 	}	
 
 	T strongCall(Store &cache, const Store &heap, std::true_type*) const{
+		//everything is strong, run it now; but f assumes everything
+		//already cached, which means strongCall for caching first
 		std::false_type* false_t(nullptr);
-		strongCall(false_t);
+		strongCall(cache,heap,false_t);
 		auto ret = f(cache,params);
 		cache.insert(this->id,ret);
 		return ret;
@@ -51,7 +53,7 @@ struct FreeExpr : public ConExpr<T, min_level<Exprs...>::value > {
 
 	void strongCall(Store &cache, const Store &heap,std::false_type*) const{
 		fold(params,[&](const auto &e, bool){
-				e.strongCall(cache,heap);
+				run_ast_strong(cache,heap,e);
 				return false;},false);
 	}
 

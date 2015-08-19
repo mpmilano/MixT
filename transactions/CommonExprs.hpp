@@ -42,15 +42,17 @@ public:
 		return BitSet<HandleAbbrev>();
 	}
 
-	constexpr T causalCall(Store&, Store&) const {
+	constexpr T causalCall(Store& cache, const Store&) const {
+		cache.insert(this->id,val);
 		return val;
 	}
 
-	constexpr T strongCall(Store&, Store&) const {
+	constexpr T strongCall(Store& cache, const Store&) const {
+		cache.insert(this->id,val);
 		return val;
 	}
 
-	static_assert(!std::is_scalar<CSConstant<l,T> >::value, "AAAH");
+	static_assert(!std::is_scalar<CSConstant<l,T> >::value);
 	
 };
 
@@ -87,14 +89,35 @@ struct Not : public ConExpr<bool, get_level<T>::value> {
 	
 	T v;
 	Not(const T& t):v(t){}
-	
-	bool operator()(const Store &s) const {
-		return !v(s);
-	}
 
 	BitSet<HandleAbbrev> getReadSet() const {
 		return v.getReadSet();
 	}
+
+	bool causalCall(Store& cache, const Store& s) const {
+		if (cache.contains(this->id) ) return cache.get<bool>(this->id);
+		else {
+			cache.insert(this->id,!v.causalCall(cache,s));
+			return !v.causalCall(cache,s);
+		}
+	}
+	
+	auto strongCall(Store& cache, const Store &s) const {
+		std::integral_constant<bool,get_level<T>::value == Level::strong>*
+			choice{nullptr};
+		return strongCall(cache,s,choice);
+	}
+
+	bool strongCall(Store& cache, const Store& s, std::true_type*) const {
+		bool ret = !v.strongCall(cache,s);
+		cache.insert(this->id,ret);
+		return ret;
+	}
+
+	void strongCall(Store &cache, const Store& s, std::false_type*) const {
+		v.strongCall(cache,s);
+	}
+
 
 	template<typename i2>
 	friend std::ostream & operator<<(std::ostream &os, const Not<i2>&);
@@ -142,6 +165,32 @@ struct IsValid : public ConExpr<bool, get_level<T>::value> {
 	const T t;
 	
 	IsValid(const T &t):t(t){}
+
+	bool causalCall(Store& cache, const Store& s) const {
+		if (cache.contains(this->id) ) return cache.get<bool>(this->id);
+		else {
+			bool ret = t.isValid();
+			cache.insert(this->id,ret);
+			return ret;
+		}
+	}
+	
+	auto strongCall(Store& cache, const Store &s) const {
+		std::integral_constant<bool,get_level<T>::value == Level::strong>*
+			choice{nullptr};
+		return strongCall(cache,s,choice);
+	}
+
+	bool strongCall(Store& cache, const Store&, std::true_type*) const {
+		bool ret = t.isValid();
+		cache.insert(this->id,ret);
+		return ret;
+	}
+
+	void strongCall(Store &cache, const Store& s, std::false_type*) const {
+		run_ast_strong(cache,s,t);
+	}
+
 	
 	bool operator()(const Store &) const {
 		return t.isValid();

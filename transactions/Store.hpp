@@ -4,7 +4,7 @@
 //TODO: define this better and move it.
 struct Store : std::map<int,std::unique_ptr<void*> >{
 	//you are *not* responsible for deleting this
-	Store const * const prev_scope = nullptr;
+	Store * const  prev_scope = nullptr;
 	bool contains(int i) const{
 		return this->find(i) != this->end();
 	}
@@ -13,7 +13,7 @@ struct Store : std::map<int,std::unique_ptr<void*> >{
 
 	Store(){}
 
-	Store(Store const * const prev):prev_scope(prev){}
+	Store(Store  * const prev):prev_scope(prev){}
 
 	Store(const Store&) = delete;
 

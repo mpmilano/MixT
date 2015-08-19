@@ -42,8 +42,6 @@ struct While : public ConStatement<min_level<Then>::value> {
 	}
 	
 	bool strongCall(Store &c, Store &s) const {
-		static_assert(!is_ConStatement<decltype(run_ast(s,cond))>::value);
-		static_assert(!is_ConStatement<decltype(call_all(s,then))>::value);
 		std::integral_constant<bool,get_level<Cond>::value == Level::strong>*
 			choice1{nullptr};
 		std::integral_constant<bool,min_level<Then>::value == Level::strong>*
@@ -108,6 +106,8 @@ struct While : public ConStatement<min_level<Then>::value> {
 			//causal condition, so nothing interesting here.
 			while(run_ast_causal(c_old,s,cond)) call_all_causal(c_old,s,then);
 		}
+
+		return true;
 	}
 	
 };

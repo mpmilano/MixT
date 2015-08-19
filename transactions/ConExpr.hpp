@@ -21,9 +21,9 @@ struct ConExpr : public ConStatement<l> {
 template<Level l>
 struct DummyConExpr : public ConExpr<void,l> {
 
-	void strongCall(Store&, const Store &) const {}
+	void strongCall(const Store&, const Store &) const {}
 
-	void causalCall(Store&, const Store &) const {}
+	void causalCall(const Store&, const Store &) const {}
 	
 	BitSet<HandleAbbrev> getReadSet() const {
 		return BitSet<HandleAbbrev>();
@@ -57,7 +57,7 @@ typename std::enable_if<is_ConStatement<T>::value && !std::is_scalar<T>::value,
 }
 
 template<typename T, restrict(is_ConExpr<T>::value && !std::is_scalar<T>::value)>
-T run_ast_strong(Store &c, const Store &s, const T& expr) {
+auto run_ast_strong(Store &c, const Store &s, const T& expr) {
 	return expr.strongCall(c,s);
 }
 
@@ -72,12 +72,12 @@ template<HandleAccess ha, typename T>
 void run_ast_strong(Store &, const Store&, const Handle<Level::causal,ha,T>& ) {
 
 }
-
-template<HandleAccess ha, typename T>
-T run_ast_strong(Store &, const Store&, const Handle<Level::strong,ha,T>& t) {
-	return t.get();
-}
 //*/
+template<HandleAccess ha, typename T>
+Handle<Level::strong,ha,T> run_ast_strong(Store &, const Store&, const Handle<Level::strong,ha,T>& t) {
+	assert(false && "sorry, you've got to handle this specially");
+}
+
 
 template<HandleAccess ha, typename T>
 Handle<Level::strong,ha,T> run_ast_causal(const Store &, const Store &, const Handle<Level::strong,ha,T>& ) {
@@ -92,7 +92,7 @@ T run_ast_causal(Store &, const Store &, const Handle<Level::causal,ha,T>& t) {
 //*/
 
 template<typename T, restrict(is_ConExpr<T>::value && !std::is_scalar<T>::value)>
-T run_ast_causal(Store &c, const Store &s, const T& expr) {
+auto run_ast_causal(Store &c, const Store &s, const T& expr) {
 	return expr.causalCall(c,s);
 }
 
