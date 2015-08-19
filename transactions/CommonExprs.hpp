@@ -56,6 +56,13 @@ public:
 	
 };
 
+template<unsigned long long, Level l, typename T>
+auto find_usage(const CSConstant<l,T> &t){
+	return nullptr;
+}
+
+template<unsigned long long ID, Level l, typename T>
+struct contains_temporary<ID, CSConstant<l,T> > : std::false_type {};
 
 template<typename T, restrict(std::is_scalar<T>::value)>
 auto wrap_constants(const T &t){

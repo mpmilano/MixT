@@ -3,6 +3,7 @@
 #include "../BitSet.hpp"
 #include "Basics.hpp"
 #include "RemoteObject.hpp"
+#include "Store.hpp"
 #include <memory>
 
 template<typename,typename>
@@ -45,6 +46,7 @@ private:
 	Handle(std::shared_ptr<RemoteObject<T> > _ro):_ro(_ro){}
 public:
 	
+	int uid = gensym();
 	
 	typename std::conditional<canWrite<HA>::value,
 							  RemoteObject<T>&,
@@ -114,6 +116,9 @@ public:
 		Handle<l,HA,T> ret(sp);
 		return ret;
 	}
+	
+	template<HandleAccess ha2, typename T2>
+	friend Handle<Level::strong,ha2,T2> run_ast_causal(const Store &cache, const Store &, const Handle<Level::strong,ha2,T2>& h);
 	
 /*
 	//TODO: same treatment as in Operate

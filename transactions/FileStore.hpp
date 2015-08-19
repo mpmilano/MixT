@@ -181,9 +181,10 @@ struct FileStore : public DataStore<l> {
 
 	template<typename T> 
 	OPERATION(Insert, FSObject<std::set<T> >* ro, const T& t){
-				std::cout << "DOING INSERT!" << std::endl;
+		std::cout << "DOING INSERT!" << std::endl;
 		if (FSDir<T>* dir = dynamic_cast<FSDir<T>*>(ro)) {
 			FSObject<T> obj(dir->filename + std::to_string(gensym()),t);
+			std::cout << "Done insert!" << std::endl;
 			return true;
 		}
 		

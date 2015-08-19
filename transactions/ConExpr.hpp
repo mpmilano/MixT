@@ -75,19 +75,26 @@ void run_ast_strong(Store &, const Store&, const Handle<Level::causal,ha,T>& ) {
 //*/
 template<HandleAccess ha, typename T>
 Handle<Level::strong,ha,T> run_ast_strong(Store &, const Store&, const Handle<Level::strong,ha,T>& t) {
-	assert(false && "sorry, you've got to handle this specially");
+	return t;
 }
 
 
 template<HandleAccess ha, typename T>
-Handle<Level::strong,ha,T> run_ast_causal(const Store &, const Store &, const Handle<Level::strong,ha,T>& ) {
-	assert(false && "sorry, you've got to handle this specially");
+Handle<Level::strong,ha,T> run_ast_causal(const Store &cache, const Store &, const Handle<Level::strong,ha,T>& h) {
+	struct LocalObject : public RemoteObject<T> {
+		const T t;
+	};
+	return Handle<Level::strong,ha,T>{std::shared_ptr<LocalObject>{new LocalObject{cache.get<T>(h.uid)}}};
+	//TODO: need to cache this at the Transaction level!
+	//TODO: need to ensure operations over strong handles
+	//do not depend on causal data! (we probably already do this, but check!)
+
 }
 
 
 template<HandleAccess ha, typename T>
 Handle<Level::causal,ha,T> run_ast_causal(Store &, const Store &, const Handle<Level::causal,ha,T>& t) {
-	assert(false && "sorry, you've got to handle this specially");
+	return t;
 }
 //*/
 

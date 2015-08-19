@@ -227,10 +227,11 @@ struct RefTemporary : public ConExpr<decltype(run_ast_causal(mke_store(), mke_st
 	}
 
 	template<typename E>
-	enable_if<!std::is_same<Temporary<id,l,T>, Temp>::value, TemporaryMutation<E> >
+	enable_if<!std::is_same<Temporary<id,l,T>, Temp>::value, TemporaryMutation<decltype(wrap_constants(*mke_p<E>()))> >
 	operator=(const E &e) const {
 		static_assert(is_ConExpr<E>::value,"Error: attempt to assign non-Expr");
-		TemporaryMutation<E> r{name,t.id,wrap_constants(e)};
+		auto wrapped = wrap_constants(e);
+		TemporaryMutation<decltype(wrapped)> r{name,t.id,wrapped};
 		return r;
 	}
 

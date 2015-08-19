@@ -30,7 +30,7 @@ int main(){
 						do_op(Insert,num_dir,42)
 						),
 					tmp = free_expr(bool,num_dir, num_dir.empty());,
-					WHILE (!tmp) DO (dummy1;),
+					WHILE (!tmp) DO (dummy1, tmp = false),
 					IF (isValid(num_dir)) THEN (dummy1;)
 					)
 				);
