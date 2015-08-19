@@ -27,3 +27,7 @@ template<template<typename> typename Pred, typename Arg>
 struct neg_error_helper : std::integral_constant<bool, !Pred<Arg>::value >{
 	static_assert(!Pred<Arg>::value);
 };
+
+struct NoOverloadFoundError{
+	const std::string msg;
+};

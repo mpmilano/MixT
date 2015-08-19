@@ -112,7 +112,8 @@ struct PreOp<std::tuple<J...> > {
 								return std::pair<bool,bool>(true,e(cached(c,args)...));
 							}
 						},std::pair<bool,bool>(false,false));
-				assert(result.first && "Error: found no function to call");
+				if (!result.first) throw NoOverloadFoundError{type_name<decltype(t)>()};
+
 				return result.second;
 			},
 			 BitSet<HandleAbbrev>::big_union(get_ReadSet(args)...),
