@@ -72,7 +72,7 @@ struct MutDeclarationScope : public DeclarationScope<ID,CS,l,Temp>{
 
 
 template<unsigned long long ID, typename CS, Level l, typename Temp >
-auto find_usage(const DeclarationScope<ID,CS,l,Temp>&){
+std::nullptr_t find_usage(const DeclarationScope<ID,CS,l,Temp>&){
 	//we have been shadowed!
 	return nullptr;
 }
@@ -91,7 +91,9 @@ auto find_usage(const DeclarationScope<ID2,CS,l,temp>& ds){
 
 template<unsigned long long ID,typename CS, Level l, typename temp>
 std::ostream & operator<<(std::ostream &os, const DeclarationScope<ID,CS,l,temp> &t){
-	assert(t.gt);
+	static_assert(!std::is_same<decltype(*t.gt), std::nullptr_t>::value);
+	static_assert(!std::is_same<decltype(t.gt.get()), std::nullptr_t>::value);
+	assert(t.gt && "Error: we found a replacement, but gt is still null!");
 	os << t.name << "<" << levelStr<l>() <<"> = " << t.gt->gets;
 	fold(t.cs,[&os](const auto &e, int) -> int
 		 {os << "  " << e << std::endl; return 0; },0);
@@ -129,25 +131,37 @@ struct _impl_pick_new_type<std::nullptr_t, std::nullptr_t > {
 //ugh truth tables.
 template<unsigned long long id, Level l2, typename T>
 auto choose_gt(const std::shared_ptr<const std::nullptr_t>&, const std::shared_ptr<const MutableTemporary<id,l2,T> >& r){
+	assert(r.get());
 	return r;
 }
 template<unsigned long long id, Level l2, typename T>
 auto choose_gt(const std::shared_ptr<const std::nullptr_t>&, const std::shared_ptr<const Temporary<id,l2,T> >& r){
+	assert(r.get());
 	return r;
 }
 template<unsigned long long id, Level l2, typename T>
 auto choose_gt(const std::shared_ptr<const MutableTemporary<id,l2,T> >& r,const std::shared_ptr<const std::nullptr_t>&){
+	assert(r.get());
 	return r;
 }
 template<unsigned long long id, Level l2, typename T>
 auto choose_gt(const std::shared_ptr<const Temporary<id,l2,T> >& r,const std::shared_ptr<const std::nullptr_t>&){
+	assert(r.get());
 	return r;
 }
 
-template<typename T>
+template<typename T, restrict(!std::is_same<T CMA std::shared_ptr<const std::nullptr_t> >::value )>
+auto choose_gt(const T& r1, const T& r2){
+	assert(r1.get() || r2.get());
+	if (r1.get()) return r1;
+	else return r2;
+}
+
+template<typename T, restrict2(std::is_same<T CMA std::shared_ptr<const std::nullptr_t> >::value )>
 auto choose_gt(const T&, const T& r){
 	return r;
 }
+
 
 template<typename T, typename R>
 auto choose_gt(const T&, const R& r){
