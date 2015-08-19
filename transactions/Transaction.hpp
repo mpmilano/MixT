@@ -5,15 +5,30 @@
 #include "Transaction_macros.hpp"
 
 struct Transaction{
-	const std::function<bool (Store &)> action;
+	const std::function<bool (const BitSet<HandleAbbrev> &, const BitSet<HandleAbbrev> &,Store &)> action;
 	const std::function<std::ostream & (std::ostream &os)> print;
 	const BitSet<HandleAbbrev> strong;
 	const BitSet<HandleAbbrev> weak;
 	
 	template<typename Cmds>
 	Transaction(const TransactionBuilder<Cmds> &s):
-		action([s](Store &st) -> bool{
-				return call_all(st,s.curr);
+		action([s](const BitSet<HandleAbbrev> &, const BitSet<HandleAbbrev> &, Store &st) -> bool{
+				//TODO: beginning and leaving transactions needs to happen.
+				//Beginning transaction can just happen via calls to
+				//handles (i.e. run_ast).
+				//leaving transactions seems trickier.
+				//Maybe stash things in the store?
+
+				//NOPE: this is exactly what those readSets are for.
+				//that will give you exactly the handles you need
+				//to begin and end transactions, which you should
+				//really do here.
+
+				Store cache;
+				//do something transactiony
+				call_all_strong(cache,st,s.curr);
+				//do something else transactiony
+				return call_all_causal(cache,st,s.curr);
 			}),
 		print([s](std::ostream &os) -> std::ostream& {
 				os << "printing AST!" << std::endl;
@@ -38,7 +53,7 @@ struct Transaction{
 
 	bool operator()() const {
 		Store s;
-		return action(s);
+		return action(strong,weak,s);
 	}
 
 	struct CannotProceedError {};

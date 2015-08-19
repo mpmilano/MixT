@@ -4,6 +4,16 @@
 #include "type_utils.hpp"
 #include "ConExpr.hpp"
 
+template<typename T, Level l, HandleAccess ha>
+auto get_if_handle(Handle<l,ha,T> h){
+	return h.get();
+}
+
+template<typename T, restrict(!is_handle<T>::value)>
+T get_if_handle(const T&t){
+	return t;
+}
+
 template<typename T, typename... Exprs>
 struct FreeExpr : public ConExpr<T, min_level<Exprs...>::value > {
 
@@ -19,7 +29,7 @@ struct FreeExpr : public ConExpr<T, min_level<Exprs...>::value > {
 		:params(std::make_tuple(h...)),
 		 f([=](const Store &c, const std::tuple<Exprs...> &t){
 				 auto retrieved = fold(t,
-									   [&](const auto &e, const auto &acc){return tuple_cons(cached(c,e),acc);}
+									   [&](const auto &e, const auto &acc){return tuple_cons(get_if_handle(cached(c,e)),acc);}
 									   ,std::tuple<>());
 				 return callFunc(f,retrieved);
 			 }),
