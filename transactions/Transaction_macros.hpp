@@ -6,7 +6,7 @@
 /*#define TRANS_CONS(x...) { auto prev2 = append(prev, curr);	\
 	{ auto prev = prev2; { x } } }
 */
-#define TRANS_CONS(x...) {auto curr = x ;{ auto prev2 = append(prev,curr); { auto prev = prev2;
+#define TRANS_CONS(x...) {static auto curr = x ;{ static auto prev2 = append(prev,curr); { static auto prev = prev2;
 #define STANDARD_BEGIN(x...) (x);
 
 #define END_TRANSACTION Transaction ____transaction(prev); std::cout << ____transaction << std::endl << "all done printing" << std::endl; ____transaction();
@@ -21,9 +21,9 @@
 #define TRANSACTION(args...) { TransactionBuilder<std::tuple<> > prev; TRANS_SEQ(args, END_TRANSACTION)}
 
 
-#define let_mutable(x) [&]() { auto decl = MutDeclaration(#x); auto x = (MutAssigner(#x)
+#define let_mutable(x) [&]() { static auto decl = MutDeclaration(#x); static auto x = (MutAssigner(#x)
 
-#define let_ifValid(x)  [&]() { auto decl = ImmutDeclaration(#x); auto x = (ImmutAssigner(#x)
+#define let_ifValid(x)  [&]() { static auto decl = ImmutDeclaration(#x); static auto x = (ImmutAssigner(#x)
 #define IN(args...) ); (TRANS_SEQ(STANDARD_BEGIN(decl),args, STANDARD_BEGIN(end_var_scope()), return clobber(prev);));  }(); 
 
 #define raw(x...) STANDARD_BEGIN(x)
