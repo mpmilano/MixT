@@ -6,3 +6,7 @@ SOURCES = new_test.cpp
 
 QMAKE_CXX = clang++
 QMAKE_CXXFLAGS += -stdlib=libc++
+QMAKE_LINK = clang++
+QMAKE_LFLAGS = -stdlib=libc++
+
+LIBS += -lboost_serialization -lboost_serialization-mt
