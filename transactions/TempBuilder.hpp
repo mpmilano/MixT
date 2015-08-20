@@ -91,8 +91,8 @@ auto find_usage(const DeclarationScope<ID2,CS,l,temp>& ds){
 
 template<unsigned long long ID,typename CS, Level l, typename temp>
 std::ostream & operator<<(std::ostream &os, const DeclarationScope<ID,CS,l,temp> &t){
-	static_assert(!std::is_same<decltype(*t.gt), std::nullptr_t>::value);
-	static_assert(!std::is_same<decltype(t.gt.get()), std::nullptr_t>::value);
+	static_assert(!std::is_same<decltype(*t.gt), std::nullptr_t>::value,"Static assert failed");
+	static_assert(!std::is_same<decltype(t.gt.get()), std::nullptr_t>::value,"Static assert failed");
 	assert(t.gt && "Error: we found a replacement, but gt is still null!");
 	os << t.name << "<" << levelStr<l>() <<"> = " << t.gt->gets;
 	fold(t.cs,[&os](const auto &e, int) -> int

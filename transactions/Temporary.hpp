@@ -249,7 +249,7 @@ struct RefTemporary : public ConExpr<decltype(run_ast_causal(mke_store(), mke_st
 private:
 	static auto call(const Store &s, const Temporary<id,l,T> &t) -> decltype(run_ast_causal(mke_store(),mke_store(),t.t)) {
 		typedef decltype(run_ast_causal(mke_store(),mke_store(),t.t)) R;
-		static_assert(neg_error_helper<is_ConStatement,R>::value);
+		static_assert(neg_error_helper<is_ConStatement,R>::value,"Static assert failed");
 		return *((R*) s.at(t.id).get());
 	}
 };

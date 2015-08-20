@@ -6,7 +6,7 @@ using TSeq = B;
 
 template<typename , typename, bool b>
 constexpr bool failOn(){
-	static_assert(b);
+	static_assert(b,"Static assert failed");
 	return true;
 }
 
@@ -20,12 +20,12 @@ using decay = typename std::decay<T>::type;
 template<bool B, typename V = void>
 using enable_if = typename std::enable_if<B,V>::type;
 
-template<template<typename> typename Pred, typename Arg>
+template<template<typename> class Pred, typename Arg>
 using type_check = enable_if<Pred<Arg>::value, Arg>;
 
-template<template<typename> typename Pred, typename Arg>
+template<template<typename> class Pred, typename Arg>
 struct neg_error_helper : std::integral_constant<bool, !Pred<Arg>::value >{
-	static_assert(!Pred<Arg>::value);
+	static_assert(!Pred<Arg>::value,"Static assert error");
 };
 
 struct NoOverloadFoundError{

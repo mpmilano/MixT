@@ -136,7 +136,6 @@ struct NoOperation {
 	return ret;															\
 	}																	\
 	catch (Transaction::ClassCastException e){							\
-		std::cerr << "ClassCastException! " << std::endl;				\
 		return tuple_cons(def,accum);									\
 	}																	\
 	},std::tuple<>());													\

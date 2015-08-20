@@ -31,7 +31,7 @@ struct FileStore : public DataStore<l> {
 		FSObject(const std::string &name, const T &init):t(heap_copy(init)),filename(name) {
 			std::ofstream ofs(filename);
 			boost::archive::text_oarchive oa(ofs);
-			static_assert(!std::is_const<decltype(this)>::value);
+			static_assert(!std::is_const<decltype(this)>::value,"Static assert failed");
 			FSObject<T> &ths = *this;
 			oa << ths;
 		}

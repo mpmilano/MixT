@@ -52,7 +52,7 @@ public:
 		return val;
 	}
 
-	static_assert(!std::is_scalar<CSConstant<l,T> >::value);
+	static_assert(!std::is_scalar<CSConstant<l,T> >::value,"Static assert failed");
 	
 };
 

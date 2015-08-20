@@ -1,3 +1,6 @@
+//#define DECLARED_OPERATIONS template<typename T> DECLARE_OPERATION(Insert, RemoteObject<std::set<T> >*, const T& )
+//#define STORE_LIST FileStore<Level::causal>,FileStore<Level::strong>
+
 #include "IfBuilder.hpp"
 #include "TransactionBuilder.hpp"
 #include "Transaction.hpp"

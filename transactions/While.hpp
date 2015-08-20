@@ -42,11 +42,14 @@ struct While : public ConStatement<min_level<Then>::value> {
 	}
 	
 	bool strongCall(Store &c, Store &s) const {
+		std::cout << "In while body" << std::endl;
 		std::integral_constant<bool,get_level<Cond>::value == Level::strong>*
 			choice1{nullptr};
 		std::integral_constant<bool,min_level<Then>::value == Level::strong>*
 			choice2{nullptr};
-		return strongCall(c,s,choice1,choice2);
+		bool ret = strongCall(c,s,choice1,choice2);
+		std::cout << "Out of while body" << std::endl;
+		return ret;
 	}
 
 	bool strongCall(Store &c, Store &s, const std::true_type*,const std::true_type*) const {
@@ -97,6 +100,7 @@ struct While : public ConStatement<min_level<Then>::value> {
 		//if there's a cache for this AST node, then
 		//that means we've already run the condition.
 		//look it up!
+		std::cout << "In while body" << std::endl;
 		if (c_old.contains(id)){
 			for (auto &c : c_old.get<std::list<std::unique_ptr<Store> > >(id)){
 				call_all_causal(*c,s,then);
@@ -106,6 +110,7 @@ struct While : public ConStatement<min_level<Then>::value> {
 			//causal condition, so nothing interesting here.
 			while(run_ast_causal(c_old,s,cond)) call_all_causal(c_old,s,then);
 		}
+		std::cout << "out of while body" << std::endl;
 
 		return true;
 	}
