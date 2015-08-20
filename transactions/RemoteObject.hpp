@@ -1,6 +1,7 @@
 #pragma once
 
 #include "type_utils.hpp"
+#include "GDataStore.hpp"
 
 struct GeneralRemoteObject {
 	const int id = gensym();
@@ -13,7 +14,8 @@ class RemoteObject : public GeneralRemoteObject {
 	virtual const T& get() const = 0;
 	virtual void put(const T&) = 0;
 	virtual bool isValid() const = 0;
-
+	virtual const GDataStore& store() const = 0;
+	virtual GDataStore& store() = 0;
 
 	//TODO: delete these when you're done hacking around.
 	RemoteObject(const RemoteObject&) = delete;

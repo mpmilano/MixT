@@ -4,6 +4,7 @@
 #include "Basics.hpp"
 #include "RemoteObject.hpp"
 #include "Store.hpp"
+#include "Tracker.hpp"
 #include <memory>
 
 template<typename,typename>
@@ -43,7 +44,10 @@ struct Handle : public GenericHandle<l,HA> {
 
 private:
 	const std::shared_ptr<RemoteObject<T> > _ro;
-	Handle(std::shared_ptr<RemoteObject<T> > _ro):_ro(_ro){}
+	Tracker &t;
+	Handle(std::shared_ptr<RemoteObject<T> > _ro):_ro(_ro),t(Tracker::global_tracker){
+		t.registerStore(_ro->store());
+	}
 public:
 	
 	int uid = gensym();
@@ -63,6 +67,7 @@ public:
 	typedef T stored_type;
 	
 	const T& get() const {
+		//TODO: causal tracking
 		assert(_ro);
 		return _ro->get();
 	}
@@ -72,6 +77,7 @@ public:
 	}
 	
 	void put(const T& t) {
+		//TODO: causal tracking
 		assert(_ro);
 		_ro->put(t);
 	}

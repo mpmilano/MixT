@@ -18,8 +18,11 @@ struct FileStore : public DataStore<l> {
 		const std::string filename;
 
 		typedef FileStore<l> Store;
+		Store s;
+		const GDataStore& store() const {return s;}
+		GDataStore& store() {return s;}
 		
-		FSObject(const std::string &name, bool exists = false):filename(name){
+		FSObject(Store &s, const std::string &name, bool exists = false):filename(name),s(s){
 			if (!exists){
 				std::ofstream ofs(filename);
 				boost::archive::text_oarchive oa(ofs);
@@ -28,7 +31,7 @@ struct FileStore : public DataStore<l> {
 			}
 		}
 		
-		FSObject(const std::string &name, const T &init):t(heap_copy(init)),filename(name) {
+		FSObject(Store &s, const std::string &name, const T &init):t(heap_copy(init)),filename(name),s(s) {
 			std::ofstream ofs(filename);
 			boost::archive::text_oarchive oa(ofs);
 			static_assert(!std::is_const<decltype(this)>::value,"Static assert failed");
@@ -118,7 +121,7 @@ struct FileStore : public DataStore<l> {
 	
 	template<typename T>
 	struct FSDir : public FSObject<std::set<T> > {
-		FSDir(const std::string &name):FSObject<std::set<T> >(name,true){
+		FSDir(const typename FSObject<std::set<T> >::Store &s, const std::string &name):FSObject<std::set<T> >(s,name,true){
 			system(("exec mkdir -p " + name).c_str());
 		}
 
@@ -150,21 +153,21 @@ struct FileStore : public DataStore<l> {
 	auto newObject(){
 		return make_handle
 			<l,ha,T,FSObject<T>>
-			(std::string("/tmp/fsstore/") + std::to_string(gensym()));
+			(*this,std::string("/tmp/fsstore/") + std::to_string(gensym()));
 	}
 
 	template<HandleAccess ha, typename T>
 	auto newCollection(){
 		return make_handle
 			<l,ha,std::set<T>,FSDir<T>>
-			(std::string("/tmp/fsstore/") + std::to_string(gensym()) + "/");
+			(*this,std::string("/tmp/fsstore/") + std::to_string(gensym()) + "/");
 	}
 
 	template<HandleAccess ha, typename T>
 	auto newObject(const T &t){
 		return make_handle
 			<l,ha,T,FSObject<T>>
-			(std::string("/tmp/fsstore/") + std::to_string(gensym()),t);
+			(*this,std::string("/tmp/fsstore/") + std::to_string(gensym()),t);
 	}
 
 	template<typename T>
@@ -183,7 +186,7 @@ struct FileStore : public DataStore<l> {
 	OPERATION(Insert, FSObject<std::set<T> >* ro, const T& t){
 		std::cout << "DOING INSERT!" << std::endl;
 		if (FSDir<T>* dir = dynamic_cast<FSDir<T>*>(ro)) {
-			FSObject<T> obj(dir->filename + std::to_string(gensym()),t);
+			FSObject<T> obj(ro->s,dir->filename + std::to_string(gensym()),t);
 			std::cout << "Done insert!" << std::endl;
 			return true;
 		}

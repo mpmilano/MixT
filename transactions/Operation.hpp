@@ -1,4 +1,6 @@
 #pragma once
+
+#include "Handle.hpp"
 #include "tuple_extras.hpp"
 #include "utils.hpp"
 #include "args-finder.hpp"
@@ -94,6 +96,10 @@ struct Operation<Store, Ret (*) (A...)> {
 		static_assert(can_flow(min,max),"Error: potential flow violation!");
 		assert(can_flow(min,max));
 		
+		//do this here so we abort before causal tracking happens
+		ignore(Store::tryCast(extract_robj_p(args))...);
+			
+		//TODO: causal tracking
 		return fun(Store::tryCast(extract_robj_p(args))...);
 	}
 };
