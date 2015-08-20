@@ -102,6 +102,7 @@ struct Not : public ConExpr<bool, get_level<T>::value> {
 	}
 
 	bool causalCall(Store& cache, const Store& s) const {
+
 		if (cache.contains(this->id) ) return cache.get<bool>(this->id);
 		else {
 			cache.insert(this->id,!v.causalCall(cache,s));

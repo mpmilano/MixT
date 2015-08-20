@@ -62,14 +62,19 @@ struct While : public ConStatement<min_level<Then>::value> {
 
 	bool strongCall(Store &c_old, Store &s, const std::true_type*, const std::false_type*) const {
 		//the "hard" case, if you will. a strong condition, but some causal statements inside.
-		s.emplace<std::list<std::unique_ptr<Store> > >(id);
+		std::cout << "in the hard case (" << this->id << ")" << std::endl;
+		c_old.emplace<std::list<std::unique_ptr<Store> > >(id);
 		
-		auto &store_stack = s.get<std::list<std::unique_ptr<Store> > >(id);
+		auto &store_stack = c_old.get<std::list<std::unique_ptr<Store> > >(id);
 		
-		while(run_ast_strong(*store_stack.back(),s,cond)){
+		do {
 			store_stack.emplace_back(new Store(&c_old));
 			call_all_strong(*store_stack.back(),s,then);
-		}
+		} while(run_ast_strong(*store_stack.back(),s,cond));
+
+		assert(c_old.contains(id));
+		
+		std::cout << "out of the hard case" << std::endl;
 
 		//TODO: error propogation
 		return true;
@@ -100,17 +105,19 @@ struct While : public ConStatement<min_level<Then>::value> {
 		//if there's a cache for this AST node, then
 		//that means we've already run the condition.
 		//look it up!
-		std::cout << "In while body" << std::endl;
+		std::cout << "In while body (Causal)" << std::endl;
 		if (c_old.contains(id)){
+			std::cout << "looks like we already ran this strong (" << this->id << ")" << std::endl;
 			for (auto &c : c_old.get<std::list<std::unique_ptr<Store> > >(id)){
 				call_all_causal(*c,s,then);
 			}
 		}
 		else {
+			std::cout << "looks like we've never done this before (" << this->id << ")" << std::endl;
 			//causal condition, so nothing interesting here.
 			while(run_ast_causal(c_old,s,cond)) call_all_causal(c_old,s,then);
 		}
-		std::cout << "out of while body" << std::endl;
+		std::cout << "out of while body (causal)" << std::endl;
 
 		return true;
 	}

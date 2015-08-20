@@ -39,6 +39,8 @@ int main(){
 				);
 		}
 
+		std::cout << std::endl << "now doing causal" << std::endl << std::endl;
+
 		{
 
 			FileStore<Level::causal> fs;
@@ -57,7 +59,7 @@ int main(){
 						do_op(Insert,num_dir,42)
 						),
 					tmp = free_expr(bool,num_dir, num_dir.empty());,
-					WHILE (!tmp) DO (dummy2;),
+					WHILE (!tmp) DO (dummy2, tmp = true),
 					IF (isValid(num_dir)) THEN (dummy2;)
 					)
 				);
