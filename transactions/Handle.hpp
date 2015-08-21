@@ -60,7 +60,7 @@ public:
 		return *_ro;
 	}
 
-	Handle() {}
+	Handle():t(Tracker::global_tracker()) {}
 		
 	static constexpr Level level = l;
 	static constexpr HandleAccess ha = HA;

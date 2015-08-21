@@ -168,7 +168,7 @@ std::enable_if_t<is_ConExpr<T>::value, Not<T> >  operator!(const T &t){
 
 template<typename T>
 struct IsValid : public ConExpr<bool, get_level<T>::value> {
-	static_assert(is_handle<decltype(mke<T>().causalCall(mke_store(),mke_store()))>::value,"error: IsValid designed for referential integrity of handles.");
+	static_assert(is_handle<decltype(run_ast_causal(mke_store(),mke_store(),mke<T>()))>::value,"error: IsValid designed for referential integrity of handles.");
 
 	const T t;
 	
