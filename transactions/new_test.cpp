@@ -32,13 +32,14 @@ int main(){
 			}
 
 			TRANSACTION(
+				let_mutable(tmp2) = true IN (
 				let_mutable(tmp) = true IN (
 					IF (tmp) THEN(
 						do_op(Insert,num_dir,42)
 						),
 					tmp = free_expr(bool,num_dir, num_dir.empty());,
 					WHILE (!tmp) DO (dummy1, tmp = true),
-					IF (isValid(num_dir)) THEN (dummy1;)
+					IF (isValid(num_dir)) THEN (dummy1;))
 					)
 				);
 		}
@@ -58,14 +59,14 @@ int main(){
 			}
 
 			TRANSACTION(
-				let_mutable(tmp) = true IN (
+					let_mutable(tmp) = true IN (
 					IF (tmp) THEN(
 						do_op(Insert,num_dir,42)
 						),
-					tmp = free_expr(bool,num_dir, num_dir.empty());,
+					tmp = free_expr(bool,num_dir, num_dir.empty()),
 					WHILE (!tmp) DO (dummy2, tmp = true),
 					IF (isValid(num_dir)) THEN (dummy2;)
-					)
+												 )
 				);
 		}
 

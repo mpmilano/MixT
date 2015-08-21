@@ -276,6 +276,7 @@ struct MutableDeclarationBuilder {
 			typename std::decay<decltype(*this_decl.gt.get())>::type
 			>::type found_type;
 
+		std::cout << "looking for " <<  ID << std::endl;
 		if (contains_temporary<ID,found_type>::value){
 			std::cout << "found it!" << std::endl;
 		}
@@ -315,6 +316,14 @@ struct ImmutableDeclarationBuilder {
 			typename std::decay<decltype(find_usage<ID>(t))>::type,
 			typename std::decay<decltype(*this_decl.gt)>::type
 			>::type found_type;
+
+		std::cout << "looking for (immutable) " << ID << std::endl;
+		if (contains_temporary<ID,found_type>::value){
+			std::cout << "found it!" << std::endl;
+		}
+		else {
+			std::cout << "still looking" << std::endl;
+		}
 
 
 		constexpr Level new_level = get_level<found_type>::value;
@@ -363,16 +372,36 @@ const auto& end_var_scope() {
 	return vse;
 }
 
+template<typename A, typename B>
+auto append_helper(const A& a, const B &b, std::true_type*){
+	return append(a, b);
+}
+
+template<typename A, typename B>
+auto append_helper(const A& prevBuilder, const B &this_decl, std::false_type*){
+	return fold(
+		this_decl.cs,
+		[](const auto &e, const auto &acc){
+			return append(acc,e);
+		},
+		prevBuilder
+		);
+}
+
 template<typename PrevBuilder, unsigned long long ID, typename CS, Level l, bool b, typename temp>
 auto append(const MutableDeclarationBuilder<PrevBuilder, ID, CS, l, b,temp>  &pb, const VarScopeEnd&){
-	static_assert(b,"Error: must use all temporaries you define in a transaction.");
-	return append(pb.prevBuilder, pb.this_decl);
+	if (!b) std::cout << "we just ended a var scope without finding anything ("
+					  << ID << ")" << std::endl;
+	std::integral_constant<bool, b> *choice = nullptr;
+	return append_helper(pb.prevBuilder, pb.this_decl, choice);
 }
 
 template<typename PrevBuilder, unsigned long long ID, typename CS, Level l, bool b, typename temp>
 auto append(const ImmutableDeclarationBuilder<PrevBuilder, ID, CS, l, b, temp>  &pb, const VarScopeEnd&){
-	static_assert(b,"Error: must use all temporaries you define in a transaction.");
-	return append(pb.prevBuilder, pb.this_decl);
+	if (!b) std::cout << "we just ended a var scope without finding anything ("
+					  << ID << ")" << std::endl;
+	std::integral_constant<bool, b> *choice = nullptr;
+	return append_helper(pb.prevBuilder, pb.this_decl, choice);
 }
 
 
