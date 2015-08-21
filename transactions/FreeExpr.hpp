@@ -3,6 +3,7 @@
 #include "tuple_extras.hpp"
 #include "type_utils.hpp"
 #include "ConExpr.hpp"
+#include "FreeExpr_macros.hpp"
 
 template<typename T, Level l, HandleAccess ha>
 auto get_if_handle(Handle<l,ha,T> h){
@@ -17,8 +18,7 @@ T get_if_handle(const T&t){
 template<unsigned long long id, Level l, typename T, typename Temp>
 struct extract_type<RefTemporary<id,l,T,Temp> >{
 	using type = typename
-		extract_type<decltype(mke<RefTemporary<id,l,T,Temp> >().
-							  causalCall(mke_store(), mke_store()))>::type;
+		extract_type<run_result<RefTemporary<id,l,T,Temp> > >::type;
 };
 
 template<typename T, typename... Exprs>
@@ -109,14 +109,3 @@ std::ostream & operator<<(std::ostream &os, const FreeExpr<i,E...>& op){
 	return os << " apparently you can't print functions ";
 }
 
-
-#define free_expr3(T,a,e) (FreeExpr<T,decltype(a)>([&](const typename extract_type<decltype(a)>::type &a){return e;},a))
-#define free_expr4(T,a,b,e) (FreeExpr<T,decltype(a),decltype(b)>([&](const typename extract_type<decltype(a)>::type &a, \
-																	 const typename extract_type<decltype(b)>::type &b){return e;},a,b))
-
-
-#define free_expr_IMPL2(count, ...) free_expr ## count (__VA_ARGS__)
-#define free_expr_IMPL(count, ...) free_expr_IMPL2(count, __VA_ARGS__)
-#define free_expr(...) free_expr_IMPL(VA_NARGS(__VA_ARGS__), __VA_ARGS__)
-
-#define msg(a,b) free_expr(decltype(run_ast_causal(mke_store(),mke_store(),a).get().b), a, a.b)

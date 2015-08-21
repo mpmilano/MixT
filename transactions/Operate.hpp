@@ -106,7 +106,9 @@ struct PreOp<std::tuple<J...> > {
 		std::shared_ptr<decltype(t)> t_ptr{heap_copy(t)};
 		assert(fold(*t_ptr,[](const auto &e, bool acc){return e.built_well || acc;},false));
 		
-		return Operate<l,decltype(std::get<0>(t)(run_ast_causal(mke_store(),mke_store(),args)...)),decltype(std::make_tuple(args...)) >
+		return Operate<l,decltype(std::get<0>(t)(
+									  std::declval<run_result<decltype(args)> >()...
+									  )),decltype(std::make_tuple(args...)) >
 			([=](const Store &c) {
 				assert(fold(*t_ptr,[](const auto &e, bool acc){return e.built_well || acc;},false));
 				std::pair<bool,bool> result =

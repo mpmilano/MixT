@@ -57,7 +57,3 @@ struct Store : std::map<int,std::unique_ptr<void*> >{
 
 };
 
-Store& mke_store(){
-	static Store s;
-	return s;
-}

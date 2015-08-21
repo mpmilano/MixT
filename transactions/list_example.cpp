@@ -7,6 +7,8 @@
 #include "TempBuilder.hpp"
 #include "FreeExpr.hpp"
 #include "Transaction_macros.hpp"
+#include "FreeExpr_macros.hpp"
+#include "Operate_macros.hpp"
 
 template<typename T>
 FINALIZE_OPERATION(Increment, RemoteObject<T>*)
@@ -20,6 +22,7 @@ struct WeakCons {
 int main() {
 
 	Handle<Level::strong, HandleAccess::all, WeakCons> h;
+
 
 	TRANSACTION(
 		let_mutable(hd) = h IN (

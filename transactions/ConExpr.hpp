@@ -141,9 +141,13 @@ run_ast_causal(const Store &, const Store&, const T& e) {
 	return e;
 }
 
+template<typename T>
+using run_result = decltype(run_ast_causal(std::declval<Store&>(),std::declval<Store&>(),std::declval<T&>()));
+
+
 template<typename T, restrict(is_ConExpr<T>::value && !std::is_scalar<T>::value)>
 auto cached(const Store &cache, const T& ast){
-	using R = decltype(run_ast_causal(mke_store(),cache,ast));
+	using R = run_result<T>;
 	return cache.get<R>(ast.id);
 }
 
@@ -176,3 +180,4 @@ struct contains_temporary<id,int> : std::false_type {};
 
 template<unsigned long long id>
 struct contains_temporary<id,bool> : std::false_type {};
+

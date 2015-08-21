@@ -179,7 +179,8 @@ class CSConstant;
 #define ImmutAssigner(c) ImmutCreator<unique_id<(sizeof(c) / sizeof(char)) - 1>(c)>{c}
 
 template<unsigned long long id, Level l, typename T, typename Temp>
-struct RefTemporary : public ConExpr<decltype(run_ast_causal(mke_store(), mke_store(), *mke_p<T>())),l> {
+struct RefTemporary : public ConExpr<run_result<T>,l> {
+	
 	const Temp t;
 	const std::string name;
 
@@ -247,11 +248,13 @@ struct RefTemporary : public ConExpr<decltype(run_ast_causal(mke_store(), mke_st
 
 
 private:
-	static auto call(const Store &s, const Temporary<id,l,T> &t) -> decltype(run_ast_causal(mke_store(),mke_store(),t.t)) {
-		typedef decltype(run_ast_causal(mke_store(),mke_store(),t.t)) R;
-		static_assert(neg_error_helper<is_ConStatement,R>::value,"Static assert failed");
-		return *((R*) s.at(t.id).get());
-	}
+	static auto call(const Store &s, const Temporary<id,l,T> &t) ->
+		run_result<decltype(t.t)>
+		{
+			typedef run_result<decltype(t.t)> R;
+			static_assert(neg_error_helper<is_ConStatement,R>::value,"Static assert failed");
+			return *((R*) s.at(t.id).get());
+		}
 };
 
 template<unsigned long long ID, Level l, typename T, typename Temp>
