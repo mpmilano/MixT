@@ -153,15 +153,12 @@ auto find_usage(const MutableTemporary<ID,l,T> &rt){
 	return heap_copy(rt);
 }
 
-template<unsigned long long ID, Level l, typename T>
-struct contains_temporary<ID, MutableTemporary<ID,l,T> > : std::true_type {};
-
 template<unsigned long long ID, unsigned long long ID2, Level l, typename T>
 struct contains_temporary<ID, MutableTemporary<ID2,l,T> > : std::integral_constant<bool, ID == ID2> {};
 
 
 template<unsigned long long ID, unsigned long long ID2, Level l, typename T>
-enable_if<ID != ID2,std::nullptr_t> find_usage(const MutableTemporary<ID2,l,T> &rt){
+std::enable_if_t<ID != ID2,std::nullptr_t> find_usage(const MutableTemporary<ID2,l,T> &rt){
 	return nullptr;
 }
 
@@ -227,7 +224,7 @@ struct RefTemporary : public ConExpr<decltype(run_ast_causal(mke_store(), mke_st
 	}
 
 	template<typename E>
-	enable_if<!std::is_same<Temporary<id,l,T>, Temp>::value, TemporaryMutation<decltype(wrap_constants(*mke_p<E>()))> >
+	std::enable_if_t<!std::is_same<Temporary<id,l,T>, Temp>::value, TemporaryMutation<decltype(wrap_constants(*mke_p<E>()))> >
 	operator=(const E &e) const {
 		static_assert(is_ConExpr<E>::value,"Error: attempt to assign non-Expr");
 		auto wrapped = wrap_constants(e);
@@ -236,7 +233,7 @@ struct RefTemporary : public ConExpr<decltype(run_ast_causal(mke_store(), mke_st
 	}
 
 	template<typename E>
-	enable_if<std::is_same<Temporary<id,l,T>, Temp>::value, TemporaryMutation<E> >
+	std::enable_if_t<std::is_same<Temporary<id,l,T>, Temp>::value, TemporaryMutation<E> >
 	operator=(const E &e) const {
 		static_assert(is_ConExpr<E>::value,"Error: attempt to assign non-Expr");
 		static_assert(!is_ConExpr<E>::value,"Error: attempt to mutate immutable temporary.");
@@ -260,7 +257,7 @@ auto find_usage(const RefTemporary<ID,l,T,Temp> &rt){
 }
 
 template<unsigned long long ID, unsigned long long ID2, Level l, typename T, typename Temp>
-enable_if<ID != ID2, std::nullptr_t> find_usage(const RefTemporary<ID,l,T,Temp> &rt){
+std::enable_if_t<ID != ID2, std::nullptr_t> find_usage(const RefTemporary<ID2,l,T,Temp> &rt){
 	return nullptr;
 }
 

@@ -70,7 +70,7 @@ auto wrap_constants(const T &t){
 }
 
 template<typename T>
-enable_if<!std::is_scalar<T>::value, T> wrap_constants(const T& t){
+std::enable_if_t<!std::is_scalar<T>::value, T> wrap_constants(const T& t){
 	return t;
 }
 
@@ -162,7 +162,7 @@ DummyConExpr<l> neg(const DummyConExpr<l>& e){
 }
 
 template<typename T>
-enable_if<is_ConExpr<T>::value, Not<T> >  operator!(const T &t){
+std::enable_if_t<is_ConExpr<T>::value, Not<T> >  operator!(const T &t){
 	return neg(t);
 }
 

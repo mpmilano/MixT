@@ -17,11 +17,8 @@ constexpr bool failOn(){
 template<typename T>
 using decay = typename std::decay<T>::type;
 
-template<bool B, typename V = void>
-using enable_if = typename std::enable_if<B,V>::type;
-
 template<template<typename> class Pred, typename Arg>
-using type_check = enable_if<Pred<Arg>::value, Arg>;
+using type_check = std::enable_if_t<Pred<Arg>::value, Arg>;
 
 template<template<typename> class Pred, typename Arg>
 struct neg_error_helper : std::integral_constant<bool, !Pred<Arg>::value >{

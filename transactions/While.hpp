@@ -128,7 +128,7 @@ template<unsigned long long ID, typename Cond, typename Then>
 auto find_usage(const While<Cond,Then>& _while){
 	return fold(tuple_cons(_while.cond, _while.then),
 				[](const auto &e, const auto &acc){
-					return pick_useful(find_usage<ID>(e),acc);
+					return choose_non_np(find_usage<ID>(e),acc);
 				}
 				, nullptr);
 }

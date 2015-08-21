@@ -72,10 +72,7 @@ template<unsigned long long ID, Level l, typename T, typename Vars>
 auto find_usage(const Operate<l,T,Vars> &op){
 	return fold(op.exprs,
 				[](const auto &e, const auto &acc){
-					if (!acc){
-						return find_usage<ID>(e);
-					}
-					else return acc;
+					return choose_non_np(acc,find_usage<ID>(e));
 				}
 				, nullptr);
 }

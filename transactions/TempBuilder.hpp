@@ -81,10 +81,7 @@ template<unsigned long long ID, unsigned long long ID2, typename CS, Level l, ty
 auto find_usage(const DeclarationScope<ID2,CS,l,temp>& ds){
 	return fold(ds.cs,
 				[](const auto &e, const auto &acc){
-					if (!acc){
-						return find_usage<ID>(e);
-					}
-					else return acc;
+					return choose_non_np(acc,find_usage<ID>(e));
 				}
 				, nullptr);
 }
@@ -185,7 +182,7 @@ struct MutableDeclarationBuilder {
 		auto new_cs = std::tuple_cat(this_decl.cs,std::tuple<T>(t));
 
 		typedef typename _impl_pick_new_type<
-			typename std::decay<decltype(find_usage<ID>(t))>::type,
+			typename std::decay<decltype(dref_np(find_usage<ID>(t)))>::type,
 			typename std::decay<decltype(*this_decl.gt.get())>::type
 			>::type found_type;
 
@@ -218,7 +215,7 @@ struct ImmutableDeclarationBuilder {
 		auto new_cs = std::tuple_cat(this_decl.cs,std::tuple<T>(t));
 
 		typedef typename _impl_pick_new_type<
-			typename std::decay<decltype(*find_usage<ID>(t))>::type,
+			typename std::decay<decltype(find_usage<ID>(t))>::type,
 			typename std::decay<decltype(*this_decl.gt)>::type
 			>::type found_type;
 

@@ -14,6 +14,13 @@ T get_if_handle(const T&t){
 	return t;
 }
 
+template<unsigned long long id, Level l, typename T, typename Temp>
+struct extract_type<RefTemporary<id,l,T,Temp> >{
+	using type = typename
+		extract_type<decltype(mke<RefTemporary<id,l,T,Temp> >().
+							  causalCall(mke_store(), mke_store()))>::type;
+};
+
 template<typename T, typename... Exprs>
 struct FreeExpr : public ConExpr<T, min_level<Exprs...>::value > {
 
@@ -24,7 +31,7 @@ struct FreeExpr : public ConExpr<T, min_level<Exprs...>::value > {
 	static constexpr Level level = min_level<Exprs...>::value;
 	
 	FreeExpr(int,
-			 std::function<T (const typename extract_type<Exprs>::type & ... )> f,
+			 std::function<T (const typename extract_type<decay<Exprs> >::type & ... )> f,
 			 Exprs... h)
 		:params(std::make_tuple(h...)),
 		 f([=](const Store &c, const std::tuple<Exprs...> &t){
@@ -89,10 +96,7 @@ template<unsigned long long ID, typename T, typename... Vars>
 auto find_usage(const FreeExpr<T,Vars...> &op){
 	return fold(op.params,
 				[](const auto &e, const auto &acc){
-					if (!acc){
-						return find_usage<ID>(e);
-					}
-					else return acc;
+					return choose_non_np(acc,find_usage<ID>(e));
 				}
 				, nullptr);
 }
@@ -114,3 +118,5 @@ std::ostream & operator<<(std::ostream &os, const FreeExpr<i,E...>& op){
 #define free_expr_IMPL2(count, ...) free_expr ## count (__VA_ARGS__)
 #define free_expr_IMPL(count, ...) free_expr_IMPL2(count, __VA_ARGS__)
 #define free_expr(...) free_expr_IMPL(VA_NARGS(__VA_ARGS__), __VA_ARGS__)
+
+#define msg(a,b) free_expr(decltype(run_ast_causal(mke_store(),mke_store(),a).get().b), a, a.b)

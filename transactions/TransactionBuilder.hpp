@@ -15,7 +15,7 @@ struct TransactionBuilder {
 
 	
 	template<typename T>
-	enable_if<is_ConStatement<T>::value ,
+	std::enable_if_t<is_ConStatement<T>::value ,
 			  TransactionBuilder<Cat<Statements, std::tuple<T> > > >
 	operator/(const T &t) const {
 		TransactionBuilder<Cat<Statements, std::tuple<T> > >

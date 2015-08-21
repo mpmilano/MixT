@@ -1,7 +1,7 @@
 #pragma once
 
 //TODO - why do I think this is ok?
-#define trans_op_arg(x) constify(run_ast_causal(mke_store(), mke_store(), op_arg(x)))
+#define trans_op_arg(x) constify(op_arg(run_ast_causal(mke_store(), mke_store(), op_arg(x))))
 
 //TODO - need to handle AST nodes in the argument list for this.
 #define do_op2(Name, arg) make_PreOp(Name(trans_op_arg(arg)))(arg)

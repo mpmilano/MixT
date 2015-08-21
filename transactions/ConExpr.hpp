@@ -141,7 +141,7 @@ Handle<l,ha,T> cached(const Store &cache, const Handle<l,ha,T>& ast){
 
 
 template<unsigned long long id, typename T>
-enable_if<std::is_scalar<T>::value, std::nullptr_t> find_usage(const T&){
+std::enable_if_t<std::is_scalar<T>::value, std::nullptr_t> find_usage(const T&){
 	return nullptr;
 }
 

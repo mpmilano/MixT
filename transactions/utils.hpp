@@ -230,14 +230,14 @@ std::unique_ptr<T> make_unique(T *t){
 	return std::unique_ptr<T>(t);
 }
 
-template<typename T>
+template<typename T, restrict(!(std::is_same<T CMA std::nullptr_t>::value))>
 std::shared_ptr<const T> make_cnst_shared(T *t){
 	return std::shared_ptr<const T>(t);
 }
 
-template<typename T>
-std::shared_ptr<const T> make_cnst_shared(std::nullptr_t){
-	return std::shared_ptr<const T>();
+template<typename>
+std::shared_ptr<const std::nullptr_t> make_cnst_shared(std::nullptr_t){
+	return std::shared_ptr<const std::nullptr_t>();
 }
 
 
@@ -253,19 +253,6 @@ const T& constify(const T& t){
 }
 
 
-template<typename T>
-T pick_useful(const T &t, std::nullptr_t){
-	return t;
-}
-
-std::nullptr_t pick_useful(std::nullptr_t, std::nullptr_t){
-	return nullptr;
-}
-
-template<typename T>
-T pick_useful(std::nullptr_t, const T& t){
-	return t;
-}
 
 template<typename T>
 std::string to_string(const T &t){
@@ -273,6 +260,35 @@ std::string to_string(const T &t){
 	ss << t;
 	return ss.str();
 }
+
+template<typename T>
+std::enable_if_t<!std::is_same<T, std::nullptr_t>::value, T>
+choose_non_np(std::nullptr_t, const T& t){
+	return t;
+}
+
+template<typename T>
+std::enable_if_t<!std::is_same<T, std::nullptr_t>::value, T>
+choose_non_np(const T& t, std::nullptr_t){
+	return t;
+}
+
+auto choose_non_np(std::nullptr_t, std::nullptr_t){
+	return nullptr;
+}
+
+template<typename T>
+std::enable_if_t<!std::is_same<T, std::nullptr_t>::value, T>
+choose_non_np(const T& t1, const T& t2){
+	if (t1) return t1; else return t2;
+}
+
+std::nullptr_t dref_np(std::nullptr_t*){
+	return nullptr;
+}
+
+template<typename T, restrict(!(std::is_same<T,std::nullptr_t>::value))>
+T dref_np(const T& t){ return t;}
 
 /*
 template<typename T, typename U>

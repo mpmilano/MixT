@@ -8,6 +8,9 @@
 #include "FreeExpr.hpp"
 #include "Transaction_macros.hpp"
 
+template<typename T>
+FINALIZE_OPERATION(Increment, RemoteObject<T>*)
+
 
 struct WeakCons {
 	Handle<Level::causal, HandleAccess::all, int> val;
@@ -16,14 +19,16 @@ struct WeakCons {
 
 int main() {
 
+	int a = 3;
+
 	Handle<Level::strong, HandleAccess::all, WeakCons> h;
 
 	TRANSACTION(
 		let_mutable(hd) = h IN (
 			WHILE (isValid(hd)) DO(
 				let_ifValid(tmp) = hd IN (
-					do_op(Increment,free_expr(hd,hd.val)),
-					hd = free_expr(hd,hd.next)
+					do_op(Increment,msg(hd,val)),
+					hd = msg(hd,next)
 					)
 				)
 			)
