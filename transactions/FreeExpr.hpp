@@ -27,7 +27,6 @@ struct FreeExpr : public ConExpr<T, min_level<Exprs...>::value > {
 	//this one is just for temp-var-finding
 	const std::tuple<Exprs...> params;
 	const std::function<T (const Store&, const std::tuple<Exprs ...>& )> f;
-	const BitSet<HandleAbbrev> rs;
 	static constexpr Level level = min_level<Exprs...>::value;
 	
 	FreeExpr(int,
@@ -39,8 +38,7 @@ struct FreeExpr : public ConExpr<T, min_level<Exprs...>::value > {
 									   [&](const auto &e, const auto &acc){return tuple_cons(get_if_handle(cached(c,e)),acc);}
 									   ,std::tuple<>());
 				 return callFunc(f,retrieved);
-			 }),
-		 rs(setify(h.abbrev()...))
+			 })
 		{}
 
 	auto strongCall(Store &cache, const Store &heap) const{
@@ -82,7 +80,7 @@ struct FreeExpr : public ConExpr<T, min_level<Exprs...>::value > {
 	}
 	
 	BitSet<HandleAbbrev> getReadSet() const {
-		return *rs;
+		assert(false && "stop using this");
 	}
 	
 	template<typename F>

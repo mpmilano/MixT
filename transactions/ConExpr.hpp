@@ -89,12 +89,31 @@ Handle<Level::strong,ha,T> run_ast_strong(Store &c, const Store&, const Handle<L
 
 
 template<HandleAccess ha, typename T>
-Handle<Level::strong,ha,T> run_ast_causal(const Store &cache, const Store &s, const Handle<Level::strong,ha,T>& h) {
+Handle<Level::strong,ha,T> run_ast_causal(Store &cache, const Store &s, const Handle<Level::strong,ha,T>& h) {
 	markInTransaction(cache,h);
 	struct LocalObject : public RemoteObject<T> {
 		const T t;
+		GDataStore &st;
+		LocalObject(const T& t, GDataStore &st):t(t),st(st){}
+		
+		const T& get() const {return t;}
+		void put(const T&) {
+			assert(false && "error: modifying strong Handle in causal context! the type system is supposed to prevent this!");
+		}
+		bool isValid() const {
+			//TODO: what if it's not valid? 
+			return true;
+		}
+		const GDataStore& store() const {
+			return st;
+		}
+
+		GDataStore& store() {
+			return st;
+		}
+		
 	};
-	return Handle<Level::strong,ha,T>{std::shared_ptr<LocalObject>{new LocalObject{cache.get<T>(h.uid)}}};
+	return Handle<Level::strong,ha,T>{std::shared_ptr<LocalObject>{new LocalObject{cache.get<T>(h.uid),h.remote_object().store()}}};
 	//TODO: need to cache this at the Transaction level!
 	//TODO: need to ensure operations over strong handles
 	//do not depend on causal data! (we probably already do this, but check!)

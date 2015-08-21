@@ -34,8 +34,11 @@ struct Temporary : public GeneralTemp, public ConStatement<get_level<T>::value> 
 	}
 
 	auto strongCall(Store &c, Store &s, std::true_type*) const {
-		typedef typename std::decay<decltype(t.strongCall(c,s))>::type R;
-		if (!s.contains(id)) s[id].reset((Store::stored) new R(t.strongCall(c,s)));
+		typedef typename std::decay<decltype(run_ast_strong(c,s,t))>::type R;
+		if (!s.contains(id))
+			s[id].reset(
+				(Store::stored)
+				new R(run_ast_strong(c,s,t)));
 		return true;
 	}
 

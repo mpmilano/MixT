@@ -3,6 +3,25 @@
 #include "Temporary.hpp"
 #include "If.hpp"
 
+bool strongc_helper(Store &, Store &, const std::shared_ptr<const std::nullptr_t>&){
+	return true;
+}
+
+template<typename T, restrict(!std::is_same<T CMA std::nullptr_t>::value)>
+bool strongc_helper(Store &c, Store &s, const std::shared_ptr<const T>& gt){
+	return gt->strongCall(c,s);
+}
+
+bool causalc_helper(Store &, Store &, const std::shared_ptr<const std::nullptr_t>&){
+	return true;
+}
+
+template<typename T, restrict(!std::is_same<T CMA std::nullptr_t>::value)>
+bool causalc_helper(Store &c, Store &s, const std::shared_ptr<const T>& gt){
+	return gt->causalCall(c,s);
+}
+
+
 template<unsigned long long ID, typename CS, Level l, typename Temp>
 struct DeclarationScope : public ConStatement<l>{
 	const std::string name;
@@ -21,11 +40,13 @@ struct DeclarationScope : public ConStatement<l>{
 	}
 
 	bool strongCall(Store &c, Store &s) const {
-		return gt->strongCall(c,s) && call_all_strong(c,s,cs);
+		assert(gt);
+		return strongc_helper(c,s,gt) && call_all_strong(c,s,cs);
 	}
 	
 	bool causalCall(Store &c, Store &s) const {
-		return gt->causalCall(c,s) && call_all_causal(c,s,cs);
+		assert(gt);
+		return causalc_helper(c,s,gt) && call_all_causal(c,s,cs);
 	}
 
 	virtual bool isVirtual() const = 0;
@@ -61,6 +82,16 @@ auto isValid_desugar(Temporary<id,l,T> const * const gt, const CS &cs){
 
 template<typename CS>
 auto isValid_desugar(std::nullptr_t*, const CS &cs){
+	return cs;
+}
+
+template<typename CS>
+auto isValid_desugar(std::nullptr_t, const CS &cs){
+	return cs;
+}
+
+template<typename CS>
+auto isValid_desugar(const std::shared_ptr<const std::nullptr_t>&, const CS &cs){
 	return cs;
 }
 
@@ -113,12 +144,22 @@ auto find_usage(const DeclarationScope<ID2,CS,l,temp>& ds){
 				, nullptr);
 }
 
+
+auto print_util(const std::shared_ptr<const std::nullptr_t>&){
+	return "aaaaaa";
+}
+
+template<typename T, restrict(!std::is_same<T CMA std::nullptr_t>::value)>
+const auto& print_util(const std::shared_ptr<const T> &sp){
+	return sp->gets;
+}
+
 template<unsigned long long ID,typename CS, Level l, typename temp>
 std::ostream & operator<<(std::ostream &os, const DeclarationScope<ID,CS,l,temp> &t){
-	static_assert(!std::is_same<decltype(*t.gt), std::nullptr_t>::value,"Static assert failed");
-	static_assert(!std::is_same<decltype(t.gt.get()), std::nullptr_t>::value,"Static assert failed");
+	static_assert(!std::is_same<std::decay_t<decltype(*t.gt)>, std::nullptr_t>::value,"Attempting to print DeclarationScope which has failed to find replacement!");
+	static_assert(!std::is_same<std::decay_t<decltype(t.gt.get())>, std::nullptr_t>::value,"Attempting to print DeclarationScope which has failed to find replacement!");
 	assert(t.gt && "Error: we found a replacement, but gt is still null!");
-	os << t.name << "<" << levelStr<l>() <<"> = " << t.gt->gets;
+	os << t.name << "<" << levelStr<l>() <<"> = " << print_util(t.gt);
 	fold(t.cs,[&os](const auto &e, int) -> int
 		 {os << "  " << e << std::endl; return 0; },0);
 	return os;
