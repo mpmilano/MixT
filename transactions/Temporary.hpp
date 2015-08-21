@@ -293,7 +293,7 @@ struct ImmutCreator {
 		auto t = wrap_constants(t_);
 		static constexpr Level l = get_level<T>::value;
 		RefTemporary<ID,l,decltype(t),Temporary<ID,l,decltype(t) > >
-			rt(Temporary<ID,l,decltype(t) >(std::hash<std::string>()(name),t));
+			rt(Temporary<ID,l,decltype(t) >(name,t));
 		return rt;
 	}
 

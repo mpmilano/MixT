@@ -109,7 +109,9 @@ Handle<Level::causal,ha,T> run_ast_causal(Store &c, const Store &, const Handle<
 }
 //*/
 
-template<typename T, restrict(is_ConExpr<T>::value && !std::is_scalar<T>::value)>
+template<typename T, restrict(is_ConExpr<T>::value &&
+							  !std::is_scalar<T>::value
+							  && !is_handle<T>::value)>
 auto run_ast_causal(Store &c, const Store &s, const T& expr) {
 	return expr.causalCall(c,s);
 }

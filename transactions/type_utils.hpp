@@ -28,6 +28,12 @@ struct neg_error_helper : std::integral_constant<bool, !Pred<Arg>::value >{
 	static_assert(!Pred<Arg>::value,"Static assert error");
 };
 
+template<template<typename> class Pred, typename Arg>
+struct error_helper : std::integral_constant<bool, !Pred<Arg>::value >{
+	static_assert(Pred<Arg>::value,"Static assert error");
+};
+
+
 struct NoOverloadFoundError{
 	const std::string msg;
 };

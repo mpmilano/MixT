@@ -168,7 +168,7 @@ enable_if<is_ConExpr<T>::value, Not<T> >  operator!(const T &t){
 
 template<typename T>
 struct IsValid : public ConExpr<bool, get_level<T>::value> {
-	static_assert(is_handle<T>::value,"error: IsValid designed for referential integrity of handles.");
+	static_assert(is_handle<decltype(mke<T>().causalCall(mke_store(),mke_store()))>::value,"error: IsValid designed for referential integrity of handles.");
 
 	const T t;
 	
@@ -177,7 +177,7 @@ struct IsValid : public ConExpr<bool, get_level<T>::value> {
 	bool causalCall(Store& cache, const Store& s) const {
 		if (cache.contains(this->id) ) return cache.get<bool>(this->id);
 		else {
-			bool ret = t.isValid();
+			bool ret = run_ast_causal(cache,s,t).isValid();
 			cache.insert(this->id,ret);
 			return ret;
 		}
@@ -189,8 +189,8 @@ struct IsValid : public ConExpr<bool, get_level<T>::value> {
 		return strongCall(cache,s,choice);
 	}
 
-	bool strongCall(Store& cache, const Store&, std::true_type*) const {
-		bool ret = t.isValid();
+	bool strongCall(Store& cache, const Store&s, std::true_type*) const {
+		bool ret = run_ast_strong(cache,s,t).isValid();
 		cache.insert(this->id,ret);
 		return ret;
 	}
@@ -199,10 +199,6 @@ struct IsValid : public ConExpr<bool, get_level<T>::value> {
 		run_ast_strong(cache,s,t);
 	}
 
-	
-	bool operator()(const Store &) const {
-		return t.isValid();
-	}
 
 	auto getReadSet() const {
 		HandleAbbrev hb = t;

@@ -170,6 +170,12 @@ struct is_handle<Handle<l,ha,T> > : std::true_type {};
 template<typename T>
 struct is_handle : std::false_type {};
 
+template<typename>
+struct is_ConExpr;
+
+template<typename T, Level l, HandleAccess ha>
+struct is_ConExpr<Handle<l,ha,T> > : std::true_type {};
+
 template<typename T>
 struct is_not_handle : std::integral_constant<bool, !is_handle<T>::value >::type {};
 

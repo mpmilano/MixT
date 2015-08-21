@@ -11,6 +11,10 @@
 #include "FreeExpr.hpp"
 #include "Transaction_macros.hpp"
 
+namespace list_ex{
+#include "list_example.cpp"
+}
+
 int main(){
 	try {
 
@@ -70,5 +74,7 @@ int main(){
 	catch (NoOverloadFoundError e){
 		std::cerr << "No overload found: " << e.msg << std::endl;
 	}
+
+	list_ex::main();
 
 }

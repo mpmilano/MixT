@@ -57,12 +57,10 @@ struct Transaction{
 				Tracker &t = *cache.get<Tracker*>(-1);
 				DataStore<Level::strong> *ss = t.strongStoreInTransaction();
 				DataStore<Level::causal> *cs = t.causalStoreInTransaction();
-				assert(ss);
-				assert(cs);
 
 				//TODO: fault-tolerance
-				ss->end_transaction();
-				cs->end_transaction();
+				if (ss) ss->end_transaction();
+				if (cs) cs->end_transaction();
 
 				//TODO: error propogation
 				return true;
