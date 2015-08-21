@@ -13,9 +13,10 @@ struct Operate : ConStatement<l> {
 	Operate(const std::function<R (const Store&)>& f,
 			const BitSet<HandleAbbrev> &bs,
 			const std::string &name,
-			const Exprs &exprs
+			const Exprs &exprs,
+			int id
 		):
-		id(gensym()),
+		id(id),
 		f(f),
 		bs(bs),
 		name(name),
@@ -128,7 +129,7 @@ struct PreOp<std::tuple<J...> > {
 			},
 			 BitSet<HandleAbbrev>::big_union(get_ReadSet(args)...),
 				"This came from a tuple, so I don't know what to print",
-				std::make_tuple(args...)
+				std::make_tuple(args...),gensym()
 				);
 	}
 };
