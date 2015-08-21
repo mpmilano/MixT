@@ -144,6 +144,19 @@ auto find_usage(const DeclarationScope<ID2,CS,l,temp>& ds){
 				, nullptr);
 }
 
+struct BaseFindUsages {};
+
+template<typename T>
+struct FindUsages : public BaseFindUsages {
+	const T find_from_here;
+	FindUsages(const T &t):find_from_here(t){}
+};
+
+template<unsigned long long ID, typename T,
+		 restrict(std::is_base_of<BaseFindUsages CMA T>::value)>
+auto find_usage(const T& fu) {
+	return find_usage<ID>(fu.find_from_here);
+}
 
 auto print_util(const std::shared_ptr<const std::nullptr_t>&){
 	return "aaaaaa";
@@ -254,7 +267,7 @@ struct MutableDeclarationBuilder {
 			typename std::decay<decltype(*this_decl.gt.get())>::type
 			>::type found_type;
 
-		if (contains_temporary<ID,T>::value){
+		if (contains_temporary<ID,found_type>::value){
 			std::cout << "found it!" << std::endl;
 		}
 		else {
@@ -268,7 +281,7 @@ struct MutableDeclarationBuilder {
 						 this_decl.gt,
 						 make_cnst_shared<found_type>(find_usage<ID>(t))),
 					 new_cs);
-		::MutableDeclarationBuilder<PrevBuilder, ID, decltype(new_cs), new_level, contains_temporary<ID,T>::value || oldb, found_type>
+		::MutableDeclarationBuilder<PrevBuilder, ID, decltype(new_cs), new_level, contains_temporary<ID,found_type>::value || oldb, found_type>
 			r(prevBuilder,new_decl);
 		return r;
 	}
@@ -302,7 +315,7 @@ struct ImmutableDeclarationBuilder {
 						 this_decl.gt,
 						 make_cnst_shared<found_type>(find_usage<ID>(t))),
 					 new_cs);
-		::ImmutableDeclarationBuilder<PrevBuilder, ID, decltype(new_cs), new_level, contains_temporary<ID,T>::value || oldb, found_type>
+		::ImmutableDeclarationBuilder<PrevBuilder, ID, decltype(new_cs), new_level, contains_temporary<ID,found_type>::value || oldb, found_type>
 			r(prevBuilder,new_decl);
 		return r;
 	}
