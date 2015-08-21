@@ -7,6 +7,7 @@
 		auto a = _arg;													\
 		using Arg = decltype(a);										\
 		struct OperateImpl : public FindUsages<Arg>, public ConStatement<get_level<decltype(a)>::value >{ \
+			const int id = gensym();									\
 			const decltype(a) arg;										\
 			const std::string name = #Name;								\
 			OperateImpl(const decltype(arg) &a):FindUsages<Arg>(a),		\
@@ -18,12 +19,12 @@
 			}															\
 																		\
 			auto strongCall(Store &c CMA  const Store &s) const {		\
-				return make_PreOp(Name(trans_op_arg(c, s, arg)))		\
+				return make_PreOp(id,Name(trans_op_arg(c, s, arg)))		\
 					(arg).strongCall(c CMA s);							\
 			}															\
 																		\
 			auto causalCall(Store &c CMA  const Store &s) const {		\
-				return make_PreOp(Name(trans_op_arg(c, s, arg)))		\
+				return make_PreOp(id,Name(trans_op_arg(c, s, arg)))		\
 					(arg).causalCall(c CMA s);							\
 			}															\
 		};																\
@@ -40,6 +41,7 @@
 		public FindUsages<Arg1,Arg2>,									\
 		public ConStatement<min_level<decltype(a),decltype(b)>::value >	\
 		{																\
+			const int id = gensym();									\
 			const decltype(a) arg1;										\
 			const decltype(b) arg2;										\
 			const std::string name = #Name;								\
@@ -53,13 +55,13 @@
 			}															\
 																		\
 			auto strongCall(Store &c CMA  const Store &s) const {		\
-				return make_PreOp(Name(trans_op_arg(c, s, arg1),		\
+				return make_PreOp(id,Name(trans_op_arg(c, s, arg1),		\
 									   trans_op_arg(c, s, arg2)))		\
 					(arg1,arg2).strongCall(c CMA s);					\
 			}															\
 																		\
 			auto causalCall(Store &c CMA  const Store &s) const {		\
-				return make_PreOp(Name(trans_op_arg(c, s, arg1),		\
+				return make_PreOp(id,Name(trans_op_arg(c, s, arg1),		\
 									   trans_op_arg(c, s, arg2)))		\
 					(arg1,arg2).causalCall(c CMA s);					\
 			}															\

@@ -93,9 +93,10 @@ struct PreOp;
 
 template<typename... J>
 struct PreOp<std::tuple<J...> > {
+	const int id;
 	const std::tuple<J...> t;
 
-	PreOp(const std::tuple<J...> &t):t(t){
+	PreOp(int id, const std::tuple<J...> &t):id(id),t(t){
 		assert(fold(t,[](const auto &e, bool acc){return e.built_well || acc;},false));
 	}
 
@@ -129,14 +130,14 @@ struct PreOp<std::tuple<J...> > {
 			},
 			 BitSet<HandleAbbrev>::big_union(get_ReadSet(args)...),
 				"This came from a tuple, so I don't know what to print",
-				std::make_tuple(args...),gensym()
+				std::make_tuple(args...),id
 				);
 	}
 };
 
 template<typename T>
-auto make_PreOp(const T &t){
-	PreOp<T> ret{t};
+auto make_PreOp(int id, const T &t){
+	PreOp<T> ret{id,t};
 	return ret;
 }
 
