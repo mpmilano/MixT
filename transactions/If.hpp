@@ -76,7 +76,7 @@ template<unsigned long long ID, typename Cond, typename Then, typename Els>
 auto find_usage(const If<Cond,Then,Els>& _if){
 	return fold(std::tuple_cat(std::make_tuple(_if.cond), _if.then, _if.els),
 				[](const auto &e, const auto &acc){
-					return pick_useful(find_usage<ID>(e),acc);
+					return choose_non_np(find_usage<ID>(e),acc);
 				}
 				, nullptr);
 }

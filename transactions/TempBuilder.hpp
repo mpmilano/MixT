@@ -33,6 +33,24 @@ struct DeclarationScope : public ConStatement<l>{
 	
 };
 
+template<unsigned long long ID, unsigned long long ID2,
+		 typename CS, Level l, typename Temp>
+struct contains_temporary<ID,DeclarationScope<ID2, CS, l, Temp> >
+	: std::integral_constant<bool,
+							 ID == ID2 ||
+							 contains_temporary<ID,Temp>::value ||
+							 contains_temp_fold<ID,CS>::value
+							 > {};
+
+template<unsigned long long ID>
+struct contains_temporary<ID,std::nullptr_t> : std::false_type {};
+
+template<unsigned long long ID, typename T>
+struct contains_temporary<ID,const T> : contains_temporary<ID,T> {};
+
+template<unsigned long long ID, typename T>
+struct contains_temporary<ID,const T&> : contains_temporary<ID,T> {};
+
 template<unsigned long long id, Level l, typename T, typename CS>
 auto isValid_desugar(Temporary<id,l,T> const * const gt, const CS &cs){
 	return make_if(
@@ -70,6 +88,15 @@ struct MutDeclarationScope : public DeclarationScope<ID,CS,l,Temp>{
 	bool isVirtual() const {return false;}
 };
 
+template<unsigned long long ID, unsigned long long ID2,
+		 typename CS, Level l, typename Temp>
+struct contains_temporary<ID,MutDeclarationScope<ID2, CS, l, Temp> >
+	: contains_temporary<ID,DeclarationScope<ID2,CS,l,Temp> > {};
+
+template<unsigned long long ID, unsigned long long ID2,
+		 typename CS, Level l, typename Temp>
+struct contains_temporary<ID,ImmutDeclarationScope<ID2, CS, l, Temp> > 
+	: contains_temporary<ID,DeclarationScope<ID2,CS,l,Temp> > {};
 
 template<unsigned long long ID, typename CS, Level l, typename Temp >
 std::nullptr_t find_usage(const DeclarationScope<ID,CS,l,Temp>&){

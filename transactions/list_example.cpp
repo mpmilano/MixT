@@ -19,8 +19,6 @@ struct WeakCons {
 
 int main() {
 
-	int a = 3;
-
 	Handle<Level::strong, HandleAccess::all, WeakCons> h;
 
 	TRANSACTION(
