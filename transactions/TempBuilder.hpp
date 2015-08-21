@@ -146,16 +146,20 @@ auto find_usage(const DeclarationScope<ID2,CS,l,temp>& ds){
 
 struct BaseFindUsages {};
 
-template<typename T>
+template<typename... T>
 struct FindUsages : public BaseFindUsages {
-	const T find_from_here;
-	FindUsages(const T &t):find_from_here(t){}
+	const std::tuple<T...> find_from_here;
+	FindUsages(const T & ... t):find_from_here(std::make_tuple(t...)){}
 };
 
 template<unsigned long long ID, typename T,
 		 restrict(std::is_base_of<BaseFindUsages CMA T>::value)>
 auto find_usage(const T& fu) {
-	return find_usage<ID>(fu.find_from_here);
+	return fold(fu.find_from_here,
+				[](const auto &e, const auto &acc){
+					return choose_non_np(find_usage<ID>(e),acc);
+				}
+				, nullptr);
 }
 
 auto print_util(const std::shared_ptr<const std::nullptr_t>&){
