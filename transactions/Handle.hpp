@@ -45,7 +45,7 @@ struct Handle : public GenericHandle<l,HA> {
 private:
 	const std::shared_ptr<RemoteObject<T> > _ro;
 	Tracker &t;
-	Handle(std::shared_ptr<RemoteObject<T> > _ro):_ro(_ro),t(Tracker::global_tracker){
+	Handle(std::shared_ptr<RemoteObject<T> > _ro):_ro(_ro),t(Tracker::global_tracker()){
 		t.registerStore(_ro->store());
 	}
 public:
@@ -125,6 +125,9 @@ public:
 	
 	template<HandleAccess ha2, typename T2>
 	friend Handle<Level::strong,ha2,T2> run_ast_causal(const Store &cache, const Store &, const Handle<Level::strong,ha2,T2>& h);
+
+	template<Level l2, HandleAccess ha2, typename T2>
+	friend void markInTransaction(Store &s, const Handle<l2,ha2,T2> &h);
 	
 /*
 	//TODO: same treatment as in Operate

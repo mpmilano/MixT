@@ -129,7 +129,7 @@ struct NoOperation {
 #define DOBODY1(decl,Name,args...)										\
 	decl {																\
 	return																\
-		fold(mke<std::tuple<STORE_LIST> >(),							\
+		fold(*mke_p<std::tuple<STORE_LIST> >(),							\
 		[&](const auto &arg, const auto &accum){						\
 		typedef decay<decltype(arg)> Store;								\
 		typedef decltype(Store::Name ## _impl(args)) ret_t;				\

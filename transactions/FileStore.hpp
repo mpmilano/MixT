@@ -12,13 +12,17 @@
 
 template<Level l>
 struct FileStore : public DataStore<l> {
+
+	FileStore(const FileStore<l>&) = delete;
+	FileStore(){}
+	
 	template<typename T>
 	struct FSObject : public RemoteObject<T> {
 		std::unique_ptr<T> t;
 		const std::string filename;
 
 		typedef FileStore<l> Store;
-		Store s;
+		Store &s;
 		const GDataStore& store() const {return s;}
 		GDataStore& store() {return s;}
 		
@@ -121,7 +125,7 @@ struct FileStore : public DataStore<l> {
 	
 	template<typename T>
 	struct FSDir : public FSObject<std::set<T> > {
-		FSDir(const typename FSObject<std::set<T> >::Store &s, const std::string &name):FSObject<std::set<T> >(s,name,true){
+		FSDir(typename FSObject<std::set<T> >::Store &s, const std::string &name):FSObject<std::set<T> >(s,name,true){
 			system(("exec mkdir -p " + name).c_str());
 		}
 
@@ -134,7 +138,7 @@ struct FileStore : public DataStore<l> {
 			static std::set<T> ret;
 			ret.clear();
 			for (const auto &str : read_dir(this->filename)){
-				FSObject<T> obj(this->filename + str,true);
+				FSObject<T> obj(this->s,this->filename + str,true);
 				ret.insert(obj.get() );
 			}
 			return ret;
@@ -143,7 +147,7 @@ struct FileStore : public DataStore<l> {
 		virtual void put(const std::set<T> &s) {
 			std::system(("exec rm -r " + this->filename + "*").c_str());
 			for (const auto &e : s){
-				FSObject<T> obj(this->filename + std::to_string(gensym()) );
+				FSObject<T> obj(this->s,this->filename + std::to_string(gensym()) );
 				obj.put(e);
 			}
 		}
@@ -180,6 +184,22 @@ struct FileStore : public DataStore<l> {
 	template<typename T, restrict(!is_RemoteObj_ptr<T>::value)>
 	static auto tryCast(T && r){
 		return std::forward<T>(r);
+	}
+
+	bool in_trans = false;
+	
+	bool in_transaction() const {
+		return in_trans;
+	}
+
+	void begin_transaction(){
+		in_trans = true;
+		//TODO: do I really want to implement transactions over the FS?
+	}
+
+	void end_transaction(){
+		//TODO: do I really want to implement transactions over the FS?
+		in_trans = false;
 	}
 
 	template<typename T> 

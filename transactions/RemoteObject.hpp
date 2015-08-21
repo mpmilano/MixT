@@ -2,10 +2,13 @@
 
 #include "type_utils.hpp"
 #include "GDataStore.hpp"
+#include "Store.hpp"
 
 struct GeneralRemoteObject {
 	const int id = gensym();
 };
+
+template<Level l2, HandleAccess ha2, typename T2> struct Handle;
 
 template<typename T>
 class RemoteObject : public GeneralRemoteObject {
@@ -24,6 +27,9 @@ public:
 	RemoteObject(){}
 	template<Level l, HandleAccess HA, typename T2>
 	friend struct Handle;
+
+	template<Level l2, HandleAccess ha2, typename T2>
+	friend void markInTransaction(Store &s, const Handle<l2,ha2,T2> &h);
 
 };
 

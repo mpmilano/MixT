@@ -67,20 +67,30 @@ run_ast_strong(const Store &, const Store&, const T& e) {
 	return e;
 }
 
+template<Level l, HandleAccess ha, typename T>
+void markInTransaction(Store &s, const Handle<l,ha,T> &h){
+	auto *ptr = dynamic_cast<DataStore<l>* >(&(h.remote_object().store()));
+	assert(ptr);
+	h.clone().t.markInTransaction(*ptr);
+	s.insert(-1,&(h.clone().t));
+}
 
 template<HandleAccess ha, typename T>
-void run_ast_strong(Store &, const Store&, const Handle<Level::causal,ha,T>& ) {
+void run_ast_strong(Store &c, const Store&, const Handle<Level::causal,ha,T>& h) {
+	markInTransaction(c,h);
 	//I think that this one, at least, is okay.
 }
 //*/
 template<HandleAccess ha, typename T>
-Handle<Level::strong,ha,T> run_ast_strong(Store &, const Store&, const Handle<Level::strong,ha,T>& t) {
-	return t;
+Handle<Level::strong,ha,T> run_ast_strong(Store &c, const Store&, const Handle<Level::strong,ha,T>& h) {
+	markInTransaction(c,h);
+	return h;
 }
 
 
 template<HandleAccess ha, typename T>
-Handle<Level::strong,ha,T> run_ast_causal(const Store &cache, const Store &, const Handle<Level::strong,ha,T>& h) {
+Handle<Level::strong,ha,T> run_ast_causal(const Store &cache, const Store &s, const Handle<Level::strong,ha,T>& h) {
+	markInTransaction(cache,h);
 	struct LocalObject : public RemoteObject<T> {
 		const T t;
 	};
@@ -93,7 +103,8 @@ Handle<Level::strong,ha,T> run_ast_causal(const Store &cache, const Store &, con
 
 
 template<HandleAccess ha, typename T>
-Handle<Level::causal,ha,T> run_ast_causal(Store &, const Store &, const Handle<Level::causal,ha,T>& t) {
+Handle<Level::causal,ha,T> run_ast_causal(Store &c, const Store &, const Handle<Level::causal,ha,T>& t) {
+	markInTransaction(c,t);
 	return t;
 }
 //*/
