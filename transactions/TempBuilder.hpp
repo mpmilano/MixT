@@ -162,6 +162,11 @@ auto find_usage(const T& fu) {
 				, nullptr);
 }
 
+template<typename T, restrict(std::is_base_of<BaseFindUsages CMA T>::value)>
+std::ostream & operator<<(std::ostream &os, const T& op){
+	return os << op.name;
+}
+
 auto print_util(const std::shared_ptr<const std::nullptr_t>&){
 	return "aaaaaa";
 }

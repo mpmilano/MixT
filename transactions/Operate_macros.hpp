@@ -8,7 +8,8 @@
 		using Arg = decltype(a);										\
 		struct OperateImpl : public FindUsages<Arg>, public ConStatement<get_level<decltype(a)>::value >{ \
 			const decltype(a) arg;										\
-			OperateImpl(const decltype(arg) &a):FindUsages<Arg>(a), \
+			const std::string name = #Name;								\
+			OperateImpl(const decltype(arg) &a):FindUsages<Arg>(a),		\
 				arg(a){}												\
 																		\
 			BitSet<HandleAbbrev> getReadSet() const {					\
@@ -41,6 +42,7 @@
 		{																\
 			const decltype(a) arg1;										\
 			const decltype(b) arg2;										\
+			const std::string name = #Name;								\
 			OperateImpl(const Arg1 &a, const Arg2 &b):					\
 				FindUsages<Arg1,Arg2>(a,b),								\
 				arg1(a),arg2(b){}										\
@@ -63,7 +65,7 @@
 			}															\
 																		\
 		};																\
-		OperateImpl r{a}; return r;										\
+		OperateImpl r{a,b}; return r;									\
 	} ()
 
 #define do_op_IMPL2(count, ...) do_op ## count (__VA_ARGS__)
