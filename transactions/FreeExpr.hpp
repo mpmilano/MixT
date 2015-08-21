@@ -42,6 +42,7 @@ struct FreeExpr : public ConExpr<T, min_level<Exprs...>::value > {
 		{}
 
 	auto strongCall(Store &cache, const Store &heap) const{
+		std::cout << "strong call" << std::endl;
 		std::integral_constant<bool,level==Level::strong>* choice = nullptr;
 		return strongCall(cache,heap,choice);
 	}	
@@ -63,6 +64,7 @@ struct FreeExpr : public ConExpr<T, min_level<Exprs...>::value > {
 	}
 
 	auto causalCall(Store &cache, const Store &heap) const {
+		std::cout << "causal call" << std::endl;
 		std::integral_constant<bool,level==Level::causal>* choice = nullptr;
 		return causalCall(cache,heap,choice);
 	}	

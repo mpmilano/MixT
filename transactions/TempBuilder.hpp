@@ -156,8 +156,8 @@ const auto& print_util(const std::shared_ptr<const T> &sp){
 
 template<unsigned long long ID,typename CS, Level l, typename temp>
 std::ostream & operator<<(std::ostream &os, const DeclarationScope<ID,CS,l,temp> &t){
-	static_assert(!std::is_same<std::decay_t<decltype(*t.gt)>, std::nullptr_t>::value,"Attempting to print DeclarationScope which has failed to find replacement!");
-	static_assert(!std::is_same<std::decay_t<decltype(t.gt.get())>, std::nullptr_t>::value,"Attempting to print DeclarationScope which has failed to find replacement!");
+//	static_assert(!std::is_same<std::decay_t<decltype(*t.gt)>, std::nullptr_t>::value,"Attempting to print DeclarationScope which has failed to find replacement!");
+//	static_assert(!std::is_same<std::decay_t<decltype(t.gt.get())>, std::nullptr_t>::value,"Attempting to print DeclarationScope which has failed to find replacement!");
 	assert(t.gt && "Error: we found a replacement, but gt is still null!");
 	os << t.name << "<" << levelStr<l>() <<"> = " << print_util(t.gt);
 	fold(t.cs,[&os](const auto &e, int) -> int
@@ -254,6 +254,13 @@ struct MutableDeclarationBuilder {
 			typename std::decay<decltype(*this_decl.gt.get())>::type
 			>::type found_type;
 
+		if (contains_temporary<ID,T>::value){
+			std::cout << "found it!" << std::endl;
+		}
+		else {
+			std::cout << "still looking" << std::endl;
+		}
+		
 		constexpr Level new_level = get_level<found_type>::value;
 		MutDeclarationScope<ID, decltype(new_cs),new_level,found_type>
 			new_decl(this_decl.name,
