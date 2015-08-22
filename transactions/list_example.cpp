@@ -21,7 +21,12 @@ struct WeakCons {
 
 int main() {
 
-	Handle<Level::strong, HandleAccess::all, WeakCons> h;
+	FileStore<Level::causal> fsc;
+	FileStore<Level::strong> fss;
+	WeakCons initial{fsc.newObject<HandleAccess::all,int>(12)};
+	Handle<Level::strong, HandleAccess::all, WeakCons> h =
+		fss.newObject<HandleAccess::all, WeakCons>(initial);
+	
 
 
 	TRANSACTION(
