@@ -74,11 +74,18 @@ struct contains_temporary<ID,const T&> : contains_temporary<ID,T> {};
 
 template<unsigned long long id, Level l, typename T, typename CS>
 auto isValid_desugar(Temporary<id,l,T> const * const gt, const CS &cs){
-	return make_if(
-		make_isValid(
-			RefTemporary<id,l,T,Temporary<id,l,T> >{*gt})
-		, cs, std::make_tuple());
+	return std::make_tuple(
+		make_if(
+			make_isValid(
+				RefTemporary<id,l,T,Temporary<id,l,T> >{*gt})
+			, cs, std::make_tuple()));
 }
+
+template<typename T, typename CS>
+auto isValid_desugar(const std::shared_ptr<const T> &gt, const CS &cs){
+	return isValid_desugar(gt.get(),cs);
+}
+
 
 template<typename CS>
 auto isValid_desugar(std::nullptr_t*, const CS &cs){
@@ -98,17 +105,28 @@ auto isValid_desugar(const std::shared_ptr<const std::nullptr_t>&, const CS &cs)
 
 template<unsigned long long ID, typename CS, Level l, typename Temp>
 struct ImmutDeclarationScope : public DeclarationScope<ID,CS,l,Temp>{
-	
+private:
 	template<typename Ptr>
 	ImmutDeclarationScope(const std::string &name, const Ptr &gt, const CS &cs)
-		:DeclarationScope<ID,CS,l,Temp>(name,gt,isValid_desugar(gt,cs))
+		:DeclarationScope<ID,CS,l,Temp>(name,gt,cs) 
 		{
 		static_assert(can_flow(l, max_level<CS>::value),
 			"Error: declaration scope requires validity check of causal expression, while body contains strong expressions.");
 		}
-
+public:
 	bool isVirtual() const {return false;}
+
+	template<typename Ptr>
+	static auto build(const std::string &name, const Ptr &gt, const CS &cs){
+		return ImmutDeclarationScope<ID,CS,l,Temp>{name,gt,cs};
+	}
 };
+
+template<unsigned long long ID, typename CS, Level l, typename Temp, typename Ptr>
+auto build_ImmutDeclarationScope(const std::string &name, const Ptr &gt, const CS &cs){
+	auto new_cs = isValid_desugar(gt,cs);
+	return ImmutDeclarationScope<ID,decltype(new_cs),l,Temp>::build(name,gt,new_cs);
+}
 
 template<unsigned long long ID, typename CS, Level l, typename Temp>
 struct MutDeclarationScope : public DeclarationScope<ID,CS,l,Temp>{
@@ -327,13 +345,13 @@ struct ImmutableDeclarationBuilder {
 
 
 		constexpr Level new_level = get_level<found_type>::value;
-		ImmutDeclarationScope<ID, decltype(new_cs),new_level,found_type>
-			new_decl(this_decl.name,
+		auto new_decl = build_ImmutDeclarationScope<ID, decltype(new_cs),new_level,found_type>
+			(this_decl.name,
 					 choose_gt(
 						 this_decl.gt,
 						 make_cnst_shared<found_type>(find_usage<ID>(t))),
 					 new_cs);
-		::ImmutableDeclarationBuilder<PrevBuilder, ID, decltype(new_cs), new_level, contains_temporary<ID,found_type>::value || oldb, found_type>
+		::ImmutableDeclarationBuilder<PrevBuilder, ID, std::decay_t<decltype(new_decl.cs)>, new_level, contains_temporary<ID,found_type>::value || oldb, found_type>
 			r(prevBuilder,new_decl);
 		return r;
 	}
@@ -359,7 +377,7 @@ auto append(const PrevBuilder &pb, const MutVarScopeBegin<ID> &vsb){
 
 template<typename PrevBuilder, unsigned long long ID>
 auto append(const PrevBuilder &pb, const ImmutVarScopeBegin<ID> &vsb){
-	ImmutDeclarationScope<ID,std::tuple<>,Level::strong,std::nullptr_t> dcl(vsb.name,nullptr,std::tuple<>());
+	auto dcl = build_ImmutDeclarationScope<ID,std::tuple<>,Level::strong,std::nullptr_t>(vsb.name,nullptr,std::tuple<>());
 	ImmutableDeclarationBuilder<PrevBuilder, ID, std::tuple<>,Level::strong, false, std::nullptr_t > db(pb,dcl);
 	return db;
 }

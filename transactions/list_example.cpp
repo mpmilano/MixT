@@ -28,8 +28,8 @@ int main() {
 		let_mutable(hd) = h IN (
 			WHILE (isValid(hd)) DO(
 				let_ifValid(tmp) = hd IN (
-					do_op(Increment,msg(hd,val)),
-					hd = msg(hd,next)
+					do_op(Increment,msg(tmp,val)),
+					hd = msg(tmp,next)
 					)
 				)
 			)
