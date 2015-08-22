@@ -19,6 +19,8 @@ class RemoteObject : public GeneralRemoteObject {
 	virtual bool isValid() const = 0;
 	virtual const GDataStore& store() const = 0;
 	virtual GDataStore& store() = 0;
+	virtual void* to_bytes() const = 0;
+	virtual int to_bytes_size() const = 0;
 
 	//TODO: delete these when you're done hacking around.
 	RemoteObject(const RemoteObject&) = delete;

@@ -50,7 +50,7 @@ private:
 	}
 public:
 	
-	int uid = gensym();
+	const int uid = gensym();
 	
 	typename std::conditional<canWrite<HA>::value,
 							  RemoteObject<T>&,
@@ -65,6 +65,21 @@ public:
 	static constexpr Level level = l;
 	static constexpr HandleAccess ha = HA;
 	typedef T stored_type;
+
+	void* to_bytes() const {
+		//for serialization
+		return _ro->to_bytes();
+	}
+
+	int to_bytes_size() const {
+		return _ro->to_bytes_size();
+	}
+
+	template<typename RObject>
+	static Handle from_bytes(void *v, int size)  {
+		//for de-serializing.
+		return Handle{std::make_shared<RObject>(RObject::from_bytes(v,size))};
+	}
 	
 	const T& get() const {
 		//TODO: causal tracking
