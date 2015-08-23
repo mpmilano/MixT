@@ -14,28 +14,22 @@ template<typename T>
 FINALIZE_OPERATION(Increment, RemoteObject<T>*)
 
 
-struct WeakCons {
-	Handle<Level::causal, HandleAccess::all, int> val;
-	Handle<Level::strong, HandleAccess::all, WeakCons> next;
-	
-	void* to_bytes() const {
-		void a[val.to_bytes_size()] = val.to_bytes();
-		assert(sizeof(a) == val.to_bytes_size());
-		void b[next.to_bytes_size()] = next.to_bytes();
-		void* both = malloc(sizeof(a) + sizeof(b));
-		memcpy(both,     a, sizeof(a));
-		memcpy(both + 4, b, sizeof(b)); 
-		return both;
-	}
+	struct WeakCons :
+	 public ByteRepresentable<std::pair<ROManager<int>, ROManager<WeakCons> > > {
+		Handle<Level::causal, HandleAccess::all, int> val;
+		Handle<Level::strong, HandleAccess::all, WeakCons> next;
 
-	template<typename RObject>
-	static WeakCons from_bytes(void *v) {
-		return WeakCons{Handle<Level::causal, HandleAccess::all, int>::
-				template from_bytes<RObject>(v[0]),
-				Handle<Level::strong, HandleAccess::all, WeakCons>::
-				template from_bytes<RObject>(arr->at(2))};
-	}
-};
+		const std::pair<ROManager<int>, ROManager<WeakCons> >&
+		manager() const {
+			static std::pair<ROManager<int>, ROManager<WeakCons> >
+				r{val.manger(),next.manager()};
+			return r;
+		}
+
+		DEFAULT_SERIALIZE(val,next)
+
+		DEFAULT_DESERIALIZE(WeakCons,val,next)
+	};
 
 int main() {
 

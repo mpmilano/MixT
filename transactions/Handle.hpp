@@ -67,9 +67,9 @@ public:
 	static constexpr HandleAccess ha = HA;
 	typedef T stored_type;
 
-	void* to_bytes() const {
+	int to_bytes(void* v) const {
 		//for serialization
-		return _ro->to_bytes();
+		return _ro->to_bytes(v);
 	}
 
 	int bytes_size() const {
@@ -78,11 +78,12 @@ public:
 
 	static Handle from_bytes(void *v, const ROManager<T> &mng)  {
 		//for de-serializing.
+		auto fb = from_bytes<RemoteObject<T> >;
 		return Handle{std::make_shared<RemoteObject<T> >
-				(heap_copy(from_bytes<RemoteObject<T> >(v,mng)))};
+				(heap_copy(fb(v,mng)))};
 	}
 
-	auto ROManager<T> manager() const {
+	const ROManager<T>& manager() const {
 		return _ro->manager();
 	}
 	

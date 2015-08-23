@@ -3,6 +3,7 @@
 #include "type_utils.hpp"
 #include "GDataStore.hpp"
 #include "Store.hpp"
+#include "SerializationSupport.hpp"
 
 struct GeneralRemoteObject {
 	const int id = gensym();

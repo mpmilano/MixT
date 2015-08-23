@@ -11,11 +11,13 @@ struct ByteRepresentable {
 	virtual const Manager& manager() const = 0;
 };
 
-int to_bytes(const ByteRepresentable& b, void* v){
+template<typename M>
+int to_bytes(const ByteRepresentable<M>& b, void* v){
 	return b.to_bytes(v);
 }
 
-int bytes_size(const ByteRepresentable& b){
+template<typename M>
+int bytes_size(const ByteRepresentable<M>& b){
 	return b.bytes_size();
 }
 
@@ -31,7 +33,7 @@ auto bytes_size(const T&){
 }
 
 template<typename T, typename M,
-		 restrict(std::is_base_of<ByteRepresentable CMA T>::value)>
+		 restrict(std::is_base_of<ByteRepresentable<M> CMA T>::value)>
 auto from_bytes(void *v, const M &m){
 	return T::from_bytes(v,m);
 }
