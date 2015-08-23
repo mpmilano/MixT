@@ -40,7 +40,7 @@ std::nullptr_t find_usage(const GenericHandle<l,ha>&){
 }
 
 template<Level l, HandleAccess HA, typename T>
-struct Handle : public GenericHandle<l,HA> {
+struct Handle : public GenericHandle<l,HA>, public ByteRepresentable {
 
 private:
 	const std::shared_ptr<RemoteObject<T> > _ro;
@@ -71,8 +71,8 @@ public:
 		return _ro->to_bytes();
 	}
 
-	int to_bytes_size() const {
-		return _ro->to_bytes_size();
+	int bytes_size() const {
+		return _ro->bytes_size();
 	}
 
 	template<typename RObject>
