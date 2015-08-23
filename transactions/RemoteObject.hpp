@@ -10,8 +10,12 @@ struct GeneralRemoteObject {
 
 template<Level l2, HandleAccess ha2, typename T2> struct Handle;
 
+template<typename>
+struct ROManager {};
+
 template<typename T>
-class RemoteObject : public GeneralRemoteObject, public ByteRepresentable {
+class RemoteObject : public GeneralRemoteObject,
+					 public ByteRepresentable<ROManager<T> > {
 	//extend this plz!
 
 	virtual const T& get() const = 0;
@@ -27,6 +31,8 @@ public:
 	RemoteObject(){}
 	template<Level l, HandleAccess HA, typename T2>
 	friend struct Handle;
+
+	using type = T;
 
 	template<Level l2, HandleAccess ha2, typename T2>
 	friend void markInTransaction(Store &s, const Handle<l2,ha2,T2> &h);

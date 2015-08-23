@@ -40,7 +40,8 @@ std::nullptr_t find_usage(const GenericHandle<l,ha>&){
 }
 
 template<Level l, HandleAccess HA, typename T>
-struct Handle : public GenericHandle<l,HA>, public ByteRepresentable {
+struct Handle : public GenericHandle<l,HA>,
+				public ByteRepresentable<ROManager<T> > {
 
 private:
 	const std::shared_ptr<RemoteObject<T> > _ro;
@@ -75,10 +76,14 @@ public:
 		return _ro->bytes_size();
 	}
 
-	template<typename RObject>
-	static Handle from_bytes(void *v, int size)  {
+	static Handle from_bytes(void *v, const ROManager<T> &mng)  {
 		//for de-serializing.
-		return Handle{std::make_shared<RObject>(RObject::from_bytes(v,size))};
+		return Handle{std::make_shared<RemoteObject<T> >
+				(heap_copy(from_bytes<RemoteObject<T> >(v,mng)))};
+	}
+
+	auto ROManager<T> manager() const {
+		return _ro->manager();
 	}
 	
 	const T& get() const {

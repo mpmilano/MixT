@@ -1,9 +1,14 @@
 #pragma once
 #include "utils.hpp"
 
+template<typename Manager>
 struct ByteRepresentable {
 	virtual int to_bytes(void* v) const = 0;
 	virtual int bytes_size() const = 0;
+
+	//also need to support from_bytes
+	//virtual static T from_bytes(void *v, const Manager&)  = 0;
+	virtual const Manager& manager() const = 0;
 };
 
 int to_bytes(const ByteRepresentable& b, void* v){
@@ -28,7 +33,7 @@ auto bytes_size(const T&){
 template<typename T, typename M,
 		 restrict(std::is_base_of<ByteRepresentable CMA T>::value)>
 auto from_bytes(void *v, const M &m){
-	return t::from_bytes(v,m);
+	return T::from_bytes(v,m);
 }
 
 template<typename T, typename M,
