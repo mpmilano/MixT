@@ -17,7 +17,7 @@ FINALIZE_OPERATION(Increment, RemoteObject<T>*);
 
 
 struct WeakCons :
-	public ByteRepresentable<std::pair<ROManager<int>, ROManager<WeakCons> > > {
+	public SERIALIZATION_CLASS(ROManager<int>, ROManager<WeakCons>) {
 	Handle<Level::causal, HandleAccess::all, int> val;
 	Handle<Level::strong, HandleAccess::all, WeakCons> next;
 	

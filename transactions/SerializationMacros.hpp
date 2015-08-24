@@ -40,3 +40,5 @@
 
 #define DEFAULT_SERIALIZATION_SUPPORT(a,b...) DEFAULT_MANAGER(b)	\
 	DEFAULT_SERIALIZE(b) DEFAULT_DESERIALIZE(a,b)
+
+#define SERIALIZATION_CLASS(a,b) ByteRepresentable<std::pair<a,b> >
