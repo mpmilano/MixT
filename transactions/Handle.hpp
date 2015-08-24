@@ -41,7 +41,7 @@ std::nullptr_t find_usage(const GenericHandle<l,ha>&){
 
 template<Level l, HandleAccess HA, typename T>
 struct Handle : public GenericHandle<l,HA>,
-				public ByteRepresentable<ROManager<T> > {
+				public ByteRepresentable {
 
 private:
 	const std::shared_ptr<RemoteObject<T> > _ro;
@@ -76,16 +76,13 @@ public:
 		return _ro->bytes_size();
 	}
 
-	static Handle* from_bytes(char *v, const ROManager<T> &mng)  {
+	static Handle* from_bytes(char *v)  {
 		//for de-serializing.
 		RemoteObject<T> *stupid = nullptr;
-		auto *ro = from_bytes_stupid(stupid,v,mng);
+		auto *ro = from_bytes_stupid(stupid,v);
 		return new Handle(std::make_shared<RemoteObject<T> >(ro));
 	}
 
-	const ROManager<T>& manager() const {
-		return _ro->manager();
-	}
 	
 	const T& get() const {
 		//TODO: causal tracking

@@ -17,7 +17,7 @@ FINALIZE_OPERATION(Increment, RemoteObject<T>*);
 
 
 struct WeakCons :
-	public SERIALIZATION_CLASS(ROManager<int>, ROManager<WeakCons>) {
+	public ByteRepresentable {
 	Handle<Level::causal, HandleAccess::all, int> val;
 	Handle<Level::strong, HandleAccess::all, WeakCons> next;
 	
@@ -30,8 +30,11 @@ struct WeakCons :
 
 int main() {
 
-	FileStore<Level::causal> fsc;
-	FileStore<Level::strong> fss;
+	auto &fsc = 
+		FileStore<Level::causal>::filestore_instance();
+	auto& fss =
+		FileStore<Level::strong>::filestore_instance();
+	
 	Handle<Level::strong, HandleAccess::all, WeakCons> h0;
 	WeakCons initial{fsc.newObject<HandleAccess::all,int>(12),h0};
 	Handle<Level::strong, HandleAccess::all, WeakCons> h =

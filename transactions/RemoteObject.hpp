@@ -11,12 +11,9 @@ struct GeneralRemoteObject {
 
 template<Level l2, HandleAccess ha2, typename T2> struct Handle;
 
-template<typename>
-struct ROManager {};
-
 template<typename T>
 class RemoteObject : public GeneralRemoteObject,
-					 public ByteRepresentable<ROManager<T> > {
+					 public ByteRepresentable {
 	//extend this plz!
 
 	virtual const T& get() const = 0;

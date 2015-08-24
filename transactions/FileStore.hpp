@@ -16,8 +16,18 @@
 template<Level l>
 struct FileStore : public DataStore<l> {
 
-	FileStore(const FileStore<l>&) = delete;
+private:
 	FileStore(){}
+	
+public:
+
+	FileStore(const FileStore<l>&) = delete;
+
+
+	static FileStore& filestore_instance() {
+		static FileStore fs;
+		return fs;
+	}
 	
 	template<typename T>
 	struct FSObject : public RemoteObject<T> {
@@ -48,16 +58,6 @@ struct FileStore : public DataStore<l> {
 
 		bool isValid() const {return true;}
 		
-		struct FSObjectManager : public ROManager<T> {
-			const Store &s;
-			FSObjectManager(const Store &s):s(s) {}
-		};
-		
-		const ROManager<T>& manager() const {
-			static FSObjectManager r{s};
-			return r;
-		}
-
 		int to_bytes(char* v) const {
 			if (std::strcpy(v,filename.c_str()))
 				return filename.length() + 1;
@@ -145,16 +145,13 @@ struct FileStore : public DataStore<l> {
 			oa << *this;
 		}
 
-		static FSObject<T>* from_bytes(char* v, ROManager<T> &_m) {
-			if (auto* m = dynamic_cast<FSObjectManager*>(&_m)) {
-				boost::filesystem::path p(v);
-				if (boost::filesystem::is_directory(p))
-					assert(false && "can't deserialize dirs yet");
-				else {
-					return new FSObject<T>(m->s,v,true);
-				}
+		static FSObject<T>* from_bytes(char* v) {
+			boost::filesystem::path p(v);
+			if (boost::filesystem::is_directory(p))
+				assert(false && "can't deserialize dirs yet");
+			else {
+				return new FSObject<T>(filestore_instance(),v,true);
 			}
-			else assert(false && "wrong manager!");
 		}
 
 	};
