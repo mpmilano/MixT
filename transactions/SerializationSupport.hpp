@@ -36,19 +36,19 @@ auto bytes_size(const T&){
 
 template<typename T, typename M,
 		 restrict(std::is_base_of<ByteRepresentable<M> CMA T>::value)>
-auto from_bytes(char *v, const M &m){
+auto* from_bytes(char *v, const M &m){
 	return T::from_bytes(v,m);
 }
 
 template<typename T, typename M,
 		 restrict2(std::is_trivially_copyable<T>::value)>
-auto from_bytes(char *v, const M &){
-	T t;
-	memcpy(&t,v,sizeof(T));
+auto* from_bytes(char *v, const M &){
+	T t = new T();
+	memcpy(t,v,sizeof(T));
 	return t;
 }
 
 template<typename T, typename M>
-auto from_bytes_stupid(T* t, char* v, const M& m){
+auto* from_bytes_stupid(T* t, char* v, const M& m){
 	return from_bytes<T>(v,m);
 }

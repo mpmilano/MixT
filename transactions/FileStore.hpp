@@ -3,12 +3,15 @@
 #include "Transaction.hpp"
 #include "Operation.hpp"
 #include "DataStore.hpp"
+#include "RemoteObject.hpp"
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/archive/text_iarchive.hpp>
 #include <iostream>
 #include <fstream>
 #include <set>
 #include <cstdlib>
+#include <cstring>
+#include <boost/filesystem.hpp>
 
 template<Level l>
 struct FileStore : public DataStore<l> {
@@ -44,6 +47,26 @@ struct FileStore : public DataStore<l> {
 		}
 
 		bool isValid() const {return true;}
+		
+		struct FSObjectManager : public ROManager<T> {
+			const Store &s;
+			FSObjectManager(const Store &s):s(s) {}
+		};
+		
+		const ROManager<T>& manager() const {
+			static FSObjectManager r{s};
+			return r;
+		}
+
+		int to_bytes(char* v) const {
+			if (std::strcpy(v,filename.c_str()))
+				return filename.length() + 1;
+			else assert(false && "error strcpy failed");
+		}
+
+		int bytes_size() const {
+			return filename.length() + 1;
+		}
 
 		struct StupidWrapper{
 			typename std::conditional<std::is_default_constructible<T>::value, T, T*>::type val;
@@ -121,6 +144,19 @@ struct FileStore : public DataStore<l> {
 			this->t.reset(heap_copy(t));
 			oa << *this;
 		}
+
+		static FSObject<T>* from_bytes(char* v, ROManager<T> &_m) {
+			if (auto* m = dynamic_cast<FSObjectManager*>(&_m)) {
+				boost::filesystem::path p(v);
+				if (boost::filesystem::is_directory(p))
+					assert(false && "can't deserialize dirs yet");
+				else {
+					return new FSObject<T>(m->s,v,true);
+				}
+			}
+			else assert(false && "wrong manager!");
+		}
+
 	};
 	
 	template<typename T>

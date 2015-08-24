@@ -76,12 +76,11 @@ public:
 		return _ro->bytes_size();
 	}
 
-	static Handle from_bytes(char *v, const ROManager<T> &mng)  {
+	static Handle* from_bytes(char *v, const ROManager<T> &mng)  {
 		//for de-serializing.
 		RemoteObject<T> *stupid = nullptr;
-		auto ro = from_bytes_stupid(stupid,v,mng);
-		return Handle{std::make_shared<RemoteObject<T> >
-				(heap_copy(ro))};
+		auto *ro = from_bytes_stupid(stupid,v,mng);
+		return new Handle(std::make_shared<RemoteObject<T> >(ro));
 	}
 
 	const ROManager<T>& manager() const {
