@@ -13,29 +13,24 @@
 #include "SerializationMacros.hpp"
 
 template<typename T>
-FINALIZE_OPERATION(Increment, RemoteObject<T>*)
+FINALIZE_OPERATION(Increment, RemoteObject<T>*);
 
 
-	struct WeakCons :
-	 public ByteRepresentable<std::pair<ROManager<int>, ROManager<WeakCons> > > {
-		Handle<Level::causal, HandleAccess::all, int> val;
-		Handle<Level::strong, HandleAccess::all, WeakCons> next;
+struct WeakCons :
+	public ByteRepresentable<std::pair<ROManager<int>, ROManager<WeakCons> > > {
+	Handle<Level::causal, HandleAccess::all, int> val;
+	Handle<Level::strong, HandleAccess::all, WeakCons> next;
+	
+	WeakCons(const decltype(val) &val, const decltype(next) &next)
+		:val(val),next(next){}
 
-		WeakCons(const decltype(val) &val, const decltype(next) &next)
-			:val(val),next(next){}
-
-		const std::pair<ROManager<int>, ROManager<WeakCons> >&
-		manager() const {
-			static std::pair<ROManager<int>, ROManager<WeakCons> >
-				r{val.manager(),next.manager()};
-			return r;
-		}
-
-		DEFAULT_SERIALIZE(val,next)
-
-		DEFAULT_DESERIALIZE(WeakCons,val,next)
-
-	};
+	DEFAULT_MANAGER(val,next)
+	
+	DEFAULT_SERIALIZE(val,next)
+	
+	DEFAULT_DESERIALIZE(WeakCons,val,next)
+	
+};
 
 int main() {
 
