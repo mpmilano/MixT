@@ -24,11 +24,7 @@ struct WeakCons :
 	WeakCons(const decltype(val) &val, const decltype(next) &next)
 		:val(val),next(next){}
 
-	DEFAULT_MANAGER(val,next)
-	
-	DEFAULT_SERIALIZE(val,next)
-	
-	DEFAULT_DESERIALIZE(WeakCons,val,next)
+	DEFAULT_SERIALIZATION_SUPPORT(WeakCons,val,next)
 	
 };
 
