@@ -1,3 +1,4 @@
+
 #include "IfBuilder.hpp"
 #include "TransactionBuilder.hpp"
 #include "Transaction.hpp"
@@ -8,7 +9,8 @@
 #include "FreeExpr.hpp"
 #include "Transaction_macros.hpp"
 #include "FreeExpr_macros.hpp"
-#include "Operate_macros.hpp"
+#include "Operate_macros.hpp" //*/
+#include "SerializationMacros.hpp"
 
 template<typename T>
 FINALIZE_OPERATION(Increment, RemoteObject<T>*)
@@ -19,23 +21,28 @@ FINALIZE_OPERATION(Increment, RemoteObject<T>*)
 		Handle<Level::causal, HandleAccess::all, int> val;
 		Handle<Level::strong, HandleAccess::all, WeakCons> next;
 
+		WeakCons(const decltype(val) &val, const decltype(next) &next)
+			:val(val),next(next){}
+
 		const std::pair<ROManager<int>, ROManager<WeakCons> >&
 		manager() const {
 			static std::pair<ROManager<int>, ROManager<WeakCons> >
-				r{val.manger(),next.manager()};
+				r{val.manager(),next.manager()};
 			return r;
 		}
 
 		DEFAULT_SERIALIZE(val,next)
 
 		DEFAULT_DESERIALIZE(WeakCons,val,next)
+
 	};
 
 int main() {
 
 	FileStore<Level::causal> fsc;
 	FileStore<Level::strong> fss;
-	WeakCons initial{fsc.newObject<HandleAccess::all,int>(12)};
+	Handle<Level::strong, HandleAccess::all, WeakCons> h0;
+	WeakCons initial{fsc.newObject<HandleAccess::all,int>(12),h0};
 	Handle<Level::strong, HandleAccess::all, WeakCons> h =
 		fss.newObject<HandleAccess::all, WeakCons>(initial);
 	
