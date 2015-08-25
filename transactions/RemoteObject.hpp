@@ -40,6 +40,12 @@ public:
 	run_ast_causal(Store &cache, const Store &s,
 				   const Handle<Level::strong,ha,T2>& h);
 
+	template<typename Arg, typename Accum>
+	using Pointerize = Cons_t<Arg*,Accum>;
+	
+	static RemoteObject* from_bytes(char* _v); 
+
+
 };
 
 

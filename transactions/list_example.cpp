@@ -11,6 +11,7 @@
 #include "FreeExpr_macros.hpp"
 #include "Operate_macros.hpp" //*/
 #include "SerializationMacros.hpp"
+#include "FinalHeader.hpp"
 
 template<typename T>
 FINALIZE_OPERATION(Increment, RemoteObject<T>*);
@@ -21,8 +22,10 @@ struct WeakCons :
 	Handle<Level::causal, HandleAccess::all, int> val;
 	Handle<Level::strong, HandleAccess::all, WeakCons> next;
 	
-	WeakCons(const decltype(val) &val, const decltype(next) &next)
-		:val(val),next(next){}
+	WeakCons(const decltype(val) *val, const decltype(next) *next)
+		:val(*val),next(*next){
+		delete val; delete next;
+	}
 
 	DEFAULT_SERIALIZATION_SUPPORT(WeakCons,val,next)
 	

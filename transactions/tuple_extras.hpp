@@ -155,6 +155,9 @@ struct Cons<T, std::tuple<Args...> >{
 	typedef std::tuple<T, Args...> type;
 };
 
+template <typename  T, typename A>
+using Cons_t = typename Cons<T,A>::type;
+
 template<typename... A>
 struct _Cat  {
 	using type = decltype(std::tuple_cat((*mke_p<A>())...));

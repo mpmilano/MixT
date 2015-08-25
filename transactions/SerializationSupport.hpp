@@ -6,9 +6,9 @@
 struct ByteRepresentable {
 	virtual int to_bytes(char* v) const = 0;
 	virtual int bytes_size() const = 0;
-
-	//also need to support from_bytes
-	//virtual static T from_bytes(char *v, const Manager&)  = 0;
+	virtual ~ByteRepresentable(){}
+	//needs to exist, but can't declare virtual statics
+	//virtual static T* from_bytes(char *v) const  = 0;
 };
 
 int to_bytes(const ByteRepresentable& b, char* v){
@@ -32,19 +32,19 @@ auto bytes_size(const T&){
 
 template<typename T,
 		 restrict(std::is_base_of<ByteRepresentable CMA T>::value)>
-auto* from_bytes(char *v){
+T* from_bytes(char *v){
 	return T::from_bytes(v);
 }
 
 template<typename T,
 		 restrict2(std::is_trivially_copyable<T>::value)>
-auto* from_bytes(char *v){
-	T t = new T();
+T* from_bytes(char *v){
+	T *t = new T();
 	memcpy(t,v,sizeof(T));
 	return t;
 }
 
 template<typename T>
-auto* from_bytes_stupid(T* t, char* v) {
+T* from_bytes_stupid(T* t, char* v) {
 	return from_bytes<T>(v);
 }

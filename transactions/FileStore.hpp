@@ -28,6 +28,8 @@ public:
 		static FileStore fs;
 		return fs;
 	}
+
+	using id = std::integral_constant<int, (int) l>;
 	
 	template<typename T>
 	struct FSObject : public RemoteObject<T> {
@@ -120,15 +122,21 @@ public:
 
 		template<class Archive> typename std::enable_if<!std::is_pod<T>::value &&
 		!std::is_pod<Archive>::value>::type
-		save(Archive &, const uint) const {
-			assert(false && "unimplemented");
+		save(Archive &ar, const uint) const {
+			char *v = (char*) malloc(::bytes_size(*t));
+			::to_bytes(*t,v);
+			ar & v;
+			free(v);
 		}
 
 		
 		template<class Archive> typename std::enable_if<!std::is_pod<T>::value &&
 		!std::is_pod<Archive>::value>::type
-		load(Archive &, const uint) const {
-			assert(false && "unimplemented");
+		load(Archive &ar, const uint) const {
+			char *v;
+			ar & v;
+			t.reset(::from_bytes<T>(v));
+			//we just leak this memory because I don't know how to free it.
 		}
 
 		virtual const T& get() const {
@@ -143,15 +151,6 @@ public:
 			boost::archive::text_oarchive oa(ofs);
 			this->t.reset(heap_copy(t));
 			oa << *this;
-		}
-
-		static FSObject<T>* from_bytes(char* v) {
-			boost::filesystem::path p(v);
-			if (boost::filesystem::is_directory(p))
-				assert(false && "can't deserialize dirs yet");
-			else {
-				return new FSObject<T>(filestore_instance(),v,true);
-			}
 		}
 
 	};
@@ -186,6 +185,16 @@ public:
 		}
 	};
 
+	template<typename T>
+	static FSObject<T>* from_bytes(char* v) {
+		boost::filesystem::path p(v);
+		if (boost::filesystem::is_directory(p))
+			assert(false && "can't deserialize dirs yet");
+		else {
+			return new FSObject<T>(filestore_instance(),v,true);
+		}
+	}
+	
 	template<HandleAccess ha, typename T>
 	auto newObject(){
 		return make_handle
