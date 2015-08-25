@@ -27,6 +27,9 @@ struct WeakCons :
 		delete val; delete next;
 	}
 
+	WeakCons(const decltype(val) &val, const decltype(next) &next)
+		:val(val),next(next){}
+
 	DEFAULT_SERIALIZATION_SUPPORT(WeakCons,val,next)
 	
 };

@@ -12,6 +12,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <boost/filesystem.hpp>
+#include <boost/serialization/vector.hpp>
 
 template<Level l>
 struct FileStore : public DataStore<l> {
@@ -102,11 +103,11 @@ public:
 		save(Archive &ar, const uint) const {
 			if (t.get()){
 				StupidWrapper stupid(t.get());
-				ar & stupid.val;
+				ar << stupid.val;
 			}
 			else {
 				T t;
-				ar & t;
+				ar << t;
 			}
 		}
 
@@ -114,7 +115,7 @@ public:
 		!std::is_pod<Archive>::value >::type
 		load(Archive &ar, const uint){
 			StupidWrapper stupid;
-			ar & stupid.val;
+			ar >> stupid.val;
 			t.reset(heap_copy(stupid.deref()));
 		}
 		
@@ -125,18 +126,18 @@ public:
 		save(Archive &ar, const uint) const {
 			char *v = (char*) malloc(::bytes_size(*t));
 			::to_bytes(*t,v);
-			ar & v;
+			std::vector<char> v2(v, v + ::bytes_size(*t));
+			ar << v2;
 			free(v);
 		}
 
 		
 		template<class Archive> typename std::enable_if<!std::is_pod<T>::value &&
 		!std::is_pod<Archive>::value>::type
-		load(Archive &ar, const uint) const {
-			char *v;
-			ar & v;
-			t.reset(::from_bytes<T>(v));
-			//we just leak this memory because I don't know how to free it.
+		load(Archive &ar, const uint) {
+			std::vector<char> v;
+			ar >> v;
+			t.reset(::from_bytes<T>(&v[0]));
 		}
 
 		virtual const T& get() const {

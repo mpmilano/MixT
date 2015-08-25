@@ -80,7 +80,7 @@ public:
 		//for de-serializing.
 		RemoteObject<T> *stupid = nullptr;
 		auto *ro = from_bytes_stupid(stupid,v);
-		return new Handle(std::make_shared<RemoteObject<T> >(ro));
+		return new Handle(std::shared_ptr<RemoteObject<T> >(ro));
 	}
 
 	
