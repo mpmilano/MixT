@@ -125,7 +125,9 @@ public:
 		!std::is_pod<Archive>::value>::type
 		save(Archive &ar, const uint) const {
 			char *v = (char*) malloc(::bytes_size(*t));
+			std::cout << "serializing member!" << std::endl;
 			::to_bytes(*t,v);
+			std::cout << "copying to vector!" << std::endl;
 			std::vector<char> v2(v, v + ::bytes_size(*t));
 			ar << v2;
 			free(v);
@@ -137,7 +139,8 @@ public:
 		load(Archive &ar, const uint) {
 			std::vector<char> v;
 			ar >> v;
-			t.reset(::from_bytes<T>(&v[0]));
+			if (v.size() != 0)
+				t.reset(::from_bytes<T>(&v[0]));
 		}
 
 		virtual const T& get() const {

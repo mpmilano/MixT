@@ -69,18 +69,28 @@ public:
 
 	int to_bytes(char* v) const {
 		//for serialization
-		return _ro->to_bytes(v);
+		if (_ro) {
+			((bool*)v)[0] = true;
+			return sizeof(bool) + _ro->to_bytes(v + sizeof(bool));
+		}
+		else {
+			((bool*)v)[0] = false;
+			return sizeof(bool);
+		}
 	}
 
 	int bytes_size() const {
-		return _ro->bytes_size();
+		return sizeof(bool) + (_ro ? _ro->bytes_size() : 0);
 	}
 
 	static Handle* from_bytes(char *v)  {
 		//for de-serializing.
 		RemoteObject<T> *stupid = nullptr;
-		auto *ro = from_bytes_stupid(stupid,v);
-		return new Handle(std::shared_ptr<RemoteObject<T> >(ro));
+		if (((bool*)v)[0]) {
+				auto *ro = from_bytes_stupid(stupid,v + sizeof(bool) );
+				return new Handle(std::shared_ptr<RemoteObject<T> >(ro));
+			}
+		else return new Handle(std::shared_ptr<RemoteObject<T> >(nullptr));
 	}
 
 	

@@ -40,8 +40,11 @@ template<typename T,
 		 restrict2(std::is_trivially_copyable<T>::value)>
 T* from_bytes(char *v){
 	T *t = new T();
-	memcpy(t,v,sizeof(T));
-	return t;
+	if (v) {
+		memcpy(t,v,sizeof(T));
+		return t;
+	}
+	else return nullptr;
 }
 
 template<typename T>
