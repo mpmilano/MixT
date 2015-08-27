@@ -233,7 +233,7 @@ private:
 		{
 			typedef run_result<decltype(t.t)> R;
 			static_assert(neg_error_helper<is_ConStatement,R>::value,"Static assert failed");
-			return *((R*) s.at(t.store_id).get());
+			return s.get<R>(t.store_id);
 		}
 };
 

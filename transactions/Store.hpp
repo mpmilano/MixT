@@ -2,12 +2,15 @@
 #include "utils.hpp"
 
 //TODO: define this better and move it.
-struct Store : std::map<int,std::unique_ptr<void*> >{
+struct Store {
+
+	std::map<int,std::unique_ptr<void*> > store_impl;
+	
 	//you are *not* responsible for deleting this
 	Store * const  prev_scope = nullptr;
 	bool valid_store = true;
 	bool contains(int i) const{
-		return (this->find(i) != this->end())
+		return (store_impl.find(i) != store_impl.end())
 			|| (prev_scope && prev_scope->contains(i));
 	}
 
@@ -22,14 +25,14 @@ struct Store : std::map<int,std::unique_ptr<void*> >{
 	template<typename T>
 	void insert(int i, const T &item) {
 		assert(valid_store);
-		(*this)[i].reset((stored)heap_copy(item));
+		store_impl[i].reset((stored)heap_copy(item));
 		assert(contains(i));
 	}
 
 	template<typename T>
 	void emplace(int i){
 		assert(valid_store);
-		(*this)[i].reset((void**)new T());
+		store_impl[i].reset((void**)new T());
 		assert(contains(i));
 	}
 
@@ -40,7 +43,7 @@ struct Store : std::map<int,std::unique_ptr<void*> >{
 		std::cerr << "trying to find something of id " << i << std::endl; \
 		assert(false && "Error: we don't have that here");				\
 	}																	\
-	T* ret = (T*) (this->at(i).get());									\
+	T* ret = (T*) (store_impl.at(i).get());								\
 	assert(ret);														\
 	return *ret;
 	
