@@ -42,7 +42,8 @@ public:
 		const GDataStore& store() const {return s;}
 		GDataStore& store() {return s;}
 		
-		FSObject(Store &s, const std::string &name, bool exists = false):filename(name),s(s){
+		FSObject(Store &s, const std::string &name, bool exists = false)
+			:filename(name),s(s){
 			if (!exists){
 				std::ofstream ofs(filename);
 				boost::archive::text_oarchive oa(ofs);
@@ -51,7 +52,8 @@ public:
 			}
 		}
 		
-		FSObject(Store &s, const std::string &name, const T &init):t(heap_copy(init)),filename(name),s(s) {
+		FSObject(Store &s, const std::string &name, const T &init)
+			:t(heap_copy(init)),filename(name),s(s) {
 			std::ofstream ofs(filename);
 			boost::archive::text_oarchive oa(ofs);
 			static_assert(!std::is_const<decltype(this)>::value,"Static assert failed");
@@ -72,7 +74,7 @@ public:
 		}
 
 		struct StupidWrapper{
-			typename std::conditional<std::is_default_constructible<T>::value, T, T*>::type val;
+			std::conditional_t<std::is_default_constructible<T>::value, T, T*> val;
 
 			template<typename T2, restrict(std::is_same<decltype(val) CMA T2>::value)>
 			StupidWrapper(const T2 &t):val(t) {}
@@ -161,7 +163,8 @@ public:
 	
 	template<typename T>
 	struct FSDir : public FSObject<std::set<T> > {
-		FSDir(typename FSObject<std::set<T> >::Store &s, const std::string &name):FSObject<std::set<T> >(s,name,true){
+		FSDir(typename FSObject<std::set<T> >::Store &s, const std::string &name)
+			:FSObject<std::set<T> >(s,name,true){
 			system(("exec mkdir -p " + name).c_str());
 		}
 

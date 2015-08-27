@@ -39,13 +39,6 @@ auto find_usage(const Noop<l>&){
 	return nullptr;
 }
 
-
-template<Level l>
-std::ostream & operator<<(std::ostream &os, const Noop<l>&){
-	
-	return os << "Noop@" << (l == Level::strong ? "strong" : "weak");
-}
-
 const Noop<Level::strong> dummy1;
 const Noop<Level::causal> dummy2;
 

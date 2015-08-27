@@ -30,25 +30,27 @@ struct Store : std::map<int,std::unique_ptr<void*> >{
 		return (*this)[i].reset((void**)new T());
 	}
 
+#define store_get_impl					  \
+	if (!contains(i) && prev_scope)		  \
+		return prev_scope->get<T>(i);	  \
+	else if (!contains(i)) {											\
+		std::cerr << "trying to find something of id " << i << std::endl; \
+		assert(false && "Error: we don't have that here");				\
+	}																	\
+	T* ret = (T*) (this->at(i).get());									\
+	assert(ret);														\
+	return *ret;
+	
 	template<typename T>
 	T& get(int i){
-		if (!contains(i) && prev_scope)
-			return prev_scope->get<T>(i);
-		else if (!contains(i)) assert(false && "Error: we don't have that here");
-		T* ret = (T*) (this->at(i).get());
-		assert(ret);
-		return *ret;
+		store_get_impl
 	}
 
 	template<typename T>
 	const T& get(int i) const{
-		if (!contains(i) && prev_scope)
-			return prev_scope->get<T>(i);
-		else if (!contains(i)) assert(false && "Error: we don't have that here");
-		T* ret = (T*) (this->at(i).get());
-		assert(ret);
-		return *ret;
+		store_get_impl
 	}
+
 
 	virtual ~Store() {
 		valid_store = false;

@@ -180,30 +180,6 @@ auto find_usage(const T& fu) {
 				, nullptr);
 }
 
-template<typename T, restrict(std::is_base_of<BaseFindUsages CMA T>::value)>
-std::ostream & operator<<(std::ostream &os, const T& op){
-	return os << op.name;
-}
-
-auto print_util(const std::shared_ptr<const std::nullptr_t>&){
-	return "aaaaaa";
-}
-
-template<typename T, restrict(!std::is_same<T CMA std::nullptr_t>::value)>
-const auto& print_util(const std::shared_ptr<const T> &sp){
-	return sp->gets;
-}
-
-template<unsigned long long ID,typename CS, Level l, typename temp>
-std::ostream & operator<<(std::ostream &os, const DeclarationScope<ID,CS,l,temp> &t){
-//	static_assert(!std::is_same<std::decay_t<decltype(*t.gt)>, std::nullptr_t>::value,"Attempting to print DeclarationScope which has failed to find replacement!");
-//	static_assert(!std::is_same<std::decay_t<decltype(t.gt.get())>, std::nullptr_t>::value,"Attempting to print DeclarationScope which has failed to find replacement!");
-	assert(t.gt && "Error: we found a replacement, but gt is still null!");
-	os << t.name << "<" << levelStr<l>() <<"> = " << print_util(t.gt);
-	fold(t.cs,[&os](const auto &e, int) -> int
-		 {os << "  " << e << std::endl; return 0; },0);
-	return os;
-}
 
 template<typename , typename >
 struct _impl_pick_new_type;

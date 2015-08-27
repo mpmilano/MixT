@@ -190,11 +190,6 @@ auto get_ReadSet(const Handle<l,ha,T> &h){
 	return BitSet<HandleAbbrev>(h.abbrev());
 }
 
-template<Level l, HandleAccess ha, typename T>
-std::ostream & operator<<(std::ostream &os, const Handle<l,ha,T>&){
-	return os << "Handle<" << levelStr<l>() << ">";
-}
-
 template<typename T>
 struct is_handle;
 

@@ -52,7 +52,7 @@ int main() {
 		let_mutable(hd) = h IN (
 			WHILE (isValid(hd)) DO(
 				let_ifValid(tmp) = hd IN (
-					do_op(Increment,msg(tmp,val)),
+					let_ifValid(weak_val) = msg(tmp,val) IN (do_op(Increment,weak_val)),
 					hd = msg(tmp,next)
 					)
 				)

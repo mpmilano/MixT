@@ -97,8 +97,3 @@ constexpr bool is_If_f(const A*){
 template<typename T>
 struct is_If : std::integral_constant<bool,is_If_f(mke_p<T>())>::type {};
 
-
-template<typename Cond, typename Then, typename Els>
-std::ostream & operator<<(std::ostream &os, const If<Cond,Then,Els>& i){
-	return os << "(" << i.cond <<" ? " << i.then << ")";
-}

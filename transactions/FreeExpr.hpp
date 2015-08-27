@@ -27,7 +27,7 @@ struct FreeExpr : public ConExpr<T, min_level<Exprs...>::value > {
 	//this one is just for temp-var-finding
 	const std::tuple<Exprs...> params;
 	const std::function<T (const Store&, const std::tuple<Exprs ...>& )> f;
-	static constexpr Level level = min_level<Exprs...>::value;
+	using level = std::integral_constant<Level, min_level<Exprs...>::value>;
 	
 	FreeExpr(int,
 			 std::function<T (const typename extract_type<decay<Exprs> >::type & ... )> f,
@@ -43,7 +43,7 @@ struct FreeExpr : public ConExpr<T, min_level<Exprs...>::value > {
 
 	auto strongCall(Store &cache, const Store &heap) const{
 		std::cout << "strong call" << std::endl;
-		std::integral_constant<bool,level==Level::strong>* choice = nullptr;
+		std::integral_constant<bool,level::value==Level::strong>* choice = nullptr;
 		return strongCall(cache,heap,choice);
 	}	
 
@@ -65,7 +65,7 @@ struct FreeExpr : public ConExpr<T, min_level<Exprs...>::value > {
 
 	auto causalCall(Store &cache, const Store &heap) const {
 		std::cout << "causal call" << std::endl;
-		std::integral_constant<bool,level==Level::causal>* choice = nullptr;
+		std::integral_constant<bool,level::value==Level::causal>* choice = nullptr;
 		return causalCall(cache,heap,choice);
 	}	
 
@@ -103,9 +103,4 @@ auto find_usage(const FreeExpr<T,Vars...> &op){
 
 template<unsigned long long ID, typename T, typename... Exprs>
 struct contains_temporary<ID, FreeExpr<T,Exprs...> > : contains_temp_fold<ID,std::tuple<Exprs...> > {};
-
-template<typename i, typename... E>
-std::ostream & operator<<(std::ostream &os, const FreeExpr<i,E...>& op){
-	return os << " apparently you can't print functions ";
-}
 

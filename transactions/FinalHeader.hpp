@@ -1,6 +1,8 @@
 //for things where it's irritating to put them before other things.
 #pragma once
 
+#include "Ostreams.hpp"
+
 template<typename T>
 RemoteObject<T>* RemoteObject<T>::from_bytes(char* _v)
 {
@@ -15,3 +17,4 @@ RemoteObject<T>* RemoteObject<T>::from_bytes(char* _v)
 				else return acc;
 		},nullptr);
 }
+

@@ -20,9 +20,8 @@ struct Temporary : public GeneralTemp, public ConStatement<get_level<T>::value> 
 				  "Error: flow violation");
 
 	const T t;
-	const int id;
-	Temporary(const T& t):GeneralTemp(std::to_string(gensym()),to_string(t)),t(t),id(std::hash<std::string>()(this->name)){}
-	Temporary(const std::string name, const T& t):GeneralTemp(name,to_string(t)),t(t),id(std::hash<std::string>()(name)){}
+	const int store_id;
+	Temporary(const std::string name, const T& t):GeneralTemp(name,to_string(t)),t(t),store_id(std::hash<std::string>()(name)){}
 	
 	auto getReadSet() const {
 		return t.getReadSet();
@@ -35,8 +34,8 @@ struct Temporary : public GeneralTemp, public ConStatement<get_level<T>::value> 
 
 	auto strongCall(Store &c, Store &s, std::true_type*) const {
 		typedef typename std::decay<decltype(run_ast_strong(c,s,t))>::type R;
-		if (!s.contains(id))
-			s[id].reset(
+		if (!s.contains(store_id))
+			s[store_id].reset(
 				(Store::stored)
 				new R(run_ast_strong(c,s,t)));
 		return true;
@@ -53,7 +52,7 @@ struct Temporary : public GeneralTemp, public ConStatement<get_level<T>::value> 
 
 	auto causalCall(Store &c, Store &s,std::true_type*) const {
 		typedef typename std::decay<decltype(t.causalCall(c,s))>::type R;
-		if (!s.contains(id)) s[id].reset((Store::stored) new R(t.causalCall(c,s)));
+		if (!s.contains(store_id)) s[store_id].reset((Store::stored) new R(t.causalCall(c,s)));
 		return true;
 	}
 
@@ -72,19 +71,14 @@ auto find_usage(const Temporary<ID,l,T> &rt){
 template<unsigned long long ID, unsigned long long ID2, Level l, typename T>
 struct contains_temporary<ID, Temporary<ID2,l,T> > : std::integral_constant<bool, ID == ID2> {};
 
-template<Level l2, typename i2, unsigned long long id>
-std::ostream & operator<<(std::ostream &os, const Temporary<id,l2,i2>& t){
-	return os << t.name << "<" << levelStr<l2>() << ">" <<  " = " << t.t;
-}
-
 template<typename T>
 struct TemporaryMutation : public ConStatement<get_level<T>::value> {
 	const std::string name;
-	const int id;
+	const int store_id;
 	const T t;
 
 	TemporaryMutation(const std::string &name, int id, const T& t)
-		:name(name),id(id),t(t) {}
+		:name(name),store_id(id),t(t) {}
 
 	auto strongCall(Store &c, Store &s) const {
 		std::integral_constant<bool,get_level<T>::value==Level::strong>* choice = nullptr;
@@ -93,7 +87,7 @@ struct TemporaryMutation : public ConStatement<get_level<T>::value> {
 
 	auto strongCall(Store &c, Store &s, std::true_type*) const {
 		typedef typename std::decay<decltype(run_ast_strong(c,s,t))>::type R;
-		s[id].reset((Store::stored) new R(run_ast_strong(c,s,t)));
+		s[store_id].reset((Store::stored) new R(run_ast_strong(c,s,t)));
 		return true;
 	}
 
@@ -108,7 +102,7 @@ struct TemporaryMutation : public ConStatement<get_level<T>::value> {
 
 	auto causalCall(Store &c, Store &s,std::true_type*) const {
 		typedef typename std::decay<decltype(run_ast_causal(c,s,t))>::type R;
-		s[id].reset((Store::stored) new R(run_ast_causal(c,s,t)));
+		s[store_id].reset((Store::stored) new R(run_ast_causal(c,s,t)));
 		return true;
 	}
 
@@ -131,11 +125,6 @@ struct contains_temporary<ID, TemporaryMutation<T> > : contains_temporary<ID,T> 
 template<unsigned long long ID, typename T>
 auto find_usage(const TemporaryMutation<T> &t){
 	return find_usage<ID>(t.t);
-}
-
-template<typename T>
-std::ostream & operator<<(std::ostream &os, const TemporaryMutation<T>& t){
-	return os << t.name << " := " << t.t;
 }
 
 template<unsigned long long ID, Level l, typename T>
@@ -165,12 +154,6 @@ std::enable_if_t<ID != ID2,std::nullptr_t> find_usage(const MutableTemporary<ID2
 	return nullptr;
 }
 
-template<unsigned long long id, Level l2, typename i2>
-std::ostream & operator<<(std::ostream &os, const MutableTemporary<id,l2,i2>& t){
-	return os << t.name << "<" << levelStr<l2>() << ">" <<  " = " << t.t;
-}
-
-
 template<Level l, typename T>
 class CSConstant;
 
@@ -188,13 +171,8 @@ struct RefTemporary : public ConExpr<run_result<T>,l> {
 	//every time we copy this class.
 	//every copy should have a unique ID.
 	const int local_id = gensym();
-	RefTemporary(const Temporary<id,l,T> &t):t(t),name(std::string("__x") + std::to_string(t.id))
-		{static_assert(std::is_same<Temporary<id,l,T>, Temp>::value,
-					   "Error: wrong constructor used for RT");}
 
-	RefTemporary(const MutableTemporary<id,l,T> &t):t(t),name(t.name)
-		{static_assert(std::is_same<MutableTemporary<id,l,T>, Temp>::value,
-					   "Error: wrong constructor used for RT");}
+	RefTemporary(const Temp &t):t(t),name(t.name) {}
 
 	RefTemporary(const RefTemporary& rt):t(rt.t),name(rt.name),local_id(gensym()){}
 
@@ -232,7 +210,7 @@ struct RefTemporary : public ConExpr<run_result<T>,l> {
 	operator=(const E &e) const {
 		static_assert(is_ConExpr<E>::value,"Error: attempt to assign non-Expr");
 		auto wrapped = wrap_constants(e);
-		TemporaryMutation<decltype(wrapped)> r{name,t.id,wrapped};
+		TemporaryMutation<decltype(wrapped)> r{name,t.store_id,wrapped};
 		return r;
 	}
 
@@ -241,7 +219,7 @@ struct RefTemporary : public ConExpr<run_result<T>,l> {
 	operator=(const E &e) const {
 		static_assert(is_ConExpr<E>::value,"Error: attempt to assign non-Expr");
 		static_assert(!is_ConExpr<E>::value,"Error: attempt to mutate immutable temporary.");
-		TemporaryMutation<E> r{name,t.id,wrap_constants(e)};
+		TemporaryMutation<E> r{name,t.store_id,wrap_constants(e)};
 		return r;
 	}
 
@@ -253,7 +231,7 @@ private:
 		{
 			typedef run_result<decltype(t.t)> R;
 			static_assert(neg_error_helper<is_ConStatement,R>::value,"Static assert failed");
-			return *((R*) s.at(t.id).get());
+			return *((R*) s.at(t.store_id).get());
 		}
 };
 
@@ -308,19 +286,9 @@ template<Level l, typename T, typename E, unsigned long long id>
 struct is_ConExpr<RefTemporary<id,l,T, E> > : std::true_type {};
 
 
-template<Level l2, typename T2, typename E, unsigned long long id>
-std::ostream & operator<<(std::ostream &os, const RefTemporary<id,l2,T2, E>& t){
-	return os << t.name <<  "<" << levelStr<l2>() << ">";
-}
-
-
 struct nope{
 	typedef std::false_type found;
 };
-
-std::ostream & operator<<(std::ostream &os, const nope& ){
-	return os << "nope!";
-}
 
 template<Level l, typename T, typename E, unsigned long long id>
 bool is_reftemp(const RefTemporary<id,l,T, E> *){

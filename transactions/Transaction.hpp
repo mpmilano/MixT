@@ -97,6 +97,3 @@ struct Transaction{
 };
 
 
-std::ostream & operator<<(std::ostream &os, Transaction& t){
-	return t.print(os);
-}

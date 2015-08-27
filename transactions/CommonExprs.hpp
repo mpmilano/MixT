@@ -21,10 +21,6 @@ public:
 	friend std::ostream & operator<<(std::ostream &os, const CSInt<l2,i2>&);
 };
 
-template<Level l, int i>
-std::ostream & operator<<(std::ostream &os, const CSInt<l,i>&){
-	return os << i;
-}
 
 template<Level l, int i>
 constexpr bool verify_compilation_complete(const CSInt<l,i>*)
@@ -77,12 +73,6 @@ std::enable_if_t<!std::is_scalar<T>::value, T> wrap_constants(const T& t){
 //TODO: figure out why this needs to be here
 template<Level l, typename T>
 struct is_ConExpr<CSConstant<l,T> > : std::true_type {};
-
-template<Level l, typename i>
-std::ostream & operator<<(std::ostream &os, const CSConstant<l,i>& c){
-	return os << c.val;
-}
-
 
 template<Level l, int i>
 constexpr bool is_base_CS_f(const CSInt<l,i>* ){
@@ -144,11 +134,6 @@ auto find_usage(const Not<T> &t){
 //TODO: figure out why this needs to be here
 template<typename T>
 struct is_ConExpr<Not<T> > : std::true_type {};
-
-template<typename i2>
-std::ostream & operator<<(std::ostream &os, const Not<i2>& n){
-	return os << "!" << n.v;
-}
 
 
 template<typename T>
@@ -221,12 +206,6 @@ struct contains_temporary<ID, IsValid<T> > : contains_temporary<ID,T> {};
 template<unsigned long long ID, typename T>
 auto find_usage(const IsValid<T> &t){
 	return find_usage<ID>(t.t);
-}
-
-
-template<typename T2>
-std::ostream & operator<<(std::ostream &os, const IsValid<T2> &t){
-	return os << "isValid(" << t.t << ")";
 }
 
 

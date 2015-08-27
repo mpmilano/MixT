@@ -147,6 +147,8 @@ using run_result = decltype(run_ast_causal(std::declval<Store&>(),std::declval<S
 
 template<typename T, restrict(is_ConExpr<T>::value && !std::is_scalar<T>::value)>
 auto cached(const Store &cache, const T& ast){
+	//TODO: make sure ast.id is always the gensym'd id.
+	assert(cache.contains(ast.id));
 	using R = run_result<T>;
 	return cache.get<R>(ast.id);
 }

@@ -150,7 +150,3 @@ template<typename T>
 struct is_while : std::integral_constant<bool,is_While_f(mke_p<T>())>::type {};
 
 
-template<typename Cond, typename Then>
-std::ostream & operator<<(std::ostream &os, const While<Cond,Then>& i){
-	return os << "while (" << i.cond <<") do {" << i.then << "}";
-}
