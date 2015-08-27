@@ -35,9 +35,7 @@ struct Temporary : public GeneralTemp, public ConStatement<get_level<T>::value> 
 	auto strongCall(Store &c, Store &s, std::true_type*) const {
 		typedef typename std::decay<decltype(run_ast_strong(c,s,t))>::type R;
 		if (!s.contains(store_id))
-			s[store_id].reset(
-				(Store::stored)
-				new R(run_ast_strong(c,s,t)));
+			s.emplace<R>(store_id, run_ast_strong(c,s,t));
 		return true;
 	}
 
@@ -52,7 +50,8 @@ struct Temporary : public GeneralTemp, public ConStatement<get_level<T>::value> 
 
 	auto causalCall(Store &c, Store &s,std::true_type*) const {
 		typedef typename std::decay<decltype(t.causalCall(c,s))>::type R;
-		if (!s.contains(store_id)) s[store_id].reset((Store::stored) new R(t.causalCall(c,s)));
+		if (!s.contains(store_id))
+			s.emplace<R>(store_id,t.causalCall(c,s));
 		return true;
 	}
 
@@ -87,7 +86,7 @@ struct TemporaryMutation : public ConStatement<get_level<T>::value> {
 
 	auto strongCall(Store &c, Store &s, std::true_type*) const {
 		typedef typename std::decay<decltype(run_ast_strong(c,s,t))>::type R;
-		s[store_id].reset((Store::stored) new R(run_ast_strong(c,s,t)));
+		s.emplace<R>(store_id,run_ast_strong(c,s,t));
 		return true;
 	}
 
@@ -102,7 +101,7 @@ struct TemporaryMutation : public ConStatement<get_level<T>::value> {
 
 	auto causalCall(Store &c, Store &s,std::true_type*) const {
 		typedef typename std::decay<decltype(run_ast_causal(c,s,t))>::type R;
-		s[store_id].reset((Store::stored) new R(run_ast_causal(c,s,t)));
+		s.emplace<R>(store_id,run_ast_causal(c,s,t));
 		return true;
 	}
 

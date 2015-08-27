@@ -29,10 +29,10 @@ struct Store {
 		assert(contains(i));
 	}
 
-	template<typename T>
-	void emplace(int i){
+	template<typename T, typename... Args>
+	void emplace(int i, Args && ... args){
 		assert(valid_store);
-		store_impl[i].reset((void**)new T());
+		store_impl[i].reset((void**)new T(std::forward<Args...>(args...)));
 		assert(contains(i));
 	}
 
