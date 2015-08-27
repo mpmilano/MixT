@@ -199,7 +199,7 @@ struct RefTemporary : public ConExpr<run_result<T>,l> {
 
 	auto causalCall(Store &cache, const Store &s) const {
 		typedef decltype(call(s,t)) R;
-		if (cache.contains(this->id)) return cache.get<R>(this->id);
+		if (cache.contains(this->local_id)) return cache.get<R>(this->local_id);
 		else {
 			return call(s,t);
 		}

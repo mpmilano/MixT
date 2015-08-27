@@ -21,6 +21,18 @@ struct extract_type<RefTemporary<id,l,T,Temp> >{
 		extract_type<run_result<RefTemporary<id,l,T,Temp> > >::type;
 };
 
+template<typename C, typename E>
+auto debug_failon_not_cached(const C& c, const E &e){
+	try {
+		return cached(c,e);
+	}
+	catch (const CacheLookupFailure&){
+		std::cerr << "found a failure point!" << std::endl;
+		std::cerr << "Type we failed on: " << type_name<E>() << std::endl;
+		return cached(c,e);
+	}
+}
+
 template<typename T, typename... Exprs>
 struct FreeExpr : public ConExpr<T, min_level<Exprs...>::value > {
 
@@ -28,15 +40,16 @@ struct FreeExpr : public ConExpr<T, min_level<Exprs...>::value > {
 	const std::tuple<Exprs...> params;
 	const std::function<T (const Store&, const std::tuple<Exprs ...>& )> f;
 	using level = std::integral_constant<Level, min_level<Exprs...>::value>;
-	
+
 	FreeExpr(int,
 			 std::function<T (const typename extract_type<decay<Exprs> >::type & ... )> f,
 			 Exprs... h)
 		:params(std::make_tuple(h...)),
 		 f([=](const Store &c, const std::tuple<Exprs...> &t){
-				 auto retrieved = fold(t,
-									   [&](const auto &e, const auto &acc){return tuple_cons(get_if_handle(cached(c,e)),acc);}
-									   ,std::tuple<>());
+				 auto retrieved = fold(
+					 t,
+					 [&](const auto &e, const auto &acc){return tuple_cons(get_if_handle(debug_failon_not_cached(c,e)),acc);}
+					 ,std::tuple<>());
 				 return callFunc(f,retrieved);
 			 })
 		{}

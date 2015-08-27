@@ -12,7 +12,7 @@ typedef Level Level;
 
 template<typename T, Level l>
 struct ConExpr : public ConStatement<l> {
-	const int id = gensym();
+	
 	//typename std::conditional<l == Level::strong, T, void>::type
 	//virtual strongCall(Store&, const Store&) const = 0;
 	//virtual T causalCall(Store&, const Store&) const = 0;
@@ -52,7 +52,6 @@ auto get_ReadSet(const Expr &){
 template<typename T>
 typename std::enable_if<is_ConStatement<T>::value && !std::is_scalar<T>::value,
 						BitSet<HandleAbbrev> >::type get_ReadSet(const T &ce){
-	assert(&ce != nullptr);
 	return ce.getReadSet();
 }
 
@@ -144,11 +143,12 @@ run_ast_causal(const Store &, const Store&, const T& e) {
 template<typename T>
 using run_result = decltype(run_ast_causal(std::declval<Store&>(),std::declval<Store&>(),std::declval<T&>()));
 
+struct CacheLookupFailure {};
 
 template<typename T, restrict(is_ConExpr<T>::value && !std::is_scalar<T>::value)>
 auto cached(const Store &cache, const T& ast){
 	//TODO: make sure ast.id is always the gensym'd id.
-	assert(cache.contains(ast.id));
+	if (!cache.contains(ast.id)) throw CacheLookupFailure();
 	using R = run_result<T>;
 	return cache.get<R>(ast.id);
 }
