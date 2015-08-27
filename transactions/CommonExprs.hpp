@@ -5,13 +5,14 @@
 template<Level l, int i>
 class CSInt : public ConExpr<int,l>, public std::integral_constant<int,i>::type {
 public:
+	
+	const int id = gensym();
+	
 	CSInt(){}
 
 	BitSet<HandleAbbrev> getReadSet() const {
 		return BitSet<HandleAbbrev>();
 	}
-
-	CONNECTOR_OP
 
 	constexpr int operator()(const Store &) const {
 		return i;
@@ -83,7 +84,8 @@ template<typename T>
 struct Not : public ConExpr<bool, get_level<T>::value> {
 
 	static_assert(is_ConExpr<T>::value,"Error: cannot negate non-expression");
-	
+
+	const int id = gensym();
 	T v;
 	Not(const T& t):v(t){}
 
@@ -156,6 +158,7 @@ struct IsValid : public ConExpr<bool, get_level<T>::value> {
 	static_assert(is_handle<run_result<T> >::value,"error: IsValid designed for referential integrity of handles.");
 
 	const T t;
+	const int id = gensym();
 	
 	IsValid(const T &t):t(t){}
 

@@ -40,6 +40,7 @@ struct FreeExpr : public ConExpr<T, min_level<Exprs...>::value > {
 	const std::tuple<Exprs...> params;
 	const std::function<T (const Store&, const std::tuple<Exprs ...>& )> f;
 	using level = std::integral_constant<Level, min_level<Exprs...>::value>;
+	const int id = gensym();
 
 	FreeExpr(int,
 			 std::function<T (const typename extract_type<decay<Exprs> >::type & ... )> f,

@@ -161,7 +161,7 @@ class CSConstant;
 #define MutAssigner(c) MutCreator<unique_id<(sizeof(c) / sizeof(char)) - 1>(c)>{c}
 #define ImmutAssigner(c) ImmutCreator<unique_id<(sizeof(c) / sizeof(char)) - 1>(c)>{c}
 
-template<unsigned long long id, Level l, typename T, typename Temp>
+template<unsigned long long ID, Level l, typename T, typename Temp>
 struct RefTemporary : public ConExpr<run_result<T>,l> {
 	
 	const Temp t;
@@ -170,11 +170,11 @@ struct RefTemporary : public ConExpr<run_result<T>,l> {
 	//Note: this ID will change
 	//every time we copy this class.
 	//every copy should have a unique ID.
-	const int local_id = gensym();
+	const int id = gensym();
 
 	RefTemporary(const Temp &t):t(t),name(t.name) {}
 
-	RefTemporary(const RefTemporary& rt):t(rt.t),name(rt.name),local_id(gensym()){}
+	RefTemporary(const RefTemporary& rt):t(rt.t),name(rt.name),id(gensym()){}
 
 	auto getReadSet() const {
 		return t.getReadSet();
@@ -182,14 +182,14 @@ struct RefTemporary : public ConExpr<run_result<T>,l> {
 
 	auto strongCall(Store &cache, const Store &s) const {
 		//TODO - endorsements should happen somewhere around here, right?
-		//todo: did I want the level of the expression which assigned the temporary? 
+		//todo: dID I want the level of the expression which assigned the temporary? 
 		std::integral_constant<bool,get_level<Temp>::value==Level::strong>* choice = nullptr;
 		return strongCall(cache, s,choice);
 	}
 
 	auto strongCall(Store &cache, const Store &s, std::true_type*) const {
 		auto ret = call(s, t);
-		cache.insert(id,ret);
+		cache.insert(ID,ret);
 		return ret;
 	}
 
@@ -199,14 +199,14 @@ struct RefTemporary : public ConExpr<run_result<T>,l> {
 
 	auto causalCall(Store &cache, const Store &s) const {
 		typedef decltype(call(s,t)) R;
-		if (cache.contains(this->local_id)) return cache.get<R>(this->local_id);
+		if (cache.contains(this->id)) return cache.get<R>(this->id);
 		else {
 			return call(s,t);
 		}
 	}
 
 	template<typename E>
-	std::enable_if_t<!std::is_same<Temporary<id,l,T>, Temp>::value, TemporaryMutation<decltype(wrap_constants(*mke_p<E>()))> >
+	std::enable_if_t<!std::is_same<Temporary<ID,l,T>, Temp>::value, TemporaryMutation<decltype(wrap_constants(*mke_p<E>()))> >
 	operator=(const E &e) const {
 		static_assert(is_ConExpr<E>::value,"Error: attempt to assign non-Expr");
 		auto wrapped = wrap_constants(e);
@@ -215,7 +215,7 @@ struct RefTemporary : public ConExpr<run_result<T>,l> {
 	}
 
 	template<typename E>
-	std::enable_if_t<std::is_same<Temporary<id,l,T>, Temp>::value, TemporaryMutation<E> >
+	std::enable_if_t<std::is_same<Temporary<ID,l,T>, Temp>::value, TemporaryMutation<E> >
 	operator=(const E &e) const {
 		static_assert(is_ConExpr<E>::value,"Error: attempt to assign non-Expr");
 		static_assert(!is_ConExpr<E>::value,"Error: attempt to mutate immutable temporary.");
@@ -226,7 +226,7 @@ struct RefTemporary : public ConExpr<run_result<T>,l> {
 
 
 private:
-	static auto call(const Store &s, const Temporary<id,l,T> &t) ->
+	static auto call(const Store &s, const Temporary<ID,l,T> &t) ->
 		run_result<decltype(t.t)>
 		{
 			typedef run_result<decltype(t.t)> R;
