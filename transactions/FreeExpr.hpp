@@ -87,6 +87,10 @@ struct FreeExpr : public ConExpr<T, min_level<Exprs...>::value > {
 		fold(params,[&](const auto &e, bool){
 				run_ast_strong(cache,heap,e);
 				return false;},false);
+
+		fold(params,[&cache](const auto &e, bool){
+				assert(is_cached(cache,e));
+				return false;},false);
 	}
 
 	auto causalCall(Store &cache, const Store &heap) const {

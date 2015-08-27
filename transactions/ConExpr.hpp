@@ -164,6 +164,22 @@ Handle<l,ha,T> cached(const Store &cache, const Handle<l,ha,T>& ast){
 	return ast;
 }
 
+template<typename T, restrict(is_ConExpr<T>::value && !std::is_scalar<T>::value)>
+auto is_cached(const Store &cache, const T& ast){
+	return cache.contains(ast.id);
+}
+
+template<typename T>
+std::enable_if_t<std::is_scalar<T>::value, bool> is_cached(const Store &cache, const T& e){
+	return true;
+}
+
+
+template<typename T, HandleAccess ha, Level l>
+bool is_cached(const Store &cache, const Handle<l,ha,T>& ast){
+	return true;
+}
+
 
 template<unsigned long long id, typename T>
 std::enable_if_t<std::is_scalar<T>::value, std::nullptr_t> find_usage(const T&){
