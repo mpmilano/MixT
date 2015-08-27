@@ -188,6 +188,8 @@ struct RefTemporary : public ConExpr<run_result<T>,l> {
 	}
 
 	auto strongCall(Store &cache, const Store &s, std::true_type*) const {
+		std::cout << "inserting RefTemp " << name << " (" << id<< ") into cache "
+				  << &cache << std::endl;
 		auto ret = call(s, t);
 		cache.insert(ID,ret);
 		return ret;

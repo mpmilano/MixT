@@ -7,7 +7,8 @@ struct Store : std::map<int,std::unique_ptr<void*> >{
 	Store * const  prev_scope = nullptr;
 	bool valid_store = true;
 	bool contains(int i) const{
-		return this->find(i) != this->end();
+		return (this->find(i) != this->end())
+			|| (prev_scope && prev_scope->contains(i));
 	}
 
 	typedef void** stored;
@@ -19,15 +20,17 @@ struct Store : std::map<int,std::unique_ptr<void*> >{
 	Store(const Store&) = delete;
 
 	template<typename T>
-	auto insert(int i, const T &item) {
+	void insert(int i, const T &item) {
 		assert(valid_store);
-		return (*this)[i].reset((stored)heap_copy(item));
+		(*this)[i].reset((stored)heap_copy(item));
+		assert(contains(i));
 	}
 
 	template<typename T>
-	auto emplace(int i){
+	void emplace(int i){
 		assert(valid_store);
-		return (*this)[i].reset((void**)new T());
+		(*this)[i].reset((void**)new T());
+		assert(contains(i));
 	}
 
 #define store_get_impl					  \

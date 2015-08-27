@@ -21,6 +21,17 @@ struct extract_type<RefTemporary<id,l,T,Temp> >{
 		extract_type<run_result<RefTemporary<id,l,T,Temp> > >::type;
 };
 
+template<unsigned long long ID, Level l, typename T, typename Temp>
+void print_more_info_if_reftemp(const Store& c, const RefTemporary<ID,l,T,Temp> &rt){
+	std::cout << "ID of temporary referenced: " << ID << std::endl;
+	std::cout << "RefTemp ID referenced: " << rt.id << std::endl;
+	std::cout << "RefTemp name referenced: " << rt.name << std::endl;
+	std::cout << "address of cache: " << &c << std::endl;
+}
+
+template<typename T>
+void print_more_info_if_reftemp(const Store &, const T&){}
+
 template<typename C, typename E>
 auto debug_failon_not_cached(const C& c, const E &e){
 	try {
@@ -29,6 +40,7 @@ auto debug_failon_not_cached(const C& c, const E &e){
 	catch (const CacheLookupFailure&){
 		std::cerr << "found a failure point!" << std::endl;
 		std::cerr << "Type we failed on: " << type_name<E>() << std::endl;
+		print_more_info_if_reftemp(c,e);
 		return cached(c,e);
 	}
 }
