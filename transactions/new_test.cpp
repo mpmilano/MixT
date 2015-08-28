@@ -10,6 +10,7 @@
 #include "TempBuilder.hpp"
 #include "FreeExpr.hpp"
 #include "Transaction_macros.hpp"
+#include "FinalHeader.hpp"
 
 namespace list_ex{
 #include "list_example.cpp"
@@ -21,7 +22,7 @@ int main(){
 		{
 
 			//FileStore<Level::causal> fsc;
-			FileStore<Level::strong> fs;
+			auto &fs = FileStore<Level::strong>::filestore_instance();
 
 			auto num_dir = fs.newCollection<HandleAccess::all, int>();
 			{
@@ -48,7 +49,7 @@ int main(){
 
 		{
 
-			FileStore<Level::causal> fs;
+			auto &fs = FileStore<Level::causal>::filestore_instance();
 
 			auto num_dir = fs.newCollection<HandleAccess::all, int>();
 			{

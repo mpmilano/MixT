@@ -63,7 +63,9 @@ public:
 
 		bool isValid() const {return true;}
 		
-		int to_bytes(char* v) const {
+		int to_bytes(char* _v) const {
+			((int*)_v)[0] = id::value;
+			char* v = _v + sizeof(int);
 			if (std::strcpy(v,filename.c_str()))
 				return filename.length() + 1;
 			else assert(false && "error strcpy failed");

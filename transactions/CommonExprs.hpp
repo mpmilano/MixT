@@ -32,6 +32,8 @@ class CSConstant : public ConExpr<T,l> {
 public:
 
 	const T val;
+
+	const int id = gensym();
 	
 	CSConstant(const T& t):val(t){}
 

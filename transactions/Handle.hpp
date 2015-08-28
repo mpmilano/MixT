@@ -77,6 +77,8 @@ public:
 			((bool*)v)[0] = false;
 			return sizeof(bool);
 		}
+
+		assert(from_bytes(v));
 	}
 
 	int bytes_size() const {
@@ -85,12 +87,14 @@ public:
 
 	static Handle* from_bytes(char *v)  {
 		//for de-serializing.
+		assert(v);
 		RemoteObject<T> *stupid = nullptr;
 		if (((bool*)v)[0]) {
 				auto *ro = from_bytes_stupid(stupid,v + sizeof(bool) );
+				assert(ro);
 				return new Handle(std::shared_ptr<RemoteObject<T> >(ro));
 			}
-		else return new Handle(std::shared_ptr<RemoteObject<T> >(nullptr));
+		else return new Handle();
 	}
 
 	
