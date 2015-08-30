@@ -77,6 +77,6 @@ int main(){
 		std::cerr << "No overload found: " << e.msg << std::endl;
 	}
 
-
+	list_ex::main();
 
 }

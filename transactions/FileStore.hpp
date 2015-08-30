@@ -66,6 +66,7 @@ public:
 		int to_bytes(char* _v) const {
 			((int*)_v)[0] = id::value;
 			char* v = _v + sizeof(int);
+			std::cout << "Serializing this name: " << filename.c_str() << std::endl;
 			if (std::strcpy(v,filename.c_str()))
 				return filename.length() + 1;
 			else assert(false && "error strcpy failed");
@@ -197,8 +198,11 @@ public:
 	template<typename T>
 	static FSObject<T>* from_bytes(char* v) {
 		boost::filesystem::path p(v);
-		if (boost::filesystem::is_directory(p))
+		assert(boost::filesystem::exists(v));
+		std::cout << "Attempting to deserialize " << v << std::endl;
+		if (boost::filesystem::is_directory(p)){
 			assert(false && "can't deserialize dirs yet");
+		}
 		else {
 			return new FSObject<T>(filestore_instance(),v,true);
 		}
