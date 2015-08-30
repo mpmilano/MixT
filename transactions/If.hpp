@@ -37,12 +37,6 @@ struct If : public ConStatement<min_level<typename min_level<Then>::type,
 			if_concept_2(Cond,Then,Els);
 		}
 
-	BitSet<HandleAbbrev> getReadSet() const {
-		std::cerr << "TODO: split into strong + weak? " << std::endl;
-		//return set_union(get_ReadSet(cond),then.getReadSet(),els.getReadSet());
-		return 0;
-	}
-
 	bool strongCall(Store &c, Store &s) const {
 		std::integral_constant<bool,get_level<Cond>::value == Level::strong>*
 			choice{nullptr};

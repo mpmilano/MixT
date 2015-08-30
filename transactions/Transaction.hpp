@@ -32,14 +32,12 @@ DataStore<Level::causal>* Tracker::causalStoreInTransaction() {
 
 
 struct Transaction{
-	const std::function<bool (const BitSet<HandleAbbrev> &, const BitSet<HandleAbbrev> &,Store &)> action;
+	const std::function<bool (Store &)> action;
 	const std::function<std::ostream & (std::ostream &os)> print;
-	const BitSet<HandleAbbrev> strong;
-	const BitSet<HandleAbbrev> weak;
 	
 	template<typename Cmds>
 	Transaction(const TransactionBuilder<Cmds> &s):
-		action([s](const BitSet<HandleAbbrev> &, const BitSet<HandleAbbrev> &, Store &st) -> bool{
+		action([s](Store &st) -> bool{
 
 				//We're just having the handles enter transaction when
 				//they're encountered in the AST crawl.
@@ -72,24 +70,14 @@ struct Transaction{
 					 {os << e << std::endl; return 0; },0);
 				os << "done printing AST!" << std::endl;
 				return os;
-			}),
-		strong(fold(s.curr,
-					[](const auto &e, const auto &bs)
-					{return (e.level == Level::strong ?
-							 bs.addAll(e.getReadSet()) : bs);},
-					BitSet<HandleAbbrev>())),
-		weak(fold(s.curr,
-				  [](const auto &e, const auto &bs)
-				  {return (e.level == Level::causal ?
-						   bs.addAll(e.getReadSet()) : bs);},
-				  BitSet<HandleAbbrev>()))
+			})
 		{}
 
 	Transaction(const Transaction&) = delete;
 
 	bool operator()() const {
 		Store s;
-		return action(strong,weak,s);
+		return action(s);
 	}
 
 	struct CannotProceedError {};

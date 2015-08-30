@@ -10,26 +10,6 @@
 template<typename,typename>
 struct Operation;
 
-struct HandleAbbrev{
-	
-	static constexpr std::true_type* CompatibleWithBitset = nullptr;
-	const BitSet<HandleAbbrev>::member_t value;
-	typedef decltype(value) itype;
-	
-	//dear programmer; it's on you to make sure that this is true.
-	static constexpr int numbits = sizeof(decltype(value));
-	
-	operator decltype(value)() const {
-		return value;
-	}
-	HandleAbbrev(decltype(value) v):value(v){}
-	
-	
-	bool operator<(const HandleAbbrev& o) const {
-		return value < o.value;
-	}
-	//idea; we use this for tracking the ReadSet.
-};
 
 template<Level l, HandleAccess HA>
 struct GenericHandle {};
@@ -120,16 +100,7 @@ public:
 		//TODO: invalid means no _ro?
 		if (!_ro) return false;
 		return _ro->isValid();
-	}
-	
-	operator HandleAbbrev() const {
-		HandleAbbrev::itype i = 1;
-		return i << _ro->id;
-	}
-	
-	HandleAbbrev abbrev() const {
-		return *this;
-	}
+	}	
 
 	template<Level lnew = l>
 	Handle<lnew,HandleAccess::read,T> readOnly() const {
@@ -193,10 +164,6 @@ Handle<l,HA,T> make_handle(Args && ... ca)
 	return Handle<l,HA,T>::template make_handle<RO, Args...>(std::forward<Args>(ca)...);
 }
 
-template<Level l, HandleAccess ha, typename T>
-auto get_ReadSet(const Handle<l,ha,T> &h){
-	return BitSet<HandleAbbrev>(h.abbrev());
-}
 
 template<typename T>
 struct is_handle;

@@ -35,12 +35,6 @@ struct While : public ConStatement<min_level<Then>::value> {
 			while_concept_2(Cond,Then);
 		}
 
-	BitSet<HandleAbbrev> getReadSet() const {
-		std::cerr << "TODO: split into strong + weak? " << std::endl;
-		//return set_union(get_ReadSet(cond),then.getReadSet(),els.getReadSet());
-		return 0;
-	}
-	
 	bool strongCall(Store &c, Store &s) const {
 		std::cout << "In while body" << std::endl;
 		std::integral_constant<bool,get_level<Cond>::value == Level::strong>*

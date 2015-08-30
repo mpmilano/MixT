@@ -13,10 +13,6 @@
 			OperateImpl(const decltype(a) &a):FindUsages<Arg>(a),		\
 				arg(heap_copy(a)){}										\
 																		\
-			BitSet<HandleAbbrev> getReadSet() const {					\
-				assert(false && "what purpose does this serve?");		\
-				return 0;												\
-			}															\
 																		\
 			auto strongCall(Store &c CMA  const Store &s) const {		\
 				return make_PreOp(id,Name(trans_op_arg(c, s, *arg)))	\
@@ -48,11 +44,6 @@
 			OperateImpl(const Arg1 &a, const Arg2 &b):					\
 				FindUsages<Arg1,Arg2>(a,b),								\
 				arg1(heap_copy(a)),arg2(heap_copy(b)){}					\
-																		\
-			BitSet<HandleAbbrev> getReadSet() const {					\
-				assert(false && "what purpose does this serve?");		\
-				return 0;												\
-			}															\
 																		\
 			auto strongCall(Store &c CMA  const Store &s) const {		\
 				return make_PreOp(id,Name(trans_op_arg(c, s, *arg1),	\

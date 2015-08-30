@@ -16,10 +16,6 @@ public:
 		return t;
 	}
 
-	BitSet<HandleAbbrev> getReadSet() const {
-		return BitSet<HandleAbbrev>();
-	}
-
 	constexpr bool strongCall(const Store&, const Store&) const {
 		return true;
 	}

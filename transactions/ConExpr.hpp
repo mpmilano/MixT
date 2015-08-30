@@ -23,11 +23,8 @@ struct DummyConExpr : public ConExpr<void,l> {
 
 	void strongCall(const Store&, const Store &) const {}
 
-	void causalCall(const Store&, const Store &) const {}
-	
-	BitSet<HandleAbbrev> getReadSet() const {
-		return BitSet<HandleAbbrev>();
-	}
+	void causalCall(const Store&, const Store &) const {}	
+
 };
 
 template<typename T, Level l>

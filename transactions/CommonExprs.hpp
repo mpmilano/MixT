@@ -10,10 +10,6 @@ public:
 	
 	CSInt(){}
 
-	BitSet<HandleAbbrev> getReadSet() const {
-		return BitSet<HandleAbbrev>();
-	}
-
 	constexpr int operator()(const Store &) const {
 		return i;
 	}
@@ -36,10 +32,6 @@ public:
 	const int id = gensym();
 	
 	CSConstant(const T& t):val(t){}
-
-	BitSet<HandleAbbrev> getReadSet() const {
-		return BitSet<HandleAbbrev>();
-	}
 
 	constexpr T causalCall(Store& cache, const Store&) const {
 		cache.insert(this->id,val);
@@ -90,10 +82,6 @@ struct Not : public ConExpr<bool, get_level<T>::value> {
 	const int id = gensym();
 	T v;
 	Not(const T& t):v(t){}
-
-	BitSet<HandleAbbrev> getReadSet() const {
-		return v.getReadSet();
-	}
 
 	bool causalCall(Store& cache, const Store& s) const {
 
@@ -189,12 +177,6 @@ struct IsValid : public ConExpr<bool, get_level<T>::value> {
 		run_ast_strong(cache,s,t);
 	}
 
-
-	auto getReadSet() const {
-		HandleAbbrev hb = t;
-		BitSet<HandleAbbrev> ret(hb);
-		return ret;
-	}
 
 	template<typename T2>
 	friend std::ostream & operator<<(std::ostream &os, const IsValid<T2>&);

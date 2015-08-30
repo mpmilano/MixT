@@ -33,11 +33,6 @@ struct DeclarationScope : public ConStatement<l>{
 	DeclarationScope(const std::string &name, const Ptr &gt, const CS &cs)
 		:name(name),gt(gt),cs(cs){
 	}
-	
-	BitSet<HandleAbbrev> getReadSet() const {
-		std::cerr << "TODO: splitting, still" << std::endl;
-		return 0;
-	}
 
 	bool strongCall(Store &c, Store &s) const {
 		assert(gt);

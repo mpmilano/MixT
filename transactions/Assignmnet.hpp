@@ -13,23 +13,16 @@ class Assignment : ConStatement<get_level<Expr>::value> {
 public:
 
 	const std::function<void ()> thunk;
-	BitSet<HandleAbbrev> rs;
 	
 	template< Level l, HandleAccess HA, typename T>
 	Assignment(Handle<l,HA,T> h, Expr e)
-		:thunk([=](){return h.clone().put(e);}),
-		 rs(get_ReadSet(e))
+		:thunk([=](){return h.clone().put(e);})
 		{
 			static_assert(canWrite<HA>::value,"Error: needs writeable handle!");
 			static_assert(l == Level::causal || level == Level::strong,
 						  "Error: flow violation");
 		}
 	
-	decltype(rs) getReadSet() const {
-		return rs;
-	}
-
-
 	void operator()(Store &) const {
 		//TODO: do we want to track
 		//modifications to handles

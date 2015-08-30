@@ -107,10 +107,6 @@ struct TemporaryMutation : public ConStatement<get_level<T>::value> {
 		return true;
 	}
 	
-	auto getReadSet() const {
-		return get_ReadSet(t);
-	}
-	
 };
 
 
