@@ -49,25 +49,24 @@ auto tuple_2fold(const F& f, const Tuple1 &t1, const Tuple2 &t2, const Acc &acc)
 }
 
 template<int ind, int stop, typename Acc, typename F, typename... Args, restrict(ind < stop)>
-constexpr auto&& fold_recr(const std::tuple<Args...> &vec, const F &f, const Acc &acc){
-	auto &&ret = std::move(fold_recr<ind+1,stop>(vec,f,f(std::get<ind>(vec),acc)));
-	return ret;
+constexpr auto fold_recr(const std::tuple<Args...> &vec, const F &f, const Acc &acc){
+	return fold_recr<ind+1,stop>(vec,f,f(std::get<ind>(vec),acc));
 }
 	
 template<int ind, int stop, typename Acc, typename F, typename... Args>
-std::enable_if_t<ind == stop,const Acc&>
+std::enable_if_t<ind == stop,Acc>
 constexpr fold_recr(const std::tuple<Args...> &, const F &, const Acc &acc){
 	return acc;
 }
 
 template<typename Acc, typename F, typename... Args>
-constexpr auto&& fold_(const std::tuple<Args...> &vec, const F &f, const Acc & acc){
-	return std::move(fold_recr<0,sizeof...(Args)>(vec,f,acc));
+constexpr auto fold_(const std::tuple<Args...> &vec, const F &f, const Acc & acc){
+	return fold_recr<0,sizeof...(Args)>(vec,f,acc);
 }
 
 template<typename Acc, typename F, typename Tuple, restrict(!std::is_function<F>::value)>
-constexpr auto&& fold(const Tuple &vec, const F &f, const Acc & acc){
-	return std::move(fold_(vec,f,acc));
+constexpr auto fold(const Tuple &vec, const F &f, const Acc & acc){
+	return fold_(vec,f,acc);
 }
 
 template<typename Acc, typename Ret, typename Tuple, typename... Args>
