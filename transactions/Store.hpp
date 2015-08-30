@@ -32,7 +32,7 @@ struct Store {
 	template<typename T, typename... Args>
 	void emplace(int i, Args && ... args){
 		assert(valid_store);
-		store_impl[i].reset((void**)new T(std::forward<Args...>(args...)));
+		store_impl[i].reset((void**)new T(std::forward<Args>(args)...));
 		assert(contains(i));
 	}
 

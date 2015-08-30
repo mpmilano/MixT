@@ -110,6 +110,14 @@ Handle<Level::strong,ha,T> run_ast_causal(Store &cache, const Store &s, const Ha
 		GDataStore& store() {
 			return st;
 		}
+
+		int bytes_size() const {
+			assert(false && "wait why are you ... stop!");
+		}
+
+		int to_bytes(char* v) const {
+			assert(false && "wait why are you ... stop!");
+		}
 		
 	};
 	return Handle<Level::strong,ha,T>{std::shared_ptr<LocalObject>{new LocalObject{cache.get<T>(h.uid),h.remote_object().store()}}};
