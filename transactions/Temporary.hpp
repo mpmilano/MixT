@@ -23,9 +23,6 @@ struct Temporary : public GeneralTemp, public ConStatement<get_level<T>::value> 
 	const int store_id;
 	Temporary(const std::string name, const T& t):GeneralTemp(name,to_string(t)),t(t),store_id(std::hash<std::string>()(name)){}
 	
-	auto getReadSet() const {
-		return t.getReadSet();
-	}
 
 	auto strongCall(Store &c, Store &s) const {
 		std::integral_constant<bool,get_level<T>::value==Level::strong>* choice = nullptr;
@@ -174,10 +171,6 @@ struct RefTemporary : public ConExpr<run_result<T>,l> {
 	RefTemporary(const Temp &t):t(t),name(t.name) {}
 
 	RefTemporary(const RefTemporary& rt):t(rt.t),name(rt.name),id(gensym()){}
-
-	auto getReadSet() const {
-		return t.getReadSet();
-	}
 
 	auto strongCall(Store &cache, const Store &s) const {
 		//TODO - endorsements should happen somewhere around here, right?

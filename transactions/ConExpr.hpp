@@ -44,17 +44,6 @@ template<typename Cls>
 struct is_ConExpr : 
 	std::integral_constant<bool, is_ConExpr_f(mke_p<Cls>()) || std::is_scalar<decay<Cls> >::value>::type {};
 
-template<typename Expr, restrict(is_ConExpr<Expr>::value && std::is_scalar<Expr>::value)>
-auto get_ReadSet(const Expr &){
-	return BitSet<HandleAbbrev>();
-}
-
-template<typename T>
-typename std::enable_if<is_ConStatement<T>::value && !std::is_scalar<T>::value,
-						BitSet<HandleAbbrev> >::type get_ReadSet(const T &ce){
-	return ce.getReadSet();
-}
-
 template<typename T, restrict(is_ConExpr<T>::value && !std::is_scalar<T>::value)>
 auto run_ast_strong(Store &c, const Store &s, const T& expr) {
 	return expr.strongCall(c,s);

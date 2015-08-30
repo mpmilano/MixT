@@ -111,10 +111,6 @@ struct FreeExpr : public ConExpr<T, min_level<Exprs...>::value > {
 		return cache.get<T>(this->id);
 	}
 	
-	BitSet<HandleAbbrev> getReadSet() const {
-		assert(false && "stop using this");
-	}
-	
 	template<typename F>
 	FreeExpr(F f, Exprs... h):FreeExpr(0, convert(f), h...){}
 };

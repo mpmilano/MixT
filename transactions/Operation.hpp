@@ -138,7 +138,8 @@ struct NoOperation {
 		auto ret = tuple_cons(
                 /*Name(args...);*/
 #define DOBODY2(Name,args...) ,accum) ;									\
-	assert(std::get<0>(ret).built_well);								\
+		assert(std::get<0>(ret).built_well &&							\
+		   "Did you actually implement this operation?");				\
 	return ret;															\
 	}																	\
 	catch (Transaction::ClassCastException e){							\

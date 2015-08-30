@@ -68,12 +68,12 @@ public:
 			char* v = _v + sizeof(int);
 			std::cout << "Serializing this name: " << filename.c_str() << std::endl;
 			if (std::strcpy(v,filename.c_str()))
-				return filename.length() + 1;
+				return filename.length() + 1 + sizeof(int);
 			else assert(false && "error strcpy failed");
 		}
 
 		int bytes_size() const {
-			return filename.length() + 1;
+			return filename.length() + 1 + sizeof(int);
 		}
 
 		struct StupidWrapper{
@@ -268,6 +268,13 @@ public:
 		
 		assert(false && "didn't pass me an FSDIR!");
 		return false;
+	}
+	END_OPERATION
+
+	OPERATION(Increment, FSObject<int> *ro){
+		int curr = ro->get();
+		ro->put(curr + 1);
+		return true;
 	}
 	END_OPERATION
 	

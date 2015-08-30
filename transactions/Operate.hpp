@@ -2,29 +2,23 @@
 #include "Operation.hpp"
 #include "Operate_macros.hpp"
 #include "ConExpr.hpp"
+#include "Temporary.hpp"
 
 template<Level l, typename R, typename Exprs>
 struct Operate : ConStatement<l> {
 	const int id;
 	const std::function<R (Store &)> f;
-	const BitSet<HandleAbbrev> bs;
 	const std::string name;
 	const Exprs exprs;
 	Operate(const std::function<R (const Store&)>& f,
-			const BitSet<HandleAbbrev> &bs,
 			const std::string &name,
 			const Exprs &exprs,
 			int id
 		):
 		id(id),
 		f(f),
-		bs(bs),
 		name(name),
 		exprs(exprs){}
-
-	auto getReadSet() const {
-		return bs;
-	}
 
 	auto strongCall(Store &cache, const Store &s) const {
 		std::integral_constant<bool,l==Level::strong>* choice = nullptr;
@@ -86,7 +80,34 @@ std::ostream & operator<<(std::ostream &os, const Operate<l,i,E>& op){
 	return os << op.name;
 }
 
+template<unsigned long long ID, Level l, typename T, typename Temp>
+auto cached_withfail(const Store& c, const RefTemporary<ID,l,T,Temp> &rt){
+	try {
+		return cached(c,rt);
+	}
+	catch( const CacheLookupFailure&){
+		std::cerr << "found a failure point (operate)!" << std::endl;
+		std::cerr << "Type we failed on: RefTemporary<...>" << std::endl;		
+		std::cout << "ID of temporary referenced: " << ID << std::endl;
+		std::cout << "RefTemp ID referenced: " << rt.id << std::endl;
+		std::cout << "RefTemp name referenced: " << rt.name << std::endl;
+		std::cout << "address of cache: " << &c << std::endl;
+		return cached(c,rt);
+	}
+}
 
+
+template<typename T>
+auto cached_withfail(const Store &cache, const T &t){
+	try {
+		return cached(cache,t);
+	}
+	catch( const CacheLookupFailure&){
+		std::cerr << "found a failure point (operate)!" << std::endl;
+		std::cerr << "Type we failed on: " << type_name<T>() << std::endl;
+		return cached(cache,t);
+	}
+}
 
 template<typename T>
 struct PreOp;
@@ -122,13 +143,12 @@ struct PreOp<std::tuple<J...> > {
 							}
 							else {
 								assert(e.built_well);
-								return std::pair<bool,bool>(true,e(cached(c,args)...));
+								return std::pair<bool,bool>(true,e(cached_withfail(c,args)...));
 							}
 						},std::pair<bool,bool>(false,false));
 				if (!result.first) throw NoOverloadFoundError{type_name<decltype(t)>()};
 				return result.second;
 			},
-			 BitSet<HandleAbbrev>::big_union(get_ReadSet(args)...),
 				"This came from a tuple, so I don't know what to print",
 				std::make_tuple(args...),id
 				);
