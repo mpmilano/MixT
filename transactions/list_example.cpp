@@ -46,7 +46,7 @@ int main() {
 	Handle<Level::strong, HandleAccess::all, WeakCons> h =
 		fss.newObject<HandleAccess::all, WeakCons>(initial);
 	
-
+	assert(initial.val.get() == 12);
 
 	TRANSACTION(
 		let_mutable(hd) = h IN (
@@ -57,7 +57,9 @@ int main() {
 					)
 				)
 			)
-		)
+		);
+	
+	assert(initial.val.get() == 13);
 	
 	return 0;
 }
