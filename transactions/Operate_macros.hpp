@@ -20,12 +20,12 @@
 																		\
 			auto strongCall(Store &c CMA  const Store &s) const {		\
 				return make_PreOp(id,Name(trans_op_arg(c, s, arg)))		\
-					(arg).strongCall(c CMA s);							\
+					(std::shared_ptr<decay<decltype(arg)> >{heap_copy(arg)}).strongCall(c CMA s); \
 			}															\
 																		\
 			auto causalCall(Store &c CMA  const Store &s) const {		\
 				return make_PreOp(id,Name(trans_op_arg(c, s, arg)))		\
-					(arg).causalCall(c CMA s);							\
+					(std::shared_ptr<decay<decltype(arg)> >{heap_copy(arg)}).causalCall(c CMA s); \
 			}															\
 		};																\
 		OperateImpl r{a}; return r;										\

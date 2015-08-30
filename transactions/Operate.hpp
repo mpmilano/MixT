@@ -1,4 +1,7 @@
 #pragma once
+
+bool should_print_operate_things = false;
+
 #include "Operation.hpp"
 #include "Operate_macros.hpp"
 #include "ConExpr.hpp"
@@ -21,14 +24,16 @@ struct Operate : ConStatement<l> {
 		exprs(exprs){}
 
 	auto strongCall(Store &cache, const Store &s) const {
+		should_print_operate_things = true;
 		std::integral_constant<bool,l==Level::strong>* choice = nullptr;
 		return strongCall(cache,s,choice);
 	}
 
-	R strongCall(Store &cache, const Store &, std::true_type*) const {
+	R strongCall(Store &cache, const Store &s, std::true_type*) const {
 		//nothing causal, just do it all at once
-		auto f2 = f; //need mutability, so can't be const copy.
-		auto ret = f2(cache);
+		//need to cache things!
+		strongCall(cache,s,(std::false_type*) nullptr);
+		auto ret = f(cache);
 		cache.insert(id,ret);
 		return ret;
 	}
@@ -37,7 +42,7 @@ struct Operate : ConStatement<l> {
 		//execute the strong expressions now. Remember they are supposed to be
 		//self-caching
 		fold(exprs,[&](const auto &e, bool){
-				run_ast_strong(cache,s,e);
+				run_ast_strong(cache,s,*e);
 				return false;},false);
 	}
 
@@ -51,7 +56,7 @@ struct Operate : ConStatement<l> {
 		//the function f assumes that absolutely everything will already be cached.
 		//thus, we cannot call it until that's true.
 		fold(exprs,[&](const auto &e, bool){
-				run_ast_causal(cache,heap,e);
+				run_ast_causal(cache,heap,*e);
 				return false;},false);
 		return f(cache);
 	}
@@ -67,13 +72,31 @@ template<unsigned long long ID, Level l, typename T, typename Vars>
 auto find_usage(const Operate<l,T,Vars> &op){
 	return fold(op.exprs,
 				[](const auto &e, const auto &acc){
-					return choose_non_np(acc,find_usage<ID>(e));
+					return choose_non_np(acc,find_usage<ID>(*e));
 				}
 				, nullptr);
 }
 
-template<unsigned long long ID, Level l, typename R, typename Exprs>
-struct contains_temporary<ID, Operate<l,R,Exprs> > : contains_temp_fold<ID,Exprs > {};
+
+template<typename>
+struct shared_deref_str;
+
+template<typename T>
+struct shared_deref_str<std::shared_ptr<T> > {
+	using type = T;
+};
+
+template<typename T>
+struct shared_deref_str<std::shared_ptr<T>&& > {
+	using type = T;
+};
+
+template<typename T>
+using shared_deref = typename shared_deref_str<T>::type;
+
+
+template<unsigned long long ID, Level l, typename R, typename... Exprs>
+struct contains_temporary<ID, Operate<l,R,std::tuple<Exprs...> > > : contains_temp_fold<ID,std::tuple<shared_deref<Exprs>...> > {};
 
 template<Level l, typename i, typename E>
 std::ostream & operator<<(std::ostream &os, const Operate<l,i,E>& op){
@@ -126,15 +149,17 @@ struct PreOp<std::tuple<J...> > {
 		//TODO: I'm sure there's some rationale behind
 		//how exactly to measure this which is better.
 
-		static constexpr Level l = min_level<Args...>::value;
+		static constexpr Level l = min_level<shared_deref<Args>...>::value;
 		assert(fold(t,[](const auto &e, bool acc){return e.built_well || acc;},false));
 		std::shared_ptr<decltype(t)> t_ptr{heap_copy(t)};
 		assert(fold(*t_ptr,[](const auto &e, bool acc){return e.built_well || acc;},false));
 		
 		return Operate<l,decltype(std::get<0>(t)(
-									  std::declval<run_result<decltype(args)> >()...
+									  std::declval<run_result<shared_deref<decltype(args)> > >()...
 									  )),decltype(std::make_tuple(args...)) >
 			([=](const Store &c) {
+				AtScopeEnd ase{[](){should_print_operate_things = false;}};
+				ignore(ase);
 				assert(fold(*t_ptr,[](const auto &e, bool acc){return e.built_well || acc;},false));
 				std::pair<bool,bool> result =
 					fold(*t_ptr,[&](const auto &e, const std::pair<bool,bool> &acc){
@@ -143,7 +168,7 @@ struct PreOp<std::tuple<J...> > {
 							}
 							else {
 								assert(e.built_well);
-								return std::pair<bool,bool>(true,e(cached_withfail(c,args)...));
+								return std::pair<bool,bool>(true,e(cached_withfail(c,*args)...));
 							}
 						},std::pair<bool,bool>(false,false));
 				if (!result.first) throw NoOverloadFoundError{type_name<decltype(t)>()};
