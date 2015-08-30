@@ -1,6 +1,7 @@
 //#define DECLARED_OPERATIONS template<typename T> DECLARE_OPERATION(Insert, RemoteObject<std::set<T> >*, const T& )
 //#define STORE_LIST FileStore<Level::causal>,FileStore<Level::strong>
 
+
 #include "IfBuilder.hpp"
 #include "TransactionBuilder.hpp"
 #include "Transaction.hpp"
@@ -9,8 +10,10 @@
 #include "Operate.hpp"
 #include "TempBuilder.hpp"
 #include "FreeExpr.hpp"
-#include "Transaction_macros.hpp"
 #include "FinalHeader.hpp"
+//*/
+#include "Transaction_macros.hpp"
+
 
 namespace list_ex{
 #include "list_example.cpp"

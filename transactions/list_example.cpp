@@ -1,4 +1,5 @@
 
+
 #include "IfBuilder.hpp"
 #include "TransactionBuilder.hpp"
 #include "Transaction.hpp"
@@ -9,9 +10,10 @@
 #include "FreeExpr.hpp"
 #include "Transaction_macros.hpp"
 #include "FreeExpr_macros.hpp"
-#include "Operate_macros.hpp" //*/
+#include "Operate_macros.hpp"
+#include "FinalHeader.hpp" //*/
 #include "SerializationMacros.hpp"
-#include "FinalHeader.hpp"
+
 
 template<typename T>
 FINALIZE_OPERATION(Increment, RemoteObject<T>*);

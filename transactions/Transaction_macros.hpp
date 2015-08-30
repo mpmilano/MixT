@@ -1,5 +1,7 @@
+#pragma once
 #include "macro_utils.hpp"
 #include "Operate_macros.hpp"
+#include "FreeExpr_macros.hpp"
 
 #define CMA ,
 
@@ -9,7 +11,7 @@
 #define TRANS_CONS(x...) {static auto curr = x ;{ static auto prev2 = append(prev,curr); { static auto prev = prev2;
 #define STANDARD_BEGIN(x...) (x);
 
-#define END_TRANSACTION Transaction ____transaction(prev); std::cout << ____transaction << std::endl << "all done printing" << std::endl; ____transaction();
+#define END_TRANSACTION static Transaction ____transaction(prev); std::cout << ____transaction << std::endl << "all done printing" << std::endl; ____transaction();
 
 #include "trans_seq_generated.hpp"
 
@@ -18,7 +20,7 @@
 #define TRANS_SEQ(...) TRANS_SEQ_IMPL(VA_NARGS(__VA_ARGS__), __VA_ARGS__)
 
 
-#define TRANSACTION(args...) { TransactionBuilder<std::tuple<> > prev; TRANS_SEQ(args, END_TRANSACTION)}
+#define TRANSACTION(args...) { static TransactionBuilder<std::tuple<> > prev; TRANS_SEQ(args, END_TRANSACTION)}
 
 
 #define let_mutable(x) [&]() { static auto decl = MutDeclaration(#x); static auto x = (MutAssigner(#x)
