@@ -43,7 +43,7 @@ public:
 	template<typename Arg, typename Accum>
 	using Pointerize = Cons_t<Arg*,Accum>;
 	
-	static RemoteObject* from_bytes(char* _v); 
+	static std::unique_ptr<RemoteObject> from_bytes(char* _v); 
 
 
 };

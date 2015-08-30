@@ -145,7 +145,7 @@ public:
 			std::vector<char> v;
 			ar >> v;
 			if (v.size() != 0)
-				t.reset(::from_bytes<T>(&v[0]));
+				t.reset(::from_bytes<T>(&v[0]).release());
 		}
 
 		virtual const T& get() const {
@@ -196,7 +196,7 @@ public:
 	};
 
 	template<typename T>
-	static FSObject<T>* from_bytes(char* v) {
+	static std::unique_ptr<FSObject<T> > from_bytes(char* v) {
 		boost::filesystem::path p(v);
 		assert(boost::filesystem::exists(v));
 		std::cout << "Attempting to deserialize " << v << std::endl;
@@ -204,7 +204,7 @@ public:
 			assert(false && "can't deserialize dirs yet");
 		}
 		else {
-			return new FSObject<T>(filestore_instance(),v,true);
+			return std::make_unique<FSObject<T> >(filestore_instance(),v,true);
 		}
 	}
 	

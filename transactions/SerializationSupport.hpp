@@ -33,23 +33,23 @@ auto bytes_size(const T&){
 
 template<typename T,
 		 restrict(std::is_base_of<ByteRepresentable CMA T>::value)>
-T* from_bytes(char *v){
+std::unique_ptr<T> from_bytes(char *v){
 	return T::from_bytes(v);
 }
 
 template<typename T,
 		 restrict2(std::is_trivially_copyable<T>::value)>
-T* from_bytes(char *v){
-	T *t = new T();
+std::unique_ptr<T> from_bytes(char *v){
+	auto t = std::make_unique<T>();
 	if (v) {
-		memcpy(t,v,sizeof(T));
-		return t;
+		memcpy(t.get(),v,sizeof(T));
+		return std::move(t);
 	}
 	else return nullptr;
 }
 
 template<typename T>
-T* from_bytes_stupid(T* t, char* v) {
+std::unique_ptr<T> from_bytes_stupid(T* t, char* v) {
 	return from_bytes<T>(v);
 }
 
@@ -79,15 +79,14 @@ template<typename T>
 struct is_set<std::set<T> > : std::true_type {};
 
 template<typename T>
-type_check<is_set,T>* from_bytes(char* _v) {
+std::unique_ptr<type_check<is_set,T> > from_bytes(char* _v) {
 	int size = ((int*)_v)[0];
 	char* v = _v + sizeof(int);
 	auto* r = new std::set<typename T::key_type>();
 	for (int i = 0; i < size; ++i){
-		auto* e = from_bytes<typename T::key_type>(v);
+		auto e = from_bytes<typename T::key_type>(v);
 		v += bytes_size(*e);
-		r->insert(std::move(*e));
-		delete e;
+		r->insert(*e);
 	}
-	return r;
+	return std::unique_ptr<std::set<typename T::key_type> >{r};
 }

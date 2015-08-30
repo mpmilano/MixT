@@ -85,16 +85,18 @@ public:
 		return sizeof(bool) + (_ro ? _ro->bytes_size() : 0);
 	}
 
-	static Handle* from_bytes(char *v)  {
+	static std::unique_ptr<Handle> from_bytes(char *v)  {
 		//for de-serializing.
 		assert(v);
 		RemoteObject<T> *stupid = nullptr;
 		if (((bool*)v)[0]) {
-				auto *ro = from_bytes_stupid(stupid,v + sizeof(bool) );
+				auto ro = from_bytes_stupid(stupid,v + sizeof(bool) );
 				assert(ro);
-				return new Handle(std::shared_ptr<RemoteObject<T> >(ro));
+				return std::unique_ptr<Handle>(
+					new Handle(
+						std::shared_ptr<RemoteObject<T> >(ro.release())));
 			}
-		else return new Handle();
+		else return std::make_unique<Handle>();
 	}
 
 	
