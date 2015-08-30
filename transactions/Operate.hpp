@@ -92,6 +92,12 @@ struct shared_deref_str<std::shared_ptr<T>&& > {
 };
 
 template<typename T>
+struct shared_deref_str<const std::shared_ptr<T>& > {
+	using type = T;
+};
+
+
+template<typename T>
 using shared_deref = typename shared_deref_str<T>::type;
 
 

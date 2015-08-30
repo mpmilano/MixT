@@ -8,10 +8,10 @@
 		using Arg = decltype(a);										\
 		struct OperateImpl : public FindUsages<Arg>, public ConStatement<get_level<decltype(a)>::value >{ \
 			const int id = gensym();									\
-			const decltype(a) arg;										\
+			const std::shared_ptr<decltype(a)> arg;						\
 			const std::string name = #Name;								\
-			OperateImpl(const decltype(arg) &a):FindUsages<Arg>(a),		\
-				arg(a){}												\
+			OperateImpl(const decltype(a) &a):FindUsages<Arg>(a),		\
+				arg(heap_copy(a)){}										\
 																		\
 			BitSet<HandleAbbrev> getReadSet() const {					\
 				assert(false && "what purpose does this serve?");		\
@@ -19,13 +19,13 @@
 			}															\
 																		\
 			auto strongCall(Store &c CMA  const Store &s) const {		\
-				return make_PreOp(id,Name(trans_op_arg(c, s, arg)))		\
-					(std::shared_ptr<decay<decltype(arg)> >{heap_copy(arg)}).strongCall(c CMA s); \
+				return make_PreOp(id,Name(trans_op_arg(c, s, *arg)))	\
+					(arg).strongCall(c CMA s); \
 			}															\
 																		\
 			auto causalCall(Store &c CMA  const Store &s) const {		\
-				return make_PreOp(id,Name(trans_op_arg(c, s, arg)))		\
-					(std::shared_ptr<decay<decltype(arg)> >{heap_copy(arg)}).causalCall(c CMA s); \
+				return make_PreOp(id,Name(trans_op_arg(c, s, *arg)))	\
+					(arg).causalCall(c CMA s);							\
 			}															\
 		};																\
 		OperateImpl r{a}; return r;										\
@@ -42,12 +42,12 @@
 		public ConStatement<min_level<decltype(a),decltype(b)>::value >	\
 		{																\
 			const int id = gensym();									\
-			const decltype(a) arg1;										\
-			const decltype(b) arg2;										\
+			const std::shared_ptr<decltype(a)> arg1;					\
+			const std::shared_ptr<decltype(b)> arg2;					\
 			const std::string name = #Name;								\
 			OperateImpl(const Arg1 &a, const Arg2 &b):					\
 				FindUsages<Arg1,Arg2>(a,b),								\
-				arg1(a),arg2(b){}										\
+				arg1(heap_copy(a)),arg2(heap_copy(b)){}					\
 																		\
 			BitSet<HandleAbbrev> getReadSet() const {					\
 				assert(false && "what purpose does this serve?");		\
@@ -55,19 +55,15 @@
 			}															\
 																		\
 			auto strongCall(Store &c CMA  const Store &s) const {		\
-				return make_PreOp(id,Name(trans_op_arg(c, s, arg1),		\
-									   trans_op_arg(c, s, arg2)))		\
-					(std::shared_ptr<decay<decltype(arg1)> >{heap_copy(arg1)} \
-					 ,std::shared_ptr<decay<decltype(arg2)> >{heap_copy(arg2)}\
-						).strongCall(c CMA s);							\
+				return make_PreOp(id,Name(trans_op_arg(c, s, *arg1),	\
+									   trans_op_arg(c, s, *arg2)))		\
+					(arg1,arg2).strongCall(c CMA s);					\
 			}															\
 																		\
 			auto causalCall(Store &c CMA  const Store &s) const {		\
-				return make_PreOp(id,Name(trans_op_arg(c, s, arg1),		\
-									   trans_op_arg(c, s, arg2)))		\
-					(std::shared_ptr<decay<decltype(arg1)> >{heap_copy(arg1)} \
-					 ,std::shared_ptr<decay<decltype(arg2)> >{heap_copy(arg2)}\
-						).causalCall(c CMA s);					\
+				return make_PreOp(id,Name(trans_op_arg(c, s, *arg1),	\
+									   trans_op_arg(c, s, *arg2)))		\
+					(arg1,arg2).causalCall(c CMA s);					\
 			}															\
 																		\
 		};																\
