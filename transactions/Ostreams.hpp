@@ -147,7 +147,7 @@ std::ostream & operator<<(std::ostream &os, const Handle<l,ha,T>&){
 template<typename i, typename... E>
 std::ostream & operator<<(std::ostream &os, const FreeExpr<i,E...>& op){
 	//let's try this for now
-	i ex;
+	i ex{};
 	return os << ex << "<" << levelStr<FreeExpr<i,E...>::level::value>() << ">";
 }
 

@@ -2,6 +2,7 @@
 #include "utils.hpp"
 #include "SerializationMacros.hpp"
 #include "macro_utils.hpp"
+#include <vector>
 
 struct ByteRepresentable {
 	virtual int to_bytes(char* v) const = 0;
@@ -21,7 +22,7 @@ int bytes_size(const ByteRepresentable& b){
 
 template<typename T, restrict(std::is_trivially_copyable<T>::value)>
 int to_bytes(const T &t, char* v){
-	assert(memcpy(v,t,sizeof(T)));
+	assert(memcpy(v,&t,sizeof(T)));
 	return sizeof(T);
 }
 
@@ -50,4 +51,43 @@ T* from_bytes(char *v){
 template<typename T>
 T* from_bytes_stupid(T* t, char* v) {
 	return from_bytes<T>(v);
+}
+
+template<typename T>
+int to_bytes(const std::set<T>& s, char* _v){
+	((int*)_v)[0] = s.size();
+	char *v = _v + sizeof(int);
+	for (auto &a : s){
+		v += to_bytes(a,v);
+	}
+	return _v - v;
+}
+
+template<typename T>
+int bytes_size(const std::set<T>& s){
+	int size = sizeof(int);
+	for (auto &a : s) {
+		size += bytes_size(a);
+	}
+	return size;
+}
+
+template<typename>
+struct is_set : std::false_type {};
+
+template<typename T>
+struct is_set<std::set<T> > : std::true_type {};
+
+template<typename T>
+type_check<is_set,T>* from_bytes(char* _v) {
+	int size = ((int*)_v)[0];
+	char* v = _v + sizeof(int);
+	auto* r = new std::set<typename T::key_type>();
+	for (int i = 0; i < size; ++i){
+		auto* e = from_bytes<typename T::key_type>(v);
+		v += bytes_size(*e);
+		r->insert(std::move(*e));
+		delete e;
+	}
+	return r;
 }
