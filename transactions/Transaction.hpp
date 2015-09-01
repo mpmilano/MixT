@@ -40,8 +40,12 @@ struct Transaction{
 					tc.at(sto->level).count(sto) == 0;
 				};
 
+				{
+				bool any = false;
 				foreach(s.curr, [&](const auto &e){
+						std::cout << "looking for handles here: " << e << std::endl;
 						foreach(e.handles(),[&](const auto &h){
+								any = true;
 								auto *sto = &h._ro->store();
 								auto *ro = h._ro.get();
 								old_ctx[ro] = ro->currentTransactionContext();
@@ -53,6 +57,8 @@ struct Transaction{
 								ro->setTransactionContext(
 									tc.at(sto->level).at(sto).get());
 							});});
+				assert(any && "no handles traversed");
+				}
 				
 				Store cache;
 				call_all_strong(cache,st,s.curr);
@@ -66,19 +72,27 @@ struct Transaction{
 
 				//todo: REPLICATE THIS COMMIT
 				bool ret = true;
-				if (tc.count(Level::strong) != 0)
+				{
+				bool any = false;
+				if (tc.count(Level::strong) != 0){
+					any = true;
 					for (auto &p : tc.at(Level::strong)){
 						ret = ret && p.second->commit();
 					}
+				}
 				
 				//causal commits definitionally can't fail!
 				if (ret && tc.count(Level::causal) != 0){
+					any = true;
 					for (auto &p : tc.at(Level::causal)){
 						ret = ret && p.second->commit();
 					}
 				}
 
 				//TODO: exception here instead of boolean?
+				assert(any);
+				}
+				assert(ret);
 				return ret;
 				
 			}),

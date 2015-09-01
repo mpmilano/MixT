@@ -14,7 +14,9 @@
 				arg(heap_copy(a)){}										\
 																		\
 			auto handles() const {										\
-				return std::make_tuple(::handles(*arg));				\
+				auto ret = ::handles(*arg);								\
+				assert(std::tuple_size<decltype(ret)>::value > 0);		\
+				return ret;												\
 																		\
 			}															\
 																		\
@@ -50,8 +52,11 @@
 				arg1(heap_copy(a)),arg2(heap_copy(b)){}					\
 																		\
 			auto handles() const {										\
-				return std::make_tuple									\
+				auto ret =  std::tuple_cat								\
 					(::handles(*arg1),::handles(*arg2));				\
+				assert(std::tuple_size<decltype(ret)>::value > 0);		\
+				std::cout << "COLLECTED THESE HANDLES: " << ret << std::endl; \
+				return ret;												\
 			}															\
 																		\
 			auto strongCall(Store &c CMA  const Store &s) const {		\

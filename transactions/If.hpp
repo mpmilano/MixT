@@ -38,7 +38,10 @@ struct If : public ConStatement<min_level<typename min_level<Then>::type,
 		}
 
 	auto handles() const {
-		return std::tuple_cat(cond.handles(),then.handles(),els.handles());
+		return std::tuple_cat(
+			cond.handles(),
+			stmt_handles(then),
+			stmt_handles(els));
 	}
 
 	bool strongCall(Store &c, Store &s) const {

@@ -45,7 +45,9 @@ struct DeclarationScope : public ConStatement<l>{
 
 	auto handles() const {
 		assert(gt);
-		return gt_handles(gt.get());
+		return std::tuple_cat(
+			gt_handles(gt.get()),
+			stmt_handles(cs));
 	}
 
 	bool strongCall(Store &c, Store &s) const {

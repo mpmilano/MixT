@@ -36,7 +36,7 @@ struct While : public ConStatement<min_level<Then>::value> {
 		}
 
 	auto handles() const {
-		return std::tuple_cat(::handles(cond), then.handles());
+		return std::tuple_cat(::handles(cond), stmt_handles(then));
 	}
 
 	bool strongCall(Store &c, Store &s) const {
