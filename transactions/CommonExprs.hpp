@@ -137,7 +137,7 @@ struct IsValid : public ConExpr<bool, get_level<T>::value> {
 	IsValid(const T &t):t(t){}
 
 	auto handles() const {
-		return t.handles();
+		return ::handles(t);
 	}
 
 	bool causalCall(Store& cache, const Store& s) const {
