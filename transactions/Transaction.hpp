@@ -45,10 +45,11 @@ struct Transaction{
 								auto *sto = &h._ro->store();
 								auto *ro = h._ro.get();
 								old_ctx[ro] = ro->currentTransactionContext();
-								if (tc_without(sto) == 0){
+								if (tc_without(sto)){
 									tc[sto->level]
 										.emplace(sto, sto->begin_transaction());
 								}
+								assert(!tc_without(sto));
 								ro->setTransactionContext(
 									tc.at(sto->level).at(sto).get());
 							});});
@@ -62,16 +63,18 @@ struct Transaction{
 					p.first->setTransactionContext(p.second);
 				}
 
+
 				//todo: REPLICATE THIS COMMIT
 				bool ret = true;
-				for (auto &p : tc.at(Level::strong)){
-					ret = ret && p.second->commit();
-				}
-
+				if (tc.count(Level::strong) != 0)
+					for (auto &p : tc.at(Level::strong)){
+						ret = ret && p.second->commit();
+					}
+				
 				//causal commits definitionally can't fail!
-				if (ret){
+				if (ret && tc.count(Level::causal) != 0){
 					for (auto &p : tc.at(Level::causal)){
-					ret = ret && p.second->commit();
+						ret = ret && p.second->commit();
 					}
 				}
 

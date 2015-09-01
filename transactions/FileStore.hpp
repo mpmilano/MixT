@@ -68,8 +68,9 @@ public:
 		}
 
 		TransactionContext* currentTransactionContext() {
+			static auto tc = s.begin_transaction();
 			//TODO: do I want transactions here?
-			return nullptr;
+			return tc.get();
 		}
 		
 		int to_bytes(char* _v) const {
@@ -251,8 +252,11 @@ public:
 	}
 	
 	std::unique_ptr<TransactionContext> begin_transaction(){
+		struct FSContext : public TransactionContext{
+			bool commit() { return true; }
+		};
 		//TODO: do I really want to implement transactions over the FS?
-		return nullptr;
+		return std::unique_ptr<TransactionContext>(new FSContext());
 	}
 
 	template<typename T> 
