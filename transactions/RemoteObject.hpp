@@ -32,9 +32,6 @@ public:
 
 	using type = T;
 
-	template<Level l2, HandleAccess ha2, typename T2>
-	friend void markInTransaction(Store &s, const Handle<l2,ha2,T2> &h);
-
 	template<HandleAccess ha, typename T2>
 	friend Handle<Level::strong,ha,T2>
 	run_ast_causal(Store &cache, const Store &s,

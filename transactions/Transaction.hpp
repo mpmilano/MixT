@@ -6,31 +6,6 @@
 #include "Tracker.hpp"
 #include "DataStore.hpp"
 
-//implementing the tracker bits for transactions here!  Woo code!
-
-void Tracker::markInTransaction(DataStore<Level::strong>& ds) {
-	if (!ds.in_transaction()) ds.begin_transaction();
-	strongTransStore = &ds;
-	//TODO - impl
-}
-
-void Tracker::markInTransaction(DataStore<Level::causal>& ds) {
-	if (!ds.in_transaction()) ds.begin_transaction();
-	causalTransStore = &ds;
-	//TODO - impl
-}
-
-DataStore<Level::strong>* Tracker::strongStoreInTransaction() {
-	//TODO - impl
-	return strongTransStore;
-}
-
-DataStore<Level::causal>* Tracker::causalStoreInTransaction() {
-	//TODO - impl
-	return causalTransStore;
-}
-
-
 struct Transaction{
 	const std::function<bool (Store &)> action;
 	const std::function<std::ostream & (std::ostream &os)> print;
@@ -59,16 +34,9 @@ struct Transaction{
 				call_all_strong(cache,st,s.curr);
 				call_all_causal(cache,st,s.curr);
 
-				//I hope we remembered to put it in there!
-				Tracker &t = *cache.get<Tracker*>(-1);
-				DataStore<Level::strong> *ss = t.strongStoreInTransaction();
-				DataStore<Level::causal> *cs = t.causalStoreInTransaction();
+				//todo: end transaction
 
-				//TODO: fault-tolerance
-				if (ss) ss->end_transaction();
-				if (cs) cs->end_transaction();
-
-				//TODO: error propogation
+				//todo: errors
 				return true;
 				
 			}),
