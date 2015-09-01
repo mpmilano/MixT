@@ -1,11 +1,13 @@
 #pragma once
 #include "Basics.hpp"
+#include "TransactionBasics.hpp"
 
 struct GDataStore {
 	const Level level;
-	virtual bool in_transaction() const = 0;
-	virtual void begin_transaction() = 0;
-	virtual void end_transaction() = 0;
+
+	//we'll delete the TransactionContext
+	//when the transaction is over.  Do any cleanup you need to do then.
+	virtual std::unique_ptr<TransactionContext> begin_transaction() = 0;
 
 	GDataStore(Level l):level(l){}
 	

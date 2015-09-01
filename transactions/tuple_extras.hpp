@@ -74,6 +74,16 @@ auto constexpr fold(const Tuple &vec, Ret (*f)(Args...), const Acc & acc){
 	return fold_(vec,convert(f),acc);
 }
 
+template<typename Tuple, typename F>
+auto foreach(const Tuple &vec, const F &f){
+	return fold(vec,[&f](const auto &e, bool){f(e); return true; },true);
+}
+
+template<typename Tuple, typename Arg>
+auto foreach(const Tuple &vec, void (*f)(Arg)){
+	return foreach(vec,convert(f));
+}
+
 template<template<typename> class Pred, typename... Args>
 constexpr bool forall_types_f(const std::tuple<Args...>*){
 	return forall(Pred<Args>::value...);

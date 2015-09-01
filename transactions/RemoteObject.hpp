@@ -7,6 +7,8 @@
 
 struct GeneralRemoteObject {
 	const int id = gensym();
+	virtual void setTransactionContext(TransactionContext*) = 0;
+	virtual TransactionContext* currentTransactionContext() = 0;
 };
 
 template<Level l2, HandleAccess ha2, typename T2> struct Handle;
@@ -42,6 +44,8 @@ public:
 	
 	static std::unique_ptr<RemoteObject> from_bytes(char* _v); 
 
+
+	friend struct Transaction;
 
 };
 

@@ -62,6 +62,15 @@ public:
 		}
 
 		bool isValid() const {return true;}
+
+		void setTransactionContext(TransactionContext*) {
+			//TODO: do I want transactions here?
+		}
+
+		TransactionContext* currentTransactionContext() {
+			//TODO: do I want transactions here?
+			return nullptr;
+		}
 		
 		int to_bytes(char* _v) const {
 			((int*)_v)[0] = id::value;
@@ -240,21 +249,10 @@ public:
 	static auto tryCast(T && r){
 		return std::forward<T>(r);
 	}
-
-	bool in_trans = false;
 	
-	bool in_transaction() const {
-		return in_trans;
-	}
-
-	void begin_transaction(){
-		in_trans = true;
+	std::unique_ptr<TransactionContext> begin_transaction(){
 		//TODO: do I really want to implement transactions over the FS?
-	}
-
-	void end_transaction(){
-		//TODO: do I really want to implement transactions over the FS?
-		in_trans = false;
+		return nullptr;
 	}
 
 	template<typename T> 

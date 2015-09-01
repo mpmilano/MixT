@@ -73,7 +73,19 @@ Handle<Level::strong,ha,T> run_ast_causal(Store &cache, const Store &s, const Ha
 	struct LocalObject : public RemoteObject<T> {
 		const T t;
 		GDataStore &st;
-		LocalObject(const T& t, GDataStore &st):t(t),st(st){}
+		TransactionContext *tc;
+		LocalObject(const T& t, GDataStore &st, TransactionContext* tc)
+			:t(t),st(st),tc(tc){}
+
+		TransactionContext* currentTransactionContext(){
+			assert(false && "you probably didn't mean to call this");
+			return tc;
+		}
+
+		void setTransactionContext(TransactionContext* tc){
+			assert(false && "you probably didn't mean to call this");
+			this->tc = tc;
+		}
 		
 		const T& get() const {return t;}
 		void put(const T&) {
@@ -100,7 +112,11 @@ Handle<Level::strong,ha,T> run_ast_causal(Store &cache, const Store &s, const Ha
 		}
 		
 	};
-	return Handle<Level::strong,ha,T>{std::shared_ptr<LocalObject>{new LocalObject{cache.get<T>(h.uid),h.remote_object().store()}}};
+	return Handle<Level::strong,ha,T>{
+		std::shared_ptr<LocalObject>{
+			new LocalObject{cache.get<T>(h.uid),
+					h.remote_object().store(),
+					h.remote_object().currentTransactionContext()}}};
 	//TODO: need to cache this at the Transaction level!
 	//TODO: need to ensure operations over strong handles
 	//do not depend on causal data! (we probably already do this, but check!)

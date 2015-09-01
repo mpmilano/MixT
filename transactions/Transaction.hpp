@@ -5,6 +5,7 @@
 #include "Transaction_macros.hpp"
 #include "Tracker.hpp"
 #include "DataStore.hpp"
+#include "TransactionBasics.hpp"
 
 struct Transaction{
 	const std::function<bool (Store &)> action;
@@ -14,26 +15,43 @@ struct Transaction{
 	Transaction(const TransactionBuilder<Cmds> &s):
 		action([s](Store &st) -> bool{
 
-				//We're just having the handles enter transaction when
-				//they're encountered in the AST crawl.
-				//We're also assuming that operations behave normally
-				//while we're doing this.
 
-				//all of which means all we need to do here is coordinate
-				//the commit.
+				//We're assuming that operations behave normally,
+				//By which we mean if they need to handle in-a-transaction
+				//in a special way, they do that for themselves.
+
+				//note: eiger only support read-only or write-only
+				//transactions.  which for the moment means we will
+				//mark as read/write only the first time we read/write,
+				//and just barf if we wind up mixing.
+
+				//TODO: encode that semantics in the type system.
 
 
-				//not quite; I think it would make implementing stores easier if we had all the handles up here.
+				std::map<GDataStore*,std::unique_ptr<TransactionContext> > tc;
 
-				auto handles = fold(s.curr,[](const auto &e, const auto &acc){
-						return std::tuple_cat(e.handles(),acc);
-					},std::tuple<>());
-				ignore(handles);
+				std::map<GeneralRemoteObject*, TransactionContext*> old_ctx;
+
+				foreach(s.curr, [&](const auto &e){
+						foreach(e.handles(),[&](const auto &h){
+								auto *sto = &h._ro->store();
+								auto *ro = h._ro.get();
+								old_ctx[ro] = ro->currentTransactionContext();
+								if (tc.count(sto) == 0){
+									tc.emplace(sto, sto->begin_transaction());
+								}
+								ro->setTransactionContext(tc.at(sto).get());
+							});});
 				
 				Store cache;
 				call_all_strong(cache,st,s.curr);
 				call_all_causal(cache,st,s.curr);
 
+				//restore the old transaction pointers
+				for (auto &p : old_ctx){
+					p.first->setTransactionContext(p.second);
+				}
+				
 				//todo: end transaction
 
 				//todo: errors
