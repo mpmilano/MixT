@@ -35,6 +35,10 @@ struct While : public ConStatement<min_level<Then>::value> {
 			while_concept_2(Cond,Then);
 		}
 
+	auto handles() const {
+		return std::tuple_cat(::handles(cond), then.handles());
+	}
+
 	bool strongCall(Store &c, Store &s) const {
 		std::cout << "In while body" << std::endl;
 		std::integral_constant<bool,get_level<Cond>::value == Level::strong>*

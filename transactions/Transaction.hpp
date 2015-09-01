@@ -46,6 +46,14 @@ struct Transaction{
 
 				//all of which means all we need to do here is coordinate
 				//the commit.
+
+
+				//not quite; I think it would make implementing stores easier if we had all the handles up here.
+
+				auto handles = fold(s.curr,[](const auto &e, const auto &acc){
+						return std::tuple_cat(e.handles(),acc);
+					},std::tuple<>());
+				ignore(handles);
 				
 				Store cache;
 				call_all_strong(cache,st,s.curr);

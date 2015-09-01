@@ -112,11 +112,6 @@ std::ostream & operator<<(std::ostream &os, Transaction& t){
 	return t.print(os);
 }
 
-template<Level l, int i>
-std::ostream & operator<<(std::ostream &os, const CSInt<l,i>&){
-	return os << i;
-}
-
 template<Level l, typename i>
 std::ostream & operator<<(std::ostream &os, const CSConstant<l,i>& c){
 	return os << c.val;

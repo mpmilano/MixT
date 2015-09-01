@@ -13,10 +13,14 @@
 			OperateImpl(const decltype(a) &a):FindUsages<Arg>(a),		\
 				arg(heap_copy(a)){}										\
 																		\
+			auto handles() const {										\
+				return std::make_tuple(::handles(*arg));				\
+																		\
+			}															\
 																		\
 			auto strongCall(Store &c CMA  const Store &s) const {		\
 				return make_PreOp(id,Name(trans_op_arg(c, s, *arg)))	\
-					(arg).strongCall(c CMA s); \
+					(arg).strongCall(c CMA s);							\
 			}															\
 																		\
 			auto causalCall(Store &c CMA  const Store &s) const {		\
@@ -44,6 +48,11 @@
 			OperateImpl(const Arg1 &a, const Arg2 &b):					\
 				FindUsages<Arg1,Arg2>(a,b),								\
 				arg1(heap_copy(a)),arg2(heap_copy(b)){}					\
+																		\
+			auto handles() const {										\
+				return std::make_tuple									\
+					(::handles(*arg1),::handles(*arg2));				\
+			}															\
 																		\
 			auto strongCall(Store &c CMA  const Store &s) const {		\
 				return make_PreOp(id,Name(trans_op_arg(c, s, *arg1),	\

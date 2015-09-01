@@ -23,6 +23,12 @@ struct Operate : ConStatement<l> {
 		name(name),
 		exprs(exprs){}
 
+	auto handles() const {
+		return fold(exprs, [](const auto &e, const auto &acc){
+				return std::tuple_cat(::handles(*e),acc);
+			},std::tuple<>());
+	}
+
 	auto strongCall(Store &cache, const Store &s) const {
 		should_print_operate_things = true;
 		std::integral_constant<bool,l==Level::strong>* choice = nullptr;

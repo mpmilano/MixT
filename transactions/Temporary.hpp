@@ -22,7 +22,10 @@ struct Temporary : public GeneralTemp, public ConStatement<get_level<T>::value> 
 	const T t;
 	const int store_id;
 	Temporary(const std::string name, const T& t):GeneralTemp(name,to_string(t)),t(t),store_id(std::hash<std::string>()(name)){}
-	
+
+	auto handles() const {
+		return ::handles(t);
+	}
 
 	auto strongCall(Store &c, Store &s) const {
 		std::integral_constant<bool,get_level<T>::value==Level::strong>* choice = nullptr;
@@ -76,6 +79,10 @@ struct TemporaryMutation : public ConStatement<get_level<T>::value> {
 	TemporaryMutation(const std::string &name, int id, const T& t)
 		:name(name),store_id(id),t(t) {}
 
+	auto handles() const {
+		return ::handles(t);
+	}
+	
 	auto strongCall(Store &c, Store &s) const {
 		std::integral_constant<bool,get_level<T>::value==Level::strong>* choice = nullptr;
 		return strongCall(c,s,choice);
@@ -170,6 +177,10 @@ struct RefTemporary : public ConExpr<run_result<T>,l> {
 		if (should_print_operate_things){
 			assert(false && "Error: don't copy RefTemporaries when in operate scope!");
 		}
+	}
+
+	auto handles() const {
+		return t.handles();
 	}
 
 	auto strongCall(Store &cache, const Store &s) const {

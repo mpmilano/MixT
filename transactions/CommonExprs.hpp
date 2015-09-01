@@ -2,26 +2,6 @@
 #include "ConExpr.hpp"
 #include "../BitSet.hpp"
 
-template<Level l, int i>
-class CSInt : public ConExpr<int,l>, public std::integral_constant<int,i>::type {
-public:
-	
-	const int id = gensym();
-	
-	CSInt(){}
-
-	constexpr int operator()(const Store &) const {
-		return i;
-	}
-	
-	template<Level l2, int i2>
-	friend std::ostream & operator<<(std::ostream &os, const CSInt<l2,i2>&);
-};
-
-
-template<Level l, int i>
-constexpr bool verify_compilation_complete(const CSInt<l,i>*)
-{return true; }
 
 template<Level l, typename T>
 class CSConstant : public ConExpr<T,l> {
@@ -41,6 +21,11 @@ public:
 	constexpr T strongCall(Store& cache, const Store&) const {
 		cache.insert(this->id,val);
 		return val;
+	}
+
+	std::tuple<> handles() const {
+		static std::tuple<> ret;
+		return ret;
 	}
 
 	static_assert(!std::is_scalar<CSConstant<l,T> >::value,"Static assert failed");
@@ -69,11 +54,6 @@ std::enable_if_t<!std::is_scalar<T>::value, T> wrap_constants(const T& t){
 template<Level l, typename T>
 struct is_ConExpr<CSConstant<l,T> > : std::true_type {};
 
-template<Level l, int i>
-constexpr bool is_base_CS_f(const CSInt<l,i>* ){
-	return true;
-}
-
 template<typename T>
 struct Not : public ConExpr<bool, get_level<T>::value> {
 
@@ -82,6 +62,10 @@ struct Not : public ConExpr<bool, get_level<T>::value> {
 	const int id = gensym();
 	T v;
 	Not(const T& t):v(t){}
+
+	auto handles() const {
+		return v.handles();
+	}
 
 	bool causalCall(Store& cache, const Store& s) const {
 
@@ -151,6 +135,10 @@ struct IsValid : public ConExpr<bool, get_level<T>::value> {
 	const int id = gensym();
 	
 	IsValid(const T &t):t(t){}
+
+	auto handles() const {
+		return t.handles();
+	}
 
 	bool causalCall(Store& cache, const Store& s) const {
 		if (cache.contains(this->id) ) return cache.get<bool>(this->id);

@@ -37,6 +37,10 @@ struct If : public ConStatement<min_level<typename min_level<Then>::type,
 			if_concept_2(Cond,Then,Els);
 		}
 
+	auto handles() const {
+		return std::tuple_cat(cond.handles(),then.handles(),els.handles());
+	}
+
 	bool strongCall(Store &c, Store &s) const {
 		std::integral_constant<bool,get_level<Cond>::value == Level::strong>*
 			choice{nullptr};

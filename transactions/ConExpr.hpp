@@ -21,6 +21,11 @@ struct ConExpr : public ConStatement<l> {
 template<Level l>
 struct DummyConExpr : public ConExpr<void,l> {
 
+	std::tuple<> handles() const {
+		static std::tuple<> ret;
+		return ret;
+	}
+	
 	void strongCall(const Store&, const Store &) const {}
 
 	void causalCall(const Store&, const Store &) const {}	
@@ -28,7 +33,7 @@ struct DummyConExpr : public ConExpr<void,l> {
 };
 
 template<typename T, Level l>
-constexpr bool is_ConExpr_f(const ConExpr<T,l>*){
+constexpr bool is_ConExpr_f(ConExpr<T,l> const * const){
 	return true;
 }
 
@@ -193,3 +198,27 @@ struct contains_temporary<id,int> : std::false_type {};
 template<unsigned long long id>
 struct contains_temporary<id,bool> : std::false_type {};
 
+template<Level l, HandleAccess ha, typename T>
+auto handles(const Handle<l,ha,T>& h) {
+	return std::make_tuple(h);
+}
+
+template<typename T, restrict(std::is_scalar<T>::value)>
+auto handles(const T&){
+	return std::tuple<>();
+}
+
+
+template<typename T, restrict2(is_ConExpr<T>::value && !std::is_scalar<T>::value)>
+auto handles(const T &e){
+	return e.handles();
+}
+
+template<typename... T>
+auto handles(const std::tuple<T...> &params){
+	return fold(params,
+				[](const auto &e, const auto &acc){
+					return std::tuple_cat(handles(e),acc);
+				}
+				,std::tuple<>());
+}

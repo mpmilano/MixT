@@ -21,6 +21,15 @@ bool causalc_helper(Store &c, Store &s, const std::shared_ptr<const T>& gt){
 	return gt->causalCall(c,s);
 }
 
+template<unsigned long long ID, Level l, typename T>
+auto gt_handles(Temporary<ID,l,T> const * const tmp){
+	assert(tmp);
+	return tmp->handles();
+}
+
+auto gt_handles(std::nullptr_t const * const){
+	assert(false && "cannot retrieve handles, replacement failed!");
+}
 
 template<unsigned long long ID, typename CS, Level l, typename Temp>
 struct DeclarationScope : public ConStatement<l>{
@@ -32,6 +41,11 @@ struct DeclarationScope : public ConStatement<l>{
 	template<typename Ptr>
 	DeclarationScope(const std::string &name, const Ptr &gt, const CS &cs)
 		:name(name),gt(gt),cs(cs){
+	}
+
+	auto handles() const {
+		assert(gt);
+		return gt_handles(gt.get());
 	}
 
 	bool strongCall(Store &c, Store &s) const {
