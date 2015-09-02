@@ -2,6 +2,7 @@
 
 #include "Operation.hpp"
 #include "DataStore.hpp"
+#include <memory>
 
 /**
    Information: We are assuming an SQL store which has already been configured
@@ -20,15 +21,11 @@ private:
 
 	struct SQLTransaction;
 
-	struct SQLConnection {
-		bool in_trans = false;
-		SQLConnection() = default;
-		SQLConnection(const SQLConnection&) = delete;
-	};
-
+	struct SQLConnection;
+	using SQLConnection_t = std::unique_ptr<SQLConnection>;
 	
 public:
-	SQLConnection default_connection;
+	SQLConnection_t default_connection;
 	
 	SQLStore(const SQLStore&) = delete;
 	
@@ -37,11 +34,94 @@ public:
 	std::unique_ptr<TransactionContext> begin_transaction();
 	
 	using id = std::integral_constant<int,2>;
+	
+	struct GSQLObject : public GeneralRemoteObject, public ByteRepresentable {
+		struct Internals;
+		Internals& i;
+		GSQLObject(int size);
+		void save();
+		char* load();
+		char* update_cached();
+		char* obj_buffer() const;
 
-	template<typename>
-	struct SQLObject;
+		//required by GeneralRemoteObject
+		void setTransactionContext(TransactionContext*);
+		TransactionContext* currentTransactionContext();
+		bool isValid() const;
+		const GDataStore& store() const;
+		GDataStore& store();
+		int bytes_size() const;
 
-	using SQLInt = SQLObject<int>;
+		//required by ByteRepresentable
+		int to_bytes(char*) const;
+		static GSQLObject from_bytes(char* v);
+		virtual ~GSQLObject();
+	};
+	
+
+	template<typename T>
+	struct SQLObject : public RemoteObject<T> {
+		GSQLObject gso;
+		std::unique_ptr<T> t;
+
+		SQLObject(GSQLObject gs, std::unique_ptr<T> t):
+			gso(std::move(gs)),t(std::move(t)){}
+		
+		const T& get() const {
+			//TODO: get really isn't const anywhere.
+			//We should remove that designator.
+
+			auto* i_lied = const_cast<SQLObject<T>* >(this);
+			char * res = nullptr;
+			if (t){
+				res = i_lied->gso.update_cached();
+			}
+			else{
+				res = i_lied->gso.load();
+			}
+			if (res != nullptr){
+				i_lied->t = ::from_bytes<T>(res);
+			}
+			return *t;
+		}
+
+		void put(const T& t){
+			this->t = std::make_unique<T>(t);
+			::to_bytes(t,gso.obj_buffer());
+			gso.save();
+		}
+
+		//these just forward
+		void setTransactionContext(TransactionContext* t){
+			gso.setTransactionContext(t);
+		}
+		TransactionContext* currentTransactionContext(){
+			return gso.currentTransactionContext();
+		}
+		bool isValid() const{
+			return gso.isValid();
+		}
+		const GDataStore& store() const{
+			return gso.store();
+		}
+		GDataStore& store(){
+			return gso.store();
+		}
+		int bytes_size() const {
+			return gso.bytes_size();
+		}
+		int to_bytes(char* c) const {
+			return gso.to_bytes(c);
+		}
+	};
+	
+	template<typename T>
+	static std::unique_ptr<SQLObject<T> > from_bytes(char* v){
+		return std::make_unique<SQLObject<T> >(GSQLObject::from_bytes(v),
+											   std::unique_ptr<T>());
+	}
+
+
 };
 
 #include "SQLStore_impl.hpp"

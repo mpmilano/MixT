@@ -82,7 +82,9 @@ int main(){
 		std::cerr << "No overload found: " << e.msg << std::endl;
 	}
 
-	SQLStore::inst();
+	SQLStore::SQLObject<int> i{
+		SQLStore::GSQLObject{0},
+			std::unique_ptr<int>()};
 
 	list_ex::main();
 
