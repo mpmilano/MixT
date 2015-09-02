@@ -42,6 +42,13 @@ struct Transaction{
 
 				{
 				bool any = false;
+
+				//TODO: it'd probably be better to keep the association of RemoteObject
+				//to TransactionContext here, and to pass the transactionContext
+				//in when performing operations inside a transaction
+				
+				//this loop finds all stores, calls begin_transaction on them exactly once,
+				//and sets their participating RemoteObjects' current transaction pointers.
 				foreach(s.curr, [&](const auto &e){
 						std::cout << "looking for handles here: " << e << std::endl;
 						foreach(e.handles(),[&](const auto &h){
@@ -73,26 +80,27 @@ struct Transaction{
 				//todo: REPLICATE THIS COMMIT
 				bool ret = true;
 				{
-				bool any = false;
-				if (tc.count(Level::strong) != 0){
-					any = true;
-					for (auto &p : tc.at(Level::strong)){
-						ret = ret && p.second->commit();
+					bool any = false;
+					if (tc.count(Level::strong) != 0){
+						any = true;
+						for (auto &p : tc.at(Level::strong)){
+							ret = ret && p.second->commit();
+						}
 					}
-				}
-				
-				//causal commits definitionally can't fail!
-				if (ret && tc.count(Level::causal) != 0){
-					any = true;
-					for (auto &p : tc.at(Level::causal)){
-						ret = ret && p.second->commit();
+					
+					//causal commits definitionally can't fail!
+					if (ret && tc.count(Level::causal) != 0){
+						any = true;
+						for (auto &p : tc.at(Level::causal)){
+							ret = ret && p.second->commit();
+						}
 					}
-				}
+					
 
-				//TODO: exception here instead of boolean?
-				assert(any);
+					assert(any);
 				}
 				assert(ret);
+				//TODO: exception here instead of boolean?
 				return ret;
 				
 			}),

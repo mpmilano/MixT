@@ -1,5 +1,6 @@
 #pragma once
 #include "utils.hpp"
+#include "type_utils.hpp"
 #include "SerializationMacros.hpp"
 #include "macro_utils.hpp"
 #include <vector>
@@ -12,13 +13,9 @@ struct ByteRepresentable {
 	//virtual static T* from_bytes(char *v) const  = 0;
 };
 
-int to_bytes(const ByteRepresentable& b, char* v){
-	return b.to_bytes(v);
-}
+int to_bytes(const ByteRepresentable& b, char* v);
 
-int bytes_size(const ByteRepresentable& b){
-	return b.bytes_size();
-}
+int bytes_size(const ByteRepresentable& b);
 
 template<typename T, restrict(std::is_trivially_copyable<T>::value)>
 int to_bytes(const T &t, char* v){

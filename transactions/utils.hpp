@@ -196,34 +196,9 @@ using Right = typename _Right<T>::type;
 
 
 
-int gensym() {
-	static int counter = 0;
-	assert(counter < (std::numeric_limits<int>::max() - 1));
-	return ++counter;
-}
+int gensym();
 
-std::vector<std::string> read_dir(const std::string &name){
-
-	std::vector<std::string> ret;
-	
-	DIR *dir;
-	struct dirent *ent;
-	if ((dir = opendir (name.c_str()))) {
-		/* print all the files and directories within directory */
-		while ((ent = readdir (dir))) {
-			std::string maybe(ent->d_name);
-			if (maybe == "." || maybe == "..") continue;
-			ret.push_back(std::string(maybe));
-		}
-		closedir (dir);
-	} else {
-		/* could not open directory */
-		perror ("");
-		assert(false && "Could not open dir.");
-	}
-
-	return ret;
-}
+std::vector<std::string> read_dir(const std::string &name);
 
 template<typename T>
 std::unique_ptr<T> make_unique(T *t){
@@ -273,9 +248,7 @@ choose_non_np(const T& t, std::nullptr_t){
 	return t;
 }
 
-auto choose_non_np(std::nullptr_t, std::nullptr_t){
-	return nullptr;
-}
+std::nullptr_t choose_non_np(std::nullptr_t, std::nullptr_t);
 
 template<typename T>
 std::enable_if_t<!std::is_same<T, std::nullptr_t>::value, T>
@@ -283,9 +256,7 @@ choose_non_np(const T& t1, const T& t2){
 	if (t1) return t1; else return t2;
 }
 
-std::nullptr_t dref_np(std::nullptr_t*){
-	return nullptr;
-}
+std::nullptr_t dref_np(std::nullptr_t*);
 
 template<typename T, restrict(!(std::is_same<T,std::nullptr_t>::value))>
 T dref_np(const T& t){ return t;}

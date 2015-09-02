@@ -2,7 +2,6 @@
 
 #include "Operation.hpp"
 #include "DataStore.hpp"
-#include "RemoteObject.hpp"
 
 /**
    Information: We are assuming an SQL store which has already been configured
@@ -16,19 +15,31 @@
 
 struct SQLStore : public DataStore<Level::strong> {
 private:
-	SQLStore(){}
-public:
-	SQLStore(const SQLStore&) = delete;
-	static SQLStore& inst(){
-		static SQLStore ss;
-		return ss;
-	}
+	
+	SQLStore();
 
+	struct SQLTransaction;
+
+	struct SQLConnection {
+		bool in_trans = false;
+		SQLConnection() = default;
+		SQLConnection(const SQLConnection&) = delete;
+	};
+
+	
+public:
+	SQLConnection default_connection;
+	
+	SQLStore(const SQLStore&) = delete;
+	
+	static SQLStore& inst();
+
+	std::unique_ptr<TransactionContext> begin_transaction();
+	
 	using id = std::integral_constant<int,2>;
 
-
-	template<typename T>
-	struct SQLObject : public RemoteObject<T> {
-		
-	};
+	template<typename>
+	struct SQLObject;
 };
+
+#include "SQLStore_impl.hpp"
