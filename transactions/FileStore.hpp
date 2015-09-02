@@ -161,7 +161,7 @@ public:
 		virtual const T& get() {
 			std::ifstream ifs(filename);
 			boost::archive::text_iarchive ia(ifs);
-			ia >> *const_cast<FSObject<T>*>(this);
+			ia >> *this;
 			return *t;
 		}
 
