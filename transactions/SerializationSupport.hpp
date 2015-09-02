@@ -79,11 +79,11 @@ template<typename T>
 std::unique_ptr<type_check<is_set,T> > from_bytes(char* _v) {
 	int size = ((int*)_v)[0];
 	char* v = _v + sizeof(int);
-	auto* r = new std::set<typename T::key_type>();
+	auto r = std::make_unique<std::set<typename T::key_type> >();
 	for (int i = 0; i < size; ++i){
 		auto e = from_bytes<typename T::key_type>(v);
 		v += bytes_size(*e);
 		r->insert(*e);
 	}
-	return std::unique_ptr<std::set<typename T::key_type> >{r};
+	return std::move(r);
 }

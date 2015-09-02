@@ -196,17 +196,17 @@ template<typename , typename >
 struct _impl_pick_new_type;
 
 template<unsigned long long ID, Level l, typename T>
-struct _impl_pick_new_type<Temporary<ID,l,T>*,Temporary<ID,l,T> > {
+struct _impl_pick_new_type<std::shared_ptr<Temporary<ID,l,T> >,Temporary<ID,l,T> > {
 	using type = Temporary<ID,l,T>;
 };
 
 template<unsigned long long ID, Level l, typename T>
-struct _impl_pick_new_type<MutableTemporary<ID,l,T>*,MutableTemporary<ID,l,T> > {
+struct _impl_pick_new_type<std::shared_ptr<MutableTemporary<ID,l,T> >,MutableTemporary<ID,l,T> > {
 	using type = MutableTemporary<ID,l,T>;
 };
 
 template<typename T>
-struct _impl_pick_new_type<T*, std::nullptr_t > {
+struct _impl_pick_new_type<std::shared_ptr<T>, std::nullptr_t > {
 	using type = T;
 };
 

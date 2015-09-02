@@ -25,7 +25,7 @@ struct Store {
 	template<typename T>
 	void insert(int i, const T &item) {
 		assert(valid_store);
-		store_impl[i].reset((stored)heap_copy(item));
+		store_impl[i].reset((stored)heap_copy(item).release());
 		assert(contains(i));
 	}
 

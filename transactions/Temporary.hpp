@@ -64,7 +64,7 @@ struct Temporary : public GeneralTemp, public ConStatement<get_level<T>::value> 
 
 template<unsigned long long ID, Level l, typename T, typename Temp>
 auto find_usage(const Temporary<ID,l,T> &rt){
-	return heap_copy(rt);
+	return shared_copy(rt);
 }
 
 template<unsigned long long ID, unsigned long long ID2, Level l, typename T>
@@ -141,7 +141,7 @@ struct MutableTemporary : public Temporary<ID, l,T> {
 
 template<unsigned long long ID, Level l, typename T>
 auto find_usage(const MutableTemporary<ID,l,T> &rt){
-	return heap_copy(rt);
+	return shared_copy(rt);
 }
 
 template<unsigned long long ID, unsigned long long ID2, Level l, typename T>
@@ -245,7 +245,7 @@ private:
 
 template<unsigned long long ID, Level l, typename T, typename Temp>
 auto find_usage(const RefTemporary<ID,l,T,Temp> &rt){
-	return heap_copy(rt.t);
+	return shared_copy(rt.t);
 }
 
 template<unsigned long long ID, unsigned long long ID2, Level l, typename T, typename Temp>

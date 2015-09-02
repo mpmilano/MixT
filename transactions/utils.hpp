@@ -107,8 +107,13 @@ struct last_of {
 };
 
 template<typename T>
-T* heap_copy(const T& t){
-	return new T(t);
+std::unique_ptr<T> heap_copy(const T& t){
+	return std::make_unique<T>(t);
+}
+
+template<typename T>
+std::shared_ptr<T> shared_copy(const T& t){
+	return std::make_shared<T>(t);
 }
 
 template<const int i,restrict(i <= 0)>
@@ -206,8 +211,8 @@ std::unique_ptr<T> make_unique(T *t){
 }
 
 template<typename T, restrict(!(std::is_same<T CMA std::nullptr_t>::value))>
-std::shared_ptr<const T> make_cnst_shared(T *t){
-	return std::shared_ptr<const T>(t);
+std::shared_ptr<const T> make_cnst_shared(std::shared_ptr<T> t){
+	return std::static_pointer_cast<const T, T>(t);
 }
 
 template<typename>

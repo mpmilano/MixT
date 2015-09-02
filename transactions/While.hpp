@@ -66,7 +66,7 @@ struct While : public ConStatement<min_level<Then>::value> {
 		auto &store_stack = c_old.get<std::list<std::unique_ptr<Store> > >(id);
 		
 		do {
-			store_stack.emplace_back(new Store(&c_old));
+			store_stack.emplace_back(std::make_unique<Store>(&c_old));
 			call_all_strong(*store_stack.back(),s,then);
 		} while(run_ast_strong(*store_stack.back(),s,cond));
 

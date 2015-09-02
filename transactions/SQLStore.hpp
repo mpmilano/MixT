@@ -40,6 +40,8 @@ public:
 
 	template<typename>
 	struct SQLObject;
+
+	using SQLInt = SQLObject<int>;
 };
 
 #include "SQLStore_impl.hpp"

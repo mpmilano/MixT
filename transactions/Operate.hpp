@@ -163,7 +163,7 @@ struct PreOp<std::tuple<J...> > {
 
 		static constexpr Level l = min_level<shared_deref<Args>...>::value;
 		assert(fold(t,[](const auto &e, bool acc){return e.built_well || acc;},false));
-		std::shared_ptr<decltype(t)> t_ptr{heap_copy(t)};
+		auto t_ptr = shared_copy(t);
 		assert(fold(*t_ptr,[](const auto &e, bool acc){return e.built_well || acc;},false));
 		
 		return Operate<l,decltype(std::get<0>(t)(

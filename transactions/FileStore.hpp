@@ -131,7 +131,7 @@ public:
 		load(Archive &ar, const uint){
 			StupidWrapper stupid;
 			ar >> stupid.val;
-			t.reset(heap_copy(stupid.deref()));
+			t = heap_copy(stupid.deref());
 		}
 		
 		BOOST_SERIALIZATION_SPLIT_MEMBER()
@@ -141,9 +141,9 @@ public:
 		save(Archive &ar, const uint) const {
 			char *v = (char*) malloc(::bytes_size(*t));
 			std::cout << "serializing member!" << std::endl;
-			::to_bytes(*t,v);
+			int size = ::to_bytes(*t,v);
 			std::cout << "copying to vector!" << std::endl;
-			std::vector<char> v2(v, v + ::bytes_size(*t));
+			std::vector<char> v2(v, v + size);
 			ar << v2;
 			free(v);
 		}
@@ -168,7 +168,7 @@ public:
 		virtual void put(const T& t) {
 			std::ofstream ofs(filename);
 			boost::archive::text_oarchive oa(ofs);
-			this->t.reset(heap_copy(t));
+			this->t = heap_copy(t);
 			oa << *this;
 		}
 

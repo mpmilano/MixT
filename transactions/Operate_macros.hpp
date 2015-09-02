@@ -11,7 +11,7 @@
 			const std::shared_ptr<decltype(a)> arg;						\
 			const std::string name = #Name;								\
 			OperateImpl(const decltype(a) &a):FindUsages<Arg>(a),		\
-				arg(heap_copy(a)){}										\
+				arg(shared_copy(a)){}									\
 																		\
 			auto handles() const {										\
 				auto ret = ::handles(*arg);								\
@@ -49,7 +49,7 @@
 			const std::string name = #Name;								\
 			OperateImpl(const Arg1 &a, const Arg2 &b):					\
 				FindUsages<Arg1,Arg2>(a,b),								\
-				arg1(heap_copy(a)),arg2(heap_copy(b)){}					\
+				arg1(shared_copy(a)),arg2(shared_copy(b)){}				\
 																		\
 			auto handles() const {										\
 				auto ret =  std::tuple_cat								\
