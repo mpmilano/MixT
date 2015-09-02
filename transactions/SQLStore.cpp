@@ -40,3 +40,16 @@ unique_ptr<TransactionContext> SQLStore::begin_transaction() {
 	return unique_ptr<TransactionContext>(new SQLTransaction(*default_connection));
 	
 }
+
+struct SQLStore::GSQLObject::Internals{
+	char* buf1;
+	char* buf2;
+};
+
+SQLStore::GSQLObject::GSQLObject(int size)
+	:i(*(new Internals{(char*) malloc(size), (char*) malloc(size)})){}
+SQLStore::GSQLObject::~GSQLObject(){
+	free(i.buf1);
+	free(i.buf2);
+	delete &i;
+}
