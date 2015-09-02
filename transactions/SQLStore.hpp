@@ -37,12 +37,14 @@ public:
 	
 	struct GSQLObject : public GeneralRemoteObject, public ByteRepresentable {
 		struct Internals;
-		Internals& i;
+		Internals* i;
 		GSQLObject(int size);
+		GSQLObject(const GSQLObject&) = delete;
+		GSQLObject(GSQLObject&&);
 		void save();
 		char* load();
 		char* update_cached();
-		char* obj_buffer() const;
+		char* obj_buffer();
 
 		//required by GeneralRemoteObject
 		void setTransactionContext(TransactionContext*);
@@ -67,20 +69,19 @@ public:
 		SQLObject(GSQLObject gs, std::unique_ptr<T> t):
 			gso(std::move(gs)),t(std::move(t)){}
 		
-		const T& get() const {
+		const T& get() {
 			//TODO: get really isn't const anywhere.
 			//We should remove that designator.
 
-			auto* i_lied = const_cast<SQLObject<T>* >(this);
 			char * res = nullptr;
 			if (t){
-				res = i_lied->gso.update_cached();
+				res = gso.update_cached();
 			}
 			else{
-				res = i_lied->gso.load();
+				res = gso.load();
 			}
 			if (res != nullptr){
-				i_lied->t = ::from_bytes<T>(res);
+				t = ::from_bytes<T>(res);
 			}
 			return *t;
 		}

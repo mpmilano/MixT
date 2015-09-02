@@ -47,9 +47,18 @@ struct SQLStore::GSQLObject::Internals{
 };
 
 SQLStore::GSQLObject::GSQLObject(int size)
-	:i(*(new Internals{(char*) malloc(size), (char*) malloc(size)})){}
+	:i((new Internals{(char*) malloc(size), (char*) malloc(size)})){}
+
+
+SQLStore::GSQLObject::GSQLObject(SQLStore::GSQLObject&& gso)
+	:i(gso.i){gso.i = nullptr;}
+
+
+
 SQLStore::GSQLObject::~GSQLObject(){
-	free(i.buf1);
-	free(i.buf2);
-	delete &i;
+	if (i){
+		free(i->buf1);
+		free(i->buf2);
+		delete i;
+	}
 }

@@ -87,7 +87,7 @@ Handle<Level::strong,ha,T> run_ast_causal(Store &cache, const Store &s, const Ha
 			this->tc = tc;
 		}
 		
-		const T& get() const {return t;}
+		const T& get() {return t;}
 		void put(const T&) {
 			assert(false && "error: modifying strong Handle in causal context! the type system is supposed to prevent this!");
 		}

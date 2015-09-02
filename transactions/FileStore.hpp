@@ -158,7 +158,7 @@ public:
 				t.reset(::from_bytes<T>(&v[0]).release());
 		}
 
-		virtual const T& get() const {
+		virtual const T& get() {
 			std::ifstream ifs(filename);
 			boost::archive::text_iarchive ia(ifs);
 			ia >> *const_cast<FSObject<T>*>(this);
@@ -186,7 +186,7 @@ public:
 			assert(false && "this should not be serialized");
 		}
 
-		const std::set<T>& get() const {
+		const std::set<T>& get() {
 			static std::set<T> ret;
 			ret.clear();
 			for (const auto &str : read_dir(this->filename)){

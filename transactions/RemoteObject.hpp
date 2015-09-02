@@ -22,7 +22,7 @@ class RemoteObject : public GeneralRemoteObject,
 					 public ByteRepresentable {
 	//extend this plz!
 
-	virtual const T& get() const = 0;
+	virtual const T& get() = 0;
 	virtual void put(const T&) = 0;
 
 	//TODO: delete these when you're done hacking around.
