@@ -23,6 +23,12 @@ struct Operate : ConStatement<l> {
 		name(name),
 		exprs(exprs){}
 
+	auto handles() const {
+		return fold(exprs, [](const auto &e, const auto &acc){
+				return std::tuple_cat(::handles(*e),acc);
+			},std::tuple<>());
+	}
+
 	auto strongCall(Store &cache, const Store &s) const {
 		should_print_operate_things = true;
 		std::integral_constant<bool,l==Level::strong>* choice = nullptr;
@@ -157,7 +163,7 @@ struct PreOp<std::tuple<J...> > {
 
 		static constexpr Level l = min_level<shared_deref<Args>...>::value;
 		assert(fold(t,[](const auto &e, bool acc){return e.built_well || acc;},false));
-		std::shared_ptr<decltype(t)> t_ptr{heap_copy(t)};
+		auto t_ptr = shared_copy(t);
 		assert(fold(*t_ptr,[](const auto &e, bool acc){return e.built_well || acc;},false));
 		
 		return Operate<l,decltype(std::get<0>(t)(

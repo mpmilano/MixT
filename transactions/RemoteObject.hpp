@@ -1,12 +1,18 @@
 #pragma once
 
 #include "type_utils.hpp"
+#include "tuple_extras.hpp"
 #include "GDataStore.hpp"
 #include "Store.hpp"
 #include "SerializationSupport.hpp"
 
 struct GeneralRemoteObject {
 	const int id = gensym();
+	virtual void setTransactionContext(TransactionContext*) = 0;
+	virtual TransactionContext* currentTransactionContext() = 0;
+	virtual bool isValid() const = 0;
+	virtual const GDataStore& store() const = 0;
+	virtual GDataStore& store() = 0;
 };
 
 template<Level l2, HandleAccess ha2, typename T2> struct Handle;
@@ -18,9 +24,6 @@ class RemoteObject : public GeneralRemoteObject,
 
 	virtual const T& get() const = 0;
 	virtual void put(const T&) = 0;
-	virtual bool isValid() const = 0;
-	virtual const GDataStore& store() const = 0;
-	virtual GDataStore& store() = 0;
 
 	//TODO: delete these when you're done hacking around.
 	RemoteObject(const RemoteObject&) = delete;
@@ -32,9 +35,6 @@ public:
 
 	using type = T;
 
-	template<Level l2, HandleAccess ha2, typename T2>
-	friend void markInTransaction(Store &s, const Handle<l2,ha2,T2> &h);
-
 	template<HandleAccess ha, typename T2>
 	friend Handle<Level::strong,ha,T2>
 	run_ast_causal(Store &cache, const Store &s,
@@ -45,6 +45,8 @@ public:
 	
 	static std::unique_ptr<RemoteObject> from_bytes(char* _v); 
 
+
+	friend struct Transaction;
 
 };
 

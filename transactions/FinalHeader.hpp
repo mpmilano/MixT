@@ -12,7 +12,7 @@ std::unique_ptr<RemoteObject<T> > RemoteObject<T>::from_bytes(char* _v)
 	typedef fold_types<Pointerize,stores,std::tuple<> > ptr_stores;
 	ptr_stores lst;
 	auto ret = 
-		fold(lst,[&](const auto &e, const auto &acc) -> std::shared_ptr<RemoteObject<T> > {
+		fold(lst,[&](const auto &e, const std::shared_ptr<RemoteObject<T> > &acc) -> std::shared_ptr<RemoteObject<T> > {
 				using DS = decay<decltype(*e)>;
 				if (read_id == DS::id::value) {
 					assert(!acc);

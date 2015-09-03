@@ -11,7 +11,7 @@
 	static std::unique_ptr<Name> from_bytes(char* v){				\
 		auto a2 = ::from_bytes<decay<decltype(a)> >(v);				\
 		Name r{*a2,*(::from_bytes<decay<decltype(b)> >(v + ::bytes_size(*a2)))}; \
-		return std::unique_ptr<Name>{heap_copy(r)};						\
+		return heap_copy(r);						\
 	}
 	
 #define DEFAULT_SERIALIZE_IMPL2(count, ...) DEFAULT_SERIALIZE ## count (__VA_ARGS__)

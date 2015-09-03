@@ -120,6 +120,8 @@ public:
 	template<Level l2, HandleAccess ha2, typename T2>
 	friend struct Handle;
 
+	friend struct Transaction;
+
 	template<typename RO, typename... Args>
 	static Handle<l,HA,T> make_handle(Args && ... ca){
 		static_assert(std::is_base_of<RemoteObject<T>,RO >::value,

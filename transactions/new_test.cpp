@@ -11,8 +11,10 @@
 #include "TempBuilder.hpp"
 #include "FreeExpr.hpp"
 #include "FinalHeader.hpp"
+#include "SQLStore.hpp"
 //*/
 #include "Transaction_macros.hpp"
+
 
 
 namespace list_ex{
@@ -79,6 +81,10 @@ int main(){
 	catch (NoOverloadFoundError e){
 		std::cerr << "No overload found: " << e.msg << std::endl;
 	}
+
+	SQLStore::SQLObject<int> i{
+		SQLStore::GSQLObject{0},
+			std::unique_ptr<int>()};
 
 	list_ex::main();
 

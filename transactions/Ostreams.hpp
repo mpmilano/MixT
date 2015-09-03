@@ -37,18 +37,6 @@ std::ostream & operator<<(std::ostream &os, const nope& ){
 	return os << "nope!";
 }
 
-/*
-template<Level l2, typename i2, unsigned long long id>
-std::ostream & operator<<(std::ostream &os, const Temporary<id,l2,i2>& t){
-	return os << "let " << t.name << "<" << levelStr<l2>() << ">" <<  " = " << t.t << "in ";
-}
-
-
-template<unsigned long long id, Level l2, typename i2>
-std::ostream & operator<<(std::ostream &os, const MutableTemporary<id,l2,i2>& t){
-	return os << t.name << "<" << levelStr<l2>() << ">" <<  " = " << t.t;
-}
-//*/
 
 template<typename T>
 std::ostream & operator<<(std::ostream &os, const TemporaryMutation<T>& t){
@@ -110,11 +98,6 @@ std::ostream & operator<<(std::ostream &os, const While<Cond,Then>& i){
 std::ostream & operator<<(std::ostream &os, Transaction& t){
 	//see Transaction.hpp
 	return t.print(os);
-}
-
-template<Level l, int i>
-std::ostream & operator<<(std::ostream &os, const CSInt<l,i>&){
-	return os << i;
 }
 
 template<Level l, typename i>

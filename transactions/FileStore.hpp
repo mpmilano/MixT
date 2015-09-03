@@ -62,6 +62,16 @@ public:
 		}
 
 		bool isValid() const {return true;}
+
+		void setTransactionContext(TransactionContext*) {
+			//TODO: do I want transactions here?
+		}
+
+		TransactionContext* currentTransactionContext() {
+			static auto tc = s.begin_transaction();
+			//TODO: do I want transactions here?
+			return tc.get();
+		}
 		
 		int to_bytes(char* _v) const {
 			((int*)_v)[0] = id::value;
@@ -121,7 +131,7 @@ public:
 		load(Archive &ar, const uint){
 			StupidWrapper stupid;
 			ar >> stupid.val;
-			t.reset(heap_copy(stupid.deref()));
+			t = heap_copy(stupid.deref());
 		}
 		
 		BOOST_SERIALIZATION_SPLIT_MEMBER()
@@ -131,9 +141,9 @@ public:
 		save(Archive &ar, const uint) const {
 			char *v = (char*) malloc(::bytes_size(*t));
 			std::cout << "serializing member!" << std::endl;
-			::to_bytes(*t,v);
+			int size = ::to_bytes(*t,v);
 			std::cout << "copying to vector!" << std::endl;
-			std::vector<char> v2(v, v + ::bytes_size(*t));
+			std::vector<char> v2(v, v + size);
 			ar << v2;
 			free(v);
 		}
@@ -158,7 +168,7 @@ public:
 		virtual void put(const T& t) {
 			std::ofstream ofs(filename);
 			boost::archive::text_oarchive oa(ofs);
-			this->t.reset(heap_copy(t));
+			this->t = heap_copy(t);
 			oa << *this;
 		}
 
@@ -240,21 +250,13 @@ public:
 	static auto tryCast(T && r){
 		return std::forward<T>(r);
 	}
-
-	bool in_trans = false;
 	
-	bool in_transaction() const {
-		return in_trans;
-	}
-
-	void begin_transaction(){
-		in_trans = true;
+	std::unique_ptr<TransactionContext> begin_transaction(){
+		struct FSContext : public TransactionContext{
+			bool commit() { return true; }
+		};
 		//TODO: do I really want to implement transactions over the FS?
-	}
-
-	void end_transaction(){
-		//TODO: do I really want to implement transactions over the FS?
-		in_trans = false;
+		return std::unique_ptr<TransactionContext>(new FSContext());
 	}
 
 	template<typename T> 

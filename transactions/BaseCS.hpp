@@ -11,9 +11,8 @@ public:
 		else return false;
 	}
 
-	template<typename T>
-	T operator/(const T& t) const {
-		return t;
+	std::tuple<> handles() const {
+		return std::tuple<>();
 	}
 
 	constexpr bool strongCall(const Store&, const Store&) const {

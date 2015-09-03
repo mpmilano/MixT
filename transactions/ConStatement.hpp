@@ -110,3 +110,11 @@ auto call_all_strong(Store &cache, Store &st, const std::tuple<CS...> &t){
 	assert(check);
 	return check;
 }
+
+template<typename... T>
+auto stmt_handles(const std::tuple<T...> &cs){
+	return fold(cs,[](const auto &e, const auto &acc){
+			return std::tuple_cat(e.handles(),acc);
+		},
+		std::tuple<>());
+}

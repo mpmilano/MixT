@@ -1,5 +1,6 @@
 #pragma once
 #include "utils.hpp"
+#include "type_utils.hpp"
 #include "SerializationMacros.hpp"
 #include "macro_utils.hpp"
 #include <vector>
@@ -12,13 +13,9 @@ struct ByteRepresentable {
 	//virtual static T* from_bytes(char *v) const  = 0;
 };
 
-int to_bytes(const ByteRepresentable& b, char* v){
-	return b.to_bytes(v);
-}
+int to_bytes(const ByteRepresentable& b, char* v);
 
-int bytes_size(const ByteRepresentable& b){
-	return b.bytes_size();
-}
+int bytes_size(const ByteRepresentable& b);
 
 template<typename T, restrict(std::is_trivially_copyable<T>::value)>
 int to_bytes(const T &t, char* v){
@@ -82,11 +79,11 @@ template<typename T>
 std::unique_ptr<type_check<is_set,T> > from_bytes(char* _v) {
 	int size = ((int*)_v)[0];
 	char* v = _v + sizeof(int);
-	auto* r = new std::set<typename T::key_type>();
+	auto r = std::make_unique<std::set<typename T::key_type> >();
 	for (int i = 0; i < size; ++i){
 		auto e = from_bytes<typename T::key_type>(v);
 		v += bytes_size(*e);
 		r->insert(*e);
 	}
-	return std::unique_ptr<std::set<typename T::key_type> >{r};
+	return std::move(r);
 }

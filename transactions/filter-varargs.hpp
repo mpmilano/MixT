@@ -16,3 +16,9 @@ struct filter<Predicate, Head, Tail...>
 										   >::type;
 };
 
+
+template <template<typename> class Predicate, typename Head, typename... Tail>
+struct filter<Predicate, std::tuple<Head, Tail...> > : filter<Predicate,Head,Tail...> {};
+
+template <template<typename> class Predicate, typename Tail>
+using filter_t = filter<Predicate,Tail>; 

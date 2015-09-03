@@ -21,6 +21,11 @@ struct ConExpr : public ConStatement<l> {
 template<Level l>
 struct DummyConExpr : public ConExpr<void,l> {
 
+	std::tuple<> handles() const {
+		static std::tuple<> ret;
+		return ret;
+	}
+	
 	void strongCall(const Store&, const Store &) const {}
 
 	void causalCall(const Store&, const Store &) const {}	
@@ -28,7 +33,7 @@ struct DummyConExpr : public ConExpr<void,l> {
 };
 
 template<typename T, Level l>
-constexpr bool is_ConExpr_f(const ConExpr<T,l>*){
+constexpr bool is_ConExpr_f(ConExpr<T,l> const * const){
 	return true;
 }
 
@@ -52,34 +57,35 @@ run_ast_strong(const Store &, const Store&, const T& e) {
 	return e;
 }
 
-template<Level l, HandleAccess ha, typename T>
-void markInTransaction(Store &s, const Handle<l,ha,T> &h){
-	auto *ptr = dynamic_cast<DataStore<l>* >(&(h.remote_object().store()));
-	assert(ptr);
-	h.clone().t.markInTransaction(*ptr);
-	s.insert(-1,&(h.clone().t));
-}
-
 template<HandleAccess ha, typename T>
 void run_ast_strong(Store &c, const Store&, const Handle<Level::causal,ha,T>& h) {
-	markInTransaction(c,h);
 	//I think that this one, at least, is okay.
 }
 //*/
 template<HandleAccess ha, typename T>
 Handle<Level::strong,ha,T> run_ast_strong(Store &c, const Store&, const Handle<Level::strong,ha,T>& h) {
-	markInTransaction(c,h);
 	return h;
 }
 
 
 template<HandleAccess ha, typename T>
 Handle<Level::strong,ha,T> run_ast_causal(Store &cache, const Store &s, const Handle<Level::strong,ha,T>& h) {
-	markInTransaction(cache,h);
 	struct LocalObject : public RemoteObject<T> {
 		const T t;
 		GDataStore &st;
-		LocalObject(const T& t, GDataStore &st):t(t),st(st){}
+		TransactionContext *tc;
+		LocalObject(const T& t, GDataStore &st, TransactionContext* tc)
+			:t(t),st(st),tc(tc){}
+
+		TransactionContext* currentTransactionContext(){
+			assert(false && "you probably didn't mean to call this");
+			return tc;
+		}
+
+		void setTransactionContext(TransactionContext* tc){
+			assert(false && "you probably didn't mean to call this");
+			this->tc = tc;
+		}
 		
 		const T& get() const {return t;}
 		void put(const T&) {
@@ -106,7 +112,11 @@ Handle<Level::strong,ha,T> run_ast_causal(Store &cache, const Store &s, const Ha
 		}
 		
 	};
-	return Handle<Level::strong,ha,T>{std::shared_ptr<LocalObject>{new LocalObject{cache.get<T>(h.uid),h.remote_object().store()}}};
+	return Handle<Level::strong,ha,T>{
+		std::shared_ptr<LocalObject>{
+			new LocalObject{cache.get<T>(h.uid),
+					h.remote_object().store(),
+					h.remote_object().currentTransactionContext()}}};
 	//TODO: need to cache this at the Transaction level!
 	//TODO: need to ensure operations over strong handles
 	//do not depend on causal data! (we probably already do this, but check!)
@@ -116,7 +126,6 @@ Handle<Level::strong,ha,T> run_ast_causal(Store &cache, const Store &s, const Ha
 
 template<HandleAccess ha, typename T>
 Handle<Level::causal,ha,T> run_ast_causal(Store &c, const Store &, const Handle<Level::causal,ha,T>& t) {
-	markInTransaction(c,t);
 	return t;
 }
 //*/
@@ -193,3 +202,27 @@ struct contains_temporary<id,int> : std::false_type {};
 template<unsigned long long id>
 struct contains_temporary<id,bool> : std::false_type {};
 
+template<Level l, HandleAccess ha, typename T>
+auto handles(const Handle<l,ha,T>& h) {
+	return std::make_tuple(h);
+}
+
+template<typename T>
+std::enable_if_t<std::is_scalar<T>::value, std::tuple<> > handles(const T&){
+	return std::tuple<>();
+}
+
+
+template<typename T, restrict(is_ConExpr<T>::value && !std::is_scalar<T>::value)>
+auto handles(const T &e){
+	return e.handles();
+}
+
+template<typename... T>
+auto handles(const std::tuple<T...> &params){
+	return fold(params,
+				[](const auto &e, const auto &acc){
+					return std::tuple_cat(::handles(e),acc);
+				}
+				,std::tuple<>());
+}

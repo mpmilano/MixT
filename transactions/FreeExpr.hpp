@@ -67,6 +67,10 @@ struct FreeExpr : public ConExpr<T, min_level<Exprs...>::value > {
 			 })
 		{}
 
+	auto handles() const {
+		return ::handles(params);
+	}
+
 	auto strongCall(Store &cache, const Store &heap) const{
 		std::cout << "strong call" << std::endl;
 		std::integral_constant<bool,level::value==Level::strong>* choice = nullptr;

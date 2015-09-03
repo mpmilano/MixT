@@ -5,31 +5,7 @@
 #include "Transaction_macros.hpp"
 #include "Tracker.hpp"
 #include "DataStore.hpp"
-
-//implementing the tracker bits for transactions here!  Woo code!
-
-void Tracker::markInTransaction(DataStore<Level::strong>& ds) {
-	if (!ds.in_transaction()) ds.begin_transaction();
-	strongTransStore = &ds;
-	//TODO - impl
-}
-
-void Tracker::markInTransaction(DataStore<Level::causal>& ds) {
-	if (!ds.in_transaction()) ds.begin_transaction();
-	causalTransStore = &ds;
-	//TODO - impl
-}
-
-DataStore<Level::strong>* Tracker::strongStoreInTransaction() {
-	//TODO - impl
-	return strongTransStore;
-}
-
-DataStore<Level::causal>* Tracker::causalStoreInTransaction() {
-	//TODO - impl
-	return causalTransStore;
-}
-
+#include "TransactionBasics.hpp"
 
 struct Transaction{
 	const std::function<bool (Store &)> action;
@@ -39,29 +15,93 @@ struct Transaction{
 	Transaction(const TransactionBuilder<Cmds> &s):
 		action([s](Store &st) -> bool{
 
-				//We're just having the handles enter transaction when
-				//they're encountered in the AST crawl.
-				//We're also assuming that operations behave normally
-				//while we're doing this.
 
-				//all of which means all we need to do here is coordinate
-				//the commit.
+				//We're assuming that operations behave normally,
+				//By which we mean if they need to handle in-a-transaction
+				//in a special way, they do that for themselves.
+
+				//note: eiger only support read-only or write-only
+				//transactions.  which for the moment means we will
+				//mark as read/write only the first time we read/write,
+				//and just barf if we wind up mixing.
+
+				//TODO: encode that semantics in the type system.
+
+
+				std::map<Level,
+						 std::map< GDataStore*,
+								   std::unique_ptr<TransactionContext> > > tc;
+
+				std::map<GeneralRemoteObject*, TransactionContext*> old_ctx;
+
+				auto tc_without = [&](auto* sto){
+					return
+					(tc.count(sto->level) == 0) ||
+					tc.at(sto->level).count(sto) == 0;
+				};
+
+				{
+				bool any = false;
+
+				//TODO: it'd probably be better to keep the association of RemoteObject
+				//to TransactionContext here, and to pass the transactionContext
+				//in when performing operations inside a transaction
+				
+				//this loop finds all stores, calls begin_transaction on them exactly once,
+				//and sets their participating RemoteObjects' current transaction pointers.
+				foreach(s.curr, [&](const auto &e){
+						std::cout << "looking for handles here: " << e << std::endl;
+						foreach(e.handles(),[&](const auto &h){
+								any = true;
+								auto *sto = &h._ro->store();
+								auto *ro = h._ro.get();
+								old_ctx[ro] = ro->currentTransactionContext();
+								if (tc_without(sto)){
+									tc[sto->level]
+										.emplace(sto, sto->begin_transaction());
+								}
+								assert(!tc_without(sto));
+								ro->setTransactionContext(
+									tc.at(sto->level).at(sto).get());
+							});});
+				assert(any && "no handles traversed");
+				}
 				
 				Store cache;
 				call_all_strong(cache,st,s.curr);
 				call_all_causal(cache,st,s.curr);
 
-				//I hope we remembered to put it in there!
-				Tracker &t = *cache.get<Tracker*>(-1);
-				DataStore<Level::strong> *ss = t.strongStoreInTransaction();
-				DataStore<Level::causal> *cs = t.causalStoreInTransaction();
+				//restore the old transaction pointers
+				for (auto &p : old_ctx){
+					p.first->setTransactionContext(p.second);
+				}
 
-				//TODO: fault-tolerance
-				if (ss) ss->end_transaction();
-				if (cs) cs->end_transaction();
 
-				//TODO: error propogation
-				return true;
+				//todo: REPLICATE THIS COMMIT
+				bool ret = true;
+				{
+					bool any = false;
+					if (tc.count(Level::strong) != 0){
+						any = true;
+						for (auto &p : tc.at(Level::strong)){
+							ret = ret && p.second->commit();
+						}
+					}
+					
+					//causal commits definitionally can't fail!
+					if (ret && tc.count(Level::causal) != 0){
+						any = true;
+						for (auto &p : tc.at(Level::causal)){
+							ret = ret && p.second->commit();
+						}
+					}
+					
+
+					assert(any);
+				}
+				assert(ret);
+				//TODO: exception here instead of boolean?
+				return ret;
 				
 			}),
 		print([s](std::ostream &os) -> std::ostream& {
