@@ -83,7 +83,7 @@ int main(){
 	}
 
 	SQLStore::SQLObject<int> i{
-		SQLStore::GSQLObject{0},
+		SQLStore::GSQLObject{std::vector<char>()},
 			std::unique_ptr<int>()};
 
 	list_ex::main();

@@ -3,6 +3,7 @@
 #include "Operation.hpp"
 #include "DataStore.hpp"
 #include <memory>
+#include <vector>
 
 /**
    Information: We are assuming an SQL store which has already been configured
@@ -18,13 +19,13 @@ struct SQLStore : public DataStore<Level::strong> {
 private:
 	
 	SQLStore();
-
+public:
+	
 	struct SQLTransaction;
 
 	struct SQLConnection;
-	using SQLConnection_t = std::unique_ptr<SQLConnection>;
-	
-public:
+	using SQLConnection_t = std::unique_ptr<SQLConnection>;	
+
 	SQLConnection_t default_connection;
 	
 	SQLStore(const SQLStore&) = delete;
@@ -38,12 +39,11 @@ public:
 	struct GSQLObject : public GeneralRemoteObject, public ByteRepresentable {
 		struct Internals;
 		Internals* i;
-		GSQLObject(int size);
+		GSQLObject(const std::vector<char> &c);
 		GSQLObject(const GSQLObject&) = delete;
 		GSQLObject(GSQLObject&&);
 		void save();
 		char* load();
-		char* update_cached();
 		char* obj_buffer();
 
 		//required by GeneralRemoteObject
@@ -59,7 +59,6 @@ public:
 		static GSQLObject from_bytes(char* v);
 		virtual ~GSQLObject();
 	};
-	
 
 	template<typename T>
 	struct SQLObject : public RemoteObject<T> {
@@ -70,16 +69,9 @@ public:
 			gso(std::move(gs)),t(std::move(t)){}
 		
 		const T& get() {
-			//TODO: get really isn't const anywhere.
-			//We should remove that designator.
-
 			char * res = nullptr;
-			if (t){
-				res = gso.update_cached();
-			}
-			else{
-				res = gso.load();
-			}
+			res = gso.load();
+			assert(res);
 			if (res != nullptr){
 				t = ::from_bytes<T>(res);
 			}

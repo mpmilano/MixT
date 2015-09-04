@@ -54,29 +54,50 @@ unique_ptr<TransactionContext> SQLStore::begin_transaction() {
 	
 }
 
-struct SQLStore::GSQLObject::Internals{
-	char* buf1;
-	char* buf2;
-	SQLTransaction* curr_ctx;
-};
+namespace {
+	unique_ptr<SQLStore::SQLTransaction> small_transaction(SQLStore &store) {
+		unique_ptr<SQLStore::SQLTransaction> owner
+			((SQLStore::SQLTransaction*)store.begin_transaction().release());
+		owner->commit_on_delete = true;
+		return move(owner);
+	}
+}
 
-SQLStore::GSQLObject::GSQLObject(int size)
-	:i((new Internals
-		{(char*) malloc(size),
-				(char*) malloc(size),
-				nullptr
-				})){}
+struct SQLStore::GSQLObject::Internals{
+	const int key;
+	const int size;
+	char* buf1;
+	SQLTransaction* curr_ctx;
+	int vers;
+
+};
 
 
 SQLStore::GSQLObject::GSQLObject(SQLStore::GSQLObject&& gso)
 	:i(gso.i){gso.i = nullptr;}
 
-
+SQLStore::GSQLObject::GSQLObject(const vector<char> &c){
+	int size = c.size();
+	int id = -1;
+	{
+		auto trans = small_transaction(inst());
+		trans->sql_conn.conn.prepare
+			("InitializeBlobData","INSERT INTO BlobStore (data) VALUES ($1)");
+		//DO I need to prepare before I start the trans?
+		binarystring blob(&c.at(0),size);
+		trans->trans.prepared("InitializeBlobData")(blob).exec();
+		result r = trans->trans.exec("select ID from BlobStore where ID = max(ID)");
+		assert(r[0][0].to(id));
+		assert(id != -1);
+	}
+	char* b1 = (char*) malloc(size);
+	memcpy(b1,&c.at(0),size);
+	this->i = new Internals{id,size,b1,nullptr,0};
+}
 
 SQLStore::GSQLObject::~GSQLObject(){
 	if (i){
 		free(i->buf1);
-		free(i->buf2);
 		delete i;
 	}
 }
@@ -102,19 +123,56 @@ GDataStore& SQLStore::GSQLObject::store() {
 	return SQLStore::inst();
 }
 
+namespace{
+	pair<unique_ptr<SQLStore::SQLTransaction>, SQLStore::SQLTransaction*>
+		enter_transaction(SQLStore::GSQLObject& gso){
+		unique_ptr<SQLStore::SQLTransaction> t_owner;
+			//this is always safe; we can't construct any others in here.
+		SQLStore::SQLTransaction *trns =
+			(SQLStore::SQLTransaction *) gso.currentTransactionContext();
+			if (!trns){
+				t_owner = small_transaction(SQLStore::inst());
+				trns = t_owner.get();
+			}
+			return make_pair(move(t_owner),trns);
+	}
+}
+
 void SQLStore::GSQLObject::save(){
 	char *c = obj_buffer();
-	unique_ptr<TransactionContext> t_owner;
-	//this is always safe; we can't construct any others in here.
-	SQLTransaction *trns = (SQLTransaction *) currentTransactionContext();
-	if (!trns){
-		auto ptr = inst().begin_transaction();
-		trns = (SQLTransaction*) ptr.get();
-		t_owner = std::move(ptr);
-		trns->commit_on_delete = true;
+	auto owner = enter_transaction(*this);
+	auto trans = owner.second;
+	int vers = -1;
+	auto r = trans->trans.exec(
+		string("select Version from BlobStore where ID=") + to_string(i->key));
+	assert(r[0][0].to(vers));
+	assert(vers != -1);
+	trans->sql_conn.conn.prepare
+		("UpdateBlobData",
+		 string(
+		  "update BlobStore set data=$1,Version=$2 where ID=" + to_string(i->key)));
+	binarystring blob(c,i->size);
+	trans->trans.prepared("UpdateBlobData")(blob)(vers).exec();
+	i->vers = vers;
+}
+
+char* SQLStore::GSQLObject::load(){
+	char* c = obj_buffer();
+	auto owner = enter_transaction(*this);
+	auto trans = owner.second;
+	int store_vers = -1;
+	auto r = trans->trans.exec(
+		string("select Version from BlobStore where ID=") + to_string(i->key));
+	assert(r[0][0].to(store_vers));
+	assert(store_vers != -1);
+	if (store_vers == i->vers) return c;
+	else{
+		i->vers = store_vers;
+		result r = trans->trans.exec
+			(string("select data from BlobStore where ID = ") + to_string(i->key));
+		binarystring bs(r[0][0]);
+		assert(bs.size() == i->size);
+		memcpy(c,bs.data(),i->size);
+		return c;
 	}
-	if (/*brand-new-store*/ true)
-		trns->trans.exec("insert into BlobStore values (?)");
-	else trns->trans.exec("update BlobStore set ?=? where ?=?");
-	//do stuff, transaction commits on destruction
 }
