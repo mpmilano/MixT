@@ -37,8 +37,11 @@ public:
 	using id = std::integral_constant<int,2>;
 	
 	struct GSQLObject : public GeneralRemoteObject, public ByteRepresentable {
+	private:
 		struct Internals;
 		Internals* i;
+		GSQLObject(int id, int size);
+	public:
 		GSQLObject(const std::vector<char> &c);
 		GSQLObject(const GSQLObject&) = delete;
 		GSQLObject(GSQLObject&&);
@@ -52,9 +55,9 @@ public:
 		bool isValid() const;
 		const GDataStore& store() const;
 		GDataStore& store();
-		int bytes_size() const;
 
 		//required by ByteRepresentable
+		int bytes_size() const;
 		int to_bytes(char*) const;
 		static GSQLObject from_bytes(char* v);
 		virtual ~GSQLObject();
