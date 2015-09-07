@@ -88,7 +88,4 @@ auto make_while_begin(const Cons &s){
 	return r;
 }
 
-const WhileEnd& make_while_end(){
-	static constexpr WhileEnd e;
-	return e;
-}
+const WhileEnd& make_while_end();

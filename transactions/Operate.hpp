@@ -1,7 +1,5 @@
 #pragma once
 
-bool should_print_operate_things = false;
-
 #include "Operation.hpp"
 #include "Operate_macros.hpp"
 #include "ConExpr.hpp"
@@ -30,7 +28,6 @@ struct Operate : ConStatement<l> {
 	}
 
 	auto strongCall(Store &cache, const Store &s) const {
-		should_print_operate_things = true;
 		std::integral_constant<bool,l==Level::strong>* choice = nullptr;
 		return strongCall(cache,s,choice);
 	}
@@ -170,8 +167,6 @@ struct PreOp<std::tuple<J...> > {
 									  std::declval<run_result<shared_deref<decltype(args)> > >()...
 									  )),decltype(std::make_tuple(args...)) >
 			([=](const Store &c) {
-				AtScopeEnd ase{[](){should_print_operate_things = false;}};
-				ignore(ase);
 				assert(fold(*t_ptr,[](const auto &e, bool acc){return e.built_well || acc;},false));
 				std::pair<bool,bool> result =
 					fold(*t_ptr,[&](const auto &e, const std::pair<bool,bool> &acc){

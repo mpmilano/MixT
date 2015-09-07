@@ -6,6 +6,7 @@
 #include "Tracker.hpp"
 #include "DataStore.hpp"
 #include "TransactionBasics.hpp"
+#include "TransactionBuilder.hpp"
 
 struct Transaction{
 	const std::function<bool (Store &)> action;

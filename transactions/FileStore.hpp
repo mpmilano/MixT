@@ -13,6 +13,7 @@
 #include <cstring>
 #include <boost/filesystem.hpp>
 #include <boost/serialization/vector.hpp>
+HACKY_PREAMBLE
 
 template<Level l>
 struct FileStore : public DataStore<l> {

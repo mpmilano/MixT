@@ -6,9 +6,12 @@
 using namespace pqxx;
 using namespace std;
 
+struct SQLTransaction;
 
 struct SQLStore::SQLConnection {
 	bool in_trans = false;
+	SQLTransaction* current_trans = nullptr;
+	
 	//hoping specifying nothing means
 	//env will be used.
 	connection conn;
@@ -36,6 +39,7 @@ public:
 	SQLTransaction(SQLStore::SQLConnection& c):sql_conn(c),trans(sql_conn.conn){
 		assert(!sql_conn.in_trans);
 		sql_conn.in_trans = true;
+		sql_conn.current_trans = this;
 		}
 	
 	SQLTransaction(const SQLTransaction&) = delete;
@@ -68,6 +72,7 @@ public:
 	
 	bool commit() {
 		sql_conn.in_trans = false;
+		sql_conn.current_trans = nullptr;
 		trans.commit();
 		return true;
 	}
@@ -87,6 +92,7 @@ public:
 			commit();
 		}
 		else sql_conn.in_trans = false;
+		sql_conn.current_trans = nullptr;
 		for (auto gso : objs)
 			if (gso->currentTransactionContext() == this)
 				gso->setTransactionContext(nullptr);
@@ -150,6 +156,24 @@ struct SQLStore::GSQLObject::Internals{
 
 };
 
+namespace{
+	pair<unique_ptr<SQLTransaction>, SQLTransaction*>
+		enter_transaction(SQLStore::GSQLObject& gso){
+		unique_ptr<SQLTransaction> t_owner;
+			//this is always safe; we can't construct any others in here.
+		SQLTransaction *trns =
+			(SQLTransaction *) gso.currentTransactionContext();
+		if (!trns){
+			if (((SQLStore&)gso.store()).default_connection->in_trans == false){
+				t_owner = small_transaction(SQLStore::inst());
+				trns = t_owner.get();
+			}
+			else trns = ((SQLStore&)gso.store()).default_connection->current_trans;
+		}
+		return make_pair(move(t_owner),trns);
+	}
+}
+
 
 SQLStore::GSQLObject::GSQLObject(SQLStore::GSQLObject&& gso)
 	:i(gso.i){gso.i = nullptr;}
@@ -158,7 +182,10 @@ SQLStore::GSQLObject::GSQLObject(const vector<char> &c){
 	int size = c.size();
 	int id = -1;
 	{
-		auto trans = small_transaction(inst());
+
+		this->i = nullptr;
+		auto trans_owner = enter_transaction(*this);
+		auto *trans = trans_owner.second;
 		
 		binarystring blob(&c.at(0),size);
 		trans->prepared("InitializeBlobData",
@@ -202,7 +229,9 @@ void SQLStore::GSQLObject::setTransactionContext(TransactionContext* tc){
 }
 
 TransactionContext* SQLStore::GSQLObject::currentTransactionContext(){
-	return i->curr_ctx;
+	if (i)
+		return i->curr_ctx;
+	else return nullptr;
 }
 
 const GDataStore& SQLStore::GSQLObject::store() const {
@@ -211,21 +240,6 @@ const GDataStore& SQLStore::GSQLObject::store() const {
 
 GDataStore& SQLStore::GSQLObject::store() {
 	return SQLStore::inst();
-}
-
-namespace{
-	pair<unique_ptr<SQLTransaction>, SQLTransaction*>
-		enter_transaction(SQLStore::GSQLObject& gso){
-		unique_ptr<SQLTransaction> t_owner;
-			//this is always safe; we can't construct any others in here.
-		SQLTransaction *trns =
-			(SQLTransaction *) gso.currentTransactionContext();
-		if (!trns){
-			t_owner = small_transaction(SQLStore::inst());
-			trns = t_owner.get();
-		}
-		return make_pair(move(t_owner),trns);
-	}
 }
 
 void SQLStore::GSQLObject::save(){

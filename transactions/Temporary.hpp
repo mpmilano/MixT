@@ -174,9 +174,7 @@ struct RefTemporary : public ConExpr<run_result<T>,l> {
 	RefTemporary(const Temp &t):t(t),name(t.name) {}
 
 	RefTemporary(const RefTemporary& rt):t(rt.t),name(rt.name),id(gensym()){
-		if (should_print_operate_things){
-			assert(false && "Error: don't copy RefTemporaries when in operate scope!");
-		}
+
 	}
 
 	auto handles() const {
@@ -186,9 +184,6 @@ struct RefTemporary : public ConExpr<run_result<T>,l> {
 	auto strongCall(Store &cache, const Store &s) const {
 		//TODO - endorsements should happen somewhere around here, right?
 		//todo: dID I want the level of the expression which assigned the temporary?
-		if (should_print_operate_things){
-			std::cout << "Strong call on Reftemp ID#" << id << std::endl;
-		}
 		std::integral_constant<bool,get_level<Temp>::value==Level::strong>* choice = nullptr;
 		return strongCall(cache, s,choice);
 	}

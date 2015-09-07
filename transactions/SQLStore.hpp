@@ -2,6 +2,7 @@
 
 #include "Operation.hpp"
 #include "DataStore.hpp"
+#include "Transaction.hpp"
 #include <memory>
 #include <vector>
 
@@ -109,6 +110,13 @@ public:
 			return gso.to_bytes(c);
 		}
 	};
+
+	template<typename T>
+	static SQLObject<T>* tryCast(RemoteObject<T>* r) {
+		if(auto *ret = dynamic_cast<SQLObject<T>* >(r))
+			return ret;
+		else throw Transaction::ClassCastException();
+	}
 
 	template<HandleAccess ha, typename T>
 	auto newObject(const T& init){

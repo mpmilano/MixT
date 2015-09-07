@@ -56,8 +56,9 @@ int main() {
 	auto& fss =
 		SQLStore::inst();
 	auto h = WeakCons::build_list(fss,fsc,12,13,14);
-	
-	assert(h.get().val.get() == 12);
+
+	std::cout << h.get().val.get() << std::endl;
+	assert(h.get().val.get() == 14);
 
 	TRANSACTION(
 		let_mutable(hd) = h IN (
@@ -71,7 +72,7 @@ int main() {
 			)
 		);
 	
-	assert(h.get().val.get() == 13);
+	assert(h.get().val.get() == 15);
 	
 	return 0;
 }
