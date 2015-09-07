@@ -49,21 +49,29 @@ struct Transaction{
 				
 				//this loop finds all stores, calls begin_transaction on them exactly once,
 				//and sets their participating RemoteObjects' current transaction pointers.
+
+				std::set<std::shared_ptr<GeneralRemoteObject> > collected_objs;
 				foreach(s.curr, [&](const auto &e){
 						std::cout << "looking for handles here: " << e << std::endl;
 						foreach(e.handles(),[&](const auto &h){
 								any = true;
-								auto *sto = &h._ro->store();
-								auto *ro = h._ro.get();
-								old_ctx[ro] = ro->currentTransactionContext();
-								if (tc_without(sto)){
-									tc[sto->level]
-										.emplace(sto, sto->begin_transaction());
-								}
-								assert(!tc_without(sto));
-								ro->setTransactionContext(
-									tc.at(sto->level).at(sto).get());
+								collected_objs.insert(h._ro);
 							});});
+				
+				for (auto &_ro : collected_objs){
+					auto *sto = &_ro->store();
+					auto *ro = _ro.get();
+					old_ctx[ro] = ro->currentTransactionContext();
+					if (tc_without(sto)){
+						tc[sto->level]
+							.emplace(sto, sto->begin_transaction());
+					}
+					assert(!tc_without(sto));
+					assert(ro->currentTransactionContext() == nullptr);
+					ro->setTransactionContext(
+						tc.at(sto->level).at(sto).get());
+				}
+				
 				assert(any && "no handles traversed");
 				}
 				
@@ -74,6 +82,7 @@ struct Transaction{
 				//restore the old transaction pointers
 				for (auto &p : old_ctx){
 					p.first->setTransactionContext(p.second);
+					assert(p.first->currentTransactionContext() == nullptr);
 				}
 
 
