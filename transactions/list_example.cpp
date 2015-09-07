@@ -54,7 +54,7 @@ int main() {
 	auto &fsc = 
 		FileStore<Level::causal>::filestore_instance();
 	auto& fss =
-		SQLStore::inst();
+		FileStore<Level::strong>::filestore_instance();
 	auto h = WeakCons::build_list(fss,fsc,12,13,14);
 
 	std::cout << h.get().val.get() << std::endl;

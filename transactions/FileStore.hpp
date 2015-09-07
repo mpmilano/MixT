@@ -65,14 +65,15 @@ public:
 
 		bool isValid() const {return true;}
 
-		void setTransactionContext(TransactionContext*) {
+		TransactionContext* currctx = nullptr;
+		
+		void setTransactionContext(TransactionContext* a) {
 			//TODO: do I want transactions here?
+			currctx = a;
 		}
 
 		TransactionContext* currentTransactionContext() {
-			static auto tc = s.begin_transaction();
-			//TODO: do I want transactions here?
-			return tc.get();
+			return currctx;
 		}
 		
 		int to_bytes(char* _v) const {
