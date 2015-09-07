@@ -20,8 +20,6 @@ private:
 	
 	SQLStore();
 public:
-	
-	struct SQLTransaction;
 
 	struct SQLConnection;
 	using SQLConnection_t = std::unique_ptr<SQLConnection>;	
@@ -110,6 +108,18 @@ public:
 			return gso.to_bytes(c);
 		}
 	};
+
+	template<HandleAccess ha, typename T>
+	auto newObject(const T& init){
+		int size = ::bytes_size(init);
+		std::vector<char> v(size);
+		assert(size == ::to_bytes(init,&v[0]));
+		GSQLObject gso(v);
+		return make_handle
+			<Level::strong,ha,T,SQLObject<T> >
+			(std::move(gso),heap_copy(init) );
+	}
+
 	
 	template<typename T>
 	static std::unique_ptr<SQLObject<T> > from_bytes(char* v){
