@@ -139,8 +139,8 @@ struct SQLStore::GSQLObject::Internals{
 			string("select Version from \"BlobStore\" where ID=") + to_string(key))
 		,select_data(string("select data from \"BlobStore\" where ID = ") +
 					 to_string(key))
-		,check_existence(string("select top 1 ID from \"BlobStore\" where ID = ") +
-						 to_string(key))
+		,check_existence(string("select ID from \"BlobStore\" where ID = ") +
+						 to_string(key) + " limit 1")
 		,update_data( string("update \"BlobStore\" set data=$1,Version=$2 where ID=")
 					  + to_string(key)){}
 
