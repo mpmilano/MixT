@@ -14,6 +14,7 @@
 #include "SQLStore.hpp"
 //*/
 #include "Transaction_macros.hpp"
+#include <pqxx/pqxx>
 
 
 
@@ -82,10 +83,17 @@ int main(){
 		std::cerr << "No overload found: " << e.msg << std::endl;
 	}
 
-	SQLStore::SQLObject<int> i{
-		SQLStore::GSQLObject{std::vector<char>()},
-			std::unique_ptr<int>()};
+	using namespace pqxx;
 
-	list_ex::main();
+	try{
+		list_ex::main();
+	}
+	catch(const pqxx_exception &r){
+		std::cerr << "yup, it's that" << std::endl;
+		std::cerr << r.base().what() << std::endl;
+	}
+	catch(...){
+		std::cerr << " a non-pqxx exception fired" << std::endl;
+	}
 
 }

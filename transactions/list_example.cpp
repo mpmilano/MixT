@@ -11,6 +11,7 @@
 #include "Transaction_macros.hpp"
 #include "FreeExpr_macros.hpp"
 #include "Operate_macros.hpp"
+#include "SQLStore.hpp"
 #include "FinalHeader.hpp" //*/
 #include "SerializationMacros.hpp"
 
@@ -41,7 +42,7 @@ int main() {
 	auto &fsc = 
 		FileStore<Level::causal>::filestore_instance();
 	auto& fss =
-		FileStore<Level::strong>::filestore_instance();
+		SQLStore::inst();
 	
 	Handle<Level::strong, HandleAccess::all, WeakCons> h0;
 	WeakCons initial{fsc.newObject<HandleAccess::all,int>(12),h0};
