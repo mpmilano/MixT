@@ -31,6 +31,7 @@ public:
 	}
 
 	using id = std::integral_constant<int, (int) l>;
+	int ds_id() const { return id::value; }
 	
 	template<typename T>
 	struct FSObject : public RemoteObject<T> {
@@ -254,6 +255,7 @@ public:
 	std::unique_ptr<TransactionContext> begin_transaction(){
 		struct FSContext : public TransactionContext{
 			bool commit() { return true; }
+			GDataStore& store() {return filestore_instance();}
 		};
 		//TODO: do I really want to implement transactions over the FS?
 		return std::unique_ptr<TransactionContext>(new FSContext());

@@ -33,6 +33,7 @@ public:
 	std::unique_ptr<TransactionContext> begin_transaction();
 	
 	using id = std::integral_constant<int,2>;
+	int ds_id() const { return id::value; }
 	
 	struct GSQLObject : public GeneralRemoteObject, public ByteRepresentable {
 	private:

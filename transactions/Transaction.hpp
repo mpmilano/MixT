@@ -68,6 +68,8 @@ struct Transaction{
 					}
 					assert(!tc_without(sto));
 					assert(ro->currentTransactionContext() == nullptr);
+					assert(&ro->store() == sto);
+					assert(sto == &tc.at(sto->level).at(sto)->store());
 					ro->setTransactionContext(
 						tc.at(sto->level).at(sto).get());
 				}

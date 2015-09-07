@@ -72,6 +72,10 @@ public:
 		return true;
 	}
 
+	GDataStore& store() {
+		return SQLStore::inst();
+	}
+
 	list<SQLStore::GSQLObject*> objs;
 	void add_obj(SQLStore::GSQLObject* gso){
 		objs.push_back(gso);
@@ -185,6 +189,10 @@ SQLStore::GSQLObject::~GSQLObject(){
 
 void SQLStore::GSQLObject::setTransactionContext(TransactionContext* tc){
 	assert(i->curr_ctx == nullptr || tc == nullptr);
+	if (tc == nullptr) {
+		i->curr_ctx = nullptr;
+		return;
+	}
 	//we can't support nested transactions right now,
 	//so it's really quite bad if there is already a transactions context here
 	if (auto* ptr = dynamic_cast<SQLTransaction*>(tc)){
