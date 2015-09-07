@@ -22,6 +22,8 @@ std::unique_ptr<RemoteObject<T> > RemoteObject<T>::from_bytes(char* _v)
 				}
 				else return acc;
 			},nullptr);
+	if (!ret) std::cerr << "Error: deserialized item matches no id: "
+						<< read_id << std::endl;
 	assert(ret);
 	assert(ret.unique());
 	std::get_deleter<release_deleter<RemoteObject<T> > >(ret)->release();

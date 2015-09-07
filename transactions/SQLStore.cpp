@@ -270,14 +270,16 @@ char* SQLStore::GSQLObject::obj_buffer() {
 }
 
 int SQLStore::GSQLObject::bytes_size() const {
-	return sizeof(int) + sizeof(int);
+	return sizeof(int)*3;
 }
 
 int SQLStore::GSQLObject::to_bytes(char* c) const {
+	//TODO: this is not symmetric! That is a bad design! Bad!
 	int* arr = (int*)c;
-	arr[0] = i->key;
-	arr[1] = i->size;
-	return sizeof(int) + sizeof(int);
+	arr[0] = id::value;
+	arr[1] = i->key;
+	arr[2] = i->size;
+	return this->bytes_size();
 }
 
 SQLStore::GSQLObject SQLStore::GSQLObject::from_bytes(char *v){

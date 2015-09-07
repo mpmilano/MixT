@@ -22,8 +22,11 @@ FINALIZE_OPERATION(Increment, RemoteObject<T>*);
 
 struct WeakCons :
 	public ByteRepresentable {
-	Handle<Level::causal, HandleAccess::all, int> val;
-	Handle<Level::strong, HandleAccess::all, WeakCons> next;
+	using WeakCons_r = Handle<Level::strong, HandleAccess::all, WeakCons>;
+	using WeakCons_v = Handle<Level::causal, HandleAccess::all, int>;
+	
+	WeakCons_v val;
+	WeakCons_r next;
 	
 	WeakCons(const decltype(val) *val, const decltype(next) *next)
 		:val(*val),next(*next){
@@ -32,6 +35,15 @@ struct WeakCons :
 
 	WeakCons(const decltype(val) &val, const decltype(next) &next)
 		:val(val),next(next){}
+
+	template<typename Strong, typename Causal, typename... Args>
+	static WeakCons_r build_list(Strong& strong, Causal& causal, const Args & ... args){
+		auto tpl = std::make_tuple(args...);
+		return fold(tpl,[&](const int &e, const auto & acc){
+				WeakCons initial{causal.template newObject<HandleAccess::all,int>(e),acc};
+				return strong.template newObject<HandleAccess::all,WeakCons>(initial);
+			},WeakCons_r());
+	}
 
 	DEFAULT_SERIALIZATION_SUPPORT(WeakCons,val,next)
 	
@@ -43,26 +55,23 @@ int main() {
 		FileStore<Level::causal>::filestore_instance();
 	auto& fss =
 		SQLStore::inst();
+	auto h = WeakCons::build_list(fss,fsc,12,13,14);
 	
-	Handle<Level::strong, HandleAccess::all, WeakCons> h0;
-	WeakCons initial{fsc.newObject<HandleAccess::all,int>(12),h0};
-	Handle<Level::strong, HandleAccess::all, WeakCons> h =
-		fss.newObject<HandleAccess::all, WeakCons>(initial);
-	
-	assert(initial.val.get() == 12);
+	assert(h.get().val.get() == 12);
 
 	TRANSACTION(
 		let_mutable(hd) = h IN (
 			WHILE (isValid(hd)) DO(
 				let_ifValid(tmp) = hd IN (
-					let_ifValid(weak_val) = msg(tmp,val) IN (do_op(Increment,weak_val)),
+					let_ifValid(weak_val) = msg(tmp,val)
+					  IN (do_op(Increment,weak_val)),
 					hd = msg(tmp,next)
 					)
 				)
 			)
 		);
 	
-	assert(initial.val.get() == 13);
+	assert(h.get().val.get() == 13);
 	
 	return 0;
 }
