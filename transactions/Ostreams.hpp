@@ -105,6 +105,21 @@ std::ostream & operator<<(std::ostream &os, const CSConstant<l,i>& c){
 	return os << c.val;
 }
 
+template<typename i1, typename i2>
+std::ostream & operator<<(std::ostream &os, const Sum<i1,i2>& n){
+	return os << n.l << " + " << n.r;
+}
+
+template<typename i1, typename i2>
+std::ostream & operator<<(std::ostream &os, const Equals<i1,i2>& n){
+	return os << n.l << " == " << n.r;
+}
+
+template<typename i1, typename i2>
+std::ostream & operator<<(std::ostream &os, const BinaryOr<i1,i2>& n){
+	return os << n.l << " || " << n.r;
+}
+
 template<typename i2>
 std::ostream & operator<<(std::ostream &os, const Not<i2>& n){
 	return os << "!" << n.v;

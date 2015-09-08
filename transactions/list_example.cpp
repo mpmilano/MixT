@@ -61,8 +61,10 @@ int main() {
 	assert(h.get().val.get() == 14);
 
 	TRANSACTION(
+		let_mutable(bound) = 0 IN (
 		let_mutable(hd) = h IN (
-			WHILE (isValid(hd)) DO(
+			WHILE (isValid(hd) || (bound == 10)) DO(
+				bound = bound + 1,
 				let_ifValid(tmp) = hd IN (
 					let_ifValid(weak_val) = msg(tmp,val)
 					  IN (do_op(Increment,weak_val)),
@@ -70,7 +72,7 @@ int main() {
 					)
 				)
 			)
-		);
+			));
 	
 	assert(h.get().val.get() == 15);
 	

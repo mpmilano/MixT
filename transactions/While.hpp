@@ -52,7 +52,12 @@ struct While : public ConStatement<min_level<Then>::value> {
 
 	bool strongCall(Store &c, Store &s, const std::true_type*,const std::true_type*) const {
 		//nothing causal in this while loop. Do it all at once.
-		while (run_ast_strong(c,s,cond)) call_all_strong(c,s,then);
+		//TODO: remove this.
+		int safety_counter = 0;
+		while (run_ast_strong(c,s,cond)) {
+			call_all_strong(c,s,then);
+			assert(safety_counter++ < 100);
+		}
 
 		//TODO: error propogation;
 		return true;
@@ -64,11 +69,18 @@ struct While : public ConStatement<min_level<Then>::value> {
 		c_old.emplace<std::list<std::unique_ptr<Store> > >(id);
 		
 		auto &store_stack = c_old.get<std::list<std::unique_ptr<Store> > >(id);
-		
-		do {
-			store_stack.emplace_back(std::make_unique<Store>(&c_old));
+
+		int safety_check = 0;
+		store_stack.emplace_back(std::make_unique<Store>(&c_old));
+		assert(store_stack.back().get() != &c_old);
+		while(run_ast_strong(*store_stack.back(),s,cond)) {
 			call_all_strong(*store_stack.back(),s,then);
-		} while(run_ast_strong(*store_stack.back(),s,cond));
+			store_stack.emplace_back(std::make_unique<Store>(&c_old));
+			assert(safety_check++ < 100);
+			assert(store_stack.front().get() != store_stack.back().get());
+		}
+		//there's one too many in here.
+		store_stack.pop_back();
 
 		assert(c_old.contains(id));
 		

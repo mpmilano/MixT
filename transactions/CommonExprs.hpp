@@ -45,6 +45,11 @@ auto wrap_constants(const T &t){
 	return CSConstant<Level::strong,T>{t};
 }
 
+template<typename T, restrict(std::is_scalar<T>::value)>
+auto import(const T& t){
+	return wrap_constants(t);
+}
+
 template<typename T>
 std::enable_if_t<!std::is_scalar<T>::value, T> wrap_constants(const T& t){
 	return t;
@@ -53,6 +58,244 @@ std::enable_if_t<!std::is_scalar<T>::value, T> wrap_constants(const T& t){
 //TODO: figure out why this needs to be here
 template<Level l, typename T>
 struct is_ConExpr<CSConstant<l,T> > : std::true_type {};
+
+template<typename T, typename V>
+struct Sum : public ConExpr<bool, min_level<T,V>::value> {
+
+	static_assert(is_ConExpr<T>::value,"Error: cannot sum non-expression");
+	static_assert(is_ConExpr<V>::value,"Error: cannot sum non-expression");
+
+	const int id = gensym();
+	T l;
+	V r;
+
+	using res_t = decltype((std::declval<run_result<T> >()) +
+						   std::declval<run_result<V> >());
+	
+	Sum(const T& l, const V& r):l(l),r(r){}
+
+	auto handles() const {
+		return std::tuple_cat(::handles(l),::handles(r));
+	}
+
+	auto causalCall(Store& cache, const Store& s) const {
+
+		if (cache.contains(this->id) ) return cache.get<res_t>(this->id);
+		else {
+			cache.insert(this->id, run_ast_causal(cache,s,l)
+						 + run_ast_causal(cache,s,r));
+			return run_ast_causal(cache,s,l) + run_ast_causal(cache,s,r);
+		}
+	}
+	
+	auto strongCall(Store& cache, const Store &s) const {
+		std::integral_constant<bool,min_level<T,V>::value == Level::strong>*
+			choice{nullptr};
+		return strongCall(cache,s,choice);
+	}
+
+	auto strongCall(Store& cache, const Store& s, std::true_type*) const {
+		auto ret = run_ast_strong(cache,s,l) + run_ast_strong(cache,s,r);
+		cache.insert(this->id,ret);
+		return ret;
+	}
+
+	void strongCall(Store &cache, const Store& s, std::false_type*) const {
+		run_ast_strong(cache,s,l);
+		run_ast_strong(cache,s,r);
+	}
+	
+	template<typename a, typename b>
+	friend std::ostream & operator<<(std::ostream &os, const Sum<a,b>&);
+};
+
+template<unsigned long long ID, typename T, typename V>
+auto find_usage(const Sum<T,V> &t){
+	return choose_non_np(find_usage<ID>(t.l),find_usage<ID>(t.r));
+}
+
+
+//TODO: figure out why this needs to be here
+template<typename T, typename V>
+struct is_ConExpr<Sum<T,V> > : std::true_type {};
+
+template<typename T, typename V>
+Sum<T,V> sum(const T& t, const V& v){
+	return Sum<T,V>(t,v);
+}
+
+template<Level l, typename T>
+auto sum(const DummyConExpr<l>& e, const T& t){
+	return t;
+}
+
+template<Level l, typename T>
+auto sum(const T& t, const DummyConExpr<l>& e){
+	return t;
+}
+
+template<typename T, typename V>
+std::enable_if_t<is_ConExpr<T>::value, Sum<T,V> >  operator+(const T &t, const V &v){
+	return sum(t,v);
+}
+
+template<typename T, typename V>
+struct Equals : public ConExpr<bool, min_level<T,V>::value> {
+
+	static_assert(is_ConExpr<T>::value,"Error: cannot equals non-expression");
+	static_assert(is_ConExpr<V>::value,"Error: cannot equals non-expression");
+
+	const int id = gensym();
+	T l;
+	V r;
+
+	using res_t = decltype((std::declval<run_result<T> >()) ==
+						   std::declval<run_result<V> >());
+	
+	Equals(const T& l, const V& r):l(l),r(r){}
+
+	auto handles() const {
+		return std::tuple_cat(::handles(l),::handles(r));
+	}
+
+	auto causalCall(Store& cache, const Store& s) const {
+
+		if (cache.contains(this->id) ) return cache.get<res_t>(this->id);
+		else {
+			cache.insert(this->id, run_ast_causal(cache,s,l)
+						 == run_ast_causal(cache,s,r));
+			return run_ast_causal(cache,s,l) == run_ast_causal(cache,s,r);
+		}
+	}
+	
+	auto strongCall(Store& cache, const Store &s) const {
+		std::integral_constant<bool,min_level<T,V>::value == Level::strong>*
+			choice{nullptr};
+		return strongCall(cache,s,choice);
+	}
+
+	auto strongCall(Store& cache, const Store& s, std::true_type*) const {
+		auto ret = run_ast_strong(cache,s,l) == run_ast_strong(cache,s,r);
+		cache.insert(this->id,ret);
+		return ret;
+	}
+
+	void strongCall(Store &cache, const Store& s, std::false_type*) const {
+		run_ast_strong(cache,s,l);
+		run_ast_strong(cache,s,r);
+	}
+	
+	template<typename a, typename b>
+	friend std::ostream & operator<<(std::ostream &os, const Equals<a,b>&);
+};
+
+template<unsigned long long ID, typename T, typename V>
+auto find_usage(const Equals<T,V> &t){
+	return choose_non_np(find_usage<ID>(t.l),find_usage<ID>(t.r));
+}
+
+
+//TODO: figure out why this needs to be here
+template<typename T, typename V>
+struct is_ConExpr<Equals<T,V> > : std::true_type {};
+
+template<typename T, typename V>
+Equals<T,V> equals(const T& t, const V& v){
+	return Equals<T,V>(t,v);
+}
+
+template<Level l, typename T>
+auto equals(const DummyConExpr<l>& e, const T& t){
+	return t;
+}
+
+template<Level l, typename T>
+auto equals(const T& t, const DummyConExpr<l>& e){
+	return t;
+}
+
+template<typename T, typename V>
+std::enable_if_t<is_ConExpr<T>::value, Equals<T,V> >  operator==(const T &t, const V &v){
+	return equals(t,v);
+}
+
+
+template<typename T, typename V>
+struct BinaryOr : public ConExpr<bool, min_level<T,V>::value> {
+
+	static_assert(is_ConExpr<T>::value,"Error: cannot binor non-expression");
+	static_assert(is_ConExpr<V>::value,"Error: cannot binor non-expression");
+
+	const int id = gensym();
+	T l;
+	V r;
+	BinaryOr(const T& l, const V& r):l(l),r(r){}
+
+	auto handles() const {
+		return std::tuple_cat(::handles(l),::handles(r));
+	}
+
+	bool causalCall(Store& cache, const Store& s) const {
+
+		if (cache.contains(this->id) ) return cache.get<bool>(this->id);
+		else {
+			cache.insert(this->id,run_ast_causal(cache,s,l) ||
+						 run_ast_causal(cache,s,r));
+			return run_ast_causal(cache,s,l) || run_ast_causal(cache,s,r);
+		}
+	}
+	
+	auto strongCall(Store& cache, const Store &s) const {
+		std::integral_constant<bool,min_level<T,V>::value == Level::strong>*
+			choice{nullptr};
+		return strongCall(cache,s,choice);
+	}
+
+	bool strongCall(Store& cache, const Store& s, std::true_type*) const {
+		auto ret = run_ast_strong(cache,s,l) || run_ast_strong(cache,s,r);
+		cache.insert(this->id,ret);
+		return ret;
+	}
+
+	void strongCall(Store &cache, const Store& s, std::false_type*) const {
+		run_ast_strong(cache,s,l);
+		run_ast_strong(cache,s,r);
+	}
+	
+	template<typename a, typename b>
+	friend std::ostream & operator<<(std::ostream &os, const BinaryOr<a,b>&);
+};
+
+template<unsigned long long ID, typename T, typename V>
+auto find_usage(const BinaryOr<T,V> &t){
+	return choose_non_np(find_usage<ID>(t.l),find_usage<ID>(t.r));
+}
+
+
+//TODO: figure out why this needs to be here
+template<typename T, typename V>
+struct is_ConExpr<BinaryOr<T,V> > : std::true_type {};
+
+template<typename T, typename V>
+BinaryOr<T,V> binor(const T& t, const V& v){
+	return BinaryOr<T,V>(t,v);
+}
+
+template<Level l, typename T>
+auto binor(const DummyConExpr<l>& e, const T& t){
+	return t;
+}
+
+template<Level l, typename T>
+auto binor(const T& t, const DummyConExpr<l>& e){
+	return t;
+}
+
+template<typename T, typename V>
+std::enable_if_t<is_ConExpr<T>::value, BinaryOr<T,V> >  operator||(const T &t, const V &v){
+	return binor(t,v);
+}
+
 
 template<typename T>
 struct Not : public ConExpr<bool, get_level<T>::value> {
