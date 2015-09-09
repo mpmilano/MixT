@@ -34,6 +34,9 @@ struct While : public ConStatement<min_level<Then>::value> {
 			while_concept(Cond,Then);
 			while_concept_2(Cond,Then);
 		}
+	
+	While(const While& w)
+		:cond(w.cond),then(w.then){}
 
 	auto handles() const {
 		return std::tuple_cat(::handles(cond), stmt_handles(then));
@@ -54,29 +57,30 @@ struct While : public ConStatement<min_level<Then>::value> {
 		//nothing causal in this while loop. Do it all at once.
 		//TODO: remove this.
 		int safety_counter = 0;
-		while (run_ast_strong(c,s,cond)) {
+		auto new_cache = std::make_unique<Store>(nullptr);
+		while (run_ast_strong(new_cache,s,cond)) {
 			call_all_strong(c,s,then);
 			assert(safety_counter++ < 100);
+			new_cache = std::make_unique<Store>(nullptr);
 		}
 
 		//TODO: error propogation;
 		return true;
 	}
 
-	bool strongCall(Store &c_old, Store &s, const std::true_type*, const std::false_type*) const {
+	bool strongCall(Store &c_old_mut, Store &s, const std::true_type*, const std::false_type*) const {
 		//the "hard" case, if you will. a strong condition, but some causal statements inside.
 		std::cout << "in the hard case (" << this->id << ")" << std::endl;
-		c_old.emplace<std::list<std::unique_ptr<Store> > >(id);
+		c_old_mut.emplace<std::list<std::unique_ptr<Store> > >(id);
+		const Store& c_old = c_old_mut;
 		
 		auto &store_stack = c_old.get<std::list<std::unique_ptr<Store> > >(id);
 
-		int safety_check = 0;
-		store_stack.emplace_back(std::make_unique<Store>(&c_old));
+		store_stack.emplace_back(std::make_unique<Store>(nullptr));
 		assert(store_stack.back().get() != &c_old);
 		while(run_ast_strong(*store_stack.back(),s,cond)) {
 			call_all_strong(*store_stack.back(),s,then);
-			store_stack.emplace_back(std::make_unique<Store>(&c_old));
-			assert(safety_check++ < 100);
+			store_stack.emplace_back(std::make_unique<Store>(nullptr));
 			assert(store_stack.front().get() != store_stack.back().get());
 		}
 		//there's one too many in here.

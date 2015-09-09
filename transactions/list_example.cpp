@@ -1,5 +1,5 @@
 
-
+#include <sstream>
 #include "IfBuilder.hpp"
 #include "TransactionBuilder.hpp"
 #include "Transaction.hpp"
@@ -11,6 +11,8 @@
 #include "Transaction_macros.hpp"
 #include "FreeExpr_macros.hpp"
 #include "Operate_macros.hpp"
+#include "Print.hpp"
+#include "Massert.hpp"
 #include "SQLStore.hpp"
 #include "FinalHeader.hpp" //*/
 #include "SerializationMacros.hpp"
@@ -45,9 +47,26 @@ struct WeakCons :
 			},WeakCons_r());
 	}
 
-	DEFAULT_SERIALIZATION_SUPPORT(WeakCons,val,next)
-	
+	bool operator==(WeakCons wc) {
+		std::stringstream ss1;
+		std::stringstream ss2;
+		ss1 << val << next;
+		ss2 << wc.val << wc.next;
+		return ss1.str() == ss2.str();
+	}
+
+	bool equals(WeakCons wc) const {
+		WeakCons copy = *this;
+		return copy == wc;
+	}
+
+	DEFAULT_SERIALIZATION_SUPPORT(WeakCons,val,next)	
 };
+
+std::ostream & operator<<(std::ostream &os, const WeakCons& wc){
+	return os << "WeakCons{ " << wc.val << ", " << wc.next << "}";
+}
+
 
 int main() {
 
@@ -63,17 +82,34 @@ int main() {
 	TRANSACTION(
 		let_mutable(bound) = 0 IN (
 		let_mutable(hd) = h IN (
-			WHILE (isValid(hd) || (bound == 10)) DO(
+			WHILE (isValid(hd) && (!(bound == 10))) DO(
+				print_str("hd"),
+				print(hd),
 				bound = bound + 1,
+				print_str("bound: "),
+				print(bound),
+				let_mutable(tmp2) = hd IN (
 				let_ifValid(tmp) = hd IN (
-					let_ifValid(weak_val) = msg(tmp,val)
-					  IN (do_op(Increment,weak_val)),
-					hd = msg(tmp,next)
-					)
+					print_str("tmp2, tmp and hd should be the same:"),
+					print(tmp2),
+					print(tmp),
+					print(hd),
+					massert(free_expr(bool,tmp,tmp2,tmp.equals(tmp2))),
+					let_ifValid(weak_val) = msg(tmp,val) IN (
+						print_str("weak_val: "),
+						print(dref(weak_val)),
+						do_op(Increment,weak_val)),
+					hd = msg(tmp,next),
+					print_str("tmp, hd, h (hd should be shorter)"),
+					print(tmp),
+					print(hd),
+					print(h)
+					))
 				)
 			)
 			));
-	
+
+	std::cout << h.get().val.get() << std::endl;
 	assert(h.get().val.get() == 15);
 	
 	return 0;

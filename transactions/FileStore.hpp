@@ -212,9 +212,6 @@ public:
 	static std::unique_ptr<FSObject<T> > from_bytes(char* v) {
 		boost::filesystem::path p(v);
 		assert(boost::filesystem::exists(v));
-		std::cout << "Attempting to deserialize " << v << std::endl;
-		AtScopeEnd ase{[](){std::cout << "success" << std::endl;}};
-		ignore(ase);
 		if (boost::filesystem::is_directory(p)){
 			assert(false && "can't deserialize dirs yet");
 		}

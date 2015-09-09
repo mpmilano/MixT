@@ -43,6 +43,9 @@ struct DeclarationScope : public ConStatement<l>{
 		:name(name),gt(gt),cs(cs){
 	}
 
+	DeclarationScope(const DeclarationScope& ds):
+		name(ds.name),gt(ds.gt),cs(ds.cs){}
+
 	auto handles() const {
 		assert(gt);
 		return std::tuple_cat(
@@ -85,15 +88,19 @@ struct contains_temporary<ID,const T&> : contains_temporary<ID,T> {};
 
 template<unsigned long long id, Level l, typename T, typename CS>
 auto isValid_desugar(Temporary<id,l,T> const * const gt, const CS &cs){
+	//TODO: debugging, remove
+	return cs;
+	/*
 	return std::make_tuple(
 		make_if(
 			make_isValid(
 				RefTemporary<id,l,T,Temporary<id,l,T> >{*gt})
-			, cs, std::make_tuple()));
+				, cs, std::make_tuple())); //*/
 }
 
 template<typename T, typename CS>
 auto isValid_desugar(const std::shared_ptr<const T> &gt, const CS &cs){
+	assert(!gt.unique());
 	return isValid_desugar(gt.get(),cs);
 }
 

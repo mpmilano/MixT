@@ -42,6 +42,7 @@ public:
 	}
 
 	Handle():t(Tracker::global_tracker()) {}
+	Handle(const Handle& h):_ro(h._ro),t(Tracker::global_tracker()){}
 		
 	static constexpr Level level = l;
 	static constexpr HandleAccess ha = HA;

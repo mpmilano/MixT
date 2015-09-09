@@ -11,3 +11,5 @@
 #define free_expr(...) free_expr_IMPL(VA_NARGS(__VA_ARGS__), __VA_ARGS__)
 
 #define msg(a,b) free_expr(decltype(std::declval<run_result<decltype(a)> >().get().b), a, a.b)
+
+#define dref(a) free_expr(typename extract_type<decltype(a)>::type,a,a)

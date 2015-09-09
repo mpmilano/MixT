@@ -7,6 +7,7 @@
 #include "ConStatement.hpp"
 #include "filter-varargs.hpp"
 #include "type_utils.hpp"
+#include "ConExpr.hpp"
 
 //because we don't have a lot of inspection abilities into this function,
 //we only allow write-enabled handles into which *all* read-enabled handles are

@@ -90,7 +90,7 @@ struct TemporaryMutation : public ConStatement<get_level<T>::value> {
 
 	auto strongCall(Store &c, Store &s, std::true_type*) const {
 		typedef typename std::decay<decltype(run_ast_strong(c,s,t))>::type R;
-		s.emplace<R>(store_id,run_ast_strong(c,s,t));
+		s.emplace_ovrt<R>(store_id,run_ast_strong(c,s,t));
 		return true;
 	}
 
@@ -105,7 +105,7 @@ struct TemporaryMutation : public ConStatement<get_level<T>::value> {
 
 	auto causalCall(Store &c, Store &s,std::true_type*) const {
 		typedef typename std::decay<decltype(run_ast_causal(c,s,t))>::type R;
-		s.emplace<R>(store_id,run_ast_causal(c,s,t));
+		s.emplace_ovrt<R>(store_id,run_ast_causal(c,s,t));
 		return true;
 	}
 
@@ -189,8 +189,8 @@ struct RefTemporary : public ConExpr<run_result<T>,l> {
 	}
 
 	auto strongCall(Store &cache, const Store &s, std::true_type*) const {
-		std::cout << "inserting RefTemp " << name << " (" << id<< ") into cache "
-				  << &cache << std::endl;
+		//std::cout << "inserting RefTemp " << name << " (" << id<< ") into cache "
+		//		  << &cache << std::endl;
 		auto ret = call(s, t);
 		cache.insert(id,ret);
 		return ret;

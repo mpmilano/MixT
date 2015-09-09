@@ -104,14 +104,6 @@ template<typename T>
 using shared_deref = typename shared_deref_str<T>::type;
 
 
-template<unsigned long long ID, Level l, typename R, typename... Exprs>
-struct contains_temporary<ID, Operate<l,R,std::tuple<Exprs...> > > : contains_temp_fold<ID,std::tuple<shared_deref<Exprs>...> > {};
-
-template<Level l, typename i, typename E>
-std::ostream & operator<<(std::ostream &os, const Operate<l,i,E>& op){
-	return os << op.name;
-}
-
 template<unsigned long long ID, Level l, typename T, typename Temp>
 auto cached_withfail(const Store& c, const RefTemporary<ID,l,T,Temp> &rt){
 	try {

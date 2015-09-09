@@ -120,6 +120,12 @@ std::ostream & operator<<(std::ostream &os, const BinaryOr<i1,i2>& n){
 	return os << n.l << " || " << n.r;
 }
 
+template<typename i1, typename i2>
+std::ostream & operator<<(std::ostream &os, const BinaryAnd<i1,i2>& n){
+	return os << n.l << " && " << n.r;
+}
+
+
 template<typename i2>
 std::ostream & operator<<(std::ostream &os, const Not<i2>& n){
 	return os << "!" << n.v;
@@ -138,8 +144,12 @@ std::ostream & operator<<(std::ostream &os, const Noop<l>&){
 }
 
 template<Level l, HandleAccess ha, typename T>
-std::ostream & operator<<(std::ostream &os, const Handle<l,ha,T>&){
-	return os << "Handle<" << levelStr<l>() << ">";
+std::ostream & operator<<(std::ostream &os, const Handle<l,ha,T>& h){
+	os << "Handle<" << levelStr<l>() << ">";
+	if (h.isValid()){
+		os << "(" << h.get() << ")";
+	}
+	return os;
 }
 
 template<typename i, typename... E>
@@ -149,3 +159,33 @@ std::ostream & operator<<(std::ostream &os, const FreeExpr<i,E...>& op){
 	return os << ex << "<" << levelStr<FreeExpr<i,E...>::level::value>() << ">";
 }
 
+
+template<typename i>
+std::ostream & operator<<(std::ostream &os, const Print<i>& op){
+	return os << "print " << op.t << std::endl;
+}
+
+template<typename i>
+std::ostream & operator<<(std::ostream &os, const Massert<i>& op){
+	return os << "massert(" << op.t << ")" << std::endl;
+}
+
+
+std::ostream & operator<<(std::ostream &os, const Print_Str& op){
+	return os << "print " << op.t << std::endl;
+}
+
+
+template<Level l, typename i, typename E>
+std::ostream & operator<<(std::ostream &os, const Operate<l,i,E>& op){
+	return os << op.name << "<" << levelStr<l>() << ">";
+}
+
+std::ostream & operator<<(std::ostream &os, Level l){
+	if (l == Level::causal)
+		return os << levelStr<Level::causal>();
+	else if (l == Level::strong)
+		return os << levelStr<Level::strong>();
+	assert(false && "fell through");
+	return os;
+}

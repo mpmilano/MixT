@@ -25,6 +25,7 @@ struct Store {
 	template<typename T>
 	void insert(int i, const T &item) {
 		assert(valid_store);
+		assert(!contains(i));
 		store_impl[i].reset((stored)heap_copy(item).release());
 		assert(contains(i));
 	}
@@ -32,9 +33,16 @@ struct Store {
 	template<typename T, typename... Args>
 	void emplace(int i, Args && ... args){
 		assert(valid_store);
+		assert(!contains(i));
+		emplace_ovrt<T>(i,std::forward<Args>(args)...);
+	}
+
+	template<typename T, typename... Args>
+	void emplace_ovrt(int i, Args && ... args){
+		assert(valid_store);
 		store_impl[i].reset((void**)new T(std::forward<Args>(args)...));
 		assert(contains(i));
-	}
+	}	
 
 #define store_get_impl					  \
 	if (!contains(i) && prev_scope)		  \

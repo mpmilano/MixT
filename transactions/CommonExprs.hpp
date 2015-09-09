@@ -12,6 +12,7 @@ public:
 	const int id = gensym();
 	
 	CSConstant(const T& t):val(t){}
+	CSConstant(const CSConstant& cs):val(cs.val){}
 
 	constexpr T causalCall(Store& cache, const Store&) const {
 		cache.insert(this->id,val);
@@ -73,6 +74,7 @@ struct Sum : public ConExpr<bool, min_level<T,V>::value> {
 						   std::declval<run_result<V> >());
 	
 	Sum(const T& l, const V& r):l(l),r(r){}
+	Sum(const Sum& s):l(s.l),r(s.r){}
 
 	auto handles() const {
 		return std::tuple_cat(::handles(l),::handles(r));
@@ -153,6 +155,7 @@ struct Equals : public ConExpr<bool, min_level<T,V>::value> {
 						   std::declval<run_result<V> >());
 	
 	Equals(const T& l, const V& r):l(l),r(r){}
+	Equals(const Equals& e):l(e.l),r(e.r){}
 
 	auto handles() const {
 		return std::tuple_cat(::handles(l),::handles(r));
@@ -230,6 +233,7 @@ struct BinaryOr : public ConExpr<bool, min_level<T,V>::value> {
 	T l;
 	V r;
 	BinaryOr(const T& l, const V& r):l(l),r(r){}
+	BinaryOr(const BinaryOr& b):l(b.l),r(b.r){}
 
 	auto handles() const {
 		return std::tuple_cat(::handles(l),::handles(r));
@@ -296,6 +300,83 @@ std::enable_if_t<is_ConExpr<T>::value, BinaryOr<T,V> >  operator||(const T &t, c
 	return binor(t,v);
 }
 
+template<typename T, typename V>
+struct BinaryAnd : public ConExpr<bool, min_level<T,V>::value> {
+
+	static_assert(is_ConExpr<T>::value,"Error: cannot binand non-expression");
+	static_assert(is_ConExpr<V>::value,"Error: cannot binand non-expression");
+
+	const int id = gensym();
+	T l;
+	V r;
+	BinaryAnd(const T& l, const V& r):l(l),r(r){}
+	BinaryAnd(const BinaryAnd &ba):l(ba.l),r(ba.r){}
+
+	auto handles() const {
+		return std::tuple_cat(::handles(l),::handles(r));
+	}
+
+	bool causalCall(Store& cache, const Store& s) const {
+
+		if (cache.contains(this->id) ) return cache.get<bool>(this->id);
+		else {
+			cache.insert(this->id,run_ast_causal(cache,s,l) &&
+						 run_ast_causal(cache,s,r));
+			return run_ast_causal(cache,s,l) && run_ast_causal(cache,s,r);
+		}
+	}
+	
+	auto strongCall(Store& cache, const Store &s) const {
+		std::integral_constant<bool,min_level<T,V>::value == Level::strong>*
+			choice{nullptr};
+		return strongCall(cache,s,choice);
+	}
+
+	bool strongCall(Store& cache, const Store& s, std::true_type*) const {
+		auto ret = run_ast_strong(cache,s,l) && run_ast_strong(cache,s,r);
+		cache.insert(this->id,ret);
+		return ret;
+	}
+
+	void strongCall(Store &cache, const Store& s, std::false_type*) const {
+		run_ast_strong(cache,s,l);
+		run_ast_strong(cache,s,r);
+	}
+	
+	template<typename a, typename b>
+	friend std::ostream & operator<<(std::ostream &os, const BinaryAnd<a,b>&);
+};
+
+template<unsigned long long ID, typename T, typename V>
+auto find_usage(const BinaryAnd<T,V> &t){
+	return choose_non_np(find_usage<ID>(t.l),find_usage<ID>(t.r));
+}
+
+
+//TODO: figure out why this needs to be here
+template<typename T, typename V>
+struct is_ConExpr<BinaryAnd<T,V> > : std::true_type {};
+
+template<typename T, typename V>
+BinaryAnd<T,V> binand(const T& t, const V& v){
+	return BinaryAnd<T,V>(t,v);
+}
+
+template<Level l, typename T>
+auto binand(const DummyConExpr<l>& e, const T& t){
+	return t;
+}
+
+template<Level l, typename T>
+auto binand(const T& t, const DummyConExpr<l>& e){
+	return t;
+}
+
+template<typename T, typename V>
+std::enable_if_t<is_ConExpr<T>::value, BinaryAnd<T,V> >  operator&&(const T &t, const V &v){
+	return binand(t,v);
+}
+
 
 template<typename T>
 struct Not : public ConExpr<bool, get_level<T>::value> {
@@ -305,6 +386,7 @@ struct Not : public ConExpr<bool, get_level<T>::value> {
 	const int id = gensym();
 	T v;
 	Not(const T& t):v(t){}
+	Not(const Not& n):v(n.v){}
 
 	auto handles() const {
 		return v.handles();
@@ -378,6 +460,7 @@ struct IsValid : public ConExpr<bool, get_level<T>::value> {
 	const int id = gensym();
 	
 	IsValid(const T &t):t(t){}
+	IsValid(const IsValid &i):t(i.t){}
 
 	auto handles() const {
 		return ::handles(t);
