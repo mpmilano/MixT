@@ -1,6 +1,13 @@
 #pragma once
 #include <string>
 
+//TODO: PRIORITY 1
+//we need to be able to add more levels.
+//this means we need to get rid of ad-hoc level
+//checks which expect something to be exactly causal
+//or strong.  Except when dealing with remote objects,
+//but honestly, it would be nice to do that even there.
+
 enum class Level { causal, strong};
 
 constexpr bool is_strong(Level l){
