@@ -12,7 +12,6 @@
 			const std::string name = #Name;								\
 			OperateImpl(const decltype(a) &a):FindUsages<Arg>(a),		\
 				arg(shared_copy(a)){}									\
-			OperateImpl(const OperateImpl &oi):FindUsages<Arg>(*oi.arg),arg(oi.arg),name(oi.name){} \
 																		\
 			auto handles() const {										\
 				auto ret = ::handles(*arg);								\
@@ -51,8 +50,7 @@
 			OperateImpl(const Arg1 &a, const Arg2 &b):					\
 				FindUsages<Arg1,Arg2>(a,b),								\
 				arg1(shared_copy(a)),arg2(shared_copy(b)){}				\
-			OperateImpl(const OperateImpl &oi)							\
-				:FindUsages<Arg1,Arg2>(*oi.arg1,*oi.arg2),arg1(oi.arg1),arg2(oi.arg2),name(oi.name){} \
+																		\
 																		\
 			auto handles() const {										\
 				auto ret =  std::tuple_cat								\
