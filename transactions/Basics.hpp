@@ -18,6 +18,28 @@ constexpr bool runs_with_causal(Level l){
 	return l == Level::causal;
 }
 
+constexpr Level min_of_levels(){
+	return Level::undef;
+}
+
+template<typename... Levels>
+constexpr Level min_of_levels(Level l, Levels... a){
+	if (l == Level::causal) return l;
+	else return min_of_levels(a...);
+}
+
+constexpr Level max_of_levels(){
+	return Level::undef;
+}
+
+template<typename... Levels>
+constexpr Level max_of_levels(Level l, Levels... a){
+	if (l == Level::strong) return l;
+	else return max_of_levels(a...);
+}
+
+template<Level l>
+using level_constant = std::integral_constant<Level,l>;
 
 
 template<Level l>

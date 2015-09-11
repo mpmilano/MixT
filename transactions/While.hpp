@@ -133,6 +133,13 @@ struct While : public ConStatement<min_level<Then>::value> {
 	
 };
 
+template<typename Cond, typename Then>
+struct chld_min_level<While<Cond,Then> > : level_constant<min_of_levels(get_level<Cond>::value, min_level<Then>::value)> {};
+
+template<typename Cond, typename Then>
+struct chld_max_level<While<Cond,Then> > : level_constant<max_of_levels(get_level<Cond>::value, max_level<Then>::value)> {};
+
+
 template<unsigned long long ID, typename Cond, typename Then>
 auto find_usage(const While<Cond,Then>& _while){
 	return fold(tuple_cons(_while.cond, _while.then),

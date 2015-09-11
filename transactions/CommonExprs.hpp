@@ -110,6 +110,8 @@ struct Sum : public ConExpr<bool, min_level<T,V>::value> {
 	friend std::ostream & operator<<(std::ostream &os, const Sum<a,b>&);
 };
 
+
+
 template<unsigned long long ID, typename T, typename V>
 auto find_usage(const Sum<T,V> &t){
 	return choose_non_np(find_usage<ID>(t.l),find_usage<ID>(t.r));
@@ -489,6 +491,8 @@ struct IsValid : public ConExpr<bool, get_level<T>::value> {
 	template<typename T2>
 	friend std::ostream & operator<<(std::ostream &os, const IsValid<T2>&);
 };
+
+
 
 template<typename T>
 auto make_isValid(const T&t){ return IsValid<T>{t}; }

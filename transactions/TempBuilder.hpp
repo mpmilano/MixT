@@ -77,6 +77,19 @@ struct DeclarationScope : public ConStatement<l>{
 	
 };
 
+template<unsigned long long ID, typename CS, Level l, typename Temp>
+struct chld_min_level<DeclarationScope<ID,CS,l,Temp > > :
+	level_constant<min_of_levels(min_level<Temp>::value, min_level<CS>::value )>{
+	static_assert(l == get_level<Temp>::value ,"assumption bad!");
+};
+
+template<unsigned long long ID, typename CS, Level l, typename Temp>
+struct chld_max_level<DeclarationScope<ID,CS,l,Temp > > :
+	level_constant<max_of_levels(min_level<Temp>::value, max_level<CS>::value )>{
+	static_assert(l == get_level<Temp>::value ,"assumption bad!");
+};
+
+
 template<unsigned long long ID, unsigned long long ID2,
 		 typename CS, Level l, typename Temp>
 struct contains_temporary<ID,DeclarationScope<ID2, CS, l, Temp> >
@@ -149,6 +162,19 @@ public:
 	}
 };
 
+template<unsigned long long ID, typename CS, Level l, typename Temp>
+struct chld_min_level<ImmutDeclarationScope<ID,CS,l,Temp > > :
+	level_constant<min_of_levels(min_level<Temp>::value, min_level<CS>::value )>{
+	static_assert(l == get_level<Temp>::value ,"assumption bad!");
+};
+
+template<unsigned long long ID, typename CS, Level l, typename Temp>
+struct chld_max_level<ImmutDeclarationScope<ID,CS,l,Temp > > :
+	level_constant<max_of_levels(min_level<Temp>::value, max_level<CS>::value )>{
+	static_assert(l == get_level<Temp>::value ,"assumption bad!");
+};
+
+
 template<unsigned long long ID, typename CS, Level l, typename Temp, typename Ptr>
 auto build_ImmutDeclarationScope(const std::string &name, const Ptr &gt, const CS &cs){
 	auto new_cs = isValid_desugar(gt,cs);
@@ -196,6 +222,20 @@ struct FindUsages : public BaseFindUsages {
 	const std::tuple<T...> find_from_here;
 	FindUsages(const T & ... t):find_from_here(std::make_tuple(t...)){}
 };
+
+template<typename... T>
+constexpr Level chld_min_level_f(FindUsages<T...> const * const){
+	return min_level<T...>::value;
+}
+
+//note: find_usages is for single-statements,
+//which in turn have a single level.  This level is
+//the min of its components. In other words, don't recur.
+template<typename... T>
+constexpr Level chld_max_level_f(FindUsages<T...> const * const){
+	return min_level<T...>::value;
+}
+
 
 template<unsigned long long ID, typename T,
 		 restrict(std::is_base_of<BaseFindUsages CMA T>::value)>

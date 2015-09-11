@@ -66,6 +66,12 @@ struct If : public ConStatement<min_level<typename min_level<Then>::type,
 	
 };
 
+template<typename Cond, typename Then, typename Els>
+struct chld_min_level<If<Cond,Then,Els> > : level_constant<min_of_levels(get_level<Cond>::value, min_level<Then>::value, min_level<Els>::value )> {};
+
+template<typename Cond, typename Then, typename Els>
+struct chld_max_level<If<Cond,Then,Els> > : level_constant<max_of_levels(get_level<Cond>::value, max_level<Then>::value, max_level<Els>::value )> {};
+
 template<typename A, typename B, typename C>
 auto make_if(const A &a, const B &b, const C &c){
 	return If<A,B,C>(a,b,c);

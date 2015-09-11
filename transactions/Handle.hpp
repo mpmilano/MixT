@@ -154,6 +154,12 @@ public:
 */
 };
 
+template<Level l, HandleAccess ha, typename T>
+constexpr Level chld_min_level_f(Handle<l,ha,T> const * const){
+	return l;
+}
+
+
 template<unsigned long long, typename>
 struct contains_temporary;
 

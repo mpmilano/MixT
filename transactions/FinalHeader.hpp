@@ -30,3 +30,5 @@ std::unique_ptr<RemoteObject<T> > RemoteObject<T>::from_bytes(char* _v)
 	return std::unique_ptr<RemoteObject<T> >{ret.get()};
 }
 
+
+//TODO: there should be a way to get rid of these.

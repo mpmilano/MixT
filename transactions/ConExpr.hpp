@@ -33,22 +33,42 @@ constexpr Level get_level_f(const ConExpr<T,l>*){
 template<typename T>
 struct get_level : std::integral_constant<Level, get_level_f(mke_p<T>())>::type {};
 
+template<typename T, Level l>
+constexpr Level chld_min_level_f(ConExpr<T,l> const * const){
+	return l;
+}
+
+template<typename T, restrict(std::is_scalar<T>::value)>
+constexpr Level chld_min_level_f(T const * const t){
+	return get_level_f(t);
+}
+
+template<Level l>
+constexpr Level chld_min_level_f(level_constant<l> const * const ){
+	return l;
+}
+
+template<typename T>
+struct chld_min_level : level_constant<chld_min_level_f(mke_p<T>())> {};
+
 template<typename... T>
 struct min_level : std::integral_constant<Level,
-										  (exists((get_level<T>::value == Level::causal)...) ?
+										  (exists((chld_min_level<T>::value == Level::causal)...) ?
 										   Level::causal :
-										   (exists((get_level<T>::value == Level::strong)...) ? Level::strong : Level::undef )
+										   (exists((chld_min_level<T>::value == Level::strong)...) ? Level::strong : Level::undef )
 										   )>::type {};
 
 template<typename... T>
 struct min_level<std::tuple<T...> > : min_level<T...> {};
 
+template<typename T>
+struct chld_max_level : get_level<T>{};
 
 template<typename... T>
 struct max_level : std::integral_constant<Level,
-										  (exists((get_level<T>::value == Level::strong)...) ?
+										  (exists((chld_max_level<T>::value == Level::strong)...) ?
 										   Level::strong :
-										   (exists((get_level<T>::value == Level::causal)...) ?
+										   (exists((chld_max_level<T>::value == Level::causal)...) ?
 											Level::causal : Level::undef))>::type {};
 
 template<typename... T>

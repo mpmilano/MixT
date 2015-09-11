@@ -62,6 +62,12 @@ struct Temporary : public GeneralTemp, public ConStatement<get_level<T>::value> 
 
 };
 
+template<unsigned long long ID, Level l, typename Temp>
+struct chld_min_level<Temporary<ID,l,Temp> > : level_constant<l> {};
+
+template<unsigned long long ID, Level l, typename Temp>
+struct chld_max_level<Temporary<ID,l,Temp> > : level_constant<l> {};
+
 template<unsigned long long ID, Level l, typename T, typename Temp>
 auto find_usage(const Temporary<ID,l,T> &rt){
 	return shared_copy(rt);
@@ -115,6 +121,13 @@ struct TemporaryMutation : public ConStatement<get_level<T>::value> {
 	}
 	
 };
+
+
+template<typename T>
+struct chld_min_level<TemporaryMutation<T> > : chld_min_level<T> {};
+
+template<typename T>
+struct chld_max_level<TemporaryMutation<T> > : chld_min_level<T> {};
 
 
 template<unsigned long long ID, typename T>

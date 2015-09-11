@@ -40,6 +40,13 @@ public:
 
 };
 
+
+template<typename T>
+constexpr Level chld_min_level_f(Print<T> const * const ){
+	return get_level<T>::value;
+}
+
+
 template<unsigned long long ID, typename l>
 auto find_usage(const Print<l>& p){
 	return find_usage<ID>(p.t);
@@ -86,13 +93,20 @@ public:
 
 };
 
+template<Level l>
+struct PS : public ConStatement<l>, public Print_Str
+{
+	PS(const Print_Str &t):Print_Str(t.t,runs_with_strong(l)){}
+};
+
+template<Level l>
+constexpr Level chld_min_level_f(PS<l> const * const ){
+	return l;
+}
+
 template<typename PrevBuilder>
 auto append(const PrevBuilder &pb, const Print_Str &ps){
-	struct PS : public ConStatement<PrevBuilder::pc::value>, public Print_Str
-	{
-		PS(const Print_Str &t):Print_Str(t.t,runs_with_strong(PrevBuilder::pc::value)){}
-	};
-	return append(pb,PS{ps});
+	return append(pb,PS<PrevBuilder::pc::value>{ps});
 }
 
 template<unsigned long long ID>
