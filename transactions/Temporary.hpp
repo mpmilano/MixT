@@ -15,9 +15,8 @@ template<unsigned long long ID, Level l, typename T>
 struct Temporary : public GeneralTemp, public ConStatement<get_level<T>::value> {
 	static_assert(is_ConExpr<T>::value,
 				  "Error: can only assign temporary the result of expressions");
-	static_assert(l == Level::causal ||
-				  get_level<T>::value == Level::strong,
-				  "Error: flow violation");
+	
+	static_assert(can_flow(get_level<T>::value,l),"Error: flow violation");
 
 	const T t;
 	const int store_id;
@@ -28,7 +27,8 @@ struct Temporary : public GeneralTemp, public ConStatement<get_level<T>::value> 
 	}
 
 	auto strongCall(Store &c, Store &s) const {
-		std::integral_constant<bool,get_level<T>::value==Level::strong>* choice = nullptr;
+
+		choose_strong<get_level<T>::value > choice{nullptr};
 		return strongCall(c,s,choice);
 	}
 
@@ -44,7 +44,7 @@ struct Temporary : public GeneralTemp, public ConStatement<get_level<T>::value> 
 	}
 
 	auto causalCall(Store &c, Store &s) const {
-		std::integral_constant<bool,get_level<T>::value==Level::causal>* choice = nullptr;
+		choose_causal<get_level<T>::value > choice{nullptr};
 		return causalCall(c,s,choice);
 	}
 
@@ -84,7 +84,7 @@ struct TemporaryMutation : public ConStatement<get_level<T>::value> {
 	}
 	
 	auto strongCall(Store &c, Store &s) const {
-		std::integral_constant<bool,get_level<T>::value==Level::strong>* choice = nullptr;
+		choose_strong<get_level<T>::value > choice{nullptr};
 		return strongCall(c,s,choice);
 	}
 
@@ -99,7 +99,7 @@ struct TemporaryMutation : public ConStatement<get_level<T>::value> {
 	}
 
 	auto causalCall(Store &c, Store &s) const {
-		std::integral_constant<bool,get_level<T>::value==Level::causal>* choice = nullptr;
+		choose_causal<get_level<T>::value > choice{nullptr};
 		return causalCall(c,s,choice);
 	}
 
@@ -184,7 +184,7 @@ struct RefTemporary : public ConExpr<run_result<T>,l> {
 	auto strongCall(Store &cache, const Store &s) const {
 		//TODO - endorsements should happen somewhere around here, right?
 		//todo: dID I want the level of the expression which assigned the temporary?
-		std::integral_constant<bool,get_level<Temp>::value==Level::strong>* choice = nullptr;
+		choose_strong<get_level<Temp>::value > choice{nullptr};
 		return strongCall(cache, s,choice);
 	}
 

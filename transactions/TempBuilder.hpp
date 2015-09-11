@@ -364,15 +364,15 @@ struct ImmutVarScopeBegin {
 
 template<typename PrevBuilder, unsigned long long ID>
 auto append(const PrevBuilder &pb, const MutVarScopeBegin<ID> &vsb){
-	MutDeclarationScope<ID,std::tuple<>,Level::strong,std::nullptr_t > dcl(vsb.name,nullptr,std::tuple<>());
-	MutableDeclarationBuilder<PrevBuilder, ID, std::tuple<>,Level::strong, false, std::nullptr_t > db(pb,dcl);
+	MutDeclarationScope<ID,std::tuple<>,PrevBuilder::pc::value,std::nullptr_t > dcl(vsb.name,nullptr,std::tuple<>());
+	MutableDeclarationBuilder<PrevBuilder, ID, std::tuple<>,PrevBuilder::pc::value, false, std::nullptr_t > db(pb,dcl);
 	return db;
 }
 
 template<typename PrevBuilder, unsigned long long ID>
 auto append(const PrevBuilder &pb, const ImmutVarScopeBegin<ID> &vsb){
-	auto dcl = build_ImmutDeclarationScope<ID,std::tuple<>,Level::strong,std::nullptr_t>(vsb.name,nullptr,std::tuple<>());
-	ImmutableDeclarationBuilder<PrevBuilder, ID, std::tuple<>,Level::strong, false, std::nullptr_t > db(pb,dcl);
+	auto dcl = build_ImmutDeclarationScope<ID,std::tuple<>,PrevBuilder::pc::value,std::nullptr_t>(vsb.name,nullptr,std::tuple<>());
+	ImmutableDeclarationBuilder<PrevBuilder, ID, std::tuple<>,PrevBuilder::pc::value, false, std::nullptr_t > db(pb,dcl);
 	return db;
 }
 

@@ -24,14 +24,14 @@ public:
 
 	bool strongCall(Store& a, const Store& b) const {
 		auto ret = ::run_ast_strong(a,b,t);
-		if (get_level<T>::value == Level::strong){
+		if (is_strong(get_level<T>::value)){
 			assert(ret);
 		}
 		return true;
 	}
 	bool causalCall(Store& a, const Store& b) const {
 		auto ret = ::run_ast_causal(a,b,t);
-		if (get_level<T>::value == Level::causal){
+		if (is_causal(get_level<T>::value)){
 			assert(ret);
 		}
 		return true;

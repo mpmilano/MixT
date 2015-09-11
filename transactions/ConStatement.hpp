@@ -10,9 +10,10 @@
 #include "Handle.hpp"
 #include "Store.hpp"
 
+struct GCS {};
 
 template<Level l>
-struct ConStatement {
+struct ConStatement : public GCS{
 	static constexpr Level level = l;
 };
 
@@ -28,10 +29,7 @@ using contains_temp_fold =
 
 template<typename Cls>
 struct is_ConStatement : 
-	std::integral_constant<bool, 
-						   std::is_base_of<ConStatement<Level::causal>,Cls>::value ||
-						   std::is_base_of<ConStatement<Level::strong>,Cls>::value
-						   >::type {};
+	std::integral_constant<bool, std::is_base_of<GCS,Cls>::value>::type {};
 
 
 template<Level l>
@@ -65,6 +63,11 @@ struct is_cs_tuple : std::integral_constant<bool,
 										 is_tuple_f((F*) nullptr)
 										 >::type {};
 
+template<Level l>
+using choose_strong = typename std::integral_constant<bool, l == Level::strong>::type*;
+
+template<Level l>
+using choose_causal = typename std::integral_constant<bool, l == Level::causal>::type*;
 
 template<typename... CS>
 auto call_all_causal(Store &cache, Store &st, const std::tuple<CS...> &t){

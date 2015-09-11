@@ -12,11 +12,8 @@
 	static_assert(is_cs_tuple<Els>::value, "Error: else-branch not a tuple of statements");} \
 
 #define if_concept_2(Cond,Then,Els)										\
-	static_assert((get_level<Cond>::value == Level::causal &&			\
-				   ((max_level<Then>::value == Level::causal) || (std::tuple_size<Then>::value == 0)) && \
-				   ((max_level<Els>::value == Level::causal) || (std::tuple_size<Els>::value == 0))) \
-				  ||													\
-				  (get_level<Cond>::value == Level::strong),			\
+	static_assert(can_flow(get_level<Cond>::value,max_level<Then>::value) \
+				  && can_flow(get_level<Cond>::value,max_level<Els>::value), \
 				  "Error: implicit flow found in IF.")
 
 
@@ -47,8 +44,7 @@ struct If : public ConStatement<min_level<typename min_level<Then>::type,
 	}
 
 	bool strongCall(Store &c, Store &s) const {
-		std::integral_constant<bool,get_level<Cond>::value == Level::strong>*
-			choice{nullptr};
+		choose_strong<get_level<Cond>::value> choice{nullptr};
 		return strongCall(c,s,choice);
 	}
 

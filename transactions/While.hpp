@@ -12,10 +12,7 @@
 		static_assert(is_cs_tuple<Then>::value, "Error: while body not a tuple of statements"); }
 
 #define while_concept_2(Cond,Then)										\
-	static_assert((get_level<Cond>::value == Level::causal &&			\
-				   max_level<Then>::value == Level::causal && false)	\
-				  ||													\
-				  (get_level<Cond>::value == Level::strong),			\
+	static_assert(can_flow(get_level<Cond>::value, max_level<Then>::value),	\
 				  "Error: implicit flow found in While.")
 
 
@@ -44,10 +41,8 @@ struct While : public ConStatement<min_level<Then>::value> {
 
 	bool strongCall(Store &c, Store &s) const {
 		std::cout << "In while body" << std::endl;
-		std::integral_constant<bool,get_level<Cond>::value == Level::strong>*
-			choice1{nullptr};
-		std::integral_constant<bool,min_level<Then>::value == Level::strong>*
-			choice2{nullptr};
+		choose_strong<get_level<Cond>::value> choice1;
+		choose_strong<min_level<Then>::value> choice2;
 		bool ret = strongCall(c,s,choice1,choice2);
 		std::cout << "Out of while body" << std::endl;
 		return ret;

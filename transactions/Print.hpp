@@ -25,7 +25,7 @@ public:
 
 	bool strongCall(Store& a, const Store& b) const {
 		auto ret = ::run_ast_strong(a,b,t);
-		if (get_level<T>::value == Level::strong){
+		if (is_strong(get_level<T>::value)) {
 			std::cout << ret << std::endl;
 		}
 		return true;
@@ -50,12 +50,14 @@ auto print(const T& t){
 	return Print<T>{t};
 }
 
-class Print_Str : public ConStatement<Level::strong> {
+class Print_Str {
 public:
-
-	std::string t;
 	
-	Print_Str(const std::string& t):t(t){
+	std::string t;
+	bool print_at_strong;
+	
+	Print_Str(const std::string& t, bool print_at_strong = true)
+		:t(t),print_at_strong(print_at_strong){
 	}
 	
 	bool operator==(const Print_Str &p) const {return t == p.t;}
@@ -71,15 +73,27 @@ public:
 	}
 
 	bool strongCall(Store& a, const Store& b) const {
-		std::cout << t << std::endl;
+		if (print_at_strong)
+			std::cout << t << std::endl;
 		return true;
 	}
 	
 	constexpr bool causalCall(Store& a, const Store& b) const {
+		if (!print_at_strong)
+			std::cout << t << std::endl;
 		return true;
 	}
 
 };
+
+template<typename PrevBuilder>
+auto append(const PrevBuilder &pb, const Print_Str &ps){
+	struct PS : public ConStatement<PrevBuilder::pc::value>, public Print_Str
+	{
+		PS(const Print_Str &t):Print_Str(t.t,is_strong(PrevBuilder::pc::value)){}
+	};
+	return append(pb,PS{ps});
+}
 
 template<unsigned long long ID>
 auto find_usage(const Print_Str& ){

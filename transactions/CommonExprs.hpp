@@ -43,6 +43,7 @@ struct contains_temporary<ID, CSConstant<l,T> > : std::false_type {};
 
 template<typename T, restrict(std::is_scalar<T>::value)>
 auto wrap_constants(const T &t){
+	assert(false && "error: fix levels");
 	return CSConstant<Level::strong,T>{t};
 }
 
@@ -91,8 +92,7 @@ struct Sum : public ConExpr<bool, min_level<T,V>::value> {
 	}
 	
 	auto strongCall(Store& cache, const Store &s) const {
-		std::integral_constant<bool,min_level<T,V>::value == Level::strong>*
-			choice{nullptr};
+		choose_strong<min_level<T,V>::value> choice{nullptr};
 		return strongCall(cache,s,choice);
 	}
 
@@ -172,8 +172,7 @@ struct Equals : public ConExpr<bool, min_level<T,V>::value> {
 	}
 	
 	auto strongCall(Store& cache, const Store &s) const {
-		std::integral_constant<bool,min_level<T,V>::value == Level::strong>*
-			choice{nullptr};
+		choose_strong<min_level<T,V>::value> choice{nullptr};
 		return strongCall(cache,s,choice);
 	}
 
@@ -250,8 +249,7 @@ struct BinaryOr : public ConExpr<bool, min_level<T,V>::value> {
 	}
 	
 	auto strongCall(Store& cache, const Store &s) const {
-		std::integral_constant<bool,min_level<T,V>::value == Level::strong>*
-			choice{nullptr};
+		choose_strong<min_level<T,V>::value> choice{nullptr};
 		return strongCall(cache,s,choice);
 	}
 
@@ -327,8 +325,7 @@ struct BinaryAnd : public ConExpr<bool, min_level<T,V>::value> {
 	}
 	
 	auto strongCall(Store& cache, const Store &s) const {
-		std::integral_constant<bool,min_level<T,V>::value == Level::strong>*
-			choice{nullptr};
+		choose_strong<min_level<T,V>::value> choice{nullptr};
 		return strongCall(cache,s,choice);
 	}
 
@@ -402,8 +399,7 @@ struct Not : public ConExpr<bool, get_level<T>::value> {
 	}
 	
 	auto strongCall(Store& cache, const Store &s) const {
-		std::integral_constant<bool,get_level<T>::value == Level::strong>*
-			choice{nullptr};
+		choose_strong<get_level<T>::value> choice{nullptr};
 		return strongCall(cache,s,choice);
 	}
 
@@ -476,8 +472,7 @@ struct IsValid : public ConExpr<bool, get_level<T>::value> {
 	}
 	
 	auto strongCall(Store& cache, const Store &s) const {
-		std::integral_constant<bool,get_level<T>::value == Level::strong>*
-			choice{nullptr};
+		choose_strong<get_level<T>::value> choice{nullptr};
 		return strongCall(cache,s,choice);
 	}
 

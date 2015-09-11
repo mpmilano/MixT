@@ -28,7 +28,7 @@ struct Operate : ConStatement<l> {
 	}
 
 	auto strongCall(Store &cache, const Store &s) const {
-		std::integral_constant<bool,l==Level::strong>* choice = nullptr;
+		choose_strong<l> choice{nullptr};
 		return strongCall(cache,s,choice);
 	}
 
@@ -51,7 +51,7 @@ struct Operate : ConStatement<l> {
 
 
 	auto causalCall(Store &cache, const Store &heap) const {
-		std::integral_constant<bool,l==Level::causal>* choice = nullptr;
+		choose_causal<l> choice{nullptr};
 		return causalCall(cache,heap,choice);
 	}	
 
