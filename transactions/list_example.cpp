@@ -80,42 +80,15 @@ int main() {
 	std::cout << h.get().val.get() << std::endl;
 	assert(h.get().val.get() == 14);
 
-	/*
-	TRANSACTION(
+		TRANSACTION(
 		let_mutable(bound) = 0 IN (
 		let_mutable(hd) = h IN (
 			WHILE (isValid(hd) && (!(bound == 10))) DO(
 				print_str("hd"),
 				print(hd),
-				bound = bound + 1,
-				print_str("bound: "),
-				print(bound),
-				let_mutable(tmp2) = hd IN (
 				let_ifValid(tmp) = hd IN (
-					print_str("tmp2, tmp and hd should be the same:"),
-					print(tmp2),
+					print_str("tmp"),
 					print(tmp),
-					print(hd),
-					massert(free_expr(bool,tmp,tmp2,tmp.equals(tmp2))),
-					let_ifValid(weak_val) = msg(tmp,val) IN (
-						print_str("weak_val: "),
-						print(dref(weak_val)),
-						do_op(Increment,weak_val)),
-					hd = msg(tmp,next),
-					print_str("tmp, hd, h (hd should be shorter)"),
-					print(tmp),
-					print(hd),
-					print(h)
-					))
-				)
-			)
-			));
-	//*/ 
-		TRANSACTION(
-		let_mutable(bound) = 0 IN (
-		let_mutable(hd) = h IN (
-			WHILE (isValid(hd) && (!(bound == 10))) DO(
-				let_ifValid(tmp) = hd IN (
 					let_ifValid(weak_val) = msg(tmp,val) IN (
 						do_op(Increment,weak_val))
 					hd = msg(tmp,next)

@@ -9,16 +9,13 @@ template<Level l, typename R, typename Exprs>
 struct Operate : ConStatement<l> {
 	const int id;
 	const std::function<R (Store &)> f;
-	const std::string name;
 	const Exprs exprs;
 	Operate(const std::function<R (const Store&)>& f,
-			const std::string &name,
 			const Exprs &exprs,
 			int id
 		):
 		id(id),
 		f(f),
-		name(name),
 		exprs(exprs){}
 
 	auto handles() const {
@@ -173,7 +170,6 @@ struct PreOp<std::tuple<J...> > {
 				if (!result.first) throw NoOverloadFoundError{type_name<decltype(t)>()};
 				return result.second;
 			},
-				"This came from a tuple, so I don't know what to print",
 				std::make_tuple(args...),id
 				);
 	}

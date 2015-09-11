@@ -45,7 +45,7 @@ std::ostream & operator<<(std::ostream &os, const TemporaryMutation<T>& t){
 
 template<typename T, restrict(std::is_base_of<BaseFindUsages CMA T>::value)>
 std::ostream & operator<<(std::ostream &os, const T& op){
-	return os << op.name;
+	return os << op.name << "<" << get_level<T>::value << ">";
 }
 
 auto print_util(const std::shared_ptr<const std::nullptr_t>&){
@@ -92,7 +92,9 @@ std::ostream & operator<<(std::ostream &os, const If<Cond,Then,Els>& i){
 
 template<typename Cond, typename Then>
 std::ostream & operator<<(std::ostream &os, const While<Cond,Then>& i){
-	return os << "while (" << i.cond <<") do {" << i.then << "}";
+	return os << "while (" << i.cond <<") do ("
+			  << (min_level<Then>::value == max_level<Then>::value ? levelStr<min_level<Then>::value>() : "mixed")
+			  << "){" << i.then << "}";
 }
 
 std::ostream & operator<<(std::ostream &os, Transaction& t){
@@ -168,11 +170,6 @@ std::ostream & operator<<(std::ostream &os, const Print_Str& op){
 	return os << "print " << op.t << std::endl;
 }
 
-
-template<Level l, typename i, typename E>
-std::ostream & operator<<(std::ostream &os, const Operate<l,i,E>& op){
-	return os << op.name << "<" << levelStr<l>() << ">";
-}
 
 std::ostream & operator<<(std::ostream &os, Level l){
 	if (l == Level::causal)

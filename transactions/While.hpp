@@ -53,7 +53,7 @@ struct While : public ConStatement<min_level<Then>::value> {
 		//TODO: remove this.
 		int safety_counter = 0;
 		auto new_cache = std::make_unique<Store>(nullptr);
-		while (run_ast_strong(new_cache,s,cond)) {
+		while (run_ast_strong(*new_cache,s,cond)) {
 			call_all_strong(c,s,then);
 			assert(safety_counter++ < 100);
 			new_cache = std::make_unique<Store>(nullptr);
