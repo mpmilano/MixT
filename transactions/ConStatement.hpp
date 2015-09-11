@@ -64,10 +64,10 @@ struct is_cs_tuple : std::integral_constant<bool,
 										 >::type {};
 
 template<Level l>
-using choose_strong = typename std::integral_constant<bool, l == Level::strong>::type*;
+using choose_strong = typename std::integral_constant<bool, runs_with_strong(l)>::type*;
 
 template<Level l>
-using choose_causal = typename std::integral_constant<bool, l == Level::causal>::type*;
+using choose_causal = typename std::integral_constant<bool, runs_with_causal(l)>::type*;
 
 template<typename... CS>
 auto call_all_causal(Store &cache, Store &st, const std::tuple<CS...> &t){

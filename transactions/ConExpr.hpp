@@ -21,7 +21,7 @@ struct ConExpr : public ConStatement<l> {
 
 template<typename T, restrict(! (is_ConStatement<T>::value || is_handle<T>::value || is_tuple<T>::value || (is_ConExpr<T>::value && !std::is_scalar<T>::value)))>
 constexpr Level get_level_f(const T*){
-	return Level::strong;
+	return Level::undef;
 }
 
 template<typename T, Level l>
@@ -35,9 +35,10 @@ struct get_level : std::integral_constant<Level, get_level_f(mke_p<T>())>::type 
 
 template<typename... T>
 struct min_level : std::integral_constant<Level,
-										  (exists(is_causal(get_level<T>::value)...) ?
+										  (exists((get_level<T>::value == Level::causal)...) ?
 										   Level::causal :
-										   Level::strong)>::type {};
+										   (exists((get_level<T>::value == Level::strong)...) ? Level::strong : Level::undef )
+										   )>::type {};
 
 template<typename... T>
 struct min_level<std::tuple<T...> > : min_level<T...> {};
@@ -45,9 +46,10 @@ struct min_level<std::tuple<T...> > : min_level<T...> {};
 
 template<typename... T>
 struct max_level : std::integral_constant<Level,
-										  (exists(is_strong(get_level<T>::value)...) ?
+										  (exists((get_level<T>::value == Level::strong)...) ?
 										   Level::strong :
-										   Level::causal)>::type {};
+										   (exists((get_level<T>::value == Level::causal)...) ?
+											Level::causal : Level::undef))>::type {};
 
 template<typename... T>
 struct max_level<std::tuple<T...> > : max_level<T...> {};

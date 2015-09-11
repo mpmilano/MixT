@@ -8,14 +8,15 @@
 #include "Operate.hpp"
 #include "TempBuilder.hpp"
 #include "FreeExpr.hpp"
-#include "Transaction_macros.hpp"
-#include "FreeExpr_macros.hpp"
-#include "Operate_macros.hpp"
 #include "Print.hpp"
 #include "Massert.hpp"
 #include "SQLStore.hpp"
 #include "FinalHeader.hpp" //*/
 #include "SerializationMacros.hpp"
+#include "Transaction_macros.hpp"
+#include "FreeExpr_macros.hpp"
+#include "Operate_macros.hpp"
+
 
 
 template<typename T>
@@ -79,6 +80,7 @@ int main() {
 	std::cout << h.get().val.get() << std::endl;
 	assert(h.get().val.get() == 14);
 
+	/*
 	TRANSACTION(
 		let_mutable(bound) = 0 IN (
 		let_mutable(hd) = h IN (
@@ -108,6 +110,20 @@ int main() {
 				)
 			)
 			));
+	//*/ 
+		TRANSACTION(
+		let_mutable(bound) = 0 IN (
+		let_mutable(hd) = h IN (
+			WHILE (isValid(hd) && (!(bound == 10))) DO(
+				let_ifValid(tmp) = hd IN (
+					let_ifValid(weak_val) = msg(tmp,val) IN (
+						do_op(Increment,weak_val))
+					hd = msg(tmp,next)
+					))
+				)
+			)
+			); //*/
+
 
 	std::cout << h.get().val.get() << std::endl;
 	assert(h.get().val.get() == 15);

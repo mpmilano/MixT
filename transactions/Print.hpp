@@ -25,14 +25,14 @@ public:
 
 	bool strongCall(Store& a, const Store& b) const {
 		auto ret = ::run_ast_strong(a,b,t);
-		if (is_strong(get_level<T>::value)) {
+		if (runs_with_strong(get_level<T>::value)) {
 			std::cout << ret << std::endl;
 		}
 		return true;
 	}
 	bool causalCall(Store& a, const Store& b) const {
 		auto ret = ::run_ast_causal(a,b,t);
-		if (get_level<T>::value == Level::causal){
+		if (runs_with_causal(get_level<T>::value)){
 			std::cout << ret << std::endl;
 		}
 		return true;
@@ -90,7 +90,7 @@ template<typename PrevBuilder>
 auto append(const PrevBuilder &pb, const Print_Str &ps){
 	struct PS : public ConStatement<PrevBuilder::pc::value>, public Print_Str
 	{
-		PS(const Print_Str &t):Print_Str(t.t,is_strong(PrevBuilder::pc::value)){}
+		PS(const Print_Str &t):Print_Str(t.t,runs_with_strong(PrevBuilder::pc::value)){}
 	};
 	return append(pb,PS{ps});
 }

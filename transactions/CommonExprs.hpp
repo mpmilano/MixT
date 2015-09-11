@@ -43,8 +43,7 @@ struct contains_temporary<ID, CSConstant<l,T> > : std::false_type {};
 
 template<typename T, restrict(std::is_scalar<T>::value)>
 auto wrap_constants(const T &t){
-	assert(false && "error: fix levels");
-	return CSConstant<Level::strong,T>{t};
+	return CSConstant<Level::undef,T>{t};
 }
 
 template<typename T, restrict(std::is_scalar<T>::value)>

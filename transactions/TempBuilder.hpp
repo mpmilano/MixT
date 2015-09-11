@@ -7,10 +7,19 @@ bool strongc_helper(Store &, Store &, const std::shared_ptr<const std::nullptr_t
 	return true;
 }
 
-template<typename T, restrict(!std::is_same<T CMA std::nullptr_t>::value)>
+template<typename T, restrict(!std::is_same<T CMA std::nullptr_t>::value &&
+							  runs_with_strong(get_level<T>::value) )>
 bool strongc_helper(Store &c, Store &s, const std::shared_ptr<const T>& gt){
 	return gt->strongCall(c,s);
 }
+
+template<typename T, restrict2(!std::is_same<T CMA std::nullptr_t>::value &&
+							  runs_with_causal(get_level<T>::value) )>
+bool strongc_helper(Store &c, Store &s, const std::shared_ptr<const T>& gt){
+	gt->strongCall(c,s);
+	return true;
+}
+
 
 bool causalc_helper(Store &, Store &, const std::shared_ptr<const std::nullptr_t>&){
 	return true;

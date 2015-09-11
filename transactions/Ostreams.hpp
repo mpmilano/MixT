@@ -136,13 +136,6 @@ std::ostream & operator<<(std::ostream &os, const IsValid<T2> &t){
 	return os << "isValid(" << t.t << ")";
 }
 
-
-template<Level l>
-std::ostream & operator<<(std::ostream &os, const Noop<l>&){
-	
-	return os << "Noop@" << (l == Level::strong ? "strong" : "weak");
-}
-
 template<Level l, HandleAccess ha, typename T>
 std::ostream & operator<<(std::ostream &os, const Handle<l,ha,T>& h){
 	os << "Handle<" << levelStr<l>() << ">";
@@ -186,6 +179,14 @@ std::ostream & operator<<(std::ostream &os, Level l){
 		return os << levelStr<Level::causal>();
 	else if (l == Level::strong)
 		return os << levelStr<Level::strong>();
+	else if (l == Level::undef)
+		return os << levelStr<Level::undef>();
 	assert(false && "fell through");
 	return os;
+}
+
+template<Level l>
+std::ostream & operator<<(std::ostream &os, const Noop<l>&){
+	
+	return os << "Noop@" << l;
 }

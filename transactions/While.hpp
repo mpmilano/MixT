@@ -41,8 +41,8 @@ struct While : public ConStatement<min_level<Then>::value> {
 
 	bool strongCall(Store &c, Store &s) const {
 		std::cout << "In while body" << std::endl;
-		choose_strong<get_level<Cond>::value> choice1;
-		choose_strong<min_level<Then>::value> choice2;
+		choose_strong<get_level<Cond>::value> choice1{nullptr};
+		choose_strong<min_level<Then>::value> choice2{nullptr};
 		bool ret = strongCall(c,s,choice1,choice2);
 		std::cout << "Out of while body" << std::endl;
 		return ret;
@@ -69,7 +69,7 @@ struct While : public ConStatement<min_level<Then>::value> {
 		c_old_mut.emplace<std::list<std::unique_ptr<Store> > >(id);
 		const Store& c_old = c_old_mut;
 		
-		auto &store_stack = c_old.get<std::list<std::unique_ptr<Store> > >(id);
+		auto &store_stack = c_old_mut.get<std::list<std::unique_ptr<Store> > >(id);
 
 		store_stack.emplace_back(std::make_unique<Store>(nullptr));
 		assert(store_stack.back().get() != &c_old);

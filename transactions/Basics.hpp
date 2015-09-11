@@ -8,20 +8,23 @@
 //or strong.  Except when dealing with remote objects,
 //but honestly, it would be nice to do that even there.
 
-enum class Level { causal, strong};
+enum class Level { causal, strong, undef};
 
-constexpr bool is_strong(Level l){
-	return l == Level::strong;
+constexpr bool runs_with_strong(Level l){
+	return (l == Level::strong) || (l == Level::undef);
 }
 
-constexpr bool is_causal(Level l){
+constexpr bool runs_with_causal(Level l){
 	return l == Level::causal;
 }
 
 
+
 template<Level l>
 std::string levelStr(){
-	const static std::string ret = (l == Level::strong ? "strong" : "weak");
+	const static std::string ret =
+		(l == Level::strong ? "strong" :
+		 (l == Level::causal ? "weak" : "undef"));
 	return ret;
 }
 
@@ -39,5 +42,8 @@ using canRead = std::integral_constant<bool,
 										  true : false)>;
 
 constexpr bool can_flow(Level from, Level to){
-	return to == Level::causal || from == Level::strong;
+	return to == Level::causal
+		|| to == Level::undef
+		|| from == Level::strong
+		|| from  == Level::undef;
 }
