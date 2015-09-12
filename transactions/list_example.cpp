@@ -90,7 +90,7 @@ int main() {
 					print_str("tmp"),
 					print(tmp),
 					let_ifValid(weak_val) = msg(tmp,val) IN (
-						do_op(Increment,weak_val))
+						do_op(Increment,weak_val)),
 					hd = msg(tmp,next)
 					))
 				)

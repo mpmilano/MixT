@@ -169,10 +169,19 @@ struct chld_min_level<ImmutDeclarationScope<ID,CS,l,Temp > > :
 };
 
 template<unsigned long long ID, typename CS, Level l, typename Temp>
+struct chld_min_level<const ImmutDeclarationScope<ID,CS,l,Temp > > :
+	chld_min_level<ImmutDeclarationScope<ID,CS,l,Temp > > {};
+
+
+template<unsigned long long ID, typename CS, Level l, typename Temp>
 struct chld_max_level<ImmutDeclarationScope<ID,CS,l,Temp > > :
 	level_constant<max_of_levels(min_level<Temp>::value, max_level<CS>::value )>{
 	static_assert(l == get_level<Temp>::value ,"assumption bad!");
 };
+
+template<unsigned long long ID, typename CS, Level l, typename Temp>
+struct chld_max_level<const ImmutDeclarationScope<ID,CS,l,Temp > > :
+	chld_max_level<ImmutDeclarationScope<ID,CS,l,Temp > > {};
 
 
 template<unsigned long long ID, typename CS, Level l, typename Temp, typename Ptr>
