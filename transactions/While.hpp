@@ -117,7 +117,7 @@ struct While : public ConStatement<min_level<Then>::value> {
 		std::cout << "In while body (Causal)" << std::endl;
 		if (c_old.contains(id)){
 			std::cout << "looks like we already ran this strong (" << this->id << ")" << std::endl;
-			for (auto &c : c_old.get<std::list<std::unique_ptr<Store> > >(id)){
+			for (auto &c : c_old.get<std::list<std::unique_ptr<Cache> > >(id)){
 				call_all_causal(*c,s,then);
 			}
 		}
