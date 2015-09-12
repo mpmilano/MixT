@@ -78,7 +78,7 @@ struct Transaction{
 				assert(any && "no handles traversed");
 				}
 				
-				Store cache;
+				Cache cache;
 				call_all_strong(cache,st,s.curr);
 				call_all_causal(cache,st,s.curr);
 

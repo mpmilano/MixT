@@ -15,10 +15,10 @@ public:
 		return std::tuple<>();
 	}
 
-	constexpr bool strongCall(const Store&, const Store&) const {
+	constexpr bool strongCall(const Cache&, const Store&) const {
 		return true;
 	}
-	constexpr bool causalCall(const Store&, const Store&) const {
+	constexpr bool causalCall(const Cache&, const Store&) const {
 		return true;
 	}
 

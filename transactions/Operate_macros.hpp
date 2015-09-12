@@ -20,12 +20,12 @@
 																		\
 			}															\
 																		\
-			auto strongCall(Store &c CMA  const Store &s) const {		\
+			auto strongCall(Cache& c CMA  const Store &s) const {		\
 				return make_PreOp(id,Name(trans_op_arg(c, s, *arg)))	\
 					(arg).strongCall(c CMA s);							\
 			}															\
 																		\
-			auto causalCall(Store &c CMA  const Store &s) const {		\
+			auto causalCall(Cache& c CMA  const Store &s) const {		\
 				return make_PreOp(id,Name(trans_op_arg(c, s, *arg)))	\
 					(arg).causalCall(c CMA s);							\
 			}															\
@@ -60,13 +60,13 @@
 				return ret;												\
 			}															\
 																		\
-			auto strongCall(Store &c CMA  const Store &s) const {		\
+			auto strongCall(Cache& c CMA  const Store &s) const {		\
 				return make_PreOp(id,Name(trans_op_arg(c, s, *arg1),	\
 									   trans_op_arg(c, s, *arg2)))		\
 					(arg1,arg2).strongCall(c CMA s);					\
 			}															\
 																		\
-			auto causalCall(Store &c CMA  const Store &s) const {		\
+			auto causalCall(Cache& c CMA  const Store &s) const {		\
 				return make_PreOp(id,Name(trans_op_arg(c, s, *arg1),	\
 									   trans_op_arg(c, s, *arg2)))		\
 					(arg1,arg2).causalCall(c CMA s);					\

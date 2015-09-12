@@ -22,7 +22,7 @@ struct extract_type<RefTemporary<id,l,T,Temp> >{
 };
 
 template<unsigned long long ID, Level l, typename T, typename Temp>
-void print_more_info_if_reftemp(const Store& c, const RefTemporary<ID,l,T,Temp> &rt){
+void print_more_info_if_reftemp(const Cache& c, const RefTemporary<ID,l,T,Temp> &rt){
 	std::cout << "ID of temporary referenced: " << ID << std::endl;
 	std::cout << "RefTemp ID referenced: " << rt.id << std::endl;
 	std::cout << "RefTemp name referenced: " << rt.name << std::endl;
@@ -50,7 +50,7 @@ struct FreeExpr : public ConExpr<T, min_level<Exprs...>::value > {
 
 	//this one is just for temp-var-finding
 	const std::tuple<Exprs...> params;
-	const std::function<T (const Store&, const std::tuple<Exprs ...>& )> f;
+	const std::function<T (const Cache&, const std::tuple<Exprs ...>& )> f;
 	using level = std::integral_constant<Level, min_level<Exprs...>::value>;
 	const int id = gensym();
 
@@ -58,7 +58,7 @@ struct FreeExpr : public ConExpr<T, min_level<Exprs...>::value > {
 			 std::function<T (const typename extract_type<decay<Exprs> >::type & ... )> f,
 			 Exprs... h)
 		:params(std::make_tuple(h...)),
-		 f([=](const Store &c, const std::tuple<Exprs...> &t){
+		 f([=](const Cache& c, const std::tuple<Exprs...> &t){
 				 auto retrieved = fold(
 					 t,
 					 [&](const auto &e, const auto &acc){return tuple_cons(get_if_handle(debug_failon_not_cached(c,e)),acc);}
@@ -73,12 +73,12 @@ struct FreeExpr : public ConExpr<T, min_level<Exprs...>::value > {
 		return ::handles(params);
 	}
 
-	auto strongCall(Store &cache, const Store &heap) const{
+	auto strongCall(Cache& cache, const Store &heap) const{
 		choose_strong<level::value> choice{nullptr};
 		return strongCall(cache,heap,choice);
 	}	
 
-	T strongCall(Store &cache, const Store &heap, std::true_type*) const{
+	T strongCall(Cache& cache, const Store &heap, std::true_type*) const{
 		//everything is strong, run it now; but f assumes everything
 		//already cached, which means strongCall for caching first
 		std::false_type* false_t(nullptr);
@@ -89,7 +89,7 @@ struct FreeExpr : public ConExpr<T, min_level<Exprs...>::value > {
 		return ret;
 	}
 
-	void strongCall(Store &cache, const Store &heap,std::false_type*) const{
+	void strongCall(Cache& cache, const Store &heap,std::false_type*) const{
 		fold(params,[&](const auto &e, bool){
 				run_ast_strong(cache,heap,e);
 				return false;},false);
@@ -99,19 +99,19 @@ struct FreeExpr : public ConExpr<T, min_level<Exprs...>::value > {
 				return false;},false);
 	}
 
-	auto causalCall(Store &cache, const Store &heap) const {
+	auto causalCall(Cache& cache, const Store &heap) const {
 		choose_causal<level::value> choice{nullptr};
 		return causalCall(cache,heap,choice);
 	}	
 
-	auto causalCall(Store &cache, const Store &heap, std::true_type*) const {
+	auto causalCall(Cache& cache, const Store &heap, std::true_type*) const {
 		fold(params,[&](const auto &e, bool){
 				run_ast_causal(cache,heap,e);
 				return false;},false);
 		return f(cache,params);
 	}
 
-	T causalCall(Store &cache, const Store &heap, std::false_type*) const {
+	T causalCall(Cache& cache, const Store &heap, std::false_type*) const {
 		assert(cache.contains(this->id));
 		return cache.get<T>(this->id);
 	}

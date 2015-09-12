@@ -8,9 +8,9 @@
 template<Level l, typename R, typename Exprs>
 struct Operate : ConStatement<l> {
 	const int id;
-	const std::function<R (Store &)> f;
+	const std::function<R (Cache &)> f;
 	const Exprs exprs;
-	Operate(const std::function<R (const Store&)>& f,
+	Operate(const std::function<R (const Cache&)>& f,
 			const Exprs &exprs,
 			int id
 		):
@@ -24,12 +24,12 @@ struct Operate : ConStatement<l> {
 			},std::tuple<>());
 	}
 
-	auto strongCall(Store &cache, const Store &s) const {
+	auto strongCall(Cache& cache, const Store &s) const {
 		choose_strong<l> choice{nullptr};
 		return strongCall(cache,s,choice);
 	}
 
-	R strongCall(Store &cache, const Store &s, std::true_type*) const {
+	R strongCall(Cache& cache, const Store &s, std::true_type*) const {
 		//nothing causal, just do it all at once
 		//need to cache things!
 		strongCall(cache,s,(std::false_type*) nullptr);
@@ -38,7 +38,7 @@ struct Operate : ConStatement<l> {
 		return ret;
 	}
 
-	void strongCall(Store &cache, const Store &s, std::false_type*) const {
+	void strongCall(Cache& cache, const Store &s, std::false_type*) const {
 		//execute the strong expressions now. Remember they are supposed to be
 		//self-caching
 		fold(exprs,[&](const auto &e, bool){
@@ -47,12 +47,12 @@ struct Operate : ConStatement<l> {
 	}
 
 
-	auto causalCall(Store &cache, const Store &heap) const {
+	auto causalCall(Cache& cache, const Store &heap) const {
 		choose_causal<l> choice{nullptr};
 		return causalCall(cache,heap,choice);
 	}	
 
-	auto causalCall(Store &cache, const Store &heap, std::true_type*) const {
+	auto causalCall(Cache& cache, const Store &heap, std::true_type*) const {
 		//the function f assumes that absolutely everything will already be cached.
 		//thus, we cannot call it until that's true.
 		fold(exprs,[&](const auto &e, bool){
@@ -61,7 +61,7 @@ struct Operate : ConStatement<l> {
 		return f(cache);
 	}
 
-	R causalCall(Store &cache, const Store &, std::false_type*) const {
+	R causalCall(Cache& cache, const Store &, std::false_type*) const {
 		//we were pure-strong, which means we're also already cached.
 		assert(cache.contains(this->id));
 		return cache.get<R>(this->id);
@@ -102,7 +102,7 @@ using shared_deref = typename shared_deref_str<T>::type;
 
 
 template<unsigned long long ID, Level l, typename T, typename Temp>
-auto cached_withfail(const Store& c, const RefTemporary<ID,l,T,Temp> &rt){
+auto cached_withfail(const Cache& c, const RefTemporary<ID,l,T,Temp> &rt){
 	try {
 		return cached(c,rt);
 	}
@@ -119,7 +119,7 @@ auto cached_withfail(const Store& c, const RefTemporary<ID,l,T,Temp> &rt){
 
 
 template<typename T>
-auto cached_withfail(const Store &cache, const T &t){
+auto cached_withfail(const Cache& cache, const T &t){
 	try {
 		return cached(cache,t);
 	}
@@ -155,7 +155,7 @@ struct PreOp<std::tuple<J...> > {
 		return Operate<l,decltype(std::get<0>(t)(
 									  std::declval<run_result<shared_deref<decltype(args)> > >()...
 									  )),decltype(std::make_tuple(args...)) >
-			([=](const Store &c) {
+			([=](const Cache& c) {
 				assert(fold(*t_ptr,[](const auto &e, bool acc){return e.built_well || acc;},false));
 				std::pair<bool,bool> result =
 					fold(*t_ptr,[&](const auto &e, const std::pair<bool,bool> &acc){

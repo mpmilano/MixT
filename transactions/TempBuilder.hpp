@@ -9,13 +9,13 @@ bool strongc_helper(Store &, Store &, const std::shared_ptr<const std::nullptr_t
 
 template<typename T, restrict(!std::is_same<T CMA std::nullptr_t>::value &&
 							  runs_with_strong(get_level<T>::value) )>
-bool strongc_helper(Store &c, Store &s, const std::shared_ptr<const T>& gt){
+bool strongc_helper(Cache& c, Store &s, const std::shared_ptr<const T>& gt){
 	return gt->strongCall(c,s);
 }
 
 template<typename T, restrict2(!std::is_same<T CMA std::nullptr_t>::value &&
 							  runs_with_causal(get_level<T>::value) )>
-bool strongc_helper(Store &c, Store &s, const std::shared_ptr<const T>& gt){
+bool strongc_helper(Cache& c, Store &s, const std::shared_ptr<const T>& gt){
 	gt->strongCall(c,s);
 	return true;
 }
@@ -26,7 +26,7 @@ bool causalc_helper(Store &, Store &, const std::shared_ptr<const std::nullptr_t
 }
 
 template<typename T, restrict(!std::is_same<T CMA std::nullptr_t>::value)>
-bool causalc_helper(Store &c, Store &s, const std::shared_ptr<const T>& gt){
+bool causalc_helper(Cache& c, Store &s, const std::shared_ptr<const T>& gt){
 	return gt->causalCall(c,s);
 }
 
@@ -62,12 +62,12 @@ struct DeclarationScope : public ConStatement<l>{
 			stmt_handles(cs));
 	}
 
-	bool strongCall(Store &c, Store &s) const {
+	bool strongCall(Cache& c, Store &s) const {
 		assert(gt);
 		return strongc_helper(c,s,gt) && call_all_strong(c,s,cs);
 	}
 	
-	bool causalCall(Store &c, Store &s) const {
+	bool causalCall(Cache& c, Store &s) const {
 		assert(gt);
 		return causalc_helper(c,s,gt) && call_all_causal(c,s,cs);
 	}
