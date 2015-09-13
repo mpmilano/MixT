@@ -30,9 +30,11 @@ struct StoreMap {
 
 	template<int ss,restrict(ss != semantic_switch)>
 	explicit StoreMap(StoreMap<ss> &&sm)
-		:store_impl(sm.store_impl),
-		 prev_scope(sm.prev_scope),
-		 valid_store(sm.valid_store){}
+		:store_impl(std::move(sm.store_impl)),
+		 prev_scope((decltype(prev_scope))sm.prev_scope),
+		 valid_store(sm.valid_store){
+		sm.valid_store = false;
+	}
 
 	StoreMap(const StoreMap&) = delete;
 
