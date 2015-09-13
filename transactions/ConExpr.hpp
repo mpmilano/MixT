@@ -83,9 +83,9 @@ struct DummyConExpr : public ConExpr<void,l> {
 		return ret;
 	}
 	
-	void strongCall(const Cache&, const Store &) const {}
+	void strongCall(const StrongCache&, const StrongStore &) const {}
 
-	void causalCall(const Cache&, const Store &) const {}	
+	void causalCall(const CausalCache&, const CausalStore &) const {}	
 
 };
 
@@ -104,29 +104,29 @@ struct is_ConExpr :
 	std::integral_constant<bool, is_ConExpr_f(mke_p<Cls>()) || std::is_scalar<decay<Cls> >::value>::type {};
 
 template<typename T, restrict(is_ConExpr<T>::value && !std::is_scalar<T>::value)>
-auto run_ast_strong(Cache& c, const Store &s, const T& expr) {
+auto run_ast_strong(StrongCache& c, const StrongStore &s, const T& expr) {
 	return expr.strongCall(c,s);
 }
 
 template<typename T>
 typename std::enable_if<std::is_scalar<decay<T > >::value,T>::type
-run_ast_strong(const Cache &, const Store&, const T& e) {
+run_ast_strong(const StrongCache &, const StrongStore&, const T& e) {
 	return e;
 }
 
 template<HandleAccess ha, typename T>
-void run_ast_strong(Cache& c, const Store&, const Handle<Level::causal,ha,T>& h) {
+void run_ast_strong(const StrongCache& c, const StrongStore&, const Handle<Level::causal,ha,T>& h) {
 	//I think that this one, at least, is okay.
 }
 //*/
 template<HandleAccess ha, typename T>
-Handle<Level::strong,ha,T> run_ast_strong(Cache& c, const Store&, const Handle<Level::strong,ha,T>& h) {
+Handle<Level::strong,ha,T> run_ast_strong(const StrongCache& c, const StrongStore&, const Handle<Level::strong,ha,T>& h) {
 	return h;
 }
 
 
 template<HandleAccess ha, typename T>
-Handle<Level::strong,ha,T> run_ast_causal(Cache& cache, const Store &s, const Handle<Level::strong,ha,T>& h) {
+Handle<Level::strong,ha,T> run_ast_causal(CausalCache& cache, const CausalStore &s, const Handle<Level::strong,ha,T>& h) {
 	struct LocalObject : public RemoteObject<T> {
 		const T t;
 		GDataStore &st;
@@ -182,7 +182,7 @@ Handle<Level::strong,ha,T> run_ast_causal(Cache& cache, const Store &s, const Ha
 
 
 template<HandleAccess ha, typename T>
-Handle<Level::causal,ha,T> run_ast_causal(Cache& c, const Store &, const Handle<Level::causal,ha,T>& t) {
+Handle<Level::causal,ha,T> run_ast_causal(const CausalCache& c, const CausalStore &, const Handle<Level::causal,ha,T>& t) {
 	return t;
 }
 //*/
@@ -190,18 +190,18 @@ Handle<Level::causal,ha,T> run_ast_causal(Cache& c, const Store &, const Handle<
 template<typename T, restrict(is_ConExpr<T>::value &&
 							  !std::is_scalar<T>::value
 							  && !is_handle<T>::value)>
-auto run_ast_causal(Cache& c, const Store &s, const T& expr) {
+auto run_ast_causal(CausalCache& c, const CausalStore &s, const T& expr) {
 	return expr.causalCall(c,s);
 }
 
 template<typename T>
 typename std::enable_if<std::is_scalar<decay<T > >::value,T>::type
-run_ast_causal(const Cache &, const Store&, const T& e) {
+run_ast_causal(const CausalCache &, const CausalStore&, const T& e) {
 	return e;
 }
 
 template<typename T>
-using run_result = decltype(run_ast_causal(std::declval<Cache&>(),std::declval<Store&>(),std::declval<T&>()));
+using run_result = decltype(run_ast_causal(std::declval<CausalCache&>(),std::declval<CausalStore&>(),std::declval<T&>()));
 
 struct CacheLookupFailure {};
 

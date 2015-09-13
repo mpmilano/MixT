@@ -39,7 +39,7 @@ struct While : public ConStatement<min_level<Then>::value> {
 		return std::tuple_cat(::handles(cond), stmt_handles(then));
 	}
 
-	bool strongCall(Cache& c, Store &s) const {
+	bool strongCall(StrongCache& c, StrongStore &s) const {
 		std::cout << "In while body" << std::endl;
 		choose_strong<get_level<Cond>::value> choice1{nullptr};
 		choose_strong<min_level<Then>::value> choice2{nullptr};
@@ -48,34 +48,34 @@ struct While : public ConStatement<min_level<Then>::value> {
 		return ret;
 	}
 
-	bool strongCall(Cache& c, Store &s, const std::true_type*,const std::true_type*) const {
+	bool strongCall(StrongCache& c, StrongStore &s, const std::true_type*,const std::true_type*) const {
 		//nothing causal in this while loop. Do it all at once.
 		//TODO: remove this.
 		int safety_counter = 0;
-		auto new_cache = std::make_unique<Cache>(nullptr);
+		auto new_cache = std::make_unique<StrongCache>(nullptr);
 		while (run_ast_strong(*new_cache,s,cond)) {
 			call_all_strong(c,s,then);
 			assert(safety_counter++ < 100);
-			new_cache = std::make_unique<Cache>(nullptr);
+			new_cache = std::make_unique<StrongCache>(nullptr);
 		}
 
 		//TODO: error propogation;
 		return true;
 	}
 
-	bool strongCall(Cache& c_old_mut, Store &s, const std::true_type*, const std::false_type*) const {
+	bool strongCall(StrongCache& c_old_mut, StrongStore &s, const std::true_type*, const std::false_type*) const {
 		//the "hard" case, if you will. a strong condition, but some causal statements inside.
 		std::cout << "in the hard case (" << this->id << ")" << std::endl;
-		c_old_mut.emplace<std::list<std::unique_ptr<Cache> > >(id);
+		c_old_mut.emplace<std::list<std::unique_ptr<StrongCache> > >(id);
 		const Cache& c_old = c_old_mut;
 		
-		auto &store_stack = c_old_mut.get<std::list<std::unique_ptr<Cache> > >(id);
+		auto &store_stack = c_old_mut.get<std::list<std::unique_ptr<StrongCache> > >(id);
 
-		store_stack.emplace_back(std::make_unique<Cache>(nullptr));
+		store_stack.emplace_back(std::make_unique<StrongCache>(nullptr));
 		assert(store_stack.back().get() != &c_old);
 		while(run_ast_strong(*store_stack.back(),s,cond)) {
 			call_all_strong(*store_stack.back(),s,then);
-			store_stack.emplace_back(std::make_unique<Cache>(nullptr));
+			store_stack.emplace_back(std::make_unique<StrongCache>(nullptr));
 			assert(store_stack.front().get() != store_stack.back().get());
 		}
 		//there's one too many in here.
@@ -89,7 +89,7 @@ struct While : public ConStatement<min_level<Then>::value> {
 		return true;
 	}
 
-	bool strongCall(Cache& c, const Store &s, const std::false_type*, const std::false_type*) const {
+	bool strongCall(StrongCache& c, const StrongStore &s, const std::false_type*, const std::false_type*) const {
 		//there aren't any strong mutative things in here.
 		//what if there are strong references?
 		//they can't be mutative,
@@ -110,14 +110,15 @@ struct While : public ConStatement<min_level<Then>::value> {
 		return call_all_strong(c,s,then);
 	}
 	
-	bool causalCall(Cache& c_old, Store &s) const {
+	bool causalCall(CausalCache& c_old, CausalStore &s) const {
 		//if there's a cache for this AST node, then
 		//that means we've already run the condition.
 		//look it up!
 		std::cout << "In while body (Causal)" << std::endl;
 		if (c_old.contains(id)){
 			std::cout << "looks like we already ran this strong (" << this->id << ")" << std::endl;
-			for (auto &c : c_old.get<std::list<std::unique_ptr<Cache> > >(id)){
+			//so, hopefully this casting is safe.  If not, use the move constructor.
+			for (auto &c : c_old.get<std::list<std::unique_ptr<CausalCache> > >(id)){
 				call_all_causal(*c,s,then);
 			}
 		}

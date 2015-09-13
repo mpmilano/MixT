@@ -24,12 +24,12 @@ struct Operate : ConStatement<l> {
 			},std::tuple<>());
 	}
 
-	auto strongCall(Cache& cache, const Store &s) const {
+	auto strongCall(StrongCache& cache, const StrongStore &s) const {
 		choose_strong<l> choice{nullptr};
 		return strongCall(cache,s,choice);
 	}
 
-	R strongCall(Cache& cache, const Store &s, std::true_type*) const {
+	R strongCall(StrongCache& cache, const StrongStore &s, std::true_type*) const {
 		//nothing causal, just do it all at once
 		//need to cache things!
 		strongCall(cache,s,(std::false_type*) nullptr);
@@ -38,7 +38,7 @@ struct Operate : ConStatement<l> {
 		return ret;
 	}
 
-	void strongCall(Cache& cache, const Store &s, std::false_type*) const {
+	void strongCall(StrongCache& cache, const StrongStore &s, std::false_type*) const {
 		//execute the strong expressions now. Remember they are supposed to be
 		//self-caching
 		fold(exprs,[&](const auto &e, bool){
@@ -47,12 +47,12 @@ struct Operate : ConStatement<l> {
 	}
 
 
-	auto causalCall(Cache& cache, const Store &heap) const {
+	auto causalCall(CausalCache& cache, const CausalStore &heap) const {
 		choose_causal<l> choice{nullptr};
 		return causalCall(cache,heap,choice);
 	}	
 
-	auto causalCall(Cache& cache, const Store &heap, std::true_type*) const {
+	auto causalCall(CausalCache& cache, const CausalStore &heap, std::true_type*) const {
 		//the function f assumes that absolutely everything will already be cached.
 		//thus, we cannot call it until that's true.
 		fold(exprs,[&](const auto &e, bool){
@@ -61,7 +61,7 @@ struct Operate : ConStatement<l> {
 		return f(cache);
 	}
 
-	R causalCall(Cache& cache, const Store &, std::false_type*) const {
+	R causalCall(CausalCache& cache, const CausalStore &, std::false_type*) const {
 		//we were pure-strong, which means we're also already cached.
 		assert(cache.contains(this->id));
 		return cache.get<R>(this->id);

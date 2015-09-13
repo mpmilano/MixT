@@ -37,7 +37,7 @@ public:
 
 	template<HandleAccess ha, typename T2>
 	friend Handle<Level::strong,ha,T2>
-	run_ast_causal(Cache& cache, const Store &s,
+	run_ast_causal(CausalCache& cache, const CausalStore &s,
 				   const Handle<Level::strong,ha,T2>& h);
 
 	template<typename Arg, typename Accum>

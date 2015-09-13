@@ -43,24 +43,24 @@ struct If : public ConStatement<min_level<typename min_level<Then>::type,
 			stmt_handles(els));
 	}
 
-	bool strongCall(Cache& c, Store &s) const {
+	bool strongCall(StrongCache& c, StrongStore &s) const {
 		choose_strong<get_level<Cond>::value> choice{nullptr};
 		return strongCall(c,s,choice);
 	}
 
-	bool strongCall(Cache& c, Store &s, const std::true_type*) const {
+	bool strongCall(StrongCache& c, StrongStore &s, const std::true_type*) const {
 		return (run_ast_strong(c,s,cond) ? call_all_strong(c,s,then) : call_all_strong(c,s,els));
 	}
 
 	//just caching can happen here;
 	//any mutative action would violate information flow.
-	bool strongCall(Cache& c, Store &s, const std::false_type*) const {
+	bool strongCall(StrongCache& c, StrongStore &s, const std::false_type*) const {
 		run_ast_strong(c,s,cond);
 		return (call_all_strong(c,s,then) &&
 				call_all_strong(c,s,els));
 	}
 	
-	bool causalCall(Cache& c, Store &s) const {
+	bool causalCall(CausalCache& c, CausalStore &s) const {
 		return (run_ast_causal(c,s,cond) ? call_all_causal(c,s,then) : call_all_causal(c,s,els));
 	}
 	

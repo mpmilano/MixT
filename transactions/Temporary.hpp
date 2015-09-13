@@ -26,36 +26,36 @@ struct Temporary : public GeneralTemp, public ConStatement<get_level<T>::value> 
 		return ::handles(t);
 	}
 
-	auto strongCall(Cache& c, Store &s) const {
+	auto strongCall(StrongCache& c, StrongStore &s) const {
 
 		choose_strong<get_level<T>::value > choice{nullptr};
 		return strongCall(c,s,choice);
 	}
 
-	auto strongCall(Cache& c, Store &s, std::true_type*) const {
+	auto strongCall(StrongCache& c, StrongStore &s, std::true_type*) const {
 		typedef typename std::decay<decltype(run_ast_strong(c,s,t))>::type R;
 		if (!s.contains(store_id))
 			s.emplace<R>(store_id, run_ast_strong(c,s,t));
 		return true;
 	}
 
-	void strongCall(Cache& c, const Store &s, std::false_type*) const {
+	void strongCall(StrongCache& c, const StrongStore &s, std::false_type*) const {
 		t.strongCall(c,s);
 	}
 
-	auto causalCall(Cache& c, Store &s) const {
+	auto causalCall(CausalCache& c, CausalStore &s) const {
 		choose_causal<get_level<T>::value > choice{nullptr};
 		return causalCall(c,s,choice);
 	}
 
-	auto causalCall(Cache& c, Store &s,std::true_type*) const {
+	auto causalCall(CausalCache& c, CausalStore &s,std::true_type*) const {
 		typedef typename std::decay<decltype(t.causalCall(c,s))>::type R;
 		if (!s.contains(store_id))
 			s.emplace<R>(store_id,t.causalCall(c,s));
 		return true;
 	}
 
-	auto causalCall(Cache& c, Store &s,std::false_type*) const {
+	auto causalCall(CausalCache& c, CausalStore &s,std::false_type*) const {
 		//noop.  We've already executed this instruction.
 		return true;
 	}
@@ -89,33 +89,33 @@ struct TemporaryMutation : public ConStatement<get_level<T>::value> {
 		return ::handles(t);
 	}
 	
-	auto strongCall(Cache& c, Store &s) const {
+	auto strongCall(StrongCache& c, StrongStore &s) const {
 		choose_strong<get_level<T>::value > choice{nullptr};
 		return strongCall(c,s,choice);
 	}
 
-	auto strongCall(Cache& c, Store &s, std::true_type*) const {
+	auto strongCall(StrongCache& c, StrongStore &s, std::true_type*) const {
 		typedef typename std::decay<decltype(run_ast_strong(c,s,t))>::type R;
 		s.emplace_ovrt<R>(store_id,run_ast_strong(c,s,t));
 		return true;
 	}
 
-	void strongCall(Cache& c, const Store &s, std::false_type*) const {
+	void strongCall(StrongCache& c, const StrongStore &s, std::false_type*) const {
 		t.strongCall(c,s);
 	}
 
-	auto causalCall(Cache& c, Store &s) const {
+	auto causalCall(CausalCache& c, CausalStore &s) const {
 		choose_causal<get_level<T>::value > choice{nullptr};
 		return causalCall(c,s,choice);
 	}
 
-	auto causalCall(Cache& c, Store &s,std::true_type*) const {
+	auto causalCall(CausalCache& c, CausalStore &s,std::true_type*) const {
 		typedef typename std::decay<decltype(run_ast_causal(c,s,t))>::type R;
 		s.emplace_ovrt<R>(store_id,run_ast_causal(c,s,t));
 		return true;
 	}
 
-	auto causalCall(Cache& c, Store &s,std::false_type*) const {
+	auto causalCall(CausalCache& c, CausalStore &s,std::false_type*) const {
 		//noop.  We've already executed this instruction.
 		return true;
 	}
@@ -194,14 +194,20 @@ struct RefTemporary : public ConExpr<run_result<T>,l> {
 		return t.handles();
 	}
 
-	auto strongCall(Cache& cache, const Store &s) const {
+	auto strongCall(StrongCache& cache, const StrongStore &s) const {
 		//TODO - endorsements should happen somewhere around here, right?
 		//todo: dID I want the level of the expression which assigned the temporary?
 		choose_strong<get_level<Temp>::value > choice{nullptr};
-		return strongCall(cache, s,choice);
+		try {
+			return strongCall(cache, s,choice);
+		}
+		catch (const StoreMiss&){
+			std::cerr << "tried to reference variable " << name << std::endl;
+			assert(false && "we don't have that in the store");
+		}
 	}
 
-	auto strongCall(Cache& cache, const Store &s, std::true_type*) const {
+	auto strongCall(StrongCache& cache, const StrongStore &s, std::true_type*) const {
 		//std::cout << "inserting RefTemp " << name << " (" << id<< ") into cache "
 		//		  << &cache << std::endl;
 		auto ret = call(s, t);
@@ -209,15 +215,21 @@ struct RefTemporary : public ConExpr<run_result<T>,l> {
 		return ret;
 	}
 
-	void strongCall(Cache& cache, const Store &s, std::false_type*) const {
+	void strongCall(StrongCache& cache, const StrongStore &s, std::false_type*) const {
 		//we haven't even done the assignment yet. nothing to see here.
 	}
 
-	auto causalCall(Cache& cache, const Store &s) const {
+	auto causalCall(CausalCache& cache, const CausalStore &s) const {
 		typedef decltype(call(s,t)) R;
 		if (cache.contains(this->id)) return cache.get<R>(this->id);
 		else {
-			return call(s,t);
+			try {
+				return call(s,t);
+			}
+			catch (const StoreMiss&){
+				std::cerr << "Couldn't find this in the store: " << name << std::endl;
+				assert(false && "Not in the store");
+			}
 		}
 	}
 

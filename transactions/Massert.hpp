@@ -22,14 +22,14 @@ public:
 		return ::handles(t);
 	}
 
-	bool strongCall(Cache& a, const Store& b) const {
+	bool strongCall(StrongCache& a, const StrongStore& b) const {
 		auto ret = ::run_ast_strong(a,b,t);
 		if (runs_with_strong(get_level<T>::value)){
 			assert(ret);
 		}
 		return true;
 	}
-	bool causalCall(Cache& a, const Store& b) const {
+	bool causalCall(CausalCache& a, const CausalStore& b) const {
 		auto ret = ::run_ast_causal(a,b,t);
 		if (runs_with_causal(get_level<T>::value)){
 			assert(ret);

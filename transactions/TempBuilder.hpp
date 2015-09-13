@@ -62,12 +62,12 @@ struct DeclarationScope : public ConStatement<l>{
 			stmt_handles(cs));
 	}
 
-	bool strongCall(Cache& c, Store &s) const {
+	bool strongCall(StrongCache& c, StrongStore &s) const {
 		assert(gt);
 		return strongc_helper(c,s,gt) && call_all_strong(c,s,cs);
 	}
 	
-	bool causalCall(Cache& c, Store &s) const {
+	bool causalCall(CausalCache& c, CausalStore &s) const {
 		assert(gt);
 		return causalc_helper(c,s,gt) && call_all_causal(c,s,cs);
 	}

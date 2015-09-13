@@ -9,12 +9,12 @@
 #include "TransactionBuilder.hpp"
 
 struct Transaction{
-	const std::function<bool (Store &)> action;
+	const std::function<bool ()> action;
 	const std::function<std::ostream & (std::ostream &os)> print;
 	
 	template<typename Cmds>
 	Transaction(const TransactionBuilder<Cmds> &s):
-		action([s](Store &st) -> bool{
+		action([s]() -> bool{
 
 
 				//We're assuming that operations behave normally,
@@ -78,9 +78,12 @@ struct Transaction{
 				assert(any && "no handles traversed");
 				}
 				
-				Cache cache;
-				call_all_strong(cache,st,s.curr);
-				call_all_causal(cache,st,s.curr);
+				StrongCache caches;
+				StrongStore stores;
+				call_all_strong(caches,stores,s.curr);
+				CausalCache cachec{std::move(caches)};
+				CausalStore storec{std::move(stores)};
+				call_all_causal(cachec,storec,s.curr);
 
 				//restore the old transaction pointers
 				for (auto &p : old_ctx){
@@ -128,8 +131,7 @@ struct Transaction{
 	Transaction(const Transaction&) = delete;
 
 	bool operator()() const {
-		Store s;
-		return action(s);
+		return action();
 	}
 
 	struct CannotProceedError {};

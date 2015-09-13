@@ -70,7 +70,7 @@ template<Level l>
 using choose_causal = typename std::integral_constant<bool, runs_with_causal(l)>::type*;
 
 template<typename... CS>
-auto call_all_causal(Cache& cache, Store &st, const std::tuple<CS...> &t){
+auto call_all_causal(CausalCache& cache, CausalStore &st, const std::tuple<CS...> &t){
 	bool check = fold(t,[&cache,&st](const auto &e, bool b)
 					  {return b && e.causalCall(cache,st);},true);
 	assert(check);
@@ -79,7 +79,7 @@ auto call_all_causal(Cache& cache, Store &st, const std::tuple<CS...> &t){
 
 
 template<typename... CS>
-auto call_all_strong(Cache& cache, Store &st, const std::tuple<CS...> &t){
+auto call_all_strong(StrongCache& cache, StrongStore &st, const std::tuple<CS...> &t){
 	//TODO: better error propogation please.
 	bool check = fold(t,[&cache,&st](const auto &e, bool b)
 					  {e.strongCall(cache,st); return true;},true);

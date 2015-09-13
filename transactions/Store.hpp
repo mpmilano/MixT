@@ -1,8 +1,10 @@
 #pragma once
 #include "utils.hpp"
 
+struct StoreMiss {};
+
 //TODO: define this better and move it.
-template<bool acts_as_store>
+template<int semantic_switch>
 struct StoreMap {
 	
 	static std::map<int, StoreMap*>& lost_and_found() {
@@ -25,6 +27,12 @@ struct StoreMap {
 	StoreMap(){}
 
 	StoreMap(StoreMap  * const prev):prev_scope(prev){}
+
+	template<int ss,restrict(ss != semantic_switch)>
+	explicit StoreMap(StoreMap<ss> &&sm)
+		:store_impl(sm.store_impl),
+		 prev_scope(sm.prev_scope),
+		 valid_store(sm.valid_store){}
 
 	StoreMap(const StoreMap&) = delete;
 
@@ -57,9 +65,9 @@ struct StoreMap {
 	if (!contains(i) && prev_scope)		  \
 		return prev_scope->get<T>(i);	  \
 	else if (!contains(i)) {											\
-		std::cerr << "trying to find something of id " << i << std::endl; \
+		std::cerr << "trying to find something of id " << i << " in a " << (semantic_switch == 0 || semantic_switch == 3 ? "store" : "cache" ) <<std::endl; \
 		std::cerr << "we have that here : "	<< lost_and_found()[i] <<std::endl; \
-		assert(false && "Error: we don't have that here");				\
+		throw StoreMiss{};												\
 	}																	\
 	T* ret = (T*) (store_impl.at(i).get());								\
 	assert(ret);														\
@@ -83,5 +91,36 @@ struct StoreMap {
 
 };
 
-using Store = StoreMap<true>;
-using Cache = StoreMap<false>;
+template<bool as_store>
+struct ROStore {
+	
+	std::map<int,std::unique_ptr<void*> > store_impl;	
+	const std::function<bool (int)> contains;
+	
+	template<int i>
+	ROStore(const StoreMap<i> &sm):
+		store_impl(sm.store_impl),
+		contains(sm.contains){}
+
+	template<typename T>
+	T& get(int i){
+		T* ret = (T*) (store_impl.at(i).get());
+		return *ret;
+	}
+	
+	template<typename T>
+	const T& get(int i) const{
+		T* ret = (T*) (store_impl.at(i).get());
+		return *ret;
+	}
+
+	
+};
+
+using Store = ROStore<true>;
+using Cache = ROStore<false>;
+
+using StrongStore = StoreMap<0>;
+using StrongCache = StoreMap<1>;
+using CausalStore = StoreMap<3>;
+using CausalCache = StoreMap<4>;

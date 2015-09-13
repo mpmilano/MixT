@@ -134,14 +134,11 @@ public:
 	}
 	
 	template<HandleAccess ha2, typename T2>
-	friend Handle<Level::strong,ha2,T2> run_ast_causal(const Cache& cache, const Store &, const Handle<Level::strong,ha2,T2>& h);
-
-	template<Level l2, HandleAccess ha2, typename T2>
-	friend void markInTransaction(Store &s, const Handle<l2,ha2,T2> &h);
+	friend Handle<Level::strong,ha2,T2> run_ast_causal(const CausalCache& cache, const CausalStore &, const Handle<Level::strong,ha2,T2>& h);
 
 	template<HandleAccess ha, typename T2>
 	friend Handle<Level::strong,ha,T2>
-	run_ast_causal(Cache& cache, const Store &s,
+	run_ast_causal(CausalCache& cache, const CausalStore &s,
 				   const Handle<Level::strong,ha,T2>& h);
 
 	

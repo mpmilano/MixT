@@ -73,12 +73,12 @@ struct FreeExpr : public ConExpr<T, min_level<Exprs...>::value > {
 		return ::handles(params);
 	}
 
-	auto strongCall(Cache& cache, const Store &heap) const{
+	auto strongCall(StrongCache& cache, const StrongStore &heap) const{
 		choose_strong<level::value> choice{nullptr};
 		return strongCall(cache,heap,choice);
 	}	
 
-	T strongCall(Cache& cache, const Store &heap, std::true_type*) const{
+	T strongCall(StrongCache& cache, const StrongStore &heap, std::true_type*) const{
 		//everything is strong, run it now; but f assumes everything
 		//already cached, which means strongCall for caching first
 		std::false_type* false_t(nullptr);
@@ -89,7 +89,7 @@ struct FreeExpr : public ConExpr<T, min_level<Exprs...>::value > {
 		return ret;
 	}
 
-	void strongCall(Cache& cache, const Store &heap,std::false_type*) const{
+	void strongCall(StrongCache& cache, const StrongStore &heap,std::false_type*) const{
 		fold(params,[&](const auto &e, bool){
 				run_ast_strong(cache,heap,e);
 				return false;},false);
@@ -99,19 +99,19 @@ struct FreeExpr : public ConExpr<T, min_level<Exprs...>::value > {
 				return false;},false);
 	}
 
-	auto causalCall(Cache& cache, const Store &heap) const {
+	auto causalCall(CausalCache& cache, const CausalStore &heap) const {
 		choose_causal<level::value> choice{nullptr};
 		return causalCall(cache,heap,choice);
 	}	
 
-	auto causalCall(Cache& cache, const Store &heap, std::true_type*) const {
+	auto causalCall(CausalCache& cache, const CausalStore &heap, std::true_type*) const {
 		fold(params,[&](const auto &e, bool){
 				run_ast_causal(cache,heap,e);
 				return false;},false);
 		return f(cache,params);
 	}
 
-	T causalCall(Cache& cache, const Store &heap, std::false_type*) const {
+	T causalCall(CausalCache& cache, const CausalStore &heap, std::false_type*) const {
 		assert(cache.contains(this->id));
 		return cache.get<T>(this->id);
 	}
