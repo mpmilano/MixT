@@ -125,9 +125,14 @@ struct TemporaryMutation : public ConStatement<get_level<T>::value> {
 
 template<typename T>
 struct chld_min_level<TemporaryMutation<T> > : chld_min_level<T> {};
+template<typename T>
+struct chld_min_level<const TemporaryMutation<T> > : chld_min_level<T> {};
+
 
 template<typename T>
 struct chld_max_level<TemporaryMutation<T> > : chld_min_level<T> {};
+template<typename T>
+struct chld_max_level<const TemporaryMutation<T> > : chld_min_level<T> {};
 
 
 template<unsigned long long ID, typename T>

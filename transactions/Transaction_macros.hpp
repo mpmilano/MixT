@@ -11,7 +11,16 @@
 #define TRANS_CONS(x...) {static auto curr = x ;{ static auto prev2 = append(prev,curr); { static auto prev = prev2;
 #define STANDARD_BEGIN(x...) (x);
 
-#define END_TRANSACTION static Transaction ____transaction(prev); std::cout << ____transaction << std::endl << "all done printing" << std::endl; ____transaction();
+#define END_TRNS_STRT static Transaction ____transaction(prev);
+#define END_TRNS_CALL ____transaction();
+
+#ifdef PRINT_TRANS
+#define END_TRANSACTION END_TRNS_STRT std::cout << ____transaction << std::endl << "all done printing" << std::endl; END_TRNS_CALL
+#endif
+
+#ifndef PRINT_TRANS
+#define END_TRANSACTION END_TRNS_STRT END_TRNS_CALL
+#endif
 
 #include "trans_seq_generated.hpp"
 

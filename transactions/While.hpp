@@ -40,11 +40,9 @@ struct While : public ConStatement<min_level<Then>::value> {
 	}
 
 	bool strongCall(StrongCache& c, StrongStore &s) const {
-		std::cout << "In while body" << std::endl;
 		choose_strong<get_level<Cond>::value> choice1{nullptr};
 		choose_strong<min_level<Then>::value> choice2{nullptr};
 		bool ret = strongCall(c,s,choice1,choice2);
-		std::cout << "Out of while body" << std::endl;
 		return ret;
 	}
 
@@ -65,7 +63,6 @@ struct While : public ConStatement<min_level<Then>::value> {
 
 	bool strongCall(StrongCache& c_old_mut, StrongStore &s, const std::true_type*, const std::false_type*) const {
 		//the "hard" case, if you will. a strong condition, but some causal statements inside.
-		std::cout << "in the hard case (" << this->id << ")" << std::endl;
 		c_old_mut.emplace<std::list<std::unique_ptr<StrongCache> > >(id);
 		const Cache& c_old = c_old_mut;
 		
@@ -82,8 +79,6 @@ struct While : public ConStatement<min_level<Then>::value> {
 		store_stack.pop_back();
 
 		assert(c_old.contains(id));
-		
-		std::cout << "out of the hard case" << std::endl;
 
 		//TODO: error propogation
 		return true;
@@ -114,20 +109,16 @@ struct While : public ConStatement<min_level<Then>::value> {
 		//if there's a cache for this AST node, then
 		//that means we've already run the condition.
 		//look it up!
-		std::cout << "In while body (Causal)" << std::endl;
 		if (c_old.contains(id)){
-			std::cout << "looks like we already ran this strong (" << this->id << ")" << std::endl;
 			//so, hopefully this casting is safe.  If not, use the move constructor.
 			for (auto &c : c_old.get<std::list<std::unique_ptr<CausalCache> > >(id)){
 				call_all_causal(*c,s,then);
 			}
 		}
 		else {
-			std::cout << "looks like we've never done this before (" << this->id << ")" << std::endl;
 			//causal condition, so nothing interesting here.
 			while(run_ast_causal(c_old,s,cond)) call_all_causal(c_old,s,then);
 		}
-		std::cout << "out of while body (causal)" << std::endl;
 
 		return true;
 	}

@@ -77,28 +77,26 @@ int main() {
 		FileStore<Level::strong>::filestore_instance();
 	auto h = WeakCons::build_list(fss,fsc,12,13,14);
 
-	std::cout << h.get().val.get() << std::endl;
 	assert(h.get().val.get() == 14);
 
 		TRANSACTION(
 		let_mutable(bound) = 0 IN (
 		let_mutable(hd) = h IN (
 			WHILE (isValid(hd) && (!(bound == 10))) DO(
-				print_str("hd"),
-				print(hd),
+				//print_str("hd"),
+				//print(hd),
 				let_ifValid(tmp) = hd IN (
-					print_str("tmp"),
-					print(tmp),
+					//print_str("tmp"),
+					//print(tmp),
 					let_ifValid(weak_val) = msg(tmp,val) IN (
 						do_op(Increment,weak_val)),
-					hd = msg(tmp,next)
+					hd = msg(tmp,next),
+					bound = bound + 1
 					))
 				)
 			)
 			); //*/
 
-
-	std::cout << h.get().val.get() << std::endl;
 	assert(h.get().val.get() == 15);
 	
 	return 0;

@@ -79,7 +79,6 @@ public:
 		int to_bytes(char* _v) const {
 			((int*)_v)[0] = id::value;
 			char* v = _v + sizeof(int);
-			std::cout << "Serializing this name: " << filename.c_str() << std::endl;
 			if (std::strcpy(v,filename.c_str()))
 				return filename.length() + 1 + sizeof(int);
 			else assert(false && "error strcpy failed");
@@ -143,9 +142,7 @@ public:
 		!std::is_pod<Archive>::value>::type
 		save(Archive &ar, const uint) const {
 			char *v = (char*) malloc(::bytes_size(*t));
-			std::cout << "serializing member!" << std::endl;
 			int size = ::to_bytes(*t,v);
-			std::cout << "copying to vector!" << std::endl;
 			std::vector<char> v2(v, v + size);
 			ar << v2;
 			free(v);
@@ -264,13 +261,10 @@ public:
 
 	template<typename T> 
 	OPERATION(Insert, FSObject<std::set<T> >* ro, const T& t){
-		std::cout << "DOING INSERT!" << std::endl;
 		if (FSDir<T>* dir = dynamic_cast<FSDir<T>*>(ro)) {
 			FSObject<T> obj(ro->s,dir->filename + std::to_string(gensym()),t);
-			std::cout << "Done insert!" << std::endl;
 			return true;
-		}
-		
+		}		
 		assert(false && "didn't pass me an FSDIR!");
 		return false;
 	}

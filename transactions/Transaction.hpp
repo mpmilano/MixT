@@ -53,7 +53,6 @@ struct Transaction{
 
 				std::set<std::shared_ptr<GeneralRemoteObject> > collected_objs;
 				foreach(s.curr, [&](const auto &e){
-						std::cout << "looking for handles here: " << e << std::endl;
 						foreach(e.handles(),[&](const auto &h){
 								any = true;
 								collected_objs.insert(h._ro);

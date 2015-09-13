@@ -345,14 +345,6 @@ struct MutableDeclarationBuilder {
 			typename std::decay<decltype(dref_np(find_usage<ID>(t)))>::type,
 			typename std::decay<decltype(*this_decl.gt.get())>::type
 			>::type found_type;
-
-		std::cout << "looking for " <<  ID << std::endl;
-		if (contains_temporary<ID,found_type>::value){
-			std::cout << "found it!" << std::endl;
-		}
-		else {
-			std::cout << "still looking" << std::endl;
-		}
 		
 		constexpr Level new_level = get_level<found_type>::value;
 		MutDeclarationScope<ID, decltype(new_cs),new_level,found_type>
@@ -386,15 +378,6 @@ struct ImmutableDeclarationBuilder {
 			typename std::decay<decltype(find_usage<ID>(t))>::type,
 			typename std::decay<decltype(*this_decl.gt)>::type
 			>::type found_type;
-
-		std::cout << "looking for (immutable) " << ID << std::endl;
-		if (contains_temporary<ID,found_type>::value){
-			std::cout << "found it!" << std::endl;
-		}
-		else {
-			std::cout << "still looking" << std::endl;
-		}
-
 
 		constexpr Level new_level = get_level<found_type>::value;
 		auto new_decl = build_ImmutDeclarationScope<ID, decltype(new_cs),new_level,found_type>
