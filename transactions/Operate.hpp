@@ -8,7 +8,7 @@
 template<Level l, typename R, typename Exprs>
 struct Operate : ConStatement<l> {
 	const int id;
-	const std::function<R (Cache &)> f;
+	const std::function<R (const Cache &)> f;
 	const Exprs exprs;
 	Operate(const std::function<R (const Cache&)>& f,
 			const Exprs &exprs,
@@ -58,7 +58,8 @@ struct Operate : ConStatement<l> {
 		fold(exprs,[&](const auto &e, bool){
 				run_ast_causal(cache,heap,*e);
 				return false;},false);
-		return f(cache);
+		const Cache ro_cache{cache};
+		return f(ro_cache);
 	}
 
 	R causalCall(CausalCache& cache, const CausalStore &, std::false_type*) const {
@@ -181,3 +182,15 @@ auto make_PreOp(int id, const T &t){
 	return ret;
 }
 
+template<typename T>
+auto trans_op_arg(CausalCache& cs, const CausalStore& cc, const T& t){
+	assert(false && "I think this is unsafe!");
+	return constify(op_arg(run_ast_causal(cs,cc,op_arg(t))));
+}
+
+template<typename T>
+auto trans_op_arg(StrongCache& , const StrongStore& , const T& ) ->
+	decltype(constify(op_arg(std::declval<run_result<decltype(extract_robj_p(std::declval<T>()))> >()))) {
+	assert(false && "I think this is unsafe!");
+	
+}

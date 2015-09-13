@@ -1,6 +1,6 @@
 #pragma once
 
-#define trans_op_arg(c,s,x) constify(op_arg(run_ast_causal(c, s, op_arg(x))))
+//#define trans_op_arg(c,s,x) constify(op_arg(run_ast_causal(c, s, op_arg(x))))
 
 #define do_op2(Name, _arg)												\
 	[&](){																\

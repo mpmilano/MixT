@@ -94,13 +94,13 @@ struct StoreMap {
 template<bool as_store>
 struct ROStore {
 	
-	std::map<int,std::unique_ptr<void*> > store_impl;	
+	const std::map<int,std::unique_ptr<void*> > &store_impl;	
 	const std::function<bool (int)> contains;
 	
 	template<int i>
 	ROStore(const StoreMap<i> &sm):
 		store_impl(sm.store_impl),
-		contains(sm.contains){}
+		contains([&](int j){return sm.contains(j);}){}
 
 	template<typename T>
 	T& get(int i){
