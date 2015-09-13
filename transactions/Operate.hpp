@@ -183,14 +183,16 @@ auto make_PreOp(int id, const T &t){
 }
 
 template<typename T>
-auto trans_op_arg(CausalCache& cs, const CausalStore& cc, const T& t){
-	assert(false && "I think this is unsafe!");
-	return constify(op_arg(run_ast_causal(cs,cc,op_arg(t))));
+auto trans_op_arg(CausalCache& c, const CausalStore& s, const T& t) ->
+	std::remove_reference_t<decltype(constify(op_arg(run_ast_causal(c,s,op_arg(t)))))>
+{
+	//I'm hoping this is default-constructible...
+	return decltype(trans_op_arg(c,s,t)){};
 }
 
 template<typename T>
-auto trans_op_arg(StrongCache& , const StrongStore& , const T& ) ->
-	decltype(constify(op_arg(std::declval<run_result<decltype(extract_robj_p(std::declval<T>()))> >()))) {
-	assert(false && "I think this is unsafe!");
-	
+auto trans_op_arg(StrongCache& c, const StrongStore& s, const T& t) ->
+	std::remove_reference_t<decltype(constify(op_arg(std::declval<run_result<decltype(extract_robj_p(std::declval<T>()))> >())))> {
+	//I'm hoping this is default-constructible...
+	return decltype(trans_op_arg(c,s,t)){};
 }
