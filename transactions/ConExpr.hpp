@@ -283,3 +283,10 @@ auto handles(const std::tuple<T...> &params){
 				}
 				,std::tuple<>());
 }
+
+template<typename T>
+using is_AST_Expr = typename std::integral_constant<
+	bool,
+	is_ConExpr<T>::value &&
+	!std::is_scalar<T>::value &&
+	!is_handle<T>::value >::type;

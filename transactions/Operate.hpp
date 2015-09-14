@@ -140,6 +140,7 @@ struct PreOp<std::tuple<J...> > {
 	const std::tuple<J...> t;
 
 	PreOp(int id, const std::tuple<J...> &t):id(id),t(t){
+		static_assert(sizeof...(J) > 0, "Error: PreOp built with an empty operation!");
 		assert(fold(t,[](const auto &e, bool acc){return e.built_well || acc;},false));
 	}
 
@@ -186,13 +187,30 @@ template<typename T>
 auto trans_op_arg(CausalCache& c, const CausalStore& s, const T& t) ->
 	std::remove_reference_t<decltype(constify(op_arg(run_ast_causal(c,s,op_arg(t)))))>
 {
-	//I'm hoping this is default-constructible...
-	return decltype(trans_op_arg(c,s,t)){};
+	return constify(op_arg(run_ast_causal(c,s,op_arg(t))));
+}
+
+template<typename A, typename B, restrict(std::is_same<A CMA B>::value)>
+A when_same_cond(const std::function<A ()> &a, const std::function<B ()> &){
+	return a();	
+}
+
+template<typename A, typename B, restrict2(!std::is_same<A CMA B>::value)>
+B when_same_cond(const std::function<A ()> &, const std::function<B ()> &b){
+	return b();	
 }
 
 template<typename T>
 auto trans_op_arg(StrongCache& c, const StrongStore& s, const T& t) ->
-	std::remove_reference_t<decltype(constify(op_arg(std::declval<run_result<decltype(extract_robj_p(std::declval<T>()))> >())))> {
-	//I'm hoping this is default-constructible...
-	return decltype(trans_op_arg(c,s,t)){};
+	std::remove_reference_t<decltype(constify(op_arg(std::declval<run_result<decltype(op_arg(t))>>())))> {
+	using Pre_return = run_result<decltype(op_arg(t))>;
+	using Strong_res = decltype(run_ast_strong(c,s,op_arg(t)));
+	assert((neg_error_helper<is_AST_Expr,Pre_return>::value));
+	assert((neg_error_helper<is_AST_Expr,Strong_res>::value));
+	return constify(
+		extract_robj_p(
+			when_same_cond<Strong_res,Pre_return> (
+				[&]() -> Strong_res {return run_ast_strong(c,s,op_arg(t));},
+				[&]() -> Pre_return {assert(false && "I don't think I can handle this");}
+				)));
 }

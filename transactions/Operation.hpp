@@ -61,6 +61,7 @@ struct Operation<Store, Ret (*) (A...)> {
 	
 	Operation(Ret (*fun) (A...)):built_well(true),fun(fun) {
 	}
+	
 	Operation():fun([](A...) -> Ret{assert(false && "Operation built on sand!");}) {
 	}
 
@@ -131,22 +132,22 @@ struct NoOperation {
 	decl {																\
 	return																\
 		fold(*mke_p<std::tuple<STORE_LIST> >(),							\
-		[&](const auto &arg, const auto &accum){						\
-		typedef decay<decltype(arg)> Store;								\
-		typedef decltype(Store::Name ## _impl(args)) ret_t;				\
-		ret_t def;														\
-		try {															\
-		auto ret = tuple_cons(
-                /*Name(args...);*/
+			 [&](const auto &arg, const auto &accum){					\
+				 typedef decay<decltype(arg)> Store;					\
+				 typedef decltype(Store::Name ## _impl(args)) ret_t;	\
+				 ret_t def;												\
+				 try {													\
+					 auto ret = tuple_cons(
+/*Name(args...);*/
 #define DOBODY2(Name,args...) ,accum) ;									\
-		assert(std::get<0>(ret).built_well &&							\
-		   "Did you actually implement this operation?");				\
-	return ret;															\
-	}																	\
-	catch (Transaction::ClassCastException e){							\
-		return tuple_cons(def,accum);									\
-	}																	\
-	},std::tuple<>());													\
+					 assert(std::get<0>(ret).built_well &&				\
+							"Did you actually implement this operation?"); \
+					 return ret;										\
+					 }													\
+				 catch (Transaction::ClassCastException e){				\
+					 return tuple_cons(def,accum);						\
+				 }														\
+				 },std::tuple<>());										\
 	}
 				
 #define FINALIZE_OPERATION2(Name, arg)								\
@@ -167,7 +168,7 @@ struct NoOperation {
 #define FINALIZE_OPERATION(...) FINALIZE_OPERATION_IMPL(VA_NARGS(__VA_ARGS__), __VA_ARGS__)
 
 
-#define op_arg(x) extract_robj_p(x)
+#define op_arg(x...) extract_robj_p(x)
 
 #define op2(Name, arg) make_DoOp(Name(op_arg(arg)))(arg)
 #define op3(Name, arg1,arg2) make_DoOp(Name(op_arg(arg1),op_arg(arg2)))(arg1,arg2)

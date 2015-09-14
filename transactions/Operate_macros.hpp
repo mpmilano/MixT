@@ -7,6 +7,7 @@
 		auto a = _arg;													\
 		using Arg = decltype(a);										\
 		struct OperateImpl : public FindUsages<Arg>, public ConStatement<get_level<decltype(a)>::value >{ \
+			using level = get_level<OperateImpl>;						\
 			const int id = gensym();									\
 			const std::shared_ptr<decltype(a)> arg;						\
 			const std::string name = #Name;								\
@@ -21,8 +22,17 @@
 			}															\
 																		\
 			auto strongCall(StrongCache& c CMA  const StrongStore &s) const { \
+				choose_strong<level::value> choice{nullptr};			\
+				return strongCall(c,s,choice);							\
+			}															\
+																		\
+			auto strongCall(StrongCache& c CMA const StrongStore &s CMA std::true_type*) const {\
 				return make_PreOp(id,Name(trans_op_arg(c, s, *arg)))	\
 					(arg).strongCall(c CMA s);							\
+			}															\
+																		\
+			void strongCall(StrongCache& c CMA const StrongStore &s CMA std::false_type*) const { \
+				arg->strongCall(c CMA s);								\
 			}															\
 																		\
 			auto causalCall(CausalCache& c CMA  const CausalStore &s) const { \
@@ -33,6 +43,7 @@
 		OperateImpl r{a}; return r;										\
 	} ()
 
+	  /*
 #define do_op3(Name, _arg1,_arg2)										\
 	[&](){																\
 		auto a = _arg1;													\
@@ -75,6 +86,7 @@
 		};																\
 		OperateImpl r{a,b}; return r;									\
 	} ()
+	  */
 
 #define do_op_IMPL2(count, ...) do_op ## count (__VA_ARGS__)
 #define do_op_IMPL(count, ...) do_op_IMPL2(count, __VA_ARGS__)
