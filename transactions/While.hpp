@@ -67,6 +67,7 @@ struct While : public ConStatement<min_level<Then>::value> {
 		const Cache& c_old = c_old_mut;
 		
 		auto &store_stack = c_old_mut.get<std::list<std::unique_ptr<StrongCache> > >(id);
+		std::cout << "store stack found at cache: " << &c_old_mut << std::endl;
 
 		store_stack.emplace_back(std::make_unique<StrongCache>());
 		assert(store_stack.back().get() != &c_old_mut);
@@ -79,6 +80,18 @@ struct While : public ConStatement<min_level<Then>::value> {
 		store_stack.pop_back();
 
 		assert(c_old.contains(id));
+
+		{
+			auto it = store_stack.begin();
+			for (auto &c : c_old.get<std::list<std::unique_ptr<CausalCache> > >(id)){
+				assert (((void*)c.get()) == ((void*)it->get()));
+				assert(c->store_impl == (*it)->store_impl);
+				assert(&(c->store_impl) == &((*it)->store_impl));
+				++it;
+			}
+			//Debugging!
+		}
+
 
 		//TODO: error propogation
 		return true;
@@ -112,6 +125,7 @@ struct While : public ConStatement<min_level<Then>::value> {
 		if (c_old.contains(id)){
 			//so, hopefully this casting is safe.  If not, use the move constructor.
 			for (auto &c : c_old.get<std::list<std::unique_ptr<CausalCache> > >(id)){
+				std::cout << "address of cache: " << c.get() << std::endl;
 				call_all_causal(*c,s,then);
 			}
 		}

@@ -31,19 +31,14 @@ struct Operate : ConStatement<l> {
 
 	R strongCall(StrongCache& cache, const StrongStore &s, std::true_type*) const {
 		//nothing causal, just do it all at once
-		//need to cache things!
-		strongCall(cache,s,(std::false_type*) nullptr);
+		//things are cached by operate_impl! i hope!
 		auto ret = f(cache);
 		cache.insert(id,ret);
 		return ret;
 	}
 
 	void strongCall(StrongCache& cache, const StrongStore &s, std::false_type*) const {
-		//execute the strong expressions now. Remember they are supposed to be
-		//self-caching
-		fold(exprs,[&](const auto &e, bool){
-				run_ast_strong(cache,s,*e);
-				return false;},false);
+		//things should already have been cached by operate_impl
 	}
 
 
@@ -52,14 +47,10 @@ struct Operate : ConStatement<l> {
 		return causalCall(cache,heap,choice);
 	}	
 
-	auto causalCall(CausalCache& cache, const CausalStore &heap, std::true_type*) const {
+	auto causalCall(CausalCache& cache, const CausalStore &, std::true_type*) const {
 		//the function f assumes that absolutely everything will already be cached.
-		//thus, we cannot call it until that's true.
-		fold(exprs,[&](const auto &e, bool){
-				run_ast_causal(cache,heap,*e);
-				return false;},false);
-		const Cache ro_cache{cache};
-		return f(ro_cache);
+		//hopefully Operate_impl does that for us, so all we have to do here is call the function.
+		return f(cache);
 	}
 
 	R causalCall(CausalCache& cache, const CausalStore &, std::false_type*) const {
@@ -186,12 +177,24 @@ auto make_PreOp(int id, const T &t){
 }
 
 template<typename T>
+auto trans_op_arg_common(const Cache& c, const Store &s, const T &t){
+	return constify(extract_robj_p(cached(c,t)));
+}
+
+template<typename T>
 auto trans_op_arg(CausalCache& c, const CausalStore& s, const T& t) ->
 	std::remove_reference_t<decltype(constify(op_arg(run_ast_causal(c,s,op_arg(t)))))>
 {
-	return constify(op_arg(run_ast_causal(c,s,op_arg(t))));
+	return constify(op_arg(run_ast_causal(c,s,t)));
 }
 
+template<typename T>
+auto trans_op_arg(StrongCache& c, const StrongStore& s, const T& t) {
+	run_ast_strong(c,s,t);
+	return trans_op_arg_common(c,s,t);
+}
+
+/*
 template<typename A, typename B, restrict(std::is_same<A CMA B>::value)>
 A when_same_cond(const std::function<A ()> &a, const std::function<B ()> &){
 	return a();	
@@ -205,6 +208,7 @@ B when_same_cond(const std::function<A ()> &, const std::function<B ()> &b){
 template<typename T>
 auto trans_op_arg(StrongCache& c, const StrongStore& s, const T& t) ->
 	std::remove_reference_t<decltype(constify(op_arg(std::declval<run_result<decltype(op_arg(t))>>())))> {
+	//Okay, this will only work if things are _cached_ from now on
 	using Pre_return = run_result<decltype(op_arg(t))>;
 	using Strong_res = decltype(run_ast_strong(c,s,op_arg(t)));
 	assert((neg_error_helper<is_AST_Expr,Pre_return>::value));
@@ -216,3 +220,4 @@ auto trans_op_arg(StrongCache& c, const StrongStore& s, const T& t) ->
 				[&]() -> Pre_return {assert(false && "I don't think I can handle this");}
 				)));
 }
+*/

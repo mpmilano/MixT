@@ -67,7 +67,7 @@ struct FreeExpr : public ConExpr<T, min_level<Exprs...>::value > {
 			 })
 		{}
 
-	FreeExpr(const FreeExpr& fe):params(fe.params),f(fe.f){}
+	FreeExpr(const FreeExpr& fe):params(fe.params),f(fe.f),id(debug_forbid_copy ? fe.id : gensym()){}
 
 	auto handles() const {
 		return ::handles(params);

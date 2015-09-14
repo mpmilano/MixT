@@ -178,8 +178,15 @@ class CSConstant;
 #define MutAssigner(c) MutCreator<unique_id<(sizeof(c) / sizeof(char)) - 1>(c)>{c}
 #define ImmutAssigner(c) ImmutCreator<unique_id<(sizeof(c) / sizeof(char)) - 1>(c)>{c}
 
+namespace{
+	bool debug_forbid_copy = false;
+}
+
 template<unsigned long long ID, Level l, typename T, typename Temp>
 struct RefTemporary : public ConExpr<run_result<T>,l> {
+private:
+	RefTemporary(const Temp& t, const std::string& name, int id):t(t),name(name),id(id){}
+public:
 	
 	const Temp t;
 	const std::string name;
@@ -191,8 +198,14 @@ struct RefTemporary : public ConExpr<run_result<T>,l> {
 
 	RefTemporary(const Temp &t):t(t),name(t.name) {}
 
-	RefTemporary(const RefTemporary& rt):t(rt.t),name(rt.name),id(gensym()){
+	RefTemporary(const RefTemporary& rt):t(rt.t),name(rt.name){
+		assert(!debug_forbid_copy);
+	}
+	
+	RefTemporary(RefTemporary&& rt):t(rt.t),name(rt.name),id(rt.id){}
 
+	RefTemporary clone() const {
+		return RefTemporary(t,name,id);
 	}
 
 	auto handles() const {
@@ -202,9 +215,6 @@ struct RefTemporary : public ConExpr<run_result<T>,l> {
 	auto strongCall(StrongCache& cache, const StrongStore &s) const {
 		//TODO - endorsements should happen somewhere around here, right?
 		//todo: dID I want the level of the expression which assigned the temporary?
-		if (ID == 56092) {
-			std::cout << "calling strong the errant thing, putting " << this->id << " into cache " << &cache << ";" << std::endl;
-		}
 		
 		choose_strong<get_level<Temp>::value > choice{nullptr};
 		try {
@@ -219,6 +229,9 @@ struct RefTemporary : public ConExpr<run_result<T>,l> {
 	auto strongCall(StrongCache& cache, const StrongStore &s, std::true_type*) const {
 		//std::cout << "inserting RefTemp " << name << " (" << id<< ") into cache "
 		//		  << &cache << std::endl;
+		if (ID == 56092) {
+			std::cout << "calling strong the errant thing, putting " << this->id << " into cache " << &cache << ";" << std::endl;
+		}
 		auto ret = call(s, t);
 		cache.insert(id,ret);
 		return ret;
@@ -226,15 +239,25 @@ struct RefTemporary : public ConExpr<run_result<T>,l> {
 
 	void strongCall(StrongCache& cache, const StrongStore &s, std::false_type*) const {
 		//we haven't even done the assignment yet. nothing to see here.
+		if (ID == 56092) {
+			std::cout << "calling strong the errant thing. Not putting anything in the cache" << std::endl;
+		}
+
 	}
 
 	auto causalCall(CausalCache& cache, const CausalStore &s) const {
 		if (ID == 56092) {
-			std::cout << "causal call of errant thing" << std::endl;
+			std::cout << "causal call of errant thing with cache " << &cache << " and id " << this->id << std::endl;
+			std::cout << "here are all the things that cache contains: " << std::endl;
+			for (auto &p : cache.store_impl){
+				std::cout << p.first << ": " << p.second.get() << std::endl;
+			}
 		}
 		
 		typedef decltype(call(s,t)) R;
-		if (cache.contains(this->id)) return cache.get<R>(this->id);
+		if (cache.contains(this->id)) {
+			return cache.get<R>(this->id);
+		}
 		else {
 			try {
 				return call(s,t);

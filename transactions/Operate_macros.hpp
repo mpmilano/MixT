@@ -27,7 +27,7 @@
 			}															\
 																		\
 			auto strongCall(StrongCache& c CMA const StrongStore &s CMA std::true_type*) const {\
-				return make_PreOp(id,Name(trans_op_arg(c, s, *arg)))	\
+				return make_PreOp(id,Name(trans_op_arg(c, s, (*arg))))	\
 					(arg).strongCall(c CMA s);							\
 			}															\
 																		\
@@ -36,7 +36,7 @@
 			}															\
 																		\
 			auto causalCall(CausalCache& c CMA  const CausalStore &s) const { \
-				return make_PreOp(id,Name(trans_op_arg(c, s, *arg)))	\
+				return make_PreOp(id,Name(trans_op_arg(c, s, (*arg))))	\
 					(arg).causalCall(c CMA s);							\
 			}															\
 		};																\

@@ -8,6 +8,7 @@
 #include "TransactionBasics.hpp"
 #include "TransactionBuilder.hpp"
 
+
 struct Transaction{
 	const std::function<bool ()> action;
 	const std::function<std::ostream & (std::ostream &os)> print;
@@ -16,6 +17,9 @@ struct Transaction{
 	Transaction(const TransactionBuilder<Cmds> &s):
 		action([s]() -> bool{
 
+				debug_forbid_copy = true;
+				AtScopeEnd ase{[](){debug_forbid_copy = false;}};
+				ignore(ase);
 
 				//We're assuming that operations behave normally,
 				//By which we mean if they need to handle in-a-transaction
@@ -81,8 +85,10 @@ struct Transaction{
 				StrongStore stores;
 				call_all_strong(caches,stores,s.curr);
 				std::cout << "strong call complete, causal call begins" << std::endl;
-				CausalCache cachec{std::move(caches)};
-				CausalStore storec{std::move(stores)};
+				std::cout << "causal cache " << &caches;
+				CausalCache &cachec = *((CausalCache*) (&caches));
+				CausalStore &storec = *((CausalStore*) (&stores));
+				std::cout << " becomes " << &cachec << std::endl;
 				call_all_causal(cachec,storec,s.curr);
 
 				//restore the old transaction pointers

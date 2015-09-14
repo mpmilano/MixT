@@ -29,7 +29,7 @@ auto operator<<(std::basic_ostream<Ch, Tr>& os, std::tuple<Args...> const& t)
 
 template<Level l2, typename T2, typename E, unsigned long long id>
 std::ostream & operator<<(std::ostream &os, const RefTemporary<id,l2,T2, E>& t){
-	return os << t.name <<  "<" << t.t.store_id << ": " << levelStr<l2>() << ">";
+	return os << t.name <<  "<" << t.t.store_id << "," << t.id << ": " << levelStr<l2>() << ">";
 }
 
 
