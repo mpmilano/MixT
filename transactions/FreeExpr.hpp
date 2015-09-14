@@ -46,12 +46,12 @@ auto debug_failon_not_cached(const C& c, const E &e){
 }
 
 template<typename T, typename... Exprs>
-struct FreeExpr : public ConExpr<T, min_level<Exprs...>::value > {
+struct FreeExpr : public ConExpr<T, min_level_dref<Exprs...>::value > {
 
 	//this one is just for temp-var-finding
 	const std::tuple<Exprs...> params;
 	const std::function<T (const Cache&, const std::tuple<Exprs ...>& )> f;
-	using level = std::integral_constant<Level, min_level<Exprs...>::value>;
+	using level = std::integral_constant<Level, min_level_dref<Exprs...>::value>;
 	const int id = gensym();
 
 	FreeExpr(int,
@@ -65,9 +65,9 @@ struct FreeExpr : public ConExpr<T, min_level<Exprs...>::value > {
 					 ,std::tuple<>());
 				 return callFunc(f,retrieved);
 			 })
-		{}
-
-	FreeExpr(const FreeExpr& fe):params(fe.params),f(fe.f),id(debug_forbid_copy ? fe.id : gensym()){}
+		{
+			static_assert(level::value == get_level<FreeExpr>::value, "Error: FreeExpr level determined inconsistently");
+		}
 
 	auto handles() const {
 		return ::handles(params);

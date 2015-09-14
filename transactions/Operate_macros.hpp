@@ -6,7 +6,7 @@
 	[&](){																\
 		auto a = _arg;													\
 		using Arg = decltype(a);										\
-		struct OperateImpl : public FindUsages<Arg>, public ConStatement<get_level<decltype(a)>::value >{ \
+		struct OperateImpl : public FindUsages<Arg>, public ConStatement<min_level_dref<decltype(a)>::value >{ \
 			using level = get_level<OperateImpl>;						\
 			const int id = gensym();									\
 			const std::shared_ptr<decltype(a)> arg;						\
@@ -21,11 +21,6 @@
 																		\
 			}															\
 																		\
-			auto strongCall(StrongCache& c CMA  const StrongStore &s) const { \
-				choose_strong<level::value> choice{nullptr};			\
-				return strongCall(c,s,choice);							\
-			}															\
-																		\
 			auto strongCall(StrongCache& c CMA const StrongStore &s CMA std::true_type*) const {\
 				return make_PreOp(id,Name(trans_op_arg(c, s, (*arg))))	\
 					(arg).strongCall(c CMA s);							\
@@ -33,6 +28,10 @@
 																		\
 			void strongCall(StrongCache& c CMA const StrongStore &s CMA std::false_type*) const { \
 				arg->strongCall(c CMA s);								\
+			}															\
+			auto strongCall(StrongCache& c CMA  const StrongStore &s) const { \
+				choose_strong<level::value> choice{nullptr};			\
+				return strongCall(c,s,choice);							\
 			}															\
 																		\
 			auto causalCall(CausalCache& c CMA  const CausalStore &s) const { \

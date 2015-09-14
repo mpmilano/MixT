@@ -142,7 +142,7 @@ struct PreOp<std::tuple<J...> > {
 		//TODO: I'm sure there's some rationale behind
 		//how exactly to measure this which is better.
 
-		static constexpr Level l = min_level<shared_deref<Args>...>::value;
+		static constexpr Level l = min_level_dref<shared_deref<Args>...>::value;
 		assert(fold(t,[](const auto &e, bool acc){return e.built_well || acc;},false));
 		auto t_ptr = shared_copy(t);
 		assert(fold(*t_ptr,[](const auto &e, bool acc){return e.built_well || acc;},false));

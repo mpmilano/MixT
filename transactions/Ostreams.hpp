@@ -53,17 +53,8 @@ auto print_util(const std::shared_ptr<const std::nullptr_t>&){
 }
 
 template<typename T, restrict(!std::is_same<T CMA std::nullptr_t>::value)>
-const auto& print_util(const std::shared_ptr<const T> &sp){
-	return sp->gets;
-}
-
-auto print_util_id(const std::shared_ptr<const std::nullptr_t>&){
-	return "aaaaaa";
-}
-
-template<typename T, restrict(!std::is_same<T CMA std::nullptr_t>::value)>
-const auto& print_util_id(const std::shared_ptr<const T> &sp){
-	return sp->store_id;
+const auto print_util(const std::shared_ptr<const T> &sp){
+	return *sp;
 }
 
 template<unsigned long long ID,typename CS, Level l, typename temp>
@@ -71,12 +62,17 @@ std::ostream & operator<<(std::ostream &os, const DeclarationScope<ID,CS,l,temp>
 //	static_assert(!std::is_same<std::decay_t<decltype(*t.gt)>, std::nullptr_t>::value,"Attempting to print DeclarationScope which has failed to find replacement!");
 //	static_assert(!std::is_same<std::decay_t<decltype(t.gt.get())>, std::nullptr_t>::value,"Attempting to print DeclarationScope which has failed to find replacement!");
 	assert(t.gt && "Error: we found a replacement, but gt is still null!");
-	os << "let " << t.name << "<" << print_util_id(t.gt) <<": " << levelStr<l>() <<"> = " << print_util(t.gt) << " in {";
+	os << "let " << print_util(t.gt) << " in {";
 	os << std::endl;
 	fold(t.cs,[&os](const auto &e, int) -> int
 		 {os << "  " << e << std::endl; return 0; },0);
 	os << "}" << std::endl;
 	return os;
+}
+
+template<unsigned long long ID,Level l, typename temp>
+std::ostream & operator<<(std::ostream &os, const Temporary<ID,l,temp> &t){
+	return os << t.name << "<" << l << "> = " << t.t << " @" << get_level<Temporary<ID,l,temp> >::value;
 }
 
 
@@ -151,7 +147,8 @@ template<typename i, typename... E>
 std::ostream & operator<<(std::ostream &os, const FreeExpr<i,E...>& op){
 	//let's try this for now
 	i ex{};
-	return os << ex << "<" << levelStr<FreeExpr<i,E...>::level::value>() << ">";
+	using T = decltype(op);
+	return os << ex << " @" << get_level<std::decay_t<T> >::value;
 }
 
 

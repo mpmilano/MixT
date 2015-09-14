@@ -26,7 +26,7 @@ constexpr Level get_level_f(const T*){
 
 template<typename T, Level l>
 constexpr Level get_level_f(const ConExpr<T,l>*){
-	return l == Level::causal? Level::causal : get_level_f(mke_p<T>());
+	return l;
 }
 
 //imported from ConStatement. Probably should get its own file or something.
@@ -57,6 +57,31 @@ struct min_level : std::integral_constant<Level,
 										   Level::causal :
 										   (exists((chld_min_level<T>::value == Level::strong)...) ? Level::strong : Level::undef )
 										   )>::type {};
+
+template<typename T, restrict(std::is_scalar<T>::value)>
+constexpr Level get_level_dref(T*){
+	return Level::undef;
+}
+
+template<HandleAccess ha, Level l, typename T>
+constexpr Level get_level_dref(Handle<l,ha,T> const * const){
+	return l;
+}
+
+template<typename T, Level l>
+constexpr Level get_level_dref(ConExpr<T,l> *){
+	return (l == Level::causal ? Level::causal : get_level_dref(mke_p<T>()));
+}
+
+
+template<typename... T>
+struct min_level_dref : std::integral_constant<Level,
+											   exists((get_level_dref(mke_p<T>()) == Level::causal)...) ? Level::causal :
+											   (exists((get_level_dref(mke_p<T>()) == Level::strong)...) ? Level::strong :
+												Level::undef)
+											   > {
+	static_assert(!exists((!is_ConExpr<T>::value)...),"Error: min_level_dref only ready for Exprs. Not sure why you need this for non-exprs...");
+};
 
 template<typename... T>
 struct min_level<std::tuple<T...> > : min_level<T...> {};
