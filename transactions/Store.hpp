@@ -6,6 +6,15 @@ struct StoreMiss {};
 //TODO: define this better and move it.
 template<int semantic_switch>
 struct StoreMap {
+private:
+	template<int ss,restrict(ss != semantic_switch)>
+	explicit StoreMap(StoreMap<ss> &&sm)
+		:store_impl(std::move(sm.store_impl)),
+		 valid_store(sm.valid_store){
+		sm.valid_store = false;
+	}
+	
+public:
 	
 	static std::map<int, StoreMap*>& lost_and_found() {
 		static std::map<int, StoreMap*> ret;
@@ -14,27 +23,14 @@ struct StoreMap {
 
 	std::map<int,std::unique_ptr<void*> > store_impl;
 	
-	//you are *not* responsible for deleting this
-	StoreMap * const  prev_scope = nullptr;
 	bool valid_store = true;
 	bool contains(int i) const{
-		return (store_impl.find(i) != store_impl.end())
-			|| (prev_scope && prev_scope->contains(i));
+		return (store_impl.find(i) != store_impl.end());
 	}
 
 	typedef void** stored;
 
 	StoreMap(){}
-
-	StoreMap(StoreMap  * const prev):prev_scope(prev){}
-
-	template<int ss,restrict(ss != semantic_switch)>
-	explicit StoreMap(StoreMap<ss> &&sm)
-		:store_impl(std::move(sm.store_impl)),
-		 prev_scope((decltype(prev_scope))sm.prev_scope),
-		 valid_store(sm.valid_store){
-		sm.valid_store = false;
-	}
 
 	StoreMap(const StoreMap&) = delete;
 
@@ -63,10 +59,8 @@ struct StoreMap {
 	}
 
 
-#define store_get_impl					  \
-	if (!contains(i) && prev_scope)		  \
-		return prev_scope->get<T>(i);	  \
-	else if (!contains(i)) {											\
+#define store_get_impl													\
+	if (!contains(i)) {													\
 		std::cerr << "trying to find something of id " << i << " in a " << (semantic_switch == 0 || semantic_switch == 3 ? "store" : "cache" ) <<std::endl; \
 		std::cerr << "we have that here : "	<< lost_and_found()[i] <<std::endl; \
 		throw StoreMiss{};												\
@@ -91,6 +85,7 @@ struct StoreMap {
 		std::cout << "destroying store" << std::endl;
 	}
 
+	friend struct Transaction;
 };
 
 template<bool as_store>

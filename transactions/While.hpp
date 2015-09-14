@@ -50,11 +50,11 @@ struct While : public ConStatement<min_level<Then>::value> {
 		//nothing causal in this while loop. Do it all at once.
 		//TODO: remove this.
 		int safety_counter = 0;
-		auto new_cache = std::make_unique<StrongCache>(nullptr);
+		auto new_cache = std::make_unique<StrongCache>();
 		while (run_ast_strong(*new_cache,s,cond)) {
 			call_all_strong(c,s,then);
 			assert(safety_counter++ < 100);
-			new_cache = std::make_unique<StrongCache>(nullptr);
+			new_cache = std::make_unique<StrongCache>();
 		}
 
 		//TODO: error propogation;
@@ -68,11 +68,11 @@ struct While : public ConStatement<min_level<Then>::value> {
 		
 		auto &store_stack = c_old_mut.get<std::list<std::unique_ptr<StrongCache> > >(id);
 
-		store_stack.emplace_back(std::make_unique<StrongCache>(nullptr));
+		store_stack.emplace_back(std::make_unique<StrongCache>());
 		assert(store_stack.back().get() != &c_old_mut);
 		while(run_ast_strong(*store_stack.back(),s,cond)) {
 			call_all_strong(*store_stack.back(),s,then);
-			store_stack.emplace_back(std::make_unique<StrongCache>(nullptr));
+			store_stack.emplace_back(std::make_unique<StrongCache>());
 			assert(store_stack.front().get() != store_stack.back().get());
 		}
 		//there's one too many in here.

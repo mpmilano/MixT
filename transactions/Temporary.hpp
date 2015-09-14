@@ -202,6 +202,10 @@ struct RefTemporary : public ConExpr<run_result<T>,l> {
 	auto strongCall(StrongCache& cache, const StrongStore &s) const {
 		//TODO - endorsements should happen somewhere around here, right?
 		//todo: dID I want the level of the expression which assigned the temporary?
+		if (ID == 56092) {
+			std::cout << "calling strong the errant thing, putting " << this->id << " into cache " << &cache << ";" << std::endl;
+		}
+		
 		choose_strong<get_level<Temp>::value > choice{nullptr};
 		try {
 			return strongCall(cache, s,choice);
@@ -225,6 +229,10 @@ struct RefTemporary : public ConExpr<run_result<T>,l> {
 	}
 
 	auto causalCall(CausalCache& cache, const CausalStore &s) const {
+		if (ID == 56092) {
+			std::cout << "causal call of errant thing" << std::endl;
+		}
+		
 		typedef decltype(call(s,t)) R;
 		if (cache.contains(this->id)) return cache.get<R>(this->id);
 		else {

@@ -114,6 +114,8 @@ auto cached_withfail(const Cache& c, const RefTemporary<ID,l,T,Temp> &rt){
 		std::cout << "RefTemp ID referenced: " << rt.id << std::endl;
 		std::cout << "RefTemp name referenced: " << rt.name << std::endl;
 		std::cout << "address of cache: " << &c << std::endl;
+		std::cout << "Where it might be (strongCache): " << StrongCache::lost_and_found()[rt.id] << std::endl;
+		std::cout << "Where it might be (causalCache): " << CausalCache::lost_and_found()[rt.id] << std::endl;
 		return cached(c,rt);
 	}
 }

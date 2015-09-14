@@ -80,6 +80,7 @@ struct Transaction{
 				StrongCache caches;
 				StrongStore stores;
 				call_all_strong(caches,stores,s.curr);
+				std::cout << "strong call complete, causal call begins" << std::endl;
 				CausalCache cachec{std::move(caches)};
 				CausalStore storec{std::move(stores)};
 				call_all_causal(cachec,storec,s.curr);
