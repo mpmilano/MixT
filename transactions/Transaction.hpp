@@ -84,11 +84,8 @@ struct Transaction{
 				StrongCache caches;
 				StrongStore stores;
 				call_all_strong(caches,stores,s.curr);
-				std::cout << "strong call complete, causal call begins" << std::endl;
-				std::cout << "causal cache " << &caches;
 				CausalCache &cachec = *((CausalCache*) (&caches));
 				CausalStore &storec = *((CausalStore*) (&stores));
-				std::cout << " becomes " << &cachec << std::endl;
 				call_all_causal(cachec,storec,s.curr);
 
 				//restore the old transaction pointers

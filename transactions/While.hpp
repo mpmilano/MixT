@@ -49,9 +49,6 @@ struct While : public ConStatement<min_level<Then>::value> {
 
 	bool strongCall(StrongCache& c, StrongStore &s, const std::true_type*,const std::true_type*) const {
 		//nothing causal in this while loop. Do it all at once.
-		std::cout << "AAAH min_level is chosen wrong again!" << std::endl;
-		std::cout << *this << std::endl;
-		std::cout << min_level<Then>::value << " " << max_level<Then>::value << std::endl;
 
 		auto new_cache = std::make_unique<StrongCache>();
 		while (run_ast_strong(*new_cache,s,cond)) {
@@ -68,7 +65,6 @@ struct While : public ConStatement<min_level<Then>::value> {
 		const Cache& c_old = c_old_mut;
 		
 		auto &store_stack = c_old_mut.get<std::list<std::unique_ptr<StrongCache> > >(id);
-		std::cout << "store stack found at cache: " << &c_old_mut << std::endl;
 
 		store_stack.emplace_back(std::make_unique<StrongCache>());
 		assert(store_stack.back().get() != &c_old_mut);
@@ -126,7 +122,6 @@ struct While : public ConStatement<min_level<Then>::value> {
 		if (c_old.contains(id)){
 			//so, hopefully this casting is safe.  If not, use the move constructor.
 			for (auto &c : c_old.get<std::list<std::unique_ptr<CausalCache> > >(id)){
-				std::cout << "address of cache: " << c.get() << std::endl;
 				call_all_causal(*c,s,then);
 			}
 		}

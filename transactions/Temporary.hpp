@@ -231,9 +231,6 @@ public:
 	auto strongCall(StrongCache& cache, const StrongStore &s, std::true_type*) const {
 		//std::cout << "inserting RefTemp " << name << " (" << id<< ") into cache "
 		//		  << &cache << std::endl;
-		if (ID == 56092) {
-			std::cout << "calling strong the errant thing, putting " << this->id << " into cache " << &cache << ";" << std::endl;
-		}
 		auto ret = call(s, t);
 		cache.insert(id,ret);
 		return ret;
@@ -241,20 +238,10 @@ public:
 
 	void strongCall(StrongCache& cache, const StrongStore &s, std::false_type*) const {
 		//we haven't even done the assignment yet. nothing to see here.
-		if (ID == 56092) {
-			std::cout << "calling strong the errant thing. Not putting anything in the cache" << std::endl;
-		}
 
 	}
 
 	auto causalCall(CausalCache& cache, const CausalStore &s) const {
-		if (ID == 56092) {
-			std::cout << "causal call of errant thing with cache " << &cache << " and id " << this->id << std::endl;
-			std::cout << "here are all the things that cache contains: " << std::endl;
-			for (auto &p : cache.store_impl){
-				std::cout << p.first << ": " << p.second.get() << std::endl;
-			}
-		}
 		
 		typedef decltype(call(s,t)) R;
 		if (cache.contains(this->id)) {
