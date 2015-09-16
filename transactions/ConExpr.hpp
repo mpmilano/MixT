@@ -51,6 +51,9 @@ constexpr Level chld_min_level_f(level_constant<l> const * const ){
 template<typename T>
 struct chld_min_level : level_constant<chld_min_level_f(mke_p<T>())> {};
 
+template<typename T>
+struct chld_min_level<const T> : chld_min_level<T> {};
+
 template<typename... T>
 struct min_level : std::integral_constant<Level,
 										  (exists((chld_min_level<T>::value == Level::causal)...) ?
@@ -84,10 +87,22 @@ struct min_level_dref : std::integral_constant<Level,
 };
 
 template<typename... T>
+struct max_level_dref : std::integral_constant<Level,
+											   exists((get_level_dref(mke_p<T>()) == Level::strong)...) ? Level::strong :
+											   (exists((get_level_dref(mke_p<T>()) == Level::causal)...) ? Level::causal :
+												Level::undef)
+											   > {
+	static_assert(!exists((!is_ConExpr<T>::value)...),"Error: max_level_dref only ready for Exprs. Not sure why you need this for non-exprs...");
+};
+
+template<typename... T>
 struct min_level<std::tuple<T...> > : min_level<T...> {};
 
 template<typename T>
 struct chld_max_level : get_level<T>{};
+
+template<typename T>
+struct chld_max_level<const T> : chld_max_level<T> {};
 
 template<typename... T>
 struct max_level : std::integral_constant<Level,

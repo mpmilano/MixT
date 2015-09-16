@@ -30,6 +30,7 @@ struct While : public ConStatement<min_level<Then>::value> {
 		{
 			while_concept(Cond,Then);
 			while_concept_2(Cond,Then);
+			static_assert(min_level<Then>::value != max_level<Then>::value? min_level<Then>::value != Level::undef && max_level<Then>::value != Level::undef : true,"Error: undef shouldn't appear when there are real levels.");
 		}
 	
 	While(const While& w)
@@ -48,15 +49,15 @@ struct While : public ConStatement<min_level<Then>::value> {
 
 	bool strongCall(StrongCache& c, StrongStore &s, const std::true_type*,const std::true_type*) const {
 		//nothing causal in this while loop. Do it all at once.
-		//TODO: remove this.
-		int safety_counter = 0;
+		std::cout << "AAAH min_level is chosen wrong again!" << std::endl;
+		std::cout << *this << std::endl;
+		std::cout << min_level<Then>::value << " " << max_level<Then>::value << std::endl;
+
 		auto new_cache = std::make_unique<StrongCache>();
 		while (run_ast_strong(*new_cache,s,cond)) {
-			call_all_strong(c,s,then);
-			assert(safety_counter++ < 100);
+			call_all_strong(*new_cache,s,then);
 			new_cache = std::make_unique<StrongCache>();
 		}
-
 		//TODO: error propogation;
 		return true;
 	}

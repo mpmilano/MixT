@@ -59,6 +59,7 @@ const auto print_util(const std::shared_ptr<const T> &sp){
 
 template<unsigned long long ID,typename CS, Level l, typename temp>
 std::ostream & operator<<(std::ostream &os, const DeclarationScope<ID,CS,l,temp> &t){
+	debug_forbid_copy = false;
 //	static_assert(!std::is_same<std::decay_t<decltype(*t.gt)>, std::nullptr_t>::value,"Attempting to print DeclarationScope which has failed to find replacement!");
 //	static_assert(!std::is_same<std::decay_t<decltype(t.gt.get())>, std::nullptr_t>::value,"Attempting to print DeclarationScope which has failed to find replacement!");
 	assert(t.gt && "Error: we found a replacement, but gt is still null!");
@@ -67,6 +68,7 @@ std::ostream & operator<<(std::ostream &os, const DeclarationScope<ID,CS,l,temp>
 	fold(t.cs,[&os](const auto &e, int) -> int
 		 {os << "  " << e << std::endl; return 0; },0);
 	os << "}" << std::endl;
+	debug_forbid_copy = true;
 	return os;
 }
 

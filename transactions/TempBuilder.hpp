@@ -77,18 +77,6 @@ struct DeclarationScope : public ConStatement<l>{
 	
 };
 
-template<unsigned long long ID, typename CS, Level l, typename Temp>
-struct chld_min_level<DeclarationScope<ID,CS,l,Temp > > :
-	level_constant<min_of_levels(min_level<Temp>::value, min_level<CS>::value )>{
-	static_assert(l == get_level<Temp>::value ,"assumption bad!");
-};
-
-template<unsigned long long ID, typename CS, Level l, typename Temp>
-struct chld_max_level<DeclarationScope<ID,CS,l,Temp > > :
-	level_constant<max_of_levels(min_level<Temp>::value, max_level<CS>::value )>{
-	static_assert(l == get_level<Temp>::value ,"assumption bad!");
-};
-
 
 template<unsigned long long ID, unsigned long long ID2,
 		 typename CS, Level l, typename Temp>
@@ -162,27 +150,18 @@ public:
 	}
 };
 
-template<unsigned long long ID, typename CS, Level l, typename Temp>
-struct chld_min_level<ImmutDeclarationScope<ID,CS,l,Temp > > :
-	level_constant<min_of_levels(min_level<Temp>::value, min_level<CS>::value )>{
+template<unsigned long long ID, Level l, typename Temp, typename... CS>
+struct chld_min_level<ImmutDeclarationScope<ID,std::tuple<CS...>,l,Temp > > :
+	level_constant<min_of_levels(min_level<Temp>::value, chld_min_level<CS>::value... )>{
 	static_assert(l == get_level<Temp>::value ,"assumption bad!");
 };
 
-template<unsigned long long ID, typename CS, Level l, typename Temp>
-struct chld_min_level<const ImmutDeclarationScope<ID,CS,l,Temp > > :
-	chld_min_level<ImmutDeclarationScope<ID,CS,l,Temp > > {};
 
-
-template<unsigned long long ID, typename CS, Level l, typename Temp>
-struct chld_max_level<ImmutDeclarationScope<ID,CS,l,Temp > > :
-	level_constant<max_of_levels(min_level<Temp>::value, max_level<CS>::value )>{
+template<unsigned long long ID, Level l, typename Temp, typename... CS>
+struct chld_max_level<ImmutDeclarationScope<ID,std::tuple<CS...>,l,Temp > > :
+	level_constant<max_of_levels(min_level<Temp>::value, chld_max_level<CS>::value... )>{
 	static_assert(l == get_level<Temp>::value ,"assumption bad!");
 };
-
-template<unsigned long long ID, typename CS, Level l, typename Temp>
-struct chld_max_level<const ImmutDeclarationScope<ID,CS,l,Temp > > :
-	chld_max_level<ImmutDeclarationScope<ID,CS,l,Temp > > {};
-
 
 template<unsigned long long ID, typename CS, Level l, typename Temp, typename Ptr>
 auto build_ImmutDeclarationScope(const std::string &name, const Ptr &gt, const CS &cs){
@@ -198,16 +177,6 @@ struct MutDeclarationScope : public DeclarationScope<ID,CS,l,Temp>{
 		:DeclarationScope<ID,CS,l,Temp>(name,gt,cs){}
 	bool isVirtual() const {return false;}
 };
-
-template<unsigned long long ID, unsigned long long ID2,
-		 typename CS, Level l, typename Temp>
-struct contains_temporary<ID,MutDeclarationScope<ID2, CS, l, Temp> >
-	: contains_temporary<ID,DeclarationScope<ID2,CS,l,Temp> > {};
-
-template<unsigned long long ID, unsigned long long ID2,
-		 typename CS, Level l, typename Temp>
-struct contains_temporary<ID,ImmutDeclarationScope<ID2, CS, l, Temp> > 
-	: contains_temporary<ID,DeclarationScope<ID2,CS,l,Temp> > {};
 
 template<unsigned long long ID, typename CS, Level l, typename Temp >
 std::nullptr_t find_usage(const DeclarationScope<ID,CS,l,Temp>&){
@@ -234,7 +203,7 @@ struct FindUsages : public BaseFindUsages {
 
 template<typename... T>
 constexpr Level chld_min_level_f(FindUsages<T...> const * const){
-	return min_level<T...>::value;
+	return min_level_dref<T...>::value;
 }
 
 //note: find_usages is for single-statements,
@@ -242,7 +211,7 @@ constexpr Level chld_min_level_f(FindUsages<T...> const * const){
 //the min of its components. In other words, don't recur.
 template<typename... T>
 constexpr Level chld_max_level_f(FindUsages<T...> const * const){
-	return min_level<T...>::value;
+	return max_level_dref<T...>::value;
 }
 
 

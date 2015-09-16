@@ -18,24 +18,41 @@ constexpr bool runs_with_causal(Level l){
 	return l == Level::causal;
 }
 
-constexpr Level min_of_levels(){
+constexpr Level _min_of_levels(){
 	return Level::undef;
 }
 
 template<typename... Levels>
-constexpr Level min_of_levels(Level l, Levels... a){
+constexpr Level _min_of_levels(Level l, Levels... a){
 	if (l == Level::causal) return l;
-	else return min_of_levels(a...);
+	else return _min_of_levels(a...);
 }
 
-constexpr Level max_of_levels(){
+constexpr Level _max_of_levels(){
 	return Level::undef;
 }
 
 template<typename... Levels>
-constexpr Level max_of_levels(Level l, Levels... a){
+constexpr Level _max_of_levels(Level l, Levels... a){
 	if (l == Level::strong) return l;
-	else return max_of_levels(a...);
+	else return _max_of_levels(a...);
+}
+
+
+template<typename... Levels>
+constexpr Level min_of_levels(Levels... l){
+	Level l1 = _min_of_levels(l...);
+	Level l2 = _max_of_levels(l...);
+	if (l1 == Level::undef) return l2;
+	else return l1;
+}
+
+template<typename... Levels>
+constexpr Level max_of_levels(Levels... l){
+	Level l1 = _min_of_levels(l...);
+	Level l2 = _max_of_levels(l...);
+	if (l2 == Level::undef) return l1;
+	else return l2;
 }
 
 template<Level l>
