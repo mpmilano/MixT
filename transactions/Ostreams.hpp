@@ -186,3 +186,18 @@ std::ostream & operator<<(std::ostream &os, const Noop<l>&){
 	
 	return os << "Noop@" << l;
 }
+
+template<typename T>
+std::ostream & operator<<(std::ostream &os, const std::list<std::unique_ptr<T> > &lst){
+	os << "[list: ";
+	for (const auto &ptr : lst){
+		os << "; " << *ptr;
+	}
+	os << "]";
+	return os;
+}
+
+template<StoreType st>
+std::ostream & operator<<(std::ostream &os, const StoreMap<st> &store){
+	return os << "(a Store)";
+}

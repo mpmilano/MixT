@@ -83,11 +83,11 @@ int main() {
 		let_mutable(bound) = 0 IN (
 		let_mutable(hd) = h IN (
 			WHILE (isValid(hd) && (!(bound == 10))) DO(
-				//print_str("hd"),
-				//print(hd),
+				print_str("hd"),
+				print(hd),
 				let_ifValid(tmp) = hd IN (
-					//print_str("tmp"),
-					//print(tmp),
+					print_str("tmp"),
+					print(tmp),
 					let_ifValid(weak_val) = msg(tmp,val) IN (
 						do_op(Increment,weak_val)),
 					hd = msg(tmp,next),

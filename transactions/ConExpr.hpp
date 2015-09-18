@@ -246,37 +246,50 @@ using run_result = decltype(run_ast_causal(std::declval<CausalCache&>(),std::dec
 struct CacheLookupFailure {};
 
 template<typename T, restrict(is_ConExpr<T>::value && !std::is_scalar<T>::value)>
-auto cached(const Cache& cache, const T& ast){
+auto cached(const StrongCache& cache, const T& ast){
 	//TODO: make sure ast.id is always the gensym'd id.
 	if (!cache.contains(ast.id)) throw CacheLookupFailure();
 	using R = run_result<T>;
 	return cache.get<R>(ast.id);
 }
 
-template<typename T>
-type_check<std::is_scalar, T> cached(const Cache& cache, const T& e){
+template<typename T, restrict(is_ConExpr<T>::value && !std::is_scalar<T>::value)>
+auto cached(const CausalCache& cache, const T& ast){
+	//TODO: make sure ast.id is always the gensym'd id.
+	if (!cache.contains(ast.id)) throw CacheLookupFailure();
+	using R = run_result<T>;
+	return cache.get<R>(ast.id);
+}
+
+template<typename T, StoreType st>
+type_check<std::is_scalar, T> cached(const StoreMap<st>& cache, const T& e){
 	return e;
 }
 
 
-template<typename T, HandleAccess ha, Level l>
-Handle<l,ha,T> cached(const Cache& cache, const Handle<l,ha,T>& ast){
+template<typename T, HandleAccess ha, Level l, StoreType st>
+Handle<l,ha,T> cached(const StoreMap<st>& cache, const Handle<l,ha,T>& ast){
 	return ast;
 }
 
 template<typename T, restrict(is_ConExpr<T>::value && !std::is_scalar<T>::value)>
-auto is_cached(const Cache& cache, const T& ast){
+auto is_cached(const CausalCache& cache, const T& ast){
 	return cache.contains(ast.id);
 }
 
-template<typename T>
-std::enable_if_t<std::is_scalar<T>::value, bool> is_cached(const Cache& cache, const T& e){
+template<typename T, restrict(is_ConExpr<T>::value && !std::is_scalar<T>::value)>
+auto is_cached(const StrongCache& cache, const T& ast){
+	return cache.contains(ast.id);
+}
+
+template<typename T, StoreType st>
+std::enable_if_t<std::is_scalar<T>::value, bool> is_cached(const StoreMap<st>& cache, const T& e){
 	return true;
 }
 
 
-template<typename T, HandleAccess ha, Level l>
-bool is_cached(const Cache& cache, const Handle<l,ha,T>& ast){
+template<typename T, HandleAccess ha, Level l, StoreType st>
+bool is_cached(const StoreMap<st>& cache, const Handle<l,ha,T>& ast){
 	return true;
 }
 

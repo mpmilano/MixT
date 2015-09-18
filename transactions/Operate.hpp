@@ -5,12 +5,12 @@
 #include "ConExpr.hpp"
 #include "Temporary.hpp"
 
-template<Level l, typename R, typename Exprs>
+template<Level l, typename R, typename F, typename Exprs>
 struct Operate : ConStatement<l> {
 	const int id;
-	const std::function<R (const Cache &)> f;
+	const F f;
 	const Exprs exprs;
-	Operate(const std::function<R (const Cache&)>& f,
+	Operate(const F& f,
 			const Exprs &exprs,
 			int id
 		):
@@ -60,8 +60,8 @@ struct Operate : ConStatement<l> {
 	}
 };
 
-template<unsigned long long ID, Level l, typename T, typename Vars>
-auto find_usage(const Operate<l,T,Vars> &op){
+template<unsigned long long ID, Level l, typename T, typename F, typename Vars>
+auto find_usage(const Operate<l,T,F,Vars> &op){
 	return fold(op.exprs,
 				[](const auto &e, const auto &acc){
 					return choose_non_np(acc,find_usage<ID>(*e));
@@ -93,8 +93,8 @@ template<typename T>
 using shared_deref = typename shared_deref_str<T>::type;
 
 
-template<unsigned long long ID, Level l, typename T, typename Temp>
-auto cached_withfail(const Cache& c, const RefTemporary<ID,l,T,Temp> &rt){
+template<unsigned long long ID, Level l, typename T, typename Temp, StoreType st>
+auto cached_withfail(const StoreMap<st>& c, const RefTemporary<ID,l,T,Temp> &rt){
 	try {
 		return cached(c,rt);
 	}
@@ -112,8 +112,8 @@ auto cached_withfail(const Cache& c, const RefTemporary<ID,l,T,Temp> &rt){
 }
 
 
-template<typename T>
-auto cached_withfail(const Cache& cache, const T &t){
+template<typename T, StoreType st>
+auto cached_withfail(const StoreMap<st>& cache, const T &t){
 	try {
 		return cached(cache,t);
 	}

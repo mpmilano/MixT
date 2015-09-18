@@ -84,9 +84,11 @@ struct Transaction{
 				StrongCache caches;
 				StrongStore stores;
 				call_all_strong(caches,stores,s.curr);
+				std::cout << "strong call complete" << std::endl;
 				CausalCache &cachec = *((CausalCache*) (&caches));
 				CausalStore &storec = *((CausalStore*) (&stores));
 				call_all_causal(cachec,storec,s.curr);
+				std::cout << "cusal call complete" << std::endl;
 
 				//restore the old transaction pointers
 				for (auto &p : old_ctx){
@@ -117,6 +119,7 @@ struct Transaction{
 
 					assert(any);
 				}
+				std::cout << "commit complete" << std::endl;
 				assert(ret);
 				//TODO: exception here instead of boolean?
 				return ret;

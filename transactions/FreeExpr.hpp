@@ -75,8 +75,10 @@ struct FreeExpr : public ConExpr<T, min_level_dref<Exprs...>::value > {
 
 	auto strongCall(StrongCache& cache, const StrongStore &heap) const{
 		choose_strong<level::value> choice{nullptr};
-		return strongCall(cache,heap,choice);
-	}	
+		auto ret = strongCall(cache,heap,choice);
+		std::cout << "FreeExpr result: " << ret << std::endl;
+		return ret;
+	}
 
 	T strongCall(StrongCache& cache, const StrongStore &heap, std::true_type*) const{
 		//everything is strong, run it now; but f assumes everything
@@ -90,16 +92,22 @@ struct FreeExpr : public ConExpr<T, min_level_dref<Exprs...>::value > {
 	}
 
 	void strongCall(StrongCache& cache, const StrongStore &heap,std::false_type*) const{
+		fold(params,[&cache](const auto &e, bool){
+				assert(!is_cached(cache,e));
+				return false;},false);
+				
 		fold(params,[&](const auto &e, bool){
 				run_ast_strong(cache,heap,e);
 				return false;},false);
 
 		fold(params,[&cache](const auto &e, bool){
 				assert(is_cached(cache,e));
+				std::cout << "FreeExpr arg: " << cached(cache,e) << std::endl;
 				return false;},false);
 	}
 
 	auto causalCall(CausalCache& cache, const CausalStore &heap) const {
+		assert(false);
 		choose_causal<level::value> choice{nullptr};
 		return causalCall(cache,heap,choice);
 	}	

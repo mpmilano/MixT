@@ -3,11 +3,22 @@
 
 struct StoreMiss {};
 
+enum class StoreType{
+	StrongStore,
+		CausalStore,
+		StrongCache,
+		CausalCache
+		};
+
+constexpr bool is_store(StoreType st){
+	return st == StoreType::CausalStore || st == StoreType::StrongStore;
+}
+
 //TODO: define this better and move it.
-template<int semantic_switch>
+template<StoreType semantic_switch>
 struct StoreMap {
 private:
-	template<int ss,restrict(ss != semantic_switch)>
+	template<StoreType ss,restrict(ss != semantic_switch)>
 	explicit StoreMap(StoreMap<ss> &&sm)
 		:store_impl(std::move(sm.store_impl)),
 		 valid_store(sm.valid_store){
@@ -34,6 +45,9 @@ public:
 
 	StoreMap(const StoreMap&) = delete;
 
+#define dbg_store_prnt(x) if (is_store(semantic_switch)) std::cout << "Storing this value (" << i << "): " << x << std::endl;
+#define dbg_store_prnt2 if (is_store(semantic_switch)) std::cout << "Getting this value (" << i << "): " << *ret << std::endl;
+	
 	template<typename T>
 	void insert(int i, const T &item) {
 		assert(valid_store);
@@ -41,6 +55,7 @@ public:
 		store_impl[i].reset((stored)heap_copy(item).release());
 		lost_and_found()[i] = this;
 		assert(contains(i));
+		dbg_store_prnt(item)
 	}
 
 	template<typename T, typename... Args>
@@ -49,6 +64,7 @@ public:
 		store_impl[i].reset((void**)new T(std::forward<Args>(args)...));
 		lost_and_found()[i] = this;
 		assert(contains(i));
+		dbg_store_prnt(*store_impl.at(i))
 	}
 
 	template<typename T, typename... Args>
@@ -61,12 +77,13 @@ public:
 
 #define store_get_impl													\
 	if (!contains(i)) {													\
-		std::cerr << "trying to find something of id " << i << " in a " << (semantic_switch == 0 || semantic_switch == 3 ? "store" : "cache" ) <<std::endl; \
+		std::cerr << "trying to find something of id " << i << " in a " << (is_store(semantic_switch) ? "store" : "cache" ) <<std::endl; \
 		std::cerr << "we have that here : "	<< lost_and_found()[i] <<std::endl; \
 		throw StoreMiss{};												\
 	}																	\
 	T* ret = (T*) (store_impl.at(i).get());								\
 	assert(ret);														\
+	dbg_store_prnt2														\
 	return *ret;
 	
 	template<typename T>
@@ -88,36 +105,35 @@ public:
 	friend struct Transaction;
 };
 
-template<bool as_store>
+/*
+template<StoreType semantic_switch>
 struct ROStore {
 	
 	const std::map<int,std::unique_ptr<void*> > &store_impl;	
-	const std::function<bool (int)> contains;
-	
-	template<int i>
-	ROStore(const StoreMap<i> &sm):
+	const std::function<bool (int)> contains;	
+
+	ROStore(const StoreMap<semantic_switch> &sm):
 		store_impl(sm.store_impl),
 		contains([&](int j){return sm.contains(j);}){}
 
 	template<typename T>
 	T& get(int i){
 		T* ret = (T*) (store_impl.at(i).get());
+		dbg_store_prnt2
 		return *ret;
 	}
 	
 	template<typename T>
 	const T& get(int i) const{
 		T* ret = (T*) (store_impl.at(i).get());
+		dbg_store_prnt2
 		return *ret;
 	}
 
 	
-};
+}; //*/
 
-using Store = ROStore<true>;
-using Cache = ROStore<false>;
-
-using StrongStore = StoreMap<0>;
-using StrongCache = StoreMap<1>;
-using CausalStore = StoreMap<3>;
-using CausalCache = StoreMap<4>;
+using StrongStore = StoreMap<StoreType::StrongStore>;
+using StrongCache = StoreMap<StoreType::StrongCache>;
+using CausalStore = StoreMap<StoreType::CausalStore>;
+using CausalCache = StoreMap<StoreType::CausalCache>;

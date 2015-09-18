@@ -37,3 +37,5 @@ std::vector<std::string> read_dir(const std::string &name){
 	return ret;
 }
 
+void break_here(){}
+

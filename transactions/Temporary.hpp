@@ -231,25 +231,25 @@ public:
 	auto strongCall(StrongCache& cache, const StrongStore &s, std::true_type*) const {
 		//std::cout << "inserting RefTemp " << name << " (" << id<< ") into cache "
 		//		  << &cache << std::endl;
-		auto ret = call(s, t);
+		auto ret = call<StoreType::StrongStore>(s, t);
 		cache.insert(id,ret);
+		//std::cout << "RefTemp ID " << this->id << " inserting into Cache " << &cache << " value: " << ret << std::endl;
 		return ret;
 	}
 
 	void strongCall(StrongCache& cache, const StrongStore &s, std::false_type*) const {
 		//we haven't even done the assignment yet. nothing to see here.
-
 	}
 
 	auto causalCall(CausalCache& cache, const CausalStore &s) const {
 		
-		typedef decltype(call(s,t)) R;
+		typedef decltype(call<StoreType::CausalStore>(s,t)) R;
 		if (cache.contains(this->id)) {
 			return cache.get<R>(this->id);
 		}
 		else {
 			try {
-				return call(s,t);
+				return call<StoreType::CausalStore>(s,t);
 			}
 			catch (const StoreMiss&){
 				std::cerr << "Couldn't find this in the store: " << name << std::endl;
@@ -279,12 +279,13 @@ public:
 
 
 private:
-	static auto call(const Store &s, const Temporary<ID,l,T> &t) ->
+	template<StoreType st, restrict(is_store(st))>
+	static auto call(const StoreMap<st> &s, const Temporary<ID,l,T> &t) ->
 		run_result<decltype(t.t)>
 		{
 			typedef run_result<decltype(t.t)> R;
 			static_assert(neg_error_helper<is_ConStatement,R>::value,"Static assert failed");
-			return s.get<R>(t.store_id);
+			return s. template get<R>(t.store_id);
 		}
 };
 

@@ -285,3 +285,5 @@ struct AtScopeEnd {
 		doit();
 	}
 };
+
+void break_here();
