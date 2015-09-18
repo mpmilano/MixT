@@ -98,6 +98,6 @@ int main() {
 			); //*/
 
 		std::cout << h.get().val.get() << std::endl;
-	assert(h.get().val.get() == 15);
-	return 0;
+		assert(h.get().val.get() == 15);
+		return 0;
 }

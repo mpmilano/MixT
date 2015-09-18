@@ -62,7 +62,7 @@ struct While : public ConStatement<min_level<Then>::value> {
 	bool strongCall(StrongCache& c_old_mut, StrongStore &s, const std::true_type*, const std::false_type*) const {
 		//the "hard" case, if you will. a strong condition, but some causal statements inside.
 		c_old_mut.emplace<std::list<std::unique_ptr<StrongCache> > >(id);
-		const Cache& c_old = c_old_mut;
+		const auto& c_old = c_old_mut;
 		
 		auto &store_stack = c_old_mut.get<std::list<std::unique_ptr<StrongCache> > >(id);
 

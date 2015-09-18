@@ -137,3 +137,11 @@ using StrongStore = StoreMap<StoreType::StrongStore>;
 using StrongCache = StoreMap<StoreType::StrongCache>;
 using CausalStore = StoreMap<StoreType::CausalStore>;
 using CausalCache = StoreMap<StoreType::CausalCache>;
+
+template<typename T>
+struct is_Cache :
+	std::integral_constant<
+	bool,
+	std::is_same<StrongCache, std::decay_t<T> >::value ||
+	std::is_same<CausalCache, std::decay_t<T> >::value >::type
+{};

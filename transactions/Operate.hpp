@@ -146,11 +146,9 @@ struct PreOp<std::tuple<J...> > {
 		assert(fold(t,[](const auto &e, bool acc){return e.built_well || acc;},false));
 		auto t_ptr = shared_copy(t);
 		assert(fold(*t_ptr,[](const auto &e, bool acc){return e.built_well || acc;},false));
-		
-		return Operate<l,decltype(std::get<0>(t)(
-									  std::declval<run_result<shared_deref<decltype(args)> > >()...
-									  )),decltype(std::make_tuple(args...)) >
-			([=](const Cache& c) {
+
+		auto op_func = [=](const auto& c) {
+			static_assert(is_Cache<std::decay_t<decltype(c)> >::value, "Error: This function can only take caches.");
 				assert(fold(*t_ptr,[](const auto &e, bool acc){return e.built_well || acc;},false));
 				std::pair<bool,bool> result =
 					fold(*t_ptr,[&](const auto &e, const std::pair<bool,bool> &acc){
@@ -164,7 +162,12 @@ struct PreOp<std::tuple<J...> > {
 						},std::pair<bool,bool>(false,false));
 				if (!result.first) throw NoOverloadFoundError{type_name<decltype(t)>()};
 				return result.second;
-			},
+		};
+		
+		return Operate<l,decltype(std::get<0>(t)(
+									  std::declval<run_result<shared_deref<decltype(args)> > >()...
+									  )),decltype(op_func),decltype(std::make_tuple(args...)) >
+			(op_func,
 				std::make_tuple(args...),id
 				);
 	}
@@ -177,11 +180,6 @@ auto make_PreOp(int id, const T &t){
 }
 
 template<typename T>
-auto trans_op_arg_common(const Cache& c, const Store &s, const T &t){
-	return constify(extract_robj_p(cached(c,t)));
-}
-
-template<typename T>
 auto trans_op_arg(CausalCache& c, const CausalStore& s, const T& t) ->
 	std::remove_reference_t<decltype(constify(op_arg(run_ast_causal(c,s,op_arg(t)))))>
 {
@@ -191,7 +189,7 @@ auto trans_op_arg(CausalCache& c, const CausalStore& s, const T& t) ->
 template<typename T>
 auto trans_op_arg(StrongCache& c, const StrongStore& s, const T& t) {
 	run_ast_strong(c,s,t);
-	return trans_op_arg_common(c,s,t);
+	return constify(extract_robj_p(cached(c,t)));
 }
 
 /*

@@ -21,16 +21,16 @@ struct extract_type<RefTemporary<id,l,T,Temp> >{
 		extract_type<run_result<RefTemporary<id,l,T,Temp> > >::type;
 };
 
-template<unsigned long long ID, Level l, typename T, typename Temp>
-void print_more_info_if_reftemp(const Cache& c, const RefTemporary<ID,l,T,Temp> &rt){
+template<unsigned long long ID, Level l, typename T, typename Temp, StoreType st>
+void print_more_info_if_reftemp(const StoreMap<st>& c, const RefTemporary<ID,l,T,Temp> &rt){
 	std::cout << "ID of temporary referenced: " << ID << std::endl;
 	std::cout << "RefTemp ID referenced: " << rt.id << std::endl;
 	std::cout << "RefTemp name referenced: " << rt.name << std::endl;
 	std::cout << "address of cache: " << &c << std::endl;
 }
 
-template<typename T>
-void print_more_info_if_reftemp(const Store &, const T&){}
+template<typename T, StoreType st>
+void print_more_info_if_reftemp(const StoreMap<st> &, const T&){}
 
 template<typename C, typename E>
 auto debug_failon_not_cached(const C& c, const E &e){
@@ -50,8 +50,9 @@ struct FreeExpr : public ConExpr<T, min_level_dref<Exprs...>::value > {
 
 	//this one is just for temp-var-finding
 	const std::tuple<Exprs...> params;
-	const std::function<T (const Cache&, const std::tuple<Exprs ...>& )> f;
 	using level = std::integral_constant<Level, min_level_dref<Exprs...>::value>;
+	using Cache = std::conditional_t<runs_with_strong(level::value),StrongCache,CausalCache>;
+	const std::function<T (const Cache&, const std::tuple<Exprs ...>& )> f;
 	const int id = gensym();
 
 	FreeExpr(int,
