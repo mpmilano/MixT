@@ -39,6 +39,8 @@ struct WeakCons :
 	WeakCons(const decltype(val) &val, const decltype(next) &next)
 		:val(val),next(next){}
 
+	int test(int) const {return 0;}
+
 	template<typename Strong, typename Causal, typename... Args>
 	static WeakCons_r build_list(Strong& strong, Causal& causal, const Args & ... args){
 		auto tpl = std::make_tuple(args...);
@@ -80,7 +82,8 @@ int main() {
 	assert(h.get().val.get() == 14);
 
 		TRANSACTION(
-		let_mutable(hd) = h IN (
+			let_ifValid(zero) = 0 IN (
+				let_mutable(hd) = h IN (
 			WHILE (isValid(hd)) DO(
 				print_str("loop"),
 				print_str("hd"),
@@ -88,11 +91,12 @@ int main() {
 				let_ifValid(tmp) = hd IN (
 					print_str("tmp"),
 					print(tmp),
-					let_ifValid(weak_val) = msg(tmp,val) IN (
+					let_ifValid(weak_val) = fld(tmp,val) IN (
 						do_op(Increment,weak_val)),
-					hd = msg(tmp,next)
+					hd = fld(tmp,next),
+					msg(tmp,test,zero)
 					))
-				)
+			))
 			); //*/
 
 		std::cout << h.get().val.get() << std::endl;

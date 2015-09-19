@@ -10,6 +10,11 @@
 template<typename,typename>
 struct Operation;
 
+//todo: move this
+
+template<typename >
+struct extract_type;
+
 
 template<Level l, HandleAccess HA>
 struct GenericHandle {};
@@ -188,9 +193,6 @@ struct is_ConExpr<Handle<l,ha,T> > : std::true_type {};
 
 template<typename T>
 struct is_not_handle : std::integral_constant<bool, !is_handle<T>::value >::type {};
-
-template<typename>
-struct extract_type;
 
 template<Level l, HandleAccess ha, typename T>
 struct extract_type<Handle<l,ha,T> > {typedef T type;};

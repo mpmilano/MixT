@@ -343,3 +343,14 @@ using is_AST_Expr = typename std::integral_constant<
 	is_ConExpr<T>::value &&
 	!std::is_scalar<T>::value &&
 	!is_handle<T>::value >::type;
+
+template<typename T, restrict(std::is_scalar<T>::value)>
+T extract_type_f(T *t){
+	assert(false);
+	return *t;
+}
+
+template<typename T>
+struct extract_type {
+	using type = decltype(extract_type_f(mke_p<T>()));
+};

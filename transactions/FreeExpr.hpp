@@ -56,15 +56,16 @@ struct FreeExpr : public ConExpr<T, min_level_dref<Exprs...>::value > {
 	const int id = gensym();
 
 	FreeExpr(int,
-			 std::function<T (const typename extract_type<decay<Exprs> >::type & ... )> f,
+			 std::function<T (const typename extract_type<decay<Exprs> >::type & ... )> _f,
 			 Exprs... h)
 		:params(std::make_tuple(h...)),
-		 f([=](const Cache& c, const std::tuple<Exprs...> &t){
+		 f([_f](const Cache& c, const std::tuple<Exprs...> &t){
 				 auto retrieved = fold(
 					 t,
-					 [&](const auto &e, const auto &acc){return tuple_cons(get_if_handle(debug_failon_not_cached(c,e)),acc);}
+					 [&](const auto &e, const auto &acc){return std::tuple_cat(acc,std::make_tuple(get_if_handle(debug_failon_not_cached(c,e))));}
 					 ,std::tuple<>());
-				 return callFunc(f,retrieved);
+				 static_assert(std::tuple_size<decltype(retrieved)>::value == sizeof...(Exprs),"You lost some arguments");
+				 return callFunc(_f,retrieved);
 			 })
 		{
 			static_assert(level::value == get_level<FreeExpr>::value, "Error: FreeExpr level determined inconsistently");
