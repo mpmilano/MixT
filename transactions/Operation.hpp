@@ -169,7 +169,7 @@ struct NoOperation {
 
 
 #define op_arg(x...) extract_robj_p(x)
-
+/*
 #define op2(Name, arg) make_DoOp(Name(op_arg(arg)))(arg)
 #define op3(Name, arg1,arg2) make_DoOp(Name(op_arg(arg1),op_arg(arg2)))(arg1,arg2)
 
@@ -205,3 +205,4 @@ auto make_DoOp(const T &t){
 	DoOp<T> ret{t};
 	return ret;
 }
+//*/
