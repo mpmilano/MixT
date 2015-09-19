@@ -22,8 +22,11 @@
 			}															\
 																		\
 			auto strongCall(StrongCache& c CMA const StrongStore &s CMA std::true_type*) const {\
-				return make_PreOp(id,Name(trans_op_arg(c, s, (*arg))))	\
-					(arg).strongCall(c CMA s);							\
+				arg->strongCall(c CMA s);								\
+				auto ret = make_PreOp(id,Name(trans_op_arg(c, s, (*arg)))) \
+					(c,arg);											\
+				c.emplace<decltype(ret)>(id,ret);						\
+				return ret;												\
 			}															\
 																		\
 			void strongCall(StrongCache& c CMA const StrongStore &s CMA std::false_type*) const { \
@@ -35,8 +38,10 @@
 			}															\
 																		\
 			auto causalCall(CausalCache& c CMA  const CausalStore &s) const { \
-				return make_PreOp(id,Name(trans_op_arg(c, s, (*arg))))	\
-					(arg).causalCall(c CMA s);							\
+				using R = decltype(make_PreOp(id,Name(trans_op_arg(c, s, (*arg))))(c,arg)); \
+				if(runs_with_strong(level::value)) return c.template get<R>(id); \
+				else return make_PreOp(id,Name(trans_op_arg(c, s, (*arg))))	\
+						 (c,arg);										\
 			}															\
 		};																\
 		OperateImpl r{a}; return r;										\
