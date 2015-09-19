@@ -80,9 +80,8 @@ int main() {
 	assert(h.get().val.get() == 14);
 
 		TRANSACTION(
-		let_mutable(bound) = 0 IN (
 		let_mutable(hd) = h IN (
-			WHILE (isValid(hd) && (!(bound == 10))) DO(
+			WHILE (isValid(hd)) DO(
 				print_str("loop"),
 				print_str("hd"),
 				print(hd),
@@ -91,11 +90,9 @@ int main() {
 					print(tmp),
 					let_ifValid(weak_val) = msg(tmp,val) IN (
 						do_op(Increment,weak_val)),
-					hd = msg(tmp,next),
-					bound = bound + 1
+					hd = msg(tmp,next)
 					))
 				)
-			)
 			); //*/
 
 		std::cout << h.get().val.get() << std::endl;

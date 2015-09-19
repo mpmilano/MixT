@@ -66,7 +66,6 @@
 				auto ret =  std::tuple_cat								\
 					(::handles(*arg1),::handles(*arg2));				\
 				assert(std::tuple_size<decltype(ret)>::value > 0);		\
-				std::cout << "COLLECTED THESE HANDLES: " << ret << std::endl; \
 				return ret;												\
 			}															\
 																		\

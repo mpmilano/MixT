@@ -219,7 +219,6 @@ public:
 		choose_strong<get_level<Temp>::value > choice{nullptr};
 		try {
 			auto ret = strongCall(cache, s,choice);
-			std::cout << "refTemping this value (" << t.store_id << "): " << ret << std::endl;
 			return ret;
 		}
 		catch (const StoreMiss&){

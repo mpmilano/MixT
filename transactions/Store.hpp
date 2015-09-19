@@ -59,8 +59,8 @@ public:
 
 	StoreMap(const StoreMap&) = delete;
 
-#define dbg_store_prnt(y,x) if (is_store(semantic_switch)) std::cout << y << " this value (" << i << "): " << x << std::endl;
-#define dbg_store_prnt2 if (is_store(semantic_switch)) std::cout << "Getting this value (" << i << "): " << *ret << std::endl;
+#define dbg_store_prnt(y,x) //if (is_store(semantic_switch)) std::cout << y << " this value (" << i << "): " << x << std::endl;
+#define dbg_store_prnt2 //if (is_store(semantic_switch)) std::cout << "Getting this value (" << i << "): " << *ret << std::endl;
 	
 	template<typename T>
 	void insert(int i, const T &item) {
@@ -113,7 +113,6 @@ public:
 
 	virtual ~StoreMap() {
 		valid_store = false;
-		std::cout << "destroying store" << std::endl;
 	}
 
 	friend struct Transaction;

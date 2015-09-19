@@ -101,12 +101,12 @@ auto cached_withfail(const StoreMap<st>& c, const RefTemporary<ID,l,T,Temp> &rt)
 	catch( const CacheLookupFailure&){
 		std::cerr << "found a failure point (operate)!" << std::endl;
 		std::cerr << "Type we failed on: RefTemporary<...>" << std::endl;		
-		std::cout << "ID of temporary referenced: " << ID << std::endl;
-		std::cout << "RefTemp ID referenced: " << rt.id << std::endl;
-		std::cout << "RefTemp name referenced: " << rt.name << std::endl;
-		std::cout << "address of cache: " << &c << std::endl;
-		std::cout << "Where it might be (strongCache): " << StrongCache::lost_and_found()[rt.id] << std::endl;
-		std::cout << "Where it might be (causalCache): " << CausalCache::lost_and_found()[rt.id] << std::endl;
+		std::cerr << "ID of temporary referenced: " << ID << std::endl;
+		std::cerr << "RefTemp ID referenced: " << rt.id << std::endl;
+		std::cerr << "RefTemp name referenced: " << rt.name << std::endl;
+		std::cerr << "address of cache: " << &c << std::endl;
+		std::cerr << "Where it might be (strongCache): " << StrongCache::lost_and_found()[rt.id] << std::endl;
+		std::cerr << "Where it might be (causalCache): " << CausalCache::lost_and_found()[rt.id] << std::endl;
 		return cached(c,rt);
 	}
 }

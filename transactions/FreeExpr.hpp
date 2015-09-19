@@ -23,10 +23,10 @@ struct extract_type<RefTemporary<id,l,T,Temp> >{
 
 template<unsigned long long ID, Level l, typename T, typename Temp, StoreType st>
 void print_more_info_if_reftemp(const StoreMap<st>& c, const RefTemporary<ID,l,T,Temp> &rt){
-	std::cout << "ID of temporary referenced: " << ID << std::endl;
-	std::cout << "RefTemp ID referenced: " << rt.id << std::endl;
-	std::cout << "RefTemp name referenced: " << rt.name << std::endl;
-	std::cout << "address of cache: " << &c << std::endl;
+	std::cerr << "ID of temporary referenced: " << ID << std::endl;
+	std::cerr << "RefTemp ID referenced: " << rt.id << std::endl;
+	std::cerr << "RefTemp name referenced: " << rt.name << std::endl;
+	std::cerr << "address of cache: " << &c << std::endl;
 }
 
 template<typename T, StoreType st>
@@ -73,18 +73,10 @@ struct FreeExpr : public ConExpr<T, min_level_dref<Exprs...>::value > {
 	auto handles() const {
 		return ::handles(params);
 	}
-
-	template<unsigned long long ID, Level l, typename T2, typename Temp>
-	static auto prnt_storeID(const RefTemporary<ID,l,T2,Temp> &t){
-		std::cout << t.t.store_id << ", ";
-	}
 	
 	auto strongCall(StrongCache& cache, const StrongStore &heap) const{
 		choose_strong<level::value> choice{nullptr};
 		auto ret = strongCall(cache,heap,choice);
-		std::cout << "FreeExpr result (";
-		fold(params,[](const auto &arg, bool){prnt_storeID(arg) ;return false;},false);
-		std::cout<< "): " << ret << std::endl;
 		return ret;
 	}
 
@@ -110,7 +102,6 @@ struct FreeExpr : public ConExpr<T, min_level_dref<Exprs...>::value > {
 
 		fold(params,[&cache](const auto &e, bool){
 				assert(is_cached(cache,e));
-				std::cout << "FreeExpr arg: " << cached(cache,e) << std::endl;
 				return false;},false);
 	}
 
