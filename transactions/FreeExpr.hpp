@@ -74,10 +74,17 @@ struct FreeExpr : public ConExpr<T, min_level_dref<Exprs...>::value > {
 		return ::handles(params);
 	}
 
+	template<unsigned long long ID, Level l, typename T2, typename Temp>
+	static auto prnt_storeID(const RefTemporary<ID,l,T2,Temp> &t){
+		std::cout << t.t.store_id << ", ";
+	}
+	
 	auto strongCall(StrongCache& cache, const StrongStore &heap) const{
 		choose_strong<level::value> choice{nullptr};
 		auto ret = strongCall(cache,heap,choice);
-		std::cout << "FreeExpr result: " << ret << std::endl;
+		std::cout << "FreeExpr result (";
+		fold(params,[](const auto &arg, bool){prnt_storeID(arg) ;return false;},false);
+		std::cout<< "): " << ret << std::endl;
 		return ret;
 	}
 

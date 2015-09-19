@@ -36,13 +36,12 @@ struct Temporary : public GeneralTemp, public ConStatement<get_level<T>::value> 
 
 	auto strongCall(StrongCache& c, StrongStore &s, std::true_type*) const {
 		typedef typename std::decay<decltype(run_ast_strong(c,s,t))>::type R;
-		if (!s.contains(store_id))
-			s.emplace<R>(store_id, run_ast_strong(c,s,t));
+		s.emplace<R>(store_id, run_ast_strong(c,s,t));
 		return true;
 	}
 
 	void strongCall(StrongCache& c, const StrongStore &s, std::false_type*) const {
-		t.strongCall(c,s);
+		run_ast_strong(c,s,t);
 	}
 
 	auto causalCall(CausalCache& c, CausalStore &s) const {
@@ -52,8 +51,7 @@ struct Temporary : public GeneralTemp, public ConStatement<get_level<T>::value> 
 
 	auto causalCall(CausalCache& c, CausalStore &s,std::true_type*) const {
 		typedef typename std::decay<decltype(t.causalCall(c,s))>::type R;
-		if (!s.contains(store_id))
-			s.emplace<R>(store_id,t.causalCall(c,s));
+		s.emplace<R>(store_id,run_ast_causal(c,s,t));
 		return true;
 	}
 
@@ -220,7 +218,9 @@ public:
 		
 		choose_strong<get_level<Temp>::value > choice{nullptr};
 		try {
-			return strongCall(cache, s,choice);
+			auto ret = strongCall(cache, s,choice);
+			std::cout << "refTemping this value (" << t.store_id << "): " << ret << std::endl;
+			return ret;
 		}
 		catch (const StoreMiss&){
 			std::cerr << "tried to reference variable " << name << std::endl;

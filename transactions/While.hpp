@@ -41,6 +41,9 @@ struct While : public ConStatement<min_level<Then>::value> {
 	}
 
 	bool strongCall(StrongCache& c, StrongStore &s) const {
+		s.in_loop();
+		AtScopeEnd ase{[&](){s.out_of_loop();}};
+		ignore(ase);
 		choose_strong<get_level<Cond>::value> choice1{nullptr};
 		choose_strong<min_level<Then>::value> choice2{nullptr};
 		bool ret = strongCall(c,s,choice1,choice2);
@@ -116,6 +119,9 @@ struct While : public ConStatement<min_level<Then>::value> {
 	}
 	
 	bool causalCall(CausalCache& c_old, CausalStore &s) const {
+		s.in_loop();
+		AtScopeEnd ase{[&](){s.out_of_loop();}};
+		ignore(ase);
 		//if there's a cache for this AST node, then
 		//that means we've already run the condition.
 		//look it up!

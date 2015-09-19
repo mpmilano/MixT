@@ -32,6 +32,20 @@ public:
 		return ret;
 	};
 
+	bool looping = false;
+	void in_loop() {
+		assert(is_store(semantic_switch));
+		//yeah, no nested while-loops for now.
+		//will be obvious later.
+		assert(!looping);
+		looping = true;
+	}
+	void out_of_loop() {
+		assert(looping);
+		assert(is_store(semantic_switch));
+		looping = false;
+	}
+
 	std::map<int,std::unique_ptr<void*> > store_impl;
 	
 	bool valid_store = true;
@@ -45,17 +59,17 @@ public:
 
 	StoreMap(const StoreMap&) = delete;
 
-#define dbg_store_prnt(x) if (is_store(semantic_switch)) std::cout << "Storing this value (" << i << "): " << x << std::endl;
+#define dbg_store_prnt(y,x) if (is_store(semantic_switch)) std::cout << y << " this value (" << i << "): " << x << std::endl;
 #define dbg_store_prnt2 if (is_store(semantic_switch)) std::cout << "Getting this value (" << i << "): " << *ret << std::endl;
 	
 	template<typename T>
 	void insert(int i, const T &item) {
 		assert(valid_store);
-		assert(!contains(i));
+		if (!looping) assert(!contains(i));
 		store_impl[i].reset((stored)heap_copy(item).release());
 		lost_and_found()[i] = this;
 		assert(contains(i));
-		dbg_store_prnt(item)
+		dbg_store_prnt("Storing",item)
 	}
 
 	template<typename T, typename... Args>
@@ -64,13 +78,13 @@ public:
 		store_impl[i].reset((void**)new T(std::forward<Args>(args)...));
 		lost_and_found()[i] = this;
 		assert(contains(i));
-		dbg_store_prnt(*store_impl.at(i))
+		dbg_store_prnt("Emplacing",*((T*) store_impl.at(i).get()))
 	}
 
 	template<typename T, typename... Args>
 	void emplace(int i, Args && ... args){
 		assert(valid_store);
-		assert(!contains(i));
+		if (!looping) assert(!contains(i));
 		emplace_ovrt<T>(i,std::forward<Args>(args)...);
 	}
 

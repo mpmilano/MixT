@@ -83,6 +83,7 @@ int main() {
 		let_mutable(bound) = 0 IN (
 		let_mutable(hd) = h IN (
 			WHILE (isValid(hd) && (!(bound == 10))) DO(
+				print_str("loop"),
 				print_str("hd"),
 				print(hd),
 				let_ifValid(tmp) = hd IN (
