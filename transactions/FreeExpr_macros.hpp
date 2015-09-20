@@ -10,9 +10,5 @@
 #define free_expr_IMPL(count, ...) free_expr_IMPL2(count, __VA_ARGS__)
 #define free_expr(...) free_expr_IMPL(VA_NARGS(__VA_ARGS__), __VA_ARGS__)
 
-
-
 #define fld(a,b) free_expr(decltype(std::declval<run_result<decltype(a)> >().get().b), a, a.b)
-#define msg(a,b,c...) free_expr(decltype(std::declval<run_result<decltype(a)> >().get().b(std::declval<run_result<decltype(c)> >())), a, c, a.b(c))
-
-
+#define msg(a,b,c...) free_expr(decltype(std::declval<run_result<decltype(a)> >().get().b(on_each_prn(std::declval<run_result<decltype, c, > >()))), a, c, a.b(c))
