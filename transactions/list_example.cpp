@@ -92,8 +92,7 @@ int main() {
 					print_str("tmp"),
 					print(tmp),
 					let_ifValid(weak_val) = fld(tmp,val) IN (
-						do_op(Increment,weak_val),
-						do_op(Increment,weak_val,zero)
+						do_op(Increment,weak_val)
 						),
 					hd = fld(tmp,next),
 					msg(tmp,test,zero)
