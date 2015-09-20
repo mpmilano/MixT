@@ -11,7 +11,7 @@
 typedef Level Level;
 
 template<typename T, Level l>
-struct ConExpr : public ConStatement<l> {
+struct ConExpr {
 	
 	//typename std::conditional<l == Level::strong, T, void>::type
 	//virtual strongCall(Cache&, const Store&) const = 0;

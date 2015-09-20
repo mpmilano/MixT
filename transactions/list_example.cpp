@@ -94,8 +94,7 @@ int main() {
 					let_ifValid(weak_val) = fld(tmp,val) IN (
 						do_op(Increment,weak_val)
 						),
-					hd = fld(tmp,next),
-					msg(tmp,test,zero)
+					hd = fld(tmp,next)
 					))
 			))
 			); //*/

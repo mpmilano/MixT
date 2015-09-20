@@ -71,8 +71,10 @@ using choose_causal = typename std::integral_constant<bool, runs_with_causal(l)>
 
 template<typename... CS>
 auto call_all_causal(CausalCache& cache, CausalStore &st, const std::tuple<CS...> &t){
+	static_assert(forall_types<is_ConStatement, std::tuple<CS...> >::value, "Error: non-statement found in body");
 	bool check = fold(t,[&cache,&st](const auto &e, bool b)
-					  {return b && e.causalCall(cache,st);},true);
+					  {assert(! is_ConExpr<std::decay_t<decltype(e)> >::value);
+						  return b && e.causalCall(cache,st);},true);
 	assert(check);
 	return check;
 }
@@ -80,6 +82,7 @@ auto call_all_causal(CausalCache& cache, CausalStore &st, const std::tuple<CS...
 
 template<typename... CS>
 auto call_all_strong(StrongCache& cache, StrongStore &st, const std::tuple<CS...> &t){
+	static_assert(forall_types<is_ConStatement, std::tuple<CS...> >::value, "Error: non-statement found in body");
 	//TODO: better error propogation please.
 	bool check = fold(t,[&cache,&st](const auto &e, bool b)
 					  {e.strongCall(cache,st); return true;},true);
