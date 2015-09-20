@@ -107,10 +107,9 @@ struct FreeExpr : public ConExpr<T, min_level_dref<Exprs...>::value > {
 	}
 
 	auto causalCall(CausalCache& cache, const CausalStore &heap) const {
-		assert(false);
 		choose_causal<level::value> choice{nullptr};
 		return causalCall(cache,heap,choice);
-	}	
+	}
 
 	auto causalCall(CausalCache& cache, const CausalStore &heap, std::true_type*) const {
 		fold(params,[&](const auto &e, bool){

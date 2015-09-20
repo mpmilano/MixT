@@ -70,8 +70,8 @@
 																		\
 			}															\
 																		\
-			auto strongCall(StrongCache& c CMA const StrongStore &s CMA std::true_type*) const {
-				auto ret = make_PreOp(id,Name(argcnt_map_dref(trans_op_arg,n,c,s,))) /*trans_op_arg(c, s, (*arg)) */ \
+			auto strongCall(StrongCache& c CMA const StrongStore &s CMA std::true_type*) const { \
+				auto ret = make_PreOp(id,Name(argcnt_map_dref(trans_op_arg,n,c,s,))) \
 					(c,argcnt(n));										\
 				c.emplace<decltype(ret)>(id,ret);						\
 				return ret;												\
