@@ -272,12 +272,12 @@ Handle<l,ha,T> cached(const StoreMap<st>& cache, const Handle<l,ha,T>& ast){
 	return ast;
 }
 
-template<typename T, restrict(is_ConExpr<T>::value && !std::is_scalar<T>::value)>
+template<typename T, restrict(is_ConExpr<T>::value && !std::is_scalar<T>::value && !is_handle<T>::value)>
 auto is_cached(const CausalCache& cache, const T& ast){
 	return cache.contains(ast.id);
 }
 
-template<typename T, restrict(is_ConExpr<T>::value && !std::is_scalar<T>::value)>
+template<typename T, restrict(is_ConExpr<T>::value && !std::is_scalar<T>::value && !is_handle<T>::value)>
 auto is_cached(const StrongCache& cache, const T& ast){
 	return cache.contains(ast.id);
 }

@@ -28,6 +28,11 @@ auto operator<<(std::basic_ostream<Ch, Tr>& os, std::tuple<Args...> const& t)
 }
 
 
+template<typename T>
+std::ostream & operator<<(std::ostream &os, const std::set<T>&){
+	return os <<"(this is a set)";
+}
+
 
 template<Level l2, typename T2, typename E, unsigned long long id>
 std::ostream & operator<<(std::ostream &os, const RefTemporary<id,l2,T2, E>& t){

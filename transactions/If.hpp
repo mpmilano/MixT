@@ -34,7 +34,7 @@ struct If : public ConStatement<min_level<typename min_level<Then>::type,
 			if_concept_2(Cond,Then,Els);
 		}
 
-	If(const If& i):cond(cond),then(then),els(els){}
+	If(const If& i):cond(i.cond),then(i.then),els(i.els){}
 
 	auto handles() const {
 		return std::tuple_cat(

@@ -77,8 +77,7 @@ struct FreeExpr : public ConExpr<T, min_level_dref<Exprs...>::value > {
 	
 	auto strongCall(StrongCache& cache, const StrongStore &heap) const{
 		choose_strong<level::value> choice{nullptr};
-		auto ret = strongCall(cache,heap,choice);
-		return ret;
+		return strongCall(cache,heap,choice);
 	}
 
 	T strongCall(StrongCache& cache, const StrongStore &heap, std::true_type*) const{
@@ -92,12 +91,9 @@ struct FreeExpr : public ConExpr<T, min_level_dref<Exprs...>::value > {
 		return ret;
 	}
 
-	void strongCall(StrongCache& cache, const StrongStore &heap,std::false_type*) const{
-		fold(params,[&cache](const auto &e, bool){
-				assert(!is_cached(cache,e));
-				return false;},false);
-				
+	void strongCall(StrongCache& cache, const StrongStore &heap,std::false_type*) const{				
 		fold(params,[&](const auto &e, bool){
+				assert(!is_cached(cache,e) || is_handle<std::decay_t<decltype(e)> >::value);
 				run_ast_strong(cache,heap,e);
 				return false;},false);
 

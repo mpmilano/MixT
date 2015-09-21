@@ -47,6 +47,14 @@
 #define argcnt_on_each_alphabet3(x) arg1(x(a)), arg2(x(b)), arg3(x(c))
 #define argcnt_on_each_alphabet(n,x) argcnt_on_each_alphabet ## n(x)
 
+template<typename... T>
+auto handles_helper(const T&... t){
+	auto ret = std::tuple_cat(::handles(*t)...);
+	static_assert(std::tuple_size<decltype(ret)>::value > 0,
+				  "Error: operation call with no handles");
+	assert(std::tuple_size<decltype(ret)>::value > 0);
+	return ret;
+}
 
 #define do_op2(Name, n, _arg...)										\
 	[&](){																\
@@ -64,9 +72,7 @@
 				/*arg(shared_copy(a))*/{}								\
 																		\
 			auto handles() const {										\
-				auto ret = std::tuple_cat((argcnt_map_dref(::handles,n)));	\
-				assert(std::tuple_size<decltype(ret)>::value > 0);		\
-				return ret;												\
+				return handles_helper(argcnt(n));						\
 																		\
 			}															\
 																		\
