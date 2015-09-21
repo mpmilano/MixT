@@ -14,6 +14,9 @@ constexpr bool is_store(StoreType st){
 	return st == StoreType::CausalStore || st == StoreType::StrongStore;
 }
 
+
+static std::map<int, void*> store_lost_and_found_map;
+
 //TODO: define this better and move it.
 template<StoreType semantic_switch>
 struct StoreMap {
@@ -28,8 +31,7 @@ private:
 public:
 	
 	static std::map<int, StoreMap*>& lost_and_found() {
-		static std::map<int, StoreMap*> ret;
-		return ret;
+		return *((std::map<int, StoreMap*>*) &store_lost_and_found_map);
 	};
 
 	bool looping = false;

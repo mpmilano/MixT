@@ -211,12 +211,15 @@ Handle<Level::strong,ha,T> run_ast_causal(CausalCache& cache, const CausalStore 
 	};
 	return Handle<Level::strong,ha,T>{
 		std::shared_ptr<LocalObject>{
-			new LocalObject{cache.get<T>(h.uid),
+			new LocalObject{h.get(),
 					h.remote_object().store(),
 					h.remote_object().currentTransactionContext()}}};
-	//TODO: need to cache this at the Transaction level!
-	//TODO: need to ensure operations over strong handles
-	//do not depend on causal data! (we probably already do this, but check!)
+	//TODO: we're calling get RIGHT HERE for the moment, even though it is a strong operation
+	//TODO: and we are in a causal context. If it turns out we need to split, then
+	//TODO: THIS IS BAD. Actual solution is to refine set of collected-handles
+	//TODO: to explicitly those which are strong and referenced by causal operations
+	//TODO: so that we execute the get in the right context and don't have lots of
+	//TODO: spurious gets.
 
 }
 
