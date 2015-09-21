@@ -245,7 +245,7 @@ using run_result = decltype(run_ast_causal(std::declval<CausalCache&>(),std::dec
 
 struct CacheLookupFailure {};
 
-template<typename T, restrict(is_ConExpr<T>::value && !std::is_scalar<T>::value)>
+template<typename T, restrict(is_ConExpr<T>::value && !std::is_scalar<T>::value && !is_handle<T>::value)>
 auto cached(const StrongCache& cache, const T& ast){
 	//TODO: make sure ast.id is always the gensym'd id.
 	if (!cache.contains(ast.id)) throw CacheLookupFailure();
@@ -253,7 +253,7 @@ auto cached(const StrongCache& cache, const T& ast){
 	return cache.get<R>(ast.id);
 }
 
-template<typename T, restrict(is_ConExpr<T>::value && !std::is_scalar<T>::value)>
+template<typename T, restrict(is_ConExpr<T>::value && !std::is_scalar<T>::value && !is_handle<T>::value)>
 auto cached(const CausalCache& cache, const T& ast){
 	//TODO: make sure ast.id is always the gensym'd id.
 	if (!cache.contains(ast.id)) throw CacheLookupFailure();

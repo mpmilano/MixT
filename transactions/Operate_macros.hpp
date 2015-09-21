@@ -80,13 +80,13 @@
 			void strongCall(StrongCache& c CMA const StrongStore &s CMA std::false_type*) const { \
 			}															\
 			auto strongCall(StrongCache& c CMA  const StrongStore &s) const { \
-				argcnt_concat(n,->strongCall(c CMA s));					\
+				argcnt_map_dref(run_ast_strong,n,c,s,);					\
 				choose_strong<level::value> choice{nullptr};			\
 				return strongCall(c,s,choice);							\
 			}															\
 																		\
 			auto causalCall(CausalCache& c CMA  const CausalStore &s) const { \
-				argcnt_concat(n,->causalCall(c CMA s));					\
+				argcnt_map_dref(run_ast_causal,n,c,s,);					\
 				using R = decltype(make_PreOp(id,Name(argcnt_map_dref(trans_op_arg,n,c,s,))) \
 								   (c,argcnt(n)));			\
 				if(runs_with_strong(level::value)) return c.template get<R>(id); \

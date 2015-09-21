@@ -117,6 +117,11 @@ public:
 			return ret;
 		else throw Transaction::ClassCastException();
 	}
+	
+	template<typename T, restrict(!is_RemoteObj_ptr<T>::value)>
+	static auto tryCast(T && r){
+		return std::forward<T>(r);
+	}
 
 	template<HandleAccess ha, typename T>
 	auto newObject(const T& init){

@@ -12,6 +12,7 @@
 #include "FreeExpr.hpp"
 #include "FinalHeader.hpp"
 #include "SQLStore.hpp"
+#include "Print.hpp"
 //*/
 #include "Transaction_macros.hpp"
 #include <pqxx/pqxx>
