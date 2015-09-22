@@ -21,3 +21,5 @@
 *.app
 votes
 test
+MyriaStore.*
+MyriaStore
