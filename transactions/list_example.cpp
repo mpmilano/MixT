@@ -12,6 +12,8 @@
 #include "Massert.hpp"
 #include "SQLStore.hpp"
 #include "FinalHeader.hpp" //*/
+#include "RemoteCons.hpp"
+#include "SQLStore.hpp"
 #include "SerializationMacros.hpp"
 #include "Transaction_macros.hpp"
 #include "FreeExpr_macros.hpp"
@@ -22,49 +24,8 @@
 template<typename T>
 FINALIZE_OPERATION(Increment, RemoteObject<T>*);
 
+using WeakCons = RemoteCons<int,Level::strong,Level::causal>;
 
-struct WeakCons :
-	public ByteRepresentable {
-	using WeakCons_r = Handle<Level::strong, HandleAccess::all, WeakCons>;
-	using WeakCons_v = Handle<Level::causal, HandleAccess::all, int>;
-	
-	WeakCons_v val;
-	WeakCons_r next;
-	
-	WeakCons(const decltype(val) *val, const decltype(next) *next)
-		:val(*val),next(*next){
-		delete val; delete next;
-	}
-
-	WeakCons(const decltype(val) &val, const decltype(next) &next)
-		:val(val),next(next){}
-
-	int test(int) const {return 0;}
-
-	template<typename Strong, typename Causal, typename... Args>
-	static WeakCons_r build_list(Strong& strong, Causal& causal, const Args & ... args){
-		auto tpl = std::make_tuple(args...);
-		return fold(tpl,[&](const int &e, const auto & acc){
-				WeakCons initial{causal.template newObject<HandleAccess::all,int>(e),acc};
-				return strong.template newObject<HandleAccess::all,WeakCons>(initial);
-			},WeakCons_r());
-	}
-
-	bool operator==(WeakCons wc) {
-		std::stringstream ss1;
-		std::stringstream ss2;
-		ss1 << val << next;
-		ss2 << wc.val << wc.next;
-		return ss1.str() == ss2.str();
-	}
-
-	bool equals(WeakCons wc) const {
-		WeakCons copy = *this;
-		return copy == wc;
-	}
-
-	DEFAULT_SERIALIZATION_SUPPORT(WeakCons,val,next)	
-};
 
 std::ostream & operator<<(std::ostream &os, const WeakCons& wc){
 	return os << "WeakCons{ " << wc.val << ", " << wc.next << "}";

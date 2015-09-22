@@ -1,6 +1,5 @@
 #pragma once
 #include "macro_utils.hpp"
-#include "Operate_macros.hpp"
 #include "FreeExpr_macros.hpp"
 
 #define CMA ,
