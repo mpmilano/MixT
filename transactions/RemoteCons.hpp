@@ -36,11 +36,11 @@ struct RemoteCons :
 		:val(val),next(next){}
 
 	template<typename Backbone, typename Data, typename... Args>
-	static p build_list(Backbone& backbone, Data& data, const Args & ... args){
+	static p build_list(Backbone& b, Data& d, const Args & ... args){
 		auto tpl = std::make_tuple(args...);
 		return fold(tpl,[&](const T &e, const auto & acc){
-				RemoteCons initial{data.template newObject<HandleAccess::all,T>(e),acc};
-				return backbone.template newObject<HandleAccess::all,RemoteCons>(initial);
+				RemoteCons initial{d.template newObject<HandleAccess::all,T>(e),acc};
+				return b.template newObject<HandleAccess::all,RemoteCons>(initial);
 			},p());
 	}
 
