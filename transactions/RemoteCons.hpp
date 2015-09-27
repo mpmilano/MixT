@@ -23,6 +23,7 @@ struct RemoteCons :
 	public ByteRepresentable {
 	using p = Handle<backbone, HandleAccess::all, RemoteCons>;
 	using v = Handle<data, HandleAccess::all, T>;
+	using newObj = p (*) (const typename p::stored_type&);
 	
 	v val;
 	p next;
@@ -34,6 +35,11 @@ struct RemoteCons :
 
 	RemoteCons(const decltype(val) &val, const decltype(next) &next)
 		:val(val),next(next){}
+
+	
+	static p mke(const newObj&){
+		return p{};
+	}
 
 	template<typename Backbone, typename Data, typename... Args>
 	static p build_list(Backbone& b, Data& d, const Args & ... args){
