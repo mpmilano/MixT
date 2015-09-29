@@ -1,9 +1,11 @@
 #pragma once
 #include "macro_utils.hpp"
 
-#define free_expr3(T,a,e) (FreeExpr<T,decltype(a)>([&](const typename extract_type<decltype(a)>::type &a){return e;},a))
-#define free_expr4(T,a,b,e) (FreeExpr<T,decltype(a),decltype(b)>([&](const typename extract_type<decltype(a)>::type &a, \
-																	 const typename extract_type<decltype(b)>::type &b){return e;},a,b))
+#define free_expr3(T,a,e) ([&](){ using t = typename extract_type<decltype(a)>::type; struct Force_cexpr{static constexpr void fun(const t &a) {ignore(e);} }; return FreeExpr<T,decltype(a)>([&](const t &a){return e;}, a);}())
+#define free_expr4(T,a,b,e) ([&](){ using ta = typename extract_type<decltype(a)>::type; \
+									using tb = typename extract_type<decltype(b)>::type; \
+									struct Force_cexpr{static constexpr void fun(const ta &a, const tb &b){ignore(e);} }; \
+									return FreeExpr<T,decltype(a),decltype(b)>([&](const ta &a, const tb &b){return e;},a,b)}())
 
 
 #define free_expr_IMPL2(count, ...) free_expr ## count (__VA_ARGS__)
