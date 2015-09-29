@@ -1,6 +1,10 @@
 #pragma once
 #include "macro_utils.hpp"
 
+#define free_expr2(T,e) ([&](){ struct Force_cexpr{static constexpr bool fun() {ignore(e); return true;} }; \
+								assert(Force_cexpr::fun(*mke_p<t>()));	\
+								return FreeExpr<T>([&](){return e;});}())
+
 #define free_expr3(T,a,e) ([&](){ using t = typename extract_type<decltype(a)>::type; struct Force_cexpr{static constexpr bool fun(const t &a) {ignore(e); return true;} }; \
 								  assert(Force_cexpr::fun(*mke_p<t>())); \
 								  return FreeExpr<T,decltype(a)>([&](const t &a){return e;}, a);}())
