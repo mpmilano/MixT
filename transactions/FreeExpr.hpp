@@ -135,6 +135,3 @@ auto find_usage(const FreeExpr<T,Vars...> &op){
 				, nullptr);
 }
 
-template<unsigned long long ID, typename T, typename... Exprs>
-struct contains_temporary<ID, FreeExpr<T,Exprs...> > : contains_temp_fold<ID,std::tuple<Exprs...> > {};
-

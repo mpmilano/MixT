@@ -6,11 +6,11 @@
 #include "Store.hpp"
 #include "SerializationSupport.hpp"
 
-struct GeneralRemoteObject {
+struct GeneralRemoteObject : public ByteRepresentable{
 	const int id = gensym();
 	virtual void setTransactionContext(TransactionContext*) = 0;
 	virtual TransactionContext* currentTransactionContext() = 0;
-	virtual bool isValid() const = 0;
+	virtual bool ro_isValid() const = 0;
 	virtual const GDataStore& store() const = 0;
 	virtual GDataStore& store() = 0;
 };
@@ -18,8 +18,14 @@ struct GeneralRemoteObject {
 template<Level l2, HandleAccess ha2, typename T2> struct Handle;
 
 template<typename T>
-class RemoteObject : public GeneralRemoteObject,
-					 public ByteRepresentable {
+class RemoteObject : public GeneralRemoteObject
+, public Handle<Level::strong,HandleAccess::all,T>,
+					 public Handle<Level::strong,HandleAccess::read,T>,
+					 public Handle<Level::strong,HandleAccess::write,T>,
+					 public Handle<Level::causal,HandleAccess::all,T>,
+					 public Handle<Level::causal,HandleAccess::read,T>,
+					 public Handle<Level::causal,HandleAccess::write,T> //*/
+{
 	//extend this plz!
 
 	virtual const T& get() = 0;

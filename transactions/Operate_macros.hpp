@@ -75,6 +75,29 @@ void run_causal_helper(Cache& c, Store &s, const T& ...t){
 	effect_map([&](const auto &t){run_ast_causal(c,s,*t);},t...);
 }
 
+template<typename T>
+struct Preserve{
+	const std::function<T ()> unbox;
+};
+
+template<typename T>
+auto preserve(const std::function<T ()> &t){
+	return Preserve<T>{t};
+}
+
+template<typename F>
+auto preserve(const F &f){
+	return preserve(convert(f));
+}
+
+template<typename T>
+constexpr Level get_level_dref(Preserve<T> const * const){
+	return get_level_dref(mke_p<T>());
+}
+
+//this "preserves" x, preventing it from being de-referenced by anything.
+#define $$(x) preserve([&](){return x;})
+
 #define do_op2(Name, n, _arg...)										\
 	[&](){																\
 		alphabet_assign(_arg);											\

@@ -71,9 +71,17 @@ constexpr Level get_level_dref(Handle<l,ha,T> const * const){
 	return l;
 }
 
-template<typename T, Level l>
+template<typename T, Level l, restrict2(is_handle<T>::value || is_ConExpr<T>::value)>
 constexpr Level get_level_dref(ConExpr<T,l> *){
 	return (l == Level::causal ? Level::causal : get_level_dref(mke_p<T>()));
+}
+
+//if we've hit "Bottom" and can't continue to find level-having
+//items below this, then just return this level.
+template<typename T, Level l>
+constexpr std::enable_if_t<!is_handle<T>::value && !is_ConExpr<T>::value, Level>
+	get_level_dref(ConExpr<T,l> *){
+	return l;
 }
 
 
@@ -83,7 +91,7 @@ struct min_level_dref : std::integral_constant<Level,
 											   (exists((get_level_dref(mke_p<T>()) == Level::strong)...) ? Level::strong :
 												Level::undef)
 											   > {
-	static_assert(!exists((!is_ConExpr<T>::value)...),"Error: min_level_dref only ready for Exprs. Not sure why you need this for non-exprs...");
+	static_assert(!exists((is_ConStatement<T>::value)...),"Error: min_level_dref only ready for Exprs. Not sure why you need this for non-exprs...");
 };
 
 template<typename... T>
@@ -92,7 +100,7 @@ struct max_level_dref : std::integral_constant<Level,
 											   (exists((get_level_dref(mke_p<T>()) == Level::causal)...) ? Level::causal :
 												Level::undef)
 											   > {
-	static_assert(!exists((!is_ConExpr<T>::value)...),"Error: max_level_dref only ready for Exprs. Not sure why you need this for non-exprs...");
+	static_assert(!exists((is_ConStatement<T>::value)...),"Error: max_level_dref only ready for Exprs. Not sure why you need this for non-exprs...");
 };
 
 template<typename... T>
@@ -188,7 +196,7 @@ Handle<Level::strong,ha,T> run_ast_causal(CausalCache& cache, const CausalStore 
 		void put(const T&) {
 			assert(false && "error: modifying strong Handle in causal context! the type system is supposed to prevent this!");
 		}
-		bool isValid() const {
+		bool ro_isValid() const {
 			//TODO: what if it's not valid? 
 			return true;
 		}

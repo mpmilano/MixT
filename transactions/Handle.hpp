@@ -25,8 +25,7 @@ std::nullptr_t find_usage(const GenericHandle<l,ha>&){
 }
 
 template<Level l, HandleAccess HA, typename T>
-struct Handle : public GenericHandle<l,HA>,
-				public ByteRepresentable {
+struct Handle : public GenericHandle<l,HA> {
 
 private:
 	const std::shared_ptr<RemoteObject<T> > _ro;
@@ -53,7 +52,7 @@ public:
 	static constexpr HandleAccess ha = HA;
 	typedef T stored_type;
 
-	int to_bytes(char* v) const {
+	int to_bytes_hndl(char* v) const {
 		//for serialization
 		if (_ro) {
 			((bool*)v)[0] = true;
@@ -67,7 +66,7 @@ public:
 		assert(from_bytes(v));
 	}
 
-	int bytes_size() const {
+	int bytes_size_hndl() const {
 		return sizeof(bool) + (_ro ? _ro->bytes_size() : 0);
 	}
 
@@ -105,7 +104,7 @@ public:
 	bool isValid() const {
 		//TODO: invalid means no _ro?
 		if (!_ro) return false;
-		return _ro->isValid();
+		return _ro->ro_isValid();
 	}	
 
 	template<Level lnew = l>
@@ -155,6 +154,8 @@ public:
 	}
 */
 };
+
+
 
 template<Level l, HandleAccess ha, typename T>
 constexpr Level chld_min_level_f(Handle<l,ha,T> const * const){
@@ -219,3 +220,19 @@ struct is_writeable_handle :
 	std::integral_constant<bool,
 						   is_handle<T>::value &&
 						   canWrite<extract_access<T>::value>::value >::type {};
+
+
+template<typename T>
+std::enable_if_t<is_handle<T>::value,std::unique_ptr<T> > from_bytes(char *v){
+	return T::from_bytes(v);
+}
+
+template<Level l, HandleAccess ha, typename T>
+int to_bytes(const Handle<l,ha,T>& h, char* v){
+	return h.to_bytes_hndl(v);
+}
+
+template<Level l, HandleAccess ha, typename T>
+int bytes_size(const Handle<l,ha,T> &h){
+	return h.bytes_size_hndl();
+}

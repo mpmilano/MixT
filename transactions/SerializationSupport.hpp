@@ -34,6 +34,7 @@ std::unique_ptr<T> from_bytes(char *v){
 	return T::from_bytes(v);
 }
 
+
 template<typename T,
 		 restrict2(std::is_trivially_copyable<T>::value)>
 std::unique_ptr<T> from_bytes(char *v){

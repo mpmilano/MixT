@@ -63,7 +63,7 @@ public:
 			oa << ths;
 		}
 
-		bool isValid() const {return true;}
+		bool ro_isValid() const {return true;}
 
 		TransactionContext* currctx = nullptr;
 		

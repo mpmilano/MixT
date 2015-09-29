@@ -274,7 +274,7 @@ char* SQLStore::GSQLObject::load(){
 	}
 }
 
-bool SQLStore::GSQLObject::isValid() const {
+bool SQLStore::GSQLObject::ro_isValid() const {
 	auto owner = enter_transaction(*const_cast<GSQLObject*>(this));
 	return owner.second->exec(i->check_existence).size() > 0;
 }

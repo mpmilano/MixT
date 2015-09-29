@@ -99,7 +99,7 @@ struct Operation<Store, Ret (*) (A...)> {
 		assert(can_flow(min,max));
 		
 		//do this here so we abort before causal tracking happens
-		ignore(Store::tryCast(extract_robj_p(args))...);
+		discard(Store::tryCast(extract_robj_p(args))...);
 			
 		//TODO: causal tracking
 		return fun(Store::tryCast(extract_robj_p(args))...);

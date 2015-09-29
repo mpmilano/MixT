@@ -12,21 +12,26 @@ Example: Chat server. Users, rooms.  Room lists are linearizable; Room membershi
 #include "Transaction.hpp"
 #include "Handle.hpp"
 #include "SQLStore.hpp"
+#include "RemoteCons.hpp"
+#include "Operate_macros.hpp"
+#include "FreeExpr_macros.hpp"
 
 using namespace std;
 
-template<Level l, typename T>
-using remote_set = Handle<l,HandleAccess::all, std::set<T> >;
-
 template<typename p>
-using newObject_f = p (*) (const p::stored_type&);
+using newObject_f = p (*) (const typename p::stored_type&);
 
 #define default_build 	template<typename... T>							\
 	static p mke( newObject_f<p> store_alloc, const T&... a){			\
-		p::stored_type ret{a...};										\
+		typename p::stored_type ret{a...};								\
 		return store_alloc(ret);										\
 	}
 
+template<Level l, typename T2>
+struct remote_set {
+	using p = Handle<l,HandleAccess::all, std::set<T2> >;
+	default_build
+};
 
 struct post{
 	using p = Handle<Level::causal, HandleAccess::all, post>;
@@ -36,7 +41,7 @@ struct post{
 
 struct user {
 	using p = Handle<Level::strong, HandleAccess::all, user>;
-	remote_set<Level::causal, post::p> inbox;
+	typename remote_set<Level::causal, post::p>::p inbox;
 	default_build
 };
 
@@ -45,21 +50,28 @@ using MemberList = RemoteCons<user,Level::strong,Level::causal>;
 struct room{
 	using p = Handle<Level::strong, HandleAccess::all, room>;
 	MemberList::p members;
-	remote_set<Level::causal, post::p> posts;
+	typename remote_set<Level::causal, post::p>::p posts;
+
+	room(newObject_f<MemberList::p> mf, newObject_f<decltype(posts)> pf)
+		:members(MemberList::mke(mf)),
+		 posts(remote_set<Level::causal, post::p>::mke(pf)) {}
+	
 	default_build
+	
 	void add_post(post::p pst){
 		TRANSACTION(
-			do_op(Insert,posts,pst),
-			let_mutable(hd) = members in (
+			do_op(Insert,posts,$$(pst)),
+			let_mutable(hd) = members IN ( 
 				WHILE (isValid(hd)) DO (
-					let_ifValid(tmp) = hd in (
-						do_op(Insert,fld(fld(tmp,val),inbox),pst),
-						hd = fld(tmp,next)
+					let_ifValid(tmp) = hd IN (
+						do_op(Insert,$($(tmp,val),inbox),$$(pst)),
+						hd = $(tmp,next)
 						),
-					)
+					) 
 				)
 			);
 	}
+	
 	void add_member(user::p usr){
 		TRANSACTION(
 			members.put(MemberList{usr,members})
@@ -68,15 +80,18 @@ struct room{
 };
 
 struct groups {
-	remote_set<Level::causal, room::p> rooms;
+	using p = typename remote_set<Level::causal, room::p>::p;
 	default_build
 };
 
 int main() {
 	auto &strong = SQLStore::inst();
-	groups g;
-	room::p initial_room = room::mke(strong);
+	auto &weak = FileStore<Level::causal>::filestore_instance();
+	auto strong_f = [&](auto &e){return strong.template newObject<HandleAccess::all>(e);};
+	auto weak_f = [&](auto &e){return weak.template newObject<HandleAccess::all>(e);};
+	groups::p g = groups::mke(weak_f);
+	room::p initial_room = room::mke(strong_f,strong_f,weak_f);
 	
-	Transaction(do_op(Insert,g.rooms,initial_room));
+	TRANSACTION(do_op(Insert,g,initial_room));	
 	
 }

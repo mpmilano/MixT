@@ -52,10 +52,10 @@ int main() {
 				let_ifValid(tmp) = hd IN (
 					print_str("tmp"),
 					print(tmp),
-					let_ifValid(weak_val) = fld(tmp,val) IN (
+					let_ifValid(weak_val) = $(tmp,val) IN (
 						do_op(Increment,weak_val)
 						),
-					hd = fld(tmp,next)
+					hd = $(tmp,next)
 					))
 			))
 			); //*/

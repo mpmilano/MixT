@@ -19,7 +19,7 @@ struct Transaction{
 
 				debug_forbid_copy = true;
 				AtScopeEnd ase{[](){debug_forbid_copy = false;}};
-				ignore(ase);
+				discard(ase);
 
 				//We're assuming that operations behave normally,
 				//By which we mean if they need to handle in-a-transaction

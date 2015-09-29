@@ -52,7 +52,7 @@ public:
 		//required by GeneralRemoteObject
 		void setTransactionContext(TransactionContext*);
 		TransactionContext* currentTransactionContext();
-		bool isValid() const;
+		bool ro_isValid() const;
 		const GDataStore& store() const;
 		GDataStore& store();
 
@@ -94,8 +94,8 @@ public:
 		TransactionContext* currentTransactionContext(){
 			return gso.currentTransactionContext();
 		}
-		bool isValid() const{
-			return gso.isValid();
+		bool ro_isValid() const{
+			return gso.ro_isValid();
 		}
 		const GDataStore& store() const{
 			return gso.store();
