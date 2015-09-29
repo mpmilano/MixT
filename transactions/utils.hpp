@@ -275,7 +275,7 @@ typename std::enable_if<!(std::is_same<T,std::nullptr_t>::value || std::is_same<
 //*/
 
 template<typename... T>
-void ignore(const T & ...) {}
+constexpr void ignore(const T & ...) {}
 
 
 struct AtScopeEnd {
