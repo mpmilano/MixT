@@ -19,7 +19,7 @@ template<Level l2, HandleAccess ha2, typename T2> struct Handle;
 
 template<typename T>
 class RemoteObject : public GeneralRemoteObject
-, public Handle<Level::strong,HandleAccess::all,T>,
+/*, public Handle<Level::strong,HandleAccess::all,T>,
 					 public Handle<Level::strong,HandleAccess::read,T>,
 					 public Handle<Level::strong,HandleAccess::write,T>,
 					 public Handle<Level::causal,HandleAccess::all,T>,

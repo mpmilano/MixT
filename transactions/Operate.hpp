@@ -101,6 +101,64 @@ auto make_PreOp(int id, const T &t){
 	return ret;
 }
 
+
+template<typename T>
+struct Preserve{
+	const T t;
+};
+
+template<typename C, typename T>
+struct Preserve2 {
+	const C c;
+	const T t;
+};
+
+template<typename T>
+struct is_preserve : std::false_type {};
+
+template<typename T>
+struct is_preserve<Preserve<T> > : std::true_type {};
+
+template<typename C, typename T>
+struct is_preserve<Preserve2<C,T> > : std::true_type {};
+
+template<typename T>
+struct is_preserve<const T> : is_preserve<T> {};
+
+template<typename T>
+struct is_preserve<const T&> : is_preserve<T> {};
+
+template<typename T>
+struct is_preserve<T&> : is_preserve<T> {};
+
+template<typename T>
+auto preserve(const T &t){
+	return Preserve<T>{t};
+}
+
+template<typename C, typename T>
+auto cached(const C &c, const Preserve<T> &t){
+	return Preserve2<const C&,T>{c,t.t};
+}
+
+template<typename T>
+constexpr Level get_level_dref(Preserve<T> const * const){
+	//TODO: should the semantics of "preserve" be such that
+	//we should recur here? 
+	return get_level<T>::value;
+}
+
+
+template<typename T>
+auto handles_helper_2(const Preserve<T>& t){
+	return ::handles(t.t);
+}
+
+template<typename C, typename T>
+auto extract_robj_p(const Preserve2<C,T> &t){
+	return cached(t.c,t.t);
+}
+
 template<typename T>
 auto trans_op_arg(CausalCache& c, const CausalStore& s, const T& t) ->
 	std::remove_reference_t<decltype(constify(op_arg(run_ast_causal(c,s,op_arg(t)))))>
@@ -112,4 +170,47 @@ template<typename T>
 auto trans_op_arg(StrongCache& c, const StrongStore& s, const T& t) {
 	run_ast_strong(c,s,t);
 	return constify(extract_robj_p(cached(c,t)));
+}
+
+template<typename T, restrict(is_ConExpr<T>::value)>
+auto handles_helper_2(const T &t){
+	return ::handles(t);
+}
+
+template<typename... T>
+auto handles_helper(const T&... t){
+	auto ret = std::tuple_cat(handles_helper_2(*t)...);
+	static_assert(std::tuple_size<decltype(ret)>::value > 0,
+				  "Error: operation call with no handles");
+	assert(std::tuple_size<decltype(ret)>::value > 0);
+	return ret;
+}
+
+template<typename A, typename B, typename T>
+void run_ast_causal(const A &a, const B &b, const Preserve<T> &t){
+	run_ast_causal(a,b,t.t);
+}
+
+template<typename A, typename B, typename T>
+void run_ast_strong(const A &a, const B &b, const Preserve<T> &t){
+	run_ast_strong(a,b,t.t);
+}
+
+template<typename F>
+void effect_map(const F&) {}
+
+template<typename F, typename T1, typename... T>
+void effect_map(const F& f, const T1 &t1, const T& ...t){
+	f(t1);
+	effect_map(f,t...);
+}
+
+template<typename Cache, typename Store, typename... T>
+void run_strong_helper(Cache& c, Store &s, const T& ...t){
+	effect_map([&](const auto &t){run_ast_strong(c,s,*t);},t...);
+}
+
+template<typename Cache, typename Store, typename... T>
+void run_causal_helper(Cache& c, Store &s, const T& ...t){
+	effect_map([&](const auto &t){run_ast_causal(c,s,*t);},t...);
 }

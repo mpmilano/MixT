@@ -47,56 +47,9 @@
 #define argcnt_on_each_alphabet3(x) arg1(x(a)), arg2(x(b)), arg3(x(c))
 #define argcnt_on_each_alphabet(n,x) argcnt_on_each_alphabet ## n(x)
 
-template<typename... T>
-auto handles_helper(const T&... t){
-	auto ret = std::tuple_cat(::handles(*t)...);
-	static_assert(std::tuple_size<decltype(ret)>::value > 0,
-				  "Error: operation call with no handles");
-	assert(std::tuple_size<decltype(ret)>::value > 0);
-	return ret;
-}
-
-template<typename F>
-void effect_map(const F&) {}
-
-template<typename F, typename T1, typename... T>
-void effect_map(const F& f, const T1 &t1, const T& ...t){
-	f(t1);
-	effect_map(f,t...);
-}
-
-template<typename Cache, typename Store, typename... T>
-void run_strong_helper(Cache& c, Store &s, const T& ...t){
-	effect_map([&](const auto &t){run_ast_strong(c,s,*t);},t...);
-}
-
-template<typename Cache, typename Store, typename... T>
-void run_causal_helper(Cache& c, Store &s, const T& ...t){
-	effect_map([&](const auto &t){run_ast_causal(c,s,*t);},t...);
-}
-
-template<typename T>
-struct Preserve{
-	const std::function<T ()> unbox;
-};
-
-template<typename T>
-auto preserve(const std::function<T ()> &t){
-	return Preserve<T>{t};
-}
-
-template<typename F>
-auto preserve(const F &f){
-	return preserve(convert(f));
-}
-
-template<typename T>
-constexpr Level get_level_dref(Preserve<T> const * const){
-	return get_level_dref(mke_p<T>());
-}
 
 //this "preserves" x, preventing it from being de-referenced by anything.
-#define $$(x) preserve([&](){return x;})
+#define $$(x) preserve(x)
 
 #define do_op2(Name, n, _arg...)										\
 	[&](){																\

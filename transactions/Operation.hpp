@@ -27,7 +27,10 @@
 template<typename, typename>
 struct Operation;
 
-template<typename T, restrict(!is_handle<decay<T> >::value)>
+template<typename T>
+struct is_preserve;
+
+template<typename T, restrict(!is_handle<decay<T> >::value && !is_preserve<T>::value )>
  auto extract_robj_p( T&& t) {
 	return std::forward<T>(t);
 }
