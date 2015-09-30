@@ -36,7 +36,7 @@ public:
 	using id = std::integral_constant<int,2>;
 	int ds_id() const { return id::value; }
 	
-	struct GSQLObject : public GeneralRemoteObject, public ByteRepresentable {
+	struct GSQLObject : public GeneralRemoteObject {
 	private:
 		struct Internals;
 		Internals* i;
