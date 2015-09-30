@@ -15,6 +15,7 @@ Example: Chat server. Users, rooms.  Room lists are linearizable; Room membershi
 #include "RemoteCons.hpp"
 #include "Operate_macros.hpp"
 #include "FreeExpr_macros.hpp"
+#include "SerializationMacros.hpp"
 
 using namespace std;
 
@@ -33,21 +34,26 @@ struct remote_set {
 	default_build
 };
 
-struct post{
+struct post : public ByteRepresentable{
 	using p = Handle<Level::causal, HandleAccess::all, post>;
 	std::string str;
+	post(const std::string &s):str(s){}
 	default_build
+	DEFAULT_SERIALIZATION_SUPPORT(post,str)
 };
 
-struct user {
+struct user : public ByteRepresentable {
 	using p = Handle<Level::strong, HandleAccess::all, user>;
 	typename remote_set<Level::causal, post::p>::p inbox;
+	user(const decltype(inbox) &i):inbox(i){}
+	
 	default_build
+	DEFAULT_SERIALIZATION_SUPPORT(user,inbox)
 };
 
 using MemberList = RemoteCons<user,Level::strong,Level::causal>;
 
-struct room{
+struct room : public ByteRepresentable{
 	using p = Handle<Level::strong, HandleAccess::all, room>;
 	MemberList::p members;
 	typename remote_set<Level::causal, post::p>::p posts;
@@ -56,7 +62,11 @@ struct room{
 		:members(MemberList::mke(mf)),
 		 posts(remote_set<Level::causal, post::p>::mke(pf)) {}
 	
+	room(const decltype(members) &m, const decltype(posts) &p)
+		:members(m),posts(p){}
+	
 	default_build
+	DEFAULT_SERIALIZATION_SUPPORT(room,members,posts)
 	
 	void add_post(post::p pst){
 		TRANSACTION(

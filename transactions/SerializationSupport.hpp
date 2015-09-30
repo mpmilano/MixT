@@ -13,9 +13,32 @@ struct ByteRepresentable {
 	//virtual static T* from_bytes(char *v) const  = 0;
 };
 
+//forward-declaring
+
+template<typename T>
+struct is_handle;
+template<Level, HandleAccess, typename>
+struct Handle;
+
+template<typename T>
+std::enable_if_t<is_handle<T>::value,std::unique_ptr<T> > from_bytes(char *v);
+
+template<Level l, HandleAccess ha, typename T>
+int to_bytes(const Handle<l,ha,T>& h, char* v);
+
+template<Level l, HandleAccess ha, typename T>
+int bytes_size(const Handle<l,ha,T> &h);
+
+//end forward-declaring
+
+
 int to_bytes(const ByteRepresentable& b, char* v);
 
 int bytes_size(const ByteRepresentable& b);
+
+int to_bytes(const std::string& b, char* v);
+
+int bytes_size(const std::string& b);
 
 template<typename T, restrict(std::is_trivially_copyable<T>::value)>
 int to_bytes(const T &t, char* v){
@@ -26,6 +49,12 @@ int to_bytes(const T &t, char* v){
 template<typename T, restrict2(std::is_trivially_copyable<T>::value)>
 auto bytes_size(const T&){
 	return sizeof(T);
+}
+
+template<typename T>
+std::enable_if_t<std::is_same<T,std::string>::value, std::unique_ptr<T> >
+from_bytes(char *v){
+	return std::make_unique<T>(v);
 }
 
 template<typename T,
