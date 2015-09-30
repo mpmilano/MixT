@@ -105,7 +105,11 @@ public:
 		//TODO: invalid means no _ro?
 		if (!_ro) return false;
 		return _ro->ro_isValid();
-	}	
+	}
+
+	bool operator<(const Handle& h) const {
+		return _ro->id < h._ro->id;
+	}
 
 	template<Level lnew = l>
 	Handle<lnew,HandleAccess::read,T> readOnly() const {
