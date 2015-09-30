@@ -126,7 +126,7 @@ namespace {
 		unique_ptr<SQLTransaction> owner
 			((SQLTransaction*)store.begin_transaction().release());
 		owner->commit_on_delete = true;
-		return move(owner);
+		return owner;
 	}
 }
 
