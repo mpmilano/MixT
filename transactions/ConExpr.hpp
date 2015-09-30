@@ -164,7 +164,6 @@ run_ast_strong(const StrongCache &, const StrongStore&, const T& e) {
 
 template<HandleAccess ha, typename T>
 void run_ast_strong(const StrongCache& c, const StrongStore&, const Handle<Level::causal,ha,T>& h) {
-	//I think that this one, at least, is okay.
 }
 //*/
 template<HandleAccess ha, typename T>

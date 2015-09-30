@@ -65,3 +65,9 @@ struct RemoteCons :
 
 	DEFAULT_SERIALIZATION_SUPPORT(RemoteCons,val,next)	
 };
+
+
+template<typename T, Level backbone, Level data>
+std::ostream& operator<<(std::ostream &os, const RemoteCons<T,backbone,data>& rc){
+	return os << rc.val << " ++ " << rc.next;
+}
