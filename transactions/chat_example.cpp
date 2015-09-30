@@ -16,6 +16,7 @@ Example: Chat server. Users, rooms.  Room lists are linearizable; Room membershi
 #include "Operate_macros.hpp"
 #include "FreeExpr_macros.hpp"
 #include "SerializationMacros.hpp"
+#include "Transaction_macros.hpp"
 
 using namespace std;
 
@@ -74,12 +75,12 @@ struct room : public ByteRepresentable{
 			let_mutable(hd) = members IN ( 
 				WHILE (isValid(hd)) DO (
 					let_ifValid(tmp) = hd IN (
-						do_op(Insert,$($(tmp,val),inbox),$$(pst)),
+						//do_op(Insert,$($(tmp,val),inbox),$$(pst)),
 						hd = $(tmp,next)
-						),
-					) 
+						)
+					)
 				)
-			);
+			); //*/
 	}
 	
 	void add_member(user::p usr){

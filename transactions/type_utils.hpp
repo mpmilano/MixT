@@ -34,3 +34,7 @@ struct error_helper : std::integral_constant<bool, !Pred<Arg>::value >{
 struct NoOverloadFoundError{
 	const std::string msg;
 };
+
+#define DecayTraits(name) template<typename T> struct name<const T> : name<T> {}; \
+	template<typename T> struct name<T&> : name<T> {};					\
+	template<typename T> struct name<const T&> : name<T> {};
