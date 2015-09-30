@@ -21,7 +21,7 @@ Example: Chat server. Users, rooms.  Room lists are linearizable; Room membershi
 using namespace std;
 
 template<typename p>
-using newObject_f = p (*) (const typename p::stored_type&);
+using newObject_f = const std::function<p (const typename p::stored_type&)>&;
 
 #define default_build 	template<typename... T>							\
 	static p mke( newObject_f<p> store_alloc, const T&... a){			\
@@ -44,7 +44,7 @@ struct post : public ByteRepresentable{
 };
 
 struct user : public ByteRepresentable {
-	using p = Handle<Level::strong, HandleAccess::all, user>;
+	using p = Handle<Level::causal, HandleAccess::all, user>;
 	typename remote_set<Level::causal, post::p>::p inbox;
 	user(const decltype(inbox) &i):inbox(i){}
 	
@@ -75,7 +75,8 @@ struct room : public ByteRepresentable{
 			let_mutable(hd) = members IN ( 
 				WHILE (isValid(hd)) DO (
 					let_ifValid(tmp) = hd IN (
-						//do_op(Insert,$($(tmp,val),inbox),$$(pst)),
+						let_ifValid(tmp2) = $(tmp,val) IN (
+							do_op(Insert,$(tmp2,inbox),$$(pst))),
 						hd = $(tmp,next)
 						)
 					)
@@ -84,9 +85,8 @@ struct room : public ByteRepresentable{
 	}
 	
 	void add_member(user::p usr){
-		TRANSACTION(
-			members.put(MemberList{usr,members})
-			);
+		//TODO: should be in a transaction
+		members.put(MemberList{usr,members});
 	}
 };
 
@@ -103,6 +103,6 @@ int main() {
 	groups::p g = groups::mke(weak_f);
 	room::p initial_room = room::mke(strong_f,strong_f,weak_f);
 	
-	TRANSACTION(do_op(Insert,g,initial_room));	
+	TRANSACTION(do_op(Insert,g,$$(initial_room)));	
 	
 }

@@ -157,3 +157,8 @@ template<typename Cache, typename Store, typename... T>
 void run_causal_helper(Cache& c, Store &s, const T& ...t){
 	effect_map([&](const auto &t){run_ast_causal(c,s,*t);},t...);
 }
+
+template<unsigned long long ID, typename T>
+auto find_usage(const Preserve<T>& p) {
+	return find_usage<ID>(p.t);
+}

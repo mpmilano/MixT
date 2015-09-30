@@ -23,7 +23,7 @@ struct RemoteCons :
 	public ByteRepresentable {
 	using p = Handle<backbone, HandleAccess::all, RemoteCons>;
 	using v = Handle<data, HandleAccess::all, T>;
-	using newObj = p (*) (const typename p::stored_type&);
+	using newObj = const std::function<p (const typename p::stored_type&)>&;
 	
 	v val;
 	p next;
@@ -37,7 +37,7 @@ struct RemoteCons :
 		:val(val),next(next){}
 
 	
-	static p mke(const newObj&){
+	static p mke(newObj){
 		return p{};
 	}
 
