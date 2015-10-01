@@ -129,13 +129,13 @@ auto handles_helper(const T&... t){
 	return ret;
 }
 
-template<typename A, typename B, typename T>
-void run_ast_causal(const A &a, const B &b, const Preserve<T> &t){
+template<typename T>
+void run_ast_causal(CausalCache &a, const CausalStore &b, const Preserve<T> &t){
 	run_ast_causal(a,b,t.t);
 }
 
-template<typename A, typename B, typename T>
-void run_ast_strong(const A &a, const B &b, const Preserve<T> &t){
+template<typename T>
+void run_ast_strong(StrongCache &a, const StrongStore &b, const Preserve<T> &t){
 	run_ast_strong(a,b,t.t);
 }
 
