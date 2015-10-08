@@ -23,6 +23,10 @@ namespace list_ex{
 #include "list_example.cpp"
 }
 
+bool bad_func(){
+	return true;
+}
+
 int main(){
 	try {
 

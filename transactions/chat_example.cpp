@@ -51,6 +51,7 @@ struct user : public ByteRepresentable {
 	default_build
 	DEFAULT_SERIALIZATION_SUPPORT(user,inbox)
 };
+
 std::ostream& operator<<(std::ostream &os, const user& u){
 	return os << "user with inbox: " << u.inbox;
 }
@@ -88,9 +89,15 @@ struct room : public ByteRepresentable{
 			); //*/
 	}
 	
-	void add_member(user::p usr){
-		//TODO: should be in a transaction
-		members.put(MemberList{usr,members});
+	static void add_member(room::p room, user::p usr){
+		TRANSACTION(
+			let_ifValid(rm) = room IN (
+				let_ifValid(membrs) = $(rm,members) IN (
+					membrs = $bld(MemberList, $$(usr), $$(membrs))
+					//membrs = MemberList{usr,membrs}
+					)
+				)
+			);
 	}
 };
 

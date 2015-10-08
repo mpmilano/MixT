@@ -30,7 +30,7 @@
 
 #define TRANSACTION(args...) { static TransactionBuilder<std::tuple<> > prev; TRANS_SEQ(args, END_TRANSACTION)}
 
-
+//change these - mutable can use, just not dref.
 #define let_mutable(x) [&]() { static auto decl = MutDeclaration(#x); static auto x = (MutAssigner(#x)
 
 #define let_ifValid(x)  [&]() { static auto decl = ImmutDeclaration(#x); static auto x = (ImmutAssigner(#x)
