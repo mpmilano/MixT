@@ -6,6 +6,8 @@
 #include "Store.hpp"
 #include "SerializationSupport.hpp"
 
+
+
 struct GeneralRemoteObject : public ByteRepresentable{
 	const int id = gensym();
 	virtual void setTransactionContext(TransactionContext*) = 0;
@@ -40,12 +42,13 @@ public:
 	friend struct Handle;
 
 	using type = T;
-
+/*
 	template<HandleAccess ha, typename T2>
 	friend Handle<Level::strong,ha,T2>
 	run_ast_causal(CausalCache& cache, const CausalStore &s,
 				   const Handle<Level::strong,ha,T2>& h);
-
+//*/
+	
 	template<typename Arg, typename Accum>
 	using Pointerize = Cons_t<Arg*,Accum>;
 	

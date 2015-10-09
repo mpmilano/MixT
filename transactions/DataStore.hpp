@@ -2,6 +2,7 @@
 
 #include "Operation.hpp"
 #include "GDataStore.hpp"
+#include "Tracker.hpp"
 
 template<Level l>
 class DataStore : public GDataStore{

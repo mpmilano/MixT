@@ -19,7 +19,9 @@ template<Level l>
 struct FileStore : public DataStore<l> {
 
 private:
-	FileStore(){}
+	FileStore(){
+		Tracker::global_tracker().registerStore(*this);
+	}
 	
 public:
 

@@ -17,7 +17,6 @@ constexpr bool is_store(StoreType st){
 
 static std::map<int, void*> store_lost_and_found_map;
 
-//TODO: define this better and move it.
 template<StoreType semantic_switch>
 struct StoreMap {
 private:
@@ -119,34 +118,6 @@ public:
 
 	friend struct Transaction;
 };
-
-/*
-template<StoreType semantic_switch>
-struct ROStore {
-	
-	const std::map<int,std::unique_ptr<void*> > &store_impl;	
-	const std::function<bool (int)> contains;	
-
-	ROStore(const StoreMap<semantic_switch> &sm):
-		store_impl(sm.store_impl),
-		contains([&](int j){return sm.contains(j);}){}
-
-	template<typename T>
-	T& get(int i){
-		T* ret = (T*) (store_impl.at(i).get());
-		dbg_store_prnt2
-		return *ret;
-	}
-	
-	template<typename T>
-	const T& get(int i) const{
-		T* ret = (T*) (store_impl.at(i).get());
-		dbg_store_prnt2
-		return *ret;
-	}
-
-	
-}; //*/
 
 using StrongStore = StoreMap<StoreType::StrongStore>;
 using StrongCache = StoreMap<StoreType::StrongCache>;

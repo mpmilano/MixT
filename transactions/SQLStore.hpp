@@ -43,6 +43,8 @@ public:
 		GSQLObject(int id, int size);
 	public:
 		GSQLObject(const std::vector<char> &c);
+		GSQLObject(const std::string &name, const std::vector<char> &c);
+		GSQLObject(const std::string &name);
 		GSQLObject(const GSQLObject&) = delete;
 		GSQLObject(GSQLObject&&);
 		void save();
@@ -133,6 +135,26 @@ public:
 			<Level::strong,ha,T,SQLObject<T> >
 			(std::move(gso),heap_copy(init) );
 	}
+	
+	template<HandleAccess ha, typename T>
+	auto newObject(const std::string &name, const T& init){
+		int size = ::bytes_size(init);
+		std::vector<char> v(size);
+		assert(size == ::to_bytes(init,&v[0]));
+		GSQLObject gso(name,v);
+		return make_handle
+			<Level::strong,ha,T,SQLObject<T> >
+			(std::move(gso),heap_copy(init) );
+	}
+
+	template<HandleAccess ha, typename T>
+	auto existingObject(const std::string &name){
+		GSQLObject gso(name);
+		return make_handle
+			<Level::strong,ha,T,SQLObject<T> >
+			(std::move(gso),nullptr);
+	}
+
 
 	
 	template<typename T>

@@ -31,7 +31,7 @@ private:
 	const std::shared_ptr<RemoteObject<T> > _ro;
 	Tracker &t;
 	Handle(std::shared_ptr<RemoteObject<T> > _ro):_ro(_ro),t(Tracker::global_tracker()){
-		t.registerStore(_ro->store());
+		assert(t.registered(_ro->store()));
 	}
 public:
 	

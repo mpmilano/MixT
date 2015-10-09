@@ -5,6 +5,7 @@ namespace ct_lambda{
 template<class F>
 struct wrapper
 {
+	using ftype = F;
 	static_assert(std::is_empty<F>(), "Lambdas must be empty");
 	template<class... Ts>
 	decltype(auto) operator()(Ts&&... xs) const
