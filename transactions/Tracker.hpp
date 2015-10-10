@@ -5,11 +5,13 @@
 
 #include "GDataStore.hpp"
 #include "compile-time-lambda.hpp"
+#include "utils.hpp"
 #include <functional>
 
-struct Ends;
-struct Metadata;
-struct Tombstone;
+//TODO: replace with non-dummy types
+using Ends = int;
+using Metadata = long;
+using Tombstone = double;
 
 template<Level l, HandleAccess HA, typename T>
 struct Handle;
@@ -18,13 +20,25 @@ class Tracker {
 private:
 
 	void registerStore(DataStore<Level::strong>&,
-					   std::function<Handle<Level::strong, HandleAccess::all, Ends> (const std::string&, const Ends&)> newEnds,
-					   std::function<Handle<Level::strong, HandleAccess::all, Metadata> (const std::string&, const Metadata&)> newMeta,
-					   std::function<Handle<Level::strong, HandleAccess::all, Tombstone> (const std::string&, const Tombstone&)> newTomb,
+					   std::function<
+					   Handle<Level::strong, HandleAccess::all, Ends>
+					   (const std::string&, const Ends&)> newEnds,
+					   std::function<
+					   Handle<Level::strong, HandleAccess::all, Metadata>
+					   (const std::string&, const Metadata&)> newMeta,
+					   std::function<
+					   Handle<Level::strong, HandleAccess::all, Tombstone>
+					   (const std::string&, const Tombstone&)> newTomb,
 					   std::function<bool (const std::string&)> exists,
-					   std::function<Handle<Level::strong, HandleAccess::all, Ends> (const std::string&)> existingEnds,
-					   std::function<Handle<Level::strong, HandleAccess::all, Metadata> (const std::string&)> existingMeta,
-					   std::function<Handle<Level::strong, HandleAccess::all, Tombstone> (const std::string&)> existingTomb
+					   std::function<
+					   Handle<Level::strong, HandleAccess::all, Ends>
+					   (const std::string&)> existingEnds,
+					   std::function<
+					   Handle<Level::strong, HandleAccess::all, Metadata>
+					   (const std::string&)> existingMeta,
+					   std::function<
+					   Handle<Level::strong, HandleAccess::all, Tombstone>
+					   (const std::string&)> existingTomb
 		);
 	
 	void registerStore(DataStore<Level::causal>&,
@@ -44,7 +58,10 @@ public:
 
 	template<typename DS, typename NF, typename EF, typename Ex>
 	void registerStore(DS &ds, const NF &nf, const Ex &ex, const EF &ef){
-		registerStore(ds,nf,nf,nf,ex,ef,ef,ef);
+		registerStore(ds,nf,nf,nf,ex,
+					  [ef](const auto &a) {return ef(a,mke_p<Ends>()); },
+					  [ef](const auto &a) {return ef(a,mke_p<Metadata>()); },
+					  [ef](const auto &a) {return ef(a,mke_p<Tombstone>()); });
 	}
 
 	void tick();

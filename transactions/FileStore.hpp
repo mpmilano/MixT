@@ -20,7 +20,18 @@ struct FileStore : public DataStore<l> {
 
 private:
 	FileStore(){
-		Tracker::global_tracker().registerStore(*this);
+		Tracker::global_tracker().registerStore(
+			*this,
+			[this](const auto &name, const auto &val){
+				return newObject<HandleAccess::all>(name,val);
+			},
+			[this](const auto &name) -> bool{
+				return exists(name);
+			},
+			[this](const auto &name, const auto *inf){
+				return existingObject<HandleAccess::all>(name,inf);
+			}
+			);
 	}
 	
 public:
@@ -210,7 +221,7 @@ public:
 	template<typename T>
 	static std::unique_ptr<FSObject<T> > from_bytes(char* v) {
 		boost::filesystem::path p(v);
-		assert(boost::filesystem::exists(v));
+		assert(boost::filesystem::exists(p));
 		if (boost::filesystem::is_directory(p)){
 			assert(false && "can't deserialize dirs yet");
 		}
@@ -238,6 +249,25 @@ public:
 		return make_handle
 			<l,ha,T,FSObject<T>>
 			(*this,std::string("/tmp/fsstore/") + std::to_string(gensym()),t);
+	}
+
+	template<HandleAccess ha, typename T>
+	auto newObject(const std::string &name, const T &t){
+		return make_handle
+			<l,ha,T,FSObject<T>>
+			(*this,std::string("/tmp/fsstore/") + name,t);
+	}
+
+	template<HandleAccess ha, typename T>
+	auto existingObject(const std::string &name, const T* inf = nullptr){
+		return make_handle
+			<l,ha,T,FSObject<T>>
+			(*this,std::string("/tmp/fsstore/") + name,true);
+	}
+
+	bool exists(const std::string &name) {
+		boost::filesystem::path p(name.c_str());
+		return boost::filesystem::exists(p);
 	}
 
 	template<typename T>

@@ -148,7 +148,7 @@ public:
 	}
 
 	template<HandleAccess ha, typename T>
-	auto existingObject(const std::string &name){
+	auto existingObject(const std::string &name, T* for_inf = nullptr){
 		GSQLObject gso(name);
 		return make_handle
 			<Level::strong,ha,T,SQLObject<T> >
