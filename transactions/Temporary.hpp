@@ -266,14 +266,11 @@ public:
 		return r;
 	}
 
-	template<typename E>
-	std::enable_if_t<std::is_same<Temporary<ID,l,T>, Temp>::value, TemporaryMutation<E> >
-	operator=(const E &e) const {
+	template<typename E, restrict((std::is_same<Temporary<ID,l,T>, Temp>::value))>
+	auto operator=(const E &e) const {
 		static_assert(is_ConExpr<E>::value,"Error: attempt to assign non-Expr");
-		static_assert(!is_ConExpr<E>::value,"Error: attempt to mutate immutable temporary.");
-		TemporaryMutation<E> r{name,t.store_id,wrap_constants(e)};
-		return r;
-	}
+		return *this << e;
+		}//*/
 
 
 

@@ -7,6 +7,9 @@
 #include "DataStore.hpp"
 #include "TransactionBasics.hpp"
 #include "TransactionBuilder.hpp"
+#include "TempBuilder.hpp"
+#include "FreeExpr.hpp"
+#include "Assignment.hpp"
 
 
 struct Transaction{
