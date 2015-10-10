@@ -9,3 +9,6 @@ run:
 
 debug:
 	PGHOST='127.0.0.1' PGPORT='5432' PGDATABASE='DataStore' PGUSER='research' PGPASSWORD='swimsand' LD_LIBRARY_PATH=/home/research/boost/boost_1_56_0/stage/lib gdb ./test
+
+test:
+	export TRANS_DIR=`pwd`; cd tests && make
