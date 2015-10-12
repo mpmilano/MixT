@@ -266,8 +266,10 @@ public:
 		return r;
 	}
 
-	template<typename E, restrict((std::is_same<Temporary<ID,l,T>, Temp>::value))>
-	auto operator=(const E &e) const {
+	template<typename E>
+	std::enable_if_t<std::is_same<Temporary<ID,l,T>, Temp>::value,
+					 decltype(std::declval<RefTemporary>() << std::declval<E>())>
+							  operator=(const E &e) const {
 		static_assert(is_ConExpr<E>::value,"Error: attempt to assign non-Expr");
 		return *this << e;
 		}//*/
