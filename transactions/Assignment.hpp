@@ -41,19 +41,21 @@ public:
 	}
 
 	bool strongCall(StrongCache& c, const StrongStore &s) const {
-		choose_strong<l> choice{nullptr};
-		strongCall(c,s,choice);
+		choose_strong<l> choice1{nullptr};
+		choose_strong<get_level<Expr>::value> choice2{nullptr};
+		strongCall(c,s,choice1,choice2);
 		return true;
 	}
 
-	void strongCall(StrongCache &c, const StrongStore &s, std::false_type*) const {
-		if (runs_with_strong(get_level<Expr>::value) ){
-			c.insert(id,Assignment::hndle_get(run_ast_strong(c,s,e)));
-		}
-		else run_ast_strong(c,s,e);
+	void strongCall(StrongCache &c, const StrongStore &s, std::false_type*, std::false_type*) const {
+		run_ast_strong(c,s,e);
+	}
+	void strongCall(StrongCache &c, const StrongStore &s, std::false_type*, std::true_type*) const {
+		c.insert(id,Assignment::hndle_get(run_ast_strong(c,s,e)));
 	}
 
-	auto strongCall(const StrongCache &c, const StrongStore &s, std::true_type*) const {
+	template<typename T2>
+	auto strongCall(const StrongCache &c, const StrongStore &s, std::true_type*, T2*) const {
 		static_assert(runs_with_strong(get_level<Expr>::value),"error: flow violation in assignment");
 		t.clone().put(Assignment::hndle_get(run_ast_strong(c,s,e)));
 	}
