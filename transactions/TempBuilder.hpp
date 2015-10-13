@@ -296,13 +296,15 @@ auto choose_gt(const T&, const R& r){
 }
 
 template<typename PrevBuilder, unsigned long long ID, typename CS, Level l, bool oldb, typename Temp>
-struct MutableDeclarationBuilder {
+struct MutableDeclarationBuilder : public Base_Builder {
 	const PrevBuilder prevBuilder;
 	const MutDeclarationScope<ID,CS,l,Temp> this_decl;
 	typedef typename PrevBuilder::pc pc;
 
 	MutableDeclarationBuilder(const PrevBuilder &pb, const MutDeclarationScope<ID,CS,l,Temp> &d)
-		:prevBuilder(pb),this_decl(d){}
+		:prevBuilder(pb),this_decl(d){
+		static_assert(is_builder<PrevBuilder>(), "Error: PrevBuilder is not a builder!");
+	}
 
 	template<typename T>
 	auto operator/(const T &t) const{
@@ -329,13 +331,15 @@ struct MutableDeclarationBuilder {
 };
 
 template<typename PrevBuilder, unsigned long long ID, typename CS, Level l, bool oldb, typename Temp>
-struct ImmutableDeclarationBuilder {
+struct ImmutableDeclarationBuilder : public Base_Builder{
 	const PrevBuilder prevBuilder;
 	const ImmutDeclarationScope<ID,CS,l,Temp> this_decl;
 	typedef typename PrevBuilder::pc pc;
 
 	ImmutableDeclarationBuilder(const PrevBuilder &pb, const ImmutDeclarationScope<ID,CS,l,Temp> &d)
-		:prevBuilder(pb),this_decl(d){}
+		:prevBuilder(pb),this_decl(d){
+		static_assert(is_builder<PrevBuilder>(), "Error: PrevBuilder is not a builder!");
+	}
 
 	template<typename T>
 	auto operator/(const T &t) const{
@@ -381,6 +385,7 @@ auto append(const PrevBuilder &pb, const MutVarScopeBegin<ID> &vsb){
 
 template<typename PrevBuilder, unsigned long long ID>
 auto append(const PrevBuilder &pb, const ImmutVarScopeBegin<ID> &vsb){
+	static_assert(!std::is_same<PrevBuilder, void (*) (void*)>::value, "Error: how did that happen?");
 	auto dcl = build_ImmutDeclarationScope<ID,std::tuple<>,PrevBuilder::pc::value,std::nullptr_t>(vsb.name,nullptr,std::tuple<>());
 	ImmutableDeclarationBuilder<PrevBuilder, ID, std::tuple<>,PrevBuilder::pc::value, false, std::nullptr_t > db(pb,dcl);
 	return db;

@@ -8,7 +8,7 @@
 
 
 template<typename PrevBuilder, typename Cond, typename Then>
-struct WhileBuilder {
+struct WhileBuilder : public Base_Builder{
 	const PrevBuilder prevBuilder;
 	const While<Cond,Then > this_while;
 	typedef typename PrevBuilder::pc old_pc;
@@ -21,6 +21,7 @@ struct WhileBuilder {
 		static_assert(can_flow(PrevBuilder::pc::value,get_level<Cond>::value),
 					  "Error: Flow violation in declaration of While."
 			);
+		static_assert(is_builder<PrevBuilder>(), "Error: PrevBuilder is not a builder!");
 		//Note to self: the while_concept takes care of flows from
 		//the condition to the branches.
 		//that *can* be moved here if we want (weak TODO).
@@ -40,7 +41,9 @@ struct is_WhileBuilder : std::integral_constant<bool, is_WhileBuilder_f(mke_p<T>
 template<typename PrevBuilder, typename Cond, typename Then>
 struct WhileBodyBuilder : WhileBuilder<PrevBuilder,Cond,Then>{
 	WhileBodyBuilder(const PrevBuilder &pb, const While<Cond,Then> &to)
-		:WhileBuilder<PrevBuilder,Cond,Then >(pb,to) {}
+		:WhileBuilder<PrevBuilder,Cond,Then >(pb,to) {
+		static_assert(is_builder<PrevBuilder>(), "Error: PrevBuilder is not a builder!");
+	}
 
 	template<typename T>
 	auto operator/(const T &t) const {

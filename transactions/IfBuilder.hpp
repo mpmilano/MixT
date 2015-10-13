@@ -8,7 +8,7 @@
 
 
 template<typename PrevBuilder, typename Cond, typename Then, typename Els>
-struct IfBuilder {
+struct IfBuilder : public Base_Builder{
 	const PrevBuilder prevBuilder;
 	const If<Cond,Then,Els > this_if;
 	typedef typename PrevBuilder::pc old_pc;
@@ -21,6 +21,7 @@ struct IfBuilder {
 		static_assert(can_flow(PrevBuilder::pc::value,get_level<Cond>::value),
 					  "Error: Flow violation in declaration of If."
 			);
+		static_assert(is_builder<PrevBuilder>(), "Error: PrevBuilder is not a builder!");
 		//Note to self: the if_concept takes care of flows from
 		//the condition to the branches.
 		//that *can* be moved here if we want (weak TODO).
@@ -40,7 +41,9 @@ struct is_IfBuilder : std::integral_constant<bool, is_IfBuilder_f(mke_p<T>()) >:
 template<typename PrevBuilder, typename Cond, typename Then>
 struct ThenBuilder : IfBuilder<PrevBuilder,Cond,Then,std::tuple<> >{
 	ThenBuilder(const PrevBuilder &pb, const If<Cond,Then,std::tuple<>> &to)
-		:IfBuilder<PrevBuilder,Cond,Then,std::tuple<> >(pb,to) {}
+		:IfBuilder<PrevBuilder,Cond,Then,std::tuple<> >(pb,to) {
+		static_assert(is_builder<PrevBuilder>(), "Error: PrevBuilder is not a builder!");
+	}
 
 	template<typename T>
 	auto operator/(const T &t) const {

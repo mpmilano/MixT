@@ -98,3 +98,9 @@ auto stmt_handles(const std::tuple<T...> &cs){
 		std::tuple<>());
 }
 
+struct Base_Builder {};
+
+template<typename T>
+constexpr bool is_builder(){
+	return std::is_base_of<Base_Builder,T>::value;
+}
