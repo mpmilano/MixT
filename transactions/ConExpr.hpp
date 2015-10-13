@@ -171,6 +171,14 @@ Handle<Level::strong,ha,T> run_ast_strong(const StrongCache& c, const StrongStor
 	return h;
 }
 
+std::string run_ast_strong(const StrongCache &, const StrongStore&, const std::string& e) {
+	return e;
+}
+
+std::string run_ast_causal(const CausalCache &, const CausalStore&, const std::string& e) {
+	return e;
+}
+
 
 template<HandleAccess ha, typename T>
 Handle<Level::strong,ha,T> run_ast_causal(CausalCache& cache, const CausalStore &s, const Handle<Level::strong,ha,T>& h) {
@@ -305,7 +313,12 @@ bool is_cached(const StoreMap<st>& cache, const Handle<l,ha,T>& ast){
 
 
 template<unsigned long long id, typename T>
-std::enable_if_t<std::is_scalar<T>::value, std::nullptr_t> find_usage(const T&){
+std::enable_if_t<std::is_scalar<T>::value || std::is_array<T>::value, std::nullptr_t> find_usage(const T&){
+	return nullptr;
+}
+
+template<unsigned long long id>
+std::nullptr_t find_usage(const std::string&){
 	return nullptr;
 }
 

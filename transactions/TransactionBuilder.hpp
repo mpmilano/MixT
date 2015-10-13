@@ -9,10 +9,12 @@
 //Names
 
 template<typename Statements>
-struct TransactionBuilder {
+struct TransactionBuilder : public Base_Builder{
 	const Statements curr;
 	typedef std::integral_constant<Level, Level::strong> pc;
 
+	TransactionBuilder(const Statements &c):curr(c){}
+	TransactionBuilder(){}
 	
 	template<typename T>
 	std::enable_if_t<is_ConStatement<T>::value ,
