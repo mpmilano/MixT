@@ -39,3 +39,7 @@ Tracker& Tracker::global_tracker(){
 					   std::function<Handle<Level::causal, HandleAccess::all, Metadata> (const std::string&)> existingMeta,
 					   std::function<Handle<Level::causal, HandleAccess::all, Tombstone> (const std::string&)> existingTomb
 		) {}
+
+bool Tracker::registered(const GDataStore&) const{ return true;}
+
+void Tracker::tick() {}

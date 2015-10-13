@@ -20,10 +20,6 @@ struct FileStore : public DataStore<l> {
 
 private:
 	FileStore(){
-		std::cerr << "YOU REALLY REALLY NEED " <<
-			"TO RE-ENABLE THE TRACKER HERE WHEN IT COMES TIME TO TEST THAT CODE"
-				  << std::endl;
-		/*
 		Tracker::global_tracker().registerStore(
 			*this,
 			[this](const auto &name, const auto &val){

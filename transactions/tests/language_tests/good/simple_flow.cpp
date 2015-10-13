@@ -10,6 +10,16 @@ void strong_strong(){
 		);
 }
 
-int main() {
+void strong_weak() {
+	Handle<Level::strong, HandleAccess::read, int> from;
+	Handle<Level::causal, HandleAccess::write, int> to;
+	TRANSACTION(
+		let_ifValid(dref) = to IN (dref = from)
+		);
 
+}
+
+int main() {
+	strong_strong();
+	strong_weak();
 }

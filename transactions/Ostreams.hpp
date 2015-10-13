@@ -208,3 +208,8 @@ template<StoreType st>
 std::ostream & operator<<(std::ostream &os, const StoreMap<st> &store){
 	return os << "(a Store)";
 }
+
+template<Level l, HandleAccess ha, typename T, typename Expr>
+std::ostream & operator<<(std::ostream &os, const Assignment<l,ha,T,Expr> &store){
+	return os << "not printing assignments yet";
+}
