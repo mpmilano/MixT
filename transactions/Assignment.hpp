@@ -34,6 +34,7 @@ public:
 				can_flow(get_level<Expr>::value, l),
 				"Error: assignment to strong member from causal expression!"
 				);
+			static_assert(std::is_same<HDref<Expr>, T>::value, "Error: Assignment of incompatible types (no subtyping applies here)" );
 		}
 
 	auto handles() const{
