@@ -43,3 +43,11 @@ Tracker& Tracker::global_tracker(){
 bool Tracker::registered(const GDataStore&) const{ return true;}
 
 void Tracker::tick() {}
+
+void Tracker::onWrite(DataStore<Level::causal>&, const std::string &name){}
+	
+void Tracker::onWrite(DataStore<Level::strong>&, const std::string &name){}
+
+void Tracker::onRead(DataStore<Level::causal>&, const std::string &name){}
+
+void Tracker::onRead(DataStore<Level::strong>&, const std::string &name){}

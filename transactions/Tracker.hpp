@@ -66,7 +66,13 @@ public:
 
 	void tick();
 
+	void onWrite(DataStore<Level::causal>&, const std::string &name);
 	
+	void onWrite(DataStore<Level::strong>&, const std::string &name);
+
+	void onRead(DataStore<Level::causal>&, const std::string &name);
+	
+	void onRead(DataStore<Level::strong>&, const std::string &name);
 
 	Tracker();
 
