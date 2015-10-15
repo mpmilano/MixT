@@ -15,6 +15,18 @@
 struct Transaction{
 	const std::function<bool ()> action;
 	const std::function<std::ostream & (std::ostream &os)> print;
+
+	struct DeferredList : public std::list<std::function<void (StrongCache&)> >{
+		using id = std::integral_constant<int,-2>;
+		static auto& get(StrongCache& c){
+			return c.get<DeferredList>(id::value);
+		}
+		static auto& get(CasualCache& c){
+			return c.get<DeferredList>(id::value);
+		}
+
+		DeferredList(const DeferredList&) = delete;
+	};
 	
 	template<typename Cmds>
 	Transaction(const TransactionBuilder<Cmds> &s):

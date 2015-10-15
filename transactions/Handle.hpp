@@ -135,6 +135,20 @@ public:
 		return r;
 	}
 
+	template<HandleAccess ha2>
+	auto restrictTo() const{
+		std::integral_constant<HandleAccess, ha2>* choice{nullptr};
+		return restrictTo(choice);
+	}
+
+	auto restrictTo(std::integral_constant<HandleAccess,HandleAccess::read>*) const{
+		return readOnly();
+	}
+
+	auto restrictTo(std::integral_constant<HandleAccess,HandleAccess::write>*) const{
+		return writeOnly();
+	}
+
 	template<Level l2, HandleAccess ha2, typename T2>
 	friend struct Handle;
 

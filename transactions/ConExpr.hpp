@@ -166,73 +166,12 @@ template<HandleAccess ha, typename T>
 void run_ast_strong(const StrongCache& c, const StrongStore&, const Handle<Level::causal,ha,T>& h) {
 }
 //*/
-template<HandleAccess ha, typename T>
-Handle<Level::strong,ha,T> run_ast_strong(const StrongCache& c, const StrongStore&, const Handle<Level::strong,ha,T>& h) {
-	return h;
-}
 
-std::string run_ast_strong(const StrongCache &, const StrongStore&, const std::string& e);
+
+std::string run_ast_strong(const StrongCache &, const StrongStore&, const std::string& e)
 
 std::string run_ast_causal(const CausalCache &, const CausalStore&, const std::string& e);
 
-
-template<HandleAccess ha, typename T>
-Handle<Level::strong,ha,T> run_ast_causal(CausalCache& cache, const CausalStore &s, const Handle<Level::strong,ha,T>& h) {
-	struct LocalObject : public RemoteObject<T> {
-		const T t;
-		GDataStore &st;
-		TransactionContext *tc;
-		LocalObject(const T& t, GDataStore &st, TransactionContext* tc)
-			:t(t),st(st),tc(tc){}
-
-		TransactionContext* currentTransactionContext(){
-			assert(false && "you probably didn't mean to call this");
-			return tc;
-		}
-
-		void setTransactionContext(TransactionContext* tc){
-			assert(false && "you probably didn't mean to call this");
-			this->tc = tc;
-		}
-		
-		const T& get() {return t;}
-		void put(const T&) {
-			assert(false && "error: modifying strong Handle in causal context! the type system is supposed to prevent this!");
-		}
-		bool ro_isValid() const {
-			//TODO: what if it's not valid? 
-			return true;
-		}
-		const GDataStore& store() const {
-			return st;
-		}
-
-		GDataStore& store() {
-			return st;
-		}
-
-		int bytes_size() const {
-			assert(false && "wait why are you ... stop!");
-		}
-
-		int to_bytes(char* v) const {
-			assert(false && "wait why are you ... stop!");
-		}
-		
-	};
-	return Handle<Level::strong,ha,T>{
-		std::shared_ptr<LocalObject>{
-			new LocalObject{h.get(),
-					h.remote_object().store(),
-					h.remote_object().currentTransactionContext()}}};
-	//TODO: we're calling get RIGHT HERE for the moment, even though it is a strong operation
-	//TODO: and we are in a causal context. If it turns out we need to split, then
-	//TODO: THIS IS BAD. Actual solution is to refine set of collected-handles
-	//TODO: to explicitly those which are strong and referenced by causal operations
-	//TODO: so that we execute the get in the right context and don't have lots of
-	//TODO: spurious gets.
-
-}
 
 
 template<HandleAccess ha, typename T>
