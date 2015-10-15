@@ -194,3 +194,22 @@ struct extract_match_str<Pred,std::tuple<Fst> >{
 
 template<template<typename> class Pred, typename... T>
 using extract_match = typename extract_match_str<Pred,std::tuple<T...> >::type;
+
+template<typename T, typename Tpl>
+auto filter_tpl(const T &t, std::true_type*, const Tpl &tpl){
+	return std::tuple_cat(std::make_tuple(t),tpl);
+}
+
+template<typename T, typename Tpl>
+auto& filter_tpl(const T &t, std::false_type*, const Tpl &tpl){
+	return tpl;
+}
+
+template<template<typename> class Pred, typename Tpl>
+auto filter_tpl(const Tpl &tpl){
+	return fold(tpl,[](const auto &e, const auto &acc){
+			Pred<std::decay_t<decltype(e)> > *choice {nullptr};
+			return filter_tpl(e,choice,acc);
+		},std::tuple<>());
+}
+

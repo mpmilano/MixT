@@ -29,9 +29,9 @@ struct Handle : public GenericHandle<l,HA> {
 
 private:
 	const std::shared_ptr<RemoteObject<T> > _ro;
-	Tracker &t;
-	Handle(std::shared_ptr<RemoteObject<T> > _ro):_ro(_ro),t(Tracker::global_tracker()){
-		assert(t.registered(_ro->store()));
+	Tracker &tracker;
+	Handle(std::shared_ptr<RemoteObject<T> > _ro):_ro(_ro),tracker(Tracker::global_tracker()){
+		assert(tracker.registered(_ro->store()));
 	}
 public:
 	
@@ -45,8 +45,8 @@ public:
 		return *_ro;
 	}
 
-	Handle():t(Tracker::global_tracker()) {}
-	Handle(const Handle& h):_ro(h._ro),t(Tracker::global_tracker()){}
+	Handle():tracker(Tracker::global_tracker()) {}
+	Handle(const Handle& h):_ro(h._ro),tracker(Tracker::global_tracker()){}
 		
 	static constexpr Level level = l;
 	static constexpr HandleAccess ha = HA;
@@ -107,6 +107,15 @@ public:
 		return _ro->ro_isValid();
 	}
 
+	DataStore<l>& store() const {
+		assert(dynamic_cast<DataStore<l>*>(&_ro->store()));
+		return (DataStore<l>&) _ro->store();
+	}
+
+	const std::string& name() const {
+		return _ro->name();
+	}
+
 	bool operator<(const Handle& h) const {
 		return _ro->id < h._ro->id;
 	}
@@ -148,6 +157,9 @@ public:
 	friend Handle<Level::strong,ha,T2>
 	run_ast_causal(CausalCache& cache, const CausalStore &s,
 				   const Handle<Level::strong,ha,T2>& h);
+
+	template<typename, typename>
+	friend struct Operation;
 
 	
 /*

@@ -152,7 +152,12 @@ struct Operation<Store, Ret (*) (A...)> {
 		discard(Store::tryCast(extract_robj_p(args))...);
 			
 		//TODO: causal tracking
-		return fun(Store::tryCast(extract_robj_p(args))...);
+		auto h_read = filter_tpl<is_readable_handle>(std::make_tuple(args...));
+		auto h_write = filter_tpl<is_writeable_handle>(std::make_tuple(args...));
+		foreach(h_read, [](const auto &h){h.tracker.onRead(h.store(),h.name());});
+		auto &&ret = fun(Store::tryCast(extract_robj_p(args))...);
+		foreach(h_write, [](const auto &h){h.tracker.onWrite(h.store(),h.name());});
+		return ret;
 	}
 };
 

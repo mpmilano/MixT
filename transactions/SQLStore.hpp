@@ -57,6 +57,7 @@ public:
 		bool ro_isValid() const;
 		const GDataStore& store() const;
 		GDataStore& store();
+		const std::string& name() const;
 
 		//required by ByteRepresentable
 		int bytes_size() const;
@@ -104,6 +105,9 @@ public:
 		}
 		GDataStore& store(){
 			return gso.store();
+		}
+		const std::string& name() const {
+			return gso.name();
 		}
 		int bytes_size() const {
 			return gso.bytes_size();

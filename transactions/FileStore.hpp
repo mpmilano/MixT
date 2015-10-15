@@ -56,6 +56,7 @@ public:
 		Store &s;
 		const GDataStore& store() const {return s;}
 		GDataStore& store() {return s;}
+		const std::string& name() const {return filename;}
 		
 		FSObject(Store &s, const std::string &name, bool exists = false)
 			:filename(name),s(s){
