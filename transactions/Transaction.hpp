@@ -16,17 +16,27 @@ struct Transaction{
 	const std::function<bool ()> action;
 	const std::function<std::ostream & (std::ostream &os)> print;
 
-	struct DeferredList : public std::list<std::function<void (StrongCache&)> >{
-		using id = std::integral_constant<int,-2>;
-		static auto& get(StrongCache& c){
-			return c.get<DeferredList>(id::value);
-		}
-		static auto& get(CasualCache& c){
-			return c.get<DeferredList>(id::value);
-		}
-
-		DeferredList(const DeferredList&) = delete;
+	enum class context{
+		unknown, read, write, operation
 	};
+
+	using context_id = std::integral_constant<int,-2>;
+
+	static context current_context(const CausalCache& c){
+		return c.get<context>(context_id::value);
+	}
+
+	static void set_context(CausalCache&c, context ctx){
+		c.emplace_ovrt<context>(context_id::value,ctx);
+	}
+	
+	static context current_context(const StrongCache& c){
+		return c.get<context>(context_id::value);
+	}
+
+	static void set_context(StrongCache&c, context ctx){
+		c.emplace_ovrt<context>(context_id::value,ctx);
+	}
 	
 	template<typename Cmds>
 	Transaction(const TransactionBuilder<Cmds> &s):
@@ -98,6 +108,7 @@ struct Transaction{
 				
 				StrongCache caches;
 				StrongStore stores;
+				set_context(caches,context::unknown);
 				call_all_strong(caches,stores,s.curr);
 				std::cout << "strong call complete" << std::endl;
 				CausalCache &cachec = *((CausalCache*) (&caches));
@@ -160,3 +171,4 @@ struct Transaction{
 };
 
 
+#include "HandleCaching.hpp"

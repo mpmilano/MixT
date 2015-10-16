@@ -168,10 +168,9 @@ void run_ast_strong(const StrongCache& c, const StrongStore&, const Handle<Level
 //*/
 
 
-std::string run_ast_strong(const StrongCache &, const StrongStore&, const std::string& e)
+std::string run_ast_strong(const StrongCache &, const StrongStore&, const std::string& e);
 
 std::string run_ast_causal(const CausalCache &, const CausalStore&, const std::string& e);
-
 
 
 template<HandleAccess ha, typename T>
