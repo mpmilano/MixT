@@ -138,6 +138,7 @@ namespace {
 
 struct SQLStore::GSQLObject::Internals{
 	const int key;
+	const std::string key_str;
 	const int size;
 	char* buf1;
 	SQLTransaction* curr_ctx;
@@ -150,7 +151,7 @@ struct SQLStore::GSQLObject::Internals{
 	string check_existence;
 	string update_data;
 	Internals(int key, int size, char* buf, SQLTransaction* ctx, int vers)
-		:key(key),size(size),buf1(buf),curr_ctx(ctx),vers(vers)
+		:key(key),key_str(std::to_string(key)),size(size),buf1(buf),curr_ctx(ctx),vers(vers)
 		,select_vers(
 			string("select Version from \"BlobStore\" where ID=") + to_string(key))
 		,select_data(string("select data from \"BlobStore\" where ID = ") +
@@ -213,6 +214,16 @@ SQLStore::GSQLObject::GSQLObject(int id, int size)
 	assert(load());
 }
 
+//existing object
+SQLStore::GSQLObject::GSQLObject(const std::string& s){
+	assert(false && "TODO: query size of binary blob (for delegating constructor)");
+}
+
+//existing object
+SQLStore::GSQLObject::GSQLObject(const std::string& s, const vector<char> &c){
+	assert(false && "TODO: hash function for string, figure out how to mix with autoincrementing key");
+}
+
 SQLStore::GSQLObject::~GSQLObject(){
 	if (i){
 		free(i->buf1);
@@ -246,6 +257,10 @@ const GDataStore& SQLStore::GSQLObject::store() const {
 
 GDataStore& SQLStore::GSQLObject::store() {
 	return SQLStore::inst();
+}
+
+const std::string& SQLStore::GSQLObject::name() const {
+	return this->i->key_str;
 }
 
 void SQLStore::GSQLObject::save(){
