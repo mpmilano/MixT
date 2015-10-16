@@ -4,6 +4,7 @@
 #include "Operate_macros.hpp"
 #include "ConExpr.hpp"
 #include "Temporary.hpp"
+#include "Context.hpp"
 
 /*
 template<typename>
@@ -150,7 +151,17 @@ void effect_map(const F& f, const T1 &t1, const T& ...t){
 
 template<typename Cache, typename Store, typename... T>
 void run_strong_helper(Cache& c, Store &s, const T& ...t){
-	effect_map([&](const auto &t){run_ast_strong(c,s,*t);},t...);
+	effect_map([&](const auto &t){
+			auto prev_ctx = context::current_context(c);
+			//TODO: potential bug site for complicated arguments to operate
+			constexpr bool op_mode = is_handle<run_result<std::decay_t<decltype(*t)> > >::value &&
+				!is_preserve<std::decay_t<decltype(*t)> >::value;
+			if (op_mode)
+				context::set_context(c,context::t::operation);
+			run_ast_strong(c,s,*t);
+			if (op_mode)
+				context::set_context(c,prev_ctx);
+		},t...);
 }
 
 template<typename Cache, typename Store, typename... T>

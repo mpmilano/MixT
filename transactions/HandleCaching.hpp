@@ -54,12 +54,12 @@ struct CachedObject : public RemoteObject<T> {
 template<HandleAccess ha, typename T>
 Handle<Level::strong,ha,T> run_ast_strong(const StrongCache& c, const StrongStore&, const Handle<Level::strong,ha,T>& _h) {
 
-	auto ctx = Transaction::current_context(c);
+	auto ctx = context::current_context(c);
 	auto h = _h.clone();
 
-	assert(ctx != Transaction::context::unknown);
+	assert(ctx != context::t::unknown);
 
-	if (ctx == Transaction::context::read){
+	if (ctx == context::t::read){
 		return 
 			make_handle<Level::strong,ha,T,CachedObject<T> >
 			(heap_copy(h.get()),h.store(),h.name());

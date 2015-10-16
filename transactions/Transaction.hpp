@@ -10,33 +10,12 @@
 #include "TempBuilder.hpp"
 #include "FreeExpr.hpp"
 #include "Assignment.hpp"
+#include "Context.hpp"
 
 
 struct Transaction{
 	const std::function<bool ()> action;
 	const std::function<std::ostream & (std::ostream &os)> print;
-
-	enum class context{
-		unknown, read, write, operation
-	};
-
-	using context_id = std::integral_constant<int,-2>;
-
-	static context current_context(const CausalCache& c){
-		return c.get<context>(context_id::value);
-	}
-
-	static void set_context(CausalCache&c, context ctx){
-		c.emplace_ovrt<context>(context_id::value,ctx);
-	}
-	
-	static context current_context(const StrongCache& c){
-		return c.get<context>(context_id::value);
-	}
-
-	static void set_context(StrongCache&c, context ctx){
-		c.emplace_ovrt<context>(context_id::value,ctx);
-	}
 	
 	template<typename Cmds>
 	Transaction(const TransactionBuilder<Cmds> &s):
@@ -108,7 +87,7 @@ struct Transaction{
 				
 				StrongCache caches;
 				StrongStore stores;
-				set_context(caches,context::unknown);
+				set_context(caches,context::t::unknown);
 				call_all_strong(caches,stores,s.curr);
 				std::cout << "strong call complete" << std::endl;
 				CausalCache &cachec = *((CausalCache*) (&caches));
