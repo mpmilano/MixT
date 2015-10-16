@@ -3,9 +3,7 @@
 #include "Temporary.hpp"
 #include "If.hpp"
 
-bool strongc_helper(StrongCache &, StrongStore &, const std::shared_ptr<const std::nullptr_t>&){
-	return true;
-}
+bool strongc_helper(StrongCache &, StrongStore &, const std::shared_ptr<const std::nullptr_t>&);
 
 template<typename T, restrict(!std::is_same<T CMA std::nullptr_t>::value &&
 							  runs_with_strong(get_level<T>::value) )>
@@ -21,9 +19,7 @@ bool strongc_helper(StrongCache& c, StrongStore &s, const std::shared_ptr<const 
 }
 
 
-bool causalc_helper(CausalCache &, CausalStore &, const std::shared_ptr<const std::nullptr_t>&){
-	return true;
-}
+bool causalc_helper(CausalCache &, CausalStore &, const std::shared_ptr<const std::nullptr_t>&);
 
 template<typename T, restrict(!std::is_same<T CMA std::nullptr_t>::value)>
 bool causalc_helper(CausalCache& c, CausalStore &s, const std::shared_ptr<const T>& gt){
@@ -36,9 +32,7 @@ auto gt_handles(Temporary<ID,l,T> const * const tmp){
 	return tmp->handles();
 }
 
-auto gt_handles(std::nullptr_t const * const){
-	assert(false && "cannot retrieve handles, replacement failed!");
-}
+std::tuple<> gt_handles(std::nullptr_t const * const);
 
 template<unsigned long long ID, typename CS, Level l, typename Temp>
 struct DeclarationScope : public ConStatement<l>{
@@ -394,10 +388,7 @@ auto append(const PrevBuilder &pb, const ImmutVarScopeBegin<ID> &vsb){
 
 struct VarScopeEnd {};
 
-const auto& end_var_scope() {
-	static VarScopeEnd vse;
-	return vse;
-}
+const VarScopeEnd& end_var_scope(); 
 
 template<typename A, typename B>
 auto append_helper(const A& a, const B &b, std::true_type*){
