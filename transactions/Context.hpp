@@ -4,9 +4,9 @@
 
 namespace context{
 
-enum class t{
-		unknown, read, write, operation
-	};
+	enum class t{
+		unknown, read, write, operation, data
+			};
 
 	using id = std::integral_constant<int,-2>;
 

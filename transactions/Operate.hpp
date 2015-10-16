@@ -156,10 +156,13 @@ void run_strong_helper(Cache& c, Store &s, const T& ...t){
 			//TODO: potential bug site for complicated arguments to operate
 			constexpr bool op_mode = is_handle<run_result<std::decay_t<decltype(*t)> > >::value &&
 				!is_preserve<std::decay_t<decltype(*t)> >::value;
+			constexpr bool data_mode = is_preserve<std::decay_t<decltype(*t)> >::value;
 			if (op_mode)
 				context::set_context(c,context::t::operation);
+			else if (data_mode)
+				context::set_context(c,context::t::data);
 			run_ast_strong(c,s,*t);
-			if (op_mode)
+			if (op_mode || data_mode)
 				context::set_context(c,prev_ctx);
 		},t...);
 }
