@@ -25,15 +25,6 @@ struct test_entry{
 
 int main(){
 
-	//TODO: hybrids like the if-test.
-	//Should be sufficient to extract test as strong -> casual
-	//asignment to temp var, and use temp var for subsequent,
-	//but need to make sure strong->causal readset dependency
-	//is captured.  When to do the extraction?
-	//can either defer both unpacking and extraction to
-	//final pass during Transaction conversion, or can
-	//try and add extraction to If-construction.
-
 	FileStore<Level::causal> fsc;
 	FileStore<Level::strong> fss;
 

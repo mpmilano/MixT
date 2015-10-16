@@ -102,7 +102,6 @@ public:
 	}
 
 	bool isValid() const {
-		//TODO: invalid means no _ro?
 		if (!_ro) return false;
 		return _ro->ro_isValid();
 	}
