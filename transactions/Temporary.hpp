@@ -9,6 +9,15 @@ struct GeneralTemp {
 	GeneralTemp(const std::string &n, const std::string &g):name(n),gets(g) {}
 };
 
+/*  TODO: redesign.
+	Pursuant to a conversation with ACM, i should replace the let_ifValid and let_Mutable constructs with new constructs more focused on referencing/dereferencing.
+	let_ifValid() becomes a dereferencing bind; the bound variable mutates the remote object when assigned to, and is drefd in free_exprs and operations
+	let_mutable() becomes a box-bind; the bound variable mutates the pointer itself, and is preserved as a raw handle in free_exprs and operations
+	Note: we should likely change the syntax of free_expr; no need to "dref" a handle syntactically, as that behavior is now dependant on how it was bound.
+	Note: this should be a large re-write (if done correctly).  Will defer until after current context work and store implementations.
+ */
+
+
 //the level here is for referencing the temporary later.
 //it's the endorsement check!
 template<unsigned long long ID, Level l, typename T>
@@ -36,12 +45,24 @@ struct Temporary : public GeneralTemp, public ConStatement<get_level<T>::value> 
 
 	auto strongCall(StrongCache& c, StrongStore &s, std::true_type*) const {
 		typedef typename std::decay<decltype(run_ast_strong(c,s,t))>::type R;
+		//TODO: when we do the great preserve replacements, this (and many other sites)
+		//should change to acknowledge them. Note: we're hoping here that if the
+		//expression to which this temporary is being assigned drefs a handle,
+		//that this target expression will actually change the context back to
+		//something more appropriate.
+		auto prev = context::current_context(c);
+		if (is_handle<R>::value) context::set_context(c,context::t::data);
 		s.emplace<R>(store_id, run_ast_strong(c,s,t));
+		if (is_handle<R>::value) context::set_context(c,prev);
 		return true;
 	}
 
 	void strongCall(StrongCache& c, const StrongStore &s, std::false_type*) const {
+		typedef typename std::decay<decltype(run_ast_strong(c,s,t))>::type R;
+		auto prev = context::current_context(c);
+		if (is_handle<R>::value) context::set_context(c,context::t::data);
 		run_ast_strong(c,s,t);
+		if (is_handle<R>::value) context::set_context(c,prev);
 	}
 
 	auto causalCall(CausalCache& c, CausalStore &s) const {

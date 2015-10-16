@@ -3,7 +3,7 @@
 
 template<typename T>
 struct CachedObject : public RemoteObject<T> {
-	std::unique_ptr<T> t;
+	std::shared_ptr<T> t;
 	GDataStore &st;
 	std::string nm;
 	CachedObject(decltype(t) t, GDataStore &st, const std::string &name)
@@ -59,10 +59,17 @@ Handle<Level::strong,ha,T> run_ast_strong(const StrongCache& c, const StrongStor
 
 	assert(ctx != context::t::unknown);
 
-	if (ctx == context::t::read){
+	if (ctx == context::t::read || ctx == context::t::validity){
+		std::shared_ptr<T> ptr {nullptr};
+		if (ctx == context::t::read){
+			ptr = heap_copy(h.get());
+		}
+		else if (ctx == context::t::validity){
+			ptr.reset((T*) new bool{h.isValid()});
+		}
 		return 
 			make_handle<Level::strong,ha,T,CachedObject<T> >
-			(heap_copy(h.get()),h.store(),h.name());
+			(ptr,h.store(),h.name());
 	}
 	else return h;
 }

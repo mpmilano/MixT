@@ -152,7 +152,10 @@ void run_ast_causal(CausalCache &a, const CausalStore &b, const Preserve<T> &t){
 
 template<typename T>
 void run_ast_strong(StrongCache &a, const StrongStore &b, const Preserve<T> &t){
+	auto prev = context::current_context(a);
+	context::set_context(a,context::t::data);
 	run_ast_strong(a,b,t.t);
+	context::set_context(a,prev);
 }
 
 template<typename F>
