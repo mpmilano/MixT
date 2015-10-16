@@ -67,14 +67,69 @@ Handle<Level::strong,ha,T> run_ast_strong(const StrongCache& c, const StrongStor
 	else return h;
 }
 
+template<typename T>
+	struct LocalObject : public RemoteObject<T> {
+		RemoteObject<T>& r;
+		LocalObject(decltype(r) t)
+			:r(t){}
+		
+		TransactionContext* currentTransactionContext(){
+			assert(false && "you probably didn't mean to call this");
+		}
+		
+		void setTransactionContext(TransactionContext* tc){
+			assert(false && "you probably didn't mean to call this");
+		}	
+		
+		const T& get() {
+			//if the assert passes, then this was already fetched.
+			//if the assert fails, then either we shouldn't have gone this deep
+			//with causal calls,
+			//or we have an info-flow violation,
+			//or we can't infer the right level for operations (which would be weird).
+
+			if(auto *co = dynamic_cast<CachedObject<T>* >(&r)){
+				return co->get();
+			}
+			else assert(false && "Error: attempt get on non CachedObject. This should have been cached earlier");
+		}
+		
+		void put(const T&) {
+			assert(false && "error: modifying strong Handle in causal context! the type system is supposed to prevent this!");
+		}
+		
+		bool ro_isValid() const {
+			if(auto *co = dynamic_cast<CachedObject<T>* >(&r)){
+				return co->ro_isValid();
+			}
+			else assert(false && "Error: attempt isValid on non CachedObject. This should have been cached earlier");
+		}
+		
+		const GDataStore& store() const {
+			return r.store();
+		}
+		
+		const std::string& name() const {
+			return r.name();
+		}
+		
+		GDataStore& store() {
+			return r.store();
+		}
+		
+		int bytes_size() const {
+			assert(false && "wait why are you ... stop!");
+		}
+		
+		int to_bytes(char* v) const {
+			assert(false && "wait why are you ... stop!");
+		}
+		
+	};	
+
 template<HandleAccess ha, typename T>
 Handle<Level::strong,ha,T> run_ast_causal(CausalCache& cache, const CausalStore &s, const Handle<Level::strong,ha,T>& h) {
-	RemoteObject<T>& r = h.remote_object();
-	assert(dynamic_cast<CachedObject<T>* >(&r));
-	//if the assert passes, then this was already fetched.
-	//if the assert fails, then either we shouldn't have gone this deep
-	//with causal calls,
-	//or we have an info-flow violation,
-	//or we can't infer the right level for operations (which would be weird).
-	return h;
+	return 
+		make_handle<Level::strong,ha,T,LocalObject<T> >
+		(h.remote_object());
 }

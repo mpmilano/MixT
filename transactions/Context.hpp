@@ -5,7 +5,7 @@
 namespace context{
 
 	enum class t{
-		unknown, read, write, operation, data
+		unknown, read, write, operation, data, validity
 			};
 
 	using id = std::integral_constant<int,-2>;

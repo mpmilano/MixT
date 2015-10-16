@@ -112,7 +112,22 @@ auto trans_op_arg(CausalCache& c, const CausalStore& s, const T& t)
 
 template<typename T>
 auto trans_op_arg(StrongCache& c, const StrongStore& s, const T& t) {
+	auto prev_ctx = context::current_context(c);
+	constexpr bool op_mode = is_handle<run_result<std::decay_t<decltype(t)> > >::value &&
+		!is_preserve<std::decay_t<decltype(t)> >::value;
+	constexpr bool data_mode = is_preserve<std::decay_t<decltype(t)> >::value;
+	if (op_mode)
+		context::set_context(c,context::t::operation);
+	else if (data_mode)
+		context::set_context(c,context::t::data);
+
+	
 	run_ast_strong(c,s,t);
+
+	
+	if (op_mode || data_mode)
+		context::set_context(c,prev_ctx);
+	
 	return constify(extract_robj_p(cached(c,t)));
 }
 
@@ -153,7 +168,6 @@ template<typename Cache, typename Store, typename... T>
 void run_strong_helper(Cache& c, Store &s, const T& ...t){
 	effect_map([&](const auto &t){
 			auto prev_ctx = context::current_context(c);
-			//TODO: potential bug site for complicated arguments to operate
 			constexpr bool op_mode = is_handle<run_result<std::decay_t<decltype(*t)> > >::value &&
 				!is_preserve<std::decay_t<decltype(*t)> >::value;
 			constexpr bool data_mode = is_preserve<std::decay_t<decltype(*t)> >::value;

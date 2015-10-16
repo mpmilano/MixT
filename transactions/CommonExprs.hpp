@@ -1,6 +1,7 @@
 #pragma once
 #include "ConExpr.hpp"
 #include "../BitSet.hpp"
+#include "Context.hpp"
 
 
 template<Level l, typename T>
@@ -466,7 +467,10 @@ struct IsValid : public ConExpr<bool, get_level<T>::value> {
 	bool causalCall(CausalCache& cache, const CausalStore& s) const {
 		if (cache.contains(this->id) ) return cache.get<bool>(this->id);
 		else {
+			auto prev = context::current_context(cache);
+			context::set_context(cache,context::t::validity);
 			bool ret = run_ast_causal(cache,s,t).isValid();
+			context::set_context(cache,prev);
 			cache.insert(this->id,ret);
 			return ret;
 		}
@@ -478,7 +482,10 @@ struct IsValid : public ConExpr<bool, get_level<T>::value> {
 	}
 
 	bool strongCall(StrongCache& cache, const StrongStore&s, std::true_type*) const {
+		auto prev = context::current_context(cache);
+		context::set_context(cache,context::t::validity);
 		bool ret = run_ast_strong(cache,s,t).isValid();
+		context::set_context(cache,prev);
 		cache.insert(this->id,ret);
 		return ret;
 	}

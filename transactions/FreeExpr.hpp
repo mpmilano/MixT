@@ -91,15 +91,28 @@ struct FreeExpr : public ConExpr<T, min_level_dref<Exprs...>::value > {
 		return ret;
 	}
 
-	void strongCall(StrongCache& cache, const StrongStore &heap,std::false_type*) const{				
-		fold(params,[&](const auto &e, bool){
+	void strongCall(StrongCache& cache, const StrongStore &heap,std::false_type*) const{
+		foreach(params,[&](const auto &e){
 				assert(!is_cached(cache,e) || is_handle<std::decay_t<decltype(e)> >::value);
+				
+				auto prev_ctx = context::current_context(cache);
+				constexpr bool read_mode = is_handle<run_result<std::decay_t<decltype(e)> > >::value &&
+					!is_preserve<std::decay_t<decltype(e)> >::value;
+				constexpr bool data_mode = is_preserve<std::decay_t<decltype(e)> >::value;
+				if (read_mode)
+					context::set_context(cache,context::t::read);
+				else if (data_mode)
+					context::set_context(cache,context::t::data);
+				
 				run_ast_strong(cache,heap,e);
-				return false;},false);
+				
+				if (read_mode || data_mode)
+					context::set_context(cache,prev_ctx);
 
-		fold(params,[&cache](const auto &e, bool){
-				assert(is_cached(cache,e));
-				return false;},false);
+			});
+
+		foreach(params,[&cache](const auto &e){
+				assert(is_cached(cache,e));});
 	}
 
 	auto causalCall(CausalCache& cache, const CausalStore &heap) const {
