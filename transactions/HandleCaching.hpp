@@ -6,8 +6,9 @@ struct CachedObject : public RemoteObject<T> {
 	std::shared_ptr<T> t;
 	GDataStore &st;
 	std::string nm;
-	CachedObject(decltype(t) t, GDataStore &st, const std::string &name)
-		:t(std::move(t)),st(st),nm(name){}
+	bool is_valid_only;
+	CachedObject(decltype(t) t, GDataStore &st, const std::string &name, bool is_valid_only)
+		:t(std::move(t)),st(st),nm(name),is_valid_only(is_valid_only){}
 	
 	TransactionContext* currentTransactionContext(){
 		assert(false && "you probably didn't mean to call this");
@@ -18,6 +19,7 @@ struct CachedObject : public RemoteObject<T> {
 	}	
 	
 	const T& get() {
+		assert(!is_valid_only);
 		return *t;
 	}
 	
@@ -26,7 +28,7 @@ struct CachedObject : public RemoteObject<T> {
 	}
 	
 	bool ro_isValid() const {
-		return t.get();
+		return t.get() || is_valid_only;
 	}
 	
 	const GDataStore& store() const {
@@ -58,18 +60,20 @@ Handle<Level::strong,ha,T> run_ast_strong(const StrongCache& c, const StrongStor
 	auto h = _h.clone();
 
 	assert(ctx != context::t::unknown);
+	//TODO: this will do extra fetches.  Need to think about whether that's important. 
 
 	if (ctx == context::t::read || ctx == context::t::validity){
 		std::shared_ptr<T> ptr {nullptr};
+		bool valid_only = false;
 		if (ctx == context::t::read){
 			ptr = heap_copy(h.get());
 		}
 		else if (ctx == context::t::validity){
-			ptr.reset((T*) new bool{h.isValid()});
+			valid_only = h.isValid();
 		}
 		return 
 			make_handle<Level::strong,ha,T,CachedObject<T> >
-			(ptr,h.store(),h.name());
+			(ptr,h.store(),h.name(),valid_only);
 	}
 	else return h;
 }
