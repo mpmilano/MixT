@@ -119,14 +119,14 @@ public:
 		return _ro->id < h._ro->id;
 	}
 
-	template<Level lnew = l>
+	static constexpr Level lnew = l;
+	
 	Handle<lnew,HandleAccess::read,T> readOnly() const {
 		static_assert(lnew == l || l == Level::strong,
 					  "Error: request for strong read handle from causal base!");
 		return Handle<lnew,HandleAccess::read,T>{_ro};
 	}
 
-	template<Level lnew = l>
 	Handle<lnew,HandleAccess::write,T> writeOnly() const {
 		static_assert(lnew == l || l == Level::causal,
 					  "Error: request for causal write handle from strong base!");

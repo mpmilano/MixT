@@ -55,6 +55,7 @@ struct While : public ConStatement<min_level<Then>::value> {
 
 		auto new_cache = std::make_unique<StrongCache>();
 		while (run_ast_strong(*new_cache,s,cond)) {
+            context::set_context(*new_cache,context::current_context(c));
 			call_all_strong(*new_cache,s,then);
 			new_cache = std::make_unique<StrongCache>();
 		}
@@ -70,10 +71,12 @@ struct While : public ConStatement<min_level<Then>::value> {
 		auto &store_stack = c_old_mut.get<std::list<std::unique_ptr<StrongCache> > >(id);
 
 		store_stack.emplace_back(std::make_unique<StrongCache>());
+        context::set_context(*store_stack.back(),context::current_context(c_old));
 		assert(store_stack.back().get() != &c_old_mut);
 		while(run_ast_strong(*store_stack.back(),s,cond)) {
 			call_all_strong(*store_stack.back(),s,then);
 			store_stack.emplace_back(std::make_unique<StrongCache>());
+            context::set_context(*store_stack.back(),context::current_context(c_old));
 			assert(store_stack.front().get() != store_stack.back().get());
 		}
 		//there's one too many in here.
@@ -133,7 +136,14 @@ struct While : public ConStatement<min_level<Then>::value> {
 		}
 		else {
 			//causal condition, so nothing interesting here.
-			while(run_ast_causal(c_old,s,cond)) call_all_causal(c_old,s,then);
+            auto new_cache = std::make_unique<CausalCache>();
+            while (run_ast_causal(*new_cache,s,cond)) {
+                context::set_context(*new_cache,context::current_context(c_old));
+                call_all_causal(*new_cache,s,then);
+                new_cache = std::make_unique<CausalCache>();
+            }
+            //TODO: error propogation;
+            return true;
 		}
 
 		return true;

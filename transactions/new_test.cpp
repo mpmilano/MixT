@@ -97,8 +97,5 @@ int main(){
 		std::cerr << "yup, it's that" << std::endl;
 		std::cerr << r.base().what() << std::endl;
 	}
-	catch(...){
-		std::cerr << " a non-pqxx exception fired" << std::endl;
-	}
-
+	
 }
