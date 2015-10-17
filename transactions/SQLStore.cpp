@@ -1,104 +1,11 @@
 //oh look, a source file! We remember those.
 
 #include "SQLStore.hpp"
+#include "SQLTransaction.hpp"
 #include <pqxx/pqxx>
 
 using namespace pqxx;
 using namespace std;
-
-struct SQLTransaction;
-
-struct SQLStore::SQLConnection {
-	bool in_trans = false;
-	SQLTransaction* current_trans = nullptr;
-	
-	//hoping specifying nothing means
-	//env will be used.
-	connection conn;
-	SQLConnection() = default;
-	SQLConnection(const SQLConnection&) = delete;
-};
-
-template<typename E>
-auto exec_prepared_hlpr(E &e){
-	return e.exec();
-}
-
-template<typename E, typename A, typename... B>
-auto exec_prepared_hlpr(E &e, A&& a, B && ... b){
-	auto fwd = e(forward<A>(a));
-	return exec_prepared_hlpr(fwd,forward<B>(b)...);
-}
-
-struct SQLTransaction : public TransactionContext {
-private:
-	SQLStore::SQLConnection& sql_conn;
-	work trans;
-public:
-	bool commit_on_delete = false;
-	SQLTransaction(SQLStore::SQLConnection& c):sql_conn(c),trans(sql_conn.conn){
-		assert(!sql_conn.in_trans);
-		sql_conn.in_trans = true;
-		sql_conn.current_trans = this;
-		}
-	
-	SQLTransaction(const SQLTransaction&) = delete;
-
-#define default_sqltransaction_catch					\
-	catch(const pqxx_exception &r){						\
-		commit_on_delete = false;						\
-		std::cerr << r.base().what() << std::endl;		\
-		assert(false && "exec failed");					\
-	}
-
-	
-	template<typename Arg1, typename... Args>
-	auto prepared(const string &name, const string &stmt, Arg1 && a1, Args && ... args){
-		try{
-			sql_conn.conn.prepare(name,stmt);
-			auto fwd = trans.prepared(name)(forward<Arg1>(a1));
-			return exec_prepared_hlpr(fwd,forward<Args>(args)...);
-		}
-		default_sqltransaction_catch
-	}
-
-
-	auto exec(const std::string &str){
-		try{
-			return trans.exec(str);
-		}
-		default_sqltransaction_catch
-	}
-	
-	bool commit() {
-		sql_conn.in_trans = false;
-		sql_conn.current_trans = nullptr;
-		trans.commit();
-		return true;
-	}
-
-	GDataStore& store() {
-		return SQLStore::inst();
-	}
-
-	list<SQLStore::GSQLObject*> objs;
-	void add_obj(SQLStore::GSQLObject* gso){
-		objs.push_back(gso);
-	}
-
-	~SQLTransaction(){
-		if (commit_on_delete) {
-			cout << "commit on delete" << endl;
-			commit();
-		}
-		else sql_conn.in_trans = false;
-		sql_conn.current_trans = nullptr;
-		for (auto gso : objs)
-			if (gso->currentTransactionContext() == this)
-				gso->setTransactionContext(nullptr);
-	}
-	
-};
 
 SQLStore::SQLStore():default_connection{make_unique<SQLConnection>()} {
 	auto t = begin_transaction();
@@ -199,9 +106,18 @@ SQLStore::GSQLObject::GSQLObject(const vector<char> &c){
 								  "INSERT INTO \"BlobStore\" (data) VALUES ($1)",
 								  blob);
 		result r = trans->exec(i->select_max_id());
+
 		assert(r.size() > 0);
 		assert(r[0][0].to(id));
 		assert(id != -1);
+	}
+	{
+		//debug
+		int size = -1;
+		result r = trans->prepared("select octet_length(data) from \"BlobStore\" where id = $1",id);
+		assert(r.size() > 0);
+		assert(r[0][0].to(size));
+		assert(size != -1);
 	}
 	char* b1 = (char*) malloc(size);
 	memcpy(b1,&c.at(0),size);
@@ -243,8 +159,8 @@ void SQLStore::GSQLObject::setTransactionContext(TransactionContext* tc){
 		i->curr_ctx = ptr;
 		ptr->add_obj(this);
 	} else assert(false && "Error: gave SQLObject wrong kind of TransactionContext");
-}
 
+}
 TransactionContext* SQLStore::GSQLObject::currentTransactionContext(){
 	if (i)
 		return i->curr_ctx;
