@@ -10,6 +10,7 @@
 #include "Operate.hpp"
 #include "TempBuilder.hpp"
 #include "FreeExpr.hpp"
+#include "Ostreams.hpp"
 #include "FinalHeader.hpp"
 #include "SQLStore.hpp"
 #include "Print.hpp"

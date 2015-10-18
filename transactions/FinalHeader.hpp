@@ -1,8 +1,6 @@
 //for things where it's irritating to put them before other things.
 #pragma once
 
-#include "Ostreams.hpp"
-
 template<typename T>
 std::unique_ptr<RemoteObject<T> > RemoteObject<T>::from_bytes(char* _v)
 {

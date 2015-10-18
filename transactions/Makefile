@@ -1,5 +1,6 @@
 TRANS_DIR= `pwd`/
-clangFlags= -Xclang -fcolor-diagnostics -g -stdlib=libc++ --std=c++14 -I/home/research/boost/boost_1_56_0 -Wall -ferror-limit=1 -DSTORE_LIST='FileStore<Level::causal>,FileStore<Level::strong>,SQLStore' -DPRINT_TRANS -DHACKY_PREAMBLE="struct SQLStore;" -DDECLARED_OPERATIONS="DECLARE_OPERATION(Increment, RemoteObject<int>*) template<typename T> DECLARE_OPERATION(Insert, RemoteObject<std::set<T> >*, const T& ) "
+storeList='FileStore<Level::causal>,FileStore<Level::strong>,SQLStore'
+clangFlags= -Xclang -fcolor-diagnostics -g -stdlib=libc++ --std=c++14 -I/home/research/boost/boost_1_56_0 -Wall -ferror-limit=1 -DSTORE_LIST=$(storeList) -DPRINT_TRANS -DHACKY_PREAMBLE="struct SQLStore;" -DDECLARED_OPERATIONS="DECLARE_OPERATION(Increment, RemoteObject<int>*) template<typename T> DECLARE_OPERATION(Insert, RemoteObject<std::set<T> >*, const T& ) "
 linkFlags= -stdlib=libc++ --std=c++14 -L/home/research/boost/boost_1_56_0/stage/lib -lpqxx -lboost_serialization -lboost_serialization-mt -lboost_system -lboost_filesystem
 export TRANS_DIR
 export clangFlags

@@ -18,7 +18,7 @@
 #include "Transaction_macros.hpp"
 #include "FreeExpr_macros.hpp"
 #include "Operate_macros.hpp"
-
+#include "Ostreams.hpp"
 
 
 template<typename T>

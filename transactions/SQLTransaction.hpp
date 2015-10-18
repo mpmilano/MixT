@@ -74,7 +74,6 @@ public:
 
 	~SQLTransaction(){
 		if (commit_on_delete) {
-			std::cout << "commit on delete" << std::endl;
 			commit();
 		}
 		else sql_conn.in_trans = false;
