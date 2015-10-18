@@ -14,7 +14,7 @@ std::tuple<> gt_handles(std::nullptr_t const * const){
 	assert(false && "cannot retrieve handles, replacement failed!");
 }
 
-const VarScopeEnd& end_var_scope() {
+VarScopeEnd end_var_scope() {
 	static VarScopeEnd vse;
 	return vse;
 }

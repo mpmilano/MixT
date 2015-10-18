@@ -352,7 +352,7 @@ auto append(const PrevBuilder &pb, const ImmutVarScopeBegin<ID> &vsb){
 
 struct VarScopeEnd {};
 
-const VarScopeEnd& end_var_scope(); 
+VarScopeEnd end_var_scope();
 
 template<typename A, typename B>
 auto append_helper(const A& a, const B &b, std::true_type*){
