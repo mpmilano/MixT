@@ -35,6 +35,7 @@ public:
 	
 	using id = std::integral_constant<int,2>;
 	int ds_id() const { return id::value; }
+	bool exists(int id) ;
 	
 	struct GSQLObject : public GeneralRemoteObject {
 	private:

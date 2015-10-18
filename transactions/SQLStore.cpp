@@ -15,7 +15,7 @@ SQLStore::SQLStore():default_connection{make_unique<SQLConnection>()} {
 	Tracker::global_tracker().registerStore(
 		*this,
 		[&](const auto &a, const auto &b){ return newObject<HandleAccess::all>(a,b);},
-		[&](const auto &a){assert(false); return true;},
+		[&](const auto &a){ return exists(a);},
 		[&](const auto &a, auto* inf){
 			return existingObject<HandleAccess::all>(a,inf);});
 }
@@ -54,7 +54,6 @@ struct SQLStore::GSQLObject::Internals{
 	}
 	string select_vers;
 	string select_data;
-	string check_existence;
 	string update_data;
 	Internals(int key, int size, char* buf, SQLTransaction* ctx, int vers)
 		:key(key),size(size),buf1(buf),curr_ctx(ctx),vers(vers)
@@ -62,8 +61,6 @@ struct SQLStore::GSQLObject::Internals{
 			string("select Version from \"BlobStore\" where ID=") + to_string(key))
 		,select_data(string("select data from \"BlobStore\" where ID = ") +
 					 to_string(key))
-		,check_existence(string("select ID from \"BlobStore\" where ID = ") +
-						 to_string(key) + " limit 1")
 		,update_data( string("update \"BlobStore\" set data=$1,Version=$2 where ID=")
 					  + to_string(key)){}
 
@@ -159,6 +156,20 @@ SQLStore::GSQLObject::GSQLObject(int id, const vector<char> &c)
 	memcpy(this->i->buf1, &c.at(0), c.size());
 }
 
+namespace {
+	//transaction context needs to be different sometimes
+	template<typename Trans>
+	bool obj_exists(int id, Trans owner){
+		const static std::string q1 = "select ID from \"BlobStore\" where ID = ";
+		const static std::string q2 = " limit 1";
+		return owner->exec(q1 + to_string(id) + q2).size() > 0;
+	}
+}
+
+bool SQLStore::exists(int id) {
+	return obj_exists(id,small_transaction(*this));
+}
+
 SQLStore::GSQLObject::~GSQLObject(){
 	if (i){
 		free(i->buf1);
@@ -232,7 +243,7 @@ char* SQLStore::GSQLObject::load(){
 
 bool SQLStore::GSQLObject::ro_isValid() const {
 	auto owner = enter_transaction(*const_cast<GSQLObject*>(this));
-	return owner.second->exec(i->check_existence).size() > 0;
+	return obj_exists(i->key,owner.second);
 }
 
 char* SQLStore::GSQLObject::obj_buffer() {
