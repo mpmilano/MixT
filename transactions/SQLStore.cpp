@@ -170,6 +170,11 @@ bool SQLStore::exists(int id) {
 	return obj_exists(id,small_transaction(*this));
 }
 
+void SQLStore::remove(int id) {
+	const static std::string q1 = "delete from \"BlobStore\" where ID = ";
+	small_transaction(*this)->exec(q1 + to_string(id));
+}
+
 SQLStore::GSQLObject::~GSQLObject(){
 	if (i){
 		free(i->buf1);

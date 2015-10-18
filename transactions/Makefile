@@ -42,5 +42,9 @@ debug: test
 testing: utils.o dummy_tracker.o SerializationSupport.o WhileBuilder.o ConExpr.o Context.o SQLStore.o TempBuilder.o
 	export TRANS_DIR=$(TRANS_DIR); $(MAKE) -C tests
 
+sql_testing: utils.o dummy_tracker.o SerializationSupport.o WhileBuilder.o ConExpr.o Context.o SQLStore.o TempBuilder.o
+	export TRANS_DIR=$(TRANS_DIR); cd tests && $(MAKE) sql
+
+
 clean:
 	rm *.o; rm chat; rm test

@@ -1,2 +1,10 @@
-all:
-	for foo in */; do $(MAKE) -C $$foo; done
+all: good bad
+	echo 'done'
+
+.PHONY: good
+good:
+	$(MAKE) -C good
+
+.PHONY: bad
+bad:
+	$(MAKE) -C bad
