@@ -45,7 +45,6 @@ namespace {
 
 struct SQLStore::GSQLObject::Internals{
 	const int key;
-	const std::string key_str;
 	const int size;
 	char* buf1;
 	SQLTransaction* curr_ctx;
@@ -58,7 +57,7 @@ struct SQLStore::GSQLObject::Internals{
 	string check_existence;
 	string update_data;
 	Internals(int key, int size, char* buf, SQLTransaction* ctx, int vers)
-		:key(key),key_str(std::to_string(key)),size(size),buf1(buf),curr_ctx(ctx),vers(vers)
+		:key(key),size(size),buf1(buf),curr_ctx(ctx),vers(vers)
 		,select_vers(
 			string("select Version from \"BlobStore\" where ID=") + to_string(key))
 		,select_data(string("select data from \"BlobStore\" where ID = ") +
@@ -111,14 +110,6 @@ SQLStore::GSQLObject::GSQLObject(const vector<char> &c){
 		assert(r[0][0].to(id));
 		assert(id != -1);
 	}
-	{
-		//debug
-		int size = -1;
-		result r = trans->prepared("select octet_length(data) from \"BlobStore\" where id = $1",id);
-		assert(r.size() > 0);
-		assert(r[0][0].to(size));
-		assert(size != -1);
-	}
 	char* b1 = (char*) malloc(size);
 	memcpy(b1,&c.at(0),size);
 	this->i = new Internals{id,size,b1,nullptr,0};
@@ -130,14 +121,42 @@ SQLStore::GSQLObject::GSQLObject(int id, int size)
 	assert(load());
 }
 
-//existing object
-SQLStore::GSQLObject::GSQLObject(const std::string& s){
-	assert(false && "TODO: query size of binary blob (for delegating constructor)");
+namespace {
+	int blob_size(int key,SQLStore::GSQLObject::GSQLObject &ctx){
+		auto trans_owner = enter_transaction(ctx);
+		auto *trans = trans_owner.second;
+		int size = -1;
+		result r = trans->prepared(
+			"CheckSize",
+			"select octet_length(data) from \"BlobStore\" where id = $1",key);
+		assert(size == -1);
+		assert(r.size() > 0);
+		assert(r[0][0].to(size));
+		assert(size != -1);
+		return size;
+	}
 }
 
 //existing object
-SQLStore::GSQLObject::GSQLObject(const std::string& s, const vector<char> &c){
-	assert(false && "TODO: hash function for string, figure out how to mix with autoincrementing key");
+SQLStore::GSQLObject::GSQLObject(int id){
+	int size = blob_size(id,*this);
+	this->i = new Internals{id,size,(char*) malloc(size),nullptr,-1};
+}
+
+//"named" object
+SQLStore::GSQLObject::GSQLObject(int id, const vector<char> &c)
+	:i{new Internals{id,(int)c.size(),(char*) malloc(c.size()),nullptr,0}}{
+	assert(!ro_isValid());
+	{
+		auto trans_owner = enter_transaction(*this);
+		auto *trans = trans_owner.second;
+		
+		binarystring blob(&c.at(0),c.size());
+		trans->prepared("InitializeBlobData",
+						"INSERT INTO \"BlobStore\" (id,data) VALUES ($1,$2)",
+						id,blob);
+	}
+	memcpy(this->i->buf1, &c.at(0), c.size());
 }
 
 SQLStore::GSQLObject::~GSQLObject(){
@@ -175,8 +194,8 @@ GDataStore& SQLStore::GSQLObject::store() {
 	return SQLStore::inst();
 }
 
-const std::string& SQLStore::GSQLObject::name() const {
-	return this->i->key_str;
+int SQLStore::GSQLObject::name() const {
+	return this->i->key;
 }
 
 void SQLStore::GSQLObject::save(){

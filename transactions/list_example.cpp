@@ -37,7 +37,7 @@ int main() {
 	auto &fsc = 
 		FileStore<Level::causal>::filestore_instance();
 	auto& fss =
-		FileStore<Level::strong>::filestore_instance();
+		SQLStore::inst();
 	auto h = WeakCons::build_list(fss,fsc,12,13,14);
 
 	assert(h.get().val.get() == 14);

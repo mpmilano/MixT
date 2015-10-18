@@ -15,7 +15,7 @@ struct GeneralRemoteObject : public ByteRepresentable{
 	virtual bool ro_isValid() const = 0;
 	virtual const GDataStore& store() const = 0;
 	virtual GDataStore& store() = 0;
-	virtual const std::string& name() const = 0;
+	virtual int name() const = 0;
 };
 
 template<Level l2, HandleAccess ha2, typename T2> struct Handle;

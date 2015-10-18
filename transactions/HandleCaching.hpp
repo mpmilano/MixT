@@ -5,9 +5,9 @@ template<typename T>
 struct CachedObject : public RemoteObject<T> {
 	std::shared_ptr<T> t;
 	GDataStore &st;
-	std::string nm;
+	int nm;
 	bool is_valid_only;
-	CachedObject(decltype(t) t, GDataStore &st, const std::string &name, bool is_valid_only)
+	CachedObject(decltype(t) t, GDataStore &st, int name, bool is_valid_only)
 		:t(std::move(t)),st(st),nm(name),is_valid_only(is_valid_only){}
 	
 	TransactionContext* currentTransactionContext(){
@@ -35,7 +35,7 @@ struct CachedObject : public RemoteObject<T> {
 		return st;
 	}
 
-	const std::string& name() const {
+	int name() const {
 		return nm;
 	}
 	
@@ -120,7 +120,7 @@ template<typename T>
 			return r.store();
 		}
 		
-		const std::string& name() const {
+	int name() const {
 			return r.name();
 		}
 		

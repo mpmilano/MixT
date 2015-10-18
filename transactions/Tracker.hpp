@@ -22,33 +22,33 @@ private:
 	void registerStore(DataStore<Level::strong>&,
 					   std::function<
 					   Handle<Level::strong, HandleAccess::all, Ends>
-					   (const std::string&, const Ends&)> newEnds,
+					   (int, const Ends&)> newEnds,
 					   std::function<
 					   Handle<Level::strong, HandleAccess::all, Metadata>
-					   (const std::string&, const Metadata&)> newMeta,
+					   (int, const Metadata&)> newMeta,
 					   std::function<
 					   Handle<Level::strong, HandleAccess::all, Tombstone>
-					   (const std::string&, const Tombstone&)> newTomb,
-					   std::function<bool (const std::string&)> exists,
+					   (int, const Tombstone&)> newTomb,
+					   std::function<bool (int)> exists,
 					   std::function<
 					   Handle<Level::strong, HandleAccess::all, Ends>
-					   (const std::string&)> existingEnds,
+					   (int)> existingEnds,
 					   std::function<
 					   Handle<Level::strong, HandleAccess::all, Metadata>
-					   (const std::string&)> existingMeta,
+					   (int)> existingMeta,
 					   std::function<
 					   Handle<Level::strong, HandleAccess::all, Tombstone>
-					   (const std::string&)> existingTomb
+					   (int)> existingTomb
 		);
 	
 	void registerStore(DataStore<Level::causal>&,
-					   std::function<Handle<Level::causal, HandleAccess::all, Ends> (const std::string&, const Ends&)> newEnds,
-					   std::function<Handle<Level::causal, HandleAccess::all, Metadata> (const std::string&, const Metadata&)> newMeta,
-					   std::function<Handle<Level::causal, HandleAccess::all, Tombstone> (const std::string&, const Tombstone&)> newTomb,
-					   std::function<bool (const std::string&)> exists,
-					   std::function<Handle<Level::causal, HandleAccess::all, Ends> (const std::string&)> existingEnds,
-					   std::function<Handle<Level::causal, HandleAccess::all, Metadata> (const std::string&)> existingMeta,
-					   std::function<Handle<Level::causal, HandleAccess::all, Tombstone> (const std::string&)> existingTomb
+					   std::function<Handle<Level::causal, HandleAccess::all, Ends> (int, const Ends&)> newEnds,
+					   std::function<Handle<Level::causal, HandleAccess::all, Metadata> (int, const Metadata&)> newMeta,
+					   std::function<Handle<Level::causal, HandleAccess::all, Tombstone> (int, const Tombstone&)> newTomb,
+					   std::function<bool (int)> exists,
+					   std::function<Handle<Level::causal, HandleAccess::all, Ends> (int)> existingEnds,
+					   std::function<Handle<Level::causal, HandleAccess::all, Metadata> (int)> existingMeta,
+					   std::function<Handle<Level::causal, HandleAccess::all, Tombstone> (int)> existingTomb
 		);
 	
 public:
@@ -66,13 +66,13 @@ public:
 
 	void tick();
 
-	void onWrite(DataStore<Level::causal>&, const std::string &name);
+	void onWrite(DataStore<Level::causal>&, int name);
 	
-	void onWrite(DataStore<Level::strong>&, const std::string &name);
+	void onWrite(DataStore<Level::strong>&, int name);
 
-	void onRead(DataStore<Level::causal>&, const std::string &name);
+	void onRead(DataStore<Level::causal>&, int name);
 	
-	void onRead(DataStore<Level::strong>&, const std::string &name);
+	void onRead(DataStore<Level::strong>&, int name);
 
 	Tracker();
 

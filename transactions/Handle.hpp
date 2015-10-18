@@ -111,7 +111,7 @@ public:
 		return (DataStore<l>&) _ro->store();
 	}
 
-	const std::string& name() const {
+	auto name() const {
 		return _ro->name();
 	}
 

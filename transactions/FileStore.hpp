@@ -38,6 +38,8 @@ public:
 
 	FileStore(const FileStore<l>&) = delete;
 
+	std::map<int,std::string> name_decoder;
+	std::function<int (const std::string&)> hash_str = std::hash<std::string>();
 
 	static FileStore& filestore_instance() {
 		static FileStore fs;
@@ -51,15 +53,19 @@ public:
 	struct FSObject : public RemoteObject<T> {
 		std::unique_ptr<T> t;
 		const std::string filename;
+		const int name_hash;
 
 		typedef FileStore<l> Store;
 		Store &s;
 		const GDataStore& store() const {return s;}
 		GDataStore& store() {return s;}
-		const std::string& name() const {return filename;}
+		int name() const {
+			return name_hash;
+		}
 		
 		FSObject(Store &s, const std::string &name, bool exists = false)
-			:filename(name),s(s){
+			:filename(name),name_hash(s.hash_str(name)),s(s){
+			s.name_decoder[name_hash] = filename;
 			if (!exists){
 				std::ofstream ofs(filename);
 				boost::archive::text_oarchive oa(ofs);
@@ -69,7 +75,7 @@ public:
 		}
 		
 		FSObject(Store &s, const std::string &name, const T &init)
-			:t(heap_copy(init)),filename(name),s(s) {
+			:t(heap_copy(init)),filename(name),name_hash(s.hash_str(name)),s(s) {
 			std::ofstream ofs(filename);
 			boost::archive::text_oarchive oa(ofs);
 			static_assert(!std::is_const<decltype(this)>::value,"Static assert failed");
@@ -253,22 +259,33 @@ public:
 	}
 
 	template<HandleAccess ha, typename T>
-	auto newObject(const std::string &name, const T &t){
+	auto newObject(int name, const T &t){
+		std::string new_name;
+		if (name_decoder.find(name) != name_decoder.end()){
+			new_name = name_decoder.at(name);
+		}
+		else {
+			new_name = std::string("/tmp/fsstore/") + std::to_string(name);
+			name_decoder[name] = new_name;
+		}
 		return make_handle
 			<l,ha,T,FSObject<T>>
-			(*this,std::string("/tmp/fsstore/") + name,t);
+			(*this, new_name,t);
 	}
 
 	template<HandleAccess ha, typename T>
-	auto existingObject(const std::string &name, const T* inf = nullptr){
+	auto existingObject(int name, const T* inf = nullptr){
+		assert(name_decoder.find(name) != name_decoder.end());
 		return make_handle
 			<l,ha,T,FSObject<T>>
-			(*this,std::string("/tmp/fsstore/") + name,true);
+			(*this,name_decoder.at(name),true);
 	}
 
-	bool exists(const std::string &name) {
-		boost::filesystem::path p(name.c_str());
-		return boost::filesystem::exists(p);
+	bool exists(int n) {
+		if (name_decoder.find(n) != name_decoder.end()){
+			boost::filesystem::path p(name_decoder.at(n).c_str());
+			return boost::filesystem::exists(p);
+		} else return false;
 	}
 
 	template<typename T>
