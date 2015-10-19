@@ -51,3 +51,6 @@ void Tracker::onWrite(DataStore<Level::strong>&, int name){}
 void Tracker::onRead(DataStore<Level::causal>&, int name){}
 
 void Tracker::onRead(DataStore<Level::strong>&, int name){}
+
+struct Tracker::TrackerDSStrong {};
+struct Tracker::TrackerDSCausal {};

@@ -18,6 +18,14 @@ struct Handle;
 
 class Tracker {
 private:
+	
+	struct TrackerDSStrong;
+	struct TrackerDSCausal;
+	
+	std::map<DataStore<Level::strong>*,
+			 std::unique_ptr<TrackerDSStrong > > strongDSmap;
+	std::map<DataStore<Level::causal>*,
+			 std::unique_ptr<TrackerDSCausal > > causalDSmap;
 
 	void registerStore(DataStore<Level::strong>&,
 					   std::function<
