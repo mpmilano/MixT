@@ -1,6 +1,7 @@
 #pragma once
 #include "Tracker.hpp"
 
+
 template<Level l>
 struct TrackerDS {
 	const std::function<
@@ -45,6 +46,8 @@ struct TrackerDS {
 		existingEnds(existingEnds),
 		existingMeta(existingMeta),
 		existingTomb(existingTomb) {}
+
+	TrackerDS(const TrackerDS&) = delete;
 };
 
 struct Tracker::TrackerDSStrong : public TrackerDS<Level::strong> {

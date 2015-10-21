@@ -22,8 +22,10 @@ void Tracker::registerStore(DataStore<Level::strong>& ds,
 					   Handle<Level::strong, HandleAccess::all, Tombstone>
 					   (int)> existingTomb
 	){
-	strongDSmap[&ds].reset( 
-		 new TrackerDSStrong{
+	assert(registeredStrong == nullptr);
+	assert(strongDS.get() == nullptr);
+	registeredStrong = &ds;
+	strongDS.reset(new TrackerDSStrong{
 			newEnds,newMeta,newTomb,exists,existingEnds,existingMeta,existingTomb});
 }
 
@@ -48,7 +50,9 @@ void Tracker::registerStore(DataStore<Level::causal>& ds,
 					   Handle<Level::causal, HandleAccess::all, Tombstone>
 					   (int)> existingTomb
 	){
-	causalDSmap[&ds].reset( 
+	assert(registeredCausal == nullptr);
+	assert(causalDS.get() == nullptr);
+	causalDS.reset( 
 		new TrackerDSCausal{
 			newEnds,newMeta,newTomb,exists,existingEnds,existingMeta,existingTomb});
 }

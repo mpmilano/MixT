@@ -9,10 +9,6 @@
 #include <functional>
 
 //TODO: replace with non-dummy types
-using Ends = int;
-using Metadata = long;
-using Tombstone = double;
-
 template<Level l, HandleAccess HA, typename T>
 struct Handle;
 
@@ -22,10 +18,21 @@ private:
 	struct TrackerDSStrong;
 	struct TrackerDSCausal;
 	
-	std::map<DataStore<Level::strong>*,
-			 std::unique_ptr<TrackerDSStrong > > strongDSmap;
-	std::map<DataStore<Level::causal>*,
-			 std::unique_ptr<TrackerDSCausal > > causalDSmap;
+
+	DataStore<Level::strong> registeredStrong* {nullptr};
+	std::unique_ptr<TrackerDSStrong > strongDS;
+
+	DataStore<Level::causal> registeredCausal* {nullptr};
+	std::unique_ptr<TrackerDSCausal > causalDSmap;
+
+	using replicaID = const int;
+	using Nonce = const int;
+	using read_pair = const std::pair<replicaID, Nonce>;
+	using Ends = int;
+	using Metadata = long;
+	using Tombstone = double;
+	Ends ends;
+	std::set<read_pair> readSet;
 
 	void registerStore(DataStore<Level::strong>&,
 					   std::function<
