@@ -21,10 +21,10 @@ SQLStore::SQLStore():default_connection{make_unique<SQLConnection>()} {
 }
 
 
-SQLStore& SQLStore::inst() {
-		static SQLStore ss;
-		return ss;
-	}
+SQLStore& SQLStore::inst(int instance_id) {
+	static std::map<int,SQLStore> ss;
+	return ss[instance_id];
+}
 
 unique_ptr<TransactionContext> SQLStore::begin_transaction() {
 	assert(default_connection->in_trans == false &&
@@ -46,6 +46,7 @@ namespace {
 struct SQLStore::GSQLObject::Internals{
 	const int key;
 	const int size;
+	const int store_id;
 	char* buf1;
 	SQLTransaction* curr_ctx;
 	int vers;
@@ -55,8 +56,9 @@ struct SQLStore::GSQLObject::Internals{
 	string select_vers;
 	string select_data;
 	string update_data;
-	Internals(int key, int size, char* buf, SQLTransaction* ctx, int vers)
-		:key(key),size(size),buf1(buf),curr_ctx(ctx),vers(vers)
+	Internals(int key, int size, int store_id,
+			  char* buf, SQLTransaction* ctx, int vers)
+		:key(key),size(size),store_id(store_id),buf1(buf),curr_ctx(ctx),vers(vers)
 		,select_vers(
 			string("select Version from \"BlobStore\" where ID=") + to_string(key))
 		,select_data(string("select data from \"BlobStore\" where ID = ") +
@@ -74,11 +76,11 @@ namespace{
 		SQLTransaction *trns =
 			(SQLTransaction *) gso.currentTransactionContext();
 		if (!trns){
-			if (((SQLStore&)gso.store()).default_connection->in_trans == false){
-				t_owner = small_transaction(SQLStore::inst());
+			if ((gso.store()).default_connection->in_trans == false){
+				t_owner = small_transaction(gso.store());
 				trns = t_owner.get();
 			}
-			else trns = ((SQLStore&)gso.store()).default_connection->current_trans;
+			else trns = (gso.store()).default_connection->current_trans;
 		}
 		return make_pair(move(t_owner),trns);
 	}
@@ -88,7 +90,7 @@ namespace{
 SQLStore::GSQLObject::GSQLObject(SQLStore::GSQLObject&& gso)
 	:i(gso.i){gso.i = nullptr;}
 
-SQLStore::GSQLObject::GSQLObject(const vector<char> &c){
+SQLStore::GSQLObject::GSQLObject(const SQLStore& ss, const vector<char> &c){
 	int size = c.size();
 	int id = -1;
 	{
@@ -109,11 +111,11 @@ SQLStore::GSQLObject::GSQLObject(const vector<char> &c){
 	}
 	char* b1 = (char*) malloc(size);
 	memcpy(b1,&c.at(0),size);
-	this->i = new Internals{id,size,b1,nullptr,0};
+	this->i = new Internals{id,size,ss.store_id(),b1,nullptr,0};
 }
 
-SQLStore::GSQLObject::GSQLObject(int id, int size)
-	:i(new Internals{id,size,nullptr,nullptr,-1}){
+SQLStore::GSQLObject::GSQLObject(const SQLStore &ss, int id, int size)
+	:i(new Internals{id,size,ss.store_id(),nullptr,nullptr,-1}){
 	i->buf1 = (char*) malloc(size);
 	assert(load());
 }
@@ -135,14 +137,15 @@ namespace {
 }
 
 //existing object
-SQLStore::GSQLObject::GSQLObject(int id){
+SQLStore::GSQLObject::GSQLObject(const SQLStore& ss, int id){
 	int size = blob_size(id,*this);
-	this->i = new Internals{id,size,(char*) malloc(size),nullptr,-1};
+	this->i = new Internals{id,size,ss.store_id(),(char*) malloc(size),nullptr,-1};
 }
 
 //"named" object
-SQLStore::GSQLObject::GSQLObject(int id, const vector<char> &c)
-	:i{new Internals{id,(int)c.size(),(char*) malloc(c.size()),nullptr,0}}{
+SQLStore::GSQLObject::GSQLObject(const SQLStore& ss, int id, const vector<char> &c)
+	:i{new Internals{id,(int)c.size(),ss.store_id(),
+			(char*) malloc(c.size()),nullptr,0}}{
 	assert(!ro_isValid());
 	{
 		auto trans_owner = enter_transaction(*this);
@@ -203,11 +206,11 @@ TransactionContext* SQLStore::GSQLObject::currentTransactionContext(){
 }
 
 const GDataStore& SQLStore::GSQLObject::store() const {
-	return SQLStore::inst();
+	return SQLStore::inst(i->store_id);
 }
 
 GDataStore& SQLStore::GSQLObject::store() {
-	return SQLStore::inst();
+	return SQLStore::inst(i->store_id);
 }
 
 int SQLStore::GSQLObject::name() const {
@@ -256,7 +259,7 @@ char* SQLStore::GSQLObject::obj_buffer() {
 }
 
 int SQLStore::GSQLObject::bytes_size() const {
-	return sizeof(int)*3;
+	return sizeof(int)*4;
 }
 
 int SQLStore::GSQLObject::to_bytes(char* c) const {
@@ -265,10 +268,13 @@ int SQLStore::GSQLObject::to_bytes(char* c) const {
 	arr[0] = id::value;
 	arr[1] = i->key;
 	arr[2] = i->size;
+	arr[3] = i->store_id;
 	return this->bytes_size();
 }
 
 SQLStore::GSQLObject SQLStore::GSQLObject::from_bytes(char *v){
 	int* arr = (int*)v;
-	return GSQLObject(arr[0],arr[1]);
+	//arr[0] has already been used to find this implementation
+	//of from_bytes
+	return GSQLObject(SQLStore::inst(arr[2]),arr[0],arr[1]);
 }

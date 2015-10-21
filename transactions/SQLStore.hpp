@@ -29,12 +29,13 @@ public:
 	
 	SQLStore(const SQLStore&) = delete;
 	
-	static SQLStore& inst();
+	static SQLStore& inst(int instance_id);
 
 	std::unique_ptr<TransactionContext> begin_transaction();
 	
 	using id = std::integral_constant<int,2>;
 	int ds_id() const { return id::value; }
+	int instance_id() const {return ?; }
 	bool exists(int id);
 	void remove(int id);
 	
@@ -58,7 +59,7 @@ public:
 		TransactionContext* currentTransactionContext();
 		bool ro_isValid() const;
 		const GDataStore& store() const;
-		GDataStore& store();
+		SQLStore& store();
 		int name() const;
 
 		//required by ByteRepresentable
