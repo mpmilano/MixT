@@ -40,6 +40,10 @@ Tracker::~Tracker(){
 	delete i;
 }
 
+int Tracker::Tombstone::name() const {
+	return nonce;
+}
+
 Tracker& Tracker::global_tracker(){
 	static Tracker t;
 	return t;
@@ -92,7 +96,6 @@ namespace {
 							{
 								rscopy,
 									nonce,
-									t.registeredStrong->instance_id(),
 									ends});
 	}
 	write_tombstone(Tracker::Nonce nonce, Tracker::Internals &i){

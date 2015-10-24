@@ -20,14 +20,23 @@ public:
 	using replicaID = const int;
 	using Nonce = const int;
 	using read_pair = const std::pair<replicaID, Nonce>;
+	using timestamp = timespec;
 	struct Ends{
-		timespec at(replicaID);
-		timespec& operator[](replicaID);
+		std::vector<std::pair<replicaID, timestamp > > contents;
+		const timestamp& at(replicaID) const;
+		timestamp& operator[](replicaID);
 		bool prec(const Ends&) const;
 		void fast_forward(const Ends&);
 	};
-	using Metadata = long;
-	using Tombstone = double;
+	struct Tombstone {
+		Nonce nonce;
+		int name() const;
+	};
+	struct Metadata {
+		Nonce nonce;
+		std::set<read_pair> readSet;
+		Ends ends;
+	}
 	
 	struct Internals;
 private:
