@@ -14,10 +14,7 @@ SQLStore::SQLStore():default_connection{make_unique<SQLConnection>()} {
 	assert(t->commit());
 	Tracker::global_tracker().registerStore(
 		*this,
-		[&](const auto &a, const auto &b){ return newObject<HandleAccess::all>(a,b);},
-		[&](const auto &a){ return exists(a);},
-		[&](const auto &a, auto* inf){
-			return existingObject<HandleAccess::all>(a,inf);});
+		[](auto i){return inst(i);});
 }
 
 

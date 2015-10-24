@@ -87,8 +87,8 @@ public:
 		return wrapStore(ds,newObject, newObject, newObject,exists,existingMeta);
 	}
 
-	template<typename DS, typename NF, typename EF, typename Ex, Ret>
-	void registerStore(DS &ds, const NF &nf, const Ex &ex, Ret (*f) (replicaID)){
+	template<typename DS, typename Ret>
+	void registerStore(DS &ds, Ret (*f) (replicaID)){
 		registerStore(ds,wrapStore(ds),f);
 	}
 

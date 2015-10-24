@@ -22,15 +22,7 @@ private:
 	FileStore(){
 		Tracker::global_tracker().registerStore(
 			*this,
-			[this](const auto &name, const auto &val){
-				return newObject<HandleAccess::all>(name,val);
-			},
-			[this](const auto &name) -> bool{
-				return exists(name);
-			},
-			[this](const auto &name, const auto *inf){
-				return existingObject<HandleAccess::all>(name,inf);
-			}
+			[](auto i){return filestore_instance(i);}
 			); //*/
 	}
 	
@@ -41,7 +33,7 @@ public:
 	std::map<int,std::string> name_decoder;
 	std::function<int (const std::string&)> hash_str = std::hash<std::string>();
 
-	static FileStore& filestore_instance() {
+	static FileStore& filestore_instance(int) {
 		static FileStore fs;
 		return fs;
 	}
@@ -179,9 +171,7 @@ public:
 		}
 
 		virtual const T& get() {
-			std::ifstream ifs(filename);
-			boost::archive::text_iarchive ia(ifs);
-			ia >> *this;
+			t.reset(onRead(s,name_hash));
 			return *t;
 		}
 
@@ -193,6 +183,13 @@ public:
 		}
 
 	};
+
+	template<typename T>
+	auto existingRaw(int name){
+		std::ifstream ifs(filename);
+		boost::archive::text_iarchive ia(ifs);
+		ia >> *this;
+	}
 	
 	template<typename T>
 	struct FSDir : public FSObject<std::set<T> > {
