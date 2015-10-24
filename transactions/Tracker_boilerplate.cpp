@@ -7,11 +7,10 @@ TrackerDSStrong Tracker::wrapStore(
 		Handle<Level::strong, HandleAccess::all, Metadata> (*newMeta) (DataStore<Level::strong>&, int, const Metadata&),
 		Handle<Level::strong, HandleAccess::all, Tombstone> (*newTomb) (DataStore<Level::strong>&, int, const Tombstone&),
 		bool (*exists) (DataStore<Level::strong>&, int),
-		Handle<Level::causal, HandleAccess::all, Metadata> (*existingMeta) (DataStore<Level::strong>&, int) existingMeta,
-		Handle<Level::causal, HandleAccess::all, Ends> (*existingEnds) (DataStore<Level::strong>&, int) existingEnds
+		Handle<Level::causal, HandleAccess::all, Metadata> (*existingMeta) (DataStore<Level::strong>&, int) existingMeta
 		){
 	return  TrackerDSStrong{
-		real,newEnds,newMeta,newTomb,exists,existingMeta,existingEnds};
+		real,newEnds,newMeta,newTomb,exists,existingMeta};
 }
 
 TrackerDSCausal Tracker::wrapStore(
@@ -20,9 +19,8 @@ TrackerDSCausal Tracker::wrapStore(
 		Handle<Level::causal, HandleAccess::all, Metadata> (*newMeta) (DataStore<Level::causal>&, int, const Metadata&),
 		Handle<Level::causal, HandleAccess::all, Tombstone> (*newTomb) (DataStore<Level::causal>&, int, const Tombstone&),
 		bool (*exists) (DataStore<Level::causal>&, int),
-		Handle<Level::causal, HandleAccess::all, Metadata> (*existingMeta) (DataStore<Level::causal>&, int) existingMeta,
-		Handle<Level::causal, HandleAccess::all, Ends> (*existingEnds) (DataStore<Level::causal>&, int) existingEnds
+		Handle<Level::causal, HandleAccess::all, Metadata> (*existingMeta) (DataStore<Level::causal>&, int) existingMeta
 		){
 	return  TrackerDSCausal{
-		real,newEnds,newMeta,newTomb,exists,existingMeta,existingEnds};
+		real,newEnds,newMeta,newTomb,exists,existingMeta};
 }

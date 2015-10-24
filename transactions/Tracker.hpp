@@ -7,6 +7,7 @@
 #include "compile-time-lambda.hpp"
 #include "utils.hpp"
 #include <functional>
+#include <time.h>
 
 //TODO: replace with non-dummy types
 template<Level l, HandleAccess HA, typename T>
@@ -19,7 +20,12 @@ public:
 	using replicaID = const int;
 	using Nonce = const int;
 	using read_pair = const std::pair<replicaID, Nonce>;
-	using Ends = int;
+	struct Ends{
+		timespec at(replicaID);
+		timespec& operator[](replicaID);
+		bool prec(const Ends&) const;
+		void fast_forward(const Ends&);
+	};
 	using Metadata = long;
 	using Tombstone = double;
 	

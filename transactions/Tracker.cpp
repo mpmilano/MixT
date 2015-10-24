@@ -144,11 +144,11 @@ void Tracker::tick(){
 namespace{
 	auto generate_causal_metadata(Ends &tstamp, Internals& i) {
 		for (auto &p : i.readSet){
-			auto t = i.ends.get(p.fist);
+			auto t = i.ends.at(p.fist);
 			if (t) tstamp[p.first] = t;
 		}
 		auto natural_replica = i.registeredCausal->instance_id();
-		auto t = i.ends.get(natural_replica);
+		auto t = i.ends.at(natural_replica);
 		assert(t);
 		tstamp[natural_replica] = t;
 		return tstamp;
