@@ -171,7 +171,9 @@ public:
 		}
 
 		virtual const T& get() {
-			t.reset(onRead(s,name_hash));
+			std::ifstream ifs(filename);
+			boost::archive::text_iarchive ia(ifs);
+			ia >> *this;
 			return *t;
 		}
 
@@ -183,13 +185,6 @@ public:
 		}
 
 	};
-
-	template<typename T>
-	auto existingRaw(int name){
-		std::ifstream ifs(filename);
-		boost::archive::text_iarchive ia(ifs);
-		ia >> *this;
-	}
 	
 	template<typename T>
 	struct FSDir : public FSObject<std::set<T> > {
