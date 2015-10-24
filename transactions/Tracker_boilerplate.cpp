@@ -1,7 +1,7 @@
 #include "Tracker_common.hpp"
 #include <map>
 
-void Tracker::registerStore(DataStore<Level::strong>& ds,
+TrackerDSStrong Tracker::wrapStore(
 					   std::function<
 					   Handle<Level::strong, HandleAccess::all, Ends>
 					   (int, const Ends&)> newEnds,
@@ -22,14 +22,11 @@ void Tracker::registerStore(DataStore<Level::strong>& ds,
 					   Handle<Level::strong, HandleAccess::all, Tombstone>
 					   (int)> existingTomb
 	){
-	assert(registeredStrong == nullptr);
-	assert(strongDS.get() == nullptr);
-	registeredStrong = &ds;
-	strongDS.reset(new TrackerDSStrong{
-			newEnds,newMeta,newTomb,exists,existingEnds,existingMeta,existingTomb});
+	return  TrackerDSStrong{
+		newEnds,newMeta,newTomb,exists,existingEnds,existingMeta,existingTomb};
 }
 
-void Tracker::registerStore(DataStore<Level::causal>& ds,
+TrackerDSCausal Tracker::wrapStore(
 					   std::function<
 					   Handle<Level::causal, HandleAccess::all, Ends>
 					   (int, const Ends&)> newEnds,
@@ -50,9 +47,6 @@ void Tracker::registerStore(DataStore<Level::causal>& ds,
 					   Handle<Level::causal, HandleAccess::all, Tombstone>
 					   (int)> existingTomb
 	){
-	assert(registeredCausal == nullptr);
-	assert(causalDS.get() == nullptr);
-	causalDS.reset( 
-		new TrackerDSCausal{
-			newEnds,newMeta,newTomb,exists,existingEnds,existingMeta,existingTomb});
+	return TrackerDSCausal{
+		newEnds,newMeta,newTomb,exists,existingEnds,existingMeta,existingTomb};
 }

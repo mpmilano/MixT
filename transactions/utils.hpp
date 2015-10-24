@@ -12,6 +12,7 @@
 #include <string>
 #include <iostream>
 #include <sstream>
+#include <algorithm>
 #include "../extras"
 #include "macro_utils.hpp"
 
@@ -287,3 +288,10 @@ struct AtScopeEnd {
 };
 
 void break_here();
+
+template<typename T, typename F>
+auto map(const std::vector<T> &v, const F &f ){
+	std::vector<T> out(v.size());
+	std::transform(v.begin(),v.end(),out.begin(),f);
+	return out;
+}

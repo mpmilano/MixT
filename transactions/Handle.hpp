@@ -250,6 +250,17 @@ struct is_writeable_handle :
 						   is_handle<T>::value &&
 						   canWrite<extract_access<T>::value>::value >::type {};
 
+template<typename T>
+struct is_strong_handle :
+	std::integral_constant<bool,
+						   is_handle<T>::value &&
+						   (get_level<T>::value == Level::strong) >::type {};
+
+template<typename T>
+struct is_causal_handle :
+	std::integral_constant<bool,
+						   is_handle<T>::value &&
+						   (get_level<T>::value == Level::causal) >::type {};
 
 template<typename T>
 std::enable_if_t<is_handle<T>::value,std::unique_ptr<T> > from_bytes(char *v){

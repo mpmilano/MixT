@@ -4,6 +4,7 @@
 
 template<Level l>
 struct TrackerDS {
+	DataStore<l> &real;
 	const std::function<
 		Handle<l, HandleAccess::all, Ends>
 		(int, const Ends&)> newEnds;
