@@ -88,7 +88,7 @@ namespace {
 		auto meta_name = make_lin_metaname(name);
 		decltype(t.readSet) rscopy = t.readSet;
 		rscopy.insert(std::make_pair(t.registeredStrong->instance_id(),nonce));
-		t.strongDS->newMeta(meta_name,
+		t.strongDS->newMeta(t.strongDS->real,meta_name,
 							{
 								rscopy,
 									nonce,
@@ -97,7 +97,7 @@ namespace {
 	}
 	write_tombstone(Tracker::Nonce nonce, Tracker::Internals &i){
 		const Tracker::Tombstone t {nonce};
-		i.causalDS->newTomb(t.name()?, t);
+		i.causalDS->newTomb(i.causalDS->real,t.name(), t);
 	}
 }
 
@@ -115,12 +115,12 @@ void Tracker::onRead(DataStore<Level::strong>& ds, int name){
 	assert(&ds == i->registeredStrong);
 	if (!is_metadata(name)){
 		auto meta_name = make_metaname(name);
-		if (i->strongDS->exists(meta_name)){
-			auto meta = i->strongDS->existingMeta(meta_name).get();
+		if (i->strongDS->exists(ds,meta_name)){
+			auto meta = i->strongDS->existingMeta(ds,meta_name).get();
 			if (!meta.ends.prec(i->ends)){
 				//TODO: argue more precisely about Ends and when to fast-forward it.
 				i->ends.fast_forward(meta.ends);
-				if (!i->causalDS->exists(Tombstone{meta.nonce}.name())){
+				if (!i->causalDS->exists(i->causalDS->real,Tombstone{meta.nonce}.name())){
 					i->readSet.insert(meta.readSet.begin(), meta.readSet.end());
 					//TODO: if there's a way to request a sync, do it here.
 					//we want to encounter that tombstone value as soon as possible.
@@ -134,7 +134,7 @@ void Tracker::tick(){
 	//refresh the readset
 	decltype(readSet) readSet_new;
 	for (auto &p : readSet){
-		if (!i->causalDS->exists(Tombstone{p.second}.name())){
+		if (!i->causalDS->exists(i->causalDS->real,Tombstone{p.second}.name())){
 			readSet_new.insert(p);
 		}
 	}
@@ -160,7 +160,7 @@ namespace{
 		//have separate namespaces.  This is a reasonable assumption
 		//in real life, but I have to remember it for local testing.
 		auto meta_name = make_metaname(name);
-		i.causalDS->newEnds(meta_name,generate_causal_metadata(tstamp,i))
+		i.causalDS->newEnds(i.causalDS->real,meta_name,generate_causal_metadata(tstamp,i));
 	}
 }
 
@@ -206,7 +206,7 @@ void Tracker::onRead_internal(
 	(DataStore<Level::causal>&, int)>& existingT,
 	const std::function<void (std::vector<std::unique_ptr<GeneralRemoteObject>>)>&
 	mergeT,
-	const std::function<Ends (std::vector<std::unique_ptr<GeneralRemoteObject>>)>&
+	const std::function<std::unique_ptr<Ends> (std::vector<std::unique_ptr<GeneralRemoteObject>>)>&
 	merge_ends
 	){
 	assert(&ds == i->registeredCausal);
@@ -214,5 +214,5 @@ void Tracker::onRead_internal(
 	//back in header onRead
 	mergeT(collect(*i,existingT,name));
 	auto metaname = make_metaname(name);
-	i->ends.fast_forward(merge_ends(collect(*i,existingEnds,metaname)));
+	i->ends.fast_forward(*merge_ends(collect(*i,existingEnds,metaname)));
 }

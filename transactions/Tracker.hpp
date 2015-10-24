@@ -28,26 +28,22 @@ private:
 	Internals *i;
 
 	TrackerDSStrong wrapStore(
-					   std::function<
-					   Handle<Level::strong, HandleAccess::all, Ends>
-					   (int, const Ends&)> newEnds,
-					   std::function<
-					   Handle<Level::strong, HandleAccess::all, Metadata>
-					   (int, const Metadata&)> newMeta,
-					   std::function<
-					   Handle<Level::strong, HandleAccess::all, Tombstone>
-					   (int, const Tombstone&)> newTomb,
-					   std::function<bool (int)> exists,
-					   std::function<Handle<Level::causal, HandleAccess::all, Metadata> (int)> existingMeta
-					   
+		DataStore<Level::strong> &real,
+		Handle<Level::strong, HandleAccess::all, Ends> (*newEnds) (DataStore<Level::strong>&, int, const Ends&),
+		Handle<Level::strong, HandleAccess::all, Metadata> (*newMeta) (DataStore<Level::strong>&, int, const Metadata&),
+		Handle<Level::strong, HandleAccess::all, Tombstone> (*newTomb) (DataStore<Level::strong>&, int, const Tombstone&),
+		bool (*exists) (DataStore<Level::strong>&, int),
+		Handle<Level::causal, HandleAccess::all, Metadata> (*existingMeta) (DataStore<Level::strong>&, int) existingMeta
 		);
 	
 	TrackerDSCausal wrapStore(
-					   std::function<Handle<Level::causal, HandleAccess::all, Ends> (int, const Ends&)> newEnds,
-					   std::function<Handle<Level::causal, HandleAccess::all, Metadata> (int, const Metadata&)> newMeta,
-					   std::function<Handle<Level::causal, HandleAccess::all, Tombstone> (int, const Tombstone&)> newTomb,
-					   std::function<bool (int)> exists,
-					   std::function<Handle<Level::causal, HandleAccess::all, Metadata> (int)> existingMeta);
+		DataStore<Level::causal> &real,
+		Handle<Level::causal, HandleAccess::all, Ends> (*newEnds) (DataStore<Level::causal>&, int, const Ends&),
+		Handle<Level::causal, HandleAccess::all, Metadata> (*newMeta) (DataStore<Level::causal>&, int, const Metadata&),
+		Handle<Level::causal, HandleAccess::all, Tombstone> (*newTomb) (DataStore<Level::causal>&, int, const Tombstone&),
+		bool (*exists) (DataStore<Level::causal>&, int),
+		Handle<Level::causal, HandleAccess::all, Metadata> (*existingMeta) (DataStore<Level::causal>&, int) existingMeta
+		);
 	
 public:
 	static Tracker& global_tracker();
@@ -57,14 +53,27 @@ public:
 	void registerStore(DataStore<Level::strong> &, const TrackerDSStrong&, getStrongInstance);
 	void registerStore(DataStore<Level::causal> &, const TrackerDSCausal&, getCausalInstance);
 
-	template<Level l, typename NF, typename EF, typename Ex>
-	auto wrapStore(const NF &nf, const Ex &ex, const EF &ef){
-		return wrapStore(nf,nf,nf,ex);
+	//I'm just going to guess the names of the functions here.
+	template<typename DS>
+	auto wrapStore(DS &ds){
+		static auto newObject = [](auto &_ds, auto name, auto &e){
+			auto &ds = dynamic_cast<DS&>(_ds);
+			return ds.newObject<HandleAccess::all>(name,e);
+		};
+		static auto exists = [](auto &_ds, auto name){
+			auto &ds = dynamic_cast<DS&>(_ds);
+			return ds.exists(name);
+		};
+		static auto existingMeta = [](auto &_ds, auto name){
+			auto &ds = dynamic_cast<DS&>(_ds);
+			return ds.existingObject<Metadata>(name);
+		};
+		return wrapStore(ds,newObject, newObject, newObject,exists,existingMeta);
 	}
 
 	template<typename DS, typename NF, typename EF, typename Ex, Ret>
 	void registerStore(DS &ds, const NF &nf, const Ex &ex, Ret (*f) (replicaID)){
-		registerStore(ds,wrapStore(nf,ex),f);
+		registerStore(ds,wrapStore(ds),f);
 	}
 
 	void tick();
@@ -84,29 +93,47 @@ private:
 		existingT,
 		const std::function<void (std::vector<std::unique_ptr<GeneralRemoteObject>>)>&
 		mergeT,
+		const std::function<std::unique_ptr<GeneralRemoteObject> (
+							 DataStore<Level::causal>&, int)> &
+		existingEnds,
 		const std::function<Ends (std::vector<std::unique_ptr<GeneralRemoteObject>>)>&
 		mergeEnds
 		);
 public:
 
-	static Ends merge_ends(const std::vector<Ends> &v);
+	template<typename Vec>
+	auto default_merge(const Vec &v){
+		return Vec::value_type::merge(map(v,[](auto &a){return a->get();}));
+	}
 
 	//need to know the type of the object we are writing here.
 	//thus, a lot of this work needs to get done in the header (sadly).
 	template<typename T, template<class> typename RO, typename DS>
 	auto onRead(DS& ds, int name,
-				const std::function<std::unique_ptr<T> (std::vector<std::unique_ptr<RO<T> > >)> &merge,
-				const std::function<RO<T> (int)> &existingObject,
-				const std::function<Ends (
-					std::vector<std::unique_ptr<RO<Ends> > >)> &mergeEnds
-				= [](auto &v){return merge_ends(map(v,[](auto &a){return a->get();}));}
-		){
+				const std::function<std::unique_ptr<T> (std::vector<std::unique_ptr<RO<T> > >)> &merge = default_merge,
+				const std::function<std::unique_ptr<Ends> (std::vector<std::unique_ptr<RO<Ends> > >)> &mergeEnds = default_merge){
 		static_assert(std::is_base_of<DataStore<Level::causal>,DS>::value,
 			"Error: first argument must be a DataStore");
 		static_assert(std::is_base_of<RemoteObject<T> >,RO<T> >::value,
 			"Error: RO must be *your* RemoteObject type");
 		std::unique_ptr<T> ret;
-		return onRead_internal(ds,name,existingObject,[&](auto &v){ret.reset(merge(v));},mergeEnds);
+		static auto existingEnds = [](auto &_ds, auto name){
+			auto &ds = dynamic_cast<DS&>(_ds);
+			return std::unique_ptr<GeneralRemoteObject>(ds.existingRaw<Ends>(name).release());
+		};
+		static auto existingT = [](auto &_ds, auto name) -> {
+			auto &ds = dynamic_cast<DS&>(_ds);
+			return std::unique_ptr<GeneralRemoteObject>(ds.existingRaw<T>(name).release());
+		};
+		static auto castBack = [](std::unique_ptr<GeneralRemoteObject> p) -> std::unique_ptr<RO<T> > {
+			if (auto *pt = dynamic_cast<RO<T>* >(p.release()))
+				return std::unique_ptr<RO<T> >(pt);
+			else assert(false && "Error casting from GeneralRemoteObject back to specific RO impl");
+		};
+		return onRead_internal(ds,name,existingT,
+							   [&](const auto &v){ret.reset(merge(map(v,castBack)));},
+							   existingEnds,
+							   [&](const auto &v){return mergeEnds(map(v,castBack));});
 	}
 
 	Tracker();

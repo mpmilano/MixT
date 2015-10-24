@@ -2,51 +2,27 @@
 #include <map>
 
 TrackerDSStrong Tracker::wrapStore(
-					   std::function<
-					   Handle<Level::strong, HandleAccess::all, Ends>
-					   (int, const Ends&)> newEnds,
-					   std::function<
-					   Handle<Level::strong, HandleAccess::all, Metadata>
-					   (int, const Metadata&)> newMeta,
-					   std::function<
-					   Handle<Level::strong, HandleAccess::all, Tombstone>
-					   (int, const Tombstone&)> newTomb,
-					   std::function<bool (int)> exists,
-					   std::function<
-					   Handle<Level::strong, HandleAccess::all, Ends>
-					   (int)> existingEnds,
-					   std::function<
-					   Handle<Level::strong, HandleAccess::all, Metadata>
-					   (int)> existingMeta,
-					   std::function<
-					   Handle<Level::strong, HandleAccess::all, Tombstone>
-					   (int)> existingTomb
-	){
+		DataStore<Level::strong> &real,
+		Handle<Level::strong, HandleAccess::all, Ends> (*newEnds) (DataStore<Level::strong>&, int, const Ends&),
+		Handle<Level::strong, HandleAccess::all, Metadata> (*newMeta) (DataStore<Level::strong>&, int, const Metadata&),
+		Handle<Level::strong, HandleAccess::all, Tombstone> (*newTomb) (DataStore<Level::strong>&, int, const Tombstone&),
+		bool (*exists) (DataStore<Level::strong>&, int),
+		Handle<Level::causal, HandleAccess::all, Metadata> (*existingMeta) (DataStore<Level::strong>&, int) existingMeta,
+		Handle<Level::causal, HandleAccess::all, Ends> (*existingEnds) (DataStore<Level::strong>&, int) existingEnds
+		){
 	return  TrackerDSStrong{
-		newEnds,newMeta,newTomb,exists,existingEnds,existingMeta,existingTomb};
+		real,newEnds,newMeta,newTomb,exists,existingMeta,existingEnds};
 }
 
 TrackerDSCausal Tracker::wrapStore(
-					   std::function<
-					   Handle<Level::causal, HandleAccess::all, Ends>
-					   (int, const Ends&)> newEnds,
-					   std::function<
-					   Handle<Level::causal, HandleAccess::all, Metadata>
-					   (int, const Metadata&)> newMeta,
-					   std::function<
-					   Handle<Level::causal, HandleAccess::all, Tombstone>
-					   (int, const Tombstone&)> newTomb,
-					   std::function<bool (int)> exists,
-					   std::function<
-					   Handle<Level::causal, HandleAccess::all, Ends>
-					   (int)> existingEnds,
-					   std::function<
-					   Handle<Level::causal, HandleAccess::all, Metadata>
-					   (int)> existingMeta,
-					   std::function<
-					   Handle<Level::causal, HandleAccess::all, Tombstone>
-					   (int)> existingTomb
-	){
-	return TrackerDSCausal{
-		newEnds,newMeta,newTomb,exists,existingEnds,existingMeta,existingTomb};
+		DataStore<Level::causal> &real,
+		Handle<Level::causal, HandleAccess::all, Ends> (*newEnds) (DataStore<Level::causal>&, int, const Ends&),
+		Handle<Level::causal, HandleAccess::all, Metadata> (*newMeta) (DataStore<Level::causal>&, int, const Metadata&),
+		Handle<Level::causal, HandleAccess::all, Tombstone> (*newTomb) (DataStore<Level::causal>&, int, const Tombstone&),
+		bool (*exists) (DataStore<Level::causal>&, int),
+		Handle<Level::causal, HandleAccess::all, Metadata> (*existingMeta) (DataStore<Level::causal>&, int) existingMeta,
+		Handle<Level::causal, HandleAccess::all, Ends> (*existingEnds) (DataStore<Level::causal>&, int) existingEnds
+		){
+	return  TrackerDSCausal{
+		real,newEnds,newMeta,newTomb,exists,existingMeta,existingEnds};
 }
