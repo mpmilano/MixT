@@ -99,3 +99,12 @@ void Tracker::Ends::fast_forward(const Tracker::Ends& e){
 	contents.insert(contents.back(),deferred_add.begin(),deferred_add.end());
 	std::sort(contents.begin(),contents.end());
 }
+
+Tracker::Ends Tracker::Ends::merge(const std::vector<std::unique_ptr<Ends> >& v){
+	//TODO: this could be faster.
+	Ends e;
+	for (auto &ptr : v){
+		e.fast_forward(*ptr);
+	}
+	return e;
+}

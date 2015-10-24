@@ -27,6 +27,7 @@ public:
 		timestamp& operator[](replicaID);
 		bool prec(const Ends&) const;
 		void fast_forward(const Ends&);
+		static Ends merge(const std::vector<std::unique_ptr<Ends> >&);
 	};
 	struct Tombstone {
 		Nonce nonce;
