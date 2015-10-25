@@ -15,6 +15,8 @@ struct Operation;
 template<typename >
 struct extract_type;
 
+template<typename>
+struct get_level;
 
 template<Level l, HandleAccess HA>
 struct GenericHandle {};

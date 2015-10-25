@@ -13,15 +13,13 @@ using namespace std;
 
 struct Tracker::Internals{
 	Internals(const Internals&) = delete;
-	DataStore<Level::strong> registeredStrong* {nullptr};
+	DataStore<Level::strong> *registeredStrong {nullptr};
 	std::unique_ptr<TrackerDSStrong > strongDS;
-	typedef std::unique_ptr<TrackerDSStrong > (*getStrongInstance) (replicaID);
 	getStrongInstance strongInst{nullptr};
 	
 
-	DataStore<Level::causal> registeredCausal* {nullptr};
-	std::unique_ptr<TrackerDSCausal > causalDSmap;
-	typedef std::unique_ptr<TrackerDSCausal > (*getCausalInstance) (replicaID);
+	DataStore<Level::causal> *registeredCausal {nullptr};
+	std::unique_ptr<TrackerDSCausal > causalDS;
 	getCausalInstance causalInst{nullptr};
 
 	Ends ends;
@@ -53,14 +51,14 @@ void Tracker::registerStore(DataStore<Level::strong>& ds, const TrackerDSStrong&
 	assert(i->registeredStrong == nullptr);
 	assert(i->strongDS.get() == nullptr);
 	i->registeredStrong = &ds;
-	i->strongDS.reset(heap_copy(wds));
+	i->strongDS = heap_copy(wds);
 	i->strongInst = f;
 }
-void Tracker::registerStore(DataStore<Level::strong>& ds, const TrackerDSCausal& wds, getCausalInstance f){
+void Tracker::registerStore(DataStore<Level::causal>& ds, const TrackerDSCausal& wds, getCausalInstance f){
 	assert(i->registeredCausal == nullptr);
 	assert(i->causalDS.get() == nullptr);
 	i->registeredCausal = &ds;
-	i->causalDS.reset(heap_copy(wds));
+	i->causalDS = heap_copy(wds);
 	i->causalInst = f;
 }
 
@@ -76,11 +74,20 @@ bool Tracker::registered(const GDataStore& gds) const{
 
 namespace{
 
-	bool is_lin_metadata(){
+	bool is_lin_metadata(int name){
 		assert(false && "TODO: unique name prefix that signifies metadata");
 	}
 
-	int make_lin_metaname(){
+	int make_lin_metaname(int name){
+		assert(false &&
+			   "TODO: whatever this is, make it compatible with is_metadata");
+	}
+
+	bool is_causal_metadata(int name){
+		assert(false && "TODO: unique name prefix that signifies metadata");
+	}
+
+	int make_causal_metaname(int name){
 		assert(false &&
 			   "TODO: whatever this is, make it compatible with is_metadata");
 	}
@@ -88,17 +95,16 @@ namespace{
 }
 
 namespace {
-	write_lin_metadata(Tracker::Nonce nonce, Tracker::Internals& t){
+	void write_lin_metadata(int name, Tracker::Nonce nonce, Tracker::Internals& t){
 		auto meta_name = make_lin_metaname(name);
 		decltype(t.readSet) rscopy = t.readSet;
 		rscopy.insert(std::make_pair(t.registeredStrong->instance_id(),nonce));
 		t.strongDS->newMeta(t.strongDS->real,meta_name,
-							{
-								rscopy,
-									nonce,
-									ends});
+							{nonce,
+									rscopy,	
+									t.ends});
 	}
-	write_tombstone(Tracker::Nonce nonce, Tracker::Internals &i){
+	void write_tombstone(Tracker::Nonce nonce, Tracker::Internals &i){
 		const Tracker::Tombstone t {nonce};
 		i.causalDS->newTomb(i.causalDS->real,t.name(), t);
 	}
@@ -106,18 +112,17 @@ namespace {
 
 void Tracker::onWrite(DataStore<Level::strong>& ds_real, int name){
 	assert(&ds_real == i->registeredStrong);
-	auto &ds = *strongDS;
-	if (!is_metadata(name)){
+	if (!is_lin_metadata(name)){
 		auto nonce = rand();
-		write_lin_metadata(nonce,*i);
+		write_lin_metadata(name,nonce,*i);
 		write_tombstone(nonce,*i);
 	}
 }
 
 void Tracker::onRead(DataStore<Level::strong>& ds, int name){
 	assert(&ds == i->registeredStrong);
-	if (!is_metadata(name)){
-		auto meta_name = make_metaname(name);
+	if (!is_lin_metadata(name)){
+		auto meta_name = make_lin_metaname(name);
 		if (i->strongDS->exists(ds,meta_name)){
 			auto meta = i->strongDS->existingMeta(ds,meta_name).get();
 			if (!meta.ends.prec(i->ends)){
@@ -135,40 +140,40 @@ void Tracker::onRead(DataStore<Level::strong>& ds, int name){
 
 void Tracker::tick(){
 	//refresh the readset
-	decltype(readSet) readSet_new;
-	for (auto &p : readSet){
+	decltype(i->readSet) readSet_new;
+	for (auto &p : i->readSet){
 		if (!i->causalDS->exists(i->causalDS->real,Tombstone{p.second}.name())){
 			readSet_new.insert(p);
 		}
 	}
-	readSet = readSet_new;
+	i->readSet = readSet_new;
 }
 
 namespace{
-	auto generate_causal_metadata(Ends &tstamp, Internals& i) {
+	auto generate_causal_metadata(Tracker::Ends &tstamp, Tracker::Internals& i) {
 		for (auto &p : i.readSet){
-			auto t = i.ends.at(p.fist);
-			if (t) tstamp[p.first] = t;
+			auto *t = i.ends.at_p(p.first);
+			if (t) tstamp[p.first] = *t;
 		}
 		auto natural_replica = i.registeredCausal->instance_id();
-		auto t = i.ends.at(natural_replica);
+		auto *t = i.ends.at_p(natural_replica);
 		assert(t);
-		tstamp[natural_replica] = t;
+		tstamp[natural_replica] = *t;
 		return tstamp;
 	}
 
-	void write_causal_metadata(int name, Internals &i){
-		Ends tstamp;
+	void write_causal_metadata(int name, Tracker::Internals &i){
+		Tracker::Ends tstamp;
 		//Note: this assumes that the causal + linearizable stores
 		//have separate namespaces.  This is a reasonable assumption
 		//in real life, but I have to remember it for local testing.
-		auto meta_name = make_metaname(name);
+		auto meta_name = make_causal_metaname(name);
 		i.causalDS->newEnds(i.causalDS->real,meta_name,generate_causal_metadata(tstamp,i));
 	}
 }
 
 void Tracker::onCreate(DataStore<Level::causal>& ds, int name){
-	assert(&ds == registeredCausal);
+	assert(&ds == i->registeredCausal);
 	write_causal_metadata(name,*i);
 }
 
@@ -181,20 +186,20 @@ void Tracker::onWrite(DataStore<Level::causal>&, int name){
 
 namespace{
 
-	auto& fetch_replica(Internals& i, replicaID id){
+	auto& fetch_replica(Tracker::Internals& i, Tracker::replicaID id){
 		if (i.replicaMap.count(id) == 0){
-			i.replicaMap.at(id).reset(getCausalInstance(id));
+			i.replicaMap[id] = i.causalInst(id);
 		}
 		return i.replicaMap.at(id);
 	}
 
-	template<typename F1, typename F2>
-	auto collect(Internals &i, const F1 &existing_obj, int name){
+	template<typename F1>
+	auto collect(Tracker::Internals &i, const F1 &existing_obj, int name){
 		std::vector<unique_ptr<GeneralRemoteObject> > relevant_ptrs;
 		relevant_ptrs.emplace_back(existing_obj(i.causalDS->real,name));
 		for (auto &p : i.readSet){
 			auto &replica = fetch_replica(i,p.first);
-			if (replica->exists(name)){
+			if (replica->exists(replica->real,name)){
 				relevant_ptrs.emplace_back(existing_obj(replica->real,name));
 			}
 		}
@@ -209,6 +214,9 @@ void Tracker::onRead_internal(
 	(DataStore<Level::causal>&, int)>& existingT,
 	const std::function<void (std::vector<std::unique_ptr<GeneralRemoteObject>>)>&
 	mergeT,
+	const std::function<std::unique_ptr<GeneralRemoteObject> (
+								  DataStore<Level::causal>&, int)> &
+	existingEnds,
 	const std::function<std::unique_ptr<Ends> (std::vector<std::unique_ptr<GeneralRemoteObject>>)>&
 	merge_ends
 	){
@@ -216,6 +224,6 @@ void Tracker::onRead_internal(
 	//mergeT should collect the value to return
 	//back in header onRead
 	mergeT(collect(*i,existingT,name));
-	auto metaname = make_metaname(name);
+	auto metaname = make_causal_metaname(name);
 	i->ends.fast_forward(*merge_ends(collect(*i,existingEnds,metaname)));
 }

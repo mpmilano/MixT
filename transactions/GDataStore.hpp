@@ -9,6 +9,7 @@ struct GDataStore {
 	//when the transaction is over.  Do any cleanup you need to do then.
 	virtual std::unique_ptr<TransactionContext> begin_transaction() = 0;
 	virtual int ds_id() const = 0;
+	virtual int instance_id() const = 0;
 
 	GDataStore(Level l):level(l){}
 	

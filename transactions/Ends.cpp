@@ -9,12 +9,18 @@
 #include "Tracker_common.hpp"
 
 const Tracker::timestamp& Tracker::Ends::at(replicaID id) const{
+	auto *ret = at_p(id);
+	if (ret) return *ret;
+	assert(false && "error: element not found");
+}
+
+Tracker::timestamp const * const Tracker::Ends::at_p(replicaID id) const {	
 	for (auto &e : contents){
 		if (e.first == id) return e.second;
 		else if (e.first < id) continue;
 		else if (e.first > id) break;
 	}
-	assert(false && "error: element not found");
+	return nullptr;
 }
 
 Tracker::timestamp& Tracker::Ends::operator[](replicaID id){

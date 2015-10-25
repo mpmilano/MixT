@@ -71,13 +71,13 @@ auto handles_helper_2(const Preserve<T>& t){
 	return ::handles(t.t);
 }
 
-template<typename C, typename T, typename T2>
-auto extract_robj_p(const T2&, const Preserve2<C,T> &t){
+template<typename C, typename T>
+auto extract_robj_p(const Preserve2<C,T> &t){
 	return cached(t.c,t.t);
 }
 
-template<typename T, typename T2, restrict(!is_handle<decay<T> >::value && !is_preserve<T>::value )>
- auto extract_robj_p(const T2& T&& t) {
+template<typename T, restrict(!is_handle<decay<T> >::value && !is_preserve<T>::value )>
+ auto extract_robj_p(T&& t) {
 	return std::forward<T>(t);
 }
 
@@ -151,9 +151,9 @@ struct Operation<Store, Ret (*) (A...)> {
 		//do this here so we abort before causal tracking happens
 		discard(Store::tryCast(extract_robj_p(args))...);			
 
-		auto h_read = filter_t<is_readable_handle>(std::make_tuple(args...));
-		auto h_strong_read = filter_t<is_strong_handle>(h_read);
-		auto h_causal_read = filter_t<is_causal_handle>(h_read);
+		auto h_read = filter_tpl<is_readable_handle>(std::make_tuple(args...));
+		auto h_strong_read = filter_tpl<is_strong_handle>(h_read);
+		auto h_causal_read = filter_tpl<is_causal_handle>(h_read);
 		auto h_write = filter_tpl<is_writeable_handle>(std::make_tuple(args...));
 		foreach(h_strong_read,
 				[](const auto &h){h.tracker.onRead(h.store(),h.name());});

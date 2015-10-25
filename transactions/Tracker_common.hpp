@@ -4,20 +4,20 @@
 template<Level l>
 struct TrackerDS {
 	
-	DataStore<Level::strong> &real;
-	Handle<Level::strong, HandleAccess::all, Ends> (*newEnds) (DataStore<Level::strong>&, int, const Ends&);
-	Handle<Level::strong, HandleAccess::all, Metadata> (*newMeta) (DataStore<Level::strong>&, int, const Metadata&);
-	Handle<Level::strong, HandleAccess::all, Tombstone> (*newTomb) (DataStore<Level::strong>&, int, const Tombstone&);
-	bool (*exists) (DataStore<Level::strong>&, int);
-	Handle<Level::causal, HandleAccess::all, Metadata> (*existingMeta) (DataStore<Level::strong>&, int) existingMeta;
+	DataStore<l> &real;
+	Handle<l, HandleAccess::all, Tracker::Ends> (*newEnds) (DataStore<l>&, int, const Tracker::Ends&);
+	Handle<l, HandleAccess::all, Tracker::Metadata> (*newMeta) (DataStore<l>&, int, const Tracker::Metadata&);
+	Handle<l, HandleAccess::all, Tracker::Tombstone> (*newTomb) (DataStore<l>&, int, const Tracker::Tombstone&);
+	bool (*exists) (DataStore<l>&, int);
+	Handle<Level::causal, HandleAccess::all, Tracker::Metadata> (*existingMeta) (DataStore<l>&, int);
 
 	TrackerDS(
-			DataStore<Level::strong> &real,
-			Handle<Level::strong, HandleAccess::all, Ends> (*newEnds) (DataStore<Level::strong>&, int, const Ends&),
-			Handle<Level::strong, HandleAccess::all, Metadata> (*newMeta) (DataStore<Level::strong>&, int, const Metadata&),
-			Handle<Level::strong, HandleAccess::all, Tombstone> (*newTomb) (DataStore<Level::strong>&, int, const Tombstone&),
-			bool (*exists) (DataStore<Level::strong>&, int),
-			Handle<Level::causal, HandleAccess::all, Metadata> (*existingMeta) (DataStore<Level::strong>&, int) existingMeta
+			DataStore<l> &real,
+			Handle<l, HandleAccess::all, Tracker::Ends> (*newEnds) (DataStore<l>&, int, const Tracker::Ends&),
+			Handle<l, HandleAccess::all, Tracker::Metadata> (*newMeta) (DataStore<l>&, int, const Tracker::Metadata&),
+			Handle<l, HandleAccess::all, Tracker::Tombstone> (*newTomb) (DataStore<l>&, int, const Tracker::Tombstone&),
+			bool (*exists) (DataStore<l>&, int),
+			Handle<Level::causal, HandleAccess::all, Tracker::Metadata> (*existingMeta) (DataStore<l>&, int)
 		):
 		real(real),
 		newEnds(newEnds),
@@ -31,11 +31,11 @@ struct TrackerDS {
 
 struct Tracker::TrackerDSStrong : public TrackerDS<Level::strong> {
 	TrackerDSStrong(DataStore<Level::strong> &real,
-					Handle<Level::strong, HandleAccess::all, Ends> (*newEnds) (DataStore<Level::strong>&, int, const Ends&),
-					Handle<Level::strong, HandleAccess::all, Metadata> (*newMeta) (DataStore<Level::strong>&, int, const Metadata&),
-					Handle<Level::strong, HandleAccess::all, Tombstone> (*newTomb) (DataStore<Level::strong>&, int, const Tombstone&),
+					Handle<Level::strong, HandleAccess::all, Tracker::Ends> (*newEnds) (DataStore<Level::strong>&, int, const Tracker::Ends&),
+					Handle<Level::strong, HandleAccess::all, Tracker::Metadata> (*newMeta) (DataStore<Level::strong>&, int, const Tracker::Metadata&),
+					Handle<Level::strong, HandleAccess::all, Tracker::Tombstone> (*newTomb) (DataStore<Level::strong>&, int, const Tracker::Tombstone&),
 					bool (*exists) (DataStore<Level::strong>&, int),
-					Handle<Level::causal, HandleAccess::all, Metadata> (*existingMeta) (DataStore<Level::strong>&, int) existingMeta
+					Handle<Level::causal, HandleAccess::all, Tracker::Metadata> (*existingMeta) (DataStore<Level::strong>&, int)
 )
 	:TrackerDS<Level::strong>(real,newEnds, newMeta, newTomb, exists, existingMeta) {}
 		
@@ -43,11 +43,11 @@ struct Tracker::TrackerDSStrong : public TrackerDS<Level::strong> {
 
 struct Tracker::TrackerDSCausal : public TrackerDS<Level::causal> {
 	TrackerDSCausal(DataStore<Level::causal> &real,
-					Handle<Level::causal, HandleAccess::all, Ends> (*newEnds) (DataStore<Level::causal>&, int, const Ends&),
-					Handle<Level::causal, HandleAccess::all, Metadata> (*newMeta) (DataStore<Level::causal>&, int, const Metadata&),
-					Handle<Level::causal, HandleAccess::all, Tombstone> (*newTomb) (DataStore<Level::causal>&, int, const Tombstone&),
+					Handle<Level::causal, HandleAccess::all, Tracker::Ends> (*newEnds) (DataStore<Level::causal>&, int, const Tracker::Ends&),
+					Handle<Level::causal, HandleAccess::all, Tracker::Metadata> (*newMeta) (DataStore<Level::causal>&, int, const Tracker::Metadata&),
+					Handle<Level::causal, HandleAccess::all, Tracker::Tombstone> (*newTomb) (DataStore<Level::causal>&, int, const Tracker::Tombstone&),
 					bool (*exists) (DataStore<Level::causal>&, int),
-					Handle<Level::causal, HandleAccess::all, Metadata> (*existingMeta) (DataStore<Level::causal>&, int) existingMeta
+					Handle<Level::causal, HandleAccess::all, Tracker::Metadata> (*existingMeta) (DataStore<Level::causal>&, int)
 )
 	:TrackerDS<Level::causal>(real,newEnds, newMeta, newTomb, exists, existingMeta) {}
 		

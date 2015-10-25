@@ -21,9 +21,13 @@ public:
 	using Nonce = const int;
 	using read_pair = const std::pair<replicaID, Nonce>;
 	using timestamp = timespec;
+	typedef std::unique_ptr<TrackerDSStrong > (*getStrongInstance) (replicaID);
+	typedef std::unique_ptr<TrackerDSCausal > (*getCausalInstance) (replicaID);
+	
 	struct Ends{
 		std::vector<std::pair<replicaID, timestamp > > contents;
 		const timestamp& at(replicaID) const;
+		const timestamp* at_p(replicaID) const;
 		timestamp& operator[](replicaID);
 		bool prec(const Ends&) const;
 		void fast_forward(const Ends&);
@@ -37,7 +41,7 @@ public:
 		Nonce nonce;
 		std::set<read_pair> readSet;
 		Ends ends;
-	}
+	};
 	
 	struct Internals;
 private:
@@ -49,7 +53,7 @@ private:
 		Handle<Level::strong, HandleAccess::all, Metadata> (*newMeta) (DataStore<Level::strong>&, int, const Metadata&),
 		Handle<Level::strong, HandleAccess::all, Tombstone> (*newTomb) (DataStore<Level::strong>&, int, const Tombstone&),
 		bool (*exists) (DataStore<Level::strong>&, int),
-		Handle<Level::causal, HandleAccess::all, Metadata> (*existingMeta) (DataStore<Level::strong>&, int) existingMeta
+		Handle<Level::causal, HandleAccess::all, Metadata> (*existingMeta) (DataStore<Level::strong>&, int)
 		);
 	
 	TrackerDSCausal wrapStore(
@@ -58,7 +62,7 @@ private:
 		Handle<Level::causal, HandleAccess::all, Metadata> (*newMeta) (DataStore<Level::causal>&, int, const Metadata&),
 		Handle<Level::causal, HandleAccess::all, Tombstone> (*newTomb) (DataStore<Level::causal>&, int, const Tombstone&),
 		bool (*exists) (DataStore<Level::causal>&, int),
-		Handle<Level::causal, HandleAccess::all, Metadata> (*existingMeta) (DataStore<Level::causal>&, int) existingMeta
+		Handle<Level::causal, HandleAccess::all, Metadata> (*existingMeta) (DataStore<Level::causal>&, int)
 		);
 	
 public:
@@ -82,7 +86,7 @@ public:
 		};
 		static auto existingMeta = [](auto &_ds, auto name){
 			auto &ds = dynamic_cast<DS&>(_ds);
-			return ds.existingObject<Metadata>(name);
+			return ds.template existingObject<Metadata>(name);
 		};
 		return wrapStore(ds,newObject, newObject, newObject,exists,existingMeta);
 	}
@@ -97,6 +101,8 @@ public:
 	void onWrite(DataStore<Level::strong>&, int name);
 
 	void onWrite(DataStore<Level::causal>&, int name);
+
+	void onCreate(DataStore<Level::causal>&, int name);
 	
 	void onRead(DataStore<Level::strong>&, int name);
 
@@ -112,44 +118,47 @@ private:
 		const std::function<std::unique_ptr<GeneralRemoteObject> (
 							 DataStore<Level::causal>&, int)> &
 		existingEnds,
-		const std::function<Ends (std::vector<std::unique_ptr<GeneralRemoteObject>>)>&
+		const std::function<std::unique_ptr<Ends> (std::vector<std::unique_ptr<GeneralRemoteObject>>)>&
 		mergeEnds
 		);
 public:
 
 	template<typename Vec>
-	auto default_merge(const Vec &v){
+	static auto default_merge(const Vec &v){
 		return Vec::value_type::merge(map(v,[](auto &a){return a->get();}));
 	}
 
 	//need to know the type of the object we are writing here.
 	//thus, a lot of this work needs to get done in the header (sadly).
-	template<typename T, template<class> typename RO, typename DS>
+	template<typename T, template<typename> class RO, typename DS>
 	auto onRead(DS& ds, int name,
 				const std::function<std::unique_ptr<T> (std::vector<std::unique_ptr<RO<T> > >)> &merge = default_merge,
 				const std::function<std::unique_ptr<Ends> (std::vector<std::unique_ptr<RO<Ends> > >)> &mergeEnds = default_merge){
 		static_assert(std::is_base_of<DataStore<Level::causal>,DS>::value,
 			"Error: first argument must be a DataStore");
-		static_assert(std::is_base_of<RemoteObject<T> >,RO<T> >::value,
+		static_assert(std::is_base_of<RemoteObject<T> ,RO<T> >::value,
 			"Error: RO must be *your* RemoteObject type");
-		std::unique_ptr<T> ret;
+		
 		static auto existingEnds = [](auto &_ds, auto name){
 			auto &ds = dynamic_cast<DS&>(_ds);
-			return std::unique_ptr<GeneralRemoteObject>(ds.existingRaw<Ends>(name).release());
+			return std::unique_ptr<GeneralRemoteObject>(ds.template existingRaw<Ends>(name).release());
 		};
-		static auto existingT = [](auto &_ds, auto name) -> {
+		static auto existingT = [](auto &_ds, auto name) {
 			auto &ds = dynamic_cast<DS&>(_ds);
-			return std::unique_ptr<GeneralRemoteObject>(ds.existingRaw<T>(name).release());
+			return std::unique_ptr<GeneralRemoteObject>(ds.template existingRaw<T>(name).release());
 		};
 		static auto castBack = [](std::unique_ptr<GeneralRemoteObject> p) -> std::unique_ptr<RO<T> > {
 			if (auto *pt = dynamic_cast<RO<T>* >(p.release()))
 				return std::unique_ptr<RO<T> >(pt);
 			else assert(false && "Error casting from GeneralRemoteObject back to specific RO impl");
 		};
-		return onRead_internal(ds,name,existingT,
-							   [&](const auto &v){ret.reset(merge(map(v,castBack)));},
-							   existingEnds,
-							   [&](const auto &v){return mergeEnds(map(v,castBack));});
+		
+		std::unique_ptr<T> ret;
+		onRead_internal(ds,name,existingT,
+						[&](const auto &v){ret.reset(merge(map(v,castBack)));},
+						existingEnds,
+						[&](const auto &v){return mergeEnds(map(v,castBack));});
+		return ret;
 	}
 
 	Tracker();
