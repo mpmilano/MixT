@@ -6,7 +6,9 @@
 template<typename T>
 class CompactSet : public ByteRepresentable{
 	std::vector<T> contents;
+	CompactSet(decltype(contents) c):contents(c){}
 public:
+	CompactSet() = default;
 	void insert(const CompactSet& e){
 		auto e_it = e.contents.begin();
 		decltype(contents) deferred_add;

@@ -4,6 +4,7 @@
 #include "SerializationMacros.hpp"
 #include "macro_utils.hpp"
 #include <vector>
+#include <string.h>
 
 struct ByteRepresentable {
 	virtual int to_bytes(char* v) const = 0;
@@ -69,28 +70,6 @@ int bytes_size (const std::vector<T> &v){
 	}
 }
 
-template<typename T>
-std::enable_if_t<is_vector<T>::value,std::unique_ptr<T> > from_bytes(char* v){
-	using member = typename T::value_type;
-	if (std::is_trivially_copyable<typename T::value_type>::value){
-		member const * const start = (member*) (v + sizeof(int));
-		const int size = ((int*)v)[0];
-		return std::unique_ptr<T>{new T{start, start + size}};
-	}
-	else{
-		int size = ((int*)v)[0];
-		char* v2 = v + sizeof(int);
-		int per_item_size = -1;
-		T accum;
-		for(int i = 0; i < size; ++i){
-			auto item = from_bytes<typename T::value_type>(v2 + (i * per_item_size));
-			if (per_item_size == -1)
-				per_item_size = bytes_size(*item);
-			accum.push_back(*item);
-		}
-		return accum;
-	}
-}
 
 template<typename T, restrict(std::is_trivially_copyable<T>::value)>
 int to_bytes(const T &t, char* v){
@@ -121,7 +100,7 @@ template<typename T,
 std::unique_ptr<T> from_bytes(char *v){
 	auto t = std::make_unique<T>();
 	if (v) {
-		memcpy(t.get(),v,sizeof(T));
+		memcpy((void*)t.get(),(void*)v,sizeof(T));
 		return std::move(t);
 	}
 	else return nullptr;
@@ -168,4 +147,27 @@ std::unique_ptr<type_check<is_set,T> > from_bytes(char* _v) {
 		r->insert(*e);
 	}
 	return std::move(r);
+}
+
+template<typename T>
+std::enable_if_t<is_vector<T>::value,std::unique_ptr<T> > from_bytes(char* v){
+	using member = typename T::value_type;
+	if (std::is_trivially_copyable<typename T::value_type>::value){
+		member const * const start = (member*) (v + sizeof(int));
+		const int size = ((int*)v)[0];
+		return std::unique_ptr<T>{new T{start, start + size}};
+	}
+	else{
+		int size = ((int*)v)[0];
+		char* v2 = v + sizeof(int);
+		int per_item_size = -1;
+		std::unique_ptr<std::vector<member> > accum{new T()};
+		for(int i = 0; i < size; ++i){
+			std::unique_ptr<member> item = from_bytes<typename T::value_type>(v2 + (i * per_item_size));
+			if (per_item_size == -1)
+				per_item_size = bytes_size(*item);
+			accum->push_back(*item);
+		}
+		return accum;
+	}
 }

@@ -19,9 +19,9 @@ class Tracker {
 public:
 	struct TrackerDSStrong;
 	struct TrackerDSCausal;
-	using replicaID = const int;
+	using replicaID = int;
 	static_assert(std::is_trivially_copyable<replicaID>::value,"error: replicaID should be trivially copyable");
-	using Nonce = const int;
+	using Nonce = int;
 	using read_pair = const TrivialPair<replicaID, Nonce>;
 	static_assert(std::is_trivially_copyable<read_pair>::value,"error: read_pair should be trivially copyable");
 	using timestamp = timespec;
