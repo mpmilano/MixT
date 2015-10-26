@@ -6,11 +6,27 @@
 	int bytes_size() const {											\
 		return ::bytes_size(a) + ::bytes_size(b);						\
 	}
+#define DEFAULT_SERIALIZE3(a,b,c) int to_bytes(char* ret) const {		\
+		int sa = ::to_bytes(a,ret);										\
+		int sb = ::to_bytes(b,ret + sa);								\
+		return sa + sb + ::to_bytes(c,ret + sa + sb);					\
+	}																	\
+	int bytes_size() const {											\
+		return ::bytes_size(a) + ::bytes_size(b) + ::bytes_size(c);		\
+	}
 
 #define DEFAULT_DESERIALIZE3(Name,a,b)			\
 	static std::unique_ptr<Name> from_bytes(char* v){				\
 		auto a2 = ::from_bytes<std::decay_t<decltype(a)> >(v);			\
 		Name r{*a2,*(::from_bytes<std::decay_t<decltype(b)> >(v + ::bytes_size(*a2)))}; \
+		return heap_copy(r);						\
+	}
+#define DEFAULT_DESERIALIZE4(Name,a,b,c)							\
+	static std::unique_ptr<Name> from_bytes(char* v){				\
+		auto a2 = ::from_bytes<std::decay_t<decltype(a)> >(v);			\
+		auto size_a2 = ::bytes_size(*a2);								\
+		auto b2 = ::from_bytes<std::decay_t<decltype(b)> >(v + size_a2); \
+		Name r{*a2,*b2,*(::from_bytes<std::decay_t<decltype(c)> >(v + size_a2 + ::bytes_size(*b2)))}; \
 		return heap_copy(r);						\
 	}
 

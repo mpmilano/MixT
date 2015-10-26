@@ -298,5 +298,5 @@ auto map(const std::vector<T> &v, const F &f ){
 
 
 template <typename T>
-using is_vector = is_same<T, std::vector< typename T::value_type,
-										  typename T::allocator_type > >;
+using is_vector = std::is_same<T, std::vector< typename T::value_type,
+											   typename T::allocator_type > >;

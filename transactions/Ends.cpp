@@ -8,6 +8,8 @@
 
 #include "Tracker_common.hpp"
 
+Tracker::Ends::Ends(decltype(Ends::contents) c):contents(c){}
+
 const Tracker::timestamp& Tracker::Ends::at(replicaID id) const{
 	auto *ret = at_p(id);
 	if (ret) return *ret;

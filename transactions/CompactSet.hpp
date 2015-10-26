@@ -1,15 +1,16 @@
 #pragma once
 
-#include "Tracker_common.hpp"
+
 #include "SerializationSupport.hpp"
 
 template<typename T>
 class CompactSet : public ByteRepresentable{
 	std::vector<T> contents;
+public:
 	void insert(const CompactSet& e){
 		auto e_it = e.contents.begin();
 		decltype(contents) deferred_add;
-		for (auto cr_it = contents.begin(); auto cr_it == contents.end();;){
+		for (auto cr_it = contents.begin(); cr_it == contents.end();){
 			if (*cr_it == *e_it){
 				++cr_it;
 				++e_it;
@@ -37,7 +38,7 @@ class CompactSet : public ByteRepresentable{
 		return contents.begin();
 	}
 	const auto& end() const {
-		return contentes.end();
+		return contents.end();
 	}	
 	auto swap(CompactSet &other){
 		return contents.swap(other.contents);

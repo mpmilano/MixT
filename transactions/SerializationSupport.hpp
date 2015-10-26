@@ -42,7 +42,7 @@ int bytes_size(const std::string& b);
 
 template<typename T>
 int to_bytes(const std::vector<T> &vec, char* _v){
-	((int*)_v)[0] = v.size();
+	((int*)_v)[0] = vec.size();
 	char* v = _v + sizeof(int);
 	if (std::is_trivially_copyable<T>::value){
 		int size = vec.size() * bytes_size(vec.back());
@@ -51,7 +51,7 @@ int to_bytes(const std::vector<T> &vec, char* _v){
 	}
 	else{
 		int offset = 0;
-		for (auto &e : v){
+		for (auto &e : vec){
 			offset += (to_bytes(e,v + offset));
 		}
 		return offset + sizeof(int);
@@ -71,7 +71,7 @@ int bytes_size (const std::vector<T> &v){
 
 template<typename T>
 std::enable_if_t<is_vector<T>::value,std::unique_ptr<T> > from_bytes(char* v){
-	if (std::is_trivially_copyable<T::value_type>::value){
+	if (std::is_trivially_copyable<typename T::value_type>::value){
 		return std::unique_ptr<T>{new T{ (T*) (v + sizeof(int)),((int*)v)[0]}};
 	}
 	else{
@@ -80,7 +80,7 @@ std::enable_if_t<is_vector<T>::value,std::unique_ptr<T> > from_bytes(char* v){
 		int per_item_size = -1;
 		T accum;
 		for(int i = 0; i < size; ++i){
-			auto item = from_bytes<T::value_type>(v2 + (i * per_item_size));
+			auto item = from_bytes<typename T::value_type>(v2 + (i * per_item_size));
 			if (per_item_size == -1)
 				per_item_size = bytes_size(*item);
 			accum.push_back(*item);

@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include "CompactSet.hpp"
 #include "GDataStore.hpp"
 #include "compile-time-lambda.hpp"
 #include "utils.hpp"
@@ -25,7 +26,11 @@ public:
 	typedef std::unique_ptr<TrackerDSCausal > (*getCausalInstance) (replicaID);
 	
 	struct Ends : public ByteRepresentable{
+	private:
 		std::vector<std::pair<replicaID, timestamp > > contents;
+		Ends(decltype(contents));
+	public:
+		Ends() = default;
 		const timestamp& at(replicaID) const;
 		const timestamp* at_p(replicaID) const;
 		timestamp& operator[](replicaID);
@@ -40,8 +45,9 @@ public:
 	};
 	struct Metadata {
 		Nonce nonce;
-		std::set<read_pair> readSet;
+		CompactSet<read_pair> readSet;
 		Ends ends;
+		DEFAULT_SERIALIZATION_SUPPORT(Metadata,nonce,readSet,ends);
 	};
 	
 	struct Internals;
