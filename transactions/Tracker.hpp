@@ -11,7 +11,6 @@
 #include <time.h>
 #include "TrivialPair.hpp"
 
-//TODO: replace with non-dummy types
 template<Level l, HandleAccess HA, typename T>
 struct Handle;
 
@@ -50,10 +49,12 @@ public:
 		Nonce nonce;
 		int name() const;
 	};
-	struct Metadata {
+	struct Metadata : public ByteRepresentable{
 		Nonce nonce;
 		CompactSet<read_pair> readSet;
 		Ends ends;
+		Metadata() = default;
+		Metadata(decltype(nonce), decltype(readSet), decltype(ends));
 		DEFAULT_SERIALIZATION_SUPPORT(Metadata,nonce,readSet,ends);
 	};
 	
@@ -61,23 +62,6 @@ public:
 private:
 	Internals *i;
 
-	TrackerDSStrong wrapStore(
-		DataStore<Level::strong> &real,
-		Handle<Level::strong, HandleAccess::all, Ends> (*newEnds) (DataStore<Level::strong>&, int, const Ends&),
-		Handle<Level::strong, HandleAccess::all, Metadata> (*newMeta) (DataStore<Level::strong>&, int, const Metadata&),
-		Handle<Level::strong, HandleAccess::all, Tombstone> (*newTomb) (DataStore<Level::strong>&, int, const Tombstone&),
-		bool (*exists) (DataStore<Level::strong>&, int),
-		Handle<Level::causal, HandleAccess::all, Metadata> (*existingMeta) (DataStore<Level::strong>&, int)
-		);
-	
-	TrackerDSCausal wrapStore(
-		DataStore<Level::causal> &real,
-		Handle<Level::causal, HandleAccess::all, Ends> (*newEnds) (DataStore<Level::causal>&, int, const Ends&),
-		Handle<Level::causal, HandleAccess::all, Metadata> (*newMeta) (DataStore<Level::causal>&, int, const Metadata&),
-		Handle<Level::causal, HandleAccess::all, Tombstone> (*newTomb) (DataStore<Level::causal>&, int, const Tombstone&),
-		bool (*exists) (DataStore<Level::causal>&, int),
-		Handle<Level::causal, HandleAccess::all, Metadata> (*existingMeta) (DataStore<Level::causal>&, int)
-		);
 	
 public:
 	static Tracker& global_tracker();
@@ -87,28 +71,8 @@ public:
 	void registerStore(DataStore<Level::strong> &, const TrackerDSStrong&, getStrongInstance);
 	void registerStore(DataStore<Level::causal> &, const TrackerDSCausal&, getCausalInstance);
 
-	//I'm just going to guess the names of the functions here.
-	template<typename DS>
-	static auto wrapStore(DS &ds){
-		static auto newObject = [](auto &_ds, auto name, auto &e){
-			auto &ds = dynamic_cast<DS&>(_ds);
-			return ds.template newObject<HandleAccess::all>(name,e);
-		};
-		static auto exists = [](auto &_ds, auto name){
-			auto &ds = dynamic_cast<DS&>(_ds);
-			return ds.exists(name);
-		};
-		static auto existingMeta = [](auto &_ds, auto name){
-			auto &ds = dynamic_cast<DS&>(_ds);
-			return ds.template existingObject<Metadata>(name);
-		};
-		return wrapStore(ds,newObject, newObject, newObject,exists,existingMeta);
-	}
-
 	template<typename DS, typename Ret>
-	void registerStore(DS &ds, Ret (*f) (replicaID)){
-		registerStore(ds,wrapStore(ds),f);
-	}
+	void registerStore(DS &ds, Ret (*f) (replicaID));
 
 	void tick();
 	
@@ -180,3 +144,45 @@ public:
 
 	Tracker(const Tracker&) = delete;
 };
+
+Tracker::TrackerDSStrong wrapStore(
+	DataStore<Level::strong> &real,
+	Handle<Level::strong, HandleAccess::all, Tracker::Ends> (*newEnds) (DataStore<Level::strong>&, int, const Tracker::Ends&),
+	Handle<Level::strong, HandleAccess::all, Tracker::Metadata> (*newMeta) (DataStore<Level::strong>&, int, const Tracker::Metadata&),
+	Handle<Level::strong, HandleAccess::all, Tracker::Tombstone> (*newTomb) (DataStore<Level::strong>&, int, const Tracker::Tombstone&),
+	bool (*exists) (DataStore<Level::strong>&, int),
+	Handle<Level::causal, HandleAccess::all, Tracker::Metadata> (*existingMeta) (DataStore<Level::strong>&, int)
+	);
+	
+Tracker::TrackerDSCausal wrapStore(
+	DataStore<Level::causal> &real,
+	Handle<Level::causal, HandleAccess::all, Tracker::Ends> (*newEnds) (DataStore<Level::causal>&, int, const Tracker::Ends&),
+	Handle<Level::causal, HandleAccess::all, Tracker::Metadata> (*newMeta) (DataStore<Level::causal>&, int, const Tracker::Metadata&),
+	Handle<Level::causal, HandleAccess::all, Tracker::Tombstone> (*newTomb) (DataStore<Level::causal>&, int, const Tracker::Tombstone&),
+	bool (*exists) (DataStore<Level::causal>&, int),
+	Handle<Level::causal, HandleAccess::all, Tracker::Metadata> (*existingMeta) (DataStore<Level::causal>&, int)
+	);
+
+
+//I'm just going to guess the names of the functions here.
+template<typename DS>
+auto wrapStore(DS &ds){
+	static auto newObject = [](auto &_ds, auto name, auto &e){
+		auto &ds = dynamic_cast<DS&>(_ds);
+		return ds.template newObject<HandleAccess::all>(name,e);
+	};
+	static auto exists = [](auto &_ds, auto name){
+		auto &ds = dynamic_cast<DS&>(_ds);
+		return ds.exists(name);
+	};
+	static auto existingMeta = [](auto &_ds, auto name){
+		auto &ds = dynamic_cast<DS&>(_ds);
+		return ds.template existingObject<HandleAccess::all,Tracker::Metadata>(name);
+	};
+	return wrapStore(ds,newObject, newObject, newObject,exists,existingMeta);
+}
+
+template<typename DS, typename Ret>
+void Tracker::registerStore(DS &ds, Ret (*f) (Tracker::replicaID)){
+	registerStore(ds,wrapStore(ds),f);
+}

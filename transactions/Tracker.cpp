@@ -30,6 +30,34 @@ struct Tracker::Internals{
 
 };
 
+TrackerDSStrong wrapStore(
+		DataStore<Level::strong> &real,
+		Handle<Level::strong, HandleAccess::all, Ends> (*newEnds) (DataStore<Level::strong>&, int, const Ends&),
+		Handle<Level::strong, HandleAccess::all, Metadata> (*newMeta) (DataStore<Level::strong>&, int, const Metadata&),
+		Handle<Level::strong, HandleAccess::all, Tombstone> (*newTomb) (DataStore<Level::strong>&, int, const Tombstone&),
+		bool (*exists) (DataStore<Level::strong>&, int),
+		Handle<Level::causal, HandleAccess::all, Metadata> (*existingMeta) (DataStore<Level::strong>&, int) existingMeta
+		){
+	return  TrackerDSStrong{
+		real,newEnds,newMeta,newTomb,exists,existingMeta};
+}
+
+TrackerDSCausal wrapStore(
+		DataStore<Level::causal> &real,
+		Handle<Level::causal, HandleAccess::all, Ends> (*newEnds) (DataStore<Level::causal>&, int, const Ends&),
+		Handle<Level::causal, HandleAccess::all, Metadata> (*newMeta) (DataStore<Level::causal>&, int, const Metadata&),
+		Handle<Level::causal, HandleAccess::all, Tombstone> (*newTomb) (DataStore<Level::causal>&, int, const Tombstone&),
+		bool (*exists) (DataStore<Level::causal>&, int),
+		Handle<Level::causal, HandleAccess::all, Metadata> (*existingMeta) (DataStore<Level::causal>&, int) existingMeta
+		){
+	return  TrackerDSCausal{
+		real,newEnds,newMeta,newTomb,exists,existingMeta};
+}
+
+
+Tracker::Metadata::Metadata(Nonce n, CompactSet<read_pair> r, Ends e)
+	:nonce(n),readSet(r),ends(e){}
+
 Tracker::Tracker():i{new Internals{}}{
 	timespec ts;
 	clock_gettime(CLOCK_REALTIME,&ts);
@@ -218,8 +246,9 @@ void Tracker::onRead_internal(
 	const std::function<std::unique_ptr<Ends> (std::vector<std::unique_ptr<GeneralRemoteObject>>)>& merge_ends
 	){
 	if (i->inCausalRead){
-		vector<unique_ptr<GeneralRemoteObject> > v{existingT(i->causalDS->real,name)};
-		mergeT(v);
+		vector<unique_ptr<GeneralRemoteObject> > v;
+		v.emplace_back(existingT(i->causalDS->real,name));
+		mergeT(std::move(v));
 	}
 	else{
 		i->inCausalRead = true;

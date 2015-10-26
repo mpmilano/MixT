@@ -9,7 +9,7 @@ export linkFlags
 all: utils.o Tracker.o SerializationSupport.o WhileBuilder.o ConExpr.o Context.o SQLStore.o TempBuilder.o new_test.o
 	clang++ utils.o Tracker.o SerializationSupport.o WhileBuilder.o ConExpr.o Context.o SQLStore.o TempBuilder.o new_test.o -o test $(linkFlags)
 
-tracker	: utils.o SerializationSupport.o WhileBuilder.o ConExpr.o Context.o SQLStore.o TempBuilder.o Tracker.o Tracker_boilerplate.o tracker_dummy.o
+tracker	: utils.o SerializationSupport.o WhileBuilder.o ConExpr.o Context.o SQLStore.o TempBuilder.o Tracker.o tracker_dummy.o
 	clang++ utils.o Tracker.o SerializationSupport.o WhileBuilder.o ConExpr.o Context.o SQLStore.o TempBuilder.o tracker_dummy.o -o tracker $(linkFlags)
 
 chat: utils.o Tracker.o SerializationSupport.o WhileBuilder.o ConExpr.o Context.o SQLStore.o TempBuilder.o chat_example.o
@@ -25,8 +25,6 @@ utils.o:
 	clang++ -c utils.cpp $(clangFlags)
 Tracker.o:
 	clang++ -c Tracker.cpp $(clangFlags)
-Tracker_boilerplate.o:
-	clang++ -c Tracker_boilerplate.cpp $(clangFlags)
 SerializationSupport.o:
 	clang++ -c SerializationSupport.cpp $(clangFlags)
 SQLStore.o:

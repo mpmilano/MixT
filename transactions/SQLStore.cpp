@@ -12,7 +12,7 @@ SQLStore::SQLStore():default_connection{make_unique<SQLConnection>()} {
 	((SQLTransaction*)t.get())
 		->exec("set search_path to \"BlobStore\",public");
 	assert(t->commit());
-	Tracker::getStrongInstance f = [](auto i) {return Tracker::wrapStore(inst(i));};
+	Tracker::getStrongInstance f = [](auto i) {return wrapStore(inst(i));};
 	Tracker::global_tracker().registerStore(
 		*this,f);
 }
