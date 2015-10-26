@@ -40,6 +40,55 @@ int to_bytes(const std::string& b, char* v);
 
 int bytes_size(const std::string& b);
 
+template<typename T>
+int to_bytes(const std::vector<T> &vec, char* _v){
+	((int*)_v)[0] = v.size();
+	char* v = _v + sizeof(int);
+	if (std::is_trivially_copyable<T>::value){
+		int size = vec.size() * bytes_size(vec.back());
+		memcpy(v, vec.data(),size);
+		return size + sizeof(int);
+	}
+	else{
+		int offset = 0;
+		for (auto &e : v){
+			offset += (to_bytes(e,v + offset));
+		}
+		return offset + sizeof(int);
+	}
+}
+
+template<typename T>
+int bytes_size (const std::vector<T> &v){
+	if (std::is_trivially_copyable<T>::value)
+		return v.size() * bytes_size(v.back()) + sizeof(int);
+	else {
+		int accum = 0;
+		for (auto &e : v) accum += bytes_size(e);
+		return accum + sizeof(int);
+	}
+}
+
+template<typename T>
+std::enable_if_t<is_vector<T>::value,std::unique_ptr<T> > from_bytes(char* v){
+	if (std::is_trivially_copyable<T::value_type>::value){
+		return std::unique_ptr<T>{new T{ (T*) (v + sizeof(int)),((int*)v)[0]}};
+	}
+	else{
+		int size = ((int*)v)[0];
+		char* v2 = v + sizeof(int);
+		int per_item_size = -1;
+		T accum;
+		for(int i = 0; i < size; ++i){
+			auto item = from_bytes<T::value_type>(v2 + (i * per_item_size));
+			if (per_item_size == -1)
+				per_item_size = bytes_size(*item);
+			accum.push_back(*item);
+		}
+		return accum;
+	}
+}
+
 template<typename T, restrict(std::is_trivially_copyable<T>::value)>
 int to_bytes(const T &t, char* v){
 	assert(memcpy(v,&t,sizeof(T)));

@@ -295,3 +295,8 @@ auto map(const std::vector<T> &v, const F &f ){
 	std::transform(v.begin(),v.end(),out.begin(),f);
 	return out;
 }
+
+
+template <typename T>
+using is_vector = is_same<T, std::vector< typename T::value_type,
+										  typename T::allocator_type > >;
