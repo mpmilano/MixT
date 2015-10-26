@@ -26,7 +26,6 @@ struct TrackerDS {
 		exists(exists),
 		existingMeta(existingMeta) {}
 
-	TrackerDS(const TrackerDS&) = delete;
 };
 
 struct Tracker::TrackerDSStrong : public TrackerDS<Level::strong> {

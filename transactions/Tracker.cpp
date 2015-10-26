@@ -7,6 +7,7 @@
 #include <functional>
 
 #include "Tracker_common.hpp"
+#include "CompactSet.hpp"
 
 
 using namespace std;
@@ -23,8 +24,9 @@ struct Tracker::Internals{
 	getCausalInstance causalInst{nullptr};
 
 	Ends ends;
-	std::set<read_pair> readSet;
+	CompactSet<read_pair> readSet;
 	std::map<replicaID, std::unique_ptr<TrackerDSCausal> > replicaMap;
+	bool inCausalRead = false;
 
 };
 
@@ -129,7 +131,7 @@ void Tracker::onRead(DataStore<Level::strong>& ds, int name){
 				//TODO: argue more precisely about Ends and when to fast-forward it.
 				i->ends.fast_forward(meta.ends);
 				if (!i->causalDS->exists(i->causalDS->real,Tombstone{meta.nonce}.name())){
-					i->readSet.insert(meta.readSet.begin(), meta.readSet.end());
+					i->readSet.insert(meta.readSet);
 					//TODO: if there's a way to request a sync, do it here.
 					//we want to encounter that tombstone value as soon as possible.
 				}
@@ -146,7 +148,7 @@ void Tracker::tick(){
 			readSet_new.insert(p);
 		}
 	}
-	i->readSet = readSet_new;
+	i->readSet.swap(readSet_new);
 }
 
 namespace{
@@ -210,20 +212,24 @@ namespace{
 
 void Tracker::onRead_internal(
 	DataStore<Level::causal> &ds,int name,
-	const std::function<std::unique_ptr<GeneralRemoteObject>
-	(DataStore<Level::causal>&, int)>& existingT,
-	const std::function<void (std::vector<std::unique_ptr<GeneralRemoteObject>>)>&
-	mergeT,
-	const std::function<std::unique_ptr<GeneralRemoteObject> (
-								  DataStore<Level::causal>&, int)> &
-	existingEnds,
-	const std::function<std::unique_ptr<Ends> (std::vector<std::unique_ptr<GeneralRemoteObject>>)>&
-	merge_ends
+	const std::function<std::unique_ptr<GeneralRemoteObject> (DataStore<Level::causal>&, int)>& existingT,
+	const std::function<void (std::vector<std::unique_ptr<GeneralRemoteObject>>)>& mergeT,
+	const std::function<std::unique_ptr<GeneralRemoteObject> (DataStore<Level::causal>&, int)> &existingEnds,
+	const std::function<std::unique_ptr<Ends> (std::vector<std::unique_ptr<GeneralRemoteObject>>)>& merge_ends
 	){
-	assert(&ds == i->registeredCausal);
-	//mergeT should collect the value to return
-	//back in header onRead
-	mergeT(collect(*i,existingT,name));
-	auto metaname = make_causal_metaname(name);
-	i->ends.fast_forward(*merge_ends(collect(*i,existingEnds,metaname)));
+	if (i->inCausalRead){
+		vector<unique_ptr<GeneralRemoteObject> > v{existingT(i->causalDS->real,name)};
+		mergeT(v);
+	}
+	else{
+		i->inCausalRead = true;
+		AtScopeEnd ase{[&](){i->inCausalRead = false;}};
+		assert(&ds == i->registeredCausal);
+		//mergeT should collect the value to return
+		//back in header onRead
+		mergeT(collect(*i,existingT,name));
+		auto metaname = make_causal_metaname(name);
+		i->ends.fast_forward(*merge_ends(collect(*i,existingEnds,metaname)));
+		discard(ase);
+	}
 }

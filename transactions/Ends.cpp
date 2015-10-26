@@ -33,7 +33,7 @@ Tracker::timestamp& Tracker::Ends::operator[](replicaID id){
 		else if (e.first > id) break;
 	}
 	//need to keep the list sorted!
-	decltype(contents) v swapped;
+	decltype(contents) v;
 	v.insert(v.begin(),contents.begin(),it);
 	v.emplace_back(id,timestamp{});
 	
@@ -108,9 +108,12 @@ void Tracker::Ends::fast_forward(const Tracker::Ends& e){
 
 Tracker::Ends Tracker::Ends::merge(const std::vector<std::unique_ptr<Ends> >& v){
 	//TODO: this could be faster.
-	Ends e;
-	for (auto &ptr : v){
-		e.fast_forward(*ptr);
+	if (v.size() == 1) return *v.front();
+	else{
+		Ends e;
+		for (auto &ptr : v){
+			e.fast_forward(*ptr);
+		}
+		return e;
 	}
-	return e;
 }

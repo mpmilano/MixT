@@ -13,3 +13,8 @@ public:
 	DECLARED_OPERATIONS
 
 };
+
+template<Level l>
+constexpr Level ds_level(const DataStore<l>&){
+	return l;
+}

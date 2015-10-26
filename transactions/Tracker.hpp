@@ -75,10 +75,10 @@ public:
 
 	//I'm just going to guess the names of the functions here.
 	template<typename DS>
-	auto wrapStore(DS &ds){
+	static auto wrapStore(DS &ds){
 		static auto newObject = [](auto &_ds, auto name, auto &e){
 			auto &ds = dynamic_cast<DS&>(_ds);
-			return ds.newObject<HandleAccess::all>(name,e);
+			return ds.template newObject<HandleAccess::all>(name,e);
 		};
 		static auto exists = [](auto &_ds, auto name){
 			auto &ds = dynamic_cast<DS&>(_ds);
