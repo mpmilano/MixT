@@ -30,6 +30,7 @@ Tracker::timestamp& Tracker::Ends::operator[](replicaID id){
 	int i = 0;
 	auto it = contents.begin();
 	for (; i < contents.size(); (++i, ++it)){
+		auto &e = *it;
 		if (e.first == id) return e.second;
 		else if (e.first < id) continue;
 		else if (e.first > id) break;

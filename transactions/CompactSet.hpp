@@ -33,11 +33,36 @@ public:
 		contents.insert(contents.back(),deferred_add.begin(),deferred_add.end());
 		std::sort(contents.begin(),contents.end());
 	}
+
+	void insert(const T &t){
+		auto old_size = contents.size();
+		int i = 0;
+		auto it = contents.begin();
+		for (; i < contents.size(); (++i, ++it)){
+			auto &e = *it;
+			if (e == t) return;
+			else if (e < t) continue;
+			else if (e > t) break;
+		}
+		//need to keep the list sorted!
+		decltype(contents) v;
+		v.insert(v.begin(),contents.begin(),it);
+		v.emplace_back(t);
+		
+		assert(v[v.size() - 2] < v.back());
+		assert(v.at(i) == v.back());
+		
+		v.insert(v.end(),it,contents.end());
+		
+		assert(v.at(i) < v.at(i+1));
+		assert(v.size() == contents.size() +1);
+		assert(contents.size() == old_size + 1);
+	}
 	
-	const auto& begin() const {
+	auto begin() const {
 		return contents.begin();
 	}
-	const auto& end() const {
+	auto end() const {
 		return contents.end();
 	}	
 	auto swap(CompactSet &other){
