@@ -4,7 +4,7 @@
 #include "SerializationMacros.hpp"
 #include "macro_utils.hpp"
 #include <vector>
-#include <string.h>
+
 
 struct ByteRepresentable {
 	virtual int to_bytes(char* v) const = 0;
@@ -97,10 +97,11 @@ std::unique_ptr<T> from_bytes(char *v){
 
 template<typename T,
 		 restrict2(std::is_trivially_copyable<T>::value)>
-std::unique_ptr<T> from_bytes(char *v){
-	auto t = std::make_unique<T>();
+std::unique_ptr<std::decay_t<T> > from_bytes(char *v){
+	using T2 = std::decay_t<T>;
+	auto t = std::make_unique<T2>();
 	if (v) {
-		memcpy((void*)t.get(),(void*)v,sizeof(T));
+		std::memcpy(t.get(),v,sizeof(T));
 		return std::move(t);
 	}
 	else return nullptr;

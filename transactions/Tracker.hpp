@@ -22,7 +22,7 @@ public:
 	using replicaID = int;
 	static_assert(std::is_trivially_copyable<replicaID>::value,"error: replicaID should be trivially copyable");
 	using Nonce = int;
-	using read_pair = const TrivialPair<replicaID, Nonce>;
+	using read_pair = TrivialPair<replicaID, Nonce>;
 	static_assert(std::is_trivially_copyable<read_pair>::value,"error: read_pair should be trivially copyable");
 	using timestamp = timespec;
 	static_assert(std::is_trivially_copyable<timestamp>::value,"error: timestamp should be trivially copyable");

@@ -30,9 +30,9 @@ public:
 			}
 		}
 		//we might have missed more things from e_it.  Add them.
-		contents.insert(contents.back(), e_it,e.contents.end());
+		contents.insert(contents.end(), e_it,e.contents.end());
 		//add the new things and sort the list.
-		contents.insert(contents.back(),deferred_add.begin(),deferred_add.end());
+		contents.insert(contents.end(),deferred_add.begin(),deferred_add.end());
 		std::sort(contents.begin(),contents.end());
 	}
 
@@ -41,7 +41,7 @@ public:
 		int i = 0;
 		auto it = contents.begin();
 		for (; i < contents.size(); (++i, ++it)){
-			auto &e = *it;
+			const auto &e = *it;
 			if (e == t) return;
 			else if (e < t) continue;
 			else if (e > t) break;
