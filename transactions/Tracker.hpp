@@ -24,7 +24,7 @@ public:
 	typedef std::unique_ptr<TrackerDSStrong > (*getStrongInstance) (replicaID);
 	typedef std::unique_ptr<TrackerDSCausal > (*getCausalInstance) (replicaID);
 	
-	struct Ends{
+	struct Ends : public ByteRepresentable{
 		std::vector<std::pair<replicaID, timestamp > > contents;
 		const timestamp& at(replicaID) const;
 		const timestamp* at_p(replicaID) const;
@@ -32,6 +32,7 @@ public:
 		bool prec(const Ends&) const;
 		void fast_forward(const Ends&);
 		static Ends merge(const std::vector<std::unique_ptr<Ends> >&);
+		DEFAULT_SERIALIZATION_SUPPORT(Ends,contents);
 	};
 	struct Tombstone {
 		Nonce nonce;
