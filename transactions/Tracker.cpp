@@ -100,7 +100,7 @@ namespace {
 	void write_lin_metadata(int name, Tracker::Nonce nonce, Tracker::Internals& t){
 		auto meta_name = make_lin_metaname(name);
 		decltype(t.readSet) rscopy = t.readSet;
-		rscopy.insert(std::make_pair(t.registeredStrong->instance_id(),nonce));
+		rscopy.insert({t.registeredStrong->instance_id(),nonce});
 		t.strongDS->newMeta(t.strongDS->real,meta_name,
 							{nonce,
 									rscopy,	

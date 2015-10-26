@@ -71,8 +71,11 @@ int bytes_size (const std::vector<T> &v){
 
 template<typename T>
 std::enable_if_t<is_vector<T>::value,std::unique_ptr<T> > from_bytes(char* v){
+	using member = typename T::value_type;
 	if (std::is_trivially_copyable<typename T::value_type>::value){
-		return std::unique_ptr<T>{new T{ (T*) (v + sizeof(int)),((int*)v)[0]}};
+		member const * const start = (member*) (v + sizeof(int));
+		const int size = ((int*)v)[0];
+		return std::unique_ptr<T>{new T{start, start + size}};
 	}
 	else{
 		int size = ((int*)v)[0];

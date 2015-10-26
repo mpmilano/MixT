@@ -9,6 +9,7 @@
 #include "utils.hpp"
 #include <functional>
 #include <time.h>
+#include "TrivialPair.hpp"
 
 //TODO: replace with non-dummy types
 template<Level l, HandleAccess HA, typename T>
@@ -19,15 +20,21 @@ public:
 	struct TrackerDSStrong;
 	struct TrackerDSCausal;
 	using replicaID = const int;
+	static_assert(std::is_trivially_copyable<replicaID>::value,"error: replicaID should be trivially copyable");
 	using Nonce = const int;
-	using read_pair = const std::pair<replicaID, Nonce>;
+	using read_pair = const TrivialPair<replicaID, Nonce>;
+	static_assert(std::is_trivially_copyable<read_pair>::value,"error: read_pair should be trivially copyable");
 	using timestamp = timespec;
+	static_assert(std::is_trivially_copyable<timestamp>::value,"error: timestamp should be trivially copyable");
 	typedef std::unique_ptr<TrackerDSStrong > (*getStrongInstance) (replicaID);
 	typedef std::unique_ptr<TrackerDSCausal > (*getCausalInstance) (replicaID);
 	
 	struct Ends : public ByteRepresentable{
 	private:
-		std::vector<std::pair<replicaID, timestamp > > contents;
+		std::vector<TrivialTriple<replicaID,  time_t, long> > contents;
+		static_assert(std::is_trivially_copyable<TrivialTriple<replicaID, time_t, long > >::value,
+					  "error: content's members should be trivially copyable");
+
 		Ends(decltype(contents));
 	public:
 		Ends() = default;
