@@ -30,27 +30,27 @@ struct Tracker::Internals{
 
 };
 
-TrackerDSStrong wrapStore(
+Tracker::TrackerDSStrong wrapStore(
 		DataStore<Level::strong> &real,
-		Handle<Level::strong, HandleAccess::all, Ends> (*newEnds) (DataStore<Level::strong>&, int, const Ends&),
-		Handle<Level::strong, HandleAccess::all, Metadata> (*newMeta) (DataStore<Level::strong>&, int, const Metadata&),
-		Handle<Level::strong, HandleAccess::all, Tombstone> (*newTomb) (DataStore<Level::strong>&, int, const Tombstone&),
+		Handle<Level::strong, HandleAccess::all, Tracker::Ends> (*newEnds) (DataStore<Level::strong>&, int, const Tracker::Ends&),
+		Handle<Level::strong, HandleAccess::all, Tracker::Metadata> (*newMeta) (DataStore<Level::strong>&, int, const Tracker::Metadata&),
+		Handle<Level::strong, HandleAccess::all, Tracker::Tombstone> (*newTomb) (DataStore<Level::strong>&, int, const Tracker::Tombstone&),
 		bool (*exists) (DataStore<Level::strong>&, int),
-		Handle<Level::causal, HandleAccess::all, Metadata> (*existingMeta) (DataStore<Level::strong>&, int) existingMeta
+		Handle<Level::causal, HandleAccess::all, Tracker::Metadata> (*existingMeta) (DataStore<Level::strong>&, int) 
 		){
-	return  TrackerDSStrong{
+	return  Tracker::TrackerDSStrong{
 		real,newEnds,newMeta,newTomb,exists,existingMeta};
 }
 
-TrackerDSCausal wrapStore(
+Tracker::TrackerDSCausal wrapStore(
 		DataStore<Level::causal> &real,
-		Handle<Level::causal, HandleAccess::all, Ends> (*newEnds) (DataStore<Level::causal>&, int, const Ends&),
-		Handle<Level::causal, HandleAccess::all, Metadata> (*newMeta) (DataStore<Level::causal>&, int, const Metadata&),
-		Handle<Level::causal, HandleAccess::all, Tombstone> (*newTomb) (DataStore<Level::causal>&, int, const Tombstone&),
+		Handle<Level::causal, HandleAccess::all, Tracker::Ends> (*newEnds) (DataStore<Level::causal>&, int, const Tracker::Ends&),
+		Handle<Level::causal, HandleAccess::all, Tracker::Metadata> (*newMeta) (DataStore<Level::causal>&, int, const Tracker::Metadata&),
+		Handle<Level::causal, HandleAccess::all, Tracker::Tombstone> (*newTomb) (DataStore<Level::causal>&, int, const Tracker::Tombstone&),
 		bool (*exists) (DataStore<Level::causal>&, int),
-		Handle<Level::causal, HandleAccess::all, Metadata> (*existingMeta) (DataStore<Level::causal>&, int) existingMeta
+		Handle<Level::causal, HandleAccess::all, Tracker::Metadata> (*existingMeta) (DataStore<Level::causal>&, int) 
 		){
-	return  TrackerDSCausal{
+	return  Tracker::TrackerDSCausal{
 		real,newEnds,newMeta,newTomb,exists,existingMeta};
 }
 
@@ -245,7 +245,7 @@ void Tracker::onRead_internal(
 	const std::function<std::unique_ptr<GeneralRemoteObject> (DataStore<Level::causal>&, int)> &existingEnds,
 	const std::function<std::unique_ptr<Ends> (std::vector<std::unique_ptr<GeneralRemoteObject>>)>& merge_ends
 	){
-	if (i->inCausalRead){
+	if (i->inCausalRead || is_causal_metadata(name)){
 		vector<unique_ptr<GeneralRemoteObject> > v;
 		v.emplace_back(existingT(i->causalDS->real,name));
 		mergeT(std::move(v));

@@ -45,9 +45,10 @@ public:
 		Internals* i;
 		GSQLObject(int id, int size);
 	public:
-		GSQLObject(const std::vector<char> &c);
-		GSQLObject(int name, const std::vector<char> &c);
-		GSQLObject(int name);
+		GSQLObject(const SQLStore &ss, const std::vector<char> &c);
+		GSQLObject(const SQLStore &ss, int name, const std::vector<char> &c);
+		GSQLObject(const SQLStore &ss, int name, int size);
+		GSQLObject(const SQLStore &ss, int name);
 		GSQLObject(const GSQLObject&) = delete;
 		GSQLObject(GSQLObject&&);
 		void save();
@@ -137,7 +138,7 @@ public:
 		int size = ::bytes_size(init);
 		std::vector<char> v(size);
 		assert(size == ::to_bytes(init,&v[0]));
-		GSQLObject gso(v);
+		GSQLObject gso(*this,v);
 		return make_handle
 			<Level::strong,ha,T,SQLObject<T> >
 			(std::move(gso),heap_copy(init) );
@@ -148,7 +149,7 @@ public:
 		int size = ::bytes_size(init);
 		std::vector<char> v(size);
 		assert(size == ::to_bytes(init,&v[0]));
-		GSQLObject gso(name,v);
+		GSQLObject gso(*this,name,v);
 		return make_handle
 			<Level::strong,ha,T,SQLObject<T> >
 			(std::move(gso),heap_copy(init) );
@@ -156,7 +157,7 @@ public:
 
 	template<HandleAccess ha, typename T>
 	auto existingObject(int name, T* for_inf = nullptr){
-		GSQLObject gso(name);
+		GSQLObject gso(*this,name);
 		return make_handle
 			<Level::strong,ha,T,SQLObject<T> >
 			(std::move(gso),nullptr);
@@ -169,7 +170,6 @@ public:
 		return std::make_unique<SQLObject<T> >(GSQLObject::from_bytes(v),
 											   std::unique_ptr<T>());
 	}
-
 
 };
 

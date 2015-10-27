@@ -12,22 +12,27 @@ SQLStore::SQLStore():default_connection{make_unique<SQLConnection>()} {
 	((SQLTransaction*)t.get())
 		->exec("set search_path to \"BlobStore\",public");
 	assert(t->commit());
-	Tracker::getStrongInstance f = [](auto i) {return wrapStore(inst(i));};
+	Tracker::getStrongInstance f =
+		[](Tracker::replicaID i) -> std::unique_ptr<Tracker::TrackerDSStrong>
+		{return wrapStore(inst(i));};
 	Tracker::global_tracker().registerStore(
 		*this,f);
 }
 
 
 SQLStore& SQLStore::inst(int instance_id) {
-	static std::map<int,SQLStore> ss;
-	return ss[instance_id];
+	static std::map<int,std::unique_ptr<SQLStore> > ss;
+	if (ss.count(instance_id) == 0){
+		ss[instance_id].reset(new SQLStore());
+	}
+	return *ss.at(instance_id);
 }
 
 unique_ptr<TransactionContext> SQLStore::begin_transaction() {
 	assert(default_connection->in_trans == false &&
 		   "Concurrency support doesn't exist yet."
 		);
-	return unique_ptr<TransactionContext>(new SQLTransaction(*default_connection));
+	return unique_ptr<TransactionContext>(new SQLTransaction(*this,*default_connection));
 	
 }
 
@@ -108,11 +113,11 @@ SQLStore::GSQLObject::GSQLObject(const SQLStore& ss, const vector<char> &c){
 	}
 	char* b1 = (char*) malloc(size);
 	memcpy(b1,&c.at(0),size);
-	this->i = new Internals{id,size,ss.store_id(),b1,nullptr,0};
+	this->i = new Internals{id,size,ss.ds_id(),b1,nullptr,0};
 }
 
 SQLStore::GSQLObject::GSQLObject(const SQLStore &ss, int id, int size)
-	:i(new Internals{id,size,ss.store_id(),nullptr,nullptr,-1}){
+	:i(new Internals{id,size,ss.ds_id(),nullptr,nullptr,-1}){
 	i->buf1 = (char*) malloc(size);
 	assert(load());
 }
@@ -136,12 +141,12 @@ namespace {
 //existing object
 SQLStore::GSQLObject::GSQLObject(const SQLStore& ss, int id){
 	int size = blob_size(id,*this);
-	this->i = new Internals{id,size,ss.store_id(),(char*) malloc(size),nullptr,-1};
+	this->i = new Internals{id,size,ss.ds_id(),(char*) malloc(size),nullptr,-1};
 }
 
 //"named" object
 SQLStore::GSQLObject::GSQLObject(const SQLStore& ss, int id, const vector<char> &c)
-	:i{new Internals{id,(int)c.size(),ss.store_id(),
+	:i{new Internals{id,(int)c.size(),ss.ds_id(),
 			(char*) malloc(c.size()),nullptr,0}}{
 	assert(!ro_isValid());
 	{
@@ -206,7 +211,7 @@ const GDataStore& SQLStore::GSQLObject::store() const {
 	return SQLStore::inst(i->store_id);
 }
 
-GDataStore& SQLStore::GSQLObject::store() {
+SQLStore& SQLStore::GSQLObject::store() {
 	return SQLStore::inst(i->store_id);
 }
 
