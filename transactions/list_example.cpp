@@ -4,7 +4,6 @@
 #include "TransactionBuilder.hpp"
 #include "Transaction.hpp"
 #include "BaseCS.hpp"
-#include "FileStore.hpp"
 #include "Operate.hpp"
 #include "TempBuilder.hpp"
 #include "FreeExpr.hpp"

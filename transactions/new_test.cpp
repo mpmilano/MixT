@@ -6,13 +6,12 @@
 #include "TransactionBuilder.hpp"
 #include "Transaction.hpp"
 #include "BaseCS.hpp"
-#include "FileStore.hpp"
 #include "Operate.hpp"
 #include "TempBuilder.hpp"
 #include "FreeExpr.hpp"
 #include "Ostreams.hpp"
-#include "FinalHeader.hpp"
 #include "SQLStore.hpp"
+#include "FinalHeader.hpp"
 #include "Print.hpp"
 //*/
 #include "Transaction_macros.hpp"
@@ -34,7 +33,7 @@ int main(){
 		{
 
 			//FileStore<Level::causal> fsc;
-			auto &fs = FileStore<Level::strong>::filestore_instance(0);
+			auto &fs = SQLStore::inst(0);
 
 			auto num_dir = fs.newCollection<HandleAccess::all, int>();
 			{
@@ -57,6 +56,7 @@ int main(){
 				);
 		}
 
+		/*
 		std::cout << std::endl << "now doing causal" << std::endl << std::endl;
 
 		{
