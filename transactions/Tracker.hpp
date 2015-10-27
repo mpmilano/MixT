@@ -71,8 +71,8 @@ public:
 
 	bool registered(const GDataStore&) const;
 
-	void registerStore(DataStore<Level::strong> &, const TrackerDSStrong&, getStrongInstance);
-	void registerStore(DataStore<Level::causal> &, const TrackerDSCausal&, getCausalInstance);
+	void registerStore(DataStore<Level::strong> &, std::unique_ptr<TrackerDSStrong>, getStrongInstance);
+	void registerStore(DataStore<Level::causal> &, std::unique_ptr<TrackerDSCausal>, getCausalInstance);
 
 	template<typename DS, typename Ret>
 	void registerStore(DS &ds, Ret (*f) (replicaID));

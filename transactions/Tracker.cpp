@@ -52,18 +52,18 @@ Tracker& Tracker::global_tracker(){
 	return t;
 }
 
-void Tracker::registerStore(DataStore<Level::strong>& ds, const TrackerDSStrong& wds, getStrongInstance f){
+void Tracker::registerStore(DataStore<Level::strong>& ds, std::unique_ptr<TrackerDSStrong> wds, getStrongInstance f){
 	assert(i->registeredStrong == nullptr);
 	assert(i->strongDS.get() == nullptr);
 	i->registeredStrong = &ds;
-	i->strongDS = heap_copy(wds);
+	i->strongDS = std::move(wds);
 	i->strongInst = f;
 }
-void Tracker::registerStore(DataStore<Level::causal>& ds, const TrackerDSCausal& wds, getCausalInstance f){
+void Tracker::registerStore(DataStore<Level::causal>& ds, std::unique_ptr<TrackerDSCausal> wds, getCausalInstance f){
 	assert(i->registeredCausal == nullptr);
 	assert(i->causalDS.get() == nullptr);
 	i->registeredCausal = &ds;
-	i->causalDS = heap_copy(wds);
+	i->causalDS = std::move(wds);
 	i->causalInst = f;
 }
 
