@@ -17,3 +17,9 @@ struct GDataStore {
 
 template<Level l>
 class DataStore;
+
+template<typename>
+struct get_level;
+
+template<Level l>
+struct get_level<DataStore<l> > : std::integral_constant<Level,l> {};

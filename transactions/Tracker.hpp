@@ -14,10 +14,13 @@
 template<Level l, HandleAccess HA, typename T>
 struct Handle;
 
+template<Level l>
+struct TrackerDS;
+
 class Tracker {
 public:
-	struct TrackerDSStrong;
-	struct TrackerDSCausal;
+	using TrackerDSStrong = TrackerDS<Level::strong>;
+	using TrackerDSCausal = TrackerDS<Level::causal>;
 	using replicaID = int;
 	static_assert(std::is_trivially_copyable<replicaID>::value,"error: replicaID should be trivially copyable");
 	using Nonce = int;
@@ -145,24 +148,7 @@ public:
 	Tracker(const Tracker&) = delete;
 };
 
-Tracker::TrackerDSStrong wrapStore(
-	DataStore<Level::strong> &real,
-	Handle<Level::strong, HandleAccess::all, Tracker::Ends> (*newEnds) (DataStore<Level::strong>&, int, const Tracker::Ends&),
-	Handle<Level::strong, HandleAccess::all, Tracker::Metadata> (*newMeta) (DataStore<Level::strong>&, int, const Tracker::Metadata&),
-	Handle<Level::strong, HandleAccess::all, Tracker::Tombstone> (*newTomb) (DataStore<Level::strong>&, int, const Tracker::Tombstone&),
-	bool (*exists) (DataStore<Level::strong>&, int),
-	Handle<Level::causal, HandleAccess::all, Tracker::Metadata> (*existingMeta) (DataStore<Level::strong>&, int)
-	);
-	
-Tracker::TrackerDSCausal wrapStore(
-	DataStore<Level::causal> &real,
-	Handle<Level::causal, HandleAccess::all, Tracker::Ends> (*newEnds) (DataStore<Level::causal>&, int, const Tracker::Ends&),
-	Handle<Level::causal, HandleAccess::all, Tracker::Metadata> (*newMeta) (DataStore<Level::causal>&, int, const Tracker::Metadata&),
-	Handle<Level::causal, HandleAccess::all, Tracker::Tombstone> (*newTomb) (DataStore<Level::causal>&, int, const Tracker::Tombstone&),
-	bool (*exists) (DataStore<Level::causal>&, int),
-	Handle<Level::causal, HandleAccess::all, Tracker::Metadata> (*existingMeta) (DataStore<Level::causal>&, int)
-	);
-
+#include "Tracker_common.hpp"
 
 //I'm just going to guess the names of the functions here.
 template<typename DS>
@@ -179,7 +165,8 @@ auto wrapStore(DS &ds){
 		auto &ds = dynamic_cast<DS&>(_ds);
 		return ds.template existingObject<HandleAccess::all,Tracker::Metadata>(name);
 	};
-	return wrapStore(ds,newObject, newObject, newObject,exists,existingMeta);
+	static constexpr Level l = get_level<DS>::value;
+	return TrackerDS<l>{ds,newObject, newObject, newObject,exists,existingMeta};
 }
 
 template<typename DS, typename Ret>

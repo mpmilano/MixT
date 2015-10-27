@@ -1,5 +1,4 @@
 #pragma once
-#include "Tracker.hpp"
 
 template<Level l>
 struct TrackerDS {
@@ -28,6 +27,8 @@ struct TrackerDS {
 
 };
 
+/*
+
 struct Tracker::TrackerDSStrong : public TrackerDS<Level::strong> {
 	TrackerDSStrong(DataStore<Level::strong> &real,
 					Handle<Level::strong, HandleAccess::all, Tracker::Ends> (*newEnds) (DataStore<Level::strong>&, int, const Tracker::Ends&),
@@ -51,3 +52,28 @@ struct Tracker::TrackerDSCausal : public TrackerDS<Level::causal> {
 	:TrackerDS<Level::causal>(real,newEnds, newMeta, newTomb, exists, existingMeta) {}
 		
 };
+
+Tracker::TrackerDSStrong wrapStore(
+		DataStore<Level::strong> &real,
+		Handle<Level::strong, HandleAccess::all, Tracker::Ends> (*newEnds) (DataStore<Level::strong>&, int, const Tracker::Ends&),
+		Handle<Level::strong, HandleAccess::all, Tracker::Metadata> (*newMeta) (DataStore<Level::strong>&, int, const Tracker::Metadata&),
+		Handle<Level::strong, HandleAccess::all, Tracker::Tombstone> (*newTomb) (DataStore<Level::strong>&, int, const Tracker::Tombstone&),
+		bool (*exists) (DataStore<Level::strong>&, int),
+		Handle<Level::causal, HandleAccess::all, Tracker::Metadata> (*existingMeta) (DataStore<Level::strong>&, int) 
+		){
+	return  Tracker::TrackerDSStrong{
+		real,newEnds,newMeta,newTomb,exists,existingMeta};
+}
+
+Tracker::TrackerDSCausal wrapStore(
+		DataStore<Level::causal> &real,
+		Handle<Level::causal, HandleAccess::all, Tracker::Ends> (*newEnds) (DataStore<Level::causal>&, int, const Tracker::Ends&),
+		Handle<Level::causal, HandleAccess::all, Tracker::Metadata> (*newMeta) (DataStore<Level::causal>&, int, const Tracker::Metadata&),
+		Handle<Level::causal, HandleAccess::all, Tracker::Tombstone> (*newTomb) (DataStore<Level::causal>&, int, const Tracker::Tombstone&),
+		bool (*exists) (DataStore<Level::causal>&, int),
+		Handle<Level::causal, HandleAccess::all, Tracker::Metadata> (*existingMeta) (DataStore<Level::causal>&, int) 
+		){
+	return  Tracker::TrackerDSCausal{
+		real,newEnds,newMeta,newTomb,exists,existingMeta};
+}
+*/
