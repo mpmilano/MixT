@@ -34,7 +34,7 @@ int main(){
 		{
 
 			//FileStore<Level::causal> fsc;
-			auto &fs = FileStore<Level::strong>::filestore_instance();
+			auto &fs = FileStore<Level::strong>::filestore_instance(0);
 
 			auto num_dir = fs.newCollection<HandleAccess::all, int>();
 			{
@@ -61,7 +61,7 @@ int main(){
 
 		{
 
-			auto &fs = FileStore<Level::causal>::filestore_instance();
+			auto &fs = FileStore<Level::causal>::filestore_instance(0);
 
 			auto num_dir = fs.newCollection<HandleAccess::all, int>();
 			{

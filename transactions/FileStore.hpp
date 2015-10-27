@@ -13,6 +13,7 @@
 #include <cstring>
 #include <boost/filesystem.hpp>
 #include <boost/serialization/vector.hpp>
+#include "Tracker_common.hpp"
 HACKY_PREAMBLE
 
 template<Level l>
@@ -20,9 +21,10 @@ struct FileStore : public DataStore<l> {
 
 private:
 	FileStore(){
+		decltype(wrapStore(filestore_instance(0))) (*inst_fun) (Tracker::replicaID) = [](Tracker::replicaID i){return wrapStore(filestore_instance(i));};
 		Tracker::global_tracker().registerStore(
 			*this,
-			[](auto i){return filestore_instance(i);}
+			inst_fun
 			); //*/
 	}
 	
@@ -40,6 +42,10 @@ public:
 
 	using id = std::integral_constant<int, (int) l>;
 	int ds_id() const { return id::value; }
+
+	int instance_id() const {
+		return (l == Level::strong? 0 : assert(false && "did you want to support multiple instances for causal?"));
+	}
 	
 	template<typename T>
 	struct FSObject : public RemoteObject<T> {
@@ -127,8 +133,8 @@ public:
 
 		};
 
-		template<class Archive> typename std::enable_if<std::is_pod<T>::value &&
-		!std::is_pod<Archive>::value >::type
+		template<class Archive> typename std::enable_if<std::is_trivially_copyable<T>::value &&
+		!std::is_trivially_copyable<Archive>::value >::type
 		save(Archive &ar, const uint) const {
 			if (t.get()){
 				StupidWrapper stupid(t.get());
@@ -140,8 +146,8 @@ public:
 			}
 		}
 
-		template<class Archive> typename std::enable_if<std::is_pod<T>::value &&
-		!std::is_pod<Archive>::value >::type
+		template<class Archive> typename std::enable_if<std::is_trivially_copyable<T>::value &&
+		!std::is_trivially_copyable<Archive>::value >::type
 		load(Archive &ar, const uint){
 			StupidWrapper stupid;
 			ar >> stupid.val;
@@ -150,8 +156,8 @@ public:
 		
 		BOOST_SERIALIZATION_SPLIT_MEMBER()
 
-		template<class Archive> typename std::enable_if<!std::is_pod<T>::value &&
-		!std::is_pod<Archive>::value>::type
+		template<class Archive> typename std::enable_if<!std::is_trivially_copyable<T>::value &&
+		!std::is_trivially_copyable<Archive>::value>::type
 		save(Archive &ar, const uint) const {
 			char *v = (char*) malloc(::bytes_size(*t));
 			int size = ::to_bytes(*t,v);
@@ -161,8 +167,8 @@ public:
 		}
 
 		
-		template<class Archive> typename std::enable_if<!std::is_pod<T>::value &&
-		!std::is_pod<Archive>::value>::type
+		template<class Archive> typename std::enable_if<!std::is_trivially_copyable<T>::value &&
+		!std::is_trivially_copyable<Archive>::value>::type
 		load(Archive &ar, const uint) {
 			std::vector<char> v;
 			ar >> v;

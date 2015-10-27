@@ -153,10 +153,11 @@ struct Operation<Store, Ret (*) (A...)> {
 
 		auto h_read = filter_tpl<is_readable_handle>(std::make_tuple(args...));
 		auto h_strong_read = filter_tpl<is_strong_handle>(h_read);
-		auto h_causal_read = filter_tpl<is_causal_handle>(h_read);
+		//auto h_causal_read = filter_tpl<is_causal_handle>(h_read);
 		auto h_write = filter_tpl<is_writeable_handle>(std::make_tuple(args...));
 		foreach(h_strong_read,
 				[](const auto &h){h.tracker.onRead(h.store(),h.name());});
+		assert(false && "did you replace the causal-read code in the stores yet? I bet not");
 		//Causal reads really really really need to be handles
 		//by the implementing classes under my current design.
 		auto &&ret = fun(Store::tryCast(extract_robj_p(args))...);
