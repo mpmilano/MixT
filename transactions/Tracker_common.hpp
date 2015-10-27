@@ -25,6 +25,9 @@ struct TrackerDS {
 		exists(exists),
 		existingMeta(existingMeta) {}
 
+	template<typename A, typename B, typename C, typename D, typename E, typename F>
+	TrackerDS(const std::tuple<A *,B *,C *,D* ,E* ,F *> &a)
+		:TrackerDS(*std::get<0>(a),*std::get<1>(a),*std::get<2>(a),*std::get<3>(a),*std::get<4>(a),*std::get<5>(a)){}
 };
 
 /*

@@ -165,11 +165,12 @@ auto wrapStore(DS &ds){
 		auto &ds = dynamic_cast<DS&>(_ds);
 		return ds.template existingObject<HandleAccess::all,Tracker::Metadata>(name);
 	};
-	static constexpr Level l = get_level<DS>::value;
-	return TrackerDS<l>{ds,newObject, newObject, newObject,exists,existingMeta};
+	return std::make_tuple(&ds,&newObject, &newObject, &newObject,&exists,&existingMeta);
 }
 
 template<typename DS, typename Ret>
 void Tracker::registerStore(DS &ds, Ret (*f) (Tracker::replicaID)){
-	registerStore(ds,wrapStore(ds),f);
+	static constexpr Level l = get_level<DS>::value;
+	static_assert(l != Level::undef, "error: stores can't have undefined level");
+	registerStore(ds,std::unique_ptr<TrackerDS<l> >(new TrackerDS<l>{wrapStore(ds)}),f);
 }

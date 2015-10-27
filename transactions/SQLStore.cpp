@@ -14,7 +14,7 @@ SQLStore::SQLStore():default_connection{make_unique<SQLConnection>()} {
 	assert(t->commit());
 	Tracker::getStrongInstance f =
 		[](Tracker::replicaID i) -> std::unique_ptr<Tracker::TrackerDSStrong>
-		{return wrapStore(inst(i));};
+		{return TrackerDS<Level::strong>{wrapStore(inst(i))};};
 	Tracker::global_tracker().registerStore(
 		*this,f);
 }
