@@ -35,7 +35,7 @@ public:
 	
 	using id = std::integral_constant<int,2>;
 	int ds_id() const { return id::value; }
-	int instance_id() const {assert(ds_level(*this) == Level::strong); return ds_id(); }
+	int instance_id() const {assert(ds_level(this) == Level::strong); return ds_id(); }
 	bool exists(int id);
 	void remove(int id);
 	

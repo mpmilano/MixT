@@ -148,28 +148,4 @@ public:
 	Tracker(const Tracker&) = delete;
 };
 
-#include "Tracker_common.hpp"
 
-//I'm just going to guess the names of the functions here.
-template<typename DS>
-auto wrapStore(DS &ds){
-	static auto newObject = [](auto &_ds, auto name, auto &e){
-		auto &ds = dynamic_cast<DS&>(_ds);
-		return ds.template newObject<HandleAccess::all>(name,e);
-	};
-	static auto exists = [](auto &_ds, auto name){
-		auto &ds = dynamic_cast<DS&>(_ds);
-		return ds.exists(name);
-	};
-	static auto existingMeta = [](auto &_ds, auto name){
-		auto &ds = dynamic_cast<DS&>(_ds);
-		return ds.template existingObject<HandleAccess::all,Tracker::Metadata>(name);
-	};
-	static constexpr Level l = get_level<DS>::value;
-	return TrackerDS<l>{ds,newObject, newObject, newObject,exists,existingMeta};
-}
-
-template<typename DS, typename Ret>
-void Tracker::registerStore(DS &ds, Ret (*f) (Tracker::replicaID)){
-	registerStore(ds,wrapStore(ds),f);
-}

@@ -2,7 +2,6 @@
 
 #include "Operation.hpp"
 #include "GDataStore.hpp"
-#include "Tracker.hpp"
 
 template<Level l>
 class DataStore : public GDataStore{
@@ -14,7 +13,3 @@ public:
 
 };
 
-template<Level l>
-constexpr Level ds_level(const DataStore<l>&){
-	return l;
-}
