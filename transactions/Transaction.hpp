@@ -3,7 +3,6 @@
 #include "args-finder.hpp"
 #include "../BitSet.hpp"
 #include "Transaction_macros.hpp"
-#include "Tracker.hpp"
 #include "DataStore.hpp"
 #include "TransactionBasics.hpp"
 #include "TransactionBuilder.hpp"

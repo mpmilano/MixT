@@ -2,6 +2,7 @@
 
 #include "SQLStore.hpp"
 #include "SQLTransaction.hpp"
+#include "Tracker_common.hpp"
 #include <pqxx/pqxx>
 
 using namespace pqxx;
