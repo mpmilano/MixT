@@ -34,9 +34,9 @@ std::ostream & operator<<(std::ostream &os, const WeakCons& wc){
 int main() {
 
 	auto &fsc = 
-		FileStore<Level::causal>::filestore_instance(0);
+		SQLStore<Level::causal>::inst(0);
 	auto& fss =
-		SQLStore::inst(0);
+		SQLStore<Level::strong>::inst(0);
 	auto h = WeakCons::build_list(fss,fsc,12,13,14);
 
 	assert(h.get().val.get() == 14);

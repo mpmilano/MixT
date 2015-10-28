@@ -30,11 +30,13 @@ bool bad_func(){
 int main(){
 	try {
 
-		{
+		//{
+
 
 			//FileStore<Level::causal> fsc;
-			auto &fs = SQLStore::inst(0);
-
+			auto &fs = SQLStore<Level::strong>::inst(0);
+			discard(fs);
+			/* this code block only makes sense if you have a "collection" available as a native object
 			auto num_dir = fs.newCollection<HandleAccess::all, int>();
 			{
 				std::set<int> test;
@@ -56,12 +58,12 @@ int main(){
 				);
 		}
 
-		/*
+
 		std::cout << std::endl << "now doing causal" << std::endl << std::endl;
 
 		{
 
-			auto &fs = FileStore<Level::causal>::filestore_instance(0);
+			auto &fs = SQLStore<Level::causal>::filestore_instance(0);
 
 			auto num_dir = fs.newCollection<HandleAccess::all, int>();
 			{

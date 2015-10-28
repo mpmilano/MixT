@@ -1,6 +1,6 @@
 //oh look, a source file! We remember those.
 
-#include "SQLStore.hpp"
+#include "SQLStore_impl.hpp"
 #include "SQLTransaction.hpp"
 #include "Tracker_common.hpp"
 #include <pqxx/pqxx>
@@ -8,28 +8,14 @@
 using namespace pqxx;
 using namespace std;
 
-SQLStore::SQLStore():default_connection{make_unique<SQLConnection>()} {
+SQLStore_impl::SQLStore_impl(Level l):l(l),default_connection{make_unique<SQLConnection>()} {
 	auto t = begin_transaction();
 	((SQLTransaction*)t.get())
 		->exec("set search_path to \"BlobStore\",public");
 	assert(t->commit());
-	Tracker::getStrongInstance f =
-		[](Tracker::replicaID i) -> std::unique_ptr<Tracker::TrackerDSStrong>
-		{return wrapStore(inst(i));};
-	Tracker::global_tracker().registerStore(
-		*this,f);
 }
 
-
-SQLStore& SQLStore::inst(int instance_id) {
-	static std::map<int,std::unique_ptr<SQLStore> > ss;
-	if (ss.count(instance_id) == 0){
-		ss[instance_id].reset(new SQLStore());
-	}
-	return *ss.at(instance_id);
-}
-
-unique_ptr<TransactionContext> SQLStore::begin_transaction() {
+unique_ptr<TransactionContext> SQLStore_impl::begin_transaction() {
 	assert(default_connection->in_trans == false &&
 		   "Concurrency support doesn't exist yet."
 		);
@@ -38,7 +24,7 @@ unique_ptr<TransactionContext> SQLStore::begin_transaction() {
 }
 
 namespace {
-	unique_ptr<SQLTransaction> small_transaction(SQLStore &store) {
+	unique_ptr<SQLTransaction> small_transaction(SQLStore_impl &store) {
 		unique_ptr<SQLTransaction> owner
 			((SQLTransaction*)store.begin_transaction().release());
 		owner->commit_on_delete = true;
@@ -46,7 +32,7 @@ namespace {
 	}
 }
 
-struct SQLStore::GSQLObject::Internals{
+struct SQLStore_impl::GSQLObject::Internals{
 	const int key;
 	const int size;
 	const int store_id;
@@ -73,7 +59,7 @@ struct SQLStore::GSQLObject::Internals{
 
 namespace{
 	pair<unique_ptr<SQLTransaction>, SQLTransaction*>
-		enter_transaction(SQLStore::GSQLObject& gso){
+		enter_transaction(SQLStore_impl::GSQLObject& gso){
 		unique_ptr<SQLTransaction> t_owner;
 			//this is always safe; we can't construct any others in here.
 		SQLTransaction *trns =
@@ -90,10 +76,10 @@ namespace{
 }
 
 
-SQLStore::GSQLObject::GSQLObject(SQLStore::GSQLObject&& gso)
+SQLStore_impl::GSQLObject::GSQLObject(SQLStore_impl::GSQLObject&& gso)
 	:i(gso.i){gso.i = nullptr;}
 
-SQLStore::GSQLObject::GSQLObject(const SQLStore& ss, const vector<char> &c){
+SQLStore_impl::GSQLObject::GSQLObject(const SQLStore_impl& ss, const vector<char> &c){
 	int size = c.size();
 	int id = -1;
 	{
@@ -117,14 +103,14 @@ SQLStore::GSQLObject::GSQLObject(const SQLStore& ss, const vector<char> &c){
 	this->i = new Internals{id,size,ss.ds_id(),b1,nullptr,0};
 }
 
-SQLStore::GSQLObject::GSQLObject(const SQLStore &ss, int id, int size)
+SQLStore_impl::GSQLObject::GSQLObject(const SQLStore_impl &ss, int id, int size)
 	:i(new Internals{id,size,ss.ds_id(),nullptr,nullptr,-1}){
 	i->buf1 = (char*) malloc(size);
 	assert(load());
 }
 
 namespace {
-	int blob_size(int key,SQLStore::GSQLObject::GSQLObject &ctx){
+	int blob_size(int key,SQLStore_impl::GSQLObject::GSQLObject &ctx){
 		auto trans_owner = enter_transaction(ctx);
 		auto *trans = trans_owner.second;
 		int size = -1;
@@ -140,13 +126,13 @@ namespace {
 }
 
 //existing object
-SQLStore::GSQLObject::GSQLObject(const SQLStore& ss, int id){
+SQLStore_impl::GSQLObject::GSQLObject(const SQLStore_impl& ss, int id){
 	int size = blob_size(id,*this);
 	this->i = new Internals{id,size,ss.ds_id(),(char*) malloc(size),nullptr,-1};
 }
 
 //"named" object
-SQLStore::GSQLObject::GSQLObject(const SQLStore& ss, int id, const vector<char> &c)
+SQLStore_impl::GSQLObject::GSQLObject(const SQLStore_impl& ss, int id, const vector<char> &c)
 	:i{new Internals{id,(int)c.size(),ss.ds_id(),
 			(char*) malloc(c.size()),nullptr,0}}{
 	assert(!ro_isValid());
@@ -172,23 +158,23 @@ namespace {
 	}
 }
 
-bool SQLStore::exists(int id) {
+bool SQLStore_impl::exists(int id) {
 	return obj_exists(id,small_transaction(*this));
 }
 
-void SQLStore::remove(int id) {
+void SQLStore_impl::remove(int id) {
 	const static std::string q1 = "delete from \"BlobStore\" where ID = ";
 	small_transaction(*this)->exec(q1 + to_string(id));
 }
 
-SQLStore::GSQLObject::~GSQLObject(){
+SQLStore_impl::GSQLObject::~GSQLObject(){
 	if (i){
 		free(i->buf1);
 		delete i;
 	}
 }
 
-void SQLStore::GSQLObject::setTransactionContext(TransactionContext* tc){
+void SQLStore_impl::GSQLObject::setTransactionContext(TransactionContext* tc){
 	assert(i->curr_ctx == nullptr || tc == nullptr);
 	if (tc == nullptr) {
 		i->curr_ctx = nullptr;
@@ -202,25 +188,21 @@ void SQLStore::GSQLObject::setTransactionContext(TransactionContext* tc){
 	} else assert(false && "Error: gave SQLObject wrong kind of TransactionContext");
 
 }
-TransactionContext* SQLStore::GSQLObject::currentTransactionContext(){
+TransactionContext* SQLStore_impl::GSQLObject::currentTransactionContext(){
 	if (i)
 		return i->curr_ctx;
 	else return nullptr;
 }
 
-const GDataStore& SQLStore::GSQLObject::store() const {
-	return SQLStore::inst(i->store_id);
+int SQLStore_impl::GSQLObject::store_instance_id() const {
+	return i->store_id;
 }
 
-SQLStore& SQLStore::GSQLObject::store() {
-	return SQLStore::inst(i->store_id);
-}
-
-int SQLStore::GSQLObject::name() const {
+int SQLStore_impl::GSQLObject::name() const {
 	return this->i->key;
 }
 
-void SQLStore::GSQLObject::save(){
+void SQLStore_impl::GSQLObject::save(){
 	char *c = obj_buffer();
 	auto owner = enter_transaction(*this);
 	auto trans = owner.second;
@@ -233,7 +215,7 @@ void SQLStore::GSQLObject::save(){
 	i->vers = vers;
 }
 
-char* SQLStore::GSQLObject::load(){
+char* SQLStore_impl::GSQLObject::load(){
 	char* c = obj_buffer();
 	auto owner = enter_transaction(*this);
 	auto trans = owner.second;
@@ -252,20 +234,20 @@ char* SQLStore::GSQLObject::load(){
 	}
 }
 
-bool SQLStore::GSQLObject::ro_isValid() const {
+bool SQLStore_impl::GSQLObject::ro_isValid() const {
 	auto owner = enter_transaction(*const_cast<GSQLObject*>(this));
 	return obj_exists(i->key,owner.second);
 }
 
-char* SQLStore::GSQLObject::obj_buffer() {
+char* SQLStore_impl::GSQLObject::obj_buffer() {
 	return i->buf1;
 }
 
-int SQLStore::GSQLObject::bytes_size() const {
+int SQLStore_impl::GSQLObject::bytes_size() const {
 	return sizeof(int)*4;
 }
 
-int SQLStore::GSQLObject::to_bytes(char* c) const {
+int SQLStore_impl::GSQLObject::to_bytes(char* c) const {
 	//TODO: this is not symmetric! That is a bad design! Bad!
 	int* arr = (int*)c;
 	arr[0] = id::value;
@@ -275,9 +257,9 @@ int SQLStore::GSQLObject::to_bytes(char* c) const {
 	return this->bytes_size();
 }
 
-SQLStore::GSQLObject SQLStore::GSQLObject::from_bytes(char *v){
+SQLStore_impl::GSQLObject SQLStore_impl::GSQLObject::from_bytes(char *v){
 	int* arr = (int*)v;
 	//arr[0] has already been used to find this implementation
 	//of from_bytes
-	return GSQLObject(SQLStore::inst(arr[2]),arr[0],arr[1]);
+	return GSQLObject(SQLStore_impl::inst(arr[2]),arr[0],arr[1]);
 }

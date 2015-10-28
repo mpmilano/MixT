@@ -1,74 +1,33 @@
 #pragma once
+#include "SQLStore_impl.hpp"
+#include "Tracker_common.hpp"
 
-#include "Operation.hpp"
-#include "DataStore.hpp"
-#include "Transaction.hpp"
-#include <memory>
-#include <vector>
+template<Level l>
+class SQLStore : public SQLStore_impl, public DataStore<Level::strong> {
 
-/**
-   Information: We are assuming an SQL store which has already been configured
-   under the following assumptions:
-
-   (1) There exists a table, BlobStore, with columns (id, data), in which we
-   can just throw a binary blob.  This is used for objects which the store
-   does not know how to handle.
-
- */
-
-struct SQLStore : public DataStore<Level::strong> {
-private:
-	
-	SQLStore();
+	SQLStore():SQLStore_impl(l) {
+		std::unique_ptr<TrackerDS<l> > (*f) (Tracker::replicaID) =
+			[](Tracker::replicaID i) -> std::unique_ptr<TrackerDS<l> >
+			{return wrapStore(inst(i));};
+		Tracker::global_tracker().registerStore(
+			*this,f);
+	}
 public:
-
-	struct SQLConnection;
-	using SQLConnection_t = std::unique_ptr<SQLConnection>;	
-
-	SQLConnection_t default_connection;
 	
-	SQLStore(const SQLStore&) = delete;
-	
-	static SQLStore& inst(int instance_id);
+	static SQLStore& inst(int instance_id){
+		static std::map<int,SQLStore* > ss;
+		if (ss.count(instance_id) == 0){
+			ss[instance_id] = new SQLStore();
+		}
+		return *ss.at(instance_id);
+	}
 
-	std::unique_ptr<TransactionContext> begin_transaction();
-	
-	using id = std::integral_constant<int,2>;
+	using id = std::integral_constant<int,2 + ((int)l)>;
 	int ds_id() const { return id::value; }
-	int instance_id() const {assert(ds_level(this) == Level::strong); return ds_id(); }
-	bool exists(int id);
-	void remove(int id);
-	
-	struct GSQLObject : public GeneralRemoteObject {
-	private:
-		struct Internals;
-		Internals* i;
-		GSQLObject(int id, int size);
-	public:
-		GSQLObject(const SQLStore &ss, const std::vector<char> &c);
-		GSQLObject(const SQLStore &ss, int name, const std::vector<char> &c);
-		GSQLObject(const SQLStore &ss, int name, int size);
-		GSQLObject(const SQLStore &ss, int name);
-		GSQLObject(const GSQLObject&) = delete;
-		GSQLObject(GSQLObject&&);
-		void save();
-		char* load();
-		char* obj_buffer();
 
-		//required by GeneralRemoteObject
-		void setTransactionContext(TransactionContext*);
-		TransactionContext* currentTransactionContext();
-		bool ro_isValid() const;
-		const GDataStore& store() const;
-		SQLStore& store();
-		int name() const;
-
-		//required by ByteRepresentable
-		int bytes_size() const;
-		int to_bytes(char*) const;
-		static GSQLObject from_bytes(char* v);
-		virtual ~GSQLObject();
-	};
+	SQLStore& store() {
+		return *this;
+	}
 
 	template<typename T>
 	struct SQLObject : public RemoteObject<T> {
@@ -104,11 +63,11 @@ public:
 		bool ro_isValid() const{
 			return gso.ro_isValid();
 		}
-		const GDataStore& store() const{
-			return gso.store();
+		const SQLStore& store() const{
+			return SQLStore::inst(gso.store_instance_id());
 		}
-		GDataStore& store(){
-			return gso.store();
+		SQLStore& store(){
+			return SQLStore::inst(gso.store_instance_id());
 		}
 		int name() const {
 			return gso.name();
@@ -140,7 +99,7 @@ public:
 		assert(size == ::to_bytes(init,&v[0]));
 		GSQLObject gso(*this,v);
 		return make_handle
-			<Level::strong,ha,T,SQLObject<T> >
+			<l,ha,T,SQLObject<T> >
 			(std::move(gso),heap_copy(init) );
 	}
 	
@@ -151,7 +110,7 @@ public:
 		assert(size == ::to_bytes(init,&v[0]));
 		GSQLObject gso(*this,name,v);
 		return make_handle
-			<Level::strong,ha,T,SQLObject<T> >
+			<l,ha,T,SQLObject<T> >
 			(std::move(gso),heap_copy(init) );
 	}
 
@@ -159,18 +118,21 @@ public:
 	auto existingObject(int name, T* for_inf = nullptr){
 		GSQLObject gso(*this,name);
 		return make_handle
-			<Level::strong,ha,T,SQLObject<T> >
+			<l,ha,T,SQLObject<T> >
 			(std::move(gso),nullptr);
 	}
 
-
-	
 	template<typename T>
 	static std::unique_ptr<SQLObject<T> > from_bytes(char* v){
 		return std::make_unique<SQLObject<T> >(GSQLObject::from_bytes(v),
 											   std::unique_ptr<T>());
 	}
 
-};
+	std::unique_ptr<TransactionContext> begin_transaction(){
+		return SQLStore_impl::begin_transaction();
+	}
 
-#include "SQLStore_impl.hpp"
+	int instance_id() const {
+		return SQLStore_impl::instance_id();
+	}
+};
