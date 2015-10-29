@@ -8,6 +8,7 @@
 
 using namespace pqxx;
 using namespace std;
+using Internals = SQLStore_impl::GSQLObject::Internals;
 
 SQLStore_impl::SQLStore_impl(Level l):level(l),default_connection{new SQLConnection()} {
 	auto t = begin_transaction();
@@ -60,53 +61,58 @@ struct SQLStore_impl::GSQLObject::Internals{
 					  + to_string(key)){}
 };
 
+SQLStore_impl::GSQLObject::GSQLObject(SQLStore_impl::GSQLObject&& gso)
+	:i(gso.i){assert(false && "we use this constructor");}
+
 namespace{
+
+	auto enter_store_transaction(SQLStore_impl& store){
+		unique_ptr<SQLTransaction> t_owner;
+		SQLTransaction *trns = nullptr;
+		if ((store).default_connection->in_trans == false){
+			t_owner = small_transaction(store);
+			trns = t_owner.get();
+		}
+		else trns = (store).default_connection->current_trans;
+		return make_pair(move(t_owner),trns);
+	}
+	
 	pair<unique_ptr<SQLTransaction>, SQLTransaction*>
 		enter_transaction(SQLStore_impl::GSQLObject& gso){
-		unique_ptr<SQLTransaction> t_owner;
-			//this is always safe; we can't construct any others in here.
 		SQLTransaction *trns =
 			(SQLTransaction *) gso.currentTransactionContext();
 		if (!trns){
-			auto &store = gso.store();
-			if ((store).default_connection->in_trans == false){
-				t_owner = small_transaction(store);
-				trns = t_owner.get();
-			}
-			else trns = (store).default_connection->current_trans;
+			return enter_store_transaction(gso.store());
 		}
-		return make_pair(move(t_owner),trns);
+		else return make_pair(unique_ptr<SQLTransaction>{nullptr},trns);
 	}
-}
 
-
-SQLStore_impl::GSQLObject::GSQLObject(SQLStore_impl::GSQLObject&& gso)
-	:i(gso.i){gso.i = nullptr;}
-
-SQLStore_impl::GSQLObject::GSQLObject(SQLStore_impl& ss, const vector<char> &c){
-	int size = c.size();
-	int id = -1;
-	{
-
-		this->i = nullptr;
-		auto trans_owner = enter_transaction(*this);
-		auto *trans = trans_owner.second;
-		
-		binarystring blob(&c.at(0),size);
-		trans->prepared("InitializeBlobData",
-								  "INSERT INTO \"BlobStore\" (data) VALUES ($1)",
-								  blob);
-		result r = trans->exec(i->select_max_id());
-
-		assert(r.size() > 0);
-		assert(r[0][0].to(id));
-		assert(id != -1);
-	}
-	char* b1 = (char*) malloc(size);
-	memcpy(b1,&c.at(0),size);
+	Internals* init_internals(SQLStore_impl &ss, const vector<char> &c){
+		int size = c.size();
+		int id = -1;
+		{
+			auto trans_owner = enter_store_transaction(ss);
+			auto *trans = trans_owner.second;
+			
+			binarystring blob(&c.at(0),size);
+			trans->prepared("InitializeBlobData",
+							"INSERT INTO \"BlobStore\" (data) VALUES ($1)",
+							blob);
+			result r = trans->exec(Internals::select_max_id());
+			
+			assert(r.size() > 0);
+			assert(r[0][0].to(id));
+			assert(id != -1);
+		}
+		char* b1 = (char*) malloc(size);
+		memcpy(b1,&c.at(0),size);
 	
-	this->i = new Internals{id,size,ss.ds_id(),ss.level,ss,b1,nullptr,0};
+		return new Internals{id,size,ss.ds_id(),ss.level,ss,b1,nullptr,0};
+	}
 }
+
+SQLStore_impl::GSQLObject::GSQLObject(SQLStore_impl& ss, const vector<char> &c)
+	:i(init_internals(ss,c)) {}
 
 SQLStore_impl::GSQLObject::GSQLObject(SQLStore_impl &ss, int id, int size)
 	:i(new Internals{id,size,ss.ds_id(),ss.level,ss,nullptr,nullptr,-1}){

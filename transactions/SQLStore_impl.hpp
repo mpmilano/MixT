@@ -47,9 +47,9 @@ public:
 	static constexpr int ds_id_nl(){ return 2;}
 	
 	struct GSQLObject {
-	private:
 		struct Internals;
-		Internals* i;
+	private:
+		Internals * const i;
 		GSQLObject(int id, int size);
 	public:
 		GSQLObject(SQLStore_impl &ss, const std::vector<char> &c);
