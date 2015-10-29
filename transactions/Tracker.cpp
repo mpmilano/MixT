@@ -162,13 +162,17 @@ void Tracker::tick(){
 namespace{
 	auto generate_causal_metadata(Tracker::Ends &tstamp, Tracker::Internals& i) {
 		for (auto &p : i.readSet){
-			auto *t = i.ends.at_p(p.first);
-			if (t) tstamp[p.first] = *t;
+			auto t = i.ends.at(p.first);
+			if (t) {
+				tstamp[p.first].tv_sec = t.tv_sec;
+				tstamp[p.first].tv_nsec = t.tv_nsec;
+			}
 		}
 		auto natural_replica = i.registeredCausal->instance_id();
-		auto *t = i.ends.at_p(natural_replica);
+		auto t = i.ends.at(natural_replica);
 		assert(t);
-		tstamp[natural_replica] = *t;
+		tstamp[natural_replica].tv_sec = t.tv_sec;
+		tstamp[natural_replica].tv_nsec = t.tv_nsec;
 		return tstamp;
 	}
 
@@ -191,7 +195,9 @@ void Tracker::onCreate(DataStore<Level::causal>& ds, int name){
 void Tracker::onWrite(DataStore<Level::causal>&, int name){
 	timespec ts;
 	clock_gettime(CLOCK_REALTIME,&ts);
-	i->ends[i->registeredCausal->instance_id()] = ts;
+	auto tstamp = i->ends[i->registeredCausal->instance_id()];
+	tstamp.tv_sec = ts.tv_sec;
+	tstamp.tv_nsec = ts.tv_nsec;
 	write_causal_metadata(name,*i);
 }
 
