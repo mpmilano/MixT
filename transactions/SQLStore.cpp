@@ -10,12 +10,24 @@ using namespace pqxx;
 using namespace std;
 using Internals = SQLStore_impl::GSQLObject::Internals;
 
+namespace {
+	bool created_causal = false;
+	bool created_strong = false;
+}
+
 SQLStore_impl::SQLStore_impl(Level l):level(l),default_connection{new SQLConnection()} {
+	if (l == Level::strong) {
+		assert(!created_strong);
+		created_strong = true;
+	}
+	if (l == Level::causal) {
+		assert(!created_causal);
+		created_causal = true;
+	}
 	auto t = begin_transaction();
 	((SQLTransaction*)t.get())
 		->exec("set search_path to \"BlobStore\",public");
 	assert(t->commit());
-
 }
 
 unique_ptr<TransactionContext> SQLStore_impl::begin_transaction() {
@@ -215,6 +227,13 @@ int SQLStore_impl::ds_id() const{
 }
 
 int SQLStore_impl::GSQLObject::store_instance_id() const {
+	if (i->level == Level::strong)
+		assert(&SQLStore<Level::strong>::inst(i->store_id) == &i->_store);
+	else if (i->level == Level::causal){
+		//note: there's a independence-of-causal-stores
+		//bug here, relating to IDs somehow. Must investigate.
+		assert(&SQLStore<Level::causal>::inst(i->store_id) == &i->_store);
+	}
 	return i->store_id;
 }
 
