@@ -16,8 +16,6 @@ SQLStore_impl::SQLStore_impl(Level l):level(l),default_connection{new SQLConnect
 		->exec("set search_path to \"BlobStore\",public");
 	assert(t->commit());
 
-	//hm.
-	delete t.release();
 }
 
 unique_ptr<TransactionContext> SQLStore_impl::begin_transaction() {
@@ -65,7 +63,7 @@ struct SQLStore_impl::GSQLObject::Internals{
 };
 
 SQLStore_impl::GSQLObject::GSQLObject(SQLStore_impl::GSQLObject&& gso)
-	:i(gso.i){assert(false && "we use this constructor");}
+	:i(gso.i){gso.i = nullptr;}
 
 namespace{
 

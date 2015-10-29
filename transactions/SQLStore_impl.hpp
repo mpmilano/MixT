@@ -49,7 +49,7 @@ public:
 	struct GSQLObject {
 		struct Internals;
 	private:
-		Internals * const i;
+		Internals *i;
 		GSQLObject(int id, int size);
 	public:
 		GSQLObject(SQLStore_impl &ss, const std::vector<char> &c);
