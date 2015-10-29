@@ -11,6 +11,7 @@
 
 
 using namespace std;
+using namespace TDS;
 
 struct Tracker::Internals{
 	Internals(const Internals&) = delete;
@@ -104,14 +105,15 @@ namespace {
 		auto meta_name = make_lin_metaname(name);
 		decltype(t.readSet) rscopy = t.readSet;
 		rscopy.insert({t.registeredStrong->instance_id(),nonce});
-		t.strongDS->newMeta(t.strongDS->real,meta_name,
+		get<TDS::newMeta>(*t.strongDS)(*get<real>(*t.strongDS),meta_name,
 							{nonce,
 									rscopy,	
 									t.ends});
 	}
 	void write_tombstone(Tracker::Nonce nonce, Tracker::Internals &i){
+		using namespace TDS;
 		const Tracker::Tombstone t {nonce};
-		i.causalDS->newTomb(i.causalDS->real,t.name(), t);
+		get<TDS::newTomb>(*i.causalDS)(*get<real>(*i.causalDS),t.name(), t);
 	}
 }
 
@@ -125,15 +127,17 @@ void Tracker::onWrite(DataStore<Level::strong>& ds_real, int name){
 }
 
 void Tracker::onRead(DataStore<Level::strong>& ds, int name){
+	using namespace TDS;
 	assert(&ds == i->registeredStrong);
 	if (!is_lin_metadata(name)){
 		auto meta_name = make_lin_metaname(name);
-		if (i->strongDS->exists(ds,meta_name)){
-			auto meta = i->strongDS->existingMeta(ds,meta_name).get();
+		if (get<TDS::exists>(*i->strongDS)(ds,meta_name)){
+			auto meta = get<existingMeta>(*i->strongDS)(ds,meta_name).get();
 			if (!meta.ends.prec(i->ends)){
 				//TODO: argue more precisely about Ends and when to fast-forward it.
 				i->ends.fast_forward(meta.ends);
-				if (!i->causalDS->exists(i->causalDS->real,Tombstone{meta.nonce}.name())){
+				if (!get<TDS::exists>(*i->causalDS)(*get<real>(*i->causalDS),
+											   Tombstone{meta.nonce}.name())){
 					i->readSet.insert(meta.readSet);
 					//TODO: if there's a way to request a sync, do it here.
 					//we want to encounter that tombstone value as soon as possible.
@@ -147,7 +151,8 @@ void Tracker::tick(){
 	//refresh the readset
 	decltype(i->readSet) readSet_new;
 	for (auto &p : i->readSet){
-		if (!i->causalDS->exists(i->causalDS->real,Tombstone{p.second}.name())){
+		if (!get<TDS::exists>(*i->causalDS)(*get<real>(*i->causalDS),
+											Tombstone{p.second}.name())){
 			readSet_new.insert(p);
 		}
 	}
@@ -173,7 +178,8 @@ namespace{
 		//have separate namespaces.  This is a reasonable assumption
 		//in real life, but I have to remember it for local testing.
 		auto meta_name = make_causal_metaname(name);
-		i.causalDS->newEnds(i.causalDS->real,meta_name,generate_causal_metadata(tstamp,i));
+		get<newEnds>(*i.causalDS)(*get<real>(*i.causalDS),meta_name,
+								  generate_causal_metadata(tstamp,i));
 	}
 }
 
@@ -201,11 +207,11 @@ namespace{
 	template<typename F1>
 	auto collect(Tracker::Internals &i, const F1 &existing_obj, int name){
 		std::vector<unique_ptr<GeneralRemoteObject> > relevant_ptrs;
-		relevant_ptrs.emplace_back(existing_obj(i.causalDS->real,name));
+		relevant_ptrs.emplace_back(existing_obj(*get<real>(*i.causalDS),name));
 		for (auto &p : i.readSet){
 			auto &replica = fetch_replica(i,p.first);
-			if (replica->exists(replica->real,name)){
-				relevant_ptrs.emplace_back(existing_obj(replica->real,name));
+			if (get<TDS::exists>(*replica)(*get<real>(*replica),name)){
+				relevant_ptrs.emplace_back(existing_obj(*get<real>(*replica),name));
 			}
 		}
 		return std::move(relevant_ptrs);
@@ -222,7 +228,7 @@ void Tracker::onRead_internal(
 	){
 	if (i->inCausalRead || is_causal_metadata(name)){
 		vector<unique_ptr<GeneralRemoteObject> > v;
-		v.emplace_back(existingT(i->causalDS->real,name));
+		v.emplace_back(existingT(*get<real>(*i->causalDS),name));
 		mergeT(std::move(v));
 	}
 	else{

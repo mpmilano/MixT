@@ -24,12 +24,13 @@ private:
 	
 	SQLStore_impl(Level);
 public:
+	virtual ~SQLStore_impl();
 
 	template<Level l>
 	friend class SQLStore;
 
 	struct SQLConnection;
-	using SQLConnection_t = std::unique_ptr<SQLConnection>;	
+	using SQLConnection_t = SQLConnection*;	
 
 	const Level level;
 	SQLConnection_t default_connection;
@@ -43,6 +44,7 @@ public:
 	void remove(int id);
 
 	int ds_id() const;
+	static constexpr int ds_id_nl(){ return 2;}
 	
 	struct GSQLObject {
 	private:

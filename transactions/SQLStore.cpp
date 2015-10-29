@@ -276,3 +276,7 @@ SQLStore_impl::GSQLObject SQLStore_impl::GSQLObject::from_bytes(char *v){
 		return GSQLObject(SQLStore<Level::causal>::inst(arr[2]),arr[0],arr[1]);
 	}
 }
+
+SQLStore_impl::~SQLStore_impl(){
+	delete default_connection;
+}

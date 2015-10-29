@@ -14,11 +14,28 @@
 template<Level l, HandleAccess HA, typename T>
 struct Handle;
 
-template<Level l>
-struct TrackerDS;
+namespace TDS{
+	static constexpr int real = 0;
+	static constexpr int newEnds = 1;
+	static constexpr int newMeta = 2;
+	static constexpr int newTomb = 3;
+	static constexpr int exists = 4;
+	static constexpr int existingMeta = 5;
+}
 
 class Tracker {
 public:
+	struct Ends;
+	struct Metadata;
+	struct Tombstone;
+	template<Level l>
+	using TrackerDS = std::tuple<DataStore<l>*, //real
+								 Handle<l, HandleAccess::all, Ends> (*) (DataStore<l>&, int, const Ends&), //newEnds
+								 Handle<l, HandleAccess::all, Metadata> (*) (DataStore<l>&, int, const Metadata&), //newMeta
+								 Handle<l, HandleAccess::all, Tombstone> (*) (DataStore<l>&, int, const Tombstone&), //newTomb
+								 bool (*) (DataStore<l>&, int), //exists
+								 Handle<l, HandleAccess::all, Metadata> (*) (DataStore<l>&, int) //existingMeta
+								 >;
 	using TrackerDSStrong = TrackerDS<Level::strong>;
 	using TrackerDSCausal = TrackerDS<Level::causal>;
 	using replicaID = int;

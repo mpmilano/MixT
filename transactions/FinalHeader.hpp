@@ -12,7 +12,7 @@ std::unique_ptr<RemoteObject<T> > RemoteObject<T>::from_bytes(char* _v)
 	auto ret = 
 		fold(lst,[&](const auto &e, const std::shared_ptr<RemoteObject<T> > &acc) -> std::shared_ptr<RemoteObject<T> > {
 				using DS = decay<decltype(*e)>;
-				if (read_id == DS::id::value) {
+				if (read_id == DS::id()) {
 					assert(!acc);
 					auto fold_ret = DS::template from_bytes<T>(v);
 					assert(fold_ret);

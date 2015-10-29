@@ -3,11 +3,11 @@
 #include "Tracker_common.hpp"
 
 template<Level l>
-class SQLStore : public SQLStore_impl, public DataStore<Level::strong> {
+class SQLStore : public SQLStore_impl, public DataStore<l> {
 
 	SQLStore():SQLStore_impl(l) {
-		std::unique_ptr<TrackerDS<l> > (*f) (Tracker::replicaID) =
-			[](Tracker::replicaID i) -> std::unique_ptr<TrackerDS<l> >
+		std::unique_ptr<Tracker::TrackerDS<l> > (*f) (Tracker::replicaID) =
+			[](Tracker::replicaID i) -> std::unique_ptr<Tracker::TrackerDS<l> >
 			{return wrapStore(inst(i));};
 		Tracker::global_tracker().registerStore(
 			*this,f);
@@ -22,8 +22,13 @@ public:
 		return *ss.at(instance_id);
 	}
 
+	static constexpr int id() {
+		return SQLStore_impl::ds_id_nl() + (int) l;
+	}
+
 	int ds_id() const {
-		return SQLStore_impl::ds_id();
+		assert(SQLStore_impl::ds_id() == id());
+		return id();
 	}
 
 	SQLStore& store() {
