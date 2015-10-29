@@ -43,7 +43,17 @@ public:
 	using Nonce = int;
 	using read_pair = TrivialPair<replicaID, Nonce>;
 	static_assert(std::is_trivially_copyable<read_pair>::value,"error: read_pair should be trivially copyable");
-	using timestamp = timespec;
+	struct timestamp {
+		time_t& tv_sec;
+		long& tv_nsec;
+		void operator=(const timestamp&) = delete;
+	};
+	struct timestamp_c {
+		const time_t& tv_sec;
+		const long& tv_nsec;
+		operator bool() const;
+		void operator=(const timestamp&) = delete;
+	};
 	static_assert(std::is_trivially_copyable<timestamp>::value,"error: timestamp should be trivially copyable");
 	typedef std::unique_ptr<TrackerDSStrong > (*getStrongInstance) (replicaID);
 	typedef std::unique_ptr<TrackerDSCausal > (*getCausalInstance) (replicaID);
@@ -57,9 +67,8 @@ public:
 		Ends(decltype(contents));
 	public:
 		Ends() = default;
-		const timestamp& at(replicaID) const;
-		const timestamp* at_p(replicaID) const;
-		timestamp& operator[](replicaID);
+		timestamp_c at(replicaID) const;
+		timestamp operator[](replicaID);
 		bool prec(const Ends&) const;
 		void fast_forward(const Ends&);
 		static Ends merge(const std::vector<std::unique_ptr<Ends> >&);

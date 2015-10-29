@@ -10,35 +10,39 @@
 
 Tracker::Ends::Ends(decltype(Ends::contents) c):contents(c){}
 
-const Tracker::timestamp& Tracker::Ends::at(replicaID id) const{
-	auto *ret = at_p(id);
-	if (ret) return *ret;
-	assert(false && "error: element not found");
+namespace{
+	int n1 = -1;
 }
 
-Tracker::timestamp const * const Tracker::Ends::at_p(replicaID id) const {	
+Tracker::timestamp_c Tracker::Ends::at(replicaID id) const {
 	for (auto &e : contents){
-		if (e.first == id) return e.second;
+		if (e.first == id) {
+			return timestamp_c{e.second,e.third};
+		}
 		else if (e.first < id) continue;
 		else if (e.first > id) break;
 	}
-	return nullptr;
+	return timestamp_c{-1,-1};
 }
 
-Tracker::timestamp& Tracker::Ends::operator[](replicaID id){
+Tracker::timestamp_c::operator bool() const {
+	return tv_sec > 0 && tv_nsec > 0;
+}
+
+Tracker::timestamp Tracker::Ends::operator[](replicaID id){
 	auto old_size = contents.size();
 	int i = 0;
 	auto it = contents.begin();
 	for (; i < contents.size(); (++i, ++it)){
 		auto &e = *it;
-		if (e.first == id) return e.second;
+		if (e.first == id) return timestamp{e.second,e.third};
 		else if (e.first < id) continue;
 		else if (e.first > id) break;
 	}
 	//need to keep the list sorted!
 	decltype(contents) v;
 	v.insert(v.begin(),contents.begin(),it);
-	v.emplace_back(id,timestamp{});
+	v.emplace_back(id,-1,-1);
 	
 	assert(v[v.size() - 2].first < v.back().first);
 	assert(v.at(i) == v.back());
@@ -49,12 +53,12 @@ Tracker::timestamp& Tracker::Ends::operator[](replicaID id){
 	assert(v.size() == contents.size() +1);
 	assert(contents.size() == old_size + 1);
 	
-	return contents[i];
+	return timestamp{contents[i].second,contents[i].third};
 }
 
-bool Tracker::Ends::prec(const Tracker::Ends& e){
+bool Tracker::Ends::prec(const Tracker::Ends& e) const {
 	auto e_it = e.contents.begin();
-	for (auto cr_it = contents.begin(); auto cr_it == contents.end();;){
+	for (auto cr_it = contents.begin(); cr_it == contents.end();){
 		if (cr_it->first == e_it->first){
 			if (!timestamp_prec(cr_it->second,e_it->second)) return false;
 			else {
