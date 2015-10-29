@@ -20,7 +20,7 @@ unique_ptr<TransactionContext> SQLStore_impl::begin_transaction() {
 	assert(default_connection->in_trans == false &&
 		   "Concurrency support doesn't exist yet."
 		);
-	return unique_ptr<TransactionContext>(new SQLTransaction(*this,*default_connection));
+	return unique_ptr<TransactionContext>(new SQLTransaction(*default_connection));
 	
 }
 
@@ -37,6 +37,7 @@ struct SQLStore_impl::GSQLObject::Internals{
 	const int key;
 	const int size;
 	const int store_id;
+	const Level level;
 	char* buf1;
 	SQLTransaction* curr_ctx;
 	int vers;
@@ -46,9 +47,10 @@ struct SQLStore_impl::GSQLObject::Internals{
 	string select_vers;
 	string select_data;
 	string update_data;
-	Internals(int key, int size, int store_id,
+	Internals(int key, int size, int store_id, Level l,
 			  char* buf, SQLTransaction* ctx, int vers)
-		:key(key),size(size),store_id(store_id),buf1(buf),curr_ctx(ctx),vers(vers)
+		:key(key),size(size),store_id(store_id),level(l),
+		 buf1(buf),curr_ctx(ctx),vers(vers)
 		,select_vers(
 			string("select Version from \"BlobStore\" where ID=") + to_string(key))
 		,select_data(string("select data from \"BlobStore\" where ID = ") +
@@ -101,11 +103,11 @@ SQLStore_impl::GSQLObject::GSQLObject(const SQLStore_impl& ss, const vector<char
 	}
 	char* b1 = (char*) malloc(size);
 	memcpy(b1,&c.at(0),size);
-	this->i = new Internals{id,size,ss.ds_id(),b1,nullptr,0};
+	this->i = new Internals{id,size,ss.ds_id(),ss.level,b1,nullptr,0};
 }
 
 SQLStore_impl::GSQLObject::GSQLObject(const SQLStore_impl &ss, int id, int size)
-	:i(new Internals{id,size,ss.ds_id(),nullptr,nullptr,-1}){
+	:i(new Internals{id,size,ss.ds_id(),ss.level,nullptr,nullptr,-1}){
 	i->buf1 = (char*) malloc(size);
 	assert(load());
 }
@@ -129,12 +131,12 @@ namespace {
 //existing object
 SQLStore_impl::GSQLObject::GSQLObject(const SQLStore_impl& ss, int id){
 	int size = blob_size(id,*this);
-	this->i = new Internals{id,size,ss.ds_id(),(char*) malloc(size),nullptr,-1};
+	this->i = new Internals{id,size,ss.ds_id(),ss.level,(char*) malloc(size),nullptr,-1};
 }
 
 //"named" object
 SQLStore_impl::GSQLObject::GSQLObject(const SQLStore_impl& ss, int id, const vector<char> &c)
-	:i{new Internals{id,(int)c.size(),ss.ds_id(),
+	:i{new Internals{id,(int)c.size(),ss.ds_id(),ss.level,
 			(char*) malloc(c.size()),nullptr,0}}{
 	assert(!ro_isValid());
 	{
@@ -249,16 +251,17 @@ char* SQLStore_impl::GSQLObject::obj_buffer() {
 }
 
 int SQLStore_impl::GSQLObject::bytes_size() const {
-	return sizeof(int)*4;
+	return sizeof(int)*5;
 }
 
 int SQLStore_impl::GSQLObject::to_bytes(char* c) const {
 	//TODO: this is not symmetric! That is a bad design! Bad!
 	int* arr = (int*)c;
-	arr[0] = ds_id();
+	arr[0] = i->store_id;
 	arr[1] = i->key;
 	arr[2] = i->size;
 	arr[3] = i->store_id;
+	arr[4] = (int) i->level;
 	return this->bytes_size();
 }
 
@@ -266,5 +269,10 @@ SQLStore_impl::GSQLObject SQLStore_impl::GSQLObject::from_bytes(char *v){
 	int* arr = (int*)v;
 	//arr[0] has already been used to find this implementation
 	//of from_bytes
-	return GSQLObject(SQLStore_impl::inst(arr[2]),arr[0],arr[1]);
+	Level lvl = (Level) arr[3];
+	if (lvl == Level::strong){
+		return GSQLObject(SQLStore<Level::strong>::inst(arr[2]),arr[0],arr[1]);
+	} else {
+		return GSQLObject(SQLStore<Level::causal>::inst(arr[2]),arr[0],arr[1]);
+	}
 }
