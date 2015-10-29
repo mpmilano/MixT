@@ -4,7 +4,7 @@
 
 struct SQLTransaction;
 
-struct SQLStore::SQLConnection {
+struct SQLStore_impl::SQLConnection {
 	bool in_trans = false;
 	SQLTransaction* current_trans = nullptr;
 	

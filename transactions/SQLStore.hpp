@@ -22,8 +22,9 @@ public:
 		return *ss.at(instance_id);
 	}
 
-	using id = std::integral_constant<int,2 + ((int)l)>;
-	int ds_id() const { return id::value; }
+	int ds_id() const {
+		return SQLStore_impl::ds_id();
+	}
 
 	SQLStore& store() {
 		return *this;

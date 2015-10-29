@@ -17,12 +17,12 @@ auto exec_prepared_hlpr(E &e, A&& a, B && ... b){
 
 struct SQLTransaction : public TransactionContext {
 private:
-	SQLStore& _store;
-	SQLStore::SQLConnection& sql_conn;
+	SQLStore_impl& _store;
+	SQLStore_impl::SQLConnection& sql_conn;
 	pqxx::work trans;
 public:
 	bool commit_on_delete = false;
-	SQLTransaction(SQLStore& s,SQLStore::SQLConnection& c):_store(s),sql_conn(c),trans(sql_conn.conn){
+	SQLTransaction(SQLStore_impl& s,SQLStore_impl::SQLConnection& c):_store(s),sql_conn(c),trans(sql_conn.conn){
 		assert(!sql_conn.in_trans);
 		sql_conn.in_trans = true;
 		sql_conn.current_trans = this;
@@ -68,8 +68,8 @@ public:
 		return _store;
 	}
 
-	std::list<SQLStore::GSQLObject*> objs;
-	void add_obj(SQLStore::GSQLObject* gso){
+	std::list<SQLStore_impl::GSQLObject*> objs;
+	void add_obj(SQLStore_impl::GSQLObject* gso){
 		objs.push_back(gso);
 	}
 

@@ -3,12 +3,13 @@
 #include "SQLStore_impl.hpp"
 #include "SQLTransaction.hpp"
 #include "Tracker_common.hpp"
+#include "SQLStore.hpp"
 #include <pqxx/pqxx>
 
 using namespace pqxx;
 using namespace std;
 
-SQLStore_impl::SQLStore_impl(Level l):l(l),default_connection{make_unique<SQLConnection>()} {
+SQLStore_impl::SQLStore_impl(Level l):level(l),default_connection{make_unique<SQLConnection>()} {
 	auto t = begin_transaction();
 	((SQLTransaction*)t.get())
 		->exec("set search_path to \"BlobStore\",public");
@@ -54,7 +55,6 @@ struct SQLStore_impl::GSQLObject::Internals{
 					 to_string(key))
 		,update_data( string("update \"BlobStore\" set data=$1,Version=$2 where ID=")
 					  + to_string(key)){}
-
 };
 
 namespace{
@@ -65,11 +65,12 @@ namespace{
 		SQLTransaction *trns =
 			(SQLTransaction *) gso.currentTransactionContext();
 		if (!trns){
-			if ((gso.store()).default_connection->in_trans == false){
-				t_owner = small_transaction(gso.store());
+			auto &store = gso.store();
+			if ((store).default_connection->in_trans == false){
+				t_owner = small_transaction(store);
 				trns = t_owner.get();
 			}
-			else trns = (gso.store()).default_connection->current_trans;
+			else trns = (store).default_connection->current_trans;
 		}
 		return make_pair(move(t_owner),trns);
 	}
@@ -194,6 +195,10 @@ TransactionContext* SQLStore_impl::GSQLObject::currentTransactionContext(){
 	else return nullptr;
 }
 
+int SQLStore_impl::ds_id() const{
+	return 2 + (int) level;
+}
+
 int SQLStore_impl::GSQLObject::store_instance_id() const {
 	return i->store_id;
 }
@@ -250,7 +255,7 @@ int SQLStore_impl::GSQLObject::bytes_size() const {
 int SQLStore_impl::GSQLObject::to_bytes(char* c) const {
 	//TODO: this is not symmetric! That is a bad design! Bad!
 	int* arr = (int*)c;
-	arr[0] = id::value;
+	arr[0] = ds_id();
 	arr[1] = i->key;
 	arr[2] = i->size;
 	arr[3] = i->store_id;

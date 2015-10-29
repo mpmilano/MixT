@@ -41,6 +41,8 @@ public:
 	int instance_id() const {assert(level == Level::strong); return 0; }
 	bool exists(int id);
 	void remove(int id);
+
+	int ds_id() const;
 	
 	struct GSQLObject {
 	private:
@@ -57,13 +59,14 @@ public:
 		void save();
 		char* load();
 		char* obj_buffer();
+		SQLStore_impl& store();
 
 		//required by GeneralRemoteObject
 		void setTransactionContext(TransactionContext*);
 		TransactionContext* currentTransactionContext();
 		bool ro_isValid() const;
 		int store_instance_id() const;
-		int name() const;
+		int name() const;;
 
 		//required by ByteRepresentable
 		int bytes_size() const;
