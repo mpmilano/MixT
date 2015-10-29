@@ -121,26 +121,26 @@ SQLStore_impl::GSQLObject::GSQLObject(SQLStore_impl &ss, int id, int size)
 }
 
 namespace {
-	int blob_size(int key,SQLStore_impl::GSQLObject::GSQLObject &ctx){
-		auto trans_owner = enter_transaction(ctx);
+
+	Internals* internals_from_size_ss_id(SQLStore_impl& ss, int id){
+		auto trans_owner = enter_store_transaction(ss);
 		auto *trans = trans_owner.second;
 		int size = -1;
 		result r = trans->prepared(
 			"CheckSize",
-			"select octet_length(data) from \"BlobStore\" where id = $1",key);
+			"select octet_length(data) from \"BlobStore\" where id = $1",id);
 		assert(size == -1);
 		assert(r.size() > 0);
 		assert(r[0][0].to(size));
 		assert(size != -1);
-		return size;
+		return new Internals{id,size,ss.ds_id(),ss.level,ss,
+				(char*) malloc(size),nullptr,-1};
 	}
 }
 
 //existing object
-SQLStore_impl::GSQLObject::GSQLObject(SQLStore_impl& ss, int id){
-	int size = blob_size(id,*this);
-	this->i = new Internals{id,size,ss.ds_id(),ss.level,ss,(char*) malloc(size),nullptr,-1};
-}
+SQLStore_impl::GSQLObject::GSQLObject(SQLStore_impl& ss, int id)
+	:i{internals_from_size_ss_id(ss,id)} {}
 
 //"named" object
 SQLStore_impl::GSQLObject::GSQLObject(SQLStore_impl& ss, int id, const vector<char> &c)
