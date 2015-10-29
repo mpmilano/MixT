@@ -12,7 +12,7 @@ struct GDataStore {
 	virtual int instance_id() const = 0;
 
 	GDataStore(Level l):level(l){}
-	
+	virtual ~GDataStore(){}
 };
 
 template<Level l>

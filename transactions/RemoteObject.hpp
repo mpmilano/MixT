@@ -16,6 +16,7 @@ struct GeneralRemoteObject : public ByteRepresentable{
 	virtual const GDataStore& store() const = 0;
 	virtual GDataStore& store() = 0;
 	virtual int name() const = 0;
+	virtual ~GeneralRemoteObject(){}
 };
 
 template<Level l2, HandleAccess ha2, typename T2> struct Handle;
@@ -39,6 +40,7 @@ class RemoteObject : public GeneralRemoteObject
 
 public:
 	RemoteObject(){}
+	virtual ~RemoteObject(){}
 	template<Level l, HandleAccess HA, typename T2>
 	friend struct Handle;
 

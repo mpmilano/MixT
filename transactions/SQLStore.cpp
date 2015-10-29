@@ -15,6 +15,9 @@ SQLStore_impl::SQLStore_impl(Level l):level(l),default_connection{new SQLConnect
 	((SQLTransaction*)t.get())
 		->exec("set search_path to \"BlobStore\",public");
 	assert(t->commit());
+
+	//hm.
+	delete t.release();
 }
 
 unique_ptr<TransactionContext> SQLStore_impl::begin_transaction() {

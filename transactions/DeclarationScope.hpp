@@ -35,5 +35,5 @@ struct DeclarationScope : public ConStatement<l>{
 
 	virtual bool isVirtual() const = 0;
 
-	
+	virtual ~DeclarationScope(){}
 };
