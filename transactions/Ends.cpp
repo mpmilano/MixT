@@ -29,6 +29,12 @@ Tracker::timestamp_c::operator bool() const {
 	return tv_sec > 0 && tv_nsec > 0;
 }
 
+namespace {
+	bool timestamp_prec(const Tracker::timestamp_c &t1, const Tracker::timestamp_c &t2){
+		return t1.tv_sec < t2.tv_sec && t1.tv_nsec < t2.tv_nsec;
+	}
+}
+
 Tracker::timestamp Tracker::Ends::operator[](replicaID id){
 	auto old_size = contents.size();
 	int i = 0;
@@ -60,7 +66,8 @@ bool Tracker::Ends::prec(const Tracker::Ends& e) const {
 	auto e_it = e.contents.begin();
 	for (auto cr_it = contents.begin(); cr_it == contents.end();){
 		if (cr_it->first == e_it->first){
-			if (!timestamp_prec(cr_it->second,e_it->second)) return false;
+			if (!timestamp_prec(timestamp_c{cr_it->second,cr_it->third},
+								timestamp_c{e_it->second,e_it->third})) return false;
 			else {
 				++cr_it;
 				++e_it;
@@ -86,9 +93,10 @@ bool Tracker::Ends::prec(const Tracker::Ends& e) const {
 void Tracker::Ends::fast_forward(const Tracker::Ends& e){
 	auto e_it = e.contents.begin();
 	decltype(contents) deferred_add;
-	for (auto cr_it = contents.begin(); auto cr_it == contents.end();;){
+	for (auto cr_it = contents.begin(); cr_it == contents.end();){
 		if (cr_it->first == e_it->first){
-			if (timestamp_prec(cr_it->second,e_it->second)){
+			if (timestamp_prec(timestamp_c{cr_it->second,cr_it->third},
+							   timestamp_c{e_it->second,e_it->third})){
 				*cr_it = *e_it;
 			}
 			++cr_it;
@@ -107,9 +115,9 @@ void Tracker::Ends::fast_forward(const Tracker::Ends& e){
 		}
 	}
 	//we might have missed more things from e_it.  Add them.
-	contents.insert(contents.back(), e_it,e.contents.end());
+	contents.insert(contents.end(), e_it,e.contents.end());
 	//add the new things and sort the list.
-	contents.insert(contents.back(),deferred_add.begin(),deferred_add.end());
+	contents.insert(contents.end(),deferred_add.begin(),deferred_add.end());
 	std::sort(contents.begin(),contents.end());
 }
 
