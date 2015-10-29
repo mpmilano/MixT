@@ -52,10 +52,10 @@ public:
 		Internals* i;
 		GSQLObject(int id, int size);
 	public:
-		GSQLObject(const SQLStore_impl &ss, const std::vector<char> &c);
-		GSQLObject(const SQLStore_impl &ss, int name, const std::vector<char> &c);
-		GSQLObject(const SQLStore_impl &ss, int name, int size);
-		GSQLObject(const SQLStore_impl &ss, int name);
+		GSQLObject(SQLStore_impl &ss, const std::vector<char> &c);
+		GSQLObject(SQLStore_impl &ss, int name, const std::vector<char> &c);
+		GSQLObject(SQLStore_impl &ss, int name, int size);
+		GSQLObject(SQLStore_impl &ss, int name);
 		GSQLObject(const GSQLObject&) = delete;
 		GSQLObject(GSQLObject&&);
 		void save();

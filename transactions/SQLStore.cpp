@@ -38,6 +38,7 @@ struct SQLStore_impl::GSQLObject::Internals{
 	const int size;
 	const int store_id;
 	const Level level;
+	SQLStore_impl &_store;
 	char* buf1;
 	SQLTransaction* curr_ctx;
 	int vers;
@@ -48,8 +49,8 @@ struct SQLStore_impl::GSQLObject::Internals{
 	string select_data;
 	string update_data;
 	Internals(int key, int size, int store_id, Level l,
-			  char* buf, SQLTransaction* ctx, int vers)
-		:key(key),size(size),store_id(store_id),level(l),
+			  SQLStore_impl& store,char* buf, SQLTransaction* ctx, int vers)
+		:key(key),size(size),store_id(store_id),level(l),_store(store),
 		 buf1(buf),curr_ctx(ctx),vers(vers)
 		,select_vers(
 			string("select Version from \"BlobStore\" where ID=") + to_string(key))
@@ -82,7 +83,7 @@ namespace{
 SQLStore_impl::GSQLObject::GSQLObject(SQLStore_impl::GSQLObject&& gso)
 	:i(gso.i){gso.i = nullptr;}
 
-SQLStore_impl::GSQLObject::GSQLObject(const SQLStore_impl& ss, const vector<char> &c){
+SQLStore_impl::GSQLObject::GSQLObject(SQLStore_impl& ss, const vector<char> &c){
 	int size = c.size();
 	int id = -1;
 	{
@@ -103,11 +104,12 @@ SQLStore_impl::GSQLObject::GSQLObject(const SQLStore_impl& ss, const vector<char
 	}
 	char* b1 = (char*) malloc(size);
 	memcpy(b1,&c.at(0),size);
-	this->i = new Internals{id,size,ss.ds_id(),ss.level,b1,nullptr,0};
+	
+	this->i = new Internals{id,size,ss.ds_id(),ss.level,ss,b1,nullptr,0};
 }
 
-SQLStore_impl::GSQLObject::GSQLObject(const SQLStore_impl &ss, int id, int size)
-	:i(new Internals{id,size,ss.ds_id(),ss.level,nullptr,nullptr,-1}){
+SQLStore_impl::GSQLObject::GSQLObject(SQLStore_impl &ss, int id, int size)
+	:i(new Internals{id,size,ss.ds_id(),ss.level,ss,nullptr,nullptr,-1}){
 	i->buf1 = (char*) malloc(size);
 	assert(load());
 }
@@ -129,14 +131,14 @@ namespace {
 }
 
 //existing object
-SQLStore_impl::GSQLObject::GSQLObject(const SQLStore_impl& ss, int id){
+SQLStore_impl::GSQLObject::GSQLObject(SQLStore_impl& ss, int id){
 	int size = blob_size(id,*this);
-	this->i = new Internals{id,size,ss.ds_id(),ss.level,(char*) malloc(size),nullptr,-1};
+	this->i = new Internals{id,size,ss.ds_id(),ss.level,ss,(char*) malloc(size),nullptr,-1};
 }
 
 //"named" object
-SQLStore_impl::GSQLObject::GSQLObject(const SQLStore_impl& ss, int id, const vector<char> &c)
-	:i{new Internals{id,(int)c.size(),ss.ds_id(),ss.level,
+SQLStore_impl::GSQLObject::GSQLObject(SQLStore_impl& ss, int id, const vector<char> &c)
+	:i{new Internals{id,(int)c.size(),ss.ds_id(),ss.level,ss,
 			(char*) malloc(c.size()),nullptr,0}}{
 	assert(!ro_isValid());
 	{
@@ -149,6 +151,10 @@ SQLStore_impl::GSQLObject::GSQLObject(const SQLStore_impl& ss, int id, const vec
 						id,blob);
 	}
 	memcpy(this->i->buf1, &c.at(0), c.size());
+}
+
+SQLStore_impl& SQLStore_impl::GSQLObject::store() {
+	return i->_store;
 }
 
 namespace {

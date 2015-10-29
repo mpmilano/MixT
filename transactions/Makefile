@@ -7,10 +7,10 @@ export clangFlags
 export linkFlags
 
 all: utils.o Tracker.o Ends.o SerializationSupport.o WhileBuilder.o ConExpr.o Context.o SQLStore.o TempBuilder.o new_test.o
-	clang++ utils.o Tracker.o SerializationSupport.o WhileBuilder.o ConExpr.o Context.o SQLStore.o TempBuilder.o new_test.o -o test $(linkFlags)
+	clang++ utils.o Tracker.o Ends.o SerializationSupport.o WhileBuilder.o ConExpr.o Context.o SQLStore.o TempBuilder.o new_test.o -o test $(linkFlags)
 
 chat: utils.o Tracker.o Ends.o SerializationSupport.o WhileBuilder.o ConExpr.o Context.o SQLStore.o TempBuilder.o chat_example.o
-	clang++ utils.o Tracker.o SerializationSupport.o WhileBuilder.o ConExpr.o Context.o SQLStore.o TempBuilder.o chat_example.o -o chat $(linkFlags)
+	clang++ utils.o Tracker.o Ends.o SerializationSupport.o WhileBuilder.o ConExpr.o Context.o SQLStore.o TempBuilder.o chat_example.o -o chat $(linkFlags)
 
 tracker_dummy.o:
 	clang++ -c tracker_dummy.cpp $(clangFlags)

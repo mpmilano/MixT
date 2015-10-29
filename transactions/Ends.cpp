@@ -10,10 +10,6 @@
 
 Tracker::Ends::Ends(decltype(Ends::contents) c):contents(c){}
 
-namespace{
-	int n1 = -1;
-}
-
 Tracker::timestamp_c Tracker::Ends::at(replicaID id) const {
 	for (auto &e : contents){
 		if (e.first == id) {
@@ -48,7 +44,7 @@ Tracker::timestamp Tracker::Ends::operator[](replicaID id){
 	//need to keep the list sorted!
 	decltype(contents) v;
 	v.insert(v.begin(),contents.begin(),it);
-	v.emplace_back(id,-1,-1);
+	v.push_back(TrivialTriple<replicaID,time_t,long>{id,-1,-1});
 	
 	assert(v[v.size() - 2].first < v.back().first);
 	assert(v.at(i) == v.back());
