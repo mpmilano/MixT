@@ -9,7 +9,7 @@
 using namespace pqxx;
 using namespace std;
 
-SQLStore_impl::SQLStore_impl(Level l):level(l),default_connection{make_unique<SQLConnection>()} {
+SQLStore_impl::SQLStore_impl(Level l):level(l),default_connection{new SQLConnection()} {
 	auto t = begin_transaction();
 	((SQLTransaction*)t.get())
 		->exec("set search_path to \"BlobStore\",public");
