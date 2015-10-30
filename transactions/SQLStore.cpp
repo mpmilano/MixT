@@ -5,6 +5,7 @@
 #include "Tracker_common.hpp"
 #include "SQLStore.hpp"
 #include <pqxx/pqxx>
+#include <arpa/inet.h>
 
 using namespace pqxx;
 using namespace std;
@@ -229,8 +230,25 @@ int SQLStore_impl::ds_id() const{
 }
 
 int SQLStore_impl::instance_id() const{
-    return ip_addr;
+    return default_connection->ip_addr;
 }
+
+namespace {
+    std::string string_of_ip(unsigned int i){
+        if (i == 0) return "127.0.0.1";
+        else {
+            in_addr a;
+            char str[INET_ADDRSTRLEN];
+            a.s_addr = i;
+            assert(a.s_addr == i);
+            inet_ntop(AF_INET,&a,str,INET_ADDRSTRLEN);
+            return std::string(str);
+        }
+    }
+}
+
+
+SQLStore_impl::SQLConnection::SQLConnection(int ip):ip_addr(ip),conn{std::string("host=") + string_of_ip(ip)}{}
 
 int SQLStore_impl::GSQLObject::store_instance_id() const {
 	if (i->level == Level::strong)
