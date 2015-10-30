@@ -15,7 +15,7 @@ namespace {
 	bool created_strong = false;
 }
 
-SQLStore_impl::SQLStore_impl(Level l):level(l),default_connection{new SQLConnection()} {
+SQLStore_impl::SQLStore_impl(int instanceID, Level l):level(l),default_connection{new SQLConnection(instanceID)} {
 	if (l == Level::strong) {
 		assert(!created_strong);
 		created_strong = true;
@@ -62,16 +62,18 @@ struct SQLStore_impl::GSQLObject::Internals{
 	string select_vers;
 	string select_data;
 	string update_data;
-	Internals(int key, int size, int store_id, Level l,
+    Internals(int key, int size,
 			  SQLStore_impl& store,char* buf, SQLTransaction* ctx, int vers)
-		:key(key),size(size),store_id(store_id),level(l),_store(store),
+        :key(key),size(size),store_id(store.instance_id()),level(store.level),_store(store),
 		 buf1(buf),curr_ctx(ctx),vers(vers)
 		,select_vers(
 			string("select Version from \"BlobStore\" where ID=") + to_string(key))
 		,select_data(string("select data from \"BlobStore\" where ID = ") +
 					 to_string(key))
 		,update_data( string("update \"BlobStore\" set data=$1,Version=$2 where ID=")
-					  + to_string(key)){}
+                      + to_string(key)){
+        std::cout << "Made an internals with store_id" << store_id << std::endl;
+    }
 };
 
 SQLStore_impl::GSQLObject::GSQLObject(SQLStore_impl::GSQLObject&& gso)
@@ -120,7 +122,7 @@ namespace{
 		char* b1 = (char*) malloc(size);
 		memcpy(b1,&c.at(0),size);
 	
-		return new Internals{id,size,ss.ds_id(),ss.level,ss,b1,nullptr,0};
+        return new Internals{id,size,ss,b1,nullptr,0};
 	}
 }
 
@@ -128,7 +130,7 @@ SQLStore_impl::GSQLObject::GSQLObject(SQLStore_impl& ss, const vector<char> &c)
 	:i(init_internals(ss,c)) {}
 
 SQLStore_impl::GSQLObject::GSQLObject(SQLStore_impl &ss, int id, int size)
-	:i(new Internals{id,size,ss.ds_id(),ss.level,ss,nullptr,nullptr,-1}){
+    :i(new Internals{id,size,ss,nullptr,nullptr,-1}){
 	i->buf1 = (char*) malloc(size);
 	assert(load());
 }
@@ -146,7 +148,7 @@ namespace {
 		assert(r.size() > 0);
 		assert(r[0][0].to(size));
 		assert(size != -1);
-		return new Internals{id,size,ss.ds_id(),ss.level,ss,
+        return new Internals{id,size,ss,
 				(char*) malloc(size),nullptr,-1};
 	}
 }
@@ -157,7 +159,7 @@ SQLStore_impl::GSQLObject::GSQLObject(SQLStore_impl& ss, int id)
 
 //"named" object
 SQLStore_impl::GSQLObject::GSQLObject(SQLStore_impl& ss, int id, const vector<char> &c)
-	:i{new Internals{id,(int)c.size(),ss.ds_id(),ss.level,ss,
+    :i{new Internals{id,(int)c.size(),ss,
 			(char*) malloc(c.size()),nullptr,0}}{
 	assert(!ro_isValid());
 	{
@@ -226,6 +228,10 @@ int SQLStore_impl::ds_id() const{
 	return 2 + (int) level;
 }
 
+int SQLStore_impl::instance_id() const{
+    return ip_addr;
+}
+
 int SQLStore_impl::GSQLObject::store_instance_id() const {
 	if (i->level == Level::strong)
 		assert(&SQLStore<Level::strong>::inst(i->store_id) == &i->_store);
@@ -289,7 +295,9 @@ int SQLStore_impl::GSQLObject::bytes_size() const {
 int SQLStore_impl::GSQLObject::to_bytes(char* c) const {
 	//TODO: this is not symmetric! That is a bad design! Bad!
 	int* arr = (int*)c;
-	arr[0] = i->store_id;
+    arr[0] = (i->level == Level::strong ?
+                  SQLStore<Level::strong>::ds_id_nl() :
+                  SQLStore<Level::causal>::ds_id_nl());
 	arr[1] = i->key;
 	arr[2] = i->size;
 	arr[3] = i->store_id;

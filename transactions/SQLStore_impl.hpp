@@ -22,7 +22,7 @@ class SQLStore;
 struct SQLStore_impl {
 private:
 	
-	SQLStore_impl(Level);
+    SQLStore_impl(int instanceID, Level);
 public:
 	virtual ~SQLStore_impl();
 
@@ -39,7 +39,7 @@ public:
 	
 	std::unique_ptr<TransactionContext> begin_transaction();
 	
-	int instance_id() const {assert(level == Level::strong); return 0; }
+    int instance_id() const;
 	bool exists(int id);
 	void remove(int id);
 

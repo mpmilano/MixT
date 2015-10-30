@@ -5,7 +5,7 @@
 template<Level l>
 class SQLStore : public SQLStore_impl, public DataStore<l> {
 
-	SQLStore():SQLStore_impl(l) {
+    SQLStore(int inst_id):SQLStore_impl(inst_id,l) {
 		std::unique_ptr<Tracker::TrackerDS<l> > (*f) (Tracker::replicaID) =
 			[](Tracker::replicaID i) -> std::unique_ptr<Tracker::TrackerDS<l> >
 			{return wrapStore(inst(i));};
@@ -15,9 +15,10 @@ class SQLStore : public SQLStore_impl, public DataStore<l> {
 public:
 	
 	static SQLStore& inst(int instance_id){
+        std::cout << "Calling inst on SQLStore with instance_id " << instance_id << std::endl;
 		static std::map<int,SQLStore* > ss;
 		if (ss.count(instance_id) == 0){
-			ss[instance_id] = new SQLStore();
+            ss[instance_id] = new SQLStore(instance_id);
 		}
 		return *ss.at(instance_id);
 	}

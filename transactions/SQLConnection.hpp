@@ -11,6 +11,6 @@ struct SQLStore_impl::SQLConnection {
 	//hoping specifying nothing means
 	//env will be used.
 	pqxx::connection conn;
-	SQLConnection() = default;
+    SQLConnection(int ip):conn{std::string("host=") + string_of_ip(ip)}{}
 	SQLConnection(const SQLConnection&) = delete;
 };
