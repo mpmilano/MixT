@@ -22,7 +22,8 @@ class SQLStore;
 struct SQLStore_impl {
 private:
 	
-    SQLStore_impl(int instanceID, Level);
+    SQLStore_impl(GDataStore &store, int instanceID, Level);
+    GDataStore &_store;
 public:
 	virtual ~SQLStore_impl();
 
@@ -37,7 +38,7 @@ public:
 	
 	SQLStore_impl(const SQLStore_impl&) = delete;
 	
-	std::unique_ptr<TransactionContext> begin_transaction();
+    std::unique_ptr<TransactionContext> begin_transaction();
 	
     int instance_id() const;
 	bool exists(int id);

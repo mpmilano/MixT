@@ -5,7 +5,7 @@
 template<Level l>
 class SQLStore : public SQLStore_impl, public DataStore<l> {
 
-    SQLStore(int inst_id):SQLStore_impl(inst_id,l) {
+    SQLStore(int inst_id):SQLStore_impl(*this,inst_id,l) {
 		std::unique_ptr<Tracker::TrackerDS<l> > (*f) (Tracker::replicaID) =
 			[](Tracker::replicaID i) -> std::unique_ptr<Tracker::TrackerDS<l> >
 			{return wrapStore(inst(i));};
@@ -136,7 +136,8 @@ public:
 	}
 
 	std::unique_ptr<TransactionContext> begin_transaction(){
-		return SQLStore_impl::begin_transaction();
+        auto ret = SQLStore_impl::begin_transaction();
+        return ret;
 	}
 
 	int instance_id() const {

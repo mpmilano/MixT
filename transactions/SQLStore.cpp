@@ -16,7 +16,8 @@ namespace {
 	bool created_strong = false;
 }
 
-SQLStore_impl::SQLStore_impl(int instanceID, Level l):level(l),default_connection{new SQLConnection(instanceID)} {
+SQLStore_impl::SQLStore_impl(GDataStore &store, int instanceID, Level l)
+    :_store(store),level(l),default_connection{new SQLConnection(instanceID)} {
 	if (l == Level::strong) {
 		assert(!created_strong);
 		created_strong = true;
@@ -25,7 +26,7 @@ SQLStore_impl::SQLStore_impl(int instanceID, Level l):level(l),default_connectio
 		assert(!created_causal);
 		created_causal = true;
 	}
-	auto t = begin_transaction();
+    auto t = begin_transaction();
 	((SQLTransaction*)t.get())
 		->exec("set search_path to \"BlobStore\",public");
 	assert(t->commit());
@@ -35,7 +36,7 @@ unique_ptr<TransactionContext> SQLStore_impl::begin_transaction() {
 	assert(default_connection->in_trans == false &&
 		   "Concurrency support doesn't exist yet."
 		);
-	return unique_ptr<TransactionContext>(new SQLTransaction(*default_connection));
+    return unique_ptr<TransactionContext>(new SQLTransaction(_store,*default_connection));
 	
 }
 
@@ -272,7 +273,7 @@ void SQLStore_impl::GSQLObject::save(){
 	int vers = -1;
 	auto r = trans->exec(i->select_vers);
 	assert(r[0][0].to(vers));
-	assert(vers != -1);
+    assert(vers != -1);
 	binarystring blob(c,i->size);
 	trans->prepared("UpdateBlobData",i->update_data,blob,vers);
 	i->vers = vers;
