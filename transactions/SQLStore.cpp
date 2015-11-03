@@ -1,12 +1,11 @@
 //oh look, a source file! We remember those.
-
+#include <pqxx/pqxx>
+#include <arpa/inet.h>
 #include "SQLStore_impl.hpp"
 #include "SQLTransaction.hpp"
 #include "Tracker_common.hpp"
 #include "SQLCommands.hpp"
 #include "SQLStore.hpp"
-#include <pqxx/pqxx>
-#include <arpa/inet.h>
 
 using namespace pqxx;
 using namespace std;
@@ -60,8 +59,8 @@ struct SQLStore_impl::GSQLObject::Internals{
 	char* buf1;
 	SQLTransaction* curr_ctx;
 	int vers;
-	constexpr static auto select_max_id(Table t) {
-		return ::select_max_id(t);
+	static auto select_max_id(Table t) {
+		return cmds::select_max_id(t);
 	}
 	string select_vers;
 	string select_data;
@@ -166,7 +165,7 @@ namespace {
 
 //existing object
 SQLStore_impl::GSQLObject::GSQLObject(SQLStore_impl& ss, Table t, int id)
-	:i{internals_from_size_ss_id(ss,id)} {}
+	:i{internals_from_size_ss_id(t,ss,id)} {}
 
 //"named" object
 SQLStore_impl::GSQLObject::GSQLObject(SQLStore_impl& ss, Table t, int id, const vector<char> &c)
@@ -180,12 +179,12 @@ SQLStore_impl::GSQLObject::GSQLObject(SQLStore_impl& ss, Table t, int id, const 
 		if (t == Table::BlobStore){
 			binarystring blob(&c.at(0),c.size());
 			trans->prepared("InitializeData",
-							initialize_with_id(t),
+							cmds::initialize_with_id(t),
 							id,blob);
 		}
 		else if (t == Table::IntStore){
 			trans->prepared("InitializeData",
-							initialize_with_id(t),
+							cmds::initialize_with_id(t),
 							id,((int*)c.data())[0]);
 		}
 	}
@@ -209,8 +208,8 @@ bool SQLStore_impl::exists(int id) {
 }
 
 void SQLStore_impl::remove(int id) {
-	small_transaction(*this)->exec(cmd::remove(Table::BlobStore) + to_string(id));
-	small_transaction(*this)->exec(cmd::remove(Table::IntStore) + to_string(id));
+	small_transaction(*this)->exec(cmds::remove(Table::BlobStore) + to_string(id));
+	small_transaction(*this)->exec(cmds::remove(Table::IntStore) + to_string(id));
 }
 
 SQLStore_impl::GSQLObject::~GSQLObject(){

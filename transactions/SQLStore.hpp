@@ -13,6 +13,8 @@ class SQLStore : public SQLStore_impl, public DataStore<l> {
 			*this,f);
 	}
 public:
+
+	using Store = SQLStore;
 	
 	static SQLStore& inst(int instance_id){
         std::cout << "Calling inst on SQLStore with instance_id " << instance_id << std::endl;
@@ -38,6 +40,7 @@ public:
 
 	template<typename T>
 	struct SQLObject : public RemoteObject<T> {
+		using Store = SQLStore;
 		GSQLObject gso;
 		std::unique_ptr<T> t;
 
@@ -98,24 +101,15 @@ public:
 	static auto tryCast(T && r){
 		return std::forward<T>(r);
 	}
-
-	template<HandleAccess ha, typename T>
-	auto newObject(const T& init){
-		int size = ::bytes_size(init);
-		std::vector<char> v(size);
-		assert(size == ::to_bytes(init,&v[0]));
-		GSQLObject gso(*this,v);
-		return make_handle
-			<l,ha,T,SQLObject<T> >
-			(std::move(gso),heap_copy(init) );
-	}
 	
 	template<HandleAccess ha, typename T>
 	auto newObject(int name, const T& init){
+		static constexpr Table t =
+			(std::is_same<T,int>::value ? Table::IntStore : Table::BlobStore);
 		int size = ::bytes_size(init);
 		std::vector<char> v(size);
 		assert(size == ::to_bytes(init,&v[0]));
-		GSQLObject gso(*this,name,v);
+		GSQLObject gso(*this,t,name,v);
 		return make_handle
 			<l,ha,T,SQLObject<T> >
 			(std::move(gso),heap_copy(init) );
@@ -123,7 +117,9 @@ public:
 
 	template<HandleAccess ha, typename T>
 	auto existingObject(int name, T* for_inf = nullptr){
-		GSQLObject gso(*this,name);
+		static constexpr Table t =
+			(std::is_same<T,int>::value ? Table::IntStore : Table::BlobStore);
+		GSQLObject gso(*this,t,name);
 		return make_handle
 			<l,ha,T,SQLObject<T> >
 			(std::move(gso),nullptr);
@@ -144,7 +140,9 @@ public:
 		return SQLStore_impl::instance_id();
 	}
 
-	OPERATION(Increment, SQLObject<int>* o){
+	OPERATION(Increment, SQLObject<int>* o) {
 		o->gso.increment();
+		return true;
 	}
+	END_OPERATION
 };
