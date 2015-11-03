@@ -104,36 +104,7 @@ namespace{
 		}
 		else return make_pair(unique_ptr<SQLTransaction>{nullptr},trns);
 	}
-	/*
-	Internals* init_internals(Table t, SQLStore_impl &ss, const vector<char> &c){
-		int size = c.size();
-		int id = -1;
-		{
-			auto trans_owner = enter_store_transaction(ss);
-			auto *trans = trans_owner.second;
 
-			if (t == Table::BlobStore){
-				binarystring blob(&c.at(0),size);
-				trans->prepared("InitializeData"
-								,cmds::initialize_data(t),
-								blob);
-			}
-			else if (t == Table::IntStore){
-				trans->prepared("InitializeData"
-								,cmds::initialize_data(t),
-								((int*)c.data())[0]);
-			}
-			result r = trans->exec(Internals::select_max_id(t));
-			
-			assert(r.size() > 0);
-			assert(r[0][0].to(id));
-			assert(id != -1);
-		}
-		char* b1 = (char*) malloc(size);
-		memcpy(b1,&c.at(0),size);
-	
-        return new Internals{t,id,size,ss,b1,nullptr,0};
-		} //*/
 }
 
 SQLStore_impl::GSQLObject::GSQLObject(SQLStore_impl &ss, Table t, int id, int size)

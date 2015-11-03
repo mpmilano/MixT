@@ -101,6 +101,19 @@ public:
 	static auto tryCast(T && r){
 		return std::forward<T>(r);
 	}
+
+	template<HandleAccess ha, typename T>
+	auto newObject(const T& init){
+		static constexpr Table t =
+			(std::is_same<T,int>::value ? Table::IntStore : Table::BlobStore);
+		int size = ::bytes_size(init);
+		std::vector<char> v(size);
+		assert(size == ::to_bytes(init,&v[0]));
+		GSQLObject gso(*this,t,rand(),v);
+		return make_handle
+			<l,ha,T,SQLObject<T> >
+			(std::move(gso),heap_copy(init) );
+	}
 	
 	template<HandleAccess ha, typename T>
 	auto newObject(int name, const T& init){
