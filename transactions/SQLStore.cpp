@@ -3,6 +3,7 @@
 #include "SQLStore_impl.hpp"
 #include "SQLTransaction.hpp"
 #include "Tracker_common.hpp"
+#include "SQLCommands.hpp"
 #include "SQLStore.hpp"
 #include <pqxx/pqxx>
 #include <arpa/inet.h>
@@ -50,6 +51,7 @@ namespace {
 }
 
 struct SQLStore_impl::GSQLObject::Internals{
+	const Table table;
 	const int key;
 	const int size;
 	const int store_id;
@@ -58,21 +60,21 @@ struct SQLStore_impl::GSQLObject::Internals{
 	char* buf1;
 	SQLTransaction* curr_ctx;
 	int vers;
-	constexpr static auto select_max_id() {
-		return "select max(ID) from \"BlobStore\"";
+	constexpr static auto select_max_id(Table t) {
+		return ::select_max_id(t);
 	}
 	string select_vers;
 	string select_data;
 	string update_data;
-    Internals(int key, int size,
+    Internals(Table table, int key, int size,
 			  SQLStore_impl& store,char* buf, SQLTransaction* ctx, int vers)
-        :key(key),size(size),store_id(store.instance_id()),level(store.level),_store(store),
+        :table(table),key(key),size(size),store_id(store.instance_id()),level(store.level),_store(store),
 		 buf1(buf),curr_ctx(ctx),vers(vers)
 		,select_vers(
-			string("select Version from \"BlobStore\" where ID=") + to_string(key))
-		,select_data(string("select data from \"BlobStore\" where ID = ") +
+			cmds::select_version(table) + to_string(key))
+		,select_data(cmds::select_data(table) +
 					 to_string(key))
-		,update_data( string("update \"BlobStore\" set data=$1,Version=$2 where ID=")
+		,update_data( cmds::update_data(table)
                       + to_string(key)){
         std::cout << "Made an internals with store_id" << store_id << std::endl;
     }
@@ -103,19 +105,26 @@ namespace{
 		}
 		else return make_pair(unique_ptr<SQLTransaction>{nullptr},trns);
 	}
-
-	Internals* init_internals(SQLStore_impl &ss, const vector<char> &c){
+	/*
+	Internals* init_internals(Table t, SQLStore_impl &ss, const vector<char> &c){
 		int size = c.size();
 		int id = -1;
 		{
 			auto trans_owner = enter_store_transaction(ss);
 			auto *trans = trans_owner.second;
-			
-			binarystring blob(&c.at(0),size);
-			trans->prepared("InitializeBlobData",
-							"INSERT INTO \"BlobStore\" (data) VALUES ($1)",
-							blob);
-			result r = trans->exec(Internals::select_max_id());
+
+			if (t == Table::BlobStore){
+				binarystring blob(&c.at(0),size);
+				trans->prepared("InitializeData"
+								,cmds::initialize_data(t),
+								blob);
+			}
+			else if (t == Table::IntStore){
+				trans->prepared("InitializeData"
+								,cmds::initialize_data(t),
+								((int*)c.data())[0]);
+			}
+			result r = trans->exec(Internals::select_max_id(t));
 			
 			assert(r.size() > 0);
 			assert(r[0][0].to(id));
@@ -124,54 +133,61 @@ namespace{
 		char* b1 = (char*) malloc(size);
 		memcpy(b1,&c.at(0),size);
 	
-        return new Internals{id,size,ss,b1,nullptr,0};
-	}
+        return new Internals{t,id,size,ss,b1,nullptr,0};
+		} //*/
 }
 
-SQLStore_impl::GSQLObject::GSQLObject(SQLStore_impl& ss, const vector<char> &c)
-	:i(init_internals(ss,c)) {}
-
-SQLStore_impl::GSQLObject::GSQLObject(SQLStore_impl &ss, int id, int size)
-    :i(new Internals{id,size,ss,nullptr,nullptr,-1}){
+SQLStore_impl::GSQLObject::GSQLObject(SQLStore_impl &ss, Table t, int id, int size)
+    :i(new Internals{t,id,size,ss,nullptr,nullptr,-1}){
 	i->buf1 = (char*) malloc(size);
 	assert(load());
 }
 
 namespace {
 
-	Internals* internals_from_size_ss_id(SQLStore_impl& ss, int id){
+	Internals* internals_from_size_ss_id(Table t, SQLStore_impl& ss, int id){
 		auto trans_owner = enter_store_transaction(ss);
 		auto *trans = trans_owner.second;
 		int size = -1;
-		result r = trans->prepared(
-			"CheckSize",
-			"select octet_length(data) from \"BlobStore\" where id = $1",id);
-		assert(size == -1);
-		assert(r.size() > 0);
-		assert(r[0][0].to(size));
-		assert(size != -1);
-        return new Internals{id,size,ss,
+		if (t == Table::BlobStore){
+			result r = trans->prepared(
+				"CheckSize",
+				cmds::check_size(t),id);
+			assert(size == -1);
+			assert(r.size() > 0);
+			assert(r[0][0].to(size));
+			assert(size != -1);
+		}
+		else if (t == Table::IntStore) size = sizeof(int);
+        return new Internals{t,id,size,ss,
 				(char*) malloc(size),nullptr,-1};
 	}
 }
 
 //existing object
-SQLStore_impl::GSQLObject::GSQLObject(SQLStore_impl& ss, int id)
+SQLStore_impl::GSQLObject::GSQLObject(SQLStore_impl& ss, Table t, int id)
 	:i{internals_from_size_ss_id(ss,id)} {}
 
 //"named" object
-SQLStore_impl::GSQLObject::GSQLObject(SQLStore_impl& ss, int id, const vector<char> &c)
-    :i{new Internals{id,(int)c.size(),ss,
+SQLStore_impl::GSQLObject::GSQLObject(SQLStore_impl& ss, Table t, int id, const vector<char> &c)
+    :i{new Internals{t,id,(int)c.size(),ss,
 			(char*) malloc(c.size()),nullptr,0}}{
 	assert(!ro_isValid());
 	{
 		auto trans_owner = enter_transaction(*this);
 		auto *trans = trans_owner.second;
-		
-		binarystring blob(&c.at(0),c.size());
-		trans->prepared("InitializeBlobData",
-						"INSERT INTO \"BlobStore\" (id,data) VALUES ($1,$2)",
-						id,blob);
+
+		if (t == Table::BlobStore){
+			binarystring blob(&c.at(0),c.size());
+			trans->prepared("InitializeData",
+							initialize_with_id(t),
+							id,blob);
+		}
+		else if (t == Table::IntStore){
+			trans->prepared("InitializeData",
+							initialize_with_id(t),
+							id,((int*)c.data())[0]);
+		}
 	}
 	memcpy(this->i->buf1, &c.at(0), c.size());
 }
@@ -184,9 +200,7 @@ namespace {
 	//transaction context needs to be different sometimes
 	template<typename Trans>
 	bool obj_exists(int id, Trans owner){
-		const static std::string q1 = "select ID from \"BlobStore\" where ID = ";
-		const static std::string q2 = " limit 1";
-		return owner->exec(q1 + to_string(id) + q2).size() > 0;
+		return owner->prepared("Exists",cmds::obj_exists(),id).size() > 0;
 	}
 }
 
@@ -195,8 +209,8 @@ bool SQLStore_impl::exists(int id) {
 }
 
 void SQLStore_impl::remove(int id) {
-	const static std::string q1 = "delete from \"BlobStore\" where ID = ";
-	small_transaction(*this)->exec(q1 + to_string(id));
+	small_transaction(*this)->exec(cmd::remove(Table::BlobStore) + to_string(id));
+	small_transaction(*this)->exec(cmd::remove(Table::IntStore) + to_string(id));
 }
 
 SQLStore_impl::GSQLObject::~GSQLObject(){
@@ -274,8 +288,11 @@ void SQLStore_impl::GSQLObject::save(){
 	auto r = trans->exec(i->select_vers);
 	assert(r[0][0].to(vers));
     assert(vers != -1);
-	binarystring blob(c,i->size);
-	trans->prepared("UpdateBlobData",i->update_data,blob,vers);
+	if (i->table == Table::BlobStore){
+		binarystring blob(c,i->size);
+		trans->prepared("UpdateData",i->update_data,blob,vers);
+	}
+	else trans->prepared("UpdateData",i->update_data,((int*)c)[0],vers);
 	i->vers = vers;
 }
 
@@ -291,11 +308,22 @@ char* SQLStore_impl::GSQLObject::load(){
 	else{
 		i->vers = store_vers;
 		result r = trans->exec(i->select_data);
-		binarystring bs(r[0][0]);
-		assert(bs.size() == i->size);
-		memcpy(c,bs.data(),i->size);
+		if (i->table == Table::BlobStore){
+			binarystring bs(r[0][0]);
+			assert(bs.size() == i->size);
+			memcpy(c,bs.data(),i->size);
+		}
+		else if (i->table == Table::IntStore) {
+			int res = -1;
+			assert(r[0][0].to(res));
+			((int*)c)[0] = res;
+		}
 		return c;
 	}
+}
+
+void SQLStore_impl::GSQLObject::increment(){
+	assert(false && "Todo: implement");
 }
 
 bool SQLStore_impl::GSQLObject::ro_isValid() const {
@@ -308,7 +336,7 @@ char* SQLStore_impl::GSQLObject::obj_buffer() {
 }
 
 int SQLStore_impl::GSQLObject::bytes_size() const {
-	return sizeof(int)*5;
+	return sizeof(int)*4 + sizeof(Level) + sizeof(Table);
 }
 
 int SQLStore_impl::GSQLObject::to_bytes(char* c) const {
@@ -320,19 +348,26 @@ int SQLStore_impl::GSQLObject::to_bytes(char* c) const {
 	arr[1] = i->key;
 	arr[2] = i->size;
 	arr[3] = i->store_id;
-	arr[4] = (int) i->level;
+	Level* arrl = (Level*) (arr + 4);
+	arrl[0] = i->level;
+	Table* arrt = (Table*) (arrl + 1);
+	arrt[0] = i->table;
 	return this->bytes_size();
 }
 
 SQLStore_impl::GSQLObject SQLStore_impl::GSQLObject::from_bytes(char *v){
 	int* arr = (int*)v;
 	//arr[0] has already been used to find this implementation
+	Level* arrl = (Level*) (arr + 3);
+	Table* arrt = (Table*) (arrl + 1);
 	//of from_bytes
-	Level lvl = (Level) arr[3];
+	Level lvl = arrl[0];
 	if (lvl == Level::strong){
-		return GSQLObject(SQLStore<Level::strong>::inst(arr[2]),arr[0],arr[1]);
+		return GSQLObject(SQLStore<Level::strong>::inst(arr[2]),
+						  arrt[0],arr[0],arr[1]);
 	} else {
-		return GSQLObject(SQLStore<Level::causal>::inst(arr[2]),arr[0],arr[1]);
+		return GSQLObject(SQLStore<Level::causal>::inst(arr[2]),
+						  arrt[0],arr[0],arr[1]);
 	}
 }
 

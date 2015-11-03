@@ -19,6 +19,10 @@
 template<Level l>
 class SQLStore;
 
+enum class Table{
+	BlobStore,IntStore
+};
+
 struct SQLStore_impl {
 private:
 	
@@ -53,16 +57,18 @@ public:
 		Internals *i;
 		GSQLObject(int id, int size);
 	public:
-		GSQLObject(SQLStore_impl &ss, const std::vector<char> &c);
-		GSQLObject(SQLStore_impl &ss, int name, const std::vector<char> &c);
-		GSQLObject(SQLStore_impl &ss, int name, int size);
-		GSQLObject(SQLStore_impl &ss, int name);
+		GSQLObject(SQLStore_impl &ss, Table t, int name, const std::vector<char> &c);
+		GSQLObject(SQLStore_impl &ss, Table t, int name, int size);
+		GSQLObject(SQLStore_impl &ss, Table t, int name);
 		GSQLObject(const GSQLObject&) = delete;
 		GSQLObject(GSQLObject&&);
 		void save();
 		char* load();
 		char* obj_buffer();
 		SQLStore_impl& store();
+
+		//will crash if stored object is non-integral.
+		void increment();
 
 		//required by GeneralRemoteObject
 		void setTransactionContext(TransactionContext*);
@@ -77,5 +83,7 @@ public:
 		static GSQLObject from_bytes(char* v);
 		virtual ~GSQLObject();
 	};
+
+	//operations
 
 };

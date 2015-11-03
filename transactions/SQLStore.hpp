@@ -143,4 +143,8 @@ public:
 	int instance_id() const {
 		return SQLStore_impl::instance_id();
 	}
+
+	OPERATION(Increment, SQLObject<int>* o){
+		o->gso.increment();
+	}
 };
