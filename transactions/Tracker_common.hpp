@@ -72,16 +72,30 @@ std::unique_ptr<T> Tracker::onRead(DS& ds, int name,
 		auto &ds = dynamic_cast<DS&>(_ds);
 		return std::unique_ptr<GeneralRemoteObject>(ds.template existingRaw<T>(name).release());
 	};
-	static auto castBack = [](std::unique_ptr<GeneralRemoteObject> p) -> std::unique_ptr<RO<T> > {
+	static auto castBackEnds_l = [](std::unique_ptr<GeneralRemoteObject> p) -> std::unique_ptr<RO<Ends> > {
+		if (auto *pt = dynamic_cast<RO<Ends>* >(p.release()))
+				return std::unique_ptr<RO<Ends> >(pt);
+		else assert(false && "Error casting from GeneralRemoteObject back to specific RO impl");
+	};
+	static auto castBackT_l = [](std::unique_ptr<GeneralRemoteObject> p) -> std::unique_ptr<RO<T> > {
 		if (auto *pt = dynamic_cast<RO<T>* >(p.release()))
 				return std::unique_ptr<RO<T> >(pt);
 		else assert(false && "Error casting from GeneralRemoteObject back to specific RO impl");
 	};
-	
+
+	std::unique_ptr<RO<T> > (*castBackT) (std::unique_ptr<GeneralRemoteObject> p) = castBackT_l;
+	std::unique_ptr<RO<Ends> > (*castBackEnds) (std::unique_ptr<GeneralRemoteObject> p) = castBackEnds_l;
+
 	std::unique_ptr<T> ret;
+	const std::function<void (std::vector<std::unique_ptr<GeneralRemoteObject> >)>
+		mergeT = [&](auto v){
+		std::vector<std::unique_ptr<RO<T> > > tmp = map(v,castBackT);
+		ret.reset(merge(tmp).release());};
+	
+
 	onRead_internal(ds,name,existingT,
-					[&](const auto &v){ret.reset(merge(map(v,castBack)));},
+					mergeT,
 					existingEnds,
-					[&](const auto &v){return mergeEnds(map(v,castBack));});
+					[&](std::vector<std::unique_ptr<GeneralRemoteObject> > v){return mergeEnds(map(v,castBackEnds));});
 	return ret;
 }

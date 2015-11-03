@@ -161,6 +161,15 @@ public:
 	}
 
 	template<typename T>
+	std::unique_ptr<SQLObject<T> > existingRaw(int name, T* for_inf = nullptr){
+		static constexpr Table t =
+			(std::is_same<T,int>::value ? Table::IntStore : Table::BlobStore);
+		assert(t == Table::IntStore);
+		return std::unique_ptr<SQLObject<T> >
+		{new SQLObject<T>{GSQLObject{*this,t,name},nullptr}};
+	}
+
+	template<typename T>
 	static std::unique_ptr<SQLObject<T> > from_bytes(char* v){
 		return std::make_unique<SQLObject<T> >(GSQLObject::from_bytes(v),
 											   std::unique_ptr<T>());

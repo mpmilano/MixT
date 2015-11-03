@@ -289,9 +289,9 @@ struct AtScopeEnd {
 
 void break_here();
 
-template<typename T, typename F>
-auto map(const std::vector<T> &v, const F &f ){
-	std::vector<std::decay_t<decltype(f(v.back()))> > out(v.size());
+template<typename T, typename Ret>
+auto map(const std::vector<T> &v, Ret (*f) (T) ){
+	std::vector<Ret> out;
 	std::transform(v.begin(),v.end(),out.begin(),f);
 	return out;
 }
