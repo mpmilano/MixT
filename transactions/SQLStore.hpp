@@ -46,14 +46,26 @@ public:
 
 		SQLObject(GSQLObject gs, std::unique_ptr<T> t):
 			gso(std::move(gs)),t(std::move(t)){}
+
+		const T& get(Tracker &trk){
+			choose_strong<l> choice {nullptr};
+			return get(trk,choice);
+		}
 		
-		const T& get() {
+		const T& get(Tracker &, std::true_type*) {
+			assert(l == Level::strong);
 			char * res = nullptr;
 			res = gso.load();
 			assert(res);
 			if (res != nullptr){
 				t = ::from_bytes<T>(res);
 			}
+			return *t;
+		}
+
+		const T& get(Tracker& trk, std::false_type*){
+			assert(l == Level::causal);
+			t = trk.onRead(store(),name());
 			return *t;
 		}
 

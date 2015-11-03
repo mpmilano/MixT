@@ -20,6 +20,7 @@ struct GeneralRemoteObject : public ByteRepresentable{
 };
 
 template<Level l2, HandleAccess ha2, typename T2> struct Handle;
+class Tracker;
 
 template<typename T>
 class RemoteObject : public GeneralRemoteObject
@@ -32,7 +33,7 @@ class RemoteObject : public GeneralRemoteObject
 {
 	//extend this plz!
 
-	virtual const T& get() = 0;
+	virtual const T& get(Tracker &t) = 0;
 	virtual void put(const T&) = 0;
 
 	//TODO: delete these when you're done hacking around.
