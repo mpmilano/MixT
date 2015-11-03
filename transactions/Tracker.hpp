@@ -25,6 +25,8 @@ namespace TDS{
 
 class Tracker {
 public:
+	//support structures, metadata.
+	//implementations are in Tracker_support_structures.hpp
 	struct Ends;
 	struct Metadata;
 	struct Tombstone;
@@ -46,7 +48,8 @@ public:
 
 	typedef std::unique_ptr<TrackerDSStrong > (*getStrongInstance) (replicaID);
 	typedef std::unique_ptr<TrackerDSCausal > (*getCausalInstance) (replicaID);
-	
+
+	//hiding private members of this class. No implementation available.
 	struct Internals;
 private:
 	Internals *i;
