@@ -48,7 +48,7 @@ namespace{
 
 		const auto& obj_exists(){
 			const static std::string query =
-				"select id from \"BlobStore\" where id = ($1) union select id from \"IntStore\" where id = $(1) limit 1";
+				"select id from \"BlobStore\" where id = $1 union select id from \"IntStore\" where id = $1 limit 1";
 			return query;
 		}
 
@@ -82,6 +82,14 @@ namespace{
 			const static std::string bs =
 				"select octet_length(data) from \"BlobStore\" where id = $1";
 			return bs;
+		}
+
+		const auto& increment(Table t){
+			assert(t == Table::IntStore
+				   && "Error: increment currently only defined on integers");
+			const static std::string s =
+				"update \"IntStore\" set data = data + 1 where id = $1";
+			return s;
 		}
 	}
 }

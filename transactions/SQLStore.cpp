@@ -293,7 +293,8 @@ char* SQLStore_impl::GSQLObject::load(){
 }
 
 void SQLStore_impl::GSQLObject::increment(){
-	assert(false && "Todo: implement");
+	auto owner = enter_transaction(*this);
+	owner.second->prepared("Increment",cmds::increment(i->table),i->key);
 }
 
 bool SQLStore_impl::GSQLObject::ro_isValid() const {
