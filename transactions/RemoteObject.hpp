@@ -33,7 +33,7 @@ class RemoteObject : public GeneralRemoteObject
 {
 	//extend this plz!
 
-	virtual const T& get(Tracker &t) = 0;
+	virtual const T& get(Tracker *t) = 0;
 	virtual void put(const T&) = 0;
 
 	//TODO: delete these when you're done hacking around.

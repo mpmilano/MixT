@@ -33,7 +33,7 @@ public:
 	timestamp operator[](replicaID);
 	bool prec(const Ends&) const;
 	void fast_forward(const Ends&);
-	static Ends merge(const std::vector<std::unique_ptr<Ends> >&);
+	static Ends merge(const std::vector<Ends const * >&);
 	DEFAULT_SERIALIZATION_SUPPORT(Ends,contents);
 };
 
@@ -44,8 +44,8 @@ struct Tracker::Metadata : public ByteRepresentable{
 	Metadata() = default;
 	Metadata(decltype(nonce), decltype(readSet), decltype(ends));
 	DEFAULT_SERIALIZATION_SUPPORT(Metadata,nonce,readSet,ends);
-
-	static Metadata merge(const Metadata&){
+	
+	static Metadata merge(const std::vector<Metadata const * >&){
 		assert(false && "error: cannot Merge metadata structs");
 	}
 };

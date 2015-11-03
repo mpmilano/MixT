@@ -291,7 +291,7 @@ void break_here();
 
 template<typename T, typename F>
 auto map(const std::vector<T> &v, const F &f ){
-	std::vector<T> out(v.size());
+	std::vector<std::decay_t<decltype(f(v.back()))> > out(v.size());
 	std::transform(v.begin(),v.end(),out.begin(),f);
 	return out;
 }

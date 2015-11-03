@@ -95,7 +95,7 @@ public:
 	const T& get(std::true_type*) const {
 		tracker.onRead(dynamic_cast<DataStore<Level::strong>&>(_ro->store())
 					   ,_ro->name());
-		return _ro->get(tracker);
+		return _ro->get(&tracker);
 	}
 	
 	const T& get(std::false_type*) const {

@@ -47,12 +47,12 @@ public:
 		SQLObject(GSQLObject gs, std::unique_ptr<T> t):
 			gso(std::move(gs)),t(std::move(t)){}
 
-		const T& get(Tracker &trk){
+		const T& get(Tracker *trk){
 			choose_strong<l> choice {nullptr};
 			return get(trk,choice);
 		}
 		
-		const T& get(Tracker &, std::true_type*) {
+		const T& get(Tracker *, std::true_type*) {
 			assert(l == Level::strong);
 			char * res = nullptr;
 			res = gso.load();
@@ -63,11 +63,20 @@ public:
 			return *t;
 		}
 
-		const T& get(Tracker& trk, std::false_type*){
+		const T& get(Tracker* trk, std::false_type*){
+			//if no tracking instance given,
+			//then just assume we're in some
+			//metadata case and don't try and track.
 			assert(l == Level::causal);
-			t = trk.template onRead<T,SQLStore<Level::causal>::SQLObject>
-				(store(),name());
-			return *t;
+			if (trk){
+				t = trk->template onRead<T,SQLStore<Level::causal>::SQLObject>
+					(store(),name());
+				return *t;
+			}
+			else {
+				std::true_type* choice{nullptr};
+				return get(trk,choice);
+			}
 		}
 
 		void put(const T& t){

@@ -94,8 +94,9 @@ private:
 public:
 
 	template<template<typename> class RO, typename T>
-	static auto default_merge(const std::vector<std::unique_ptr<RO<T> > > &v){
-		return T::merge(map(v,[](auto &a){return a->get();}));
+	static auto default_merge(const std::vector<std::unique_ptr<RO<T> > > &v)  {
+		std::vector<T const * > arg = map(v,[](const std::unique_ptr<RO<T> > &a) -> T const *  {return &a->get(nullptr);});
+		return T::merge(arg);
 	}
 
 	//need to know the type of the object we are writing here.

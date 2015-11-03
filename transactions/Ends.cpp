@@ -118,7 +118,7 @@ void Tracker::Ends::fast_forward(const Tracker::Ends& e){
 	std::sort(contents.begin(),contents.end());
 }
 
-Tracker::Ends Tracker::Ends::merge(const std::vector<std::unique_ptr<Ends> >& v){
+Tracker::Ends Tracker::Ends::merge(const std::vector<Ends const * >& v){
 	//TODO: this could be faster.
 	if (v.size() == 1) return *v.front();
 	else{
