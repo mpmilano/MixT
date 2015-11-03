@@ -190,16 +190,19 @@ namespace{
 
 void Tracker::onCreate(DataStore<Level::causal>& ds, int name){
 	assert(&ds == i->registeredCausal);
-	write_causal_metadata(name,*i);
+	if (!is_causal_metadata(name))
+		write_causal_metadata(name,*i);
 }
 
 void Tracker::onWrite(DataStore<Level::causal>&, int name){
-	timespec ts;
-	clock_gettime(CLOCK_REALTIME,&ts);
-	auto tstamp = i->ends[i->registeredCausal->instance_id()];
-	tstamp.tv_sec = ts.tv_sec;
-	tstamp.tv_nsec = ts.tv_nsec;
-	write_causal_metadata(name,*i);
+	if (!is_causal_metadata(name)){
+		timespec ts;
+		clock_gettime(CLOCK_REALTIME,&ts);
+		auto tstamp = i->ends[i->registeredCausal->instance_id()];
+		tstamp.tv_sec = ts.tv_sec;
+		tstamp.tv_nsec = ts.tv_nsec;
+		write_causal_metadata(name,*i);
+	}
 }
 
 namespace{

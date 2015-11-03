@@ -88,8 +88,11 @@ public:
 
 	
 	const T& get() const {
-		//TODO: causal tracking
 		assert(_ro);
+		if (l == Level::strong){
+			tracker.onRead(_ro->store(),_ro->name());
+		}
+		else assert(false && "remove this when you've hooked-in causal read stuff");
 		return _ro->get();
 	}
 	
@@ -98,8 +101,8 @@ public:
 	}
 	
 	void put(const T& t) {
-		//TODO: causal tracking
 		assert(_ro);
+		tracker.onWrite(_ro->store(),_ro->name());
 		_ro->put(t);
 	}
 
