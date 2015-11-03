@@ -75,7 +75,6 @@ struct SQLStore_impl::GSQLObject::Internals{
 					 to_string(key))
 		,update_data( cmds::update_data(table)
                       + to_string(key)){
-        std::cout << "Made an internals with store_id" << store_id << std::endl;
     }
 };
 

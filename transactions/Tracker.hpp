@@ -28,6 +28,8 @@ public:
 	struct Ends;
 	struct Metadata;
 	struct Tombstone;
+	struct timestamp;
+	struct timestamp_c;
 	template<Level l>
 	using TrackerDS = std::tuple<DataStore<l>*, //real
 								 Handle<l, HandleAccess::all, Ends> (*) (DataStore<l>&, int, const Ends&), //newEnds
@@ -39,53 +41,11 @@ public:
 	using TrackerDSStrong = TrackerDS<Level::strong>;
 	using TrackerDSCausal = TrackerDS<Level::causal>;
 	using replicaID = int;
-	static_assert(std::is_trivially_copyable<replicaID>::value,"error: replicaID should be trivially copyable");
 	using Nonce = int;
 	using read_pair = TrivialPair<replicaID, Nonce>;
-	static_assert(std::is_trivially_copyable<read_pair>::value,"error: read_pair should be trivially copyable");
-	struct timestamp {
-		time_t& tv_sec;
-		long& tv_nsec;
-		void operator=(const timestamp&) = delete;
-	};
-	struct timestamp_c {
-		const time_t& tv_sec;
-		const long& tv_nsec;
-		operator bool() const;
-		void operator=(const timestamp&) = delete;
-	};
-	static_assert(std::is_trivially_copyable<timestamp>::value,"error: timestamp should be trivially copyable");
+
 	typedef std::unique_ptr<TrackerDSStrong > (*getStrongInstance) (replicaID);
 	typedef std::unique_ptr<TrackerDSCausal > (*getCausalInstance) (replicaID);
-	
-	struct Ends : public ByteRepresentable{
-	private:
-		std::vector<TrivialTriple<replicaID,  time_t, long> > contents;
-		static_assert(std::is_trivially_copyable<TrivialTriple<replicaID, time_t, long > >::value,
-					  "error: content's members should be trivially copyable");
-
-		Ends(decltype(contents));
-	public:
-		Ends() = default;
-		timestamp_c at(replicaID) const;
-		timestamp operator[](replicaID);
-		bool prec(const Ends&) const;
-		void fast_forward(const Ends&);
-		static Ends merge(const std::vector<std::unique_ptr<Ends> >&);
-		DEFAULT_SERIALIZATION_SUPPORT(Ends,contents);
-	};
-	struct Tombstone {
-		Nonce nonce;
-		int name() const;
-	};
-	struct Metadata : public ByteRepresentable{
-		Nonce nonce;
-		CompactSet<read_pair> readSet;
-		Ends ends;
-		Metadata() = default;
-		Metadata(decltype(nonce), decltype(readSet), decltype(ends));
-		DEFAULT_SERIALIZATION_SUPPORT(Metadata,nonce,readSet,ends);
-	};
 	
 	struct Internals;
 private:
@@ -138,35 +98,9 @@ public:
 	//need to know the type of the object we are writing here.
 	//thus, a lot of this work needs to get done in the header (sadly).
 	template<typename T, template<typename> class RO, typename DS>
-	auto onRead(DS& ds, int name,
+	std::unique_ptr<T> onRead(DS& ds, int name,
 				const std::function<std::unique_ptr<T> (std::vector<std::unique_ptr<RO<T> > >)> &merge = default_merge,
-				const std::function<std::unique_ptr<Ends> (std::vector<std::unique_ptr<RO<Ends> > >)> &mergeEnds = default_merge){
-		static_assert(std::is_base_of<DataStore<Level::causal>,DS>::value,
-			"Error: first argument must be a DataStore");
-		static_assert(std::is_base_of<RemoteObject<T> ,RO<T> >::value,
-			"Error: RO must be *your* RemoteObject type");
-		
-		static auto existingEnds = [](auto &_ds, auto name){
-			auto &ds = dynamic_cast<DS&>(_ds);
-			return std::unique_ptr<GeneralRemoteObject>(ds.template existingRaw<Ends>(name).release());
-		};
-		static auto existingT = [](auto &_ds, auto name) {
-			auto &ds = dynamic_cast<DS&>(_ds);
-			return std::unique_ptr<GeneralRemoteObject>(ds.template existingRaw<T>(name).release());
-		};
-		static auto castBack = [](std::unique_ptr<GeneralRemoteObject> p) -> std::unique_ptr<RO<T> > {
-			if (auto *pt = dynamic_cast<RO<T>* >(p.release()))
-				return std::unique_ptr<RO<T> >(pt);
-			else assert(false && "Error casting from GeneralRemoteObject back to specific RO impl");
-		};
-		
-		std::unique_ptr<T> ret;
-		onRead_internal(ds,name,existingT,
-						[&](const auto &v){ret.reset(merge(map(v,castBack)));},
-						existingEnds,
-						[&](const auto &v){return mergeEnds(map(v,castBack));});
-		return ret;
-	}
+				const std::function<std::unique_ptr<Ends> (std::vector<std::unique_ptr<RO<Ends> > >)> &mergeEnds = default_merge);
 
 	Tracker();
 	virtual ~Tracker();

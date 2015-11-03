@@ -1,6 +1,7 @@
 #pragma once
 #include "SQLStore_impl.hpp"
 #include "Tracker_common.hpp"
+#include "Tracker_support_structs.hpp"
 
 template<Level l>
 class SQLStore : public SQLStore_impl, public DataStore<l> {
@@ -17,7 +18,6 @@ public:
 	using Store = SQLStore;
 	
 	static SQLStore& inst(int instance_id){
-        std::cout << "Calling inst on SQLStore with instance_id " << instance_id << std::endl;
 		static std::map<int,SQLStore* > ss;
 		if (ss.count(instance_id) == 0){
             ss[instance_id] = new SQLStore(instance_id);

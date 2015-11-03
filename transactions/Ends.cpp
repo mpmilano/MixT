@@ -7,6 +7,7 @@
 #include <functional>
 
 #include "Tracker_common.hpp"
+#include "Tracker_support_structs.hpp"
 
 Tracker::Ends::Ends(decltype(Ends::contents) c):contents(c){}
 

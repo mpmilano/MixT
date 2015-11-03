@@ -8,6 +8,7 @@
 
 #include "Tracker_common.hpp"
 #include "CompactSet.hpp"
+#include "Tracker_support_structs.hpp"
 
 
 using namespace std;

@@ -54,3 +54,34 @@ template<typename DS, typename Ret>
 void Tracker::registerStore(DS &ds, Ret (*f) (Tracker::replicaID)){
 	registerStore(ds,wrapStore(ds),f);
 }
+
+template<typename T, template<typename> class RO, typename DS>
+std::unique_ptr<T> Tracker::onRead(DS& ds, int name,
+								   const std::function<std::unique_ptr<T> (std::vector<std::unique_ptr<RO<T> > >)> &merge,
+								   const std::function<std::unique_ptr<Ends> (std::vector<std::unique_ptr<RO<Ends> > >)> &mergeEnds){
+	static_assert(std::is_base_of<DataStore<Level::causal>,DS>::value,
+				  "Error: first argument must be a DataStore");
+	static_assert(std::is_base_of<RemoteObject<T> ,RO<T> >::value,
+				  "Error: RO must be *your* RemoteObject type");
+	
+	static auto existingEnds = [](auto &_ds, auto name){
+		auto &ds = dynamic_cast<DS&>(_ds);
+		return std::unique_ptr<GeneralRemoteObject>(ds.template existingRaw<Ends>(name).release());
+	};
+	static auto existingT = [](auto &_ds, auto name) {
+		auto &ds = dynamic_cast<DS&>(_ds);
+		return std::unique_ptr<GeneralRemoteObject>(ds.template existingRaw<T>(name).release());
+	};
+	static auto castBack = [](std::unique_ptr<GeneralRemoteObject> p) -> std::unique_ptr<RO<T> > {
+		if (auto *pt = dynamic_cast<RO<T>* >(p.release()))
+				return std::unique_ptr<RO<T> >(pt);
+		else assert(false && "Error casting from GeneralRemoteObject back to specific RO impl");
+	};
+	
+	std::unique_ptr<T> ret;
+	onRead_internal(ds,name,existingT,
+					[&](const auto &v){ret.reset(merge(map(v,castBack)));},
+					existingEnds,
+					[&](const auto &v){return mergeEnds(map(v,castBack));});
+	return ret;
+}
