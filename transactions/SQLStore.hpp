@@ -65,7 +65,8 @@ public:
 
 		const T& get(Tracker& trk, std::false_type*){
 			assert(l == Level::causal);
-			t = trk.onRead(store(),name());
+			t = trk.template onRead<T,SQLStore<Level::causal>::SQLObject>
+				(store(),name());
 			return *t;
 		}
 

@@ -63,11 +63,6 @@ struct is_cs_tuple : std::integral_constant<bool,
 										 is_tuple_f((F*) nullptr)
 										 >::type {};
 
-template<Level l>
-using choose_strong = typename std::integral_constant<bool, runs_with_strong(l)>::type*;
-
-template<Level l>
-using choose_causal = typename std::integral_constant<bool, runs_with_causal(l)>::type*;
 
 template<typename... CS>
 auto call_all_causal(CausalCache& cache, CausalStore &st, const std::tuple<CS...> &t){

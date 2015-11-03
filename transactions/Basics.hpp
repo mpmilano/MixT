@@ -79,3 +79,9 @@ constexpr bool can_flow(Level from, Level to){
 		|| from == Level::strong
 		|| from  == Level::undef;
 }
+
+template<Level l>
+using choose_strong = typename std::integral_constant<bool, runs_with_strong(l)>::type*;
+
+template<Level l>
+using choose_causal = typename std::integral_constant<bool, runs_with_causal(l)>::type*;

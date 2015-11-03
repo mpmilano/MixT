@@ -86,14 +86,20 @@ public:
 		else return std::make_unique<Handle>();
 	}
 
-	
 	const T& get() const {
 		assert(_ro);
-		if (l == Level::strong){
-			tracker.onRead(_ro->store(),_ro->name());
-		}
-		else assert(false && "remove this when you've hooked-in causal read stuff");
-		return _ro->get();
+		choose_strong<l> choice {nullptr};
+		return get(choice);
+	}
+	
+	const T& get(std::true_type*) const {
+		tracker.onRead(dynamic_cast<DataStore<Level::strong>&>(_ro->store())
+					   ,_ro->name());
+		return _ro->get(tracker);
+	}
+	
+	const T& get(std::false_type*) const {
+		assert(false && "remove this when you've hooked-in causal read stuff");
 	}
 	
 	Handle clone() const {
