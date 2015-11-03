@@ -93,17 +93,19 @@ private:
 		);
 public:
 
-	template<typename Vec>
-	static auto default_merge(const Vec &v){
-		return Vec::value_type::merge(map(v,[](auto &a){return a->get();}));
+	template<template<typename> class RO, typename T>
+	static auto default_merge(const std::vector<std::unique_ptr<RO<T> > > &v){
+		return T::merge(map(v,[](auto &a){return a->get();}));
 	}
 
 	//need to know the type of the object we are writing here.
 	//thus, a lot of this work needs to get done in the header (sadly).
 	template<typename T, template<typename> class RO, typename DS>
 	std::unique_ptr<T> onRead(DS& ds, int name,
-				const std::function<std::unique_ptr<T> (std::vector<std::unique_ptr<RO<T> > >)> &merge = default_merge,
-				const std::function<std::unique_ptr<Ends> (std::vector<std::unique_ptr<RO<Ends> > >)> &mergeEnds = default_merge);
+							  const std::function<std::unique_ptr<T> (const std::vector<std::unique_ptr<RO<T> > >&)> &merge
+							  = default_merge<RO,T>,
+							  const std::function<std::unique_ptr<Ends> (const std::vector<std::unique_ptr<RO<Ends> > >&)> &mergeEnds =
+							  default_merge<RO,Ends>);
 
 	Tracker();
 	virtual ~Tracker();

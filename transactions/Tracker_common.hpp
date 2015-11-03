@@ -57,8 +57,8 @@ void Tracker::registerStore(DS &ds, Ret (*f) (Tracker::replicaID)){
 
 template<typename T, template<typename> class RO, typename DS>
 std::unique_ptr<T> Tracker::onRead(DS& ds, int name,
-								   const std::function<std::unique_ptr<T> (std::vector<std::unique_ptr<RO<T> > >)> &merge,
-								   const std::function<std::unique_ptr<Ends> (std::vector<std::unique_ptr<RO<Ends> > >)> &mergeEnds){
+								   const std::function<std::unique_ptr<T> (const std::vector<std::unique_ptr<RO<T> > >&)> &merge,
+								   const std::function<std::unique_ptr<Ends> (const std::vector<std::unique_ptr<RO<Ends> > >&)> &mergeEnds){
 	static_assert(std::is_base_of<DataStore<Level::causal>,DS>::value,
 				  "Error: first argument must be a DataStore");
 	static_assert(std::is_base_of<RemoteObject<T> ,RO<T> >::value,

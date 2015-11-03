@@ -44,4 +44,8 @@ struct Tracker::Metadata : public ByteRepresentable{
 	Metadata() = default;
 	Metadata(decltype(nonce), decltype(readSet), decltype(ends));
 	DEFAULT_SERIALIZATION_SUPPORT(Metadata,nonce,readSet,ends);
+
+	static Metadata merge(const Metadata&){
+		assert(false && "error: cannot Merge metadata structs");
+	}
 };
