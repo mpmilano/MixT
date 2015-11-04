@@ -67,6 +67,11 @@ void Tracker::registerStore(DataStore<Level::causal>& ds, std::unique_ptr<Tracke
 	i->registeredCausal = &ds;
 	i->causalDS = std::move(wds);
 	i->causalInst = f;
+        auto stamp = i->ends[i->registeredCausal->instance_id()];
+        timespec ts;
+        clock_gettime(CLOCK_REALTIME,&ts);
+        stamp.tv_nsec = ts.tv_nsec;
+        stamp.tv_sec = ts.tv_sec;
 }
 
 bool Tracker::registered(const GDataStore& gds) const{
@@ -185,7 +190,7 @@ namespace{
 		}
 		auto natural_replica = i.registeredCausal->instance_id();
 		auto t = i.ends.at(natural_replica);
-		assert(t);
+                assert(t);
 		tstamp[natural_replica].tv_sec = t.tv_sec;
 		tstamp[natural_replica].tv_nsec = t.tv_nsec;
 		return tstamp;
@@ -197,7 +202,7 @@ namespace{
 		//have separate namespaces.  This is a reasonable assumption
 		//in real life, but I have to remember it for local testing.
 		auto meta_name = make_causal_metaname(name);
-		get<newEnds>(*i.causalDS)(*get<real>(*i.causalDS),meta_name,
+                get<newEnds>(*i.causalDS)(*get<real>(*i.causalDS),meta_name,
 								  generate_causal_metadata(tstamp,i));
 	}
 }
