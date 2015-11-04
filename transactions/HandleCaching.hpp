@@ -18,7 +18,7 @@ struct CachedObject : public RemoteObject<T> {
 		assert(false && "you probably didn't mean to call this");
 	}	
 	
-	const T& get() {
+	const T& get(Tracker*) {
 		assert(!is_valid_only);
 		return *t;
 	}
@@ -92,7 +92,7 @@ template<typename T>
 			assert(false && "you probably didn't mean to call this");
 		}	
 		
-		const T& get() {
+		const T& get(Tracker*) {
 			//if the assert passes, then this was already fetched.
 			//if the assert fails, then either we shouldn't have gone this deep
 			//with causal calls,

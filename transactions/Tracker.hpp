@@ -94,11 +94,31 @@ private:
 public:
 
 	template<template<typename> class RO, typename T>
-	static std::unique_ptr<T> default_merge(const std::vector<std::unique_ptr<RO<T> > > &v)  {
-		T const * (*mapped) (const std::unique_ptr<RO<T> >&) =
-			[](const std::unique_ptr<RO<T> > &a) -> T const *  {return &a->get(nullptr);};
-		std::vector<T const * > arg = map(v,mapped);
-		return T::merge(arg);
+	static std::unique_ptr<T> default_merge_imp(const std::vector<std::unique_ptr<RO<T> > > &v, int)
+		{
+			assert(false && "you don't have a merge function for this type. Roll again.");
+		}
+
+
+	template<template<typename> class RO, typename T>
+	static auto default_merge_imp(const std::vector<std::unique_ptr<RO<T> > > &v, long)
+		{
+			T const * (*mapped) (const std::unique_ptr<RO<T> >&) =
+				[](const std::unique_ptr<RO<T> > &a) -> T const *  {return &a->get(nullptr);};
+			std::vector<T const * > arg = map(v,mapped);
+			return T::merge(arg);
+		}
+
+	template<template<typename> class RO, typename T>
+	static std::enable_if_t<!std::is_scalar<T>::value,std::unique_ptr<T> >
+	default_merge(const std::vector<std::unique_ptr<RO<T> > > &v)
+		{
+			return default_merge_imp(v,0);
+		}
+
+	template<template<typename> class RO, typename T>
+	static std::enable_if_t<std::is_scalar<T>::value,std::unique_ptr<T> > default_merge(const std::vector<std::unique_ptr<RO<T> > > &v)  {
+		assert(false && "merging scalars does not make sense");
 	}
 
 	//need to know the type of the object we are writing here.
