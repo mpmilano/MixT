@@ -290,9 +290,20 @@ struct AtScopeEnd {
 void break_here();
 
 template<typename T, typename Ret>
-auto map(const std::vector<T> &v, Ret (*f) (T) ){
+auto map(std::vector<T> &v, Ret (*f) (T&) ){
 	std::vector<Ret> out;
-	std::transform(v.begin(),v.end(),out.begin(),f);
+	for (auto &e : v){
+		out.emplace_back(f(e));
+	}
+	return out;
+}
+
+template<typename T, typename Ret>
+auto map(const std::vector<T> &v, Ret (*f) (const T&) ){
+	std::vector<Ret> out;
+	for (auto &e : v){
+		out.emplace_back(f(e));
+	}
 	return out;
 }
 

@@ -95,7 +95,9 @@ public:
 
 	template<template<typename> class RO, typename T>
 	static std::unique_ptr<T> default_merge(const std::vector<std::unique_ptr<RO<T> > > &v)  {
-		std::vector<T const * > arg = map(v,[](const std::unique_ptr<RO<T> > &a) -> T const *  {return &a->get(nullptr);});
+		T const * (*mapped) (const std::unique_ptr<RO<T> >&) =
+			[](const std::unique_ptr<RO<T> > &a) -> T const *  {return &a->get(nullptr);};
+		std::vector<T const * > arg = map(v,mapped);
 		return T::merge(arg);
 	}
 
