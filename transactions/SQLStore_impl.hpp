@@ -75,7 +75,7 @@ public:
 		TransactionContext* currentTransactionContext();
 		bool ro_isValid() const;
 		int store_instance_id() const;
-		int name() const;;
+        int name() const;
 
 		//required by ByteRepresentable
 		int bytes_size() const;

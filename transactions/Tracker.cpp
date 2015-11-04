@@ -86,8 +86,8 @@ bool Tracker::registered(const GDataStore& gds) const{
 
 namespace{
 
-	constexpr int bigprime_lin = 15485863;
-	constexpr int bigprime_causal = 15485867;
+        constexpr int bigprime_lin = 2750861;
+        constexpr int bigprime_causal = 2751103;
 	
 	bool is_metaname(int base, int name){
 		return (name % base) == 0;
@@ -96,7 +96,7 @@ namespace{
 	int make_metaname(int base, int name){
 		assert(!is_metaname(base,name));
 		int cand;
-		if (name > (10 * base))
+                if (name > (5 * base))
 			cand = (name / base) * base;
 		else cand = name * base;
 		assert(is_metaname(base,cand));

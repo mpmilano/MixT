@@ -43,17 +43,20 @@ Tracker::timestamp Tracker::Ends::operator[](replicaID id){
 		else if (e.first > id) break;
 	}
 	//need to keep the list sorted!
-	decltype(contents) v;
+    decltype(contents) v;
 	v.insert(v.begin(),contents.begin(),it);
+    assert(v.size() == 0 || v.back().first < id);
 	v.push_back(TrivialTriple<replicaID,time_t,long>{id,-1,-1});
 	
-	assert(v[v.size() - 2].first < v.back().first);
+    assert(v.size() == 1 || v[v.size() - 2].first < v.back().first);
 	assert(v.at(i) == v.back());
 	
 	v.insert(v.end(),it,contents.end());
 	
-	assert(v.at(i).first < v.at(i+1).first);
+    assert(v.size() == 1 || v.at(i).first < v.at(i+1).first);
 	assert(v.size() == contents.size() +1);
+    contents.clear();
+    contents = v;
 	assert(contents.size() == old_size + 1);
 	
 	return timestamp{contents[i].second,contents[i].third};

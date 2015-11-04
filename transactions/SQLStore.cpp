@@ -120,7 +120,7 @@ namespace {
 		int size = -1;
 		if (t == Table::BlobStore){
 			result r = trans->prepared(
-				"CheckSize",
+				(t == Table::IntStore ? "CheckIntSize" : "CheckBlobSize"),
 				cmds::check_size(t),id);
 			assert(size == -1);
 			assert(r.size() > 0);
@@ -148,12 +148,12 @@ SQLStore_impl::GSQLObject::GSQLObject(SQLStore_impl& ss, Table t, int id, const 
 
 		if (t == Table::BlobStore){
 			binarystring blob(&c.at(0),c.size());
-			trans->prepared("InitializeData",
+			trans->prepared("InitializeBlobData",
 							cmds::initialize_with_id(t),
 							id,blob);
 		}
 		else if (t == Table::IntStore){
-			trans->prepared("InitializeData",
+			trans->prepared("InitializeIntData",
 							cmds::initialize_with_id(t),
 							id,((int*)c.data())[0]);
 		}
@@ -174,7 +174,8 @@ namespace {
 }
 
 bool SQLStore_impl::exists(int id) {
-	return obj_exists(id,small_transaction(*this));
+    auto owner = enter_store_transaction(*this);
+    return obj_exists(id,owner.second);
 }
 
 void SQLStore_impl::remove(int id) {
@@ -259,9 +260,9 @@ void SQLStore_impl::GSQLObject::save(){
     assert(vers != -1);
 	if (i->table == Table::BlobStore){
 		binarystring blob(c,i->size);
-		trans->prepared("UpdateData",i->update_data,blob,vers);
+		trans->prepared("UpdateBlobData",i->update_data,blob,vers);
 	}
-	else trans->prepared("UpdateData",i->update_data,((int*)c)[0],vers);
+	else trans->prepared("UpdateIntData",i->update_data,((int*)c)[0],vers);
 	i->vers = vers;
 }
 
@@ -313,8 +314,8 @@ int SQLStore_impl::GSQLObject::to_bytes(char* c) const {
 	//TODO: this is not symmetric! That is a bad design! Bad!
 	int* arr = (int*)c;
     arr[0] = (i->level == Level::strong ?
-                  SQLStore<Level::strong>::ds_id_nl() :
-                  SQLStore<Level::causal>::ds_id_nl());
+                  SQLStore<Level::strong>::id() :
+                  SQLStore<Level::causal>::id());
 	arr[1] = i->key;
 	arr[2] = i->size;
 	arr[3] = i->store_id;

@@ -36,6 +36,7 @@ public:
 private:
 	Handle(std::shared_ptr<RemoteObject<T> > _ro):_ro(_ro),tracker(Tracker::global_tracker()){
 		assert(tracker.registered(_ro->store()));
+        assert(_ro->store().level == l);
 	}
 public:
 	
@@ -95,6 +96,7 @@ public:
 	}
 	
 	const T& get(std::true_type*) const {
+        assert(_ro->store().level == l);
 		tracker.onRead(dynamic_cast<DataStore<Level::strong>&>(_ro->store())
 					   ,_ro->name());
 		return _ro->get(&tracker);
