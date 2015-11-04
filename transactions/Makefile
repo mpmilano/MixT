@@ -12,11 +12,17 @@ all: utils.o Tracker.o Ends.o SerializationSupport.o WhileBuilder.o ConExpr.o Co
 chat: utils.o Tracker.o Ends.o SerializationSupport.o WhileBuilder.o ConExpr.o Context.o SQLStore.o TempBuilder.o chat_example.o
 	clang++ utils.o Tracker.o Ends.o SerializationSupport.o WhileBuilder.o ConExpr.o Context.o SQLStore.o TempBuilder.o chat_example.o -o chat $(linkFlags)
 
-sqlstore: all sqlstore_clean
+sqlstore: sqlstore_clean all
+	echo "done"
+
+tracker: tracker_clean all
 	echo "done"
 
 sqlstore_clean:
 	touch SQLStore.o; rm SQLStore.o
+
+tracker_clean:
+	rm Tracker.o;  true
 
 tracker_dummy.o:
 	clang++ -c tracker_dummy.cpp $(clangFlags)

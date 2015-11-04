@@ -81,24 +81,38 @@ bool Tracker::registered(const GDataStore& gds) const{
 
 namespace{
 
+	constexpr int bigprime_lin = 15485863;
+	constexpr int bigprime_causal = 15485867;
+	
+	bool is_metaname(int base, int name){
+		return (name % base) == 0;
+	}
+
+	int make_metaname(int base, int name){
+		assert(!is_metaname(base,name));
+		int cand;
+		if (name > (10 * base))
+			cand = (name / base) * base;
+		else cand = name * base;
+		assert(is_metaname(base,cand));
+		return cand;
+	}
+
 	bool is_lin_metadata(int name){
-		assert(false && "TODO: unique name prefix that signifies metadata");
+		return is_metaname(bigprime_lin,name);
 	}
 
 	int make_lin_metaname(int name){
-		assert(false &&
-			   "TODO: whatever this is, make it compatible with is_metadata");
+		return make_metaname(bigprime_lin,name);
 	}
-
+	
 	bool is_causal_metadata(int name){
-		assert(false && "TODO: unique name prefix that signifies metadata");
+		return is_metaname(bigprime_causal,name);
 	}
 
 	int make_causal_metaname(int name){
-		assert(false &&
-			   "TODO: whatever this is, make it compatible with is_metadata");
+		return make_metaname(bigprime_causal,name);
 	}
-
 }
 
 namespace {

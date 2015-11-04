@@ -99,7 +99,8 @@ public:
 	}
 	
 	const T& get(std::false_type*) const {
-		assert(false && "remove this when you've hooked-in causal read stuff");
+		//tracker needs to be used by the store in order to guarantee causal ordering.
+		return _ro->get(&tracker);
 	}
 	
 	Handle clone() const {
