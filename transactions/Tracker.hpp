@@ -73,7 +73,9 @@ public:
 	void onWrite(DataStore<Level::causal>&, int name);
 
 	void onCreate(DataStore<Level::causal>&, int name);
-	
+
+    void onCreate(DataStore<Level::strong>&, int name);
+
 	void onRead(DataStore<Level::strong>&, int name);
 
 private:
@@ -96,7 +98,8 @@ public:
 	template<template<typename> class RO, typename T>
 	static std::unique_ptr<T> default_merge_imp(const std::vector<std::unique_ptr<RO<T> > > &v, int)
 		{
-			assert(false && "you don't have a merge function for this type. Roll again.");
+			if (v.size() == 1) return heap_copy(v.back()->get(nullptr));
+			else assert(false && "you don't have a merge function for this type. Roll again.");
 		}
 
 
@@ -118,7 +121,8 @@ public:
 
 	template<template<typename> class RO, typename T>
 	static std::enable_if_t<std::is_scalar<T>::value,std::unique_ptr<T> > default_merge(const std::vector<std::unique_ptr<RO<T> > > &v)  {
-		assert(false && "merging scalars does not make sense");
+		if (v.size() == 1) return heap_copy(v.back()->get(nullptr));
+		else assert(false && "merging scalars does not make sense");
 	}
 
 	//need to know the type of the object we are writing here.

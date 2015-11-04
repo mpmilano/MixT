@@ -208,6 +208,10 @@ void Tracker::onCreate(DataStore<Level::causal>& ds, int name){
 		write_causal_metadata(name,*i);
 }
 
+void Tracker::onCreate(DataStore<Level::strong>& , int ){
+    //there's nothing to do for a strong datastore right now. maybe there will be later.
+}
+
 void Tracker::onWrite(DataStore<Level::causal>&, int name){
 	if (!is_causal_metadata(name)){
 		timespec ts;

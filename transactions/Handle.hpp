@@ -31,7 +31,9 @@ struct Handle : public GenericHandle<l,HA> {
 
 private:
 	const std::shared_ptr<RemoteObject<T> > _ro;
+public:
 	Tracker &tracker;
+private:
 	Handle(std::shared_ptr<RemoteObject<T> > _ro):_ro(_ro),tracker(Tracker::global_tracker()){
 		assert(tracker.registered(_ro->store()));
 	}

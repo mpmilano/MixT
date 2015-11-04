@@ -53,7 +53,6 @@ public:
 		}
 		
 		const T& get(Tracker *, std::true_type*) {
-			assert(l == Level::strong);
 			char * res = nullptr;
 			res = gso.load();
 			assert(res);
@@ -123,19 +122,6 @@ public:
 	static auto tryCast(T && r){
 		return std::forward<T>(r);
 	}
-
-	template<HandleAccess ha, typename T>
-	auto newObject(const T& init){
-		static constexpr Table t =
-			(std::is_same<T,int>::value ? Table::IntStore : Table::BlobStore);
-		int size = ::bytes_size(init);
-		std::vector<char> v(size);
-		assert(size == ::to_bytes(init,&v[0]));
-		GSQLObject gso(*this,t,rand(),v);
-		return make_handle
-			<l,ha,T,SQLObject<T> >
-			(std::move(gso),heap_copy(init) );
-	}
 	
 	template<HandleAccess ha, typename T>
 	auto newObject(int name, const T& init){
@@ -145,10 +131,17 @@ public:
 		std::vector<char> v(size);
 		assert(size == ::to_bytes(init,&v[0]));
 		GSQLObject gso(*this,t,name,v);
-		return make_handle
+        auto ret = make_handle
 			<l,ha,T,SQLObject<T> >
 			(std::move(gso),heap_copy(init) );
+        ret.tracker.onCreate(*this,name);
+        return ret;
 	}
+
+    template<HandleAccess ha, typename T>
+    auto newObject(const T& init){
+        return newObject<ha,T>(rand(),init);
+    }
 
 	template<HandleAccess ha, typename T>
 	auto existingObject(int name, T* for_inf = nullptr){
@@ -164,7 +157,6 @@ public:
 	std::unique_ptr<SQLObject<T> > existingRaw(int name, T* for_inf = nullptr){
 		static constexpr Table t =
 			(std::is_same<T,int>::value ? Table::IntStore : Table::BlobStore);
-		assert(t == Table::IntStore);
 		return std::unique_ptr<SQLObject<T> >
 		{new SQLObject<T>{GSQLObject{*this,t,name},nullptr}};
 	}
