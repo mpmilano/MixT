@@ -18,6 +18,10 @@ static_assert(std::is_trivially_copyable<Tracker::timestamp>::value,"error: time
 struct Tracker::Tombstone {
 	Nonce nonce;
 	int name() const;
+
+	static std::unique_ptr<Tombstone> merge(const std::vector<Tombstone const * >&){
+		assert(false && "error: cannot Merge metadata structs");
+	}
 };
 
 struct Tracker::Ends : public ByteRepresentable{
