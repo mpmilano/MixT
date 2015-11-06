@@ -7,7 +7,7 @@
 #include "SerializationSupport.hpp"
 
 
-
+template<Level l>
 struct GeneralRemoteObject : public ByteRepresentable{
 	const int id = gensym();
 	virtual void setTransactionContext(TransactionContext*) = 0;
@@ -22,14 +22,8 @@ struct GeneralRemoteObject : public ByteRepresentable{
 template<Level l2, HandleAccess ha2, typename T2> struct Handle;
 class Tracker;
 
-template<typename T>
-class RemoteObject : public GeneralRemoteObject
-/*, public Handle<Level::strong,HandleAccess::all,T>,
-					 public Handle<Level::strong,HandleAccess::read,T>,
-					 public Handle<Level::strong,HandleAccess::write,T>,
-					 public Handle<Level::causal,HandleAccess::all,T>,
-					 public Handle<Level::causal,HandleAccess::read,T>,
-					 public Handle<Level::causal,HandleAccess::write,T> //*/
+template<Level l, typename T>
+class RemoteObject : public GeneralRemoteObject<l>
 {
 	//extend this plz!
 

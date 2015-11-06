@@ -15,6 +15,19 @@
 struct Transaction{
 	const std::function<bool ()> action;
 	const std::function<std::ostream & (std::ostream &os)> print;
+
+private:
+	void assign_current_context (std::map<GeneralRemoteObject<Level::strong>, TransactionContext*> &old_ctx_s,
+								 const std::map<GeneralRemoteObject<Level::causal>, TransactionContext*> &,
+								 GeneralRemoteObject<Level::strong>* ro){
+		old_ctx_s[ro] = ro->currentTransactionContext();
+	}
+	void assign_current_context (const std::map<GeneralRemoteObject<Level::strong>, TransactionContext*> &,
+								 const std::map<GeneralRemoteObject<Level::causal>, TransactionContext*> &old_ctx_c,
+								 GeneralRemoteObject<Level::strong>* ro){
+		old_ctx_c[ro] = ro->currentTransactionContext();
+	}
+public:
 	
 	template<typename Cmds>
 	Transaction(const TransactionBuilder<Cmds> &s):
@@ -40,7 +53,8 @@ struct Transaction{
 						 std::map< GDataStore*,
 								   std::unique_ptr<TransactionContext> > > tc;
 
-				std::map<GeneralRemoteObject*, TransactionContext*> old_ctx;
+				std::map<GeneralRemoteObject<Level::strong>*, TransactionContext*> old_ctx_s;
+				std::map<GeneralRemoteObject<Level::causal>*, TransactionContext*> old_ctx_c;
 
 				auto tc_without = [&](auto* sto){
 					return
@@ -68,7 +82,7 @@ struct Transaction{
 				for (auto &_ro : collected_objs){
 					auto *sto = &_ro->store();
 					auto *ro = _ro.get();
-					old_ctx[ro] = ro->currentTransactionContext();
+					assign_current_context(old_ctx_s,old_ctx_c,ro);
 					if (tc_without(sto)){
 						tc[sto->level]
 							.emplace(sto, sto->begin_transaction());
@@ -95,7 +109,11 @@ struct Transaction{
 				std::cout << "cusal call complete" << std::endl;
 
 				//restore the old transaction pointers
-				for (auto &p : old_ctx){
+				for (auto &p : old_ctx_s){
+					p.first->setTransactionContext(p.second);
+					assert(p.first->currentTransactionContext() == nullptr);
+				}
+				for (auto &p : old_ctx_c){
 					p.first->setTransactionContext(p.second);
 					assert(p.first->currentTransactionContext() == nullptr);
 				}

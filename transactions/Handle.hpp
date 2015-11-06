@@ -30,11 +30,11 @@ template<Level l, HandleAccess HA, typename T>
 struct Handle : public GenericHandle<l,HA> {
 
 private:
-	const std::shared_ptr<RemoteObject<T> > _ro;
+	const std::shared_ptr<RemoteObject<l,T> > _ro;
 public:
 	Tracker &tracker;
 private:
-	Handle(std::shared_ptr<RemoteObject<T> > _ro):_ro(_ro),tracker(Tracker::global_tracker()){
+	Handle(std::shared_ptr<RemoteObject<l,T> > _ro):_ro(_ro),tracker(Tracker::global_tracker()){
 		assert(tracker.registered(_ro->store()));
         assert(_ro->store().level == l);
 	}
@@ -43,8 +43,8 @@ public:
 	const int uid = gensym();
 	
 	typename std::conditional<canWrite<HA>::value,
-							  RemoteObject<T>&,
-							  const RemoteObject<T>& >::type
+							  RemoteObject<l,T>&,
+							  const RemoteObject<l,T>& >::type
 	remote_object() const {
 		assert(_ro);
 		return *_ro;
@@ -78,13 +78,13 @@ public:
 	static std::unique_ptr<Handle> from_bytes(char *v)  {
 		//for de-serializing.
 		assert(v);
-		RemoteObject<T> *stupid = nullptr;
+		RemoteObject<l,T> *stupid = nullptr;
 		if (((bool*)v)[0]) {
 				auto ro = from_bytes_stupid(stupid,v + sizeof(bool) );
 				assert(ro);
 				return std::unique_ptr<Handle>(
 					new Handle(
-						std::shared_ptr<RemoteObject<T> >(ro.release())));
+						std::shared_ptr<RemoteObject<l,T> >(ro.release())));
 			}
 		else return std::make_unique<Handle>();
 	}
@@ -171,10 +171,10 @@ public:
 
 	template<typename RO, typename... Args>
 	static Handle<l,HA,T> make_handle(Args && ... ca){
-		static_assert(std::is_base_of<RemoteObject<T>,RO >::value,
+		static_assert(std::is_base_of<RemoteObject<l,T>,RO >::value,
 					  "Error: must template on valid RemoteObject extender");
-		RemoteObject<T> *rop = new RO(std::forward<Args>(ca)...);
-		std::shared_ptr<RemoteObject<T> > sp(rop);
+		RemoteObject<l,T> *rop = new RO(std::forward<Args>(ca)...);
+		std::shared_ptr<RemoteObject<l,T> > sp(rop);
 		Handle<l,HA,T> ret(sp);
 		return ret;
 	}
@@ -194,7 +194,7 @@ public:
 /*
 	//TODO: same treatment as in Operate
 	template<typename... Args>
-	auto op(Operation<bool(*) (RemoteObject<T>*, cr_add<Args>...)> (*fp) (RemoteObject<T>*, cr_add<Args>...), Args && ... a){
+	auto op(Operation<bool(*) (RemoteObject<l,T>*, cr_add<Args>...)> (*fp) (RemoteObject<l,T>*, cr_add<Args>...), Args && ... a){
 		return fp(&remote_object(),std::forward<Args>(a)...)(*this, std::forward<Args>(a)...);
 	}
 */

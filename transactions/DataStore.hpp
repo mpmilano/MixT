@@ -12,4 +12,3 @@ public:
 	DECLARED_OPERATIONS
 
 };
-

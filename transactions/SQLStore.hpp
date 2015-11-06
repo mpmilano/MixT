@@ -39,7 +39,7 @@ public:
 	}
 
 	template<typename T>
-	struct SQLObject : public RemoteObject<T> {
+	struct SQLObject : public RemoteObject<l,T> {
 		using Store = SQLStore;
 		GSQLObject gso;
 		std::unique_ptr<T> t;
@@ -112,7 +112,7 @@ public:
 	};
 
 	template<typename T>
-	static SQLObject<T>* tryCast(RemoteObject<T>* r) {
+	static SQLObject<T>* tryCast(RemoteObject<l,T>* r) {
 		if(auto *ret = dynamic_cast<SQLObject<T>* >(r))
 			return ret;
 		else throw Transaction::ClassCastException();
