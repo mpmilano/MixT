@@ -82,15 +82,15 @@ private:
 	void onRead_internal(
 		DataStore<Level::causal>&,
 		int name,
-		const std::function<std::unique_ptr<GeneralRemoteObject> (
+		const std::function<std::unique_ptr<GeneralRemoteObject<Level::causal>> (
 			DataStore<Level::causal>&, int)> &
 		existingT,
-		const std::function<void (std::vector<std::unique_ptr<GeneralRemoteObject>>)>&
+		const std::function<void (std::vector<std::unique_ptr<GeneralRemoteObject<Level::causal>>>)>&
 		mergeT,
-		const std::function<std::unique_ptr<GeneralRemoteObject> (
+		const std::function<std::unique_ptr<GeneralRemoteObject<Level::causal>> (
 							 DataStore<Level::causal>&, int)> &
 		existingEnds,
-		const std::function<std::unique_ptr<Ends> (std::vector<std::unique_ptr<GeneralRemoteObject>>)>&
+		const std::function<std::unique_ptr<Ends> (std::vector<std::unique_ptr<GeneralRemoteObject<Level::causal> > >)>&
 		mergeEnds
 		);
 public:

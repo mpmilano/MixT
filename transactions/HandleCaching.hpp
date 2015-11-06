@@ -1,8 +1,8 @@
 #pragma once
 #include "Transaction.hpp"
 
-template<Level l, typename T>
-struct CachedObject : public RemoteObject<l,T> {
+template<typename T>
+struct CachedObject : public RemoteObject<Level::strong,T> {
 	std::shared_ptr<T> t;
 	GDataStore &st;
 	int nm;
@@ -78,9 +78,9 @@ Handle<Level::strong,ha,T> run_ast_strong(const StrongCache& c, const StrongStor
 	else return h;
 }
 
-template<Level l, typename T>
-struct LocalObject : public RemoteObject<l,T> {
-	RemoteObject<l,T>& r;
+template<typename T>
+struct LocalObject : public RemoteObject<Level::strong,T> {
+		RemoteObject<T>& r;
 		LocalObject(decltype(r) t)
 			:r(t){}
 		

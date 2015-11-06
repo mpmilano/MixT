@@ -239,7 +239,7 @@ namespace{
 
 	template<typename F1>
 	auto collect(Tracker::Internals &i, const F1 &existing_obj, int name){
-		std::vector<unique_ptr<GeneralRemoteObject> > relevant_ptrs;
+		std::vector<unique_ptr<GeneralRemoteObject<Level::causal>> > relevant_ptrs;
 		relevant_ptrs.emplace_back(existing_obj(*get<real>(*i.causalDS),name));
 		for (auto &p : i.readSet){
 			auto &replica = fetch_replica(i,p.first);
@@ -254,13 +254,13 @@ namespace{
 
 void Tracker::onRead_internal(
 	DataStore<Level::causal> &ds,int name,
-	const std::function<std::unique_ptr<GeneralRemoteObject> (DataStore<Level::causal>&, int)>& existingT,
-	const std::function<void (std::vector<std::unique_ptr<GeneralRemoteObject>>)>& mergeT,
-	const std::function<std::unique_ptr<GeneralRemoteObject> (DataStore<Level::causal>&, int)> &existingEnds,
-	const std::function<std::unique_ptr<Ends> (std::vector<std::unique_ptr<GeneralRemoteObject>>)>& merge_ends
+	const std::function<std::unique_ptr<GeneralRemoteObject<Level::causal>> (DataStore<Level::causal>&, int)>& existingT,
+	const std::function<void (std::vector<std::unique_ptr<GeneralRemoteObject<Level::causal>>>)>& mergeT,
+	const std::function<std::unique_ptr<GeneralRemoteObject<Level::causal>> (DataStore<Level::causal>&, int)> &existingEnds,
+	const std::function<std::unique_ptr<Ends> (std::vector<std::unique_ptr<GeneralRemoteObject<Level::causal>>>)>& merge_ends
 	){
 	if (i->inCausalRead || is_causal_metadata(name)){
-		vector<unique_ptr<GeneralRemoteObject> > v;
+		vector<unique_ptr<GeneralRemoteObject<Level::causal>> > v;
 		v.emplace_back(existingT(*get<real>(*i->causalDS),name));
 		mergeT(std::move(v));
 	}

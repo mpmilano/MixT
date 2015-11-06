@@ -61,33 +61,33 @@ std::unique_ptr<T> Tracker::onRead(DS& ds, int name,
 						  const std::function<std::unique_ptr<Tracker::Ends> (const std::vector<std::unique_ptr<RO<Tracker::Ends> > >&)> &mergeEnds){
 	static_assert(std::is_base_of<DataStore<Level::causal>,DS>::value,
 				  "Error: first argument must be a DataStore");
-	static_assert(std::is_base_of<RemoteObject<T> ,RO<T> >::value,
+	static_assert(std::is_base_of<RemoteObject<Level::causal,T> ,RO<T> >::value,
 				  "Error: RO must be *your* RemoteObject type");
 	
 	static auto existingEnds = [](auto &_ds, auto name){
 		auto &ds = dynamic_cast<DS&>(_ds);
-		return std::unique_ptr<GeneralRemoteObject>(ds.template existingRaw<Ends>(name).release());
+		return std::unique_ptr<GeneralRemoteObject<Level::causal>>(ds.template existingRaw<Ends>(name).release());
 	};
 	static auto existingT = [](auto &_ds, auto name) {
 		auto &ds = dynamic_cast<DS&>(_ds);
-		return std::unique_ptr<GeneralRemoteObject>(ds.template existingRaw<T>(name).release());
+		return std::unique_ptr<GeneralRemoteObject<Level::causal>>(ds.template existingRaw<T>(name).release());
 	};
-	static auto castBackEnds_l = [](std::unique_ptr<GeneralRemoteObject> &p) -> std::unique_ptr<RO<Ends> > {
+	static auto castBackEnds_l = [](std::unique_ptr<GeneralRemoteObject<Level::causal>> &p) -> std::unique_ptr<RO<Ends> > {
 		if (auto *pt = dynamic_cast<RO<Ends>* >(p.release()))
 				return std::unique_ptr<RO<Ends> >(pt);
-		else assert(false && "Error casting from GeneralRemoteObject back to specific RO impl");
+		else assert(false && "Error casting from GeneralRemoteObject<Level::causal> back to specific RO impl");
 	};
-	static auto castBackT_l = [](std::unique_ptr<GeneralRemoteObject> &p) -> std::unique_ptr<RO<T> > {
+	static auto castBackT_l = [](std::unique_ptr<GeneralRemoteObject<Level::causal>> &p) -> std::unique_ptr<RO<T> > {
 		if (auto *pt = dynamic_cast<RO<T>* >(p.release()))
 				return std::unique_ptr<RO<T> >(pt);
-		else assert(false && "Error casting from GeneralRemoteObject back to specific RO impl");
+		else assert(false && "Error casting from GeneralRemoteObject<Level::causal> back to specific RO impl");
 	};
 
-	std::unique_ptr<RO<T> > (*castBackT) (std::unique_ptr<GeneralRemoteObject> &p) = castBackT_l;
-	std::unique_ptr<RO<Ends> > (*castBackEnds) (std::unique_ptr<GeneralRemoteObject> &p) = castBackEnds_l;
+	std::unique_ptr<RO<T> > (*castBackT) (std::unique_ptr<GeneralRemoteObject<Level::causal>> &p) = castBackT_l;
+	std::unique_ptr<RO<Ends> > (*castBackEnds) (std::unique_ptr<GeneralRemoteObject<Level::causal>> &p) = castBackEnds_l;
 
 	std::unique_ptr<T> ret;
-	const std::function<void (std::vector<std::unique_ptr<GeneralRemoteObject> >)>
+	const std::function<void (std::vector<std::unique_ptr<GeneralRemoteObject<Level::causal>> >)>
 		mergeT = [&](auto v){
 		std::vector<std::unique_ptr<RO<T> > > tmp = map(v,castBackT);
 		ret.reset(merge(tmp).release());};
@@ -96,6 +96,6 @@ std::unique_ptr<T> Tracker::onRead(DS& ds, int name,
 	onRead_internal(ds,name,existingT,
 					mergeT,
 					existingEnds,
-					[&](std::vector<std::unique_ptr<GeneralRemoteObject> > v){return mergeEnds(map(v,castBackEnds));});
+					[&](std::vector<std::unique_ptr<GeneralRemoteObject<Level::causal> > > v){return mergeEnds(map(v,castBackEnds));});
 	return ret;
 }

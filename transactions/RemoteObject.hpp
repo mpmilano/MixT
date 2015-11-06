@@ -36,7 +36,7 @@ class RemoteObject : public GeneralRemoteObject<l>
 public:
 	RemoteObject(){}
 	virtual ~RemoteObject(){}
-	template<Level l, HandleAccess HA, typename T2>
+	template<Level l2, HandleAccess HA, typename T2>
 	friend struct Handle;
 
 	using type = T;
@@ -62,10 +62,15 @@ template<typename T>
 struct is_RemoteObj_ptr;
 
 template<template<typename> class C, typename T>
-struct is_RemoteObj_ptr<C<T>*> : std::is_base_of<RemoteObject<T>,C<T> >::type {};
+struct is_RemoteObj_ptr<C<T>*> : std::integral_constant<
+	bool,
+	std::is_base_of<RemoteObject<Level::causal,T>,C<T> >::value
+	|| std::is_base_of<RemoteObject<Level::strong,T>,C<T> >::value>::type {};
 
-template<template<typename> class C, typename T>
-struct is_RemoteObj_ptr<const C<T>*> : std::is_base_of<RemoteObject<T>,C<T> >::type {};
+template<template<Level,typename> class C, Level l, typename T>
+struct is_RemoteObj_ptr<C<l,T>*> : std::is_base_of<RemoteObject<l,T>,C<l,T> >::type {};
+
+DecayTraits(is_RemoteObj_ptr)
 
 template<typename T>
 struct is_RemoteObj_ptr : std::false_type{};
@@ -76,5 +81,3 @@ struct is_not_RemoteObj_ptr : std::integral_constant<bool,!is_RemoteObj_ptr<T>::
 template<typename T>
 using cr_add = typename std::conditional<is_RemoteObj_ptr<T>::value, T, const decay<T>&>::type;
 
-template<typename T>
-using generalize_ro = typename std::conditional<is_RemoteObj_ptr<T>::value, const GeneralRemoteObject*,  T>::type;
