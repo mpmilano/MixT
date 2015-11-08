@@ -111,14 +111,16 @@ public:
 		}
 	};
 
-	template<typename T>
-	static SQLObject<T>* tryCast(RemoteObject<l,T>* r) {
-		if(auto *ret = dynamic_cast<SQLObject<T>* >(r))
+	template<typename T, Level l2>
+	static SQLObject<T>* tryCast(RemoteObject<l2,T>* r) {
+		if(auto *ret = dynamic_cast<SQLObject<T>* >(r)){
+			assert(l2 == l);
 			return ret;
+		}
 		else throw Transaction::ClassCastException();
 	}
 	
-	template<typename T, restrict(!is_RemoteObj_ptr<T>::value)>
+	template<typename T, restrict(!(is_RemoteObj_ptr<T>::value))>
 	static auto tryCast(T && r){
 		return std::forward<T>(r);
 	}

@@ -39,5 +39,9 @@ struct NoOverloadFoundError{
 	template<typename T> struct name<T&> : name<T> {};					\
 	template<typename T> struct name<const T&> : name<T> {};
 
+#define DecayTraitsLevel(name) template<Level l, typename T> struct name<l, const T> : name<l,T> {}; \
+	template<Level l, typename T> struct name<l,T&> : name<l,T> {};		\
+	template<Level l, typename T> struct name<l,const T&> : name<l,T> {};
+
 template<typename T> struct argument_type;
 template<typename T, typename U> struct argument_type<T(U)> { typedef U type; };

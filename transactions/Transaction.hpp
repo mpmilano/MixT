@@ -30,13 +30,13 @@ private:
 
 	static void collected_objs_insert(std::set<std::shared_ptr<GeneralRemoteObject<Level::strong> > > &collected_objs,
 							   const std::set<std::shared_ptr<GeneralRemoteObject<Level::causal> > > &,
-							   std::shared_ptr<GeneralRemoteObject<Level::strong> > &ro){
+							   const std::shared_ptr<GeneralRemoteObject<Level::strong> > &ro){
 		collected_objs.insert(ro);
 	}
 
 	static void collected_objs_insert(const std::set<std::shared_ptr<GeneralRemoteObject<Level::strong> > > &,
 							   std::set<std::shared_ptr<GeneralRemoteObject<Level::causal> > > &collected_objs,
-							   std::shared_ptr<GeneralRemoteObject<Level::causal> > &ro){
+							   const std::shared_ptr<GeneralRemoteObject<Level::causal> > &ro){
 		collected_objs.insert(ro);
 	}
 	
@@ -90,7 +90,7 @@ public:
 				foreach(s.curr, [&](const auto &e){
 						foreach(e.handles(),[&](const auto &h){
 								any = true;
-								collected_objs_insert(collected_objs_s, collected_objs_c,h._ro);
+								Transaction::collected_objs_insert(collected_objs_s, collected_objs_c,h._ro);
 							});});
 
 				auto collected_objs_proc = [&](auto &_ro){

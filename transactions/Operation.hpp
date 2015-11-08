@@ -83,7 +83,7 @@ template<typename T, restrict(!is_handle<decay<T> >::value && !is_preserve<T>::v
 }
 
 template<HandleAccess ha, Level l, typename T>
- auto extract_robj_p(const Handle<l,ha,T>& t)  {
+auto extract_robj_p(const Handle<l,ha,T>& t)  {
 	return &t.remote_object();
 }
 
