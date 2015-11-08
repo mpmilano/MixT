@@ -20,8 +20,7 @@
 #include "Ostreams.hpp"
 
 
-template<Level l, typename T>
-FINALIZE_OPERATION(Increment, RemoteObject<l,T>*);
+template<Level l, typename T> FINALIZE_OPERATION(Increment, (RemoteObject<l, T>*));
 
 using WeakCons = RemoteCons<int,Level::strong,Level::causal>;
 

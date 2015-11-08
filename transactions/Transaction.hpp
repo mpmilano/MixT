@@ -17,16 +17,29 @@ struct Transaction{
 	const std::function<std::ostream & (std::ostream &os)> print;
 
 private:
-	void assign_current_context (std::map<GeneralRemoteObject<Level::strong>, TransactionContext*> &old_ctx_s,
-								 const std::map<GeneralRemoteObject<Level::causal>, TransactionContext*> &,
+	static void assign_current_context (std::map<GeneralRemoteObject<Level::strong>*, TransactionContext*> &old_ctx_s,
+								 const std::map<GeneralRemoteObject<Level::causal>*, TransactionContext*> &,
 								 GeneralRemoteObject<Level::strong>* ro){
 		old_ctx_s[ro] = ro->currentTransactionContext();
 	}
-	void assign_current_context (const std::map<GeneralRemoteObject<Level::strong>, TransactionContext*> &,
-								 const std::map<GeneralRemoteObject<Level::causal>, TransactionContext*> &old_ctx_c,
-								 GeneralRemoteObject<Level::strong>* ro){
+	static void assign_current_context (std::map<GeneralRemoteObject<Level::strong> * , TransactionContext*> &,
+								 std::map<GeneralRemoteObject<Level::causal>*, TransactionContext*> &old_ctx_c,
+								 GeneralRemoteObject<Level::causal>* ro){
 		old_ctx_c[ro] = ro->currentTransactionContext();
 	}
+
+	static void collected_objs_insert(std::set<std::shared_ptr<GeneralRemoteObject<Level::strong> > > &collected_objs,
+							   const std::set<std::shared_ptr<GeneralRemoteObject<Level::causal> > > &,
+							   std::shared_ptr<GeneralRemoteObject<Level::strong> > &ro){
+		collected_objs.insert(ro);
+	}
+
+	static void collected_objs_insert(const std::set<std::shared_ptr<GeneralRemoteObject<Level::strong> > > &,
+							   std::set<std::shared_ptr<GeneralRemoteObject<Level::causal> > > &collected_objs,
+							   std::shared_ptr<GeneralRemoteObject<Level::causal> > &ro){
+		collected_objs.insert(ro);
+	}
+	
 public:
 	
 	template<typename Cmds>
@@ -72,14 +85,15 @@ public:
 				//this loop finds all stores, calls begin_transaction on them exactly once,
 				//and sets their participating RemoteObjects' current transaction pointers.
 
-				std::set<std::shared_ptr<GeneralRemoteObject> > collected_objs;
+				std::set<std::shared_ptr<GeneralRemoteObject<Level::strong> > > collected_objs_s;
+				std::set<std::shared_ptr<GeneralRemoteObject<Level::causal> > > collected_objs_c;
 				foreach(s.curr, [&](const auto &e){
 						foreach(e.handles(),[&](const auto &h){
 								any = true;
-								collected_objs.insert(h._ro);
+								collected_objs_insert(collected_objs_s, collected_objs_c,h._ro);
 							});});
-				
-				for (auto &_ro : collected_objs){
+
+				auto collected_objs_proc = [&](auto &_ro){
 					auto *sto = &_ro->store();
 					auto *ro = _ro.get();
 					assign_current_context(old_ctx_s,old_ctx_c,ro);
@@ -93,6 +107,12 @@ public:
 					assert(sto == &tc.at(sto->level).at(sto)->store());
 					ro->setTransactionContext(
 						tc.at(sto->level).at(sto).get());
+				};
+				for (auto &_ro : collected_objs_s){
+					collected_objs_proc(_ro);
+				}
+				for (auto &ro : collected_objs_c){
+					collected_objs_proc(ro);
 				}
 				
 				assert(any && "no handles traversed");

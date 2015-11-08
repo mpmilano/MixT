@@ -8,6 +8,7 @@
 #include "filter-varargs.hpp"
 #include "type_utils.hpp"
 #include "ConExpr.hpp"
+#include "Operation_macros.hpp"
 
 //because we don't have a lot of inspection abilities into this function,
 //we only allow write-enabled handles into which *all* read-enabled handles are
@@ -180,89 +181,6 @@ struct NoOperation {
 	}
 };
 
-#define DECLARE_OPERATION3(Name, arg1, arg2) static NoOperation Name ## _impl(arg1,arg2){return NoOperation();}
-#define DECLARE_OPERATION2(Name, arg1) static NoOperation Name ## _impl(arg1){return NoOperation();}
-#define DECLARE_OPERATION_IMPL2(count, ...) DECLARE_OPERATION ## count (__VA_ARGS__)
-#define DECLARE_OPERATION_IMPL(count, ...) DECLARE_OPERATION_IMPL2(count, __VA_ARGS__)
-#define DECLARE_OPERATION(...) DECLARE_OPERATION_IMPL(VA_NARGS(__VA_ARGS__), __VA_ARGS__)
-
-
-
-#define DOBODY1(decl,Name,args...)										\
-	decl {																\
-	return																\
-		fold(*mke_p<std::tuple<STORE_LIST> >(),							\
-			 [&](const auto &arg, const auto &accum){					\
-				 typedef decay<decltype(arg)> Store;					\
-				 typedef decltype(Store::Name ## _impl(args)) ret_t;	\
-				 ret_t def;												\
-				 try {													\
-					 auto ret = tuple_cons(
-/*Name(args...);*/
-#define DOBODY2(Name,args...) ,accum) ;									\
-					 assert(std::get<0>(ret).built_well &&				\
-							"Did you actually implement this operation?"); \
-					 return ret;										\
-					 }													\
-				 catch (Transaction::ClassCastException e){				\
-					 return tuple_cons(def,accum);						\
-				 }														\
-				 },std::tuple<>());										\
-	}
-				
-#define FINALIZE_OPERATION2(Name, arg)								\
-	DOBODY1(auto Name (arg a),Name,Store::tryCast(a))				\
-	Store::Name ## _impl(Store::tryCast(a))							\
-	DOBODY2(Name,a)
-
-	
-
-#define FINALIZE_OPERATION3(Name,Arg1, Arg2)								\
-	DOBODY1(auto Name (Arg1 a, Arg2 b),Name,Store::tryCast(a),Store::tryCast(b)) \
-	Store::Name ## _impl (Store::tryCast(a),Store::tryCast(b))			\
-	DOBODY2(Name,a,b)
-
-
-#define FINALIZE_OPERATION_IMPL2(count, ...) FINALIZE_OPERATION ## count (__VA_ARGS__)
-#define FINALIZE_OPERATION_IMPL(count, ...) FINALIZE_OPERATION_IMPL2(count, __VA_ARGS__)
-#define FINALIZE_OPERATION(...) FINALIZE_OPERATION_IMPL(VA_NARGS(__VA_ARGS__), __VA_ARGS__)
 
 
 #define op_arg(x...) extract_robj_p(x)
-/*
-#define op2(Name, arg) make_DoOp(Name(op_arg(arg)))(arg)
-#define op3(Name, arg1,arg2) make_DoOp(Name(op_arg(arg1),op_arg(arg2)))(arg1,arg2)
-
-#define op_IMPL2(count, ...) op ## count (__VA_ARGS__)
-#define op_IMPL(count, ...) op_IMPL2(count, __VA_ARGS__)
-#define op(...) op_IMPL(VA_NARGS(__VA_ARGS__), __VA_ARGS__)
-
-template<typename>
-struct DoOp;
-
-template<typename... J>
-struct DoOp<std::tuple<J...> > {
-	const std::tuple<J...> t;
-	template<typename... Args>
-	auto operator()(Args && ... args) const {
-		std::pair<bool,bool> result =
-					fold(t,[&](const auto &e, const std::pair<bool,bool> &acc){
-							if (acc.first || !e.built_well) {
-								return acc;
-							}
-							else {
-								assert(e.built_well);
-								return std::pair<bool,bool>(true,e(args...));
-							}
-						},std::pair<bool,bool>(false,false));
-				assert(result.first && "Error: found no function to call");
-				return result.second;
-	}
-};
-
-template<typename T>
-auto make_DoOp(const T &t){
-	DoOp<T> ret{t};
-	return ret;
-}
-//*/

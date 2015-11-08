@@ -80,7 +80,7 @@ Handle<Level::strong,ha,T> run_ast_strong(const StrongCache& c, const StrongStor
 
 template<typename T>
 struct LocalObject : public RemoteObject<Level::strong,T> {
-		RemoteObject<T>& r;
+	RemoteObject<Level::strong,T>& r;
 		LocalObject(decltype(r) t)
 			:r(t){}
 		
