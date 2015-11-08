@@ -72,7 +72,7 @@
 			}															\
 																		\
 			auto strongCall(StrongCache& c CMA const StrongStore &s CMA std::true_type*) const { \
-				auto ret = make_PreOp(id,Name<level::value,int>(argcnt_map_dref(trans_op_arg,n,c,s,))) \
+				auto ret = make_PreOp(id,Name(argcnt_map_dref(trans_op_arg,n,c,s,))) \
 					(c,argcnt(n));										\
 				c.emplace<decltype(ret)>(id,ret);						\
 				return ret;												\
@@ -88,10 +88,10 @@
 																		\
 			auto causalCall(CausalCache& c CMA  const CausalStore &s) const { \
 				run_causal_helper(c,s,argcnt(n));						\
-				using R = decltype(make_PreOp(id,Name<level::value,int>(argcnt_map_dref(trans_op_arg,n,c,s,))) \
+				using R = decltype(make_PreOp(id,Name(argcnt_map_dref(trans_op_arg,n,c,s,))) \
 								   (c,argcnt(n)));			\
 				if(runs_with_strong(level::value)) return c.template get<R>(id); \
-				else return make_PreOp(id,Name<level::value,int>(argcnt_map_dref(trans_op_arg,n,c,s,))) \
+				else return make_PreOp(id,Name(argcnt_map_dref(trans_op_arg,n,c,s,))) \
 									   (c,argcnt(n));		\
 			}															\
 		};																\

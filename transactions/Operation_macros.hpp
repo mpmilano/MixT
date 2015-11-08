@@ -28,19 +28,17 @@
 				 },std::tuple<>());										\
 	}
 				
-#define FINALIZE_OPERATION2(Name, arg)								\
-	DOBODY1(auto Name (typename argument_type<void (arg)>::type a),Name,Store::tryCast(a)) \
+#define FINALIZE_OPERATION1(Name, arg)								\
+	DOBODY1(auto Name arg,Name,Store::tryCast(a)) \
 	Store::Name ## _impl(Store::tryCast(a))							\
 	DOBODY2(Name,a)
 
 	
 
-#define FINALIZE_OPERATION3(Name,Arg1, Arg2)								\
-	DOBODY1(auto Name (Arg1 a, Arg2 b),Name,Store::tryCast(a),Store::tryCast(b)) \
-	Store::Name ## _impl (Store::tryCast(a),Store::tryCast(b))			\
+#define FINALIZE_OPERATION2(Name,args)								\
+	DOBODY1(auto Name args,Name,Store::tryCast(a),Store::tryCast(b)) \
+	Store::Name ## _impl (Store::tryCast(a),Store::tryCast(b))		 \
 	DOBODY2(Name,a,b)
 
 
-#define FINALIZE_OPERATION_IMPL2(count, ...) FINALIZE_OPERATION ## count (__VA_ARGS__)
-#define FINALIZE_OPERATION_IMPL(count, ...) FINALIZE_OPERATION_IMPL2(count, __VA_ARGS__)
-#define FINALIZE_OPERATION(...) FINALIZE_OPERATION_IMPL(VA_NARGS(__VA_ARGS__), __VA_ARGS__)
+#define FINALIZE_OPERATION(Name,count,args) FINALIZE_OPERATION ## count (Name,args)

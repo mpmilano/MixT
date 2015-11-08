@@ -20,8 +20,7 @@
 #include "Ostreams.hpp"
 
 
-//template<Level l, typename T> FINALIZE_OPERATION(Increment, (RemoteObject<l, T>*));
-template<Level l, typename T> auto Increment (typename argument_type<void ((RemoteObject<l, T>*))>::type a) { return fold(*mke_p<std::tuple<STORE_LIST> >(), [&](const auto &arg, const auto &accum){ typedef decay<decltype(arg)> Store; typedef decltype(Store::Increment_impl(Store::tryCast(a))) ret_t; ret_t def; try { auto ret = tuple_cons( Store::Increment_impl(Store::tryCast(a)) ,accum) ; assert(std::get<0>(ret).built_well && "Did you actually implement this operation?"); return ret; } catch (Transaction::ClassCastException e){ return tuple_cons(def,accum); } },std::tuple<>()); };
+template<Level l, typename T> FINALIZE_OPERATION(Increment, 1, (RemoteObject<l, T>* a));
 
 using WeakCons = RemoteCons<int,Level::strong,Level::causal>;
 
