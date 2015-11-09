@@ -28,7 +28,9 @@ SQLStore_impl::SQLStore_impl(GDataStore &store, int instanceID, Level l)
 	}
     auto t = begin_transaction();
 	((SQLTransaction*)t.get())
-		->exec("set search_path to \"BlobStore\",public");
+		->exec(l == Level::strong ?
+			   "set search_path to \"BlobStore\",public"
+			   : "set search_path to causalstore,public");
 	assert(t->commit());
 }
 
@@ -59,9 +61,6 @@ struct SQLStore_impl::GSQLObject::Internals{
 	char* buf1;
 	SQLTransaction* curr_ctx;
 	int vers;
-	static auto select_max_id(Table t) {
-		return cmds::select_max_id(t);
-	}
 	string select_vers;
 	string select_data;
 	string update_data;
