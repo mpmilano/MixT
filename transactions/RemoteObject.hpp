@@ -6,18 +6,30 @@
 #include "Store.hpp"
 #include "SerializationSupport.hpp"
 
+#define GeneralRemoteObject_body				\
+	const int id = gensym();										\
+	virtual void setTransactionContext(TransactionContext*) = 0;	\
+	virtual TransactionContext* currentTransactionContext() = 0;	\
+	virtual bool ro_isValid() const = 0;							\
+	virtual const GDataStore& store() const = 0;					\
+	virtual GDataStore& store() = 0;								\
+	virtual int name() const = 0;									\
+	virtual ~GeneralRemoteObject(){}								\
 
-template<Level l>
-struct GeneralRemoteObject : public ByteRepresentable{
-	const int id = gensym();
-	virtual void setTransactionContext(TransactionContext*) = 0;
-	virtual TransactionContext* currentTransactionContext() = 0;
-	virtual bool ro_isValid() const = 0;
-	virtual const GDataStore& store() const = 0;
-	virtual GDataStore& store() = 0;
-	virtual int name() const = 0;
-	virtual ~GeneralRemoteObject(){}
+template<Level>
+struct GeneralRemoteObject;
+
+template<>
+struct GeneralRemoteObject<Level::strong> : public ByteRepresentable{
+	GeneralRemoteObject_body
 };
+
+template<>
+struct GeneralRemoteObject<Level::causal> : public ByteRepresentable{
+	GeneralRemoteObject_body
+	
+};
+
 
 template<Level l2, HandleAccess ha2, typename T2> struct Handle;
 class Tracker;
