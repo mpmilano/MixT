@@ -29,10 +29,10 @@ BEGIN
 
     UPDATE "BlobStore"
         SET data = NEW.data,
-            vc1 = MAX(max.vc1, NEW.v1),
-            vc2 = MAX(max.vc2, NEW.v2),
-            vc3 = MAX(max.vc3, NEW.v3),
-            vc4 = MAX(max.vc4, NEW.v4)
+            vc1 = GREATEST(max.vc1, NEW.vc1),
+            vc2 = GREATEST(max.vc2, NEW.vc2),
+            vc3 = GREATEST(max.vc3, NEW.vc3),
+            vc4 = GREATEST(max.vc3, NEW.vc4)
         FROM (SELECT MAX(b.vc1) AS vc1,
                      MAX(b.vc2) AS vc2,
                      MAX(b.vc3) AS vc3,
