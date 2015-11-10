@@ -67,9 +67,9 @@ namespace{
 		template<typename T, typename Blob>
 		void update_data_s(T& trans, Table t, int id, const Blob& b){
 			static const std::string bs =
-				"update \"BlobStore\" set data=$1,Version=$2 where ID=";
+				"update \"BlobStore\" set data=$2,Version=Version + 1 where ID=$1";
 			static const std::string is =
-					"update \"IntStore\" set data=$1,Version=$2 where ID=";
+				"update \"IntStore\" set data=$2,Version=Version + 1 where ID=$1";
 				switch(t) {
 				case Table::BlobStore : trans.prepared("Update1",bs,id,b); return;
 				case Table::IntStore : trans.prepared("Update2",is,id,b); return;
@@ -199,7 +199,7 @@ namespace{
 				auto &p = commands[i];
 				if (i == 1 || i == 2)
 					trans.prepared(p.first,p.second,id);
-				else trans.prepared(p.first,p.second);
+				else trans.exec(p.second);
 			}
 			update_data_c_cmd("$5");
 			auto &p = update_cmds.at(((int)t) * (NUM_CAUSAL_GROUPS) + k);
@@ -209,22 +209,24 @@ namespace{
 		//entry points
 
 		template<typename T, typename Ret>
-		void select_version(Level l, T &tran, Table t, int k, int id,Ret& r){
-			if (l == Level::strong) assert(std::is_scalar<Ret>::value);
-			else return select_version_(tran,t,k,id,r);
+		void select_version(Level l, T &tran, Table t, int id,Ret& r){
+			if (l == Level::strong) {
+				assert(std::is_scalar<Ret>::value);
+			}
+			return select_version_(tran,t,id,r);
 		}
 		
 
 		template<typename T, typename Blob>
 		void update_data(Level l, T &tran, Table t, int k, int id, const std::array<int,NUM_CAUSAL_GROUPS> &ends, const Blob& b){
 			if (l == Level::strong) update_data_s(tran,t,id,b);
-			else update_data_s(tran,t,k,id,ends,b);
+			else if (l == Level::causal) update_data_c(tran,t,k,id,ends,b);
 		}
 
 
 		template<typename T, typename Blob>
 			void initialize_with_id(Level l, T &tran, Table t, int k, int id, const std::array<int,NUM_CAUSAL_GROUPS> &ends, const Blob& b){
-			if (l == Level::strong) initialize_with_id_s(tran,id,b);
+			if (l == Level::strong) initialize_with_id_s(tran,t,id,b);
 			else initialize_with_id_c(tran,t,k,id,ends,b);
 		}
 		template<typename T, typename Blob>
@@ -234,11 +236,11 @@ namespace{
 		}
 
 		template<typename T>
-			void increment(Level l, T& tran, Table t, int k, int id, const std::array<int,NUM_CAUSAL_GROUPS> &ends, int b){
+			void increment(Level l, T& tran, Table t, int k, int id, const std::array<int,NUM_CAUSAL_GROUPS> &ends){
 			assert(t == Table::IntStore
 				   && "Error: increment currently only defined on integers");
-			if (l == Level::strong) increment_s(tran,t,id,b);
-			else increment_c(tran,t,k,id,ends,b);
+			if (l == Level::strong) increment_s(tran,t,id);
+			else increment_c(tran,t,k,id,ends);
 		}
 
 

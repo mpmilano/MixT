@@ -24,16 +24,9 @@ enum class Table{
 	BlobStore = 0,IntStore = 1
 };
 
-int Table_max = 2;
-const std::string table_name(Table t){
-	static const std::string bs = "\"BlobStore\"";
-	static const std::string is = "\"IntStore\"";
-	switch (t){
-	case Table::BlobStore : return bs;
-	case Table::IntStore : return is;
-	};
-	assert(false && "you always knew adding new tables would be a pain");
-}
+static constexpr int Table_max = 2;
+
+const std::string& table_name(Table t);
 
 struct SQLStore_impl {
 private:
@@ -48,7 +41,8 @@ public:
 
 	struct SQLConnection;
 	using SQLConnection_t = SQLConnection*;
-	std::array<int,NUM_CAUSAL_GROUPS> clock;
+	struct Clock;
+	Clock* clock;
 
 	const Level level;
 	SQLConnection_t default_connection;

@@ -6,6 +6,7 @@
 #include "Tracker_common.hpp"
 #include "SQLCommands.hpp"
 #include "SQLStore.hpp"
+#include "Ends.hpp"
 
 using namespace pqxx;
 using namespace std;
@@ -16,8 +17,22 @@ namespace {
 	bool created_strong = false;
 }
 
+struct SQLStore_impl::Clock {
+	std::array<int,NUM_CAUSAL_GROUPS> t;
+};
+
+const std::string& table_name(Table t){
+	static const std::string bs = "\"BlobStore\"";
+	static const std::string is = "\"IntStore\"";
+	switch (t){
+	case Table::BlobStore : return bs;
+	case Table::IntStore : return is;
+	};
+	assert(false && "you always knew adding new tables would be a pain");
+}
+
 SQLStore_impl::SQLStore_impl(GDataStore &store, int instanceID, Level l)
-    :_store(store),level(l),default_connection{new SQLConnection(instanceID)} {
+    :_store(store),clock(new Clock()),level(l),default_connection{new SQLConnection(instanceID)} {
 	if (l == Level::strong) {
 		assert(!created_strong);
 		created_strong = true;
@@ -61,20 +76,12 @@ struct SQLStore_impl::GSQLObject::Internals{
 	char* buf1;
 	SQLTransaction* curr_ctx;
 	int vers;
-	string select_vers;
-	string select_data;
-	string update_data;
+	std::array<int,4> causal_vers;
     Internals(Table table, int key, int size,
-			  SQLStore_impl& store,char* buf, SQLTransaction* ctx, int vers)
+			  SQLStore_impl& store,char* buf, SQLTransaction* ctx)
         :table(table),key(key),size(size),store_id(store.instance_id()),level(store.level),_store(store),
-		 buf1(buf),curr_ctx(ctx),vers(vers)
-		,select_vers(
-			cmds::select_version(table) + to_string(key))
-		,select_data(cmds::select_data(table) +
-					 to_string(key))
-		,update_data( cmds::update_data(table)
-                      + to_string(key)){
-    }
+		 buf1(buf),curr_ctx(ctx),vers(-1),causal_vers{{-1,-1,-1,-1}}
+		{}
 };
 
 SQLStore_impl::GSQLObject::GSQLObject(SQLStore_impl::GSQLObject&& gso)
@@ -106,7 +113,7 @@ namespace{
 }
 
 SQLStore_impl::GSQLObject::GSQLObject(SQLStore_impl &ss, Table t, int id, int size)
-    :i(new Internals{t,id,size,ss,nullptr,nullptr,-1}){
+    :i(new Internals{t,id,size,ss,nullptr,nullptr}){
 	i->buf1 = (char*) malloc(size);
 	assert(load());
 }
@@ -118,9 +125,7 @@ namespace {
 		auto *trans = trans_owner.second;
 		int size = -1;
 		if (t == Table::BlobStore){
-			result r = trans->prepared(
-				(t == Table::IntStore ? "CheckIntSize" : "CheckBlobSize"),
-				cmds::check_size(t),id);
+			result r = cmds::check_size(ss.level,*trans,t,id);
 			assert(size == -1);
 			assert(r.size() > 0);
 			assert(r[0][0].to(size));
@@ -128,7 +133,7 @@ namespace {
 		}
 		else if (t == Table::IntStore) size = sizeof(int);
         return new Internals{t,id,size,ss,
-				(char*) malloc(size),nullptr,-1};
+				(char*) malloc(size),nullptr};
 	}
 }
 
@@ -139,7 +144,7 @@ SQLStore_impl::GSQLObject::GSQLObject(SQLStore_impl& ss, Table t, int id)
 //"named" object
 SQLStore_impl::GSQLObject::GSQLObject(SQLStore_impl& ss, Table t, int id, const vector<char> &c)
     :i{new Internals{t,id,(int)c.size(),ss,
-			(char*) malloc(c.size()),nullptr,0}}{
+			(char*) malloc(c.size()),nullptr}}{
 	assert(!ro_isValid());
 	{
 		auto trans_owner = enter_transaction(*this);
@@ -147,14 +152,10 @@ SQLStore_impl::GSQLObject::GSQLObject(SQLStore_impl& ss, Table t, int id, const 
 
 		if (t == Table::BlobStore){
 			binarystring blob(&c.at(0),c.size());
-			trans->prepared("InitializeBlobData",
-							cmds::initialize_with_id(t),
-							id,blob);
+			cmds::initialize_with_id(ss.level,*trans,t,ss.default_connection->repl_group,id,ss.clock->t,blob);
 		}
 		else if (t == Table::IntStore){
-			trans->prepared("InitializeIntData",
-							cmds::initialize_with_id(t),
-							id,((int*)c.data())[0]);
+			cmds::initialize_with_id(ss.level,*trans,t,ss.default_connection->repl_group,id,ss.clock->t,((int*)c.data())[0]);
 		}
 	}
 	memcpy(this->i->buf1, &c.at(0), c.size());
@@ -168,7 +169,8 @@ namespace {
 	//transaction context needs to be different sometimes
 	template<typename Trans>
 	bool obj_exists(int id, Trans owner){
-		return owner->prepared("Exists",cmds::obj_exists(),id).size() > 0;
+		//level doesn't matter here for now.
+		return cmds::obj_exists(Level::undef,*owner,id).size() > 0;
 	}
 }
 
@@ -178,8 +180,7 @@ bool SQLStore_impl::exists(int id) {
 }
 
 void SQLStore_impl::remove(int id) {
-	small_transaction(*this)->exec(cmds::remove(Table::BlobStore) + to_string(id));
-	small_transaction(*this)->exec(cmds::remove(Table::IntStore) + to_string(id));
+	cmds::remove(level,*small_transaction(*this),Table::BlobStore,id);
 }
 
 SQLStore_impl::GSQLObject::~GSQLObject(){
@@ -230,8 +231,8 @@ namespace {
         }
     }
 
-	int ip_to_group(unsigned int _i){
-		unsigned int32 i = _i; //just in case
+	int ip_to_group(unsigned int i){
+		static_assert(sizeof(unsigned int) == 4,"Need a 32-bit type here");
 		if (i == 0) return 1;
 		//get the 10s position out of the last octet of the ip address.
 		else
@@ -261,30 +262,48 @@ void SQLStore_impl::GSQLObject::save(){
 	char *c = obj_buffer();
 	auto owner = enter_transaction(*this);
 	auto trans = owner.second;
-	int vers = -1;
-	auto r = trans->exec(i->select_vers);
-	assert(r[0][0].to(vers));
-    assert(vers != -1);
+
+#define upd_23425(x...) cmds::update_data(i->_store.level,*trans,i->table,i->_store.default_connection->repl_group,i->key,i->_store.clock->t,x)
+	
 	if (i->table == Table::BlobStore){
 		binarystring blob(c,i->size);
-		trans->prepared("UpdateBlobData",i->update_data,blob,vers);
+		upd_23425(blob);
 	}
-	else trans->prepared("UpdateIntData",i->update_data,((int*)c)[0],vers);
-	i->vers = vers;
+	else if (i->table == Table::IntStore){
+		upd_23425(((int*)c)[0]);
+	}
+
+	if (i->_store.level == Level::strong){
+		cmds::select_version(i->_store.level, *trans,i->table,i->key,i->vers);
+	}
+	else if (i->_store.level == Level::causal){
+		cmds::select_version(i->_store.level, *trans,i->table,i->key,i->causal_vers);
+		//I'm not actually contributing my counter from my clock to the version,
+		//so there's no need to update it here. 
+		//i->_store.clock->t = ends::max(i->_store.clock->t,i->causal_vers);
+	}
 }
 
 char* SQLStore_impl::GSQLObject::load(){
 	char* c = obj_buffer();
 	auto owner = enter_transaction(*this);
 	auto trans = owner.second;
-	int store_vers = -1;
-	auto r = trans->exec(i->select_vers);
-	assert(r[0][0].to(store_vers));
-	assert(store_vers != -1);
-	if (store_vers == i->vers) return c;
+	bool store_same = false;
+	if (i->_store.level == Level::causal){
+		auto old = i->causal_vers;
+		cmds::select_version(i->_store.level, *trans,i->table,i->key,i->causal_vers);
+		store_same = ends::is_same(old,i->causal_vers);
+		if (!store_same) i->_store.clock->t = max(i->_store.clock->t,i->causal_vers);
+	}
+	else if (i->_store.level == Level::strong){
+		auto old = i->vers;
+		cmds::select_version(i->_store.level, *trans,i->table,i->key,i->vers);
+		store_same = (old == i->vers);
+	}
+
+	if (store_same) return c;
 	else{
-		i->vers = store_vers;
-		result r = trans->exec(i->select_data);
+		result r = cmds::select_data(i->_store.level,*trans,i->table,i->key);
 		if (i->table == Table::BlobStore){
 			binarystring bs(r[0][0]);
 			assert(bs.size() == i->size);
@@ -301,7 +320,12 @@ char* SQLStore_impl::GSQLObject::load(){
 
 void SQLStore_impl::GSQLObject::increment(){
 	auto owner = enter_transaction(*this);
-	owner.second->prepared("Increment",cmds::increment(i->table),i->key);
+	cmds::increment(i->_store.level,
+					*owner.second,
+					i->table,
+					i->_store.default_connection->repl_group,
+					i->key,
+					i->_store.clock->t);
 }
 
 bool SQLStore_impl::GSQLObject::ro_isValid() const {
@@ -351,4 +375,5 @@ SQLStore_impl::GSQLObject SQLStore_impl::GSQLObject::from_bytes(char *v){
 
 SQLStore_impl::~SQLStore_impl(){
 	delete default_connection;
+	delete clock;
 }
