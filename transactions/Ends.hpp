@@ -13,4 +13,12 @@ namespace ends{
 		}
 		return true;
 	}
+
+	template<size_t s>
+	bool prec(const std::array<int,s> &a,const std::array<int,s> &b){
+		for (int i = 0; i < s; ++i){
+			if (a[i] > b[i]) return false;
+		}
+		return true;
+	}
 }

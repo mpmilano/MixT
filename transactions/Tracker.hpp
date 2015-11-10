@@ -15,39 +15,32 @@ template<Level l, HandleAccess HA, typename T>
 struct Handle;
 
 namespace TDS{
-	static constexpr int real = 0;
-	static constexpr int newEnds = 1;
-	static constexpr int newMeta = 2;
-	static constexpr int newTomb = 3;
-	static constexpr int exists = 4;
-	static constexpr int existingMeta = 5;
+	static constexpr int newTomb = 0;
+	static constexpr int exists = 1;
+	static constexpr int existingClock = 2;
 }
 
 class Tracker {
 public:
 	//support structures, metadata.
-	//implementations are in Tracker_support_structures.hpp
-	struct Ends;
-	struct Metadata;
-	struct Tombstone;
-	struct timestamp;
-	struct timestamp_c;
+	using Nonce = int;
+	struct Tombstone{
+		Nonce nonce;
+		int name() const;
+	};
+
+	using Clock = std::array<int,NUM_CAUSAL_GROUPS>;
 	template<Level l>
-	using TrackerDS = std::tuple<DataStore<l>*, //real
-								 Handle<l, HandleAccess::all, Ends> (*) (DataStore<l>&, int, const Ends&), //newEnds
-								 Handle<l, HandleAccess::all, Metadata> (*) (DataStore<l>&, int, const Metadata&), //newMeta
-								 Handle<l, HandleAccess::all, Tombstone> (*) (DataStore<l>&, int, const Tombstone&), //newTomb
-								 bool (*) (DataStore<l>&, int), //exists
-								 Handle<l, HandleAccess::all, Metadata> (*) (DataStore<l>&, int) //existingMeta
-								 >;
+	using TrackerDS =
+		std::tuple<
+		Handle<l, HandleAccess::all, Tombstone> (*)
+		(DataStore<l>&, int, const Tombstone&), //newTomb
+		bool (*) (DataStore<l>&, int), //exists
+		std::unique_ptr<RemoteObject<l, Clock> > (*)
+		(DataStore<l>&, int) //existingClock
+		>;
 	using TrackerDSStrong = TrackerDS<Level::strong>;
 	using TrackerDSCausal = TrackerDS<Level::causal>;
-	using replicaID = int;
-	using Nonce = int;
-	using read_pair = TrivialPair<replicaID, Nonce>;
-
-	typedef std::unique_ptr<TrackerDSStrong > (*getStrongInstance) (replicaID);
-	typedef std::unique_ptr<TrackerDSCausal > (*getCausalInstance) (replicaID);
 
 	//hiding private members of this class. No implementation available.
 	struct Internals;
@@ -60,80 +53,25 @@ public:
 
 	bool registered(const GDataStore&) const;
 
-	void registerStore(DataStore<Level::strong> &, std::unique_ptr<TrackerDSStrong>, getStrongInstance);
-	void registerStore(DataStore<Level::causal> &, std::unique_ptr<TrackerDSCausal>, getCausalInstance);
+	void registerStore(DataStore<Level::strong> &, std::unique_ptr<TrackerDSStrong>);
+	void registerStore(DataStore<Level::causal> &, std::unique_ptr<TrackerDSCausal>);
 
-	template<typename DS, typename Ret>
-	void registerStore(DS &ds, Ret (*f) (replicaID));
-
-	void tick();
+	template<typename DS>
+	void registerStore(DS &ds);
 	
 	void onWrite(DataStore<Level::strong>&, int name);
 
-	void onWrite(DataStore<Level::causal>&, int name);
+	void onWrite(DataStore<Level::causal>&, int name, const Clock &version);
 
 	void onCreate(DataStore<Level::causal>&, int name);
 
     void onCreate(DataStore<Level::strong>&, int name);
 
 	void onRead(DataStore<Level::strong>&, int name);
+	
+	void onRead(DataStore<Level::causal>&, int name, const Clock &version);
 
 private:
-	void onRead_internal(
-		DataStore<Level::causal>&,
-		int name,
-		const std::function<std::unique_ptr<GeneralRemoteObject<Level::causal>> (
-			DataStore<Level::causal>&, int)> &
-		existingT,
-		const std::function<void (std::vector<std::unique_ptr<GeneralRemoteObject<Level::causal>>>)>&
-		mergeT,
-		const std::function<std::unique_ptr<GeneralRemoteObject<Level::causal>> (
-							 DataStore<Level::causal>&, int)> &
-		existingEnds,
-		const std::function<std::unique_ptr<Ends> (std::vector<std::unique_ptr<GeneralRemoteObject<Level::causal> > >)>&
-		mergeEnds
-		);
-public:
-
-	template<template<typename> class RO, typename T>
-	static std::unique_ptr<T> default_merge_imp(const std::vector<std::unique_ptr<RO<T> > > &v, int)
-		{
-			if (v.size() == 1) return heap_copy(v.back()->get(nullptr));
-			else assert(false && "you don't have a merge function for this type. Roll again.");
-		}
-
-
-	template<template<typename> class RO, typename T>
-	static auto default_merge_imp(const std::vector<std::unique_ptr<RO<T> > > &v, long)
-		{
-			T const * (*mapped) (const std::unique_ptr<RO<T> >&) =
-				[](const std::unique_ptr<RO<T> > &a) -> T const *  {return &a->get(nullptr);};
-			std::vector<T const * > arg = map(v,mapped);
-			return T::merge(arg);
-		}
-
-	template<template<typename> class RO, typename T>
-	static std::enable_if_t<!std::is_scalar<T>::value,std::unique_ptr<T> >
-	default_merge(const std::vector<std::unique_ptr<RO<T> > > &v)
-		{
-			return default_merge_imp(v,0);
-		}
-
-	template<template<typename> class RO, typename T>
-	static std::enable_if_t<std::is_scalar<T>::value,std::unique_ptr<T> > default_merge(const std::vector<std::unique_ptr<RO<T> > > &v)  {
-		if (v.size() == 1) return heap_copy(v.back()->get(nullptr));
-		else assert(false && "merging scalars does not make sense");
-	}
-
-	//need to know the type of the object we are writing here.
-	//thus, a lot of this work needs to get done in the header (sadly).
-	template<typename T, template<typename> class RO, typename DS>
-	std::unique_ptr<T> onRead(DS& ds, int name,
-							  const std::function<std::unique_ptr<T> (const std::vector<std::unique_ptr<RO<T> > >&)> &merge
-							  = default_merge<RO,T>,
-							  const std::function<std::unique_ptr<Ends> (const std::vector<std::unique_ptr<RO<Ends> > >&)> &mergeEnds =
-							  default_merge<RO,Ends>);
-
 	Tracker();
 	virtual ~Tracker();
 

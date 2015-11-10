@@ -7,11 +7,7 @@ template<Level l>
 class SQLStore : public SQLStore_impl, public DataStore<l> {
 
     SQLStore(int inst_id):SQLStore_impl(*this,inst_id,l) {
-		std::unique_ptr<Tracker::TrackerDS<l> > (*f) (Tracker::replicaID) =
-			[](Tracker::replicaID i) -> std::unique_ptr<Tracker::TrackerDS<l> >
-			{return wrapStore(inst(i));};
-		Tracker::global_tracker().registerStore(
-			*this,f);
+		Tracker::global_tracker().registerStore(*this);
 	}
 public:
 

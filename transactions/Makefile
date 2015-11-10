@@ -6,11 +6,11 @@ export TRANS_DIR
 export clangFlags
 export linkFlags
 
-all: utils.o Tracker.o Ends.o SerializationSupport.o WhileBuilder.o ConExpr.o Context.o SQLStore.o TempBuilder.o new_test.o
-	clang++ utils.o Tracker.o Ends.o SerializationSupport.o WhileBuilder.o ConExpr.o Context.o SQLStore.o TempBuilder.o new_test.o -o test $(linkFlags)
+all: utils.o Tracker.o SerializationSupport.o WhileBuilder.o ConExpr.o Context.o SQLStore.o TempBuilder.o new_test.o
+	clang++ utils.o Tracker.o SerializationSupport.o WhileBuilder.o ConExpr.o Context.o SQLStore.o TempBuilder.o new_test.o -o test $(linkFlags)
 
-chat: utils.o Tracker.o Ends.o SerializationSupport.o WhileBuilder.o ConExpr.o Context.o SQLStore.o TempBuilder.o chat_example.o
-	clang++ utils.o Tracker.o Ends.o SerializationSupport.o WhileBuilder.o ConExpr.o Context.o SQLStore.o TempBuilder.o chat_example.o -o chat $(linkFlags)
+chat: utils.o Tracker.o SerializationSupport.o WhileBuilder.o ConExpr.o Context.o SQLStore.o TempBuilder.o chat_example.o
+	clang++ utils.o Tracker.o SerializationSupport.o WhileBuilder.o ConExpr.o Context.o SQLStore.o TempBuilder.o chat_example.o -o chat $(linkFlags)
 
 sqlstore: sqlstore_clean all
 	echo "done"
@@ -34,8 +34,6 @@ utils.o:
 	clang++ -c utils.cpp $(clangFlags)
 Tracker.o:
 	clang++ -c Tracker.cpp $(clangFlags)
-Ends.o:
-	clang++  -c Ends.cpp $(clangFlags)
 SerializationSupport.o:
 	clang++ -c SerializationSupport.cpp $(clangFlags)
 SQLStore.o:
