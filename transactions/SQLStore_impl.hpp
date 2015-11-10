@@ -5,6 +5,7 @@
 #include "Transaction.hpp"
 #include <memory>
 #include <vector>
+#include <array>
 
 /**
    Information: We are assuming an SQL store which has already been configured
@@ -20,8 +21,19 @@ template<Level l>
 class SQLStore;
 
 enum class Table{
-	BlobStore,IntStore
+	BlobStore = 0,IntStore = 1
 };
+
+int Table_max = 2;
+const std::string table_name(Table t){
+	static const std::string bs = "\"BlobStore\"";
+	static const std::string is = "\"IntStore\"";
+	switch (t){
+	case Table::BlobStore : return bs;
+	case Table::IntStore : return is;
+	};
+	assert(false && "you always knew adding new tables would be a pain");
+}
 
 struct SQLStore_impl {
 private:
@@ -35,7 +47,8 @@ public:
 	friend class SQLStore;
 
 	struct SQLConnection;
-	using SQLConnection_t = SQLConnection*;	
+	using SQLConnection_t = SQLConnection*;
+	std::array<int,NUM_CAUSAL_GROUPS> clock;
 
 	const Level level;
 	SQLConnection_t default_connection;

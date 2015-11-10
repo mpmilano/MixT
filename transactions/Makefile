@@ -39,7 +39,7 @@ Ends.o:
 SerializationSupport.o:
 	clang++ -c SerializationSupport.cpp $(clangFlags)
 SQLStore.o:
-	clang++ -c SQLStore.cpp $(clangFlags)
+	clang++ -c SQLStore.cpp -DNUM_CAUSAL_MASTERS="2" -DNUM_CAUSAL_GROUPS="4" $(clangFlags)
 Context.o:
 	clang++ -c Context.cpp $(clangFlags)
 TempBuilder.o:

@@ -229,17 +229,25 @@ namespace {
             return std::string(str);
         }
     }
+
+	int ip_to_group(unsigned int _i){
+		unsigned int32 i = _i; //just in case
+		if (i == 0) return 1;
+		//get the 10s position out of the last octet of the ip address.
+		else
+			return
+				(((char*)(&i))[3] / 10)
+				- (10 *(((char*)(&i))[3] / 100));
+	}
 }
 
 
-SQLStore_impl::SQLConnection::SQLConnection(int ip):ip_addr(ip),conn{std::string("host=") + string_of_ip(ip)}{}
+SQLStore_impl::SQLConnection::SQLConnection(int ip):ip_addr(ip),repl_group(ip_to_group(ip)),conn{std::string("host=") + string_of_ip(ip)}{}
 
 int SQLStore_impl::GSQLObject::store_instance_id() const {
 	if (i->level == Level::strong)
 		assert(&SQLStore<Level::strong>::inst(i->store_id) == &i->_store);
 	else if (i->level == Level::causal){
-		//note: there's a independence-of-causal-stores
-		//bug here, relating to IDs somehow. Must investigate.
 		assert(&SQLStore<Level::causal>::inst(i->store_id) == &i->_store);
 	}
 	return i->store_id;

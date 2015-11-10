@@ -1,4 +1,5 @@
 #pragma once
+#include <vector>
 
 namespace{
 
@@ -7,19 +8,19 @@ namespace{
 		//hybrid section (same command works on both strong and causal)
 
 		template<typename T>
-		const std::string& select_data(Level, T &trans, Table t, int id){
+		auto select_data(Level, T &trans, Table t, int id){
 			static const std::string bs =
 				"select data from \"BlobStore\" where index = 0 and ID = $1";
 			static const std::string is = "select data from \"IntStore\" where index = 0 and ID = $1";
 			switch(t) {
-			case Table::BlobStore : trans.prepared("select1",bs,id); return;
-			case Table::IntStore : trans.prepared("select2",is,id); return;
+			case Table::BlobStore : return trans.prepared("select1",bs,id); 
+			case Table::IntStore : return trans.prepared("select2",is,id); 
 			}
 			assert(false && "forgot a case");
 		}
 
 		template<typename T>
-		const auto& obj_exists(Level, T &trans, int id){
+		auto obj_exists(Level, T &trans, int id){
 			const static std::string query =
 				"select id from \"BlobStore\" where id = $1 union select id from \"IntStore\" where id = $1 limit 1";
 			return trans.prepared("exists",query,id);
@@ -40,7 +41,7 @@ namespace{
 		}
 
 		template<typename T>
-		const auto& check_size(Level, T &trans, Table t, int id){
+		auto check_size(Level, T &trans, Table t, int id){
 			assert(t == Table::BlobStore &&
 				   "Error: size check non-sensical for non-blob data");
 			const static std::string bs =
@@ -64,7 +65,7 @@ namespace{
 		}
 
 		template<typename T, typename Blob>
-		void update_data_s(Level l, Table t, int id, const Blob& b){
+		void update_data_s(T& trans, Table t, int id, const Blob& b){
 			static const std::string bs =
 				"update \"BlobStore\" set data=$1,Version=$2 where ID=";
 			static const std::string is =
@@ -77,7 +78,7 @@ namespace{
 		}
 
 		template<typename T>
-		const auto& increment_s(T &trans, Table t, int id){
+		void increment_s(T &trans, Table t, int id){
 			assert(t == Table::IntStore
 				   && "Error: increment currently only defined on integers");
 			const static std::string s =
@@ -103,24 +104,24 @@ namespace{
 
 		static constexpr int group_mapper(int k){
 			if (k < 1) assert(false && "Error: k is 1-indexed");
-			static constexpr int sizes = NUM_CAUSAL_GROUPS / NUM_CAUSAL_MASTERS;
-			static constexpr int overflow = NUM_CAUSAL_GROUPS - sizes * NUM_CAUSAL_MASTERS;
+			constexpr int sizes = NUM_CAUSAL_GROUPS / NUM_CAUSAL_MASTERS;
+			constexpr int overflow = NUM_CAUSAL_GROUPS - sizes * NUM_CAUSAL_MASTERS;
 			return (k < overflow ? 0
 					: (k - overflow - 1) / (NUM_CAUSAL_MASTERS)) + 1;
 		}
 		
 		int md(int k){return (k % NUM_CAUSAL_GROUPS == 0 ? NUM_CAUSAL_GROUPS : k % NUM_CAUSAL_GROUPS);}
 
-#define update_data_c_cmd(set, t, k)								\
-		const static auto update_cmds = [&](){						\
-			vector<pair<string,string> > > ret;						\
+#define update_data_c_cmd(set)	using namespace std;					\
+		const static auto update_cmds = [&](){							\
+			vector<pair<string,string> > ret;							\
 			for (int _t = 0; _t < Table_max; ++_t){						\
 				string t = table_name((Table)_t);						\
 				for (int _k = 1; _k < (NUM_CAUSAL_GROUPS+1); ++_k){		\
 					auto k = to_string(_k);								\
 					stringstream main;									\
 					main << "update " << t << "set data = " << set;		\
-					for (int i = 1; i < NUM_CAUSAL_GROUPS; ++i) main << ", vc" << md(k+i) << "=$"<<i+1<<; \
+					for (int i = 1; i < NUM_CAUSAL_GROUPS; ++i) main << ", vc" << md(_k+i) << "=$"<<i+1; \
 					main << ", lw = " << k								\
 						 << " where \"ID\" = $1 and index = " << group_mapper(_k); \
 					ret.push_back(pair<string,string>{(t + "Update") + k,main.str()}); \
@@ -129,12 +130,13 @@ namespace{
 			return ret;													\
 		}();
 
+		template<typename T>
 		void select_version_(T &trans, Table t, int id, std::array<int,NUM_CAUSAL_GROUPS>& vers){
 			using namespace std;
 			static const vector<pair<string,string> > v = [&](){
 				vector<pair<string,string> > v;
 				for (int i = 0; i < Table_max; ++i){
-					v.push_back(pair<string,string>{string("Sel1") + i,
+					v.push_back(pair<string,string>{string("Sel1") + std::to_string(i),
 								string("select vc1,vc2,vc3,vc4 from ") + table_name((Table)i)
 								+ " where ID=$1 and index=0"});
 				}
@@ -150,7 +152,7 @@ namespace{
 		
 		template<typename T, typename Blob>
 		void update_data_c(T &trans, Table t, int k, int id, const std::array<int,NUM_CAUSAL_GROUPS> &ends, const Blob &b){
-			update_data_c_cmd("$5",t,k);
+			update_data_c_cmd("$5");
 			auto &p = update_cmds.at(((int)t) * (NUM_CAUSAL_GROUPS) + k);
 			trans.prepared(p.first,p.second,id,ends[md(k+1)],ends[md(k+2)],ends[md(k+3)],b);
 		}
@@ -158,7 +160,7 @@ namespace{
 		
 		template<typename T>
 			void increment_c(T &trans, Table t, int k, int id, const std::array<int,NUM_CAUSAL_GROUPS> &ends){
-			update_data_c_cmd("data + 1",t,k);
+			update_data_c_cmd("data + 1");
 			auto &p = update_cmds.at(((int)t) * (NUM_CAUSAL_GROUPS) + k);
 			trans.prepared(p.first,p.second,id,ends[md(k+1)],ends[md(k+2)],ends[md(k+3)]);
 		}
@@ -169,7 +171,7 @@ namespace{
 			static constexpr int n = NUM_CAUSAL_GROUPS;
 			static constexpr int r = NUM_CAUSAL_MASTERS;
 			const static auto v = [&](){
-				vector<array<pair<string,string>,6 > > ret;
+				vector<array<pair<string,string>,3 > > ret;
 				for (int _t = 0; _t < Table_max; ++_t){
 					stringstream main1;
 					stringstream main2;
@@ -194,13 +196,14 @@ namespace{
 			}();
 			auto &commands = v.at(((int)t) * n + k);
 			for (int i = 0; i < commands.size(); ++i){
+				auto &p = commands[i];
 				if (i == 1 || i == 2)
 					trans.prepared(p.first,p.second,id);
 				else trans.prepared(p.first,p.second);
 			}
-			update_data_c_cmd("$5",t,k);
+			update_data_c_cmd("$5");
 			auto &p = update_cmds.at(((int)t) * (NUM_CAUSAL_GROUPS) + k);
-			trans.prepared(p.first,p.second,id,ends[md(k+1)],ends[md(k+2)],ends[md(k+3)],blob);
+			trans.prepared(p.first,p.second,id,ends[md(k+1)],ends[md(k+2)],ends[md(k+3)],b);
 		}
 
 		//entry points
@@ -213,7 +216,7 @@ namespace{
 		
 
 		template<typename T, typename Blob>
-		const std::string& update_data(Level l, T &tran, Table t, int k, int id, const std::array<int,NUM_CAUSAL_GROUPS> &ends, const Blob& b){
+		void update_data(Level l, T &tran, Table t, int k, int id, const std::array<int,NUM_CAUSAL_GROUPS> &ends, const Blob& b){
 			if (l == Level::strong) update_data_s(tran,t,id,b);
 			else update_data_s(tran,t,k,id,ends,b);
 		}
