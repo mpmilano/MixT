@@ -1,6 +1,6 @@
 TRANS_DIR= `pwd`/
 storeList='SQLStore<Level::strong>, SQLStore<Level::causal>'
-clangFlags= -Xclang -fcolor-diagnostics -g -stdlib=libc++ --std=c++14 -Wall -ferror-limit=1 -DSTORE_LIST=$(storeList) -DPRINT_TRANS -DDECLARED_OPERATIONS="template<Level l2> DECLARE_OPERATION(Increment, RemoteObject<l2,int>*) template<Level l2, typename T> DECLARE_OPERATION(Insert, RemoteObject<l2,std::set<T> >*, const T& ) "
+clangFlags= -Xclang -fcolor-diagnostics -g -stdlib=libc++ --std=c++14 -Wall -ferror-limit=1 -DNUM_CAUSAL_GROUPS="4" -DSTORE_LIST=$(storeList) -DPRINT_TRANS -DDECLARED_OPERATIONS="template<Level l2> DECLARE_OPERATION(Increment, RemoteObject<l2,int>*) template<Level l2, typename T> DECLARE_OPERATION(Insert, RemoteObject<l2,std::set<T> >*, const T& ) "
 linkFlags= -stdlib=libc++ --std=c++14 -lpqxx
 export TRANS_DIR
 export clangFlags
@@ -39,7 +39,7 @@ Ends.o:
 SerializationSupport.o:
 	clang++ -c SerializationSupport.cpp $(clangFlags)
 SQLStore.o:
-	clang++ -c SQLStore.cpp -DNUM_CAUSAL_MASTERS="2" -DNUM_CAUSAL_GROUPS="4" $(clangFlags)
+	clang++ -c SQLStore.cpp -DNUM_CAUSAL_MASTERS="2" $(clangFlags)
 Context.o:
 	clang++ -c Context.cpp $(clangFlags)
 TempBuilder.o:

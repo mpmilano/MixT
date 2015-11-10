@@ -17,10 +17,6 @@ namespace {
 	bool created_strong = false;
 }
 
-struct SQLStore_impl::Clock {
-	std::array<int,NUM_CAUSAL_GROUPS> t;
-};
-
 const std::string& table_name(Table t){
 	static const std::string bs = "\"BlobStore\"";
 	static const std::string is = "\"IntStore\"";
@@ -32,7 +28,7 @@ const std::string& table_name(Table t){
 }
 
 SQLStore_impl::SQLStore_impl(GDataStore &store, int instanceID, Level l)
-    :_store(store),clock(new Clock()),level(l),default_connection{new SQLConnection(instanceID)} {
+    :_store(store),clock{{0,0,0,0}},level(l),default_connection{new SQLConnection(instanceID)} {
 	if (l == Level::strong) {
 		assert(!created_strong);
 		created_strong = true;
@@ -152,10 +148,10 @@ SQLStore_impl::GSQLObject::GSQLObject(SQLStore_impl& ss, Table t, int id, const 
 
 		if (t == Table::BlobStore){
 			binarystring blob(&c.at(0),c.size());
-			cmds::initialize_with_id(ss.level,*trans,t,ss.default_connection->repl_group,id,ss.clock->t,blob);
+			cmds::initialize_with_id(ss.level,*trans,t,ss.default_connection->repl_group,id,ss.clock,blob);
 		}
 		else if (t == Table::IntStore){
-			cmds::initialize_with_id(ss.level,*trans,t,ss.default_connection->repl_group,id,ss.clock->t,((int*)c.data())[0]);
+			cmds::initialize_with_id(ss.level,*trans,t,ss.default_connection->repl_group,id,ss.clock,((int*)c.data())[0]);
 		}
 	}
 	memcpy(this->i->buf1, &c.at(0), c.size());
@@ -263,7 +259,7 @@ void SQLStore_impl::GSQLObject::save(){
 	auto owner = enter_transaction(*this);
 	auto trans = owner.second;
 
-#define upd_23425(x...) cmds::update_data(i->_store.level,*trans,i->table,i->_store.default_connection->repl_group,i->key,i->_store.clock->t,x)
+#define upd_23425(x...) cmds::update_data(i->_store.level,*trans,i->table,i->_store.default_connection->repl_group,i->key,i->_store.clock,x)
 	
 	if (i->table == Table::BlobStore){
 		binarystring blob(c,i->size);
@@ -280,7 +276,7 @@ void SQLStore_impl::GSQLObject::save(){
 		cmds::select_version(i->_store.level, *trans,i->table,i->key,i->causal_vers);
 		//I'm not actually contributing my counter from my clock to the version,
 		//so there's no need to update it here. 
-		//i->_store.clock->t = ends::max(i->_store.clock->t,i->causal_vers);
+		//i->_store.clock = ends::max(i->_store.clock,i->causal_vers);
 	}
 }
 
@@ -293,7 +289,7 @@ char* SQLStore_impl::GSQLObject::load(){
 		auto old = i->causal_vers;
 		cmds::select_version(i->_store.level, *trans,i->table,i->key,i->causal_vers);
 		store_same = ends::is_same(old,i->causal_vers);
-		if (!store_same) i->_store.clock->t = max(i->_store.clock->t,i->causal_vers);
+		if (!store_same) i->_store.clock = max(i->_store.clock,i->causal_vers);
 	}
 	else if (i->_store.level == Level::strong){
 		auto old = i->vers;
@@ -325,7 +321,7 @@ void SQLStore_impl::GSQLObject::increment(){
 					i->table,
 					i->_store.default_connection->repl_group,
 					i->key,
-					i->_store.clock->t);
+					i->_store.clock);
 }
 
 bool SQLStore_impl::GSQLObject::ro_isValid() const {
@@ -375,5 +371,4 @@ SQLStore_impl::GSQLObject SQLStore_impl::GSQLObject::from_bytes(char *v){
 
 SQLStore_impl::~SQLStore_impl(){
 	delete default_connection;
-	delete clock;
 }

@@ -5,13 +5,25 @@
 #include "Basics.hpp"
 
 template<Level l>
-class DataStore : public GDataStore{
+class DataStore;
+
+template<>
+class DataStore<Level::strong> : public GDataStore{
 public:
 
-	DataStore():GDataStore{l}{}
+	DataStore():GDataStore{Level::strong}{}
 	
-	//DECLARED_OPERATIONS
-	template<Level l2> DECLARE_OPERATION(Increment, RemoteObject<l2,int>*);
-	template<Level l2, typename T> DECLARE_OPERATION(Insert, RemoteObject<l2,std::set<T> >*, const T& ) 
+	DECLARED_OPERATIONS
+};
+
+template<>
+class DataStore<Level::causal> : public GDataStore{
+public:
+
+	DataStore():GDataStore{Level::causal}{}
+
+	virtual const std::array<int, NUM_CAUSAL_GROUPS>& local_time() = 0;
+	
+	DECLARED_OPERATIONS
 
 };

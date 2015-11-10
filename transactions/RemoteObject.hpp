@@ -11,8 +11,8 @@
 	virtual void setTransactionContext(TransactionContext*) = 0;	\
 	virtual TransactionContext* currentTransactionContext() = 0;	\
 	virtual bool ro_isValid() const = 0;							\
-	virtual const GDataStore& store() const = 0;					\
-	virtual GDataStore& store() = 0;								\
+	virtual const DataStore<level>& store() const = 0;					\
+	virtual DataStore<level>& store() = 0;								\
 	virtual int name() const = 0;									\
 	virtual ~GeneralRemoteObject(){}								\
 
@@ -21,13 +21,14 @@ struct GeneralRemoteObject;
 
 template<>
 struct GeneralRemoteObject<Level::strong> : public ByteRepresentable{
+	static constexpr Level level = Level::strong;
 	GeneralRemoteObject_body
 };
 
 template<>
 struct GeneralRemoteObject<Level::causal> : public ByteRepresentable{
+	static constexpr Level level = Level::causal;
 	GeneralRemoteObject_body
-	
 };
 
 

@@ -4,10 +4,10 @@
 template<typename T>
 struct CachedObject : public RemoteObject<Level::strong,T> {
 	std::shared_ptr<T> t;
-	GDataStore &st;
+	DataStore<Level::strong> &st;
 	int nm;
 	bool is_valid_only;
-	CachedObject(decltype(t) t, GDataStore &st, int name, bool is_valid_only)
+	CachedObject(decltype(t) t, DataStore<Level::strong> &st, int name, bool is_valid_only)
 		:t(std::move(t)),st(st),nm(name),is_valid_only(is_valid_only){}
 	
 	TransactionContext* currentTransactionContext(){
@@ -31,7 +31,7 @@ struct CachedObject : public RemoteObject<Level::strong,T> {
 		return t.get() || is_valid_only;
 	}
 	
-	const GDataStore& store() const {
+	const DataStore<Level::strong>& store() const {
 		return st;
 	}
 
@@ -39,7 +39,7 @@ struct CachedObject : public RemoteObject<Level::strong,T> {
 		return nm;
 	}
 	
-	GDataStore& store() {
+	DataStore<Level::strong>& store() {
 		return st;
 	}
 	
@@ -116,7 +116,7 @@ struct LocalObject : public RemoteObject<Level::strong,T> {
 			else assert(false && "Error: attempt isValid on non CachedObject. This should have been cached earlier");
 		}
 		
-		const GDataStore& store() const {
+	const DataStore<Level::strong>& store() const {
 			return r.store();
 		}
 		
@@ -124,7 +124,7 @@ struct LocalObject : public RemoteObject<Level::strong,T> {
 			return r.name();
 		}
 		
-		GDataStore& store() {
+	DataStore<Level::strong>& store() {
 			return r.store();
 		}
 		

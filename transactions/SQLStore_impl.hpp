@@ -41,8 +41,7 @@ public:
 
 	struct SQLConnection;
 	using SQLConnection_t = SQLConnection*;
-	struct Clock;
-	Clock* clock;
+	std::array<int, NUM_CAUSAL_GROUPS> clock;
 
 	const Level level;
 	SQLConnection_t default_connection;

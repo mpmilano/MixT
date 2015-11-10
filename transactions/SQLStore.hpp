@@ -38,6 +38,10 @@ public:
 		return *this;
 	}
 
+	const std::array<int, NUM_CAUSAL_GROUPS>& local_time(){
+		return this->clock;
+	}
+
 	template<typename T>
 	struct SQLObject : public RemoteObject<l,T> {
 		using Store = SQLStore;
