@@ -109,7 +109,7 @@ namespace{
 					: (k - overflow - 1) / (NUM_CAUSAL_MASTERS)) + 1;
 		}
 		
-		int md4(int k){return (k % 4 == 0 ? 4 : k % 4);}
+		int md(int k){return (k % NUM_CAUSAL_GROUPS == 0 ? NUM_CAUSAL_GROUPS : k % NUM_CAUSAL_GROUPS);}
 
 #define update_data_c_cmd(set, t, k)								\
 		const static auto update_cmds = [&](){						\
@@ -119,8 +119,9 @@ namespace{
 				for (int _k = 1; _k < (NUM_CAUSAL_GROUPS+1); ++_k){		\
 					auto k = to_string(_k);								\
 					stringstream main;									\
-					main << "update " << t << "set data = " << set		\
-						 << ", vc" << md4(k+1) << "=$2, vc"<<md4(k+2)<<" = $3, vc"<<md4(k+3)<<" = $4, lw = " << k \
+					main << "update " << t << "set data = " << set;		\
+					for (int i = 1; i < NUM_CAUSAL_GROUPS; ++i) main << ", vc" << md(k+i) << "=$"<<i+1<<; \
+					main << ", lw = " << k								\
 						 << " where \"ID\" = $1 and index = " << group_mapper(_k); \
 					ret.push_back(pair<string,string>{(t + "Update") + k,main.str()}); \
 				}														\
@@ -128,7 +129,7 @@ namespace{
 			return ret;													\
 		}();
 
-		void select_version_(T &trans, Table t, int id, std::array<int,4>& vers){
+		void select_version_(T &trans, Table t, int id, std::array<int,NUM_CAUSAL_GROUPS>& vers){
 			using namespace std;
 			static const vector<pair<string,string> > v = [&](){
 				vector<pair<string,string> > v;
@@ -148,22 +149,22 @@ namespace{
 		}
 		
 		template<typename T, typename Blob>
-		void update_data_c(T &trans, Table t, int k, int id, const std::array<int,4> &ends, const Blob &b){
+		void update_data_c(T &trans, Table t, int k, int id, const std::array<int,NUM_CAUSAL_GROUPS> &ends, const Blob &b){
 			update_data_c_cmd("$5",t,k);
 			auto &p = update_cmds.at(((int)t) * (NUM_CAUSAL_GROUPS) + k);
-			trans.prepared(p.first,p.second,id,ends[md4(k+1)],ends[md4(k+2)],ends[md4(k+3)],b);
+			trans.prepared(p.first,p.second,id,ends[md(k+1)],ends[md(k+2)],ends[md(k+3)],b);
 		}
 
 		
 		template<typename T>
-			void increment_c(T &trans, Table t, int k, int id, const std::array<int,4> &ends){
+			void increment_c(T &trans, Table t, int k, int id, const std::array<int,NUM_CAUSAL_GROUPS> &ends){
 			update_data_c_cmd("data + 1",t,k);
 			auto &p = update_cmds.at(((int)t) * (NUM_CAUSAL_GROUPS) + k);
-			trans.prepared(p.first,p.second,id,ends[md4(k+1)],ends[md4(k+2)],ends[md4(k+3)]);
+			trans.prepared(p.first,p.second,id,ends[md(k+1)],ends[md(k+2)],ends[md(k+3)]);
 		}
 
 		template<typename T, typename Blob>
-			void initialize_with_id_c(T &trans, Table t, int k, int id, const std::array<int,4> &ends, const Blob& b){
+			void initialize_with_id_c(T &trans, Table t, int k, int id, const std::array<int,NUM_CAUSAL_GROUPS> &ends, const Blob& b){
 			using namespace std;
 			static constexpr int n = NUM_CAUSAL_GROUPS;
 			static constexpr int r = NUM_CAUSAL_MASTERS;
@@ -199,7 +200,7 @@ namespace{
 			}
 			update_data_c_cmd("$5",t,k);
 			auto &p = update_cmds.at(((int)t) * (NUM_CAUSAL_GROUPS) + k);
-			trans.prepared(p.first,p.second,id,ends[md4(k+1)],ends[md4(k+2)],ends[md4(k+3)],blob);
+			trans.prepared(p.first,p.second,id,ends[md(k+1)],ends[md(k+2)],ends[md(k+3)],blob);
 		}
 
 		//entry points
@@ -212,14 +213,14 @@ namespace{
 		
 
 		template<typename T, typename Blob>
-		const std::string& update_data(Level l, T &tran, Table t, int k, int id, const std::array<int,4> &ends, const Blob& b){
+		const std::string& update_data(Level l, T &tran, Table t, int k, int id, const std::array<int,NUM_CAUSAL_GROUPS> &ends, const Blob& b){
 			if (l == Level::strong) update_data_s(tran,t,id,b);
 			else update_data_s(tran,t,k,id,ends,b);
 		}
 
 
 		template<typename T, typename Blob>
-			void initialize_with_id(Level l, T &tran, Table t, int k, int id, const std::array<int,4> &ends, const Blob& b){
+			void initialize_with_id(Level l, T &tran, Table t, int k, int id, const std::array<int,NUM_CAUSAL_GROUPS> &ends, const Blob& b){
 			if (l == Level::strong) initialize_with_id_s(tran,id,b);
 			else initialize_with_id_c(tran,t,k,id,ends,b);
 		}
@@ -230,7 +231,7 @@ namespace{
 		}
 
 		template<typename T>
-			void increment(Level l, T& tran, Table t, int k, int id, const std::array<int,4> &ends, int b){
+			void increment(Level l, T& tran, Table t, int k, int id, const std::array<int,NUM_CAUSAL_GROUPS> &ends, int b){
 			assert(t == Table::IntStore
 				   && "Error: increment currently only defined on integers");
 			if (l == Level::strong) increment_s(tran,t,id,b);
