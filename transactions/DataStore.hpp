@@ -22,7 +22,7 @@ public:
 
 	DataStore():GDataStore{Level::causal}{}
 
-	virtual const std::array<int, NUM_CAUSAL_GROUPS>& local_time() = 0;
+	virtual const std::array<int, NUM_CAUSAL_GROUPS>& local_time() const = 0;
 	
 	DECLARED_OPERATIONS
 

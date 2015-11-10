@@ -71,6 +71,7 @@ public:
 		void save();
 		char* load();
 		char* obj_buffer();
+		const std::array<int,NUM_CAUSAL_GROUPS>& timestamp() const ;
 		SQLStore_impl& store();
 
 		//will crash if stored object is non-integral.

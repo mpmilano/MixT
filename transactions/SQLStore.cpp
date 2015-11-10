@@ -254,6 +254,10 @@ int SQLStore_impl::GSQLObject::name() const {
 	return this->i->key;
 }
 
+const std::array<int,NUM_CAUSAL_GROUPS>& SQLStore_impl::GSQLObject::timestamp() const {
+	return this->i->causal_vers;
+}
+
 void SQLStore_impl::GSQLObject::save(){
 	char *c = obj_buffer();
 	auto owner = enter_transaction(*this);

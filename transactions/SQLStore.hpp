@@ -38,7 +38,7 @@ public:
 		return *this;
 	}
 
-	const std::array<int, NUM_CAUSAL_GROUPS>& local_time(){
+	const std::array<int, NUM_CAUSAL_GROUPS>& local_time() const {
 		return this->clock;
 	}
 
@@ -80,6 +80,10 @@ public:
 				std::true_type* choice{nullptr};
 				return get(trk,choice);
 			}
+		}
+
+		const std::array<int,NUM_CAUSAL_GROUPS>& timestamp() const {
+			return gso.timestamp();
 		}
 
 		void put(const T& t){

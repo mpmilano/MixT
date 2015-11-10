@@ -29,6 +29,7 @@ template<>
 struct GeneralRemoteObject<Level::causal> : public ByteRepresentable{
 	static constexpr Level level = Level::causal;
 	GeneralRemoteObject_body
+	virtual const std::array<int,NUM_CAUSAL_GROUPS>& timestamp() const = 0;
 };
 
 
