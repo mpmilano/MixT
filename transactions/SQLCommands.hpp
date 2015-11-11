@@ -22,7 +22,7 @@ namespace{
 		template<typename T>
 		auto obj_exists(Level, T &trans, int id){
 			const static std::string query =
-				"select id from \"BlobStore\" where id = $1 union select id from \"IntStore\" where id = $1 limit 1";
+				"select ID from \"BlobStore\" where id = $1 union select id from \"IntStore\" where id = $1 limit 1";
 			return trans.prepared("exists",query,id);
 		}
 
@@ -123,7 +123,7 @@ namespace{
 					main << "update " << t << "set data = " << set;		\
 					for (int i = 1; i < NUM_CAUSAL_GROUPS; ++i) main << ", vc" << md(_k+i) << "=$"<<i+1; \
 					main << ", lw = " << k								\
-						 << " where \"ID\" = $1 and index = " << group_mapper(_k); \
+						 << " where id = $1 and index = " << group_mapper(_k); \
 					ret.push_back(pair<string,string>{(t + "Update") + k,main.str()}); \
 				}														\
 			}															\
@@ -179,10 +179,10 @@ namespace{
 					string t = table_name((Table)_t);
 					main1 << "insert into " << t << " (vc1) "
 						 << "select zeros from thirty_zeros where not"
-						 <<"((select count(*) from " << t << "where \"ID\"=0)"
+						 <<"((select count(*) from " << t << "where id=0)"
 						 <<" > 30);";
-					main2 << "update "<< t << "set \"ID\"=$1 where index in (select index from " << t << " where \"ID\"=0 limit " << r+1 <<  ");";
-					main3 << "update " << t << " set index=index-(select min(index) from " << t << " where \"ID\"=$1) where \"ID\"=$1;";
+					main2 << "update "<< t << "set id=$1 where index in (select index from " << t << " where id=0 limit " << r+1 <<  ");";
+					main3 << "update " << t << " set index=index-(select min(index) from " << t << " where id=$1) where id=$1;";
 					for (int _k = 1; _k < (n+1); ++_k){
 						auto k = to_string(_k);
 						array<pair<string,string>,3> arr;
