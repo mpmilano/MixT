@@ -28,6 +28,11 @@ bool bad_func(){
 }
 
 int main(){
+
+	std::array<int,4> arr;
+	static_assert(std::is_trivially_copyable<decltype(arr)>::value,"aaaaa");
+	static_assert(sizeof(decltype(arr)) == 4*4,"aaaaa");
+	
 	try {
 
 		//{
