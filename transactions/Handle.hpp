@@ -179,6 +179,15 @@ public:
 
 	friend struct Transaction;
 
+private:
+	static void do_onwrite(Tracker &tr, RemoteObject<Level::strong,T> &ro){
+		tr.onWrite(ro.store(),ro.name());
+	}
+	static void do_onwrite(Tracker &tr, RemoteObject<Level::causal,T> &ro){
+		tr.onWrite(ro.store(),ro.name(),ro.timestamp());
+	}
+public:
+
 	template<typename RO, typename... Args>
 	static Handle<l,HA,T> make_handle(Args && ... ca){
 		static_assert(std::is_base_of<RemoteObject<l,T>,RO >::value,
@@ -186,6 +195,7 @@ public:
 		RemoteObject<l,T> *rop = new RO(std::forward<Args>(ca)...);
 		std::shared_ptr<RemoteObject<l,T> > sp(rop);
 		Handle<l,HA,T> ret(sp);
+		do_onwrite(ret.tracker,*rop);
 		return ret;
 	}
 	
