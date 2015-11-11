@@ -24,7 +24,7 @@ namespace {
 		assert(h1.get() == 12);
 		h1.put(54);
 		assert(h1.get() == 54);
-		store.remove(1);
+                store.remove(1 + start);
 		return true;
 	}
 

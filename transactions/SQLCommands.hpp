@@ -28,16 +28,13 @@ namespace{
 
 
 		template<typename T>
-		void remove(Level l, T &trans, Table t, int id){
+                void remove(Level l, T &trans, Table, int id){
 			const static std::string bs =
 				"delete from \"BlobStore\" where ID = $1";
 			const static std::string is =
 				"delete from \"IntStore\" where ID = $1";
-			switch(t) {
-			case Table::BlobStore : trans.prepared("Del1",bs,id); return;
-			case Table::IntStore : trans.prepared("Del2",is,id); return;
-			}
-			assert(false && "forgot a case");
+                        trans.prepared("Del1",bs,id);
+                        trans.prepared("Del2",is,id);
 		}
 
 		template<typename T>
