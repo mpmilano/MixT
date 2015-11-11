@@ -122,9 +122,21 @@ namespace {
 void Tracker::onWrite(DataStore<Level::strong>& ds_real, int name){
 	assert(&ds_real == i->registeredStrong);
 	if (!is_lin_metadata(name) && !i->tracking.empty()){
+		assert(false);
 		auto nonce = rand();
 		write_lin_metadata(name,nonce,*i);
 		write_causal_tombstone(nonce,*i);
+		assert(get<TDS::exists>(*i->strongDS)(ds_real,make_lin_metaname(name)));
+	}
+}
+
+namespace{
+	std::ostream & operator<<(std::ostream &os, const Tracker::Clock& c){
+		os << "Clock: [";
+		for (auto &a : c){
+			os << a << ",";
+		}
+		return os << "]";
 	}
 }
 
@@ -151,6 +163,7 @@ void Tracker::onRead(DataStore<Level::strong>& ds, int name){
 			auto tomb = get<TDS::existingTomb>(*i->strongDS)(ds,ts)->get();
 			while (true){
 				if (get<TDS::exists>(*i->causalDS)(*i->registeredCausal,tomb.name())){
+					assert(false);
 					return;
 				}
 				else sleep(1);
