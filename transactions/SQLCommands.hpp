@@ -30,9 +30,9 @@ namespace{
 		template<typename T>
 		void remove(Level l, T &trans, Table t, int id){
 			const static std::string bs =
-				"delete from \"BlobStore\" where ID = ";
+				"delete from \"BlobStore\" where ID = $1";
 			const static std::string is =
-				"delete from \"IntStore\" where ID = ";
+				"delete from \"IntStore\" where ID = $1";
 			switch(t) {
 			case Table::BlobStore : trans.prepared("Del1",bs,id); return;
 			case Table::IntStore : trans.prepared("Del2",is,id); return;
