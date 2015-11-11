@@ -71,8 +71,8 @@ namespace{
 			static const std::string is =
 				"update \"IntStore\" set data=$2,Version=Version + 1 where ID=$1";
 				switch(t) {
-				case Table::BlobStore : trans.prepared("Update1",bs,id,b); return;
-				case Table::IntStore : trans.prepared("Update2",is,id,b); return;
+				case Table::BlobStore : trans.prepared("Updates1",bs,id,b); return;
+				case Table::IntStore : trans.prepared("Updates2",is,id,b); return;
 				}
 			assert(false && "forgot a case");
 		}
@@ -112,7 +112,7 @@ namespace{
 		
 		int md(int k){return (k % NUM_CAUSAL_GROUPS == 0 ? NUM_CAUSAL_GROUPS : k % NUM_CAUSAL_GROUPS);}
 
-#define update_data_c_cmd(set)	using namespace std;					\
+#define update_data_c_cmd(xx,set)	using namespace std;				\
 		const static auto update_cmds = [&](){							\
 			vector<pair<string,string> > ret;							\
 			for (int _t = 0; _t < Table_max; ++_t){						\
@@ -124,7 +124,7 @@ namespace{
 					for (int i = 1; i < NUM_CAUSAL_GROUPS; ++i) main << ", vc" << md(_k+i) << "=$"<<i+1; \
 					main << ", lw = " << k								\
 						 << " where id = $1 and index = " << group_mapper(_k); \
-					ret.push_back(pair<string,string>{(t + "Update") + k,main.str()}); \
+					ret.push_back(pair<string,string>{(t + "Update") + k + xx,main.str()}); \
 				}														\
 			}															\
 			return ret;													\
@@ -152,7 +152,7 @@ namespace{
 		
 		template<typename T, typename Blob>
 		void update_data_c(T &trans, Table t, int k, int id, const std::array<int,NUM_CAUSAL_GROUPS> &ends, const Blob &b){
-			update_data_c_cmd("$5");
+			update_data_c_cmd("x","$5");
 			auto &p = update_cmds.at(((int)t) * (NUM_CAUSAL_GROUPS) + k);
 			trans.prepared(p.first,p.second,id,ends[md(k+1)],ends[md(k+2)],ends[md(k+3)],b);
 		}
@@ -160,7 +160,7 @@ namespace{
 		
 		template<typename T>
 			void increment_c(T &trans, Table t, int k, int id, const std::array<int,NUM_CAUSAL_GROUPS> &ends){
-			update_data_c_cmd("data + 1");
+			update_data_c_cmd("y","data + 1");
 			auto &p = update_cmds.at(((int)t) * (NUM_CAUSAL_GROUPS) + k);
 			trans.prepared(p.first,p.second,id,ends[md(k+1)],ends[md(k+2)],ends[md(k+3)]);
 		}
@@ -201,7 +201,7 @@ namespace{
 					trans.prepared(p.first,p.second,id);
 				else trans.exec(p.second);
 			}
-			update_data_c_cmd("$5");
+			update_data_c_cmd("z","$5");
 			auto &p = update_cmds.at(((int)t) * (NUM_CAUSAL_GROUPS) + k);
 			trans.prepared(p.first,p.second,id,ends[md(k+1)],ends[md(k+2)],ends[md(k+3)],b);
 		}
