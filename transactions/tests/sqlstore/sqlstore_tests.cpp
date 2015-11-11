@@ -6,7 +6,7 @@
 namespace {
 
 	SQLStore<Level::strong>& store = SQLStore<Level::strong>::inst(0);
-	SQLStore<Level::causal>::inst(0); //tracker needs registration
+	
 	bool creation_and_existence(){
 		auto h1 = store.newObject<HandleAccess::all>(1,12);
 		assert(store.exists(1));
@@ -43,6 +43,7 @@ namespace {
 }
 
 int main(){
+	SQLStore<Level::causal>::inst(0); //tracker needs registration
 	assert(creation_and_existence());
 	assert(updating_values());
 	assert(storing_itself());
