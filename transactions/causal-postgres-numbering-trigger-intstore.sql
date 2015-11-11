@@ -1,9 +1,9 @@
-CREATE TRIGGER trg_blobstore_numbering BEFORE UPDATE
-ON "BlobStore" FOR EACH ROW
+CREATE TRIGGER trg_intstore_numbering BEFORE UPDATE
+ON "IntStore" FOR EACH ROW
 WHEN (NEW.index <> 0 AND OLD.data IS DISTINCT FROM NEW.data)
-EXECUTE PROCEDURE blobstore_numbering();
+EXECUTE PROCEDURE intstore_numbering();
 
-CREATE OR REPLACE FUNCTION blobstore_numbering() RETURNS TRIGGER AS
+CREATE OR REPLACE FUNCTION intstore_numbering() RETURNS TRIGGER AS
 $do$
 DECLARE
     cntr integer;
@@ -27,7 +27,7 @@ BEGIN
         ELSE RAISE EXCEPTION 'unknown last writer: ' ;
     END CASE;
 
-    UPDATE "BlobStore"
+    UPDATE "IntStore"
         SET data = NEW.data,
             vc1 = GREATEST(max.vc1, NEW.vc1),
             vc2 = GREATEST(max.vc2, NEW.vc2),
@@ -37,7 +37,7 @@ BEGIN
                      MAX(b.vc2) AS vc2,
                      MAX(b.vc3) AS vc3,
                      MAX(b.vc4) AS vc4
-              FROM "BlobStore" b
+              FROM "IntStore" b
               WHERE b.id = NEW.id
                   AND b.index <> 0) AS max
         WHERE id = NEW.id
