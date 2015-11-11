@@ -7,9 +7,13 @@ using namespace pqxx;
 using namespace std;
 
 int main(){
+	const string id = to_string(
+#include "../big_prime"
+		);
 	try { 
 	pqxx::connection conn_strong;
-	conn_strong.prepare("Update","update global_clock set data=$1");
+	conn_strong.prepare("Update",
+						string("update \"BlobStore\" set data=$1 where id= ") + id);
 	pqxx::connection conn_causal;
 	while (true){
 		std::array<int,4> tmp;
@@ -33,7 +37,9 @@ int main(){
 		{
 			pqxx::work trans_strong(conn_strong);
 			trans_strong.exec("set search_path to \"BlobStore\",public");
-			binarystring bs(trans_strong.exec("select * from global_clock")[0][0]);
+			binarystring bs
+				(trans_strong.exec
+				 (string("select data from \"BlobStore\" where id = ") + id)[0][0]);
 			std::array<int,4> arr;
 			memcpy(&arr[0],bs.data(),tmp.size()*4);
 			assert(arr[0] == tmp[0]);
