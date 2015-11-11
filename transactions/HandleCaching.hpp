@@ -18,7 +18,7 @@ struct CachedObject : public RemoteObject<Level::strong,T> {
 		assert(false && "you probably didn't mean to call this");
 	}	
 	
-	const T& get(Tracker*) {
+	const T& get() {
 		assert(!is_valid_only);
 		return *t;
 	}
@@ -92,7 +92,7 @@ struct LocalObject : public RemoteObject<Level::strong,T> {
 			assert(false && "you probably didn't mean to call this");
 		}	
 		
-		const T& get(Tracker*) {
+		const T& get() {
 			//if the assert passes, then this was already fetched.
 			//if the assert fails, then either we shouldn't have gone this deep
 			//with causal calls,

@@ -18,6 +18,7 @@ namespace TDS{
 	static constexpr int newTomb = 0;
 	static constexpr int exists = 1;
 	static constexpr int existingClock = 2;
+	static constexpr int existingTomb = 3;
 }
 
 class Tracker {
@@ -37,7 +38,9 @@ public:
 		(DataStore<l>&, int, const Tombstone&), //newTomb
 		bool (*) (DataStore<l>&, int), //exists
 		std::unique_ptr<RemoteObject<l, Clock> > (*)
-		(DataStore<l>&, int) //existingClock
+		(DataStore<l>&, int), //existingClock
+		std::unique_ptr<RemoteObject<l, Tombstone> > (*)
+		(DataStore<l>&, int) //existingTomb
 		>;
 	using TrackerDSStrong = TrackerDS<Level::strong>;
 	using TrackerDSCausal = TrackerDS<Level::causal>;

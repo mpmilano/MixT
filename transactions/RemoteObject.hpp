@@ -34,14 +34,13 @@ struct GeneralRemoteObject<Level::causal> : public ByteRepresentable{
 
 
 template<Level l2, HandleAccess ha2, typename T2> struct Handle;
-class Tracker;
 
 template<Level l, typename T>
 class RemoteObject : public GeneralRemoteObject<l>
 {
 	//extend this plz!
 
-	virtual const T& get(Tracker *t) = 0;
+	virtual const T& get() = 0;
 	virtual void put(const T&) = 0;
 
 	//TODO: delete these when you're done hacking around.
@@ -68,6 +67,7 @@ public:
 
 
 	friend struct Transaction;
+	friend class Tracker;
 
 };
 

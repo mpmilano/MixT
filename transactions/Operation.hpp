@@ -154,15 +154,18 @@ struct Operation<Store, Ret (*) (A...)> {
 
 		auto h_read = filter_tpl<is_readable_handle>(std::make_tuple(args...));
 		auto h_strong_read = filter_tpl<is_strong_handle>(h_read);
-		//auto h_causal_read = filter_tpl<is_causal_handle>(h_read);
+		auto h_causal_read = filter_tpl<is_causal_handle>(h_read);
 		auto h_write = filter_tpl<is_writeable_handle>(std::make_tuple(args...));
+		auto h_strong_write = filter_tpl<is_strong_handle>(h_write);
+		auto h_causal_write = filter_tpl<is_causal_handle>(h_write);
 		foreach(h_strong_read,
 				[](const auto &h){h.tracker.onRead(h.store(),h.name());});
+		foreach(h_causal_read,
+				[](const auto &h){h.tracker.onRead(h.store(),h.name(),h.remote_object().timestamp());});
 
-		//Causal reads really really really need to be handles
-		//by the implementing classes under my current design.
 		auto &&ret = fun(Store::tryCast(extract_robj_p(args))...);
-		foreach(h_write, [](const auto &h){h.tracker.onWrite(h.store(),h.name());});
+		foreach(h_strong_write, [](const auto &h){h.tracker.onWrite(h.store(),h.name());});
+		foreach(h_causal_write, [](const auto &h){h.tracker.onWrite(h.store(),h.name(),h.remote_object().timestamp());});
 		return ret;
 	}
 };

@@ -92,28 +92,38 @@ public:
 	const T& get() const {
 		assert(_ro);
 		choose_strong<l> choice {nullptr};
+		assert(_ro->store().level == l);
 		return get(choice);
 	}
 	
 	const T& get(std::true_type*) const {
-        assert(_ro->store().level == l);
-		tracker.onRead(dynamic_cast<DataStore<Level::strong>&>(_ro->store())
-					   ,_ro->name());
-		return _ro->get(&tracker);
+		tracker.onRead(_ro->store(),_ro->name());
+		return _ro->get();
 	}
 	
 	const T& get(std::false_type*) const {
-		//tracker needs to be used by the store in order to guarantee causal ordering.
-		return _ro->get(&tracker);
+		tracker.onRead(_ro->store(),_ro->name(),_ro->timestamp());
+		return _ro->get();
 	}
 	
 	Handle clone() const {
 		return *this;
 	}
+
+	void put(const T& t){
+		choose_strong<l> choice{nullptr};
+		return put(t,choice);
+	}
 	
-	void put(const T& t) {
+	void put(const T& t, std::true_type*) {
 		assert(_ro);
 		tracker.onWrite(_ro->store(),_ro->name());
+		_ro->put(t);
+	}
+
+	void put(const T& t, std::false_type*) {
+		assert(_ro);
+		tracker.onWrite(_ro->store(),_ro->name(),_ro->timestamp());
 		_ro->put(t);
 	}
 

@@ -7,10 +7,13 @@
 #include <functional>
 #include <array>
 #include <map>
+#include <list>
+#include <unistd.h>
 
 #include "Tracker_common.hpp"
 #include "CompactSet.hpp"
 #include "Tracker_support_structs.hpp"
+#include "Ends.hpp"
 
 
 using namespace std;
@@ -98,19 +101,6 @@ namespace{
 	int make_lin_metaname(int name){
 		return make_metaname(bigprime_lin,name);
 	}
-
-	void update_clock(Tracker::Internals &t){
-		auto newc = get<TDS::existingClock>(*t.strongDS)(*t.registeredStrong, bigprime_lin)->get();
-		assert(ends::prec(t.global_min,newc));
-		t.global_min = newc;
-		list<int> to_remove;
-		for (auto& p : t.tracking){
-			if (ends::prec(p.second,newc)) to_remove.push_back(p.first);
-		}
-		for (auto &e : to_remove){
-			t.tracking.erase(e);
-		}
-	}
 }
 
 namespace {
@@ -118,7 +108,7 @@ namespace {
 		auto meta_name = make_lin_metaname(name);
 		get<TDS::newTomb>(*t.strongDS)(*t.registeredStrong,
 									   meta_name,
-									   Tombstone{nonce});
+									   Tracker::Tombstone{nonce});
 	}
 	void write_causal_tombstone(Tracker::Nonce nonce, Tracker::Internals &i){
 		using namespace TDS;
@@ -132,20 +122,33 @@ void Tracker::onWrite(DataStore<Level::strong>& ds_real, int name){
 	if (!is_lin_metadata(name) && !i->tracking.empty()){
 		auto nonce = rand();
 		write_lin_metadata(name,nonce,*i);
-		write_tombstone(nonce,*i);
+		write_causal_tombstone(nonce,*i);
 	}
 }
 
 void Tracker::onRead(DataStore<Level::strong>& ds, int name){
-	using namespace TDS;
+	using update_clock_t = void (*)(Tracker::Internals &t);
+	static update_clock_t update_clock = [](Tracker::Internals &t){
+		auto newc = get<TDS::existingClock>(*t.strongDS)(*t.registeredStrong, bigprime_lin)->get();
+		assert(ends::prec(t.global_min,newc));
+		t.global_min = newc;
+		list<int> to_remove;
+		for (auto& p : t.tracking){
+			if (ends::prec(p.second,newc)) to_remove.push_back(p.first);
+		}
+		for (auto &e : to_remove){
+			t.tracking.erase(e);
+		}
+	};
 	assert(&ds == i->registeredStrong);
 	if (!is_lin_metadata(name)){
 		//TODO: reduce frequency of this call.
 		update_clock(*i);
 		auto ts = make_lin_metaname(name);
-		while (true){
-			if (get<TDS::exists>(*i->strongDS)(ds,tstone)){
-				if (get<TDS::exists>(*i->causalDS)(*i->registeredCausal,ts.name())){
+		if (get<TDS::exists>(*i->strongDS)(ds,ts)){
+			auto tomb = get<TDS::existingTomb>(*i->strongDS)(ds,ts)->get();
+			while (true){
+				if (get<TDS::exists>(*i->causalDS)(*i->registeredCausal,tomb.name())){
 					return;
 				}
 				else sleep(1);
