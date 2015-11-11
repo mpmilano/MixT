@@ -8,6 +8,10 @@
 #include "SQLStore.hpp"
 #include "Ends.hpp"
 
+namespace {
+#include "Ostreams.hpp"
+}
+
 using namespace pqxx;
 using namespace std;
 using Internals = SQLStore_impl::GSQLObject::Internals;
@@ -124,7 +128,9 @@ namespace {
 			result r = cmds::check_size(ss.level,*trans,t,id);
 			assert(size == -1);
 			assert(r.size() > 0);
-			assert(r[0][0].to(size));
+			if (!(r[0][0].to(size))){
+				std::cerr << "trying to find existing object: " << id << " from table " << table_name(t) << " (in " << ss.level << " cluster) had no size!" << std::endl;
+			};
 			assert(size != -1);
 		}
 		else if (t == Table::IntStore) size = sizeof(int);
