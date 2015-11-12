@@ -1,6 +1,6 @@
 TRANS_DIR= `pwd`/
 storeList='SQLStore<Level::strong>, SQLStore<Level::causal>'
-clangFlags= -Xclang -fcolor-diagnostics -g -stdlib=libc++ --std=c++14 -Wall -ferror-limit=1 -DNUM_CAUSAL_GROUPS="4" -DSTORE_LIST=$(storeList) -DPRINT_TRANS -DDECLARED_OPERATIONS="template<Level l2> DECLARE_OPERATION(Increment, RemoteObject<l2,int>*) template<Level l2, typename T> DECLARE_OPERATION(Insert, RemoteObject<l2,std::set<T> >*, const T& ) "
+clangFlags= -Xclang -fcolor-diagnostics -g -stdlib=libc++ --std=c++14 -Wall -ferror-limit=1 -DNUM_CAUSAL_GROUPS="4" -DSTORE_LIST=$(storeList) -DDECLARED_OPERATIONS="template<Level l2> DECLARE_OPERATION(Increment, RemoteObject<l2,int>*) template<Level l2, typename T> DECLARE_OPERATION(Insert, RemoteObject<l2,std::set<T> >*, const T& ) "
 linkFlags= -stdlib=libc++ --std=c++14 -lpqxx
 export TRANS_DIR
 export clangFlags
@@ -8,6 +8,9 @@ export linkFlags
 
 all: Ends.o utils.o Tracker.o Ostreams.o SerializationSupport.o WhileBuilder.o ConExpr.o Context.o SQLStore.o TempBuilder.o new_test.o
 	clang++ utils.o Ends.o Tracker.o Ostreams.o SerializationSupport.o WhileBuilder.o ConExpr.o Context.o SQLStore.o TempBuilder.o new_test.o -o test $(linkFlags)
+
+stress: Ends.o utils.o Tracker.o Ostreams.o SerializationSupport.o WhileBuilder.o ConExpr.o Context.o SQLStore.o TempBuilder.o stress_test.o
+	clang++ utils.o Ends.o Tracker.o Ostreams.o SerializationSupport.o WhileBuilder.o ConExpr.o Context.o SQLStore.o TempBuilder.o stress_test.o -o stress $(linkFlags)
 
 chat: Ends.o utils.o Ostreams.o Tracker.o SerializationSupport.o WhileBuilder.o ConExpr.o Context.o SQLStore.o TempBuilder.o chat_example.o
 	clang++ utils.o Ends.o Ostreams.o Tracker.o SerializationSupport.o WhileBuilder.o ConExpr.o Context.o SQLStore.o TempBuilder.o chat_example.o -o chat $(linkFlags)
@@ -18,6 +21,8 @@ sqlstore: sqlstore_clean all
 tracker: tracker_clean all
 	echo "done"
 
+stress_test.o:
+	clang++ -c stress_test.cpp -DTEST_MODE=1 $(clangFlags)
 sqlstore_clean:
 	touch SQLStore.o; rm SQLStore.o
 tracker_clean:

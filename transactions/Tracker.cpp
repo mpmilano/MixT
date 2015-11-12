@@ -64,6 +64,7 @@ void Tracker::registerStore(DataStore<Level::strong>& ds, std::unique_ptr<Tracke
 	i->registeredStrong = &ds;
 	i->strongDS = std::move(wds);
 }
+
 void Tracker::registerStore(DataStore<Level::causal>& ds, std::unique_ptr<TrackerDSCausal> wds){
 	assert(i->registeredCausal == nullptr);
 	assert(i->causalDS.get() == nullptr);

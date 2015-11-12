@@ -52,10 +52,10 @@ struct user : public ByteRepresentable {
 	DEFAULT_SERIALIZATION_SUPPORT(user,inbox)
 };
 
-std::ostream& operator<<(std::ostream &os, const user& u){
+/*std::ostream& operator<<(std::ostream &os, const user& u){
 	return os << "user with inbox: " << u.inbox;
 }
-
+*/
 
 using MemberList = RemoteCons<user,Level::strong,Level::causal>;
 
