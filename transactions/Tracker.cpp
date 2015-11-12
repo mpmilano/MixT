@@ -182,7 +182,10 @@ void Tracker::onRead(DataStore<Level::strong>& ds, int name){
 				if (get<TDS::exists>(*i->causalDS)(*i->registeredCausal,tomb.name())){
 					return;
 				}
-				else sleep(1);
+				else {
+					std::cout << "waiting..." << std::endl;
+					sleep(1);
+				}
 			}
 		}
 	}

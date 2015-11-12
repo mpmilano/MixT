@@ -9,6 +9,9 @@ namespace{
 
 		template<typename T>
 		auto select_data(Level, T &trans, Table t, int id){
+			//std::cerr << "in select_data" << std::endl;
+			//AtScopeEnd ase{[](){//std::cerr << "out" << std::endl;}};
+			//discard(ase);
 			static const std::string bs =
 				"select data from \"BlobStore\" where index = 0 and ID = $1";
 			static const std::string is = "select data from \"IntStore\" where index = 0 and ID = $1";
@@ -21,29 +24,37 @@ namespace{
 
 		template<typename T>
 		auto obj_exists(Level, T &trans, int id){
+			//std::cerr << "in obj_exists" << std::endl;
 			const static std::string query =
 				"select ID from \"BlobStore\" where id = $1 union select id from \"IntStore\" where id = $1 limit 1";
-			return trans.prepared("exists",query,id);
+			auto r = trans.prepared("exists",query,id);
+			//std::cerr << "out" << std::endl;
+			return r;
 		}
 
 
 		template<typename T>
                 void remove(Level l, T &trans, Table, int id){
+			//std::cerr << "in remove" << std::endl;
 			const static std::string bs =
 				"delete from \"BlobStore\" where ID = $1";
 			const static std::string is =
 				"delete from \"IntStore\" where ID = $1";
                         trans.prepared("Del1",bs,id);
                         trans.prepared("Del2",is,id);
+			//std::cerr << "out" << std::endl;
 		}
 
 		template<typename T>
 		auto check_size(Level, T &trans, Table t, int id){
+			//std::cerr << "in check_size" << std::endl;
 			assert(t == Table::BlobStore &&
 				   "Error: size check non-sensical for non-blob data");
 			const static std::string bs =
 				"select max(octet_length(data)) from \"BlobStore\" where id = $1";
-			return trans.prepared("Size",bs,id);
+			auto r =  trans.prepared("Size",bs,id);
+			//std::cerr << "out" << std::endl;
+			return r;
 		}
 
 		//strong section
@@ -57,6 +68,7 @@ namespace{
 			auto &s = (t == Table::BlobStore ? bs : is );
 			vers = -1;
 			auto r = trans.prepared(s,s,id);
+			assert(!r.empty());
 			assert(r[0][0].to(vers));
 			assert(vers != -1);
 		}
@@ -93,7 +105,8 @@ namespace{
 			case Table::BlobStore : trans.prepared("Insert1",bs,id,b); return;
 			case Table::IntStore : trans.prepared("Insert2",is,id,b); return;
 			}
-			assert(false && "forgot a case");			
+			assert(false && "forgot a case");
+			
 		}
 
 
@@ -207,6 +220,9 @@ namespace{
 
 		template<typename T, typename Ret>
 		void select_version(Level l, T &tran, Table t, int id,Ret& r){
+			//std::cerr << "in select_version" << std::endl;
+			//AtScopeEnd ase{[](){//std::cerr << "out" << std::endl;}};
+			//discard(ase);
 			if (l == Level::strong) {
 				assert(std::is_scalar<Ret>::value);
 			}
@@ -216,28 +232,36 @@ namespace{
 
 		template<typename T, typename Blob>
 		void update_data(Level l, T &tran, Table t, int k, int id, const std::array<int,NUM_CAUSAL_GROUPS> &ends, const Blob& b){
+			//std::cerr << "in update_data" << std::endl;
 			if (l == Level::strong) update_data_s(tran,t,id,b);
 			else if (l == Level::causal) update_data_c(tran,t,k,id,ends,b);
+			//std::cerr << "out" << std::endl;
 		}
 
 
 		template<typename T, typename Blob>
 			void initialize_with_id(Level l, T &tran, Table t, int k, int id, const std::array<int,NUM_CAUSAL_GROUPS> &ends, const Blob& b){
+			//std::cerr << "in initialize_with_id" << std::endl;
 			if (l == Level::strong) initialize_with_id_s(tran,t,id,b);
 			else initialize_with_id_c(tran,t,k,id,ends,b);
+			//std::cerr << "out" << std::endl;
 		}
 		template<typename T, typename Blob>
 			void initialize_with_id(Level l, T &tran, Table t, int id, const Blob& b){
+			//std::cerr << "in initialize_with_id" << std::endl;
 			if (l == Level::strong) initialize_with_id_s(tran,t,id,b);
 			else assert(false && "not enough parameters for causal initialization");
+			//std::cerr << "out" << std::endl;
 		}
 
 		template<typename T>
 			void increment(Level l, T& tran, Table t, int k, int id, const std::array<int,NUM_CAUSAL_GROUPS> &ends){
+			//std::cerr << "in increment" << std::endl;
 			assert(t == Table::IntStore
 				   && "Error: increment currently only defined on integers");
 			if (l == Level::strong) increment_s(tran,t,id);
 			else increment_c(tran,t,k,id,ends);
+			//std::cerr << "out" << std::endl;
 		}
 
 

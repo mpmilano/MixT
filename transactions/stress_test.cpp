@@ -34,8 +34,10 @@ void increment(Store &s, int i){
 }
 
 void heavy_lin(SQLStore<Level::strong> &strong, SQLStore<Level::causal> &causal){
+	int count = 0;
 	while(true){
 		for (auto name : names_strong){
+			std::cout << "loop " << ++count << std::endl;
 			{
 				auto obj = strong.template existingObject<HandleAccess::all,int>(name);
 				obj.get();
@@ -64,6 +66,7 @@ int main(){
 	try{
 		SQLStore<Level::strong> &strong = SQLStore<Level::strong>::inst(ip);
 		SQLStore<Level::causal> &causal = SQLStore<Level::causal>::inst(ip);
+		setup(strong,causal);
 		
 		switch(TEST_MODE){
 		case 1 : heavy_lin(strong,causal); break;
