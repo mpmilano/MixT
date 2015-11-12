@@ -61,6 +61,13 @@ public:
 
 	template<typename DS>
 	void registerStore(DS &ds);
+
+    void exemptItem(int name);
+
+    template<typename T, Level l, HandleAccess ha>
+    void exemptItem(const Handle<l,ha,T>& h){
+        exemptItem(h.name());
+    }
 	
 	void onWrite(DataStore<Level::strong>&, int name);
 
@@ -73,6 +80,9 @@ public:
 	void onRead(DataStore<Level::strong>&, int name);
 	
 	void onRead(DataStore<Level::causal>&, int name, const Clock &version);
+
+	//for testing
+	void assert_nonempty_tracking() const;
 
 private:
 	Tracker();

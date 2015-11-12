@@ -40,9 +40,7 @@ std::ostream & operator<<(std::ostream &os, const RefTemporary<id,l2,T2, E>& t){
 }
 
 
-std::ostream & operator<<(std::ostream &os, const nope& ){
-	return os << "nope!";
-}
+std::ostream & operator<<(std::ostream &os, const nope& );
 
 
 template<typename T>
@@ -55,9 +53,7 @@ std::ostream & operator<<(std::ostream &os, const T& op){
 	return os << op.name << "<" << get_level<T>::value << ">";
 }
 
-auto print_util(const std::shared_ptr<const std::nullptr_t>&){
-	return "aaaaaa";
-}
+auto print_util(const std::shared_ptr<const std::nullptr_t>&);
 
 template<typename T, restrict(!std::is_same<T CMA std::nullptr_t>::value)>
 const auto print_util(const std::shared_ptr<const T> &sp){
@@ -102,10 +98,7 @@ std::ostream & operator<<(std::ostream &os, const While<Cond,Then>& i){
 			  << "){" << i.then << "}";
 }
 
-std::ostream & operator<<(std::ostream &os, Transaction& t){
-	//see Transaction.hpp
-	return t.print(os);
-}
+std::ostream & operator<<(std::ostream &os, Transaction& t);
 
 template<Level l, typename i>
 std::ostream & operator<<(std::ostream &os, const CSConstant<l,i>& c){
@@ -172,21 +165,10 @@ std::ostream & operator<<(std::ostream &os, const Massert<i>& op){
 }
 
 
-std::ostream & operator<<(std::ostream &os, const Print_Str& op){
-	return os << "print " << op.t << std::endl;
-}
+std::ostream & operator<<(std::ostream &os, const Print_Str& op);
 
 
-std::ostream & operator<<(std::ostream &os, Level l){
-	if (l == Level::causal)
-		return os << levelStr<Level::causal>();
-	else if (l == Level::strong)
-		return os << levelStr<Level::strong>();
-	else if (l == Level::undef)
-		return os << levelStr<Level::undef>();
-	assert(false && "fell through");
-	return os;
-}
+std::ostream & operator<<(std::ostream &os, Level l);
 
 template<Level l>
 std::ostream & operator<<(std::ostream &os, const Noop<l>&){

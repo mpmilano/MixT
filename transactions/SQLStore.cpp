@@ -7,10 +7,8 @@
 #include "SQLCommands.hpp"
 #include "SQLStore.hpp"
 #include "Ends.hpp"
-
-namespace {
 #include "Ostreams.hpp"
-}
+
 
 using namespace pqxx;
 using namespace std;
