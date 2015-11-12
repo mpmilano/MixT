@@ -15,12 +15,14 @@ int main(){
 	conn_strong.prepare("Update",
 						string("update \"BlobStore\" set data=$1 where id= ") + id);
 	pqxx::connection conn_causal;
+	conn_causal.prepare("selectit","select max(vc1) as vc1,max(vc2) as vc2,max(vc3) as vc3,max(vc4) as vc4 from (select max(vc1) as vc1,max(vc2) as vc2,max(vc3) as vc3,max(vc4) as vc4 from \"BlobStore\" union select max(vc1) as vc1,max(vc2) as vc2,max(vc3) as vc3,max(vc4) as vc4 from \"IntStore\") as foo");
+
 	while (true){
 		std::array<int,4> tmp;
 		{
 			pqxx::work trans_causal(conn_causal);
 			trans_causal.exec("set search_path to causalstore,public");
-			auto r = trans_causal.exec("select max(vc1) as vc1,max(vc2) as vc2,max(vc3) as vc3,max(vc4) as vc4 from (select max(vc1) as vc1,max(vc2) as vc2,max(vc3) as vc3,max(vc4) as vc4 from \"BlobStore\" union select max(vc1) as vc1,max(vc2) as vc2,max(vc3) as vc3,max(vc4) as vc4 from \"IntStore\") as foo");
+			auto r = trans_causal.prepared("selectit").exec();
 			assert(r[0][0].to(tmp[0]));
 			assert(r[0][1].to(tmp[1]));
 			assert(r[0][2].to(tmp[2]));
