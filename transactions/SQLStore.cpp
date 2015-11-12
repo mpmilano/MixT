@@ -44,6 +44,10 @@ SQLStore_impl::SQLStore_impl(GDataStore &store, int instanceID, Level l)
 		->exec(l == Level::strong ?
 			   "set search_path to \"BlobStore\",public"
 			   : "set search_path to causalstore,public");
+	((SQLTransaction*)t.get())
+		->exec(l == Level::strong ?
+			   "SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL SERIALIZABLE"
+			   : "SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL REPEATABLE READ");
 	assert(t->commit());
 }
 
