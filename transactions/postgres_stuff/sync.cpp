@@ -31,15 +31,17 @@ int main(){
 			pqxx::work trans_strong(conn_strong);
 			trans_strong.exec("set search_path to \"BlobStore\",public");
 			binarystring blob(&tmp[0],tmp.size()*4);
-			trans_strong.prepared("Update")(blob).exec();
+			auto r = trans_strong.prepared("Update")(blob).exec();
+			assert(r.affected_rows() > 0);
 			trans_strong.commit();
 		}
 		{
 			pqxx::work trans_strong(conn_strong);
 			trans_strong.exec("set search_path to \"BlobStore\",public");
+			auto r = trans_strong.exec
+				(string("select data from \"BlobStore\" where id = ") + id);
 			binarystring bs
-				(trans_strong.exec
-				 (string("select data from \"BlobStore\" where id = ") + id)[0][0]);
+				(r[0][0]);
 			std::array<int,4> arr;
 			memcpy(&arr[0],bs.data(),tmp.size()*4);
 			assert(arr[0] == tmp[0]);

@@ -6,4 +6,4 @@ export clangFlags
 export linkFlags
 
 all: 
-	clang++ sync.cpp -o sync $(linkFlags)
+	clang++ $(clangFlags) sync.cpp -o sync $(linkFlags)
