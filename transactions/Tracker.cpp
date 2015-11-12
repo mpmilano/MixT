@@ -33,6 +33,10 @@ struct Tracker::Internals{
 	
 };
 
+void Tracker::assert_nonempty_tracking() const {
+	assert (!(i->tracking.empty()));
+}
+
 Tracker::Tracker():i{new Internals{}}{
 	timespec ts;
 	clock_gettime(CLOCK_REALTIME,&ts);
@@ -106,12 +110,6 @@ namespace{
 }
 
 namespace {
-	void write_lin_metadata(int name, Tracker::Nonce nonce, Tracker::Internals& t){
-		auto meta_name = make_lin_metaname(name);
-		get<TDS::newTomb>(*t.strongDS)(*t.registeredStrong,
-									   meta_name,
-									   Tracker::Tombstone{nonce});
-	}
 	void write_causal_tombstone(Tracker::Nonce nonce, Tracker::Internals &i){
 		using namespace TDS;
 		const Tracker::Tombstone t {nonce};
@@ -120,9 +118,19 @@ namespace {
 }
 
 void Tracker::onWrite(DataStore<Level::strong>& ds_real, int name){
+        using wlm_t = void (*)(int name, Tracker::Nonce nonce, Tracker::Internals& t);
+        static const wlm_t write_lin_metadata= [](int name, Tracker::Nonce nonce, Tracker::Internals& t){
+            auto meta_name = make_lin_metaname(name);
+            if (get<TDS::exists>(*t.strongDS)(*t.registeredStrong,meta_name)){
+                get<TDS::existingTomb>(*t.strongDS)(*t.registeredStrong,meta_name)->put(Tracker::Tombstone{nonce});
+            }
+            else get<TDS::newTomb>(*t.strongDS)(*t.registeredStrong,
+                                                meta_name,
+                                                Tracker::Tombstone{nonce});
+        };
+
 	assert(&ds_real == i->registeredStrong);
 	if (!is_lin_metadata(name) && !i->tracking.empty()){
-		assert(false);
 		auto nonce = rand();
 		write_lin_metadata(name,nonce,*i);
 		write_causal_tombstone(nonce,*i);
@@ -163,7 +171,6 @@ void Tracker::onRead(DataStore<Level::strong>& ds, int name){
 			auto tomb = get<TDS::existingTomb>(*i->strongDS)(ds,ts)->get();
 			while (true){
 				if (get<TDS::exists>(*i->causalDS)(*i->registeredCausal,tomb.name())){
-					assert(false);
 					return;
 				}
 				else sleep(1);

@@ -74,6 +74,9 @@ public:
 	
 	void onRead(DataStore<Level::causal>&, int name, const Clock &version);
 
+	//for testing
+	void assert_nonempty_tracking() const;
+
 private:
 	Tracker();
 	virtual ~Tracker();

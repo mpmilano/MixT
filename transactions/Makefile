@@ -20,12 +20,8 @@ tracker: tracker_clean all
 
 sqlstore_clean:
 	touch SQLStore.o; rm SQLStore.o
-
 tracker_clean:
 	rm Tracker.o;  true
-
-tracker_dummy.o:
-	clang++ -c tracker_dummy.cpp $(clangFlags)
 new_test.o:
 	clang++ -c new_test.cpp $(clangFlags)
 chat_example.o:
