@@ -114,6 +114,8 @@ auto find_usage(const Print_Str& ){
 	return nullptr;
 }
 
-auto print_str(const std::string& t){
+template<typename T>
+auto print_str(const T& t){
 	return Print_Str{t};
 }
+
