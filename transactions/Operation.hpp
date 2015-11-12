@@ -9,6 +9,7 @@
 #include "type_utils.hpp"
 #include "ConExpr.hpp"
 #include "Operation_macros.hpp"
+#include "Ends.hpp"
 
 //because we don't have a lot of inspection abilities into this function,
 //we only allow write-enabled handles into which *all* read-enabled handles are
@@ -160,10 +161,14 @@ struct Operation<Store, Ret (*) (A...)> {
 		auto h_causal_write = filter_tpl<is_causal_handle>(h_write);
 		foreach(h_strong_read,
 				[](const auto &h){h.tracker.onRead(h.store(),h.name());});
-		foreach(h_causal_read,
-				[](const auto &h){h.tracker.onRead(h.store(),h.name(),h.remote_object().timestamp());});
-
+		//optimization: track timestamps for causal, only check if they've changed.
+		auto causal_pair = fold(h_causal_read,[](const auto &a, const auto &acc){
+				return tuple_cons(std::make_pair(a.remote_object().timestamp(),a),acc);},std::tuple<>{});
 		auto &&ret = fun(Store::tryCast(extract_robj_p(args))...);
+		foreach(causal_pair,
+			[](const auto &p){
+				if (ends::is_same(p.first, p.second.remote_object().timestamp())) return;
+				else p.second.tracker.onRead(p.second.store(),p.second.name(),p.second.remote_object().timestamp());});
 		foreach(h_strong_write, [](const auto &h){h.tracker.onWrite(h.store(),h.name());});
 		foreach(h_causal_write, [](const auto &h){h.tracker.onWrite(h.store(),h.name(),h.remote_object().timestamp());});
 		return ret;

@@ -122,7 +122,7 @@ SQLStore_impl::GSQLObject::GSQLObject(SQLStore_impl &ss, Table t, int id, int si
 
 namespace {
 
-	Internals* internals_from_size_ss_id(Table t, SQLStore_impl& ss, int id){
+	Internals* internals_from_size_ss_id(const Table t, SQLStore_impl& ss, int id){
 		auto trans_owner = enter_store_transaction(ss);
 		auto *trans = trans_owner.second;
 		int size = -1;
@@ -238,11 +238,11 @@ namespace {
 	int ip_to_group(unsigned int i){
 		static_assert(sizeof(unsigned int) == 4,"Need a 32-bit type here");
 		if (i == 0) return 1;
-		//get the 10s position out of the last octet of the ip address.
-		else
-			return
-				(((char*)(&i))[3] / 10)
-				- (10 *(((char*)(&i))[3] / 100));
+		else {
+			int ret = (((unsigned char*)(&i))[3] % 4) + 1;
+			assert(ret <= 10 && ret > 0);
+			return ret;
+		}
 	}
 }
 
@@ -305,6 +305,7 @@ char* SQLStore_impl::GSQLObject::load(){
 		cmds::select_version(i->_store.level, *trans,i->table,i->key,i->causal_vers);
 		store_same = ends::is_same(old,i->causal_vers);
 		if (!store_same) i->_store.clock = max(i->_store.clock,i->causal_vers);
+		assert(i->_store.clock[2] < 30);
 	}
 	else if (i->_store.level == Level::strong){
 		auto old = i->vers;

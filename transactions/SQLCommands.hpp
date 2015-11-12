@@ -138,7 +138,7 @@ namespace{
 				}														\
 			}															\
 			return ret;													\
-		}();
+		}(); assert(ends[2] < 30); 
 
 		template<typename T>
 		void select_version_(T &trans, Table t, int id, std::array<int,NUM_CAUSAL_GROUPS>& vers){
@@ -154,29 +154,32 @@ namespace{
 			}();
 			auto &s = v.at((int)t);
 			auto r = trans.prepared(s.first,s.second,id);
+			assert(!r.empty());
 			assert(r[0][0].to(vers[0]));
 			assert(r[0][1].to(vers[1]));
 			assert(r[0][2].to(vers[2]));
 			assert(r[0][3].to(vers[3]));
+			assert(vers[2] < 30);
 		}
 		
 		template<typename T, typename Blob>
 		void update_data_c(T &trans, Table t, int k, int id, const std::array<int,NUM_CAUSAL_GROUPS> &ends, const Blob &b){
 			update_data_c_cmd("x","$5");
-			auto &p = update_cmds.at(((int)t) * (NUM_CAUSAL_GROUPS) + k);
-			trans.prepared(p.first,p.second,id,ends[md(k+1)],ends[md(k+2)],ends[md(k+3)],b);
+			auto &p = update_cmds.at(((int)t) * (NUM_CAUSAL_GROUPS) + (k-1));
+			trans.prepared(p.first,p.second,id,ends[md(k+1)-1],ends[md(k+2)-1],ends[md(k+3)-1],b);
 		}
 
 		
 		template<typename T>
 			void increment_c(T &trans, Table t, int k, int id, const std::array<int,NUM_CAUSAL_GROUPS> &ends){
 			update_data_c_cmd("y","data + 1");
-			auto &p = update_cmds.at(((int)t) * (NUM_CAUSAL_GROUPS) + k);
-			trans.prepared(p.first,p.second,id,ends[md(k+1)],ends[md(k+2)],ends[md(k+3)]);
+			auto &p = update_cmds.at(((int)t) * (NUM_CAUSAL_GROUPS) + (k-1));
+			trans.prepared(p.first,p.second,id,ends[md(k+1)-1],ends[md(k+2)-1],ends[md(k+3)-1]);
 		}
 
 		template<typename T, typename Blob>
 			void initialize_with_id_c(T &trans, Table t, int k, int id, const std::array<int,NUM_CAUSAL_GROUPS> &ends, const Blob& b){
+			assert(k > 0);
 			using namespace std;
 			static constexpr int n = NUM_CAUSAL_GROUPS;
 			static constexpr int r = NUM_CAUSAL_MASTERS;
@@ -204,7 +207,7 @@ namespace{
 				}
 				return ret;
 			}();
-			auto &commands = v.at(((int)t) * n + k);
+			auto &commands = v.at(((int)t) * n + (k-1));
 			for (int i = 0; i < commands.size(); ++i){
 				auto &p = commands[i];
 				if (i == 1 || i == 2)
@@ -212,8 +215,8 @@ namespace{
 				else trans.exec(p.second);
 			}
 			update_data_c_cmd("z","$5");
-			auto &p = update_cmds.at(((int)t) * (NUM_CAUSAL_GROUPS) + k);
-			trans.prepared(p.first,p.second,id,ends[md(k+1)],ends[md(k+2)],ends[md(k+3)],b);
+			auto &p = update_cmds.at(((int)t) * (NUM_CAUSAL_GROUPS) + (k-1));
+			trans.prepared(p.first,p.second,id,ends[md(k+1) - 1],ends[md(k+2) - 1],ends[md(k+3) - 1],b);
 		}
 
 		//entry points

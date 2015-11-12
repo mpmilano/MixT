@@ -102,7 +102,7 @@ public:
 	}
 	
 	const T& get(std::false_type*) const {
-		auto ret = _ro->get();
+		auto &ret = _ro->get();
 		tracker.onRead(_ro->store(),_ro->name(),_ro->timestamp());
 		return ret;
 	}
