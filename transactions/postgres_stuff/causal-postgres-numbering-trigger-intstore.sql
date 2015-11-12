@@ -32,7 +32,7 @@ BEGIN
             vc1 = GREATEST(max.vc1, NEW.vc1),
             vc2 = GREATEST(max.vc2, NEW.vc2),
             vc3 = GREATEST(max.vc3, NEW.vc3),
-            vc4 = GREATEST(max.vc3, NEW.vc4)
+            vc4 = GREATEST(max.vc4, NEW.vc4)
         FROM (SELECT MAX(b.vc1) AS vc1,
                      MAX(b.vc2) AS vc2,
                      MAX(b.vc3) AS vc3,
