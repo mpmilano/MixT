@@ -243,7 +243,10 @@ namespace {
 }
 
 
-SQLStore_impl::SQLConnection::SQLConnection(int ip):ip_addr(ip),repl_group(ip_to_group(ip)),conn{std::string("host=") + string_of_ip(ip)}{}
+SQLStore_impl::SQLConnection::SQLConnection(int ip):ip_addr(ip),repl_group(ip_to_group(ip)),conn{std::string("host=") + string_of_ip(ip)}{
+	assert(conn.is_open());
+	std::cout << string_of_ip(ip) << std::endl;
+}
 
 int SQLStore_impl::GSQLObject::store_instance_id() const {
 	if (i->level == Level::strong)
@@ -301,8 +304,10 @@ char* SQLStore_impl::GSQLObject::load(){
 	}
 	else if (i->_store.level == Level::strong){
 		auto old = i->vers;
-		cmds::select_version(i->_store.level, *trans,i->table,i->key,i->vers);
-		store_same = (old == i->vers);
+		int newi = -12;
+		cmds::select_version(i->_store.level, *trans,i->table,i->key,newi);
+		store_same = (old == newi);
+		i->vers = newi;
 	}
 
 	if (store_same) return c;

@@ -4,7 +4,9 @@
 #include "FinalHeader.hpp"
 #include "FinalizedOps.hpp"
 #include <list>
+#include <pqxx/pqxx>
 
+using namespace std;
 
 const std::list<int> names_strong = {5,7,9,11,13};
 const std::list<int> names_causal = {6,8,10,12,14};
@@ -52,12 +54,25 @@ void mostly_reading(SQLStore<Level::strong> &strong, SQLStore<Level::causal> &ca
 }
 
 int main(){
-	SQLStore<Level::strong> &strong = SQLStore<Level::strong>::inst(0);
-	SQLStore<Level::causal> &causal = SQLStore<Level::causal>::inst(0);
-
-	switch(TEST_MODE){
-	case 1 : heavy_lin(strong,causal); break;
-	case 2 : heavy_causal(strong,causal); break;
-	case 3 : mostly_reading(strong,causal); break;
+	int ip = 0;
+	char *iparr = (char*)&ip;
+	//128.84.217.139
+	iparr[0] = 128;
+	iparr[1] = 84;
+	iparr[2] = 217;
+	iparr[3] = 139;
+	try{
+		SQLStore<Level::strong> &strong = SQLStore<Level::strong>::inst(ip);
+		SQLStore<Level::causal> &causal = SQLStore<Level::causal>::inst(ip);
+		
+		switch(TEST_MODE){
+		case 1 : heavy_lin(strong,causal); break;
+		case 2 : heavy_causal(strong,causal); break;
+		case 3 : mostly_reading(strong,causal); break;
+		}
+	}
+	catch (const pqxx::pqxx_exception &r){
+		std::cerr << r.base().what() << std::endl;
+		assert(false && "exec failed");
 	}
 }

@@ -1,6 +1,6 @@
 #!/bin/bash
 alias make="/usr/bin/make -j 8"
-export PGHOST='127.0.0.1';
+export PGHOST='milano.cs.cornell.edu';
 export PGPORT='5432';
 export PGDATABASE='DataStore';
 export PGUSER='research';
