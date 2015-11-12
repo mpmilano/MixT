@@ -61,7 +61,8 @@ ConExpr.o:
 	clang++ -c ConExpr.cpp $(clangFlags)
 WhileBuilder.o:
 	clang++ -c WhileBuilder.cpp $(clangFlags)
-
+CooperativeCache.o:
+	clang++ -c CooperativeCache.cpp $(clangFlags)
 
 run: test
 	PGHOST='127.0.0.1' PGPORT='5432' PGDATABASE='DataStore' PGUSER='research' PGPASSWORD='swimsand' ./test

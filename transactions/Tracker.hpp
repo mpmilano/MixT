@@ -10,6 +10,7 @@
 #include <functional>
 #include <time.h>
 #include "TrivialPair.hpp"
+#include "RemoteObject.hpp"
 
 template<Level l, HandleAccess HA, typename T>
 struct Handle;

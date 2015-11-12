@@ -208,5 +208,10 @@ void Tracker::onRead(DataStore<Level::causal>&, int name, const Clock &version, 
 	if (ends::prec(version,i->global_min)) {
 		i->tracking.erase(name);
 	}
-	else if (i->exceptions.count(name) == 0) i->tracking.emplace(name,make_pair(version,bytes));
+	else if (i->exceptions.count(name) == 0) {
+		//need to overwrite, not occlude, the previous element.
+		//C++'s map semantics are really stupid. 
+		i->tracking.erase(name);
+		i->tracking.emplace(name,make_pair(version,bytes));
+	}
 }

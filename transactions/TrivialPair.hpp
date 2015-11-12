@@ -37,4 +37,5 @@ struct TrivialTriple{
 	bool operator>(const TrivialTriple&p) const {
 		return p < *this;
 	}
+	TrivialTriple(T t,U u,V v):first(t),second(u),third(v){}
 };
