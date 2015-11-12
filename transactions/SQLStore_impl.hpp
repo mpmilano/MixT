@@ -71,6 +71,8 @@ public:
 		void save();
 		char* load();
 		char* obj_buffer();
+		char const * const obj_buffer() const ;
+		int obj_buffer_size() const;
 		const std::array<int,NUM_CAUSAL_GROUPS>& timestamp() const ;
 		SQLStore_impl& store();
 

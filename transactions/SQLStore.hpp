@@ -61,6 +61,12 @@ public:
 			return gso.timestamp();
 		}
 
+		std::vector<char> bytes() const {
+			std::vector<char> ret(gso.obj_buffer_size());
+			memcpy(ret.data(),gso.obj_buffer(),gso.obj_buffer_size());
+			return ret;
+		}
+
 		void put(const T& t){
 			this->t = std::make_unique<T>(t);
 			::to_bytes(t,gso.obj_buffer());

@@ -351,6 +351,14 @@ char* SQLStore_impl::GSQLObject::obj_buffer() {
 	return i->buf1;
 }
 
+char const * const SQLStore_impl::GSQLObject::obj_buffer() const {
+	return i->buf1;
+}
+
+int SQLStore_impl::GSQLObject::obj_buffer_size() const {
+	return i->size;
+}
+
 int SQLStore_impl::GSQLObject::bytes_size() const {
 	return sizeof(int)*4 + sizeof(Level) + sizeof(Table);
 }

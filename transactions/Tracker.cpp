@@ -30,7 +30,7 @@ struct Tracker::Internals{
 
 	Clock global_min;
 
-	std::map<int, Clock > tracking;
+	std::map<int, pair<Clock, vector<char> > > tracking;
         std::set<int> exceptions;
 	
 };
@@ -138,6 +138,7 @@ void Tracker::onWrite(DataStore<Level::strong>& ds_real, int name){
 
 	assert(&ds_real == i->registeredStrong);
 	if (!is_lin_metadata(name) && !i->tracking.empty()){
+		
 		auto nonce = rand();
 		write_lin_metadata(name,nonce,*i);
 		write_causal_tombstone(nonce,*i);
@@ -165,7 +166,7 @@ void Tracker::onRead(DataStore<Level::strong>& ds, int name){
 		t.global_min = newc;
 		list<int> to_remove;
 		for (auto& p : t.tracking){
-			if (ends::prec(p.second,newc)) to_remove.push_back(p.first);
+			if (ends::prec(p.second.first,newc)) to_remove.push_back(p.first);
 		}
 		for (auto &e : to_remove){
 			t.tracking.erase(e);
@@ -203,9 +204,9 @@ void Tracker::onWrite(DataStore<Level::causal>&, int name, const Clock &version)
     //there's nothing to do for a strong datastore right now. maybe there will be later.	
 }
 
-void Tracker::onRead(DataStore<Level::causal>&, int name, const Clock &version){
+void Tracker::onRead(DataStore<Level::causal>&, int name, const Clock &version, std::vector<char> bytes){
 	if (ends::prec(version,i->global_min)) {
 		i->tracking.erase(name);
 	}
-        else if (i->exceptions.count(name) == 0) i->tracking.emplace(name,version);
+	else if (i->exceptions.count(name) == 0) i->tracking.emplace(name,make_pair(version,bytes));
 }

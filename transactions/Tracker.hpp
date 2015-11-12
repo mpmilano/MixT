@@ -79,7 +79,7 @@ public:
 
 	void onRead(DataStore<Level::strong>&, int name);
 	
-	void onRead(DataStore<Level::causal>&, int name, const Clock &version);
+	void onRead(DataStore<Level::causal>&, int name, const Clock &version, std::vector<char> bytes);
 
 	//for testing
 	void assert_nonempty_tracking() const;
