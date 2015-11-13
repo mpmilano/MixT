@@ -9,6 +9,16 @@
 
 struct hostent * extract_ip(Tracker::Nonce n);
 
+void CooperativeCache::track_with_eviction(Tracker::Nonce n, const obj_bundle &o){
+	if (order.size() > max_size){
+		auto elim = order.front();
+		order.pop_front();
+		cache.erase(elim);
+	}
+	order.push_back(n);
+	cache[n] = o;
+}
+
 CooperativeCache::CooperativeCache(){}
 void CooperativeCache::insert(Tracker::Nonce n, const std::map<int,std::pair<Tracker::Clock, std::vector<char> > > &map){
 	obj_bundle new_tracking;
@@ -17,7 +27,7 @@ void CooperativeCache::insert(Tracker::Nonce n, const std::map<int,std::pair<Tra
 	}
 	{
 		lock l{m};
-		cache[n] = new_tracking;
+		track_with_eviction(n,new_tracking);
 	}
 }
 
@@ -131,7 +141,7 @@ std::unique_ptr<CooperativeCache::obj_bundle> CooperativeCache::get(Tracker::Non
 		}
 		{
 			lock l{m};
-			cache[nonce] = *ret;
+			track_with_eviction(nonce,*ret);
 		}
 		return ret;
 	}
