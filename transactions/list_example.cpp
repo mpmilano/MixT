@@ -10,14 +10,14 @@
 #include "Print.hpp"
 #include "Massert.hpp"
 #include "SQLStore.hpp"
-#include "FinalHeader.hpp" //*/
+#include "FinalHeader.hpp" 
 #include "RemoteCons.hpp"
 #include "SQLStore.hpp"
+#include "Ostreams.hpp"//*/
 #include "SerializationMacros.hpp"
 #include "Transaction_macros.hpp"
 #include "FreeExpr_macros.hpp"
 #include "Operate_macros.hpp"
-#include "Ostreams.hpp"
 
 
 template<Level l, typename T> FINALIZE_OPERATION(Increment, 1, (RemoteObject<l, T>* a));
@@ -39,23 +39,21 @@ int main() {
 	auto h = WeakCons::build_list(fss,fsc,12,13,14);
 
 	assert(h.get().val.get() == 14);
-
-		TRANSACTION(
-			let_ifValid(zero) = 0 IN (
-				let_mutable(hd) = h IN (
+	TRANSACTION(
+		let(hd) = {h} IN (
 			WHILE (isValid(hd)) DO(
 				print_str("loop"),
 				print_str("hd"),
 				print(hd),
-				let_ifValid(tmp) = hd IN (
+				let_dereferenced(tmp) = hd IN (
 					print_str("tmp"),
 					print(tmp),
-					let_ifValid(weak_val) = $(tmp,val) IN (
+					let_dereferenced(weak_val) = $(tmp,val) IN (
 						do_op(Increment,weak_val)
 						),
 					hd = $(tmp,next)
 					))
-			))
+			)
 			); //*/
 
 		std::cout << h.get().val.get() << std::endl;

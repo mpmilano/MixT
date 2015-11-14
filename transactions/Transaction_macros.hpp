@@ -31,9 +31,9 @@
 #define TRANSACTION(args...) { TransactionBuilder<std::tuple<> > prev; TRANS_SEQ(args, END_TRANSACTION)}
 
 //change these - mutable can use, just not dref.
-#define let_mutable(x) [&]() { auto decl = MutDeclaration(#x); auto x = (MutAssigner(#x)
+#define let(x) [&]() { auto decl = MutDeclaration(#x); auto x = (MutAssigner(#x)
 
-#define let_ifValid(x)  [&]() { auto decl = ImmutDeclaration(#x); auto x = (ImmutAssigner(#x)
+#define let_dereferenced(x)  [&]() { auto decl = ImmutDeclaration(#x); auto x = (ImmutAssigner(#x)
 #define IN(args...) ); (TRANS_SEQ(STANDARD_BEGIN(decl),args, STANDARD_BEGIN(end_var_scope()), return clobber(prev);));  }(); 
 
 #define raw(x...) STANDARD_BEGIN(x)

@@ -5,6 +5,7 @@
 #include "ConExpr.hpp"
 #include "RefTemporary.hpp"
 #include "Context.hpp"
+#include "MutableTemporary.hpp"
 
 /*
 template<typename>
@@ -102,12 +103,27 @@ auto make_PreOp(int id, const T &t){
 	return ret;
 }
 
+template<typename T, restrict(!is_RefTemporary<T>::value ) >
+auto preserve_mut_refs(const T &t){
+	return t;
+}
+
+template<unsigned long long ID, Level l, typename T>
+auto preserve_mut_refs(const RefTemporary<ID,l,T,Temporary<ID,l,T> > &t){
+	return t;
+}
+
+template<unsigned long long ID, Level l, typename T>
+auto preserve_mut_refs(const RefTemporary<ID,l,T,MutableTemporary<ID,l,T> > &t){
+	return preserve(t);
+}
+
 
 template<typename T>
 auto trans_op_arg(CausalCache& c, const CausalStore& s, const T& t) 
 {
 	run_ast_causal(c,s,t);
-	return constify(extract_robj_p(cached(c,t)));
+	return constify(extract_robj_p(cached(c,preserve_mut_refs(t))));
 }
 
 template<typename T>
@@ -128,7 +144,7 @@ auto trans_op_arg(StrongCache& c, const StrongStore& s, const T& t) {
 	if (op_mode || data_mode)
 		context::set_context(c,prev_ctx);
 	
-	return constify(extract_robj_p(cached(c,t)));
+	return constify(extract_robj_p(cached(c,preserve_mut_refs(t))));
 }
 
 template<typename T, restrict(is_ConExpr<T>::value)>

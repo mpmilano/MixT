@@ -128,7 +128,7 @@ struct nope{
 };
 
 template<Level l, typename T, typename E, unsigned long long id>
-bool is_reftemp(const RefTemporary<id,l,T, E> *){
+constexpr bool is_reftemp(const RefTemporary<id,l,T, E> *){
 	return true;
 }
 

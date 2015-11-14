@@ -19,6 +19,11 @@ struct MutCreator {
 			rt(MutableTemporary<ID,l,decltype(t) >(name,t));
 		return rt;
 	}
+	template<typename T>
+	auto operator=(const std::initializer_list<T>& t_) const {
+		static_assert(is_ConExpr<T>::value, "Error: cannot assign non-expression");
+		return operator=(*t_.begin());
+	}
 };
 
 template<unsigned long long ID>
@@ -33,6 +38,11 @@ struct ImmutCreator {
 		RefTemporary<ID,l,decltype(t),Temporary<ID,l,decltype(t) > >
 			rt(Temporary<ID,l,decltype(t) >(name,t));
 		return rt;
+	}
+	template<typename T>
+	auto operator=(const std::initializer_list<T>& t_) const {
+		static_assert(is_ConExpr<T>::value, "Error: cannot assign non-expression");
+		return operator=(*t_.begin());
 	}
 
 };
