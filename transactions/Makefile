@@ -36,7 +36,7 @@ stress_test2.o:
 	clang++ -c stress_test.cpp -DTEST_MODE=2 $(clangFlags)
 stress_test3.o:
 	clang++ -c stress_test.cpp -DTEST_MODE=3 $(clangFlags)
-vm_main.o
+vm_main.o:
 	clang++ -c vm_main.cpp -DCAUSAL_GROUP=$(causalGroup) $(clangFlags)
 sqlstore_clean:
 	touch SQLStore.o; rm SQLStore.o
