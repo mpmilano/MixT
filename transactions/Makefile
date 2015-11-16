@@ -18,6 +18,9 @@ stress2: Ends.o utils.o Tracker.o Ostreams.o SerializationSupport.o WhileBuilder
 stress3: Ends.o utils.o Tracker.o Ostreams.o SerializationSupport.o WhileBuilder.o ConExpr.o Context.o SQLStore.o TempBuilder.o stress_test3.o
 	clang++ utils.o Ends.o Tracker.o Ostreams.o SerializationSupport.o WhileBuilder.o ConExpr.o Context.o SQLStore.o TempBuilder.o stress_test.o -o stress3 $(linkFlags)
 
+vm: Ends.o utils.o Tracker.o Ostreams.o SerializationSupport.o WhileBuilder.o ConExpr.o Context.o SQLStore.o TempBuilder.o vm_main.o
+	clang++ utils.o Ends.o Tracker.o Ostreams.o SerializationSupport.o WhileBuilder.o ConExpr.o Context.o SQLStore.o TempBuilder.o vm_main.o -o vm $(linkFlags)
+
 chat: Ends.o utils.o Ostreams.o Tracker.o SerializationSupport.o WhileBuilder.o ConExpr.o Context.o SQLStore.o TempBuilder.o chat_example.o
 	clang++ utils.o Ends.o Ostreams.o Tracker.o SerializationSupport.o WhileBuilder.o ConExpr.o Context.o SQLStore.o TempBuilder.o chat_example.o -o chat $(linkFlags)
 
@@ -33,6 +36,8 @@ stress_test2.o:
 	clang++ -c stress_test.cpp -DTEST_MODE=2 $(clangFlags)
 stress_test3.o:
 	clang++ -c stress_test.cpp -DTEST_MODE=3 $(clangFlags)
+vm_main.o
+	clang++ -c vm_main.cpp -DCAUSAL_GROUP=$(causalGroup) $(clangFlags)
 sqlstore_clean:
 	touch SQLStore.o; rm SQLStore.o
 tracker_clean:
@@ -78,4 +83,4 @@ sql_testing: utils.o Tracker.o SerializationSupport.o WhileBuilder.o ConExpr.o C
 
 
 clean:
-	rm *.o; rm chat; rm test; rm stress1; rm stress2; rm stress3
+	rm *.o; rm chat; rm test; rm stress1; rm stress2; rm stress3; rm vm
