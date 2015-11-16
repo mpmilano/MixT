@@ -11,7 +11,7 @@ int main(){
 #include "../big_prime"
 		);
 	try { 
-	pqxx::connection conn_strong;
+		pqxx::connection conn_strong("host=128.84.217.31");
 	conn_strong.prepare("Update",
 						string("update \"BlobStore\" set data=$1 where id= ") + id);
 	pqxx::connection conn_causal;
@@ -45,6 +45,8 @@ int main(){
 			binarystring bs
 				(r[0][0]);
 			std::array<int,4> arr;
+			for (int i : arr) std::cout << i << " ";
+			std::cout << std::endl;
 			memcpy(&arr[0],bs.data(),tmp.size()*4);
 			assert(arr[0] == tmp[0]);
 			assert(arr[1] == tmp[1]);
