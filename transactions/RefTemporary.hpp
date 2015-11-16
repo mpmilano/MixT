@@ -133,5 +133,10 @@ constexpr bool is_reftemp(const RefTemporary<id,l,T, E> *){
 }
 
 template<typename T>
+constexpr bool is_reftemp(const T*){
+	return false;
+}
+
+template<typename T>
 struct is_RefTemporary : std::integral_constant<bool,is_reftemp(mke_p<T>())>::type
 {};
