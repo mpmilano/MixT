@@ -184,7 +184,7 @@ void Tracker::onRead(DataStore<Level::strong>& ds, int name){
 					return;
 				}
 				else {
-					std::cout << "waiting..." << std::endl;
+					std::cout << "waiting for " << tomb.name() << " to appear..." << std::endl;
 					sleep(1);
 				}
 			}

@@ -15,7 +15,7 @@ stress1: Ends.o utils.o Tracker.o Ostreams.o SerializationSupport.o WhileBuilder
 stress2: Ends.o utils.o Tracker.o Ostreams.o SerializationSupport.o WhileBuilder.o ConExpr.o Context.o SQLStore.o TempBuilder.o stress_test2.o
 	clang++ utils.o Ends.o Tracker.o Ostreams.o SerializationSupport.o WhileBuilder.o ConExpr.o Context.o SQLStore.o TempBuilder.o stress_test.o -o stress2 $(linkFlags)
 
-stress3: Ends.o utils.o Tracker.o Ostreams.o SerializationSupport.o WhileBuilder.o ConExpr.o Context.o SQLStore.o TempBuilder.o stress_test2.o
+stress3: Ends.o utils.o Tracker.o Ostreams.o SerializationSupport.o WhileBuilder.o ConExpr.o Context.o SQLStore.o TempBuilder.o stress_test3.o
 	clang++ utils.o Ends.o Tracker.o Ostreams.o SerializationSupport.o WhileBuilder.o ConExpr.o Context.o SQLStore.o TempBuilder.o stress_test.o -o stress3 $(linkFlags)
 
 chat: Ends.o utils.o Ostreams.o Tracker.o SerializationSupport.o WhileBuilder.o ConExpr.o Context.o SQLStore.o TempBuilder.o chat_example.o
@@ -78,4 +78,4 @@ sql_testing: utils.o Tracker.o SerializationSupport.o WhileBuilder.o ConExpr.o C
 
 
 clean:
-	rm *.o; rm chat; rm test
+	rm *.o; rm chat; rm test; rm stress1; rm stress2; rm stress3

@@ -45,8 +45,8 @@ int main(){
 			binarystring bs
 				(r[0][0]);
 			std::array<int,4> arr;
-			for (int i : arr) std::cout << i << " ";
-			std::cout << std::endl;
+			//for (int i : arr) std::cout << i << " ";
+			//std::cout << std::endl;
 			memcpy(&arr[0],bs.data(),tmp.size()*4);
 			assert(arr[0] == tmp[0]);
 			assert(arr[1] == tmp[1]);
