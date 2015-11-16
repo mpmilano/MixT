@@ -81,16 +81,17 @@ void heavy_both(SQLStore<Level::strong> &strong, SQLStore<Level::causal> &causal
 
 int main(){
 	int ip = 0;
+	
 	char *iparr = (char*)&ip;
-	//128.84.217.139
+	//128.84.217.31
 	iparr[0] = 128;
 	iparr[1] = 84;
 	iparr[2] = 217;
-	iparr[3] = 139;
+	iparr[3] = 31;
 	std::cout << "running in mode " << TEST_MODE << std::endl;
 	try{
 		SQLStore<Level::strong> &strong = SQLStore<Level::strong>::inst(ip);
-		SQLStore<Level::causal> &causal = SQLStore<Level::causal>::inst(ip);
+		SQLStore<Level::causal> &causal = SQLStore<Level::causal>::inst(0);
 		setup(strong,causal);
 		
 		switch(TEST_MODE){
