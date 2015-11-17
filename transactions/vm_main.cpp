@@ -92,10 +92,10 @@ int main(){
 		int personal_generator = 0;
 		int light_generator = 0;
 		int heavy_generator = 0;
-		for (int i = 0; i < 50; ++i){
-			writemix(light_generator,40,10,light);
-			writemix(heavy_generator,10,5,heavy);
-			writemix(personal_generator,50,10,personal);
+		for (int i = 0; i < 5; ++i){
+			writemix(light_generator,4,10,light);
+			writemix(heavy_generator,1,5,heavy);
+			writemix(personal_generator,5,10,personal);
 		}
 		
 	}
