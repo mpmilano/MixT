@@ -63,13 +63,16 @@ int main(){
 						sleep(rand() %4);
 						if (j >= num_iterations) throw Escape{};
 						const auto start = high_resolution_clock::now();
-						while(true){
+						for(int tmp2 = 0; tmp2 < 10; ++tmp2){
 							try{
 								if ((i % modulus) == 0)
 									TRANSACTION(
 										do_op(Increment,hndl)
 										)
 								else hndl.get();
+								auto end = high_resolution_clock::now() - start;
+								logFile << "duration: " << duration_cast<microseconds>(end).count()
+										<< ((i % modulus) == 0 ? " read/write" : " read") << std::endl;
 								break;
 							}
 							catch(const Transaction::SerializationFailure &r){
@@ -79,9 +82,6 @@ int main(){
 								continue;
 							}
 						}
-						auto end = high_resolution_clock::now() - start;
-						logFile << "duration: " << duration_cast<microseconds>(end).count()
-								<< ((i % modulus) == 0 ? " read/write" : " read") << std::endl;
 						++i,++j;
 					});
 				if (i == 100) i = 0;
