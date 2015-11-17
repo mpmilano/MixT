@@ -105,10 +105,11 @@ int main(){
 						}
 						++i,++j;
 					});
+				if (j == 0) break;
 				if (i == 100) i = 0;
 			}
 		}catch(const Escape&){
-			
+
 		}
 	};
 	

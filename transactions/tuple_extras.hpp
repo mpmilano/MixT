@@ -76,6 +76,7 @@ auto constexpr fold(const Tuple &vec, Ret (*f)(Args...), const Acc & acc){
 
 template<typename Tuple, typename F>
 auto foreach(const Tuple &vec, const F &f){
+	if (std::tuple_size<Tuple>::value == 0) return true;
 	return fold(vec,[&f](const auto &e, bool){f(e); return true; },true);
 }
 
