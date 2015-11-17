@@ -182,6 +182,7 @@ public:
 	struct CannotProceedError {
 		const std::string why;
 	};
+	struct SerializationFailure {};
 	struct ClassCastException{};
 };
 

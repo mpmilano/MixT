@@ -63,11 +63,22 @@ int main(){
 						sleep(rand() %4);
 						if (j >= num_iterations) throw Escape{};
 						const auto start = high_resolution_clock::now();
-						if ((i % modulus) == 0)
-							TRANSACTION(
-								do_op(Increment,hndl)
-								)
-							else hndl.get();
+						while(true){
+							try{
+								if ((i % modulus) == 0)
+									TRANSACTION(
+										do_op(Increment,hndl)
+										)
+								else hndl.get();
+								break;
+							}
+							catch(const Transaction::SerializationFailure &r){
+								logFile << "serialization failure: "
+										<< duration_cast<microseconds>(high_resolution_clock::now() - start).count()
+										<< std::endl;
+								continue;
+							}
+						}
 						auto end = high_resolution_clock::now() - start;
 						logFile << "duration: " << duration_cast<microseconds>(end).count()
 								<< ((i % modulus) == 0 ? " read/write" : " read") << std::endl;
@@ -81,6 +92,9 @@ int main(){
 	};
 	
 	std::cout << "hello world from VM "<< my_unique_id << " in group " << CAUSAL_GROUP << std::endl;
+	AtScopeEnd ase{[&](){logFile << "End" << std::endl;
+			logFile.close();}};
+	discard(ase);
 	int ip = 0;
 	{
 		char *iparr = (char*)&ip;
@@ -113,8 +127,6 @@ int main(){
 			writemix(heavy_generator,1,5,heavy);
 			writemix(personal_generator,5,10,personal);
 		}
-		logFile << "End" << std::endl;
-		logFile.close();
 	}
 	catch (const pqxx::pqxx_exception &r){
 		std::cerr << r.base().what() << std::endl;

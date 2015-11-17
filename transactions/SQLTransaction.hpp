@@ -29,13 +29,19 @@ public:
 		sql_conn.in_trans = true;
 		sql_conn.current_trans = this;
 		}
+
+	bool is_serialize_error(const pqxx::pqxx_exception &r){
+		auto s = r.base().what();
+		return s.find("could not serialize access due to concurrent update") != std::string::npos;
+	}
 	
 	SQLTransaction(const SQLTransaction&) = delete;
 
-#define default_sqltransaction_catch					\
-	catch(const pqxx::pqxx_exception &r){				\
-		commit_on_delete = false;								\
-		throw Transaction::CannotProceedError{r.base().what() + show_backtrace()}; \
+#define default_sqltransaction_catch									\
+	catch(const pqxx::pqxx_exception &r){								\
+		commit_on_delete = false;										\
+		if (is_serialize_error(r)) throw Transaction::SerializationFailure{}; \
+		else throw Transaction::CannotProceedError{r.base().what() + show_backtrace()}; \
 	}
 
 	
