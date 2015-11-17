@@ -234,20 +234,11 @@ namespace {
             return std::string(str);
         }
     }
-
-	int ip_to_group(unsigned int i){
-		static_assert(sizeof(unsigned int) == 4,"Need a 32-bit type here");
-		if (i == 0) return 1;
-		else {
-			int ret = (((unsigned char*)(&i))[3] % 4) + 1;
-			assert(ret <= 10 && ret > 0);
-			return ret;
-		}
-	}
 }
 
 
-SQLStore_impl::SQLConnection::SQLConnection(int ip):ip_addr(ip),repl_group(ip_to_group(ip)),conn{std::string("host=") + string_of_ip(ip)}{
+SQLStore_impl::SQLConnection::SQLConnection(int ip):ip_addr(ip),repl_group(CAUSAL_GROUP),conn{std::string("host=") + string_of_ip(ip)}{
+	static_assert(int{CAUSAL_GROUP} > 0, "errorr: did not set CAUSAL_GROUP or failed to 1-index");
 	assert(conn.is_open());
 	std::cout << string_of_ip(ip) << std::endl;
 }

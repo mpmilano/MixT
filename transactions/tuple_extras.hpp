@@ -48,15 +48,15 @@ auto tuple_2fold(const F& f, const Tuple1 &t1, const Tuple2 &t2, const Acc &acc)
 		 (typename std::integral_constant<bool,(size1 > 0)>::type*) nullptr);
 }
 
-template<int ind, int stop, typename Acc, typename F, typename... Args, restrict(ind < stop)>
-constexpr auto fold_recr(const std::tuple<Args...> &vec, const F &f, const Acc &acc){
-	return fold_recr<ind+1,stop>(vec,f,f(std::get<ind>(vec),acc));
-}
-	
 template<int ind, int stop, typename Acc, typename F, typename... Args>
 std::enable_if_t<ind == stop,Acc>
 constexpr fold_recr(const std::tuple<Args...> &, const F &, const Acc &acc){
 	return acc;
+}
+
+template<int ind, int stop, typename Acc, typename F, typename... Args, restrict(ind < stop)>
+constexpr auto fold_recr(const std::tuple<Args...> &vec, const F &f, const Acc &acc){
+	return fold_recr<ind+1,stop>(vec,f,f(std::get<ind>(vec),acc));
 }
 
 template<typename Acc, typename F, typename... Args>

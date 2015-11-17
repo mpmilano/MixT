@@ -57,7 +57,6 @@
 		using FindUsage = FindUsages<alphabet_on_each(decltype, n)>;	\
 		struct OperateImpl : public FindUsage,							\
 							 public ConStatement<min_level_dref<alphabet_on_each(decltype,n)>::value >{ \
-			using level = get_level<OperateImpl>;						\
 			const int id = gensym();									\
 			argcnt_shared_ptr(n)										\
 				const std::string name = #Name;							\
@@ -82,15 +81,15 @@
 			}															\
 			auto strongCall(StrongCache& c CMA  const StrongStore &s) const { \
 				run_strong_helper(c,s,argcnt(n));						\
-				choose_strong<level::value> choice{nullptr};			\
+				choose_strong<get_level<OperateImpl>::value> choice{nullptr}; \
 				return strongCall(c,s,choice);							\
 			}															\
 																		\
 			auto causalCall(CausalCache& c CMA  const CausalStore &s) const { \
 				run_causal_helper(c,s,argcnt(n));						\
 				using R = decltype(make_PreOp(id,Name(argcnt_map_dref(trans_op_arg,n,c,s,))) \
-								   (c,argcnt(n)));			\
-				if(runs_with_strong(level::value)) return c.template get<R>(id); \
+								   (c,argcnt(n)));						\
+				if(runs_with_strong(get_level<OperateImpl>::value)) return c.template get<R>(id); \
 				else return make_PreOp(id,Name(argcnt_map_dref(trans_op_arg,n,c,s,))) \
 									   (c,argcnt(n));		\
 			}															\

@@ -13,7 +13,7 @@ int main(){
 	try { 
 		pqxx::connection conn_strong("host=128.84.217.31");
 	conn_strong.prepare("Update",
-						string("update \"BlobStore\" set data=$1 where id= ") + id);
+						string("update \"BlobStore\" set data=$1,version=$2 where id= ") + id);
 	pqxx::connection conn_causal;
 	conn_causal.prepare("selectit","select max(vc1) as vc1,max(vc2) as vc2,max(vc3) as vc3,max(vc4) as vc4 from (select max(vc1) as vc1,max(vc2) as vc2,max(vc3) as vc3,max(vc4) as vc4 from \"BlobStore\" union select max(vc1) as vc1,max(vc2) as vc2,max(vc3) as vc3,max(vc4) as vc4 from \"IntStore\") as foo");
 
@@ -33,7 +33,7 @@ int main(){
 			pqxx::work trans_strong(conn_strong);
 			trans_strong.exec("set search_path to \"BlobStore\",public");
 			binarystring blob(&tmp[0],tmp.size()*4);
-			auto r = trans_strong.prepared("Update")(blob).exec();
+			auto r = trans_strong.prepared("Update")(blob)(tmp[0]+tmp[1]+tmp[2]+tmp[3]).exec();
 			assert(r.affected_rows() > 0);
 			trans_strong.commit();
 		}

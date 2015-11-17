@@ -1,7 +1,9 @@
 TRANS_DIR= `pwd`/
+IP_quad=`ifconfig | sed s/broadcast.*//g | tr " " "\n" | grep 128.84 | rev | sed s/'\..*'//g | rev`
 storeList='SQLStore<Level::strong>, SQLStore<Level::causal>'
 clangFlags= -Xclang -fcolor-diagnostics -g -stdlib=libc++ --std=c++14 -Wall -ferror-limit=1 -DNUM_CAUSAL_GROUPS="4" -DSTORE_LIST=$(storeList) -DDECLARED_OPERATIONS="template<Level l2> DECLARE_OPERATION(Increment, RemoteObject<l2,int>*) template<Level l2, typename T> DECLARE_OPERATION(Insert, RemoteObject<l2,std::set<T> >*, const T& ) "
 linkFlags= -stdlib=libc++ --std=c++14 -lpqxx
+export IP_quad
 export TRANS_DIR
 export clangFlags
 export linkFlags
@@ -37,7 +39,7 @@ stress_test2.o:
 stress_test3.o:
 	clang++ -c stress_test.cpp -DTEST_MODE=3 $(clangFlags)
 vm_main.o:
-	clang++ -c vm_main.cpp -DCAUSAL_GROUP=$(causalGroup) $(clangFlags)
+	clang++ -c vm_main.cpp -DIP_QUAD=$(IP_quad) -DCAUSAL_GROUP=$(causalGroup) $(clangFlags)
 sqlstore_clean:
 	touch SQLStore.o; rm SQLStore.o
 tracker_clean:
@@ -57,7 +59,7 @@ Ostreams.o:
 SerializationSupport.o:
 	clang++ -c SerializationSupport.cpp $(clangFlags)
 SQLStore.o:
-	clang++ -c SQLStore.cpp -DNUM_CAUSAL_MASTERS="2" $(clangFlags)
+	clang++ -c SQLStore.cpp -DNUM_CAUSAL_MASTERS="2" -DCAUSAL_GROUP=$(causalGroup) $(clangFlags)
 Context.o:
 	clang++ -c Context.cpp $(clangFlags)
 TempBuilder.o:
