@@ -31,7 +31,7 @@ public:
 		}
 
 	bool is_serialize_error(const pqxx::pqxx_exception &r){
-		auto s = r.base().what();
+		auto s = std::string(r.base().what());
 		return s.find("could not serialize access due to concurrent update") != std::string::npos;
 	}
 	

@@ -12,3 +12,5 @@ do
 	i=$[i%4 + 1]
 	/bin/bash test-things-loop-body2.sh $i $foo &
 done
+wait
+echo copy done
