@@ -34,8 +34,8 @@ public:
 
 #define default_sqltransaction_catch					\
 	catch(const pqxx::pqxx_exception &r){				\
-		commit_on_delete = false;						\
-		throw Transaction::CannotProceedError{};		\
+		commit_on_delete = false;								\
+		throw Transaction::CannotProceedError{r.base().what() + show_backtrace()}; \
 	}
 
 	

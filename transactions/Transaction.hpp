@@ -179,7 +179,9 @@ public:
 		return action();
 	}
 
-	struct CannotProceedError {};
+	struct CannotProceedError {
+		const std::string why;
+	};
 	struct ClassCastException{};
 };
 
