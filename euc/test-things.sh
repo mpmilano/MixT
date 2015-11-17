@@ -1,9 +1,9 @@
 #!/bin/bash
 i=0
-for num_per in 1 #2 3 4 5 6 7 8 9 10
+for num_per in 1 2 3 4 5 6 7 8 9 10
 do
 	echo "iteration " $num_per
-	for configuration in USE_STRONG #NO_USE_STRONG
+	for configuration in USE_STRONG NO_USE_STRONG
 	do
 		echo $configuration
 		for foo in $instance_list
