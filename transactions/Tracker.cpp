@@ -15,6 +15,7 @@
 #include "CompactSet.hpp"
 #include "Tracker_support_structs.hpp"
 #include "Ends.hpp"
+#include "Transaction.hpp"
 
 
 using namespace std;
@@ -140,7 +141,7 @@ void Tracker::onWrite(DataStore<Level::strong>& ds_real, int name){
 	if (!is_lin_metadata(name) && !i->tracking.empty()){
 
 		bool always_failed = true;
-		for (int i < 0; i < 100; ++i){
+		for (int asdf = 0; asdf < 100; ++asdf){
 			try{
 				auto nonce = rand();
 				write_lin_metadata(name,nonce,*i);
