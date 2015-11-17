@@ -2,7 +2,7 @@ TRANS_DIR= `pwd`/
 IP_quad=`ifconfig | sed s/broadcast.*//g | tr " " "\n" | grep 128.84 | rev | sed s/'\..*'//g | rev`
 storeList='SQLStore<Level::strong>, SQLStore<Level::causal>'
 clangFlags= -Xclang -fcolor-diagnostics -g -stdlib=libc++ --std=c++14 -Wall -ferror-limit=1 -DNUM_CAUSAL_GROUPS="4" -DSTORE_LIST=$(storeList) -DDECLARED_OPERATIONS="template<Level l2> DECLARE_OPERATION(Increment, RemoteObject<l2,int>*) template<Level l2, typename T> DECLARE_OPERATION(Insert, RemoteObject<l2,std::set<T> >*, const T& ) "
-linkFlags= -stdlib=libc++ --std=c++14 -lpqxx
+linkFlags= -stdlib=libc++ --std=c++14 -lpqxx -lunwind
 export IP_quad
 export TRANS_DIR
 export clangFlags

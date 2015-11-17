@@ -1,6 +1,7 @@
 #pragma once
 #include "SQLStore.hpp"
 #include "SQLConnection.hpp"
+#include "backtrace.hpp"
 #include <pqxx/pqxx>
 
 template<typename E>
@@ -35,6 +36,7 @@ public:
 	catch(const pqxx::pqxx_exception &r){				\
 		commit_on_delete = false;						\
 		std::cerr << r.base().what() << std::endl;		\
+		show_backtrace();								\
 		assert(false && "exec failed");					\
 	}
 
