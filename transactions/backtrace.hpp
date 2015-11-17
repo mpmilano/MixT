@@ -5,7 +5,7 @@
 #include <cstdlib>
 
 
-
+namespace{
 void show_backtrace() {
 	unw_cursor_t cursor;
 	unw_context_t context;
@@ -37,4 +37,5 @@ void show_backtrace() {
 			std::printf(" -- error: unable to obtain symbol name for this frame\n");
 		}
 	}
+}
 }

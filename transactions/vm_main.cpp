@@ -6,6 +6,7 @@
 #include "Ostreams.hpp"
 #include "tuple_extras.hpp"
 #include "Basics.hpp"
+#include "backtrace.hpp"
 #include <unistd.h>//*/
 #include "Operate_macros.hpp"
 
@@ -101,5 +102,8 @@ int main(){
 	catch (const pqxx::pqxx_exception &r){
 		std::cerr << r.base().what() << std::endl;
 		assert(false && "exec failed");
+	}
+	catch(...){
+		show_backtrace();
 	}
 }
