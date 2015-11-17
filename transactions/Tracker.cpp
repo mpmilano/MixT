@@ -138,10 +138,21 @@ void Tracker::onWrite(DataStore<Level::strong>& ds_real, int name){
 
 	assert(&ds_real == i->registeredStrong);
 	if (!is_lin_metadata(name) && !i->tracking.empty()){
-		
-		auto nonce = rand();
-		write_lin_metadata(name,nonce,*i);
-		write_causal_tombstone(nonce,*i);
+
+		bool always_failed = true;
+		for (int i < 0; i < 100; ++i){
+			try{
+				auto nonce = rand();
+				write_lin_metadata(name,nonce,*i);
+				write_causal_tombstone(nonce,*i);
+				always_failed = false;
+				break;
+			}
+			catch(const Transaction::CannotProceedError&){
+				//assume we picked a bad nonce, try again
+			}
+		}
+		assert(!always_failed);
 		assert(get<TDS::exists>(*i->strongDS)(ds_real,make_lin_metaname(name)));
 	}
 }

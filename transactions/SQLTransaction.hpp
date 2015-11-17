@@ -35,9 +35,7 @@ public:
 #define default_sqltransaction_catch					\
 	catch(const pqxx::pqxx_exception &r){				\
 		commit_on_delete = false;						\
-		std::cerr << r.base().what() << std::endl;		\
-		show_backtrace();								\
-		assert(false && "exec failed");					\
+		throw Transaction::CannotProceedError{};		\
 	}
 
 	
