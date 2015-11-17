@@ -7,9 +7,9 @@ source pg_env.sh
 killall -9 vm
 rm /tmp/Myria*
 make clean
-causalGroup="$1" make -j4 vm
+defineThis="$2" causalGroup="$1" make -j4 vm
 sleep 10
-for i in {1..5}
+for ((i=1; i <= $3; i++))
 do
 	./vm &
 done

@@ -19,13 +19,34 @@ using namespace chrono;
 
 
 //const std::vector<int> personal_names_strong = {5 + (my_unique_id*100),7 + (my_unique_id*100),9 + (my_unique_id*100),11 + (my_unique_id*100),13 + (my_unique_id*100)};
-const auto personal_names_causal = std::make_tuple(6 + (my_unique_id*100),8 + (my_unique_id*100),10 + (my_unique_id*100),12 + (my_unique_id*100),14 + (my_unique_id*100));
-
+const auto personal_names_causal = 
+#ifdef NO_USE_STRONG
+std::make_tuple(6 + (my_unique_id*100),8 + (my_unique_id*100),10 + (my_unique_id*100),12 + (my_unique_id*100),14 + (my_unique_id*100));
+#endif
+#ifdef USE_STRONG
+std::tuple<>{};
+#endif
 const auto lightly_names_strong = std::make_tuple(5  + (CAUSAL_GROUP * 100),7  + (CAUSAL_GROUP * 100),9  + (CAUSAL_GROUP * 100),11  + (CAUSAL_GROUP * 100),13  + (CAUSAL_GROUP * 100));
-const auto lightly_names_causal = std::make_tuple(6  + (CAUSAL_GROUP * 100),8  + (CAUSAL_GROUP * 100),10  + (CAUSAL_GROUP * 100),12  + (CAUSAL_GROUP * 100),14  + (CAUSAL_GROUP * 100));
+
+const auto lightly_names_causal = 
+#ifdef NO_USE_STRONG
+std::make_tuple(6  + (CAUSAL_GROUP * 100),8  + (CAUSAL_GROUP * 100),10  + (CAUSAL_GROUP * 100),12  + (CAUSAL_GROUP * 100),14  + (CAUSAL_GROUP * 100));
+#endif
+#ifdef USE_STRONG
+std::tuple<>{};
+#endif
+
 
 const auto heavily_names_strong = std::make_tuple(5,7/*,9,11,13*/);
-const auto heavily_names_causal = std::make_tuple(6,8,10,12,14);
+
+
+const auto heavily_names_causal =
+#ifdef NO_USE_STRONG
+	std::make_tuple(6,8,10,12,14);
+#endif
+#ifdef USE_STRONG
+std::tuple<>{};
+#endif
 
 const auto log = [](){
 	auto pid = getpid();
