@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <pqxx/pqxx>
 #include "SQLStore.hpp"
 #include "FinalHeader.hpp"
@@ -6,10 +7,16 @@
 #include "Ostreams.hpp"
 #include "tuple_extras.hpp"
 #include "Basics.hpp"
+#include <sys/types.h>
+#include <chrono>
 #include <unistd.h>//*/
 #include "Operate_macros.hpp"
 
 constexpr int my_unique_id = IP_QUAD;
+
+using namespace std;
+using namespace chrono;
+
 
 //const std::vector<int> personal_names_strong = {5 + (my_unique_id*100),7 + (my_unique_id*100),9 + (my_unique_id*100),11 + (my_unique_id*100),13 + (my_unique_id*100)};
 const auto personal_names_causal = std::make_tuple(6 + (my_unique_id*100),8 + (my_unique_id*100),10 + (my_unique_id*100),12 + (my_unique_id*100),14 + (my_unique_id*100));
@@ -20,7 +27,15 @@ const auto lightly_names_causal = std::make_tuple(6  + (CAUSAL_GROUP * 100),8  +
 const auto heavily_names_strong = std::make_tuple(5,7/*,9,11,13*/);
 const auto heavily_names_causal = std::make_tuple(6,8,10,12,14);
 
+const auto log = [](){
+	auto pid = getpid();
+	return std::string("/tmp/MyriaStore-output-") + std::to_string(pid);
+}();
+ofstream logFile;
+
 void setup(SQLStore<Level::strong> &strong, SQLStore<Level::causal> &causal){
+	logFile.open(log);
+	logFile << "Begin Log for " << log << std::endl;
 	auto strongt = std::tuple_cat(lightly_names_strong, heavily_names_strong);
 	auto causalt = std::tuple_cat(personal_names_causal, lightly_names_causal, heavily_names_causal);
 	foreach(strongt,[&](const auto &name){
@@ -45,15 +60,17 @@ int main(){
 		try{
 			for (; ; ){
 				foreach(handles,[&](const auto &hndl){
-						std::cout << "loop " << j << " of " << num_iterations << std::endl;
 						sleep(rand() %4);
-						std::cout << "go" << std::endl;
 						if (j >= num_iterations) throw Escape{};
+						const auto start = high_resolution_clock::now();
 						if ((i % modulus) == 0)
 							TRANSACTION(
 								do_op(Increment,hndl)
 								)
 							else hndl.get();
+						auto end = high_resolution_clock::now() - start;
+						logFile << "duration: " << duration_cast<microseconds>(end).count()
+								<< ((i % modulus) == 0 ? " read/write" : " read") << std::endl;
 						++i,++j;
 					});
 				if (i == 100) i = 0;
@@ -91,12 +108,13 @@ int main(){
 		int personal_generator = 0;
 		int light_generator = 0;
 		int heavy_generator = 0;
-		for (int i = 0; i < 5; ++i){
+		for (int i = 0; i < 0; ++i){
 			writemix(light_generator,4,10,light);
 			writemix(heavy_generator,1,5,heavy);
 			writemix(personal_generator,5,10,personal);
 		}
-		
+		logFile << "End" << std::endl;
+		logFile.close();
 	}
 	catch (const pqxx::pqxx_exception &r){
 		std::cerr << r.base().what() << std::endl;
