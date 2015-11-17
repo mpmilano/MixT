@@ -316,7 +316,10 @@ char* SQLStore_impl::GSQLObject::load(){
 		}
 		else if (i->table == Table::IntStore) {
 			int res = -1;
-			assert(r[0][0].to(res));
+			if (!r[0][0].to(res)){
+				std::cerr << "Attempting to access key "<< i->key << " from IntStore in " <<  i->_store.level << " land" << std::endl;
+				assert(false && "no result!");
+			}
 			((int*)c)[0] = res;
 		}
 		return c;
