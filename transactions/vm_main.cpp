@@ -148,8 +148,6 @@ int main(){
 	while (bound()){
 		futures->emplace_back(launch());
 		std::this_thread::sleep_for(milliseconds(getArrivalInterval(20)));
-		std::this_thread::sleep_for(1s);
-
 		/*
 		{ //clean up the log of messages
 			decltype(futures) nf{new future_list()};
