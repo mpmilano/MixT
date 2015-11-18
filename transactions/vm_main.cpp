@@ -76,37 +76,50 @@ int main(){
 			logFile.close();}};
 	discard(ase);
 
-	std::function<std::string (unsigned long long)> pool_fun = [ip](unsigned long long start_time){
-							   SQLStore<Level::strong> &strong = SQLStore<Level::strong>::inst(ip);
-							   SQLStore<Level::causal> &causal = SQLStore<Level::causal>::inst(0);
-							   auto name = get_name(1.5);
-							   std::stringstream log_messages;
-							   auto test_fun = [&](const auto &hndl){
-							   for(int tmp2 = 0; tmp2 < 10; ++tmp2){
-								   try{
-									   if ((name % mod_constant) == 0)
-										   TRANSACTION(
-											   do_op(Increment,hndl)
-											   )
-										   else hndl.get();
-									   auto end = high_resolution_clock::now() - launch_clock;
-									   log_messages << "duration: " << duration_cast<microseconds>(end).count() - start_time
-											   << ((name % mod_constant) == 0 ? " read/write" : " read") << std::endl;
-									   break;
-								   }
-								   catch(const Transaction::SerializationFailure &r){
-									   log_messages << "serialization failure: "
-											   << duration_cast<microseconds>(high_resolution_clock::now() - launch_clock).count() - start_time
-											   << std::endl;
-									   continue;
-								   }
-							   }
-							   return log_messages.str();
-							   };
-							   if (better_rand() > .7 || !causal_enabled){
-								   return test_fun(strong.template existingObject<HandleAccess::all,int>(name));
-							   }
-							   else return test_fun(causal.template existingObject<HandleAccess::all,int>(name));};
+	std::function<std::string (unsigned long long)> pool_fun =
+		[ip](unsigned long long start_time){
+		std::stringstream log_messages;
+		try{
+			std::cout << "running worker function" << std::endl;
+			SQLStore<Level::strong> &strong = SQLStore<Level::strong>::inst(ip);
+			SQLStore<Level::causal> &causal = SQLStore<Level::causal>::inst(0);
+			std::cout << "instances retrieved" << std::endl;
+			auto name = get_name(1.5);
+			
+			
+			auto test_fun = [&](const auto &hndl){
+				std::cout << "working on name " << name << std::endl;
+				for(int tmp2 = 0; tmp2 < 10; ++tmp2){
+					try{
+						if ((name % mod_constant) == 0)
+							TRANSACTION(
+								do_op(Increment,hndl)
+								)
+							else hndl.get();
+						auto end = high_resolution_clock::now() - launch_clock;
+						log_messages << "duration: " << duration_cast<microseconds>(end).count() - start_time
+									 << ((name % mod_constant) == 0 ? " read/write" : " read") << std::endl;
+						break;
+					}
+					catch(const Transaction::SerializationFailure &r){
+						log_messages << "serialization failure: "
+									 << duration_cast<microseconds>(high_resolution_clock::now() - launch_clock).count() - start_time
+									 << std::endl;
+						continue;
+					}
+				}
+				return log_messages.str();
+			};
+			if (better_rand() > .7 || !causal_enabled){
+				return test_fun(strong.template existingObject<HandleAccess::all,int>(name));
+			}
+			else return test_fun(causal.template existingObject<HandleAccess::all,int>(name));
+		}
+		catch(pqxx::pqxx_exception &e){
+			log_messages << "pqxx failure: " << e.base().what() << std::endl;
+		}
+		return log_messages.str();
+	};
 	vector<decltype(pool_fun)> pool_v {{pool_fun}};
 	auto &p = *(new ProcessPool<std::string, unsigned long long>(pool_v));
 	auto start = high_resolution_clock::now();
@@ -135,6 +148,7 @@ int main(){
 	while (bound()){
 		futures->emplace_back(launch());
 		std::this_thread::sleep_for(milliseconds(getArrivalInterval(20)));
+		std::this_thread::sleep_for(1s);
 
 		/*
 		{ //clean up the log of messages

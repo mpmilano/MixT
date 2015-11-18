@@ -1,5 +1,6 @@
 #pragma once
 #include <set>
+#include <list>
 #include <thread>
 #include <mutex>
 
@@ -8,21 +9,20 @@ void discard(const T&){}
 
 template<typename T>
 struct SafeSet{
-	std::set<T> impl;
+	std::list<T> impl;
 	std::mutex m;
 	using lock = std::unique_lock<std::mutex>;
 	template<typename... Args>
 	T& emplace(Args && ... args){
 		lock l{m}; discard(l);
-		std::pair<typename decltype(impl)::iterator,bool> ret = impl.emplace(std::forward<Args>(args)...);
-		//I know, it's evil.
-		return const_cast<T&>(*ret.first);
+		impl.emplace_back(std::forward<Args>(args)...);
+		return impl.back();
 	}
 
 	T pop(){
 		lock l{m}; discard(l);
-		auto r = *impl.begin();
-		impl.erase(impl.begin());
+		auto r = impl.front();
+		impl.pop_front();
 		return r;
 	}
 
@@ -36,12 +36,12 @@ struct SafeSet{
 
 	void add(T t){
 		lock l{m}; discard(l);
-		impl.insert(t);
+		impl.push_back(t);
 	}
 
 	void remove(const T &t){
 		lock l{m}; discard(l);
-		impl.erase(t);
+		impl.erase(std::find(impl.begin(), impl.end(),t));
 	}
 	
 };

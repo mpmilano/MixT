@@ -16,15 +16,20 @@ class ProcessPool{
 		void childSpin(){
 			int command;
 			Arg arg;
+			std::cout << "child spun up" << std::endl;
 			while ((read(parent_to_child[0],&command,sizeof(command)) > 0)
 				   && (read(parent_to_child[0],&arg,sizeof(arg)) > 0)){
+				std::cout << "child got command at time " << arg << std::endl;
 				auto ret = behaviors.at(command)(arg);
+				std::cout << "command done; passing logging up" << std::endl;
 				int size = bytes_size(ret);
 				std::vector<char> bytes(size);
 				assert(bytes.size() == to_bytes(ret,bytes.data()));
 				write(child_to_parent[1],&size,sizeof(size));
 				write(child_to_parent[1],bytes.data(),size);
+				std::cout << "child completed work " << std::endl;
 			}
+			std::cout << "child terminated" << std::endl;
 		}
 
 		void command(int com, Arg arg){
@@ -32,18 +37,17 @@ class ProcessPool{
 			write(parent_to_child[1],&arg,sizeof(arg));
 		}
 	public:
-		
-		bool operator<(const Child &c) const {
-			return (name < c.name)
-				&& (parent_to_child[0] < c.parent_to_child[0])
-				&& (parent_to_child[1] < c.parent_to_child[1])
-				&& (child_to_parent[0] < c.child_to_parent[0])
-				&& (child_to_parent[1] < c.child_to_parent[1]);
+
+		bool operator==(const Child &c) const {
+			assert(name != 0);
+			assert(c.name != 0);
+			return name == c.name;
 		}
 		
 		Child(decltype(behaviors) b):behaviors(b){
 			pipe(parent_to_child);
 			pipe(child_to_parent);
+			std::cout << "forking new child!" << std::endl;
 			name = fork();
 		}
 		Child(const Child&) = delete;
@@ -63,6 +67,8 @@ class ProcessPool{
 	std::vector<std::function<Ret (Arg)> > behaviors;
 
 	std::unique_ptr<Ret> waitOnChild(Child &c){
+		std::cout << "waiting on child" << std::endl;
+		AtScopeEnd ase{[](){std::cout << "child wait thread done" << std::endl;}};
 		int size;
 		if(read(c.child_to_parent[0],&size,sizeof(size)) > 0){
 			std::vector<char> v(size);
@@ -78,12 +84,14 @@ class ProcessPool{
 	}
 public:
 
-	ProcessPool (std::vector<std::function<Ret (Arg)> > beh, int limit = 201):limit(limit),tp(limit),behaviors(beh)
+
+	
+	ProcessPool (std::vector<std::function<Ret (Arg)> > beh, int limit = 200):limit(limit),tp(limit),behaviors(beh)
 		{}
 	
 	auto launch(int command, Arg arg){
 		if (children.size() < limit){
-			
+			std::cout << " the limit is " << limit << " and we are tracking " << children.size() << " children" << std::endl;
 			auto &child = children.emplace(behaviors);
 			if (child.name == 0) {
 				child.childSpin();
