@@ -92,6 +92,15 @@ int main(){
 	try{
 		SQLStore<Level::strong> &strong = SQLStore<Level::strong>::inst(ip);
 		SQLStore<Level::causal> &causal = SQLStore<Level::causal>::inst(0);
+		for (int i = 0; i < 1000000; ++i){
+			if (!strong.exists(i)){
+				strong.template newObject<HandleAccess::all>(i,1337);
+			}
+			if (!causal.exists(i)){
+				causal.template newObject<HandleAccess::all>(i,1337);
+			}
+		}
+		exit(0);
 		setup(strong,causal);
 		
 		switch(TEST_MODE){
