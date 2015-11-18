@@ -1,16 +1,22 @@
 #pragma once
 #include <set>
+#include <thread>
+#include <mutex>
 
 template<typename T>
-class SafeSet{
-	std::set impl;
+void discard(const T&){}
+
+template<typename T>
+struct SafeSet{
+	std::set<T> impl;
 	std::mutex m;
 	using lock = std::unique_lock<std::mutex>;
-public:
 	template<typename... Args>
 	T& emplace(Args && ... args){
 		lock l{m}; discard(l);
-		return *impl.emplace(std::forward<Args>(args)...).first;
+		std::pair<typename decltype(impl)::iterator,bool> ret = impl.emplace(std::forward<Args>(args)...);
+		//I know, it's evil.
+		return const_cast<T&>(*ret.first);
 	}
 
 	T pop(){
@@ -22,6 +28,10 @@ public:
 
 	bool empty() const{
 		return impl.empty();
+	}
+
+	auto size() const{
+		return impl.size();
 	}
 
 	void add(T t){
