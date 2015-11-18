@@ -49,7 +49,7 @@ long getArrivalInterval(double arrival_rate) {
 
 
 int get_name(double alpha){
-	const int max = 220000;
+	const int max = 327453;
 	double y = better_rand();
 	double max_pow = pow(max,1 - alpha);
 	double x = pow(max_pow*y,1/(1-alpha));
