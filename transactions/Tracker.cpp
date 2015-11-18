@@ -9,6 +9,8 @@
 #include <map>
 #include <list>
 #include <set>
+#include <chrono>
+#include <thread>
 #include <unistd.h>
 
 #include "Tracker_common.hpp"
@@ -19,6 +21,7 @@
 
 
 using namespace std;
+using namespace chrono;
 using namespace TDS;
 
 struct Tracker::Internals{
@@ -197,7 +200,7 @@ void Tracker::onRead(DataStore<Level::strong>& ds, int name){
 				}
 				else {
 					std::cout << "waiting for " << tomb.name() << " to appear..." << std::endl;
-					sleep(1);
+					std::this_thread::sleep_for(milliseconds(1));
 				}
 			}
 		}
