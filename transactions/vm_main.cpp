@@ -80,15 +80,15 @@ int main(){
 		[ip](unsigned long long start_time){
 		std::stringstream log_messages;
 		try{
-			std::cout << "running worker function" << std::endl;
+
 			SQLStore<Level::strong> &strong = SQLStore<Level::strong>::inst(ip);
 			SQLStore<Level::causal> &causal = SQLStore<Level::causal>::inst(0);
-			std::cout << "instances retrieved" << std::endl;
+
 			auto name = get_name(1.5);
 			
 			
 			auto test_fun = [&](const auto &hndl){
-				std::cout << "working on name " << name << std::endl;
+
 				for(int tmp2 = 0; tmp2 < 10; ++tmp2){
 					try{
 						if ((name % mod_constant) == 0)

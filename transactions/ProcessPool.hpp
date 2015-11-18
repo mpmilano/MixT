@@ -16,20 +16,20 @@ class ProcessPool{
 		void childSpin(){
 			int command;
 			Arg arg;
-			std::cout << "child spun up" << std::endl;
+
 			while ((read(parent_to_child[0],&command,sizeof(command)) > 0)
 				   && (read(parent_to_child[0],&arg,sizeof(arg)) > 0)){
-				std::cout << "child got command at time " << arg << std::endl;
+
 				auto ret = behaviors.at(command)(arg);
-				std::cout << "command done; passing logging up" << std::endl;
+
 				int size = bytes_size(ret);
 				std::vector<char> bytes(size);
 				assert(bytes.size() == to_bytes(ret,bytes.data()));
 				write(child_to_parent[1],&size,sizeof(size));
 				write(child_to_parent[1],bytes.data(),size);
-				std::cout << "child completed work " << std::endl;
+
 			}
-			std::cout << "child terminated" << std::endl;
+
 		}
 
 		void command(int com, Arg arg){
@@ -91,7 +91,6 @@ public:
 	
 	auto launch(int command, Arg arg){
 		if (children.size() < limit){
-			std::cout << " the limit is " << limit << " and we are tracking " << children.size() << " children" << std::endl;
 			auto &child = children.emplace(behaviors);
 			if (child.name == 0) {
 				child.childSpin();
