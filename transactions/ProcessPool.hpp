@@ -4,31 +4,59 @@
 #include "SerializationSupport.hpp"
 #include <unistd.h>
 #include <signal.h>
+#include "compile-time-tuple.hpp"
 
-template<typename Ret, typename Arg>
+template<typename Ret, typename... Arg>
 class ProcessPool{
 
 	class Child{
 		pid_t name;
 		int parent_to_child[2];
 		int child_to_parent[2];
-		std::vector<std::function<Ret (Arg)> > &behaviors;
+		std::vector<std::function<Ret (Arg...)> > &behaviors;
+
+		struct ReadError{};
+
+		auto _populate_arg(const ct::tuple<> &a){
+			return a;
+		}
+		
+		template<typename A, typename... Elts>
+		auto _populate_arg(const ct::tuple<std::shared_ptr<A>, std::shared_ptr<Elts>... > &arg){
+			int size = -1;
+			assert(read(parent_to_child[0],&size,sizeof(size)) > 0);
+			std::vector<char> recv (size);
+			if (read(parent_to_child[0],recv.data(),size) <= 0)
+				throw ReadError{};
+			else{
+				return ct::cons(from_bytes<A>(recv.data()),populate_arg(arg.rest));
+			}
+		};
+		
+		template<typename CT>
+		auto populate_arg(const CT &ct){
+			return _populate_arg(ct).to_std_tuple();
+		}
+
+		auto behaviorOnPointers(int command, std::shared_ptr<Args>... args){
+			return behaviors.at(command)((*args)...);
+		}
+		
 		void childSpin(){
 			int command;
-			Arg arg;
-
-			while ((read(parent_to_child[0],&command,sizeof(command)) > 0)
-				   && (read(parent_to_child[0],&arg,sizeof(arg)) > 0)){
-
-				auto ret = behaviors.at(command)(arg);
-
-				int size = bytes_size(ret);
-				std::vector<char> bytes(size);
-				assert(bytes.size() == to_bytes(ret,bytes.data()));
-				write(child_to_parent[1],&size,sizeof(size));
-				write(child_to_parent[1],bytes.data(),size);
-
+			try{
+				while (read(parent_to_child[0],&command,sizeof(command)) > 0){
+					auto args = populate_arg(ct::tuple<std::shared_ptr<Arg>...>{});
+					auto ret = callFunc(behaviorOnPointers,
+										std::tuple_cat(std::make_tuple(command),args));
+					int size = bytes_size(ret);
+					std::vector<char> bytes(size);
+					assert(bytes.size() == to_bytes(ret,bytes.data()));
+					write(child_to_parent[1],&size,sizeof(size));
+					write(child_to_parent[1],bytes.data(),size);
+				}
 			}
+			catch (const ReadError&) {/* abort thread*/}
 
 		}
 

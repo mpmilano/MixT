@@ -1,5 +1,6 @@
 #pragma once
 #include <type_traits>
+#include <tuple>
 #include "restrict.hpp"
 #include "utils.hpp"
 
@@ -35,6 +36,10 @@ namespace ct {
 			return ct::get<i,A,B...>(*this);
 		}
 
+		std::tuple<A,B...> to_std_tuple(){
+			return std::tuple_cat(std::make_tuple(a),rest.to_std_tuple());
+		}
+
 		const int size = sizeof...(B) + 1;
 	};
 
@@ -46,6 +51,10 @@ namespace ct {
 			static_assert(i == 0,"Error: index out of range!");
 			return a;
 		}
+
+		std::tuple<A> to_std_tuple(){
+			return std::make_tuple(a);
+		}
 	};
 
 	template<>
@@ -55,6 +64,10 @@ namespace ct {
 		constexpr int get(){
 			static_assert(i > -17,"Error: index out of range!");
 			return 0;
+		}
+
+		std::tuple<> to_std_tuple(){
+			return std::tuple<>();
 		}
 	};
 
