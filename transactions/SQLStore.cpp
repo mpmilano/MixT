@@ -70,7 +70,7 @@ namespace {
 
 struct SQLStore_impl::GSQLObject::Internals{
 	const Table table;
-	const int key;
+	const Name key;
 	const int size;
 	const int store_id;
 	const Level level;
@@ -79,7 +79,7 @@ struct SQLStore_impl::GSQLObject::Internals{
 	SQLTransaction* curr_ctx;
 	int vers;
 	std::array<int,4> causal_vers;
-    Internals(Table table, int key, int size,
+    Internals(Table table, Name key, int size,
 			  SQLStore_impl& store,char* buf, SQLTransaction* ctx)
         :table(table),key(key),size(size),store_id(store.instance_id()),level(store.level),_store(store),
 		 buf1(buf),curr_ctx(ctx),vers(-1),causal_vers{{-1,-1,-1,-1}}
@@ -114,7 +114,7 @@ namespace{
 
 }
 
-SQLStore_impl::GSQLObject::GSQLObject(SQLStore_impl &ss, Table t, int id, int size)
+SQLStore_impl::GSQLObject::GSQLObject(SQLStore_impl &ss, Table t, Name id, int size)
     :i(new Internals{t,id,size,ss,nullptr,nullptr}){
 	i->buf1 = (char*) malloc(size);
 	assert(load());
@@ -122,7 +122,7 @@ SQLStore_impl::GSQLObject::GSQLObject(SQLStore_impl &ss, Table t, int id, int si
 
 namespace {
 
-	Internals* internals_from_size_ss_id(const Table t, SQLStore_impl& ss, int id){
+	Internals* internals_from_size_ss_id(const Table t, SQLStore_impl& ss, Name id){
 		auto trans_owner = enter_store_transaction(ss);
 		auto *trans = trans_owner.second;
 		int size = -1;
@@ -142,11 +142,11 @@ namespace {
 }
 
 //existing object
-SQLStore_impl::GSQLObject::GSQLObject(SQLStore_impl& ss, Table t, int id)
+SQLStore_impl::GSQLObject::GSQLObject(SQLStore_impl& ss, Table t, Name id)
 	:i{internals_from_size_ss_id(t,ss,id)} {}
 
 //"named" object
-SQLStore_impl::GSQLObject::GSQLObject(SQLStore_impl& ss, Table t, int id, const vector<char> &c)
+SQLStore_impl::GSQLObject::GSQLObject(SQLStore_impl& ss, Table t, Name id, const vector<char> &c)
     :i{new Internals{t,id,(int)c.size(),ss,
 			(char*) malloc(c.size()),nullptr}}{
 	assert(!ro_isValid());
@@ -172,18 +172,18 @@ SQLStore_impl& SQLStore_impl::GSQLObject::store() {
 namespace {
 	//transaction context needs to be different sometimes
 	template<typename Trans>
-	bool obj_exists(int id, Trans owner){
+	bool obj_exists(Name id, Trans owner){
 		//level doesn't matter here for now.
 		return cmds::obj_exists(Level::undef,*owner,id).size() > 0;
 	}
 }
 
-bool SQLStore_impl::exists(int id) {
+bool SQLStore_impl::exists(Name id) {
     auto owner = enter_store_transaction(*this);
     return obj_exists(id,owner.second);
 }
 
-void SQLStore_impl::remove(int id) {
+void SQLStore_impl::remove(Name id) {
 	cmds::remove(level,*small_transaction(*this),Table::BlobStore,id);
 }
 
@@ -252,7 +252,7 @@ int SQLStore_impl::GSQLObject::store_instance_id() const {
 	return i->store_id;
 }
 
-int SQLStore_impl::GSQLObject::name() const {
+Name SQLStore_impl::GSQLObject::name() const {
 	return this->i->key;
 }
 

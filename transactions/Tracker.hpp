@@ -28,7 +28,7 @@ public:
 	using Nonce = int;
 	struct Tombstone{
 		Nonce nonce;
-		int name() const;
+		Name name() const;
 	};
 
 	using Clock = std::array<int,NUM_CAUSAL_GROUPS>;
@@ -36,12 +36,12 @@ public:
 	using TrackerDS =
 		std::tuple<
 		Handle<l, HandleAccess::all, Tombstone> (*)
-		(DataStore<l>&, int, const Tombstone&), //newTomb
-		bool (*) (DataStore<l>&, int), //exists
+		(DataStore<l>&, Name, const Tombstone&), //newTomb
+		bool (*) (DataStore<l>&, Name), //exists
 		std::unique_ptr<RemoteObject<l, Clock> > (*)
-		(DataStore<l>&, int), //existingClock
+		(DataStore<l>&, Name), //existingClock
 		std::unique_ptr<RemoteObject<l, Tombstone> > (*)
-		(DataStore<l>&, int) //existingTomb
+		(DataStore<l>&, Name) //existingTomb
 		>;
 	using TrackerDSStrong = TrackerDS<Level::strong>;
 	using TrackerDSCausal = TrackerDS<Level::causal>;
@@ -63,24 +63,24 @@ public:
 	template<typename DS>
 	void registerStore(DS &ds);
 
-    void exemptItem(int name);
+    void exemptItem(Name name);
 
     template<typename T, Level l, HandleAccess ha>
     void exemptItem(const Handle<l,ha,T>& h){
         exemptItem(h.name());
     }
 	
-	void onWrite(DataStore<Level::strong>&, int name);
+	void onWrite(DataStore<Level::strong>&, Name name);
 
-	void onWrite(DataStore<Level::causal>&, int name, const Clock &version);
+	void onWrite(DataStore<Level::causal>&, Name name, const Clock &version);
 
-	void onCreate(DataStore<Level::causal>&, int name);
+	void onCreate(DataStore<Level::causal>&, Name name);
 
-    void onCreate(DataStore<Level::strong>&, int name);
+    void onCreate(DataStore<Level::strong>&, Name name);
 
-	void onRead(DataStore<Level::strong>&, int name);
+	void onRead(DataStore<Level::strong>&, Name name);
 	
-	void onRead(DataStore<Level::causal>&, int name, const Clock &version, std::vector<char> bytes);
+	void onRead(DataStore<Level::causal>&, Name name, const Clock &version, std::vector<char> bytes);
 
 	//for testing
 	void assert_nonempty_tracking() const;

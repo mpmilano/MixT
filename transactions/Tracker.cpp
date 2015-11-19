@@ -53,7 +53,7 @@ Tracker::~Tracker(){
 	delete i;
 }
 
-int Tracker::Tombstone::name() const {
+Name Tracker::Tombstone::name() const {
 	return nonce;
 }
 
@@ -76,7 +76,7 @@ void Tracker::registerStore(DataStore<Level::causal>& ds, std::unique_ptr<Tracke
 	i->causalDS = std::move(wds);
 }
 
-void Tracker::exemptItem(int name){
+void Tracker::exemptItem(Name name){
     i->exceptions.insert(name);
 }
 
@@ -97,11 +97,11 @@ namespace{
 		;
 	//constexpr int bigprime_causal = 2751103;
 	
-	bool is_metaname(int base, int name){
+	bool is_metaname(int base, Name name){
 		return (name % base) == 0;
 	}
 
-	int make_metaname(int base, int name){
+	int make_metaname(int base, Name name){
 		assert(!is_metaname(base,name));
 		int cand;
                 if (name > (5 * base))
@@ -111,11 +111,11 @@ namespace{
 		return cand;
 	}
 
-	bool is_lin_metadata(int name){
+	bool is_lin_metadata(Name name){
 		return is_metaname(bigprime_lin,name);
 	}
 
-	int make_lin_metaname(int name){
+	int make_lin_metaname(Name name){
 		return make_metaname(bigprime_lin,name);
 	}
 }
@@ -128,9 +128,9 @@ namespace {
 	}
 }
 
-void Tracker::onWrite(DataStore<Level::strong>& ds_real, int name){
-        using wlm_t = void (*)(int name, Tracker::Nonce nonce, Tracker::Internals& t);
-        static const wlm_t write_lin_metadata= [](int name, Tracker::Nonce nonce, Tracker::Internals& t){
+void Tracker::onWrite(DataStore<Level::strong>& ds_real, Name name){
+        using wlm_t = void (*)(Name name, Tracker::Nonce nonce, Tracker::Internals& t);
+        static const wlm_t write_lin_metadata= [](Name name, Tracker::Nonce nonce, Tracker::Internals& t){
             auto meta_name = make_lin_metaname(name);
             if (get<TDS::exists>(*t.strongDS)(*t.registeredStrong,meta_name)){
                 get<TDS::existingTomb>(*t.strongDS)(*t.registeredStrong,meta_name)->put(Tracker::Tombstone{nonce});
@@ -173,7 +173,7 @@ namespace{
 }
 */
 
-void Tracker::onRead(DataStore<Level::strong>& ds, int name){
+void Tracker::onRead(DataStore<Level::strong>& ds, Name name){
 	using update_clock_t = void (*)(Tracker::Internals &t);
 	static update_clock_t update_clock = [](Tracker::Internals &t){
 		auto newc = get<TDS::existingClock>(*t.strongDS)(*t.registeredStrong, bigprime_lin)->get();
@@ -207,19 +207,19 @@ void Tracker::onRead(DataStore<Level::strong>& ds, int name){
 	}
 }
 
-void Tracker::onCreate(DataStore<Level::causal>& ds, int name){
+void Tracker::onCreate(DataStore<Level::causal>& ds, Name name){
     //there's nothing to do for a strong datastore right now. maybe there will be later.
 }
 
-void Tracker::onCreate(DataStore<Level::strong>& , int ){
+void Tracker::onCreate(DataStore<Level::strong>& , Name ){
     //there's nothing to do for a strong datastore right now. maybe there will be later.
 }
 
-void Tracker::onWrite(DataStore<Level::causal>&, int name, const Clock &version){
+void Tracker::onWrite(DataStore<Level::causal>&, Name name, const Clock &version){
     //there's nothing to do for a strong datastore right now. maybe there will be later.	
 }
 
-void Tracker::onRead(DataStore<Level::causal>&, int name, const Clock &version, std::vector<char> bytes){
+void Tracker::onRead(DataStore<Level::causal>&, Name name, const Clock &version, std::vector<char> bytes){
 	if (ends::prec(version,i->global_min)) {
 		i->tracking.erase(name);
 	}

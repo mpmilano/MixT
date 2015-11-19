@@ -125,7 +125,7 @@ std::unique_ptr<CooperativeCache::obj_bundle> CooperativeCache::get(Tracker::Non
 		care_assert(num_messages > 0);
 		std::unique_ptr<obj_bundle> ret{new obj_bundle{}};
 		for (int i = 0; i < num_messages; ++i){
-			int name;
+			Name name;
 			care_read(name);
 			Tracker::Clock clock;
 			for (int j = 0; j < clock.size(); ++j){

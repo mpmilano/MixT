@@ -7,7 +7,7 @@ struct CachedObject : public RemoteObject<Level::strong,T> {
 	DataStore<Level::strong> &st;
 	int nm;
 	bool is_valid_only;
-	CachedObject(decltype(t) t, DataStore<Level::strong> &st, int name, bool is_valid_only)
+	CachedObject(decltype(t) t, DataStore<Level::strong> &st, Name name, bool is_valid_only)
 		:t(std::move(t)),st(st),nm(name),is_valid_only(is_valid_only){}
 	
 	TransactionContext* currentTransactionContext(){
@@ -35,7 +35,7 @@ struct CachedObject : public RemoteObject<Level::strong,T> {
 		return st;
 	}
 
-	int name() const {
+	Name name() const {
 		return nm;
 	}
 	
@@ -120,7 +120,7 @@ struct LocalObject : public RemoteObject<Level::strong,T> {
 			return r.store();
 		}
 		
-	int name() const {
+	Name name() const {
 			return r.name();
 		}
 		

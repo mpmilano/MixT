@@ -51,8 +51,8 @@ public:
     std::unique_ptr<TransactionContext> begin_transaction();
 	
     int instance_id() const;
-	bool exists(int id);
-	void remove(int id);
+	bool exists(Name id);
+	void remove(Name id);
 
 	int ds_id() const;
 	static constexpr int ds_id_nl(){ return 2;}
@@ -61,11 +61,11 @@ public:
 		struct Internals;
 	private:
 		Internals *i;
-		GSQLObject(int id, int size);
+		GSQLObject(Name id, int size);
 	public:
-		GSQLObject(SQLStore_impl &ss, Table t, int name, const std::vector<char> &c);
-		GSQLObject(SQLStore_impl &ss, Table t, int name, int size);
-		GSQLObject(SQLStore_impl &ss, Table t, int name);
+		GSQLObject(SQLStore_impl &ss, Table t, Name name, const std::vector<char> &c);
+		GSQLObject(SQLStore_impl &ss, Table t, Name name, int size);
+		GSQLObject(SQLStore_impl &ss, Table t, Name name);
 		GSQLObject(const GSQLObject&) = delete;
 		GSQLObject(GSQLObject&&);
 		void save();
@@ -84,7 +84,7 @@ public:
 		TransactionContext* currentTransactionContext();
 		bool ro_isValid() const;
 		int store_instance_id() const;
-        int name() const;
+        Name name() const;
 
 		//required by ByteRepresentable
 		int bytes_size() const;

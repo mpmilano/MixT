@@ -56,7 +56,7 @@ void heavy_both(SQLStore<Level::strong> &strong, SQLStore<Level::causal> &causal
 	while(true){
 		for (int i = 0; i < names_strong.size(); ++i){
 			{
-				int name = names_strong[i];
+				Name name = names_strong[i];
 				std::cout << "loop " << ++count << " time " << duration_cast<microseconds>(high_resolution_clock::now() - start).count() <<std::endl;
 				{
 					auto obj = strong.template existingObject<HandleAccess::all,int>(name);
@@ -65,7 +65,7 @@ void heavy_both(SQLStore<Level::strong> &strong, SQLStore<Level::causal> &causal
 				increment(strong,name);
 			}
 			{
-				int name = names_causal[i];
+				Name name = names_causal[i];
 				std::cout << "loop " << ++count << " time " << duration_cast<microseconds>(high_resolution_clock::now() - start).count() <<std::endl;
 				{
 					auto obj = causal.template existingObject<HandleAccess::all,int>(name);

@@ -44,13 +44,13 @@ bool Tracker::registered(const GDataStore&) const{ return true;}
 
 void Tracker::tick() {}
 
-void Tracker::onWrite(DataStore<Level::causal>&, int name){}
+void Tracker::onWrite(DataStore<Level::causal>&, Name name){}
 	
-void Tracker::onWrite(DataStore<Level::strong>&, int name){}
+void Tracker::onWrite(DataStore<Level::strong>&, Name name){}
 
-void Tracker::onRead(DataStore<Level::causal>&, int name){}
+void Tracker::onRead(DataStore<Level::causal>&, Name name){}
 
-void Tracker::onRead(DataStore<Level::strong>&, int name){}
+void Tracker::onRead(DataStore<Level::strong>&, Name name){}
 
 struct Tracker::TrackerDSStrong {};
 struct Tracker::TrackerDSCausal {};

@@ -89,7 +89,7 @@ public:
 		SQLStore& store(){
 			return SQLStore::inst(gso.store_instance_id());
 		}
-		int name() const {
+		Name name() const {
 			return gso.name();
 		}
 		int bytes_size() const {
@@ -115,7 +115,7 @@ public:
 	}
 	
 	template<HandleAccess ha, typename T>
-	auto newObject(int name, const T& init){
+	auto newObject(Name name, const T& init){
 		static constexpr Table t =
 			(std::is_same<T,int>::value ? Table::IntStore : Table::BlobStore);
 		int size = ::bytes_size(init);
@@ -135,7 +135,7 @@ public:
     }
 
 	template<HandleAccess ha, typename T>
-	auto existingObject(int name, T* for_inf = nullptr){
+	auto existingObject(Name name, T* for_inf = nullptr){
 		static constexpr Table t =
 			(std::is_same<T,int>::value ? Table::IntStore : Table::BlobStore);
 		GSQLObject gso(*this,t,name);
@@ -145,7 +145,7 @@ public:
 	}
 
 	template<typename T>
-	std::unique_ptr<SQLObject<T> > existingRaw(int name, T* for_inf = nullptr){
+	std::unique_ptr<SQLObject<T> > existingRaw(Name name, T* for_inf = nullptr){
 		static constexpr Table t =
 			(std::is_same<T,int>::value ? Table::IntStore : Table::BlobStore);
 		return std::unique_ptr<SQLObject<T> >

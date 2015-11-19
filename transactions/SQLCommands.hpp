@@ -8,7 +8,7 @@ namespace{
 		//hybrid section (same command works on both strong and causal)
 
 		template<typename T>
-		auto select_data(Level, T &trans, Table t, int id){
+		auto select_data(Level, T &trans, Table t, Name id){
 			//std::cerr << "in select_data" << std::endl;
 			//AtScopeEnd ase{[](){//std::cerr << "out" << std::endl;}};
 			//discard(ase);
@@ -23,7 +23,7 @@ namespace{
 		}
 
 		template<typename T>
-		auto obj_exists(Level, T &trans, int id){
+		auto obj_exists(Level, T &trans, Name id){
 			//std::cerr << "in obj_exists" << std::endl;
 			const static std::string query =
 				"select ID from \"BlobStore\" where id = $1 union select id from \"IntStore\" where id = $1 limit 1";
@@ -34,7 +34,7 @@ namespace{
 
 
 		template<typename T>
-                void remove(Level l, T &trans, Table, int id){
+                void remove(Level l, T &trans, Table, Name id){
 			//std::cerr << "in remove" << std::endl;
 			const static std::string bs =
 				"delete from \"BlobStore\" where ID = $1";
@@ -46,7 +46,7 @@ namespace{
 		}
 
 		template<typename T>
-		auto check_size(Level, T &trans, Table t, int id){
+		auto check_size(Level, T &trans, Table t, Name id){
 			//std::cerr << "in check_size" << std::endl;
 			assert(t == Table::BlobStore &&
 				   "Error: size check non-sensical for non-blob data");
@@ -60,7 +60,7 @@ namespace{
 		//strong section
 
 		template<typename T>
-		void select_version_(T &trans, Table t, int id, int& vers){
+		void select_version_(T &trans, Table t, Name id, int& vers){
 			static const std::string bs =
 				"select Version from \"BlobStore\" where ID=$1";
 			static const std::string is =
@@ -74,7 +74,7 @@ namespace{
 		}
 
 		template<typename T, typename Blob>
-		void update_data_s(T& trans, Table t, int id, const Blob& b){
+		void update_data_s(T& trans, Table t, Name id, const Blob& b){
 			static const std::string bs =
 				"update \"BlobStore\" set data=$2,Version=Version + 1 where ID=$1";
 			static const std::string is =
@@ -87,7 +87,7 @@ namespace{
 		}
 
 		template<typename T>
-		void increment_s(T &trans, Table t, int id){
+		void increment_s(T &trans, Table t, Name id){
 			assert(t == Table::IntStore
 				   && "Error: increment currently only defined on integers");
 			const static std::string s =
@@ -96,7 +96,7 @@ namespace{
 		}
 
 		template<typename T, typename Blob>
-		void initialize_with_id_s(T &trans, Table t, int id, const Blob& b){
+		void initialize_with_id_s(T &trans, Table t, Name id, const Blob& b){
 			const static std::string bs =
 				"INSERT INTO \"BlobStore\" (id,data) VALUES ($1,$2)";
 			const static std::string is =
@@ -141,7 +141,7 @@ namespace{
 		}(); assert(ends[2] < 30); 
 
 		template<typename T>
-		void select_version_(T &trans, Table t, int id, std::array<int,NUM_CAUSAL_GROUPS>& vers){
+		void select_version_(T &trans, Table t, Name id, std::array<int,NUM_CAUSAL_GROUPS>& vers){
 			using namespace std;
 			static const vector<pair<string,string> > v = [&](){
 				vector<pair<string,string> > v;
@@ -163,7 +163,7 @@ namespace{
 		}
 		
 		template<typename T, typename Blob>
-		void update_data_c(T &trans, Table t, int k, int id, const std::array<int,NUM_CAUSAL_GROUPS> &ends, const Blob &b){
+		void update_data_c(T &trans, Table t, int k, Name id, const std::array<int,NUM_CAUSAL_GROUPS> &ends, const Blob &b){
 			update_data_c_cmd("x","$5");
 			auto &p = update_cmds.at(((int)t) * (NUM_CAUSAL_GROUPS) + (k-1));
 			trans.prepared(p.first,p.second,id,ends[md(k+1)-1],ends[md(k+2)-1],ends[md(k+3)-1],b);
@@ -171,14 +171,14 @@ namespace{
 
 		
 		template<typename T>
-			void increment_c(T &trans, Table t, int k, int id, const std::array<int,NUM_CAUSAL_GROUPS> &ends){
+			void increment_c(T &trans, Table t, int k, Name id, const std::array<int,NUM_CAUSAL_GROUPS> &ends){
 			update_data_c_cmd("y","data + 1");
 			auto &p = update_cmds.at(((int)t) * (NUM_CAUSAL_GROUPS) + (k-1));
 			trans.prepared(p.first,p.second,id,ends[md(k+1)-1],ends[md(k+2)-1],ends[md(k+3)-1]);
 		}
 
 		template<typename T, typename Blob>
-			void initialize_with_id_c(T &trans, Table t, int k, int id, const std::array<int,NUM_CAUSAL_GROUPS> &ends, const Blob& b){
+			void initialize_with_id_c(T &trans, Table t, int k, Name id, const std::array<int,NUM_CAUSAL_GROUPS> &ends, const Blob& b){
 			assert(k > 0);
 			using namespace std;
 			static constexpr int n = NUM_CAUSAL_GROUPS;
@@ -222,7 +222,7 @@ namespace{
 		//entry points
 
 		template<typename T, typename Ret>
-		void select_version(Level l, T &tran, Table t, int id,Ret& r){
+		void select_version(Level l, T &tran, Table t, Name id,Ret& r){
 			//std::cerr << "in select_version" << std::endl;
 			//AtScopeEnd ase{[](){//std::cerr << "out" << std::endl;}};
 			//discard(ase);
@@ -234,7 +234,7 @@ namespace{
 		
 
 		template<typename T, typename Blob>
-		void update_data(Level l, T &tran, Table t, int k, int id, const std::array<int,NUM_CAUSAL_GROUPS> &ends, const Blob& b){
+		void update_data(Level l, T &tran, Table t, int k, Name id, const std::array<int,NUM_CAUSAL_GROUPS> &ends, const Blob& b){
 			//std::cerr << "in update_data" << std::endl;
 			if (l == Level::strong) update_data_s(tran,t,id,b);
 			else if (l == Level::causal) update_data_c(tran,t,k,id,ends,b);
@@ -243,14 +243,14 @@ namespace{
 
 
 		template<typename T, typename Blob>
-			void initialize_with_id(Level l, T &tran, Table t, int k, int id, const std::array<int,NUM_CAUSAL_GROUPS> &ends, const Blob& b){
+			void initialize_with_id(Level l, T &tran, Table t, int k, Name id, const std::array<int,NUM_CAUSAL_GROUPS> &ends, const Blob& b){
 			//std::cerr << "in initialize_with_id" << std::endl;
 			if (l == Level::strong) initialize_with_id_s(tran,t,id,b);
 			else initialize_with_id_c(tran,t,k,id,ends,b);
 			//std::cerr << "out" << std::endl;
 		}
 		template<typename T, typename Blob>
-			void initialize_with_id(Level l, T &tran, Table t, int id, const Blob& b){
+			void initialize_with_id(Level l, T &tran, Table t, Name id, const Blob& b){
 			//std::cerr << "in initialize_with_id" << std::endl;
 			if (l == Level::strong) initialize_with_id_s(tran,t,id,b);
 			else assert(false && "not enough parameters for causal initialization");
@@ -258,7 +258,7 @@ namespace{
 		}
 
 		template<typename T>
-			void increment(Level l, T& tran, Table t, int k, int id, const std::array<int,NUM_CAUSAL_GROUPS> &ends){
+			void increment(Level l, T& tran, Table t, int k, Name id, const std::array<int,NUM_CAUSAL_GROUPS> &ends){
 			//std::cerr << "in increment" << std::endl;
 			assert(t == Table::IntStore
 				   && "Error: increment currently only defined on integers");

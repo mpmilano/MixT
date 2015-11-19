@@ -13,7 +13,7 @@
 	virtual bool ro_isValid() const = 0;							\
 	virtual const DataStore<level>& store() const = 0;					\
 	virtual DataStore<level>& store() = 0;								\
-	virtual int name() const = 0;									\
+	virtual Name name() const = 0;									\
 	virtual ~GeneralRemoteObject(){}								\
 
 template<Level>

@@ -80,6 +80,8 @@ constexpr bool can_flow(Level from, Level to){
 		|| from  == Level::undef;
 }
 
+using Name = unsigned long long;
+
 template<Level l>
 using choose_strong = typename std::integral_constant<bool, runs_with_strong(l)>::type*;
 
