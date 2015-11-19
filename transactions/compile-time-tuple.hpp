@@ -42,21 +42,6 @@ namespace ct {
 
 		const int size = sizeof...(B) + 1;
 	};
-
-	template<typename A>
-	struct tuple<A> {
-		const A a;
-		template<int i = 0, restrict(i == 0)>
-		constexpr A get(){
-			static_assert(i == 0,"Error: index out of range!");
-			return a;
-		}
-
-		std::tuple<A> to_std_tuple(){
-			return std::make_tuple(a);
-		}
-	};
-
 	template<>
 	struct tuple<> {
 		
@@ -70,6 +55,22 @@ namespace ct {
 			return std::tuple<>();
 		}
 	};
+
+	template<typename A>
+	struct tuple<A> {
+		const A a;
+		tuple<> rest;
+		template<int i = 0, restrict(i == 0)>
+		constexpr A get(){
+			static_assert(i == 0,"Error: index out of range!");
+			return a;
+		}
+
+		std::tuple<A> to_std_tuple(){
+			return std::make_tuple(a);
+		}
+	};
+
 
 	template<typename A>
 	constexpr auto make_tuple(const A &a) {

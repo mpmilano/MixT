@@ -16,7 +16,7 @@
 #include "ProcessPool.hpp"
 #include "Operate_macros.hpp"
 
-constexpr int my_unique_id = IP_QUAD;
+constexpr int my_unique_id = int{IP_QUAD};
 
 using namespace std;
 using namespace chrono;

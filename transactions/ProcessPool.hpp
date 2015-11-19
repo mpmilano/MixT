@@ -29,7 +29,7 @@ class ProcessPool{
 			if (read(parent_to_child[0],recv.data(),size) <= 0)
 				throw ReadError{};
 			else{
-				return ct::cons(from_bytes<A>(recv.data()),populate_arg(arg.rest));
+				return ct::cons(std::shared_ptr<A>(from_bytes<A>(recv.data()).release()),_populate_arg(arg.rest));
 			}
 		};
 		
@@ -38,8 +38,8 @@ class ProcessPool{
 			return _populate_arg(ct).to_std_tuple();
 		}
 
-		auto behaviorOnPointers(int command, std::shared_ptr<Args>... args){
-			return behaviors.at(command)((*args)...);
+		static auto behaviorOnPointers(std::vector<std::function<Ret (Arg...)> > const * const behaviors, int command, std::shared_ptr<Arg>... args){
+			return behaviors->at(command)((*args)...);
 		}
 		
 		void childSpin(){
@@ -48,7 +48,7 @@ class ProcessPool{
 				while (read(parent_to_child[0],&command,sizeof(command)) > 0){
 					auto args = populate_arg(ct::tuple<std::shared_ptr<Arg>...>{});
 					auto ret = callFunc(behaviorOnPointers,
-										std::tuple_cat(std::make_tuple(command),args));
+										std::tuple_cat(std::make_tuple(&behaviors,command),args));
 					int size = bytes_size(ret);
 					std::vector<char> bytes(size);
 					assert(bytes.size() == to_bytes(ret,bytes.data()));
@@ -69,11 +69,12 @@ class ProcessPool{
 			assert(bytes.size() == to_bytes(arg,bytes.data()));
 			write(parent_to_child[1],&size,sizeof(size));
 			write(parent_to_child[1],bytes.data(),size);
+			_command(rest...);
 		}
 
 		void command(int com, const Arg & ... arg){
 			write(parent_to_child[1],&com,sizeof(com));
-			_command(arg);
+			_command(arg...);
 		}
 	public:
 

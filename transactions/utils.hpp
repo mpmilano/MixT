@@ -80,6 +80,11 @@ auto callFunc(const F &f, const Tuple &t) {
 	return __callFunc(f,t,gens<std::tuple_size<Tuple>::value >::build() );
 }
 
+template<typename Ret, typename Tuple, typename... Args>
+auto callFunc(Ret (*f) (Args...), const Tuple &t) {
+	return __callFunc(f,t,gens<std::tuple_size<Tuple>::value >::build() );
+}
+
 template<typename Ret, typename Tuple, typename Pack, typename... Args>
 Ret callFunc(Ret (*f) (Args...), const Tuple &t, Pack p) {
 	return __callFunc(convert(f),t,p);
