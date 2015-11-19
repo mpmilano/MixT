@@ -60,9 +60,20 @@ class ProcessPool{
 
 		}
 
-		void command(int com, Arg arg){
+		void _command(){}
+
+		template<typename Arg1, typename... Arg2>
+		void _command(const Arg1 & arg, const Arg2 & ... rest){
+			int size = bytes_size(arg);
+			std::vector<char> bytes(size);
+			assert(bytes.size() == to_bytes(arg,bytes.data()));
+			write(parent_to_child[1],&size,sizeof(size));
+			write(parent_to_child[1],bytes.data(),size);
+		}
+
+		void command(int com, const Arg & ... arg){
 			write(parent_to_child[1],&com,sizeof(com));
-			write(parent_to_child[1],&arg,sizeof(arg));
+			_command(arg);
 		}
 	public:
 
@@ -92,7 +103,7 @@ class ProcessPool{
 	ctpl::thread_pool tp;
 	SafeSet<Child> children;
 	SafeSet<Child*> ready;
-	std::vector<std::function<Ret (Arg)> > behaviors;
+	std::vector<std::function<Ret (Arg...)> > behaviors;
 
 	std::unique_ptr<Ret> waitOnChild(Child &c){
 		std::cout << "waiting on child" << std::endl;
@@ -111,13 +122,11 @@ class ProcessPool{
 		}
 	}
 public:
-
-
 	
-	ProcessPool (std::vector<std::function<Ret (Arg)> > beh, int limit = 200):limit(limit),tp(limit),behaviors(beh)
+	ProcessPool (std::vector<std::function<Ret (Arg...)> > beh, int limit = 200):limit(limit),tp(limit),behaviors(beh)
 		{}
 	
-	auto launch(int command, Arg arg){
+	auto launch(int command, const Arg & ... arg){
 		if (children.size() < limit){
 			auto &child = children.emplace(behaviors);
 			if (child.name == 0) {
@@ -129,7 +138,7 @@ public:
 		while (ready.empty()) {}
 		if (!ready.empty()){
 			Child &cand = *ready.pop();
-			cand.command(command,arg);
+			cand.command(command,arg...);
 			return tp.push([&](int){return waitOnChild(cand);});
 		}
 		else assert(false && "um you screwed up threads really bad dude");
