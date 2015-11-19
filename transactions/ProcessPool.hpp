@@ -87,7 +87,6 @@ class ProcessPool{
 		Child(decltype(behaviors) b):behaviors(b){
 			pipe(parent_to_child);
 			pipe(child_to_parent);
-			std::cout << "forking new child!" << std::endl;
 			name = fork();
 		}
 		Child(const Child&) = delete;
@@ -107,8 +106,6 @@ class ProcessPool{
 	std::vector<std::function<Ret (Arg...)> > behaviors;
 
 	std::unique_ptr<Ret> waitOnChild(Child &c){
-		std::cout << "waiting on child" << std::endl;
-		AtScopeEnd ase{[](){std::cout << "child wait thread done" << std::endl;}};
 		int size;
 		if(read(c.child_to_parent[0],&size,sizeof(size)) > 0){
 			std::vector<char> v(size);
