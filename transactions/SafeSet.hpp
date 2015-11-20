@@ -8,7 +8,7 @@ template<typename T>
 void discard(const T&){}
 
 template<typename T>
-struct SafeSet{
+struct MonotoneSafeSet {
 	std::list<T> impl;
 	std::mutex m;
 	using lock = std::unique_lock<std::mutex>;
@@ -18,14 +18,6 @@ struct SafeSet{
 		impl.emplace_back(std::forward<Args>(args)...);
 		return impl.back();
 	}
-
-	T pop(){
-		lock l{m}; discard(l);
-		auto r = impl.front();
-		impl.pop_front();
-		return r;
-	}
-
 	bool empty() const{
 		return impl.empty();
 	}
@@ -44,4 +36,30 @@ struct SafeSet{
 		impl.erase(std::find(impl.begin(), impl.end(),t));
 	}
 	
+};
+
+template<typename T>
+struct SafeSet : MonotoneSafeSet<T>{
+
+	struct EmptyException{};
+	using lock = typename MonotoneSafeSet<T>::lock;
+	T pop(){
+		lock l{this->m}; discard(l);
+		if (this->impl.size() == 0) throw EmptyException{};
+		auto r = this->impl.front();
+		this->impl.pop_front();
+		return r;
+	}
+};
+
+template<typename T>
+struct SafeSet<T*> : MonotoneSafeSet<T*>{
+	using lock = typename MonotoneSafeSet<T>::lock;
+	T* pop(){
+		lock l{this->m}; discard(l);
+		if (this->impl.size() == 0) return nullptr;
+		auto r = this->impl.front();
+		this->impl.pop_front();
+		return r;
+	}	
 };

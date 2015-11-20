@@ -13,6 +13,9 @@ int main(){
 		futures.push_back(p.launch(0,i));
 	}
 	for (auto &f : futures){
-		std::cout << *f.get() << std::endl;
+		if (auto p = f.get()){
+			std::cout << *f.get() << std::endl;
+		}
+		else std::cout << "future subroutine failed to complete function" << std::endl;
 	}
 }

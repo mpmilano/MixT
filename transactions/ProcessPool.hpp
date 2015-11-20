@@ -6,8 +6,11 @@
 #include <signal.h>
 #include "compile-time-tuple.hpp"
 
+template<typename, typename...>
+class ProcessPool;
+
 template<typename Ret, typename... Arg>
-class ProcessPool{
+class ProcessPool_impl{
 
 	class Child{
 		pid_t name;
@@ -96,7 +99,7 @@ class ProcessPool{
 			close(parent_to_child[0]);
 			close(child_to_parent[1]);
 		}
-		friend class ProcessPool;
+		friend class ProcessPool_impl;
 	};
 	
 	const int limit;
@@ -119,12 +122,21 @@ class ProcessPool{
 			return nullptr;
 		}
 	}
-public:
+
+	bool pool_alive;
+	std::shared_ptr<ProcessPool_impl> &this_sp;
 	
-	ProcessPool (std::vector<std::function<Ret (Arg...)> > beh, int limit = 200):limit(limit),tp(limit),behaviors(beh)
+public:
+
+	friend class ProcessPool<Ret,Arg...>;
+	
+	ProcessPool_impl (std::shared_ptr<ProcessPool_impl> &pp,
+					  std::vector<std::function<Ret (Arg...)> > beh,
+					  int limit):limit(limit),tp(limit),behaviors(beh),pool_alive(true),this_sp(pp)
 		{}
 	
 	auto launch(int command, const Arg & ... arg){
+		assert(this_sp.get() == this);
 		if (children.size() < limit){
 			auto &child = children.emplace(behaviors);
 			if (child.name == 0) {
@@ -133,16 +145,21 @@ public:
 			}
 			else ready.add(&child);
 		}
-		while (ready.empty()) {}
-		if (!ready.empty()){
-			Child &cand = *ready.pop();
-			cand.command(command,arg...);
-			return tp.push([&](int){return waitOnChild(cand);});
-		}
-		else assert(false && "um you screwed up threads really bad dude");
+		auto this_sp = this->this_sp;
+		return tp.push([this_sp,command,arg...](int) -> std::unique_ptr<Ret>{
+				//we should only be scheduled when there's something to grab,
+				//so this should never spin-lock.
+				while (this_sp->pool_alive) {
+					if (Child *cand = this_sp->ready.pop()){
+						cand->command(command,arg...);
+						return this_sp->waitOnChild(*cand);
+					}
+				} return nullptr;
+			});
 	}
 
-	virtual ~ProcessPool(){
+	virtual ~ProcessPool_impl(){
+		assert(pool_alive == false);
 		typename decltype(children)::lock l{children.m};
 		discard(l);
 		for (auto &c : children.impl){
@@ -151,5 +168,20 @@ public:
 		}
 
 	}
+};
 
+template<typename Ret, typename... Arg>
+class ProcessPool{
+	std::shared_ptr<ProcessPool_impl<Ret,Arg...> > inst;
+public:
+	ProcessPool (std::vector<std::function<Ret (Arg...)> > beh,int limit = 200)
+		:inst(new ProcessPool_impl<Ret,Arg...>(inst,beh,limit)){}
+
+	auto launch(int command, const Arg & ... arg){
+		return inst->launch(command,arg...);
+	}
+	
+	virtual ~ProcessPool(){
+		inst->pool_alive = false;
+	}
 };
