@@ -18,8 +18,13 @@
 #include "Tracker_support_structs.hpp"
 #include "Ends.hpp"
 #include "Transaction.hpp"
-
-
+namespace {
+	constexpr int bigprime_lin =
+#include "big_prime"
+		;
+}
+#include <cstdlib>
+	
 using namespace std;
 using namespace chrono;
 using namespace TDS;
@@ -92,9 +97,7 @@ bool Tracker::registered(const GDataStore& gds) const{
 
 namespace{
 
-	constexpr int bigprime_lin =
-#include "big_prime"
-		;
+
 	//constexpr int bigprime_causal = 2751103;
 	
 	bool is_metaname(int base, Name name){

@@ -15,6 +15,14 @@
 #include <algorithm>
 #include "../extras"
 #include "macro_utils.hpp"
+#include <type_traits>
+#include <typeinfo>
+#ifndef _MSC_VER
+#   include <cxxabi.h>
+#endif
+#include <memory>
+#include <string>
+#include <cstdlib>
 
 template<typename T, std::size_t size1, std::size_t size2>
 auto prefix_array(const std::array<T,size1>& t,
@@ -133,17 +141,6 @@ constexpr typename std::enable_if<(i > 0), unsigned long long>::type
 unique_id(const char str[i]){
 	return (i == 0 ? 0 : (str[0] << sizeof(char)*i ) + unique_id<i-1>(str+1));
 }
-
-
-
-#include <type_traits>
-#include <typeinfo>
-#ifndef _MSC_VER
-#   include <cxxabi.h>
-#endif
-#include <memory>
-#include <string>
-#include <cstdlib>
 
 template <class T>
 std::string

@@ -12,16 +12,9 @@
 #include "Ostreams.hpp"
 #include "SQLStore.hpp"
 #include "FinalHeader.hpp"
-#include "Print.hpp"
-//*/
+#include "Print.hpp"//*/
 #include "Transaction_macros.hpp"
 #include <pqxx/pqxx>
-
-
-
-namespace list_ex{
-#include "list_example.cpp"
-}
 
 bool bad_func(){
 	return true;
@@ -97,13 +90,5 @@ int main(){
 	}
 
 	using namespace pqxx;
-
-	try{
-		list_ex::main();
-	}
-	catch(const pqxx_exception &r){
-		std::cerr << "yup, it's that" << std::endl;
-		std::cerr << r.base().what() << std::endl;
-	}
 	
 }

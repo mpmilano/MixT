@@ -8,8 +8,8 @@ export TRANS_DIR
 export clangFlags
 export linkFlags
 
-all: Ends.o utils.o Tracker.o Ostreams.o SerializationSupport.o WhileBuilder.o ConExpr.o Context.o SQLStore.o TempBuilder.o new_test.o
-	clang++ utils.o Ends.o Tracker.o Ostreams.o SerializationSupport.o WhileBuilder.o ConExpr.o Context.o SQLStore.o TempBuilder.o new_test.o -o test $(linkFlags)
+all: Ends.o utils.o Tracker.o Ostreams.o SerializationSupport.o WhileBuilder.o ConExpr.o Context.o SQLStore.o TempBuilder.o list_example.o
+	clang++ utils.o Ends.o Tracker.o Ostreams.o SerializationSupport.o WhileBuilder.o ConExpr.o Context.o SQLStore.o TempBuilder.o list_example.o -o test $(linkFlags)
 
 stress1: Ends.o utils.o Tracker.o Ostreams.o SerializationSupport.o WhileBuilder.o ConExpr.o Context.o SQLStore.o TempBuilder.o stress_test1.o
 	clang++ utils.o Ends.o Tracker.o Ostreams.o SerializationSupport.o WhileBuilder.o ConExpr.o Context.o SQLStore.o TempBuilder.o stress_test.o -o stress1 $(linkFlags)
@@ -44,8 +44,8 @@ sqlstore_clean:
 	touch SQLStore.o; rm SQLStore.o
 tracker_clean:
 	rm Tracker.o;  true
-new_test.o:
-	clang++ -c new_test.cpp $(clangFlags)
+list_example.o:
+	clang++ -c list_example.cpp $(clangFlags)
 chat_example.o:
 	clang++ -c chat_example.cpp $(clangFlags)
 utils.o:
