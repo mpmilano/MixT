@@ -98,6 +98,9 @@ class ProcessPool_impl{
 			close(child_to_parent[0]);
 			close(parent_to_child[0]);
 			close(child_to_parent[1]);
+			if (name != 0){
+				kill(name, SIGKILL);
+			}
 		}
 		friend class ProcessPool_impl;
 	};
