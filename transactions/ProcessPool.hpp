@@ -166,7 +166,7 @@ public:
 			if (c.name != 0)
 				kill(c.name,SIGKILL);
 		}
-
+		std::cout << "process pool destroyed" << std::endl;
 	}
 };
 
@@ -183,5 +183,6 @@ public:
 	
 	virtual ~ProcessPool(){
 		inst->pool_alive = false;
+		std::cout << "sent process pool destroy" << std::endl;
 	}
 };
