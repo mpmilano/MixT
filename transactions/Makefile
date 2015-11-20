@@ -1,7 +1,7 @@
 TRANS_DIR= `pwd`/
 IP_quad=`ifconfig | sed s/broadcast.*//g | tr " " "\n" | grep 128.84 | rev | sed s/'\..*'//g | rev`
 storeList='SQLStore<Level::strong>, SQLStore<Level::causal>'
-clangFlags= -Xclang -fcolor-diagnostics -g -stdlib=libc++ --std=c++14 -Wall -ferror-limit=1 -DNUM_CAUSAL_GROUPS="4" -DSTORE_LIST=$(storeList) -DDECLARED_OPERATIONS="template<Level l2> DECLARE_OPERATION(Increment, RemoteObject<l2,int>*) template<Level l2, typename T> DECLARE_OPERATION(Insert, RemoteObject<l2,std::set<T> >*, const T& ) "
+clangFlags= -I$(TRANS_DIR) -I$(TRANS_DIR)mtl -I$(TRANS_DIR)mutils -I$(TRANS_DIR)pgsql -I$(TRANS_DIR)tracker -g -stdlib=libc++ --std=c++14 -Wall -ferror-limit=1 -DNUM_CAUSAL_GROUPS="4" -DSTORE_LIST=$(storeList) -DDECLARED_OPERATIONS="template<Level l2> DECLARE_OPERATION(Increment, RemoteObject<l2,int>*) template<Level l2, typename T> DECLARE_OPERATION(Insert, RemoteObject<l2,std::set<T> >*, const T& ) "
 linkFlags= -stdlib=libc++ --std=c++14 -lpqxx -lunwind -lm -pthread
 export IP_quad
 export TRANS_DIR
@@ -49,27 +49,27 @@ list_example.o:
 chat_example.o:
 	clang++ -c chat_example.cpp $(clangFlags)
 utils.o:
-	clang++ -c utils.cpp $(clangFlags)
+	clang++ -c */utils.cpp $(clangFlags)
 Ends.o:
-	clang++ -c Ends.cpp $(clangFlags)
+	clang++ -c */Ends.cpp $(clangFlags)
 Tracker.o:
-	clang++ -c Tracker.cpp $(clangFlags)
+	clang++ -c */Tracker.cpp $(clangFlags)
 Ostreams.o:
 	clang++ -c Ostreams.cpp $(clangFlags)
 SerializationSupport.o:
-	clang++ -c SerializationSupport.cpp $(clangFlags)
+	clang++ -c */SerializationSupport.cpp $(clangFlags)
 SQLStore.o:
-	clang++ -c SQLStore.cpp -DNUM_CAUSAL_MASTERS="2" -DCAUSAL_GROUP=$(causalGroup) $(clangFlags)
+	clang++ -c */SQLStore.cpp -DNUM_CAUSAL_MASTERS="2" -DCAUSAL_GROUP=$(causalGroup) $(clangFlags)
 Context.o:
-	clang++ -c Context.cpp $(clangFlags)
+	clang++ -c */Context.cpp $(clangFlags)
 TempBuilder.o:
-	clang++ -c TempBuilder.cpp $(clangFlags)
+	clang++ -c */TempBuilder.cpp $(clangFlags)
 ConExpr.o:
-	clang++ -c ConExpr.cpp $(clangFlags)
+	clang++ -c */ConExpr.cpp $(clangFlags)
 WhileBuilder.o:
-	clang++ -c WhileBuilder.cpp $(clangFlags)
+	clang++ -c */WhileBuilder.cpp $(clangFlags)
 CooperativeCache.o:
-	clang++ -c CooperativeCache.cpp $(clangFlags)
+	clang++ -c */CooperativeCache.cpp $(clangFlags)
 
 run: test
 	PGHOST='127.0.0.1' PGPORT='5432' PGDATABASE='DataStore' PGUSER='research' PGPASSWORD='swimsand' ./test
