@@ -4,6 +4,8 @@
 #include <thread>
 #include <mutex>
 
+namespace mutils{
+
 template<typename T>
 void discard(const T&){}
 
@@ -63,3 +65,4 @@ struct SafeSet<T*> : MonotoneSafeSet<T*>{
 		return r;
 	}	
 };
+}

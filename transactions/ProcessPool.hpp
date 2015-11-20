@@ -6,6 +6,8 @@
 #include <signal.h>
 #include "compile-time-tuple.hpp"
 
+namespace mutils{
+
 template<typename, typename...>
 class ProcessPool;
 
@@ -189,3 +191,5 @@ public:
 		std::cout << "sent process pool destroy" << std::endl;
 	}
 };
+
+}
