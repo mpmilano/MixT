@@ -3,6 +3,8 @@
 #include "../BitSet.hpp"
 #include "Context.hpp"
 
+namespace myria { namespace mtl {
+
 
 template<Level l, typename T>
 class CSConstant : public ConExpr<T,l> {
@@ -524,3 +526,5 @@ auto isValid(const T &t){
 //TODO: figure out why this needs to be here
 template<typename T>
 struct is_ConExpr<IsValid<T> > : std::true_type {};
+
+	} }

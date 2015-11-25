@@ -6,6 +6,8 @@
 #include "TransactionBuilder.hpp"
 #include "While.hpp"
 
+namespace myria { namespace mtl {
+
 
 template<typename PrevBuilder, typename Cond, typename Then>
 struct WhileBuilder : public Base_Builder{
@@ -92,3 +94,5 @@ auto make_while_begin(const Cons &s){
 }
 
 const WhileEnd& make_while_end();
+
+	} }

@@ -1,6 +1,8 @@
 #pragma once
 #include "ConStatement.hpp"
 
+namespace myria { namespace mtl {
+
 template<unsigned long long ID, typename CS, Level l, typename Temp>
 struct DeclarationScope : public ConStatement<l>{
 	const std::string name;
@@ -37,3 +39,5 @@ struct DeclarationScope : public ConStatement<l>{
 
 	virtual ~DeclarationScope(){}
 };
+
+	} }

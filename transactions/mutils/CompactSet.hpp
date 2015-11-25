@@ -1,5 +1,7 @@
 #pragma once
 
+namespace mutils {
+
 
 #include "SerializationSupport.hpp"
 
@@ -73,3 +75,5 @@ public:
 
 	DEFAULT_SERIALIZATION_SUPPORT(CompactSet, contents);
 };
+
+}

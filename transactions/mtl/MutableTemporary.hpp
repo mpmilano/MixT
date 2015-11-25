@@ -1,6 +1,8 @@
 #pragma once
 #include "Temporary.hpp"
 
+namespace myria { namespace mtl {
+
 template<unsigned long long ID, Level l, typename T>
 struct MutableTemporary : public Temporary<ID, l,T> {
 	MutableTemporary(const std::string& name, const T& t):
@@ -27,3 +29,5 @@ template<unsigned long long ID, unsigned long long ID2, Level l, typename T>
 std::enable_if_t<ID != ID2,std::nullptr_t> find_usage(const MutableTemporary<ID2,l,T> &rt){
 	return nullptr;
 }
+
+	} }

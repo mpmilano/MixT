@@ -24,6 +24,8 @@
 #include <string>
 #include <cstdlib>
 
+namespace mutils{
+
 template<typename T, std::size_t size1, std::size_t size2>
 auto prefix_array(const std::array<T,size1>& t,
 				  const std::array<T,size2> &arr,
@@ -313,3 +315,4 @@ auto map(const std::vector<T> &v, Ret (*f) (const T&) ){
 template <typename T>
 using is_vector = std::is_same<T, std::vector< typename T::value_type,
 											   typename T::allocator_type > >;
+}

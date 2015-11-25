@@ -5,6 +5,8 @@
 #include "ConExpr.hpp"
 #include "FreeExpr_macros.hpp"
 
+namespace myria { namespace mtl {
+
 template<typename T, Level l, HandleAccess ha>
 auto get_if_handle(Handle<l,ha,T> h){
 	return h.get();
@@ -148,3 +150,5 @@ auto find_usage(const FreeExpr<T,Vars...> &op){
 				, nullptr);
 }
 
+
+	} }

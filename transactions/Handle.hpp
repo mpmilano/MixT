@@ -7,8 +7,12 @@
 #include "Tracker.hpp"
 #include <memory>
 
+namespace myria{
+
+
 template<typename,typename>
 struct Operation;
+
 
 //todo: move this
 
@@ -25,22 +29,22 @@ template<unsigned long long id, Level l, HandleAccess ha>
 std::nullptr_t find_usage(const GenericHandle<l,ha>&){
 	return nullptr;
 }
-
+	
 template<Level l, HandleAccess HA, typename T>
 struct Handle : public GenericHandle<l,HA> {
 
 private:
 	const std::shared_ptr<RemoteObject<l,T> > _ro;
 public:
-	Tracker &tracker;
+	tracker::Tracker &tracker;
 private:
-	Handle(std::shared_ptr<RemoteObject<l,T> > _ro):_ro(_ro),tracker(Tracker::global_tracker()){
+	Handle(std::shared_ptr<RemoteObject<l,T> > _ro):_ro(_ro),tracker(tracker::Tracker::global_tracker()){
 		assert(tracker.registered(_ro->store()));
         assert(_ro->store().level == l);
 	}
 public:
 	
-	const int uid = gensym();
+	const int uid = mutils::gensym();
 	
 	typename std::conditional<canWrite<HA>::value,
 							  RemoteObject<l,T>&,
@@ -50,8 +54,8 @@ public:
 		return *_ro;
 	}
 
-	Handle():tracker(Tracker::global_tracker()) {}
-	Handle(const Handle& h):_ro(h._ro),tracker(Tracker::global_tracker()){}
+	Handle():tracker(tracker::Tracker::global_tracker()) {}
+	Handle(const Handle& h):_ro(h._ro),tracker(tracker::Tracker::global_tracker()){}
 		
 	static constexpr Level level = l;
 	static constexpr HandleAccess ha = HA;
@@ -181,10 +185,10 @@ public:
 	friend struct Transaction;
 
 private:
-	static void do_onwrite(Tracker &tr, RemoteObject<Level::strong,T> &ro){
+	static void do_onwrite(tracker::Tracker &tr, RemoteObject<Level::strong,T> &ro){
 		tr.onWrite(ro.store(),ro.name());
 	}
-	static void do_onwrite(Tracker &tr, RemoteObject<Level::causal,T> &ro){
+	static void do_onwrite(tracker::Tracker &tr, RemoteObject<Level::causal,T> &ro){
 		tr.onWrite(ro.store(),ro.name(),ro.timestamp());
 	}
 public:
@@ -201,11 +205,11 @@ public:
 	}
 	
 	template<HandleAccess ha2, typename T2>
-	friend Handle<Level::strong,ha2,T2> run_ast_causal(const CausalCache& cache, const CausalStore &, const Handle<Level::strong,ha2,T2>& h);
+	friend Handle<Level::strong,ha2,T2> run_ast_causal(const mtl::CausalCache& cache, const mtl::CausalStore &, const Handle<Level::strong,ha2,T2>& h);
 
 	template<HandleAccess ha, typename T2>
 	friend Handle<Level::strong,ha,T2>
-	run_ast_causal(CausalCache& cache, const CausalStore &s,
+	run_ast_causal(mtl::CausalCache& cache, const mtl::CausalStore &s,
 				   const Handle<Level::strong,ha,T2>& h);
 
 	template<typename, typename>
@@ -228,12 +232,13 @@ constexpr Level chld_min_level_f(Handle<l,ha,T> const * const){
 	return l;
 }
 
-
+	namespace mtl{
 template<unsigned long long, typename>
 struct contains_temporary;
+	}
 
 template<unsigned long long id, Level l, HandleAccess ha, typename T>
-struct contains_temporary<id,  Handle<l,ha,T> > : std::false_type {};
+struct mtl::contains_temporary<id,  Handle<l,ha,T> > : std::false_type {};
 
 template<Level l, HandleAccess HA, typename T,
 		 typename RO, typename... Args>
@@ -312,4 +317,22 @@ int to_bytes(const Handle<l,ha,T>& h, char* v){
 template<Level l, HandleAccess ha, typename T>
 int bytes_size(const Handle<l,ha,T> &h){
 	return h.bytes_size_hndl();
+}
+
+//forward-declaring
+
+template<typename T>
+struct is_handle;
+template<Level, HandleAccess, typename>
+struct Handle;
+
+template<typename T>
+std::enable_if_t<is_handle<T>::value,std::unique_ptr<T> > from_bytes(char *v);
+
+template<Level l, HandleAccess ha, typename T>
+int to_bytes(const Handle<l,ha,T>& h, char* v);
+
+template<Level l, HandleAccess ha, typename T>
+int bytes_size(const Handle<l,ha,T> &h);
+	
 }

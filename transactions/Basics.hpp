@@ -1,6 +1,8 @@
 #pragma once
 #include <string>
 
+namespace myria{
+
 enum class Level { causal, strong, undef};
 
 constexpr bool runs_with_strong(Level l){
@@ -87,3 +89,5 @@ using choose_strong = typename std::integral_constant<bool, runs_with_strong(l)>
 
 template<Level l>
 using choose_causal = typename std::integral_constant<bool, runs_with_causal(l)>::type*;
+
+}

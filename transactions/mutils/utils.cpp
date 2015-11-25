@@ -1,5 +1,7 @@
 #include "utils.hpp"
 
+namespace mutils{
+
 std::nullptr_t choose_non_np(std::nullptr_t, std::nullptr_t){
 	return nullptr;
 }
@@ -39,3 +41,4 @@ std::vector<std::string> read_dir(const std::string &name){
 
 void break_here(){}
 
+}

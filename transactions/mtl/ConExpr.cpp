@@ -2,6 +2,8 @@
 
 #include "ConExpr.hpp"
 
+namespace myria { namespace mtl {
+
 std::string run_ast_strong(const StrongCache &, const StrongStore&, const std::string& e) {
 	return e;
 }
@@ -9,3 +11,5 @@ std::string run_ast_strong(const StrongCache &, const StrongStore&, const std::s
 std::string run_ast_causal(const CausalCache &, const CausalStore&, const std::string& e) {
 	return e;
 }
+
+	} }

@@ -3,6 +3,8 @@
 #include "Tracker_common.hpp"
 #include "Tracker_support_structs.hpp"
 
+namespace myria {
+
 template<Level l>
 class SQLStore : public SQLStore_impl, public DataStore<l> {
 
@@ -173,3 +175,5 @@ public:
 	}
 	END_OPERATION
 };
+
+}

@@ -2,6 +2,8 @@
 #include "Tracker.hpp"
 #include <tuple>
 
+namespace myria { namespace tracker { 
+
 
 
 //I'm just going to guess the names of the functions here.
@@ -49,3 +51,4 @@ void Tracker::registerStore(DS &ds){
 	registerStore(ds,wrapStore(ds));
 }
 
+	}}

@@ -4,6 +4,8 @@
 #include "If.hpp"
 #include "DeclarationScope.hpp"
 
+namespace myria { namespace mtl {
+
 bool strongc_helper(StrongCache &, StrongStore &, const std::shared_ptr<const std::nullptr_t>&);
 
 template<typename T, restrict(!std::is_same<T CMA std::nullptr_t>::value &&
@@ -391,3 +393,5 @@ auto append(const ImmutableDeclarationBuilder<PrevBuilder, ID, CS, l, b, temp>  
 #define ImmutDeclaration(c) ImmutVarScopeBegin<unique_id<(sizeof(c) / sizeof(char)) - 1>(c)>{c}
 
 
+
+	} }

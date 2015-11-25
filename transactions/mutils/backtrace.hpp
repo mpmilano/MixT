@@ -5,6 +5,8 @@
 #include <cstdlib>
 #include <sstream>
 
+namespace mutils{
+
 
 namespace{
 	std::string show_backtrace() {
@@ -44,5 +46,6 @@ namespace{
 		}
 	}
 	return accum.str();
+}
 }
 }

@@ -11,6 +11,8 @@
 #include "Operation_macros.hpp"
 #include "Ends.hpp"
 
+namespace myria { 
+
 //because we don't have a lot of inspection abilities into this function,
 //we only allow write-enabled handles into which *all* read-enabled handles are
 //permitted to flow.
@@ -70,7 +72,7 @@ constexpr Level get_level_dref(Preserve<T> const * const){
 
 template<typename T>
 auto handles_helper_2(const Preserve<T>& t){
-	return ::handles(t.t);
+	return mtl::handles(t.t);
 }
 
 template<typename C, typename T>
@@ -78,7 +80,7 @@ auto extract_robj_p(const Preserve2<C,T> &t){
 	return cached(t.c,t.t);
 }
 
-template<typename T, restrict(!is_handle<decay<T> >::value && !is_preserve<T>::value )>
+	template<typename T, restrict(!is_handle<std::decay_t<T> >::value && !is_preserve<T>::value )>
  auto extract_robj_p(T&& t) {
 	return std::forward<T>(t);
 }
@@ -93,8 +95,8 @@ struct extract_store_str;
 
 template<typename Ret, typename... Args>
 struct extract_store_str<Ret (*) (Args...)> {
-	typedef extract_match<is_RemoteObj_ptr,Args...> match;
-	using type = typename std::remove_pointer<decay<match> >::type::Store;
+	typedef mutils::extract_match<is_RemoteObj_ptr,Args...> match;
+	using type = typename std::remove_pointer<std::decay_t<match> >::type::Store;
 };
 
 template<typename T>
@@ -120,15 +122,15 @@ struct Operation<Store, Ret (*) (A...)> {
 	}
 
 	template<typename ___T, typename Acc>
-	using type_check = std::pair<Rest<Left<Acc> >,
+	using type_check = std::pair<mutils::Rest<mutils::Left<Acc> >,
 								 std::integral_constant
 								 <bool,
-								  sassert2(___T, First<Left<Acc> >, 
-										   (std::is_same<decay<___T>, decay<First<Left<Acc> > > >::value || 
-											(is_handle<decay<___T> >::value &&
-											 is_RemoteObj_ptr<First<Left<Acc> > >::value)
-											|| (is_preserve<___T>::value && is_handle<decay<First<Left<Acc> > > >::value) )) && 
-								  Right<Acc>::value
+								  sassert2(___T, mutils::First<mutils::Left<Acc> >, 
+										   (std::is_same<decay<___T>, std::decay_t<mutils::First<mutils::Left<Acc> > > >::value || 
+											(is_handle<std::decay_t<___T> >::value &&
+											 is_RemoteObj_ptr<mutils::First<mutils::Left<Acc> > >::value)
+											|| (is_preserve<___T>::value && is_handle<std::decay_t<mutils::First<mutils::Left<Acc> > > >::value) )) && 
+								  mutils::Right<Acc>::value
 								  > > ;
 	
 	template<typename... Args>
@@ -192,3 +194,5 @@ struct NoOperation {
 
 
 #define op_arg(x...) extract_robj_p(x)
+
+	} 

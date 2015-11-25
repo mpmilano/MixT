@@ -12,6 +12,8 @@
 #include "TrivialPair.hpp"
 #include "RemoteObject.hpp"
 
+namespace myria { namespace tracker {
+
 template<Level l, HandleAccess HA, typename T>
 struct Handle;
 
@@ -93,3 +95,4 @@ private:
 };
 
 
+	}}

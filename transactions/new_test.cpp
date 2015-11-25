@@ -16,6 +16,10 @@
 #include "Transaction_macros.hpp"
 #include <pqxx/pqxx>
 
+using namespace myria;
+using namespace mutils;
+using namespace mtl;
+
 bool bad_func(){
 	return true;
 }

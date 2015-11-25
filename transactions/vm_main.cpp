@@ -21,6 +21,8 @@ constexpr int my_unique_id = int{IP_QUAD};
 using namespace std;
 using namespace chrono;
 using namespace mutils;
+using namespace myria;
+using namespace mtl;
 
 #ifdef NO_USE_STRONG
 constexpr bool causal_enabled = true;

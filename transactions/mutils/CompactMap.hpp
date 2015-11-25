@@ -3,6 +3,8 @@
 #include <pair>
 #include <memory>
 
+namespace mutils{
+
 //make a reasonably-fast (linear time) map which is represented compactly in memory for speedy serialization.
 
 template<typename K, typename V>
@@ -55,4 +57,6 @@ V& CompactMap<K,V>::operator[](K id){
 	assert(contents.size() == old_size + 1);
 	
 	return contents[i];
+}
+
 }

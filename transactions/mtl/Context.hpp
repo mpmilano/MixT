@@ -2,6 +2,8 @@
 #include <type_traits>
 #include "Store.hpp"
 
+namespace myria { namespace mtl {
+
 namespace context{
 
 	enum class t{
@@ -16,3 +18,5 @@ namespace context{
 	void set_context(StrongCache&c, t ctx);
 	
 }
+
+	} }

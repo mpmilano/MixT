@@ -19,6 +19,9 @@ Example: Chat server. Users, rooms.  Room lists are linearizable; Room membershi
 #include "Transaction_macros.hpp"
 
 using namespace std;
+using namespace myria;
+using namespace mtl;
+using namespace mutils;
 
 template<typename p>
 using newObject_f = const std::function<p (const typename p::stored_type&)>&;

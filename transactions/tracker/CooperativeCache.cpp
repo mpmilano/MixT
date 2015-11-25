@@ -7,6 +7,8 @@
 #include <netdb.h>
 #include <thread>
 
+namespace myria { namespace tracker { 
+
 struct hostent * extract_ip(Tracker::Nonce n);
 
 void CooperativeCache::track_with_eviction(Tracker::Nonce n, const obj_bundle &o){
@@ -186,3 +188,4 @@ void CooperativeCache::listen_on(int portno){
 			}
 		}).detach();
 }
+	}}

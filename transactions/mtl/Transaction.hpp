@@ -11,6 +11,8 @@
 #include "Assignment.hpp"
 #include "Context.hpp"
 
+namespace myria { namespace mtl {
+
 
 struct Transaction{
 	const std::function<bool ()> action;
@@ -188,3 +190,5 @@ public:
 
 
 
+
+	} }

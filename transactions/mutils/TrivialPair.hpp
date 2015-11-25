@@ -1,6 +1,8 @@
 #pragma once
 #include <type_traits>
 
+namespace mutils{
+
 template<typename T, typename V>
 struct TrivialPair{
 	T first;
@@ -39,3 +41,4 @@ struct TrivialTriple{
 	}
 	TrivialTriple(T t,U u,V v):first(t),second(u),third(v){}
 };
+}

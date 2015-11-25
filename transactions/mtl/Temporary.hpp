@@ -3,6 +3,8 @@
 #include "CommonExprs.hpp"
 #include <string>
 
+namespace myria { namespace mtl {
+
 struct GeneralTemp {
 	const std::string name;
 	const std::string gets;
@@ -101,3 +103,5 @@ namespace{
 	bool debug_forbid_copy = false;
 }
 
+
+	} }

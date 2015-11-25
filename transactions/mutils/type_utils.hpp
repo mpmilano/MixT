@@ -1,6 +1,8 @@
 #pragma once
 #include <type_traits>
 
+namespace mutils{
+
 template<typename A, typename B>
 using TSeq = B;
 
@@ -10,7 +12,7 @@ constexpr bool failOn(){
 	return true;
 }
 
-#define sassert2(x,y,z) (failOn<x,y,z>())
+#define sassert2(x,y,z) (mutils::failOn<x,y,z>())
 
 #define tassert(x) decltype(sassert)
 
@@ -45,3 +47,4 @@ struct NoOverloadFoundError{
 
 template<typename T> struct argument_type;
 template<typename T, typename U> struct argument_type<T(U)> { typedef U type; };
+}

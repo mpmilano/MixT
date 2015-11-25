@@ -7,6 +7,8 @@
 #include <list>
 #include "TrivialPair.hpp"
 
+namespace myria { namespace tracker { 
+
 
 class CooperativeCache{
 	std::mutex m;
@@ -25,3 +27,4 @@ public:
 	std::unique_ptr<obj_bundle> get(Tracker::Nonce, int port);
 };
 
+	}}

@@ -6,6 +6,8 @@
 #include "TransactionBuilder.hpp"
 #include "If.hpp"
 
+namespace myria { namespace mtl {
+
 
 template<typename PrevBuilder, typename Cond, typename Then, typename Els>
 struct IfBuilder : public Base_Builder{
@@ -112,3 +114,5 @@ const IfEnd& make_if_end(){
 	static constexpr IfEnd e;
 	return e;
 }
+
+	} }

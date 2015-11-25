@@ -1,6 +1,8 @@
 #pragma once
 #include "ConStatement.hpp"
 
+namespace myria { namespace mtl {
+
 template<Level l>
 class Noop : public ConStatement<l> {
 public:
@@ -63,3 +65,5 @@ template<typename T>
 struct is_base_CS : std::integral_constant<bool, is_base_CS_f((T*)nullptr)> {};
 
 #define CONNECTOR_OP 
+
+	} }

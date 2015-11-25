@@ -1,5 +1,7 @@
 #pragma once
 
+namespace mutils{
+
 namespace ct_lambda{
 
 template<class F>
@@ -37,3 +39,4 @@ struct addr_add
 		nullptr :											\
 		ct_lambda::addr_add() + []
 
+}

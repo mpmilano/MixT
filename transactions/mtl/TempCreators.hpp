@@ -3,6 +3,8 @@
 #include "MutableTemporary.hpp"
 #include "Temporary.hpp"
 
+namespace myria { namespace mtl {
+
 #define MutAssigner(c) MutCreator<unique_id<(sizeof(c) / sizeof(char)) - 1>(c)>{c}
 #define ImmutAssigner(c) ImmutCreator<unique_id<(sizeof(c) / sizeof(char)) - 1>(c)>{c}
 
@@ -47,3 +49,5 @@ struct ImmutCreator {
 
 };
 
+
+	} }

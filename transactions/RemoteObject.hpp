@@ -6,10 +6,12 @@
 #include "Store.hpp"
 #include "SerializationSupport.hpp"
 
+namespace myria{
+
 #define GeneralRemoteObject_body				\
-	const int id = gensym();										\
-	virtual void setTransactionContext(TransactionContext*) = 0;	\
-	virtual TransactionContext* currentTransactionContext() = 0;	\
+	const int id = mutils::gensym();									\
+	virtual void setTransactionContext(mtl::TransactionContext*) = 0;	\
+	virtual mtl::TransactionContext* currentTransactionContext() = 0;	\
 	virtual bool ro_isValid() const = 0;							\
 	virtual const DataStore<level>& store() const = 0;					\
 	virtual DataStore<level>& store() = 0;								\
@@ -20,13 +22,13 @@ template<Level>
 struct GeneralRemoteObject;
 
 template<>
-struct GeneralRemoteObject<Level::strong> : public ByteRepresentable{
+struct GeneralRemoteObject<Level::strong> : public mutils::ByteRepresentable{
 	static constexpr Level level = Level::strong;
 	GeneralRemoteObject_body
 };
 
 template<>
-struct GeneralRemoteObject<Level::causal> : public ByteRepresentable{
+struct GeneralRemoteObject<Level::causal> : public mutils::ByteRepresentable{
 	static constexpr Level level = Level::causal;
 	GeneralRemoteObject_body
 	virtual const std::array<int,NUM_CAUSAL_GROUPS>& timestamp() const = 0;
@@ -62,7 +64,7 @@ public:
 //*/
 	
 	template<typename Arg, typename Accum>
-	using Pointerize = Cons_t<Arg*,Accum>;
+	using Pointerize = mutils::Cons_t<Arg*,Accum>;
 	
 	static std::unique_ptr<RemoteObject> from_bytes(char* _v); 
 
@@ -81,7 +83,7 @@ constexpr Level get_ro_ptr_lvl_f(RemoteObject<l,T>*){
 }
 
 template<typename T>
-struct get_ro_ptr_lvl<T*> : std::integral_constant<Level, get_ro_ptr_lvl_f(mke_p<T>())>::type {};
+struct get_ro_ptr_lvl<T*> : std::integral_constant<Level, get_ro_ptr_lvl_f(mutils::mke_p<T>())>::type {};
 
 DecayTraits(get_ro_ptr_lvl);
 
@@ -115,5 +117,7 @@ template<typename T>
 struct is_not_RemoteObj_ptr : std::integral_constant<bool,!is_RemoteObj_ptr<T>::value >::type {};
 
 template<typename T>
-using cr_add = typename std::conditional<is_RemoteObj_ptr<T>::value, T, const decay<T>&>::type;
+using cr_add = typename std::conditional<is_RemoteObj_ptr<T>::value, T, const std::decay_t<T>&>::type;
+
+}
 

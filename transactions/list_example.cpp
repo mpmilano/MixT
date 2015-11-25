@@ -10,6 +10,9 @@
 #include "FreeExpr_macros.hpp"
 #include "Operate_macros.hpp"
 
+using namespace myria;
+using namespace mutils;
+using namespace mtl;
 
 template<Level l, typename T> FINALIZE_OPERATION(Increment, 1, (RemoteObject<l, T>* a));
 

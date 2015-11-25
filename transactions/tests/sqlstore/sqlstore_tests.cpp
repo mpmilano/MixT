@@ -3,6 +3,9 @@
 #include "SQLStore.hpp"
 #include "FinalHeader.hpp"
 
+using namespace myria;
+using namespace mpgsql;
+
 namespace {
 
 	SQLStore<Level::strong>& store = SQLStore<Level::strong>::inst(0);

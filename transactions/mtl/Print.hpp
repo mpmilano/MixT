@@ -1,6 +1,8 @@
 #pragma once
 #include "Transaction.hpp"
 
+namespace myria { namespace mtl {
+
 template<typename T>
 class Print : public ConStatement<get_level<T>::value> {
 public:
@@ -119,3 +121,5 @@ auto print_str(const T& t){
 	return Print_Str{t};
 }
 
+
+	} }

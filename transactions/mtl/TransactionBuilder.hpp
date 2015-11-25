@@ -4,6 +4,8 @@
 #include "ConStatement.hpp"
 #include "WhileBuilder.hpp"
 
+namespace myria { namespace mtl {
+
 //this makes sure the expression (expr)
 //only references temporaries defined in the tuple
 //Names
@@ -49,3 +51,5 @@ auto append(const CurrBuilder &pb, const Clobber<T> &ct){
 	return ct.t;
 }
 
+
+	} }

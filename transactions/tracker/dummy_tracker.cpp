@@ -1,5 +1,7 @@
 #include "Tracker.hpp"
 
+namespace myria { namespace tracker { 
+
 Tracker::Tracker(){}
 
 Tracker& Tracker::global_tracker(){
@@ -54,3 +56,4 @@ void Tracker::onRead(DataStore<Level::strong>&, Name name){}
 
 struct Tracker::TrackerDSStrong {};
 struct Tracker::TrackerDSCausal {};
+	}}

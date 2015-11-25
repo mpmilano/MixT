@@ -3,6 +3,8 @@
 #include "Print.hpp"
 #include "Massert.hpp"
 
+namespace myria{
+
 namespace aux{
 	template<std::size_t...> struct seq{};
 
@@ -194,4 +196,5 @@ std::ostream & operator<<(std::ostream &os, const StoreMap<st> &store){
 template<Level l, HandleAccess ha, typename T, typename Expr>
 std::ostream & operator<<(std::ostream &os, const Assignment<l,ha,T,Expr> &store){
 	return os << "not printing assignments yet";
+}
 }

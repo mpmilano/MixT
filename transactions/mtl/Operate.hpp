@@ -7,6 +7,8 @@
 #include "Context.hpp"
 #include "MutableTemporary.hpp"
 
+namespace myria { namespace mtl {
+
 /*
 template<typename>
 struct shared_deref_str;
@@ -209,3 +211,5 @@ template<unsigned long long ID, typename T>
 auto find_usage(const Preserve<T>& p) {
 	return find_usage<ID>(p.t);
 }
+
+	} }

@@ -6,6 +6,8 @@
 #include "Operate.hpp"
 #include <iostream>
 
+namespace myria { namespace mtl {
+
 #define if_concept(Cond,Then,Els)										\
 	{static_assert(is_ConExpr<Cond>::value, "Error: if-condition not a condition"); \
 	static_assert(is_cs_tuple<Then>::value, "Error: then-branch not a tuple of statements"); \
@@ -102,3 +104,5 @@ constexpr bool is_If_f(const A*){
 template<typename T>
 struct is_If : std::integral_constant<bool,is_If_f(mke_p<T>())>::type {};
 
+
+	} }

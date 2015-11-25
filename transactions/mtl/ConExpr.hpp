@@ -8,6 +8,8 @@
 #include "ConStatement.hpp"
 #include "args-finder.hpp"
 
+namespace myria { namespace mtl {
+
 typedef Level Level;
 
 template<typename T, Level l>
@@ -19,7 +21,7 @@ struct ConExpr {
 };
 
 
-template<typename T, restrict(! (is_ConStatement<T>::value || is_handle<T>::value || is_tuple<T>::value || (is_ConExpr<T>::value && !std::is_scalar<T>::value)))>
+template<typename T, restrict(! (is_ConStatement<T>::value || is_handle<T>::value || mutils::is_tuple<T>::value || (is_ConExpr<T>::value && !std::is_scalar<T>::value)))>
 constexpr Level get_level_f(const T*){
 	return Level::undef;
 }
@@ -31,7 +33,7 @@ constexpr Level get_level_f(const ConExpr<T,l>*){
 
 //imported from ConStatement. Probably should get its own file or something.
 template<typename T>
-struct get_level : std::integral_constant<Level, get_level_f(mke_p<T>())>::type {};
+struct get_level : std::integral_constant<Level, get_level_f(mutils::mke_p<T>())>::type {};
 
 template<typename T, Level l>
 constexpr Level chld_min_level_f(ConExpr<T,l> const * const){
@@ -49,7 +51,7 @@ constexpr Level chld_min_level_f(level_constant<l> const * const ){
 }
 
 template<typename T>
-struct chld_min_level : level_constant<chld_min_level_f(mke_p<T>())> {};
+struct chld_min_level : level_constant<chld_min_level_f(mutils::mke_p<T>())> {};
 
 template<typename T>
 struct chld_min_level<const T> : chld_min_level<T> {};
@@ -73,7 +75,7 @@ constexpr Level get_level_dref(Handle<l,ha,T> const * const){
 
 template<typename T, Level l, restrict2(is_handle<T>::value || is_ConExpr<T>::value)>
 constexpr Level get_level_dref(ConExpr<T,l> *){
-	return (l == Level::causal ? Level::causal : get_level_dref(mke_p<T>()));
+	return (l == Level::causal ? Level::causal : get_level_dref(mutils::mke_p<T>()));
 }
 
 //if we've hit "Bottom" and can't continue to find level-having
@@ -87,8 +89,8 @@ constexpr std::enable_if_t<!is_handle<T>::value && !is_ConExpr<T>::value, Level>
 
 template<typename... T>
 struct min_level_dref : std::integral_constant<Level,
-											   exists((get_level_dref(mke_p<T>()) == Level::causal)...) ? Level::causal :
-											   (exists((get_level_dref(mke_p<T>()) == Level::strong)...) ? Level::strong :
+											   exists((get_level_dref(mutils::mke_p<T>()) == Level::causal)...) ? Level::causal :
+											   (exists((get_level_dref(mutils::mke_p<T>()) == Level::strong)...) ? Level::strong :
 												Level::undef)
 											   > {
 	static_assert(!exists((is_ConStatement<T>::value)...),"Error: min_level_dref only ready for Exprs. Not sure why you need this for non-exprs...");
@@ -96,8 +98,8 @@ struct min_level_dref : std::integral_constant<Level,
 
 template<typename... T>
 struct max_level_dref : std::integral_constant<Level,
-											   exists((get_level_dref(mke_p<T>()) == Level::strong)...) ? Level::strong :
-											   (exists((get_level_dref(mke_p<T>()) == Level::causal)...) ? Level::causal :
+											   exists((get_level_dref(mutils::mke_p<T>()) == Level::strong)...) ? Level::strong :
+											   (exists((get_level_dref(mutils::mke_p<T>()) == Level::causal)...) ? Level::causal :
 												Level::undef)
 											   > {
 	static_assert(!exists((is_ConStatement<T>::value)...),"Error: max_level_dref only ready for Exprs. Not sure why you need this for non-exprs...");
@@ -149,7 +151,7 @@ constexpr bool is_ConExpr_f(const T*){
 
 template<typename Cls>
 struct is_ConExpr : 
-	std::integral_constant<bool, is_ConExpr_f(mke_p<Cls>()) || std::is_scalar<decay<Cls> >::value>::type {};
+		std::integral_constant<bool, is_ConExpr_f(mutils::mke_p<Cls>()) || std::is_scalar<std::decay_t<Cls> >::value>::type {};
 
 template<typename T, restrict(is_ConExpr<T>::value && !std::is_scalar<T>::value && !is_handle<T>::value)>
 auto run_ast_strong(StrongCache& c, const StrongStore &s, const T& expr) {
@@ -157,7 +159,7 @@ auto run_ast_strong(StrongCache& c, const StrongStore &s, const T& expr) {
 }
 
 template<typename T>
-typename std::enable_if<std::is_scalar<decay<T > >::value,T>::type
+typename std::enable_if<std::is_scalar<std::decay_t<T > >::value,T>::type
 run_ast_strong(const StrongCache &, const StrongStore&, const T& e) {
 	return e;
 }
@@ -187,7 +189,7 @@ auto run_ast_causal(CausalCache& c, const CausalStore &s, const T& expr) {
 }
 
 template<typename T>
-typename std::enable_if<std::is_scalar<decay<T > >::value,T>::type
+typename std::enable_if<std::is_scalar<std::decay_t<T > >::value,T>::type
 run_ast_causal(const CausalCache &, const CausalStore&, const T& e) {
 	return e;
 }
@@ -214,7 +216,7 @@ auto cached(const CausalCache& cache, const T& ast){
 }
 
 template<typename T, StoreType st>
-type_check<std::is_scalar, T> cached(const StoreMap<st>& cache, const T& e){
+mutils::type_check<std::is_scalar, T> cached(const StoreMap<st>& cache, const T& e){
 	return e;
 }
 
@@ -289,7 +291,7 @@ template<typename... T>
 auto handles(const std::tuple<T...> &params){
 	return fold(params,
 				[](const auto &e, const auto &acc){
-					return std::tuple_cat(::handles(e),acc);
+					return std::tuple_cat(mtl::handles(e),acc);
 				}
 				,std::tuple<>());
 }
@@ -309,5 +311,7 @@ T extract_type_f(T *t){
 
 template<typename T>
 struct extract_type {
-	using type = decltype(extract_type_f(mke_p<T>()));
+	using type = decltype(extract_type_f(mutils::mke_p<T>()));
 };
+
+	} }

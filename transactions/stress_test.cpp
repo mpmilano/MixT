@@ -9,6 +9,10 @@
 
 using namespace std;
 using namespace chrono;
+using namespace myria;
+using namespace mutils;
+using namespace mtl;
+
 
 const std::vector<int> names_strong = {5,7,9,11,13};
 const std::vector<int> names_causal = {6,8,10,12,14};

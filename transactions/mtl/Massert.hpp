@@ -1,5 +1,7 @@
 #pragma once
 
+namespace myria { namespace mtl {
+
 template<typename T>
 class Massert : public ConStatement<get_level<T>::value> {
 public:
@@ -48,3 +50,5 @@ template<typename T>
 auto massert(const T& t){
 	return Massert<T>{t};
 }
+
+	} }

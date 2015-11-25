@@ -3,6 +3,8 @@
 #include "Temporary.hpp"
 #include "RefTemporary.hpp"
 
+namespace myria { namespace mtl {
+
 template<Level l, HandleAccess ha, typename T, typename Expr>
 struct Assignment : public ConStatement<get_level<Expr>::value>{
 private:
@@ -92,3 +94,5 @@ template<unsigned long long ID, Level l, HandleAccess ha, typename T, typename E
 auto find_usage(const Assignment<l,ha,T,Expr> &rt){
 	return find_usage<ID>(rt.e);
 }
+
+	} }

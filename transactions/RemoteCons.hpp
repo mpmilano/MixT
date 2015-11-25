@@ -14,6 +14,8 @@
 #include "FreeExpr_macros.hpp"
 #include "Operate_macros.hpp"
 
+namespace myria{
+
 
 template<typename T, Level backbone, Level data>
 struct RemoteCons :
@@ -67,4 +69,5 @@ struct RemoteCons :
 template<typename T, Level backbone, Level data>
 std::ostream& operator<<(std::ostream &os, const RemoteCons<T,backbone,data>& rc){
 	return os << rc.val << " ++ " << rc.next;
+}
 }

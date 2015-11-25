@@ -1,6 +1,8 @@
 #pragma once
 #include "Temporary.hpp"
 
+namespace myria { namespace mtl {
+
 template<typename T>
 struct TemporaryMutation : public ConStatement<get_level<T>::value> {
 	const std::string name;
@@ -68,3 +70,5 @@ template<unsigned long long ID, typename T>
 auto find_usage(const TemporaryMutation<T> &t){
 	return find_usage<ID>(t.t);
 }
+
+	} }

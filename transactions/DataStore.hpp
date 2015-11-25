@@ -4,6 +4,8 @@
 #include "GDataStore.hpp"
 #include "Basics.hpp"
 
+namespace myria{
+
 template<Level l>
 class DataStore;
 
@@ -27,3 +29,4 @@ public:
 	DECLARED_OPERATIONS
 
 };
+}

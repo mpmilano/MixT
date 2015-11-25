@@ -1,6 +1,8 @@
 //for things where it's irritating to put them before other things.
 #pragma once
 
+namespace myria{
+
 template<Level l, typename T>
 std::shared_ptr<RemoteObject<l,T> > release_delete(RemoteObject<l,T>* ro){
 	return std::shared_ptr<RemoteObject<l,T> >(ro, release_deleter<RemoteObject<l,T> >());
@@ -40,3 +42,4 @@ std::unique_ptr<RemoteObject<l,T> > RemoteObject<l,T>::from_bytes(char* _v)
 
 
 //TODO: there should be a way to get rid of these.
+}

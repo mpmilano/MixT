@@ -1,5 +1,7 @@
 #include "Context.hpp"
 
+namespace myria { namespace mtl {
+
 namespace context{
 
 	t current_context(const CausalCache& c){
@@ -20,3 +22,5 @@ namespace context{
 		c.emplace_ovrt<t>(id::value,ctx);
 	}
 }
+
+	} }

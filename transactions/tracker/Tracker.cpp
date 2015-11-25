@@ -24,7 +24,9 @@ namespace {
 		;
 }
 #include <cstdlib>
-	
+
+namespace myria { namespace tracker { 
+
 using namespace std;
 using namespace chrono;
 using namespace TDS;
@@ -233,3 +235,4 @@ void Tracker::onRead(DataStore<Level::causal>&, Name name, const Clock &version,
 		i->tracking.emplace(name,make_pair(version,bytes));
 	}
 }
+	}}

@@ -9,6 +9,7 @@
 #include "Ends.hpp"
 #include "Ostreams.hpp"
 
+namespace myria{
 
 using namespace pqxx;
 using namespace std;
@@ -391,4 +392,6 @@ SQLStore_impl::GSQLObject SQLStore_impl::GSQLObject::from_bytes(char *v){
 
 SQLStore_impl::~SQLStore_impl(){
 	delete default_connection;
+}
+
 }

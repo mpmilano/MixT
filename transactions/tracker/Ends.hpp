@@ -2,6 +2,8 @@
 #include <algorithm>
 #include <array>
 
+namespace myria { namespace tracker { 
+
 namespace ends{
 	std::array<int,4> max(const std::array<int,4> &a,const std::array<int,4> &b);
 	
@@ -23,3 +25,4 @@ namespace ends{
 		return true;
 	}
 }
+	}}

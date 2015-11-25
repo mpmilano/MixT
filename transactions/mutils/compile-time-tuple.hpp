@@ -4,6 +4,8 @@
 #include "restrict.hpp"
 #include "utils.hpp"
 
+namespace mutils{
+
 namespace ct {
 
 	template<typename... B>
@@ -97,3 +99,4 @@ namespace ct {
 }
 
 
+}

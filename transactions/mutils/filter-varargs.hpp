@@ -3,6 +3,8 @@
 #include "utils.hpp"
 #include "tuple_extras.hpp"
 
+namespace mutils{
+
 template <template<typename> class Predicate, typename...> struct filter;
 
 template <template<typename> class Pred> struct filter<Pred> { using type = std::tuple<>; };
@@ -22,3 +24,4 @@ struct filter<Predicate, std::tuple<Head, Tail...> > : filter<Predicate,Head,Tai
 
 template <template<typename> class Predicate, typename Tail>
 using filter_t = filter<Predicate,Tail>; 
+}

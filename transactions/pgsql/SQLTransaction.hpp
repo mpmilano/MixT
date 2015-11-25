@@ -4,6 +4,8 @@
 #include "backtrace.hpp"
 #include <pqxx/pqxx>
 
+namespace myria{
+
 template<typename E>
 auto exec_prepared_hlpr(E &e){
 	return e.exec();
@@ -92,3 +94,5 @@ public:
 	}
 	
 };
+
+}

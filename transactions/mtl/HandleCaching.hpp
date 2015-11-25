@@ -1,6 +1,8 @@
 #pragma once
 #include "Transaction.hpp"
 
+namespace myria { namespace mtl {
+
 template<typename T>
 struct CachedObject : public RemoteObject<Level::strong,T> {
 	std::shared_ptr<T> t;
@@ -144,3 +146,5 @@ Handle<Level::strong,ha,T> run_ast_causal(CausalCache& cache, const CausalStore 
 		make_handle<Level::strong,ha,T,LocalObject<T> >
 		(h.remote_object());
 }
+
+	} }

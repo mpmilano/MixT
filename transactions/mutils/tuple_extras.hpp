@@ -5,6 +5,8 @@
 #include <tuple>
 #include "utils.hpp"
 
+namespace mutils{
+
 template<typename... T>
 constexpr bool is_tuple_f(const std::tuple<T...>*){
 	return true;
@@ -214,3 +216,4 @@ auto filter_tpl(const Tpl &tpl){
 		},std::tuple<>());
 }
 
+}

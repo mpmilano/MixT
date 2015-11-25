@@ -5,6 +5,8 @@
 #include "macro_utils.hpp"
 #include <vector>
 
+namespace mutils{
+
 
 struct ByteRepresentable {
 	virtual int to_bytes(char* v) const = 0;
@@ -14,21 +16,6 @@ struct ByteRepresentable {
 	//virtual static T* from_bytes(char *v) const  = 0;
 };
 
-//forward-declaring
-
-template<typename T>
-struct is_handle;
-template<Level, HandleAccess, typename>
-struct Handle;
-
-template<typename T>
-std::enable_if_t<is_handle<T>::value,std::unique_ptr<T> > from_bytes(char *v);
-
-template<Level l, HandleAccess ha, typename T>
-int to_bytes(const Handle<l,ha,T>& h, char* v);
-
-template<Level l, HandleAccess ha, typename T>
-int bytes_size(const Handle<l,ha,T> &h);
 
 //end forward-declaring
 
@@ -171,4 +158,5 @@ std::enable_if_t<is_vector<T>::value,std::unique_ptr<T> > from_bytes(char* v){
 		}
 		return accum;
 	}
+}
 }

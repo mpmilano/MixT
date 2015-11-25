@@ -1,6 +1,8 @@
 #pragma once
 #include "utils.hpp"
 
+namespace myria { namespace mtl {
+
 struct StoreMiss {};
 
 enum class StoreType{
@@ -131,3 +133,5 @@ struct is_Cache :
 	std::is_same<StrongCache, std::decay_t<T> >::value ||
 	std::is_same<CausalCache, std::decay_t<T> >::value >::type
 {};
+
+	} }

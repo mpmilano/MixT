@@ -5,6 +5,8 @@
 #include <functional>
 #include "restrict.hpp"
 
+namespace mutils{
+
 template <typename T>
 struct function_traits
     : public function_traits<decltype(&T::operator())>
@@ -86,4 +88,5 @@ template<typename F, restrict(!std::is_function<F>::value)>
 auto convert_fp(F f) 
 {
 	return function_traits<F>::as_fp(f);
+}
 }

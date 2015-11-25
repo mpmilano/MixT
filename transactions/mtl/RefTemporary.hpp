@@ -1,6 +1,8 @@
 #pragma once
 #include "TemporaryMutation.hpp"
 
+namespace myria { namespace mtl {
+
 template<unsigned long long ID, Level l, typename T, typename Temp>
 struct RefTemporary : public ConExpr<run_result<T>,l> {
 private:
@@ -140,3 +142,5 @@ constexpr bool is_reftemp(const T*){
 template<typename T>
 struct is_RefTemporary : std::integral_constant<bool,is_reftemp(mke_p<T>())>::type
 {};
+
+	} }

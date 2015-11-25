@@ -1,5 +1,7 @@
 #include "Ostreams.hpp"
 
+namespace myria{
+
 std::ostream & operator<<(std::ostream &os, const nope& ){
 	return os << "nope!";
 }
@@ -26,4 +28,5 @@ std::ostream & operator<<(std::ostream &os, Level l){
 		return os << levelStr<Level::undef>();
 	assert(false && "fell through");
 	return os;
+}
 }

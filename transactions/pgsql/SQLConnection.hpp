@@ -2,6 +2,8 @@
 #include "SQLStore.hpp"
 #include <pqxx/pqxx>
 
+namespace myria{
+
 struct SQLTransaction;
 
 
@@ -18,3 +20,4 @@ struct SQLStore_impl::SQLConnection {
 	SQLConnection(const SQLConnection&) = delete;
 };
 
+}

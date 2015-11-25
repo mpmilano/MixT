@@ -7,6 +7,8 @@
 #include <iostream>
 #include <list>
 
+namespace myria { namespace mtl {
+
 #define while_concept(Cond,Then)										\
 	{static_assert(is_ConExpr<Cond>::value, "Error: while-condition not a condition"); \
 		static_assert(is_cs_tuple<Then>::value, "Error: while body not a tuple of statements"); }
@@ -184,3 +186,5 @@ template<typename T>
 struct is_while : std::integral_constant<bool,is_While_f(mke_p<T>())>::type {};
 
 
+
+	} }
