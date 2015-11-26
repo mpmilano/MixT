@@ -18,16 +18,16 @@
 #define DEFAULT_DESERIALIZE3(Name,a,b)			\
 	static std::unique_ptr<Name> from_bytes(char* v){				\
 		auto a2 = mutils::from_bytes<std::decay_t<decltype(a)> >(v);			\
-		Name r{*a2,*(::from_bytes<std::decay_t<decltype(b)> >(v + mutils::bytes_size(*a2)))}; \
-		return heap_copy(r);						\
+		Name r{*a2,*(mutils::from_bytes<std::decay_t<decltype(b)> >(v + mutils::bytes_size(*a2)))}; \
+		return mutils::heap_copy(r);						\
 	}
 #define DEFAULT_DESERIALIZE4(Name,a,b,c)							\
 	static std::unique_ptr<Name> from_bytes(char* v){				\
 		auto a2 = mutils::from_bytes<std::decay_t<decltype(a)> >(v);			\
 		auto size_a2 = mutils::bytes_size(*a2);								\
-		auto b2 = ::from_bytes<std::decay_t<decltype(b)> >(v + size_a2); \
-		Name r{*a2,*b2,*(::from_bytes<std::decay_t<decltype(c)> >(v + size_a2 + mutils::bytes_size(*b2)))}; \
-		return heap_copy(r);						\
+		auto b2 = mutils::from_bytes<std::decay_t<decltype(b)> >(v + size_a2); \
+		Name r{*a2,*b2,*(mutils::from_bytes<std::decay_t<decltype(c)> >(v + size_a2 + mutils::bytes_size(*b2)))}; \
+		return mutils::heap_copy(r);						\
 	}
 
 #define DEFAULT_SERIALIZE1(a) int to_bytes(char* ret) const {		\
@@ -41,7 +41,7 @@
 	static std::unique_ptr<Name> from_bytes(char* v){				\
 		auto a2 = mutils::from_bytes<std::decay_t<decltype(a)> >(v);		\
 		Name r{*a2};												\
-		return heap_copy(r);						\
+		return mutils::heap_copy(r);						\
 	}
 
 	

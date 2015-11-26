@@ -2,7 +2,7 @@
 #include "SQLStore.hpp"
 #include <pqxx/pqxx>
 
-namespace myria{
+namespace myria{ namespace pgsql {
 
 struct SQLTransaction;
 
@@ -20,4 +20,4 @@ struct SQLStore_impl::SQLConnection {
 	SQLConnection(const SQLConnection&) = delete;
 };
 
-}
+	} }

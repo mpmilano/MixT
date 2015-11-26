@@ -2,14 +2,20 @@
 
 namespace myria{
 
+	using namespace mtl;
+
+	namespace mtl{
 std::ostream & operator<<(std::ostream &os, const nope& ){
 	return os << "nope!";
 }
+	}
 
 auto print_util(const std::shared_ptr<const std::nullptr_t>&){
 	return "aaaaaa";
 }
 
+	namespace mtl {
+	
 std::ostream & operator<<(std::ostream &os, Transaction& t){
 	//see Transaction.hpp
 	return t.print(os);
@@ -18,6 +24,8 @@ std::ostream & operator<<(std::ostream &os, Transaction& t){
 std::ostream & operator<<(std::ostream &os, const Print_Str& op){
 	return os << "print " << op.t << std::endl;
 }
+
+	}
 
 std::ostream & operator<<(std::ostream &os, Level l){
 	if (l == Level::causal)

@@ -17,6 +17,8 @@
 
  */
 
+namespace myria { namespace pgsql {
+
 template<Level l>
 class SQLStore;
 
@@ -48,7 +50,7 @@ public:
 	
 	SQLStore_impl(const SQLStore_impl&) = delete;
 	
-    std::unique_ptr<TransactionContext> begin_transaction();
+    std::unique_ptr<mtl::TransactionContext> begin_transaction();
 	
     int instance_id() const;
 	bool exists(Name id);
@@ -80,8 +82,8 @@ public:
 		void increment();
 
 		//required by GeneralRemoteObject
-		void setTransactionContext(TransactionContext*);
-		TransactionContext* currentTransactionContext();
+		void setTransactionContext(mtl::TransactionContext*);
+		mtl::TransactionContext* currentTransactionContext();
 		bool ro_isValid() const;
 		int store_instance_id() const;
         Name name() const;
@@ -96,3 +98,5 @@ public:
 	//operations
 
 };
+
+	}}

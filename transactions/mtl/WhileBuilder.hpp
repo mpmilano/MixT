@@ -37,7 +37,7 @@ constexpr bool is_WhileBuilder_f(const WhileBuilder<PrevBuilder, Cond, Then>*) {
 
 
 template<typename T>
-struct is_WhileBuilder : std::integral_constant<bool, is_WhileBuilder_f(mke_p<T>()) >::type {};
+struct is_WhileBuilder : std::integral_constant<bool, is_WhileBuilder_f(mutils::mke_p<T>()) >::type {};
 
 
 template<typename PrevBuilder, typename Cond, typename Then>
@@ -51,7 +51,7 @@ struct WhileBodyBuilder : WhileBuilder<PrevBuilder,Cond,Then>{
 	auto operator/(const T &t) const {
 		static_assert(is_ConStatement<T>::value,
 					  "Error: non-statement in Then clause of While.");
-		typedef Cat<Then,std::tuple<T> > newThen;
+		typedef mutils::Cat<Then,std::tuple<T> > newThen;
 		While<Cond,newThen >
 			new_while(this->this_while.cond,
 				   std::tuple_cat(this->this_while.then,

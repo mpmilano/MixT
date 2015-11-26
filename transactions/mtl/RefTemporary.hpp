@@ -15,7 +15,7 @@ public:
 	//Note: this ID will change
 	//every time we copy this class.
 	//every copy should have a unique ID.
-	const int id = gensym();
+	const int id = mutils::gensym();
 
 	RefTemporary(const Temp &t):t(t),name(t.name) {}
 
@@ -79,7 +79,7 @@ public:
 	}
 
 	template<typename E>
-	std::enable_if_t<!std::is_same<Temporary<ID,l,T>, Temp>::value, TemporaryMutation<decltype(wrap_constants(*mke_p<E>()))> >
+	std::enable_if_t<!std::is_same<Temporary<ID,l,T>, Temp>::value, TemporaryMutation<decltype(wrap_constants(*mutils::mke_p<E>()))> >
 	operator=(const E &e) const {
 		static_assert(is_ConExpr<E>::value,"Error: attempt to assign non-Expr");
 		auto wrapped = wrap_constants(e);
@@ -103,7 +103,7 @@ private:
 		run_result<decltype(t.t)>
 		{
 			typedef run_result<decltype(t.t)> R;
-			static_assert(neg_error_helper<is_ConStatement,R>::value,"Static assert failed");
+			static_assert(mutils::neg_error_helper<is_ConStatement,R>::value,"Static assert failed");
 			return s. template get<R>(t.store_id);
 		}
 };
@@ -140,7 +140,7 @@ constexpr bool is_reftemp(const T*){
 }
 
 template<typename T>
-struct is_RefTemporary : std::integral_constant<bool,is_reftemp(mke_p<T>())>::type
+struct is_RefTemporary : std::integral_constant<bool,is_reftemp(mutils::mke_p<T>())>::type
 {};
 
 	} }

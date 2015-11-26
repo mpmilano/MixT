@@ -13,6 +13,8 @@
 using namespace myria;
 using namespace mutils;
 using namespace mtl;
+using namespace tracker;
+using namespace pgsql;
 
 template<Level l, typename T> FINALIZE_OPERATION(Increment, 1, (RemoteObject<l, T>* a));
 

@@ -25,7 +25,7 @@ struct While : public ConStatement<min_level<Then>::value> {
 	typedef Cond Cond_t;
 	const Cond cond;
 	const Then then;
-	const int id = gensym();
+	const int id = mutils::gensym();
 
 	While(const Cond& cond, const Then& then):
 		cond(cond),then(then)
@@ -39,12 +39,12 @@ struct While : public ConStatement<min_level<Then>::value> {
 		:cond(w.cond),then(w.then){}
 
 	auto handles() const {
-		return std::tuple_cat(::handles(cond), stmt_handles(then));
+		return std::tuple_cat(mtl::handles(cond), stmt_handles(then));
 	}
 
 	bool strongCall(StrongCache& c, StrongStore &s) const {
 		s.in_loop();
-		AtScopeEnd ase{[&](){s.out_of_loop();}};
+		mutils::AtScopeEnd ase{[&](){s.out_of_loop();}};
 		discard(ase);
 		choose_strong<get_level<Cond>::value> choice1{nullptr};
 		choose_strong<min_level<Then>::value> choice2{nullptr};
@@ -125,7 +125,7 @@ struct While : public ConStatement<min_level<Then>::value> {
 	
 	bool causalCall(CausalCache& c_old, CausalStore &s) const {
 		s.in_loop();
-		AtScopeEnd ase{[&](){s.out_of_loop();}};
+		mutils::AtScopeEnd ase{[&](){s.out_of_loop();}};
 		discard(ase);
 		//if there's a cache for this AST node, then
 		//that means we've already run the condition.
@@ -170,7 +170,7 @@ auto find_usage(const While<Cond,Then>& _while){
 }
 
 template<unsigned long long ID, typename Cond, typename Then>
-struct contains_temporary<ID, While<Cond,Then> > : contains_temp_fold<ID,Cat<std::tuple<Cond>,Then> > {};
+struct contains_temporary<ID, While<Cond,Then> > : contains_temp_fold<ID,mutils::Cat<std::tuple<Cond>,Then> > {};
 
 template<typename A, typename B>
 constexpr bool is_While_f(const While<A,B>*){
@@ -183,7 +183,7 @@ constexpr bool is_While_f(const A*){
 }
 
 template<typename T>
-struct is_while : std::integral_constant<bool,is_While_f(mke_p<T>())>::type {};
+struct is_while : std::integral_constant<bool,is_While_f(mutils::mke_p<T>())>::type {};
 
 
 

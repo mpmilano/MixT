@@ -12,10 +12,11 @@
 #include "TrivialPair.hpp"
 #include "RemoteObject.hpp"
 
-namespace myria { namespace tracker {
+namespace myria { 
 
 template<Level l, HandleAccess HA, typename T>
 struct Handle;
+	namespace tracker {
 
 namespace TDS{
 	static constexpr int newTomb = 0;

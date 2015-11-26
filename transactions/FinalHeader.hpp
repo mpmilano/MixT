@@ -19,11 +19,11 @@ std::unique_ptr<RemoteObject<l,T> > RemoteObject<l,T>::from_bytes(char* _v)
 	int read_id = ((int*)_v)[0];
 	char *v = _v + sizeof(int);
 	typedef std::tuple<STORE_LIST> stores;
-	typedef fold_types<Pointerize,stores,std::tuple<> > ptr_stores;
+	typedef mutils::fold_types<Pointerize,stores,std::tuple<> > ptr_stores;
 	ptr_stores lst;
 	auto ret = 
-		fold(lst,[&](const auto &e, const std::shared_ptr<RemoteObject<l,T> > &acc) -> std::shared_ptr<RemoteObject<l,T> > {
-				using DS = decay<decltype(*e)>;
+		mutils::fold(lst,[&](const auto &e, const std::shared_ptr<RemoteObject<l,T> > &acc) -> std::shared_ptr<RemoteObject<l,T> > {
+				using DS = std::decay_t<decltype(*e)>;
 				if (read_id == DS::id()) {
 					assert(!acc);
 					auto fold_ret = DS::template from_bytes<T>(v);

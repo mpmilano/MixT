@@ -21,18 +21,18 @@ public:
 	}
 
 	auto handles() const {
-		return ::handles(t);
+		return mtl::handles(t);
 	}
 
 	bool strongCall(StrongCache& a, const StrongStore& b) const {
-		auto ret = ::run_ast_strong(a,b,t);
+		auto ret = mtl::run_ast_strong(a,b,t);
 		if (runs_with_strong(get_level<T>::value)){
 			assert(ret);
 		}
 		return true;
 	}
 	bool causalCall(CausalCache& a, const CausalStore& b) const {
-		auto ret = ::run_ast_causal(a,b,t);
+		auto ret = mtl::run_ast_causal(a,b,t);
 		if (runs_with_causal(get_level<T>::value)){
 			assert(ret);
 		}

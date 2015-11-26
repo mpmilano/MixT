@@ -58,7 +58,7 @@ auto cached_withfail(const StoreMap<st>& cache, const T &t){
 	}
 	catch( const CacheLookupFailure&){
 		std::cerr << "found a failure point (operate)!" << std::endl;
-		std::cerr << "Type we failed on: " << type_name<T>() << std::endl;
+		std::cerr << "Type we failed on: " << mutils::type_name<T>() << std::endl;
 		return cached(cache,t);
 	}
 }
@@ -94,7 +94,7 @@ struct PreOp<std::tuple<J...> > {
 						return std::pair<bool,bool>(true,e(cached_withfail(c,*args)...));
 					}
 				},std::pair<bool,bool>(false,false));
-		if (!result.first) throw NoOverloadFoundError{type_name<decltype(t)>()};
+		if (!result.first) throw mutils::NoOverloadFoundError{mutils::type_name<decltype(t)>()};
 		return result.second;
 	}
 };
@@ -151,7 +151,7 @@ auto trans_op_arg(StrongCache& c, const StrongStore& s, const T& t) {
 
 template<typename T, restrict(is_ConExpr<T>::value)>
 auto handles_helper_2(const T &t){
-	return ::handles(t);
+	return mtl::handles(t);
 }
 
 template<typename... T>

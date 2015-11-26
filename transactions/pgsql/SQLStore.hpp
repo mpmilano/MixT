@@ -3,13 +3,13 @@
 #include "Tracker_common.hpp"
 #include "Tracker_support_structs.hpp"
 
-namespace myria {
-
+namespace myria { namespace pgsql {
+	
 template<Level l>
 class SQLStore : public SQLStore_impl, public DataStore<l> {
 
     SQLStore(int inst_id):SQLStore_impl(*this,inst_id,l) {
-		Tracker::global_tracker().registerStore(*this);
+		tracker::Tracker::global_tracker().registerStore(*this);
 	}
 public:
 
@@ -54,7 +54,7 @@ public:
 			res = gso.load();
 			assert(res);
 			if (res != nullptr){
-				t = ::from_bytes<T>(res);
+				t = mutils::from_bytes<T>(res);
 			}
 			return *t;
 		}
@@ -71,15 +71,15 @@ public:
 
 		void put(const T& t){
 			this->t = std::make_unique<T>(t);
-			::to_bytes(t,gso.obj_buffer());
+			mutils::to_bytes(t,gso.obj_buffer());
 			gso.save();
 		}
 
 		//these just forward
-		void setTransactionContext(TransactionContext* t){
+		void setTransactionContext(mtl::TransactionContext* t){
 			gso.setTransactionContext(t);
 		}
-		TransactionContext* currentTransactionContext(){
+		mtl::TransactionContext* currentTransactionContext(){
 			return gso.currentTransactionContext();
 		}
 		bool ro_isValid() const{
@@ -108,7 +108,7 @@ public:
 			assert(l2 == l);
 			return ret;
 		}
-		else throw Transaction::ClassCastException();
+		else throw mtl::Transaction::ClassCastException();
 	}
 	
 	template<typename T, restrict(!(is_RemoteObj_ptr<T>::value))>
@@ -120,13 +120,13 @@ public:
 	auto newObject(Name name, const T& init){
 		static constexpr Table t =
 			(std::is_same<T,int>::value ? Table::IntStore : Table::BlobStore);
-		int size = ::bytes_size(init);
+		int size = mutils::bytes_size(init);
 		std::vector<char> v(size);
-		assert(size == ::to_bytes(init,&v[0]));
+		assert(size == mutils::to_bytes(init,&v[0]));
 		GSQLObject gso(*this,t,name,v);
         auto ret = make_handle
 			<l,ha,T,SQLObject<T> >
-			(std::move(gso),heap_copy(init) );
+			(std::move(gso),mutils::heap_copy(init) );
         ret.tracker.onCreate(*this,name);
         return ret;
 	}
@@ -160,7 +160,7 @@ public:
 											   std::unique_ptr<T>());
 	}
 
-	std::unique_ptr<TransactionContext> begin_transaction(){
+	std::unique_ptr<mtl::TransactionContext> begin_transaction(){
         auto ret = SQLStore_impl::begin_transaction();
         return ret;
 	}
@@ -176,4 +176,4 @@ public:
 	END_OPERATION
 };
 
-}
+	}}

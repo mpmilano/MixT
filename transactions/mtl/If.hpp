@@ -27,7 +27,7 @@ struct If : public ConStatement<min_level<typename min_level<Then>::type,
 	const Cond cond;
 	const Then then;
 	const Els els;
-	const int id = gensym();
+	const int id = mutils::gensym();
 
 	If(const Cond& cond, const Then& then, const Els &els):
 		cond(cond),then(then),els(els)
@@ -89,7 +89,7 @@ auto find_usage(const If<Cond,Then,Els>& _if){
 }
 
 template<unsigned long long ID, typename Cond, typename Then, typename Els>
-struct contains_temporary<ID, If<Cond,Then,Els> > : contains_temp_fold<ID,Cat<std::tuple<Cond>,Then,Els> > {};
+struct contains_temporary<ID, If<Cond,Then,Els> > : contains_temp_fold<ID,mutils::Cat<std::tuple<Cond>,Then,Els> > {};
 
 template<typename A, typename B, typename C>
 constexpr bool is_If_f(const If<A,B,C>*){
@@ -102,7 +102,7 @@ constexpr bool is_If_f(const A*){
 }
 
 template<typename T>
-struct is_If : std::integral_constant<bool,is_If_f(mke_p<T>())>::type {};
+struct is_If : std::integral_constant<bool,is_If_f(mutils::mke_p<T>())>::type {};
 
 
 	} }

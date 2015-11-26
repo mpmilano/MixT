@@ -67,7 +67,7 @@ template<typename T>
 constexpr Level get_level_dref(Preserve<T> const * const){
 	//TODO: should the semantics of "preserve" be such that
 	//we should recur here? 
-	return get_level<T>::value;
+	return mtl::get_level<T>::value;
 }
 
 template<typename T>
@@ -126,7 +126,7 @@ struct Operation<Store, Ret (*) (A...)> {
 								 std::integral_constant
 								 <bool,
 								  sassert2(___T, mutils::First<mutils::Left<Acc> >, 
-										   (std::is_same<decay<___T>, std::decay_t<mutils::First<mutils::Left<Acc> > > >::value || 
+										   (std::is_same<std::decay_t<___T>, std::decay_t<mutils::First<mutils::Left<Acc> > > >::value || 
 											(is_handle<std::decay_t<___T> >::value &&
 											 is_RemoteObj_ptr<mutils::First<mutils::Left<Acc> > >::value)
 											|| (is_preserve<___T>::value && is_handle<std::decay_t<mutils::First<mutils::Left<Acc> > > >::value) )) && 
@@ -138,16 +138,16 @@ struct Operation<Store, Ret (*) (A...)> {
 		assert(this);
 		assert(built_well && "Calling operation constructed with default constructor is evil!");
 		static_assert(sizeof...(Args) == arity, "Error: arity violation");
-		typedef fold_types<type_check,std::tuple<Args...>,
+		typedef mutils::fold_types<type_check,std::tuple<Args...>,
 						   std::pair<args_tuple, std::true_type> >
 			ft_res;
-		static_assert(Right<ft_res>::value,
+		static_assert(mutils::Right<ft_res>::value,
 					  "Error: TypeError calling operation!");
-		constexpr Level min = min_level<typename
-										filter<is_readable_handle,Args...>::type
+		constexpr Level min = mtl::min_level<typename
+										mutils::filter<is_readable_handle,Args...>::type
 										>::value;
-		constexpr Level max = max_level<typename
-										filter<is_writeable_handle,Args...>::type
+		constexpr Level max = mtl::max_level<typename
+										mutils::filter<is_writeable_handle,Args...>::type
 										>::value;
 		static_assert(can_flow(min,max),"Error: potential flow violation!");
 		assert(can_flow(min,max));
@@ -155,24 +155,24 @@ struct Operation<Store, Ret (*) (A...)> {
 		//do this here so we abort before causal tracking happens
 		discard(Store::tryCast(extract_robj_p(args))...);			
 
-		auto h_read = filter_tpl<is_readable_handle>(std::make_tuple(args...));
-		auto h_strong_read = filter_tpl<is_strong_handle>(h_read);
-		auto h_causal_read = filter_tpl<is_causal_handle>(h_read);
-		auto h_write = filter_tpl<is_writeable_handle>(std::make_tuple(args...));
-		auto h_strong_write = filter_tpl<is_strong_handle>(h_write);
-		auto h_causal_write = filter_tpl<is_causal_handle>(h_write);
-		foreach(h_strong_read,
+		auto h_read = mutils::filter_tpl<is_readable_handle>(std::make_tuple(args...));
+		auto h_strong_read = mutils::filter_tpl<is_strong_handle>(h_read);
+		auto h_causal_read = mutils::filter_tpl<is_causal_handle>(h_read);
+		auto h_write = mutils::filter_tpl<is_writeable_handle>(std::make_tuple(args...));
+		auto h_strong_write = mutils::filter_tpl<is_strong_handle>(h_write);
+		auto h_causal_write = mutils::filter_tpl<is_causal_handle>(h_write);
+		mutils::foreach(h_strong_read,
 				[](const auto &h){h.tracker.onRead(h.store(),h.name());});
 		//optimization: track timestamps for causal, only check if they've changed.
-		auto causal_pair = fold(h_causal_read,[](const auto &a, const auto &acc){
-				return tuple_cons(std::make_pair(a.remote_object().timestamp(),a),acc);},std::tuple<>{});
+		auto causal_pair = mutils::fold(h_causal_read,[](const auto &a, const auto &acc){
+				return mutils::tuple_cons(std::make_pair(a.remote_object().timestamp(),a),acc);},std::tuple<>{});
 		auto &&ret = fun(Store::tryCast(extract_robj_p(args))...);
-		foreach(causal_pair,
+		mutils::foreach(causal_pair,
 			[](const auto &p){
-				if (ends::is_same(p.first, p.second.remote_object().timestamp())) return;
+					if (tracker::ends::is_same(p.first, p.second.remote_object().timestamp())) return;
 				else p.second.tracker.onRead(p.second.store(),p.second.name(),p.second.remote_object().timestamp(),p.second.remote_object().bytes());});
-		foreach(h_strong_write, [](const auto &h){h.tracker.onWrite(h.store(),h.name());});
-		foreach(h_causal_write, [](const auto &h){h.tracker.onWrite(h.store(),h.name(),h.remote_object().timestamp());});
+		mutils::foreach(h_strong_write, [](const auto &h){h.tracker.onWrite(h.store(),h.name());});
+		mutils::foreach(h_causal_write, [](const auto &h){h.tracker.onWrite(h.store(),h.name(),h.remote_object().timestamp());});
 		return ret;
 	}
 };

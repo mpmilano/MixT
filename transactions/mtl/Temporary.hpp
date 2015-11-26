@@ -36,7 +36,7 @@ struct Temporary : public GeneralTemp, public ConStatement<get_level<T>::value> 
 	}
 
 	auto handles() const {
-		return ::handles(t);
+		return mtl::handles(t);
 	}
 
 	auto strongCall(StrongCache& c, StrongStore &s) const {

@@ -146,9 +146,9 @@ std::nullptr_t find_usage(const DeclarationScope<ID,CS,l,Temp>&){
 
 template<unsigned long long ID, unsigned long long ID2, typename CS, Level l, typename temp, restrict(ID != ID2)>
 auto find_usage(const DeclarationScope<ID2,CS,l,temp>& ds){
-	return fold(ds.cs,
+	return mutils::fold(ds.cs,
 				[](const auto &e, const auto &acc){
-					return choose_non_np(acc,find_usage<ID>(e));
+					return mutils::choose_non_np(acc,find_usage<ID>(e));
 				}
 				, nullptr);
 }
@@ -178,9 +178,9 @@ constexpr Level chld_max_level_f(FindUsages<T...> const * const){
 template<unsigned long long ID, typename T,
 		 restrict(std::is_base_of<BaseFindUsages CMA T>::value)>
 auto find_usage(const T& fu) {
-	return fold(fu.find_from_here,
+	return mutils::fold(fu.find_from_here,
 				[](const auto &e, const auto &acc){
-					return choose_non_np(find_usage<ID>(e),acc);
+					return mutils::choose_non_np(find_usage<ID>(e),acc);
 				}
 				, nullptr);
 }
@@ -282,9 +282,9 @@ struct MutableDeclarationBuilder : public Base_Builder {
 			new_decl(this_decl.name,
 					 choose_gt(
 						 this_decl.gt,
-						 make_cnst_shared<found_type>(find_usage<ID>(t))),
+						 mutils::make_cnst_shared<found_type>(find_usage<ID>(t))),
 					 new_cs);
-		::MutableDeclarationBuilder<PrevBuilder, ID, decltype(new_cs), new_level, contains_temporary<ID,found_type>::value || oldb, found_type>
+		myria::mtl::MutableDeclarationBuilder<PrevBuilder, ID, decltype(new_cs), new_level, contains_temporary<ID,found_type>::value || oldb, found_type>
 			r(prevBuilder,new_decl);
 		return r;
 	}
@@ -317,9 +317,9 @@ struct ImmutableDeclarationBuilder : public Base_Builder{
 			(this_decl.name,
 					 choose_gt(
 						 this_decl.gt,
-						 make_cnst_shared<found_type>(find_usage<ID>(t))),
+						 mutils::make_cnst_shared<found_type>(find_usage<ID>(t))),
 					 new_cs);
-		::ImmutableDeclarationBuilder<PrevBuilder, ID, std::decay_t<decltype(new_decl.cs)>, new_level, contains_temporary<ID,found_type>::value || oldb, found_type>
+		myria::mtl::ImmutableDeclarationBuilder<PrevBuilder, ID, std::decay_t<decltype(new_decl.cs)>, new_level, contains_temporary<ID,found_type>::value || oldb, found_type>
 			r(prevBuilder,new_decl);
 		return r;
 	}

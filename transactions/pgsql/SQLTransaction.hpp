@@ -4,7 +4,7 @@
 #include "backtrace.hpp"
 #include <pqxx/pqxx>
 
-namespace myria{
+namespace myria{ namespace pgsql {
 
 template<typename E>
 auto exec_prepared_hlpr(E &e){
@@ -18,7 +18,7 @@ auto exec_prepared_hlpr(E &e, A&& a, B && ... b){
 }
 
 
-struct SQLTransaction : public TransactionContext {
+struct SQLTransaction : public mtl::TransactionContext {
 private:
         GDataStore& gstore;
 	SQLStore_impl::SQLConnection& sql_conn;
@@ -42,8 +42,8 @@ public:
 #define default_sqltransaction_catch									\
 	catch(const pqxx::pqxx_exception &r){								\
 		commit_on_delete = false;										\
-		if (is_serialize_error(r)) throw Transaction::SerializationFailure{}; \
-		else throw Transaction::CannotProceedError{r.base().what() + show_backtrace()}; \
+		if (is_serialize_error(r)) throw mtl::Transaction::SerializationFailure{}; \
+		else throw mtl::Transaction::CannotProceedError{r.base().what() + mutils::show_backtrace()}; \
 	}
 
 	
@@ -95,4 +95,4 @@ public:
 	
 };
 
-}
+	}}

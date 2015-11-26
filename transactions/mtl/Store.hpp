@@ -69,7 +69,7 @@ public:
 	void insert(int i, const T &item) {
 		assert(valid_store);
 		if (!looping) assert(!contains(i));
-		store_impl[i].reset((stored)heap_copy(item).release());
+		store_impl[i].reset((stored)mutils::heap_copy(item).release());
 		lost_and_found()[i] = this;
 		assert(contains(i));
 		dbg_store_prnt("Storing",item)

@@ -19,7 +19,7 @@ namespace myria{
 
 template<typename T, Level backbone, Level data>
 struct RemoteCons :
-	public ByteRepresentable {
+	public mutils::ByteRepresentable {
 	using p = Handle<backbone, HandleAccess::all, RemoteCons>;
 	using v = Handle<data, HandleAccess::all, T>;
 	using newObj = const std::function<p (const typename p::stored_type&)>&;

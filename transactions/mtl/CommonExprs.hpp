@@ -12,7 +12,7 @@ public:
 
 	const T val;
 
-	const int id = gensym();
+	const int id = mutils::gensym();
 	
 	CSConstant(const T& t):val(t){}
 	CSConstant(const CSConstant& cs):val(cs.val){}
@@ -69,7 +69,7 @@ struct Sum : public ConExpr<bool, min_level<T,V>::value> {
 	static_assert(is_ConExpr<T>::value,"Error: cannot sum non-expression");
 	static_assert(is_ConExpr<V>::value,"Error: cannot sum non-expression");
 
-	const int id = gensym();
+	const int id = mutils::gensym();
 	T l;
 	V r;
 
@@ -80,7 +80,7 @@ struct Sum : public ConExpr<bool, min_level<T,V>::value> {
 	Sum(const Sum& s):l(s.l),r(s.r){}
 
 	auto handles() const {
-		return std::tuple_cat(::handles(l),::handles(r));
+		return std::tuple_cat(mtl::handles(l),mtl::handles(r));
 	}
 
 	auto causalCall(CausalCache& cache, const CausalStore& s) const {
@@ -151,7 +151,7 @@ struct Equals : public ConExpr<bool, min_level<T,V>::value> {
 	static_assert(is_ConExpr<T>::value,"Error: cannot equals non-expression");
 	static_assert(is_ConExpr<V>::value,"Error: cannot equals non-expression");
 
-	const int id = gensym();
+	const int id = mutils::gensym();
 	T l;
 	V r;
 
@@ -162,7 +162,7 @@ struct Equals : public ConExpr<bool, min_level<T,V>::value> {
 	Equals(const Equals& e):l(e.l),r(e.r){}
 
 	auto handles() const {
-		return std::tuple_cat(::handles(l),::handles(r));
+		return std::tuple_cat(mtl::handles(l),mtl::handles(r));
 	}
 
 	auto causalCall(CausalCache& cache, const CausalStore& s) const {
@@ -232,14 +232,14 @@ struct BinaryOr : public ConExpr<bool, min_level<T,V>::value> {
 	static_assert(is_ConExpr<T>::value,"Error: cannot binor non-expression");
 	static_assert(is_ConExpr<V>::value,"Error: cannot binor non-expression");
 
-	const int id = gensym();
+	const int id = mutils::gensym();
 	T l;
 	V r;
 	BinaryOr(const T& l, const V& r):l(l),r(r){}
 	BinaryOr(const BinaryOr& b):l(b.l),r(b.r){}
 
 	auto handles() const {
-		return std::tuple_cat(::handles(l),::handles(r));
+		return std::tuple_cat(mtl::handles(l),mtl::handles(r));
 	}
 
 	bool causalCall(CausalCache& cache, const CausalStore& s) const {
@@ -308,14 +308,14 @@ struct BinaryAnd : public ConExpr<bool, min_level<T,V>::value> {
 	static_assert(is_ConExpr<T>::value,"Error: cannot binand non-expression");
 	static_assert(is_ConExpr<V>::value,"Error: cannot binand non-expression");
 
-	const int id = gensym();
+	const int id = mutils::gensym();
 	T l;
 	V r;
 	BinaryAnd(const T& l, const V& r):l(l),r(r){}
 	BinaryAnd(const BinaryAnd &ba):l(ba.l),r(ba.r){}
 
 	auto handles() const {
-		return std::tuple_cat(::handles(l),::handles(r));
+		return std::tuple_cat(mtl::handles(l),mtl::handles(r));
 	}
 
 	bool causalCall(CausalCache& cache, const CausalStore& s) const {
@@ -384,7 +384,7 @@ struct Not : public ConExpr<bool, get_level<T>::value> {
 
 	static_assert(is_ConExpr<T>::value,"Error: cannot negate non-expression");
 
-	const int id = gensym();
+	const int id = mutils::gensym();
 	T v;
 	Not(const T& t):v(t){}
 	Not(const Not& n):v(n.v){}
@@ -457,13 +457,13 @@ struct IsValid : public ConExpr<bool, get_level<T>::value> {
 	static_assert(is_handle<run_result<T> >::value,"error: IsValid designed for referential integrity of handles.");
 
 	const T t;
-	const int id = gensym();
+	const int id = mutils::gensym();
 	
 	IsValid(const T &t):t(t){}
 	IsValid(const IsValid &i):t(i.t){}
 
 	auto handles() const {
-		return ::handles(t);
+		return mtl::handles(t);
 	}
 
 	bool causalCall(CausalCache& cache, const CausalStore& s) const {

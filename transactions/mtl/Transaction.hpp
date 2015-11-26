@@ -49,7 +49,7 @@ public:
 		action([s]() -> bool{
 
 				debug_forbid_copy = true;
-				AtScopeEnd ase{[](){debug_forbid_copy = false;}};
+				mutils::AtScopeEnd ase{[](){debug_forbid_copy = false;}};
 				discard(ase);
 
 				//We're assuming that operations behave normally,

@@ -13,7 +13,7 @@ struct TemporaryMutation : public ConStatement<get_level<T>::value> {
 		:name(name),store_id(id),t(t) {}
 
 	auto handles() const {
-		return ::handles(t);
+		return mtl::handles(t);
 	}
 	
 	auto strongCall(StrongCache& c, StrongStore &s) const {

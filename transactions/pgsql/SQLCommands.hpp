@@ -1,7 +1,11 @@
 #pragma once
 #include <vector>
+#include "Basics.hpp"
 
 namespace{
+
+	using namespace myria;
+	using namespace myria::pgsql;
 
 	namespace cmds {
 		
@@ -269,4 +273,5 @@ namespace{
 
 
 	}
+
 }

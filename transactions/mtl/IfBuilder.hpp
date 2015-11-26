@@ -37,7 +37,7 @@ constexpr bool is_IfBuilder_f(const IfBuilder<PrevBuilder, Cond, Then, Els>*) {
 
 
 template<typename T>
-struct is_IfBuilder : std::integral_constant<bool, is_IfBuilder_f(mke_p<T>()) >::type {};
+struct is_IfBuilder : std::integral_constant<bool, is_IfBuilder_f(mutils::mke_p<T>()) >::type {};
 
 
 template<typename PrevBuilder, typename Cond, typename Then>
@@ -51,7 +51,7 @@ struct ThenBuilder : IfBuilder<PrevBuilder,Cond,Then,std::tuple<> >{
 	auto operator/(const T &t) const {
 		static_assert(is_ConStatement<T>::value,
 					  "Error: non-statement in Then clause of If.");
-		typedef Cat<Then,std::tuple<T> > newThen;
+		typedef mutils::Cat<Then,std::tuple<T> > newThen;
 		If<Cond,newThen,std::tuple<> >
 			new_if(this->this_if.cond,
 				   std::tuple_cat(this->this_if.then,
@@ -71,7 +71,7 @@ struct ElseBuilder : IfBuilder<PrevBuilder,Cond,Then, Els>{
 	template<typename T>
 	auto operator/(const T &t) const {
 		static_assert(is_ConStatement<T>::value, "Error: non-statement in Else clause of If.");
-		typedef Cat<Els,std::tuple<T> > newEls;
+		typedef mutils::Cat<Els,std::tuple<T> > newEls;
 		If<Cond,Then,newEls >
 			new_if(this->this_if.cond,this->this_if.then, std::tuple_cat(this->this_if.els, std::make_tuple(t)));
 		ElseBuilder<PrevBuilder,Cond,Then,newEls > r(this->prevBuilder,new_if);

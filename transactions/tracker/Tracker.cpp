@@ -157,7 +157,7 @@ void Tracker::onWrite(DataStore<Level::strong>& ds_real, Name name){
 				always_failed = false;
 				break;
 			}
-			catch(const Transaction::CannotProceedError&){
+			catch(const mtl::Transaction::CannotProceedError&){
 				//assume we picked a bad nonce, try again
 			}
 		}

@@ -16,11 +16,26 @@ struct Operation;
 
 //todo: move this
 
-template<typename >
-struct extract_type;
 
-template<typename>
-struct get_level;
+	namespace mtl {
+		
+		template<typename >
+		struct extract_type;
+		
+		template<typename>
+		struct get_level;
+
+		struct Transaction;
+
+		template<HandleAccess ha2, typename T2>
+		Handle<Level::strong,ha2,T2> run_ast_causal(const mtl::CausalCache& cache, const mtl::CausalStore &, const Handle<Level::strong,ha2,T2>& h);
+		
+		template<HandleAccess ha, typename T2>
+		Handle<Level::strong,ha,T2>
+		run_ast_causal(mtl::CausalCache& cache, const mtl::CausalStore &s,
+							const Handle<Level::strong,ha,T2>& h);
+
+	}
 
 template<Level l, HandleAccess HA>
 struct GenericHandle {};
@@ -182,7 +197,7 @@ public:
 	template<Level l2, HandleAccess ha2, typename T2>
 	friend struct Handle;
 
-	friend struct Transaction;
+	friend struct mtl::Transaction;
 
 private:
 	static void do_onwrite(tracker::Tracker &tr, RemoteObject<Level::strong,T> &ro){
@@ -205,11 +220,11 @@ public:
 	}
 	
 	template<HandleAccess ha2, typename T2>
-	friend Handle<Level::strong,ha2,T2> run_ast_causal(const mtl::CausalCache& cache, const mtl::CausalStore &, const Handle<Level::strong,ha2,T2>& h);
+	friend Handle<Level::strong,ha2,T2> mtl::run_ast_causal(const mtl::CausalCache& cache, const mtl::CausalStore &, const Handle<Level::strong,ha2,T2>& h);
 
 	template<HandleAccess ha, typename T2>
 	friend Handle<Level::strong,ha,T2>
-	run_ast_causal(mtl::CausalCache& cache, const mtl::CausalStore &s,
+	mtl::run_ast_causal(mtl::CausalCache& cache, const mtl::CausalStore &s,
 				   const Handle<Level::strong,ha,T2>& h);
 
 	template<typename, typename>
@@ -257,17 +272,19 @@ struct is_handle<Handle<l,ha,T> > : std::true_type {};
 template<typename T>
 struct is_handle : std::false_type {};
 
+	namespace mtl{
 template<typename>
 struct is_ConExpr;
+	}
 
 template<typename T, Level l, HandleAccess ha>
-struct is_ConExpr<Handle<l,ha,T> > : std::true_type {};
+struct mtl::is_ConExpr<Handle<l,ha,T> > : std::true_type {};
 
 template<typename T>
 struct is_not_handle : std::integral_constant<bool, !is_handle<T>::value >::type {};
 
 template<Level l, HandleAccess ha, typename T>
-struct extract_type<Handle<l,ha,T> > {typedef T type;};
+struct mtl::extract_type<Handle<l,ha,T> > {typedef T type;};
 
 template<typename H>
 struct extract_access;
@@ -296,29 +313,34 @@ template<typename T>
 struct is_strong_handle :
 	std::integral_constant<bool,
 						   is_handle<T>::value &&
-						   (get_level<T>::value == Level::strong) >::type {};
+						   (mtl::get_level<T>::value == Level::strong) >::type {};
 
 template<typename T>
 struct is_causal_handle :
 	std::integral_constant<bool,
 						   is_handle<T>::value &&
-						   (get_level<T>::value == Level::causal) >::type {};
+						   (mtl::get_level<T>::value == Level::causal) >::type {};	
 
-template<typename T>
-std::enable_if_t<is_handle<T>::value,std::unique_ptr<T> > from_bytes(char *v){
-	return T::from_bytes(v);
+}
+namespace mutils{
+	
+	template<myria::Level l, myria::HandleAccess ha, typename T>
+	int to_bytes(const myria::Handle<l,ha,T>& h, char* v){
+		return h.to_bytes_hndl(v);
+	}
+	
+	template<myria::Level l, myria::HandleAccess ha, typename T>
+	int bytes_size(const myria::Handle<l,ha,T> &h){
+		return h.bytes_size_hndl();
+	}
+
+	template<typename T>
+	std::enable_if_t<myria::is_handle<T>::value,std::unique_ptr<T> > from_bytes(char *v){
+		return T::from_bytes(v);
+	}
 }
 
-template<Level l, HandleAccess ha, typename T>
-int to_bytes(const Handle<l,ha,T>& h, char* v){
-	return h.to_bytes_hndl(v);
-}
-
-template<Level l, HandleAccess ha, typename T>
-int bytes_size(const Handle<l,ha,T> &h){
-	return h.bytes_size_hndl();
-}
-
+/*
 //forward-declaring
 
 template<typename T>
@@ -335,4 +357,4 @@ int to_bytes(const Handle<l,ha,T>& h, char* v);
 template<Level l, HandleAccess ha, typename T>
 int bytes_size(const Handle<l,ha,T> &h);
 	
-}
+ */

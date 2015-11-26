@@ -8,6 +8,14 @@
 
 namespace myria{
 
+	namespace mtl {
+		struct Transaction;
+	}
+
+	namespace tracker {
+		class Tracker;
+	}
+
 #define GeneralRemoteObject_body				\
 	const int id = mutils::gensym();									\
 	virtual void setTransactionContext(mtl::TransactionContext*) = 0;	\
@@ -69,8 +77,8 @@ public:
 	static std::unique_ptr<RemoteObject> from_bytes(char* _v); 
 
 
-	friend struct Transaction;
-	friend class Tracker;
+	friend struct mtl::Transaction;
+	friend class tracker::Tracker;
 
 };
 

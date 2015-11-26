@@ -1,8 +1,11 @@
 #pragma once
 
-namespace myria { namespace mtl {
-
+namespace myria {
+	
 struct GDataStore;
+	namespace mtl {
+
+
 
 struct TransactionContext {
 

@@ -9,7 +9,7 @@ namespace myria { namespace tracker {
 //I'm just going to guess the names of the functions here.
 template<typename DS>
 auto wrapStore(DS &ds){
-	constexpr Level l = ds_level(mke_p<DS>());
+	constexpr Level l = ds_level(mutils::mke_p<DS>());
 	using newTomb_t = Handle<l, HandleAccess::all, Tracker::Tombstone>
 		(*) (DataStore<l>&, Name, const Tracker::Tombstone&);
 	using existingClock_t = std::unique_ptr<RemoteObject<l, Tracker::Clock> >

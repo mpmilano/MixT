@@ -9,10 +9,13 @@
 #include "Ends.hpp"
 #include "Ostreams.hpp"
 
-namespace myria{
+namespace myria{ namespace pgsql {
 
 using namespace pqxx;
 using namespace std;
+using namespace mtl;
+		using namespace tracker;
+		using namespace mutils;
 using Internals = SQLStore_impl::GSQLObject::Internals;
 
 namespace {
@@ -394,4 +397,5 @@ SQLStore_impl::~SQLStore_impl(){
 	delete default_connection;
 }
 
+}
 }

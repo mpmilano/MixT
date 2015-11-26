@@ -41,7 +41,7 @@ auto debug_failon_not_cached(const C& c, const E &e){
 	}
 	catch (const CacheLookupFailure&){
 		std::cerr << "found a failure point!" << std::endl;
-		std::cerr << "Type we failed on: " << type_name<E>() << std::endl;
+		std::cerr << "Type we failed on: " << mutils::type_name<E>() << std::endl;
 		print_more_info_if_reftemp(c,e);
 		return cached(c,e);
 	}
@@ -55,10 +55,10 @@ struct FreeExpr : public ConExpr<T, min_level_dref<Exprs...>::value > {
 	using level = std::integral_constant<Level, min_level_dref<Exprs...>::value>;
 	using Cache = std::conditional_t<runs_with_strong(level::value),StrongCache,CausalCache>;
 	const std::function<T (const Cache&, const std::tuple<Exprs ...>& )> f;
-	const int id = gensym();
+	const int id = mutils::gensym();
 
 	FreeExpr(int,
-			 std::function<T (const typename extract_type<decay<Exprs> >::type & ... )> _f,
+			 std::function<T (const typename extract_type<std::decay_t<Exprs> >::type & ... )> _f,
 			 Exprs... h)
 		:params(std::make_tuple(h...)),
 		 f([_f](const Cache& c, const std::tuple<Exprs...> &t){
@@ -74,7 +74,7 @@ struct FreeExpr : public ConExpr<T, min_level_dref<Exprs...>::value > {
 		}
 
 	auto handles() const {
-		return ::handles(params);
+		return mtl::handles(params);
 	}
 	
 	auto strongCall(StrongCache& cache, const StrongStore &heap) const{
@@ -135,7 +135,7 @@ struct FreeExpr : public ConExpr<T, min_level_dref<Exprs...>::value > {
 	}
 	
 	template<typename F>
-	FreeExpr(F f, Exprs... h):FreeExpr(0, convert(f), h...){}
+	FreeExpr(F f, Exprs... h):FreeExpr(0, mutils::convert(f), h...){}
 };
 
 template<typename T, typename... H>
@@ -143,9 +143,9 @@ struct is_ConExpr<FreeExpr<T,H...> > : std::true_type {};
 
 template<unsigned long long ID, typename T, typename... Vars>
 auto find_usage(const FreeExpr<T,Vars...> &op){
-	return fold(op.params,
+	return mutils::fold(op.params,
 				[](const auto &e, const auto &acc){
-					return choose_non_np(acc,find_usage<ID>(e));
+					return mutils::choose_non_np(acc,find_usage<ID>(e));
 				}
 				, nullptr);
 }

@@ -29,7 +29,7 @@ private:
 public:
 	const Handle<l,ha,T> t;
 	const Expr e;
-	const int id = gensym();
+	const int id = mutils::gensym();
 	Assignment(const Handle<l,ha,T> &t, const Expr & e)
 		:t(t),e(e)
 		{
@@ -41,7 +41,7 @@ public:
 		}
 
 	auto handles() const{
-		return ::handles(e);
+		return mtl::handles(e);
 	}
 
 	bool strongCall(StrongCache& c, const StrongStore &s) const {

@@ -20,9 +20,9 @@ struct TransactionBuilder : public Base_Builder{
 	
 	template<typename T>
 	std::enable_if_t<is_ConStatement<T>::value ,
-			  TransactionBuilder<Cat<Statements, std::tuple<T> > > >
+			  TransactionBuilder<mutils::Cat<Statements, std::tuple<T> > > >
 	operator/(const T &t) const {
-		TransactionBuilder<Cat<Statements, std::tuple<T> > >
+		TransactionBuilder<mutils::Cat<Statements, std::tuple<T> > >
 			r{std::tuple_cat(curr,std::make_tuple(t))};
 		return r;
 	}
