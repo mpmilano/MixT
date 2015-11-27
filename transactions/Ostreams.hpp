@@ -36,6 +36,8 @@ std::ostream & operator<<(std::ostream &os, const std::set<T>&){
 }
 
 std::ostream & operator<<(std::ostream &os, Level l);
+
+auto print_util(const std::shared_ptr<const std::nullptr_t>&);
 	
 	namespace mtl{
 
@@ -173,8 +175,6 @@ std::ostream & operator<<(std::ostream &os, const mtl::Assignment<l,ha,T,Expr> &
 	return os << "not printing assignments yet";
 }
 	}
-
-auto print_util(const std::shared_ptr<const std::nullptr_t>&);
 
 template<typename T, restrict(!std::is_same<T CMA std::nullptr_t>::value)>
 const auto print_util(const std::shared_ptr<const T> &sp){
