@@ -23,6 +23,7 @@ using namespace chrono;
 using namespace mutils;
 using namespace myria;
 using namespace mtl;
+using namespace pgsql;
 
 #ifdef NO_USE_STRONG
 constexpr bool causal_enabled = true;
@@ -36,10 +37,6 @@ const auto log_name = [](){
 	return std::string("/tmp/MyriaStore-output-") + std::to_string(pid);
 }();
 ofstream logFile;
-
-double better_rand(){
-	return ((double)rand()) / RAND_MAX;
-}
 
 //I'm guessing miliseconds.  Here's hoping!
 long getArrivalInterval(double arrival_rate) {

@@ -9,9 +9,9 @@
 #define DOBODY1(decl,Name,args...)										\
 	decl {																\
 	return																\
-		fold(*mke_p<std::tuple<STORE_LIST> >(),							\
+		mutils::fold(*mutils::mke_p<std::tuple<STORE_LIST> >(),			\
 			 [&](const auto &arg, const auto &accum){					\
-				 typedef decay<decltype(arg)> Store;					\
+				 typedef std::decay_t<decltype(arg)> Store;				\
 				 typedef decltype(Store::Name ## _impl(args)) ret_t;	\
 				 ret_t def;												\
 				 try {													\
@@ -22,7 +22,7 @@
 							"Did you actually implement this operation?"); \
 					 return ret;										\
 					 }													\
-				 catch (Transaction::ClassCastException e){				\
+				 catch (mtl::Transaction::ClassCastException e){		\
 					 return tuple_cons(def,accum);						\
 				 }														\
 				 },std::tuple<>());										\

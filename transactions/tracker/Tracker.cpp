@@ -50,11 +50,7 @@ void Tracker::assert_nonempty_tracking() const {
 	assert (!(i->tracking.empty()));
 }
 
-Tracker::Tracker():i{new Internals{}}{
-	timespec ts;
-	clock_gettime(CLOCK_REALTIME,&ts);
-	srand(ts.tv_nsec);
-}
+Tracker::Tracker():i{new Internals{}}{}
 
 Tracker::~Tracker(){
 	delete i;
@@ -151,7 +147,7 @@ void Tracker::onWrite(DataStore<Level::strong>& ds_real, Name name){
 		bool always_failed = true;
 		for (int asdf = 0; asdf < 100; ++asdf){
 			try{
-				auto nonce = rand();
+				auto nonce = long_rand();
 				write_lin_metadata(name,nonce,*i);
 				write_causal_tombstone(nonce,*i);
 				always_failed = false;
@@ -205,7 +201,7 @@ void Tracker::onRead(DataStore<Level::strong>& ds, Name name){
 				}
 				else {
 					std::cout << "waiting for " << tomb.name() << " to appear..." << std::endl;
-					std::this_thread::sleep_for(milliseconds(1));
+					std::this_thread::sleep_for(1ms);
 				}
 			}
 		}

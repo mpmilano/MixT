@@ -56,10 +56,7 @@ namespace {
 }
 
 int main(){
-	timespec ts;
-	clock_gettime(CLOCK_REALTIME,&ts);
-	srand(ts.tv_nsec);
-	start = rand();
+	start = long_rand();
 	auto &st = SQLStore<Level::causal>::inst(0); //tracker needs registration
 	assert(creation_and_existence());
 	assert(updating_values());

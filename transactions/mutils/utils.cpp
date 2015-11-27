@@ -41,4 +41,25 @@ std::vector<std::string> read_dir(const std::string &name){
 
 void break_here(){}
 
+	namespace{
+		bool init_rand(){
+			static bool init = [&](){
+				timespec ts;
+				clock_gettime(CLOCK_REALTIME,&ts);
+				srand48(ts.tv_nsec);
+				return true;}();
+		return init;
+		}
+	}
+	
+double better_rand(){
+	discard(init_rand());
+	return drand48();
+}
+
+	unsigned long long long_rand() {
+		discard(init_rand());
+		return lrand48();
+	}
+
 }

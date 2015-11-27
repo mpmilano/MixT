@@ -315,4 +315,9 @@ auto map(const std::vector<T> &v, Ret (*f) (const T&) ){
 template <typename T>
 using is_vector = std::is_same<T, std::vector< typename T::value_type,
 											   typename T::allocator_type > >;
+
+double better_rand();
+
+unsigned long long long_rand();
+
 }

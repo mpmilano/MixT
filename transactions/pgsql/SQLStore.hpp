@@ -133,7 +133,7 @@ public:
 
     template<HandleAccess ha, typename T>
     auto newObject(const T& init){
-        return newObject<ha,T>(rand(),init);
+        return newObject<ha,T>(long_rand(),init);
     }
 
 	template<HandleAccess ha, typename T>
