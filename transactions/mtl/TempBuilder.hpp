@@ -363,7 +363,7 @@ auto append_helper(const A& a, const B &b, std::true_type*){
 
 template<typename A, typename B>
 auto append_helper(const A& prevBuilder, const B &this_decl, std::false_type*){
-	return fold(
+	return mutils::fold(
 		this_decl.cs,
 		[](const auto &e, const auto &acc){
 			return append(acc,e);
@@ -389,8 +389,8 @@ auto append(const ImmutableDeclarationBuilder<PrevBuilder, ID, CS, l, b, temp>  
 }
 
 
-#define MutDeclaration(c) MutVarScopeBegin<unique_id<(sizeof(c) / sizeof(char)) - 1>(c)>{c}
-#define ImmutDeclaration(c) ImmutVarScopeBegin<unique_id<(sizeof(c) / sizeof(char)) - 1>(c)>{c}
+#define MutDeclaration(c) mtl::MutVarScopeBegin<mutils::unique_id<(sizeof(c) / sizeof(char)) - 1>(c)>{c}
+#define ImmutDeclaration(c) mtl::ImmutVarScopeBegin<mutils::unique_id<(sizeof(c) / sizeof(char)) - 1>(c)>{c}
 
 
 

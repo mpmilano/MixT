@@ -3,8 +3,9 @@
 #include <string>
 
 using namespace std;
+using namespace myria;
 
 int main(){
 	Handle<Level::strong, HandleAccess::all, int> h1;
-	TRANSACTION(let_ifValid(x) = h1 IN (x = string("death!")));
+	TRANSACTION(let_remote(x) = h1 IN (x = string("death!")));
 }

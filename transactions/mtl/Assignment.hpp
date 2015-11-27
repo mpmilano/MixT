@@ -2,6 +2,7 @@
 #include "Handle.hpp"
 #include "Temporary.hpp"
 #include "RefTemporary.hpp"
+#include "HandleCaching.hpp"
 
 namespace myria { namespace mtl {
 

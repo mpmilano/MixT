@@ -4,7 +4,7 @@
 #include "FinalHeader.hpp"
 
 using namespace myria;
-using namespace mpgsql;
+using namespace pgsql;
 
 namespace {
 
@@ -66,7 +66,7 @@ int main(){
 	assert(storing_itself());
 	causal_basic(st);
 	//add a causal object to the tracking set
-	Tracker &t = Tracker::global_tracker();
+	auto &t = tracker::Tracker::global_tracker();
 	t.assert_nonempty_tracking();
 	assert(creation_and_existence());
 	assert(updating_values());

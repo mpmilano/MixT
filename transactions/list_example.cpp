@@ -41,10 +41,10 @@ int main() {
 				print_str("loop"),
 				print_str("hd"),
 				print(hd),
-				let_dereferenced(tmp) = hd IN (
+				let_remote(tmp) = hd IN (
 					print_str("tmp"),
 					print(tmp),
-					let_dereferenced(weak_val) = $(tmp,val) IN (
+					let_remote(weak_val) = $(tmp,val) IN (
 						do_op(Increment,weak_val)
 						),
 					hd = $(tmp,next)

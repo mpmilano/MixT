@@ -5,8 +5,8 @@
 
 namespace myria { namespace mtl {
 
-#define MutAssigner(c) MutCreator<unique_id<(sizeof(c) / sizeof(char)) - 1>(c)>{c}
-#define ImmutAssigner(c) ImmutCreator<unique_id<(sizeof(c) / sizeof(char)) - 1>(c)>{c}
+#define MutAssigner(c) MutCreator<mutils::unique_id<(sizeof(c) / sizeof(char)) - 1>(c)>{c}
+#define ImmutAssigner(c) ImmutCreator<mutils::unique_id<(sizeof(c) / sizeof(char)) - 1>(c)>{c}
 
 template<unsigned long long ID>
 struct MutCreator {

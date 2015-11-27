@@ -31,7 +31,7 @@ struct Temporary : public GeneralTemp, public ConStatement<get_level<T>::value> 
 
 	const T t;
 	const int store_id;
-	Temporary(const std::string name, const T& t):GeneralTemp(name,to_string(t)),t(t),store_id(std::hash<std::string>()(name)){
+	Temporary(const std::string name, const T& t):GeneralTemp(name,mutils::to_string(t)),t(t),store_id(std::hash<std::string>()(name)){
 		static_assert(get_level<Temporary>::value == get_level<T>::value,"error: you overrode get_level wrong for Temporaries");
 	}
 

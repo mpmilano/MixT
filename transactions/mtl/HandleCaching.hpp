@@ -68,7 +68,7 @@ Handle<Level::strong,ha,T> run_ast_strong(const StrongCache& c, const StrongStor
 		std::shared_ptr<T> ptr {nullptr};
 		bool valid_only = false;
 		if (ctx == context::t::read){
-			ptr = heap_copy(h.get());
+			ptr = mutils::heap_copy(h.get());
 		}
 		else if (ctx == context::t::validity){
 			valid_only = h.isValid();

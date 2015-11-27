@@ -89,8 +89,8 @@ public:
 
 				std::set<std::shared_ptr<GeneralRemoteObject<Level::strong> > > collected_objs_s;
 				std::set<std::shared_ptr<GeneralRemoteObject<Level::causal> > > collected_objs_c;
-				foreach(s.curr, [&](const auto &e){
-						foreach(e.handles(),[&](const auto &h){
+				mutils::foreach(s.curr, [&](const auto &e){
+						mutils::foreach(e.handles(),[&](const auto &h){
 								any = true;
 								Transaction::collected_objs_insert(collected_objs_s, collected_objs_c,h._ro);
 							});});
@@ -168,7 +168,7 @@ public:
 			}),
 		print([s](std::ostream &os) -> std::ostream& {
 				os << "printing AST!" << std::endl;
-				fold(s.curr,[&os](const auto &e, int) -> int
+				mutils::fold(s.curr,[&os](const auto &e, int) -> int
 					 {os << e << std::endl; return 0; },0);
 				os << "done printing AST!" << std::endl;
 				return os;

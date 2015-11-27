@@ -35,6 +35,7 @@ struct Operation;
 		run_ast_causal(mtl::CausalCache& cache, const mtl::CausalStore &s,
 							const Handle<Level::strong,ha,T2>& h);
 
+
 	}
 
 template<Level l, HandleAccess HA>
