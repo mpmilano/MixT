@@ -54,10 +54,10 @@ int main(){
 			CSInt<Level::causal,4>() /
 			ref("f")
 			}
-		ELSE(causal) CSInt<Level::causal,3>()
+	ELSE(causal) CSInt<Level::causal,3>()
 		FI
 		CSInt<Level::causal,0>() / 
-	END_TRANSACTION;
+		END_TRANSACTION;
 
 	std::cout << "building transactions with macros and such" << std::endl;
 

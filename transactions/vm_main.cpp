@@ -40,12 +40,12 @@ ofstream logFile;
 
 //I'm guessing miliseconds.  Here's hoping!
 long getArrivalInterval(double arrival_rate) {
-	 // exponential
+	// exponential
 	constexpr double thousand = -1000.0;
 	double U = better_rand();
 	double T = thousand * log(U) / arrival_rate;
 	return round(T);
- }
+}
 
 
 int get_name(double alpha){
@@ -98,13 +98,13 @@ int main(){
 							else hndl.get();
 						auto end = high_resolution_clock::now() - launch_clock;
 						log_messages << "duration: " << duration_cast<microseconds>(end).count() - start_time
-									 << ((name % mod_constant) == 0 ? " read/write" : " read") << std::endl;
+						<< ((name % mod_constant) == 0 ? " read/write" : " read") << std::endl;
 						break;
 					}
 					catch(const Transaction::SerializationFailure &r){
 						log_messages << "serialization failure: "
-									 << duration_cast<microseconds>(high_resolution_clock::now() - launch_clock).count() - start_time
-									 << std::endl;
+						<< duration_cast<microseconds>(high_resolution_clock::now() - launch_clock).count() - start_time
+						<< std::endl;
 						continue;
 					}
 				}
@@ -149,15 +149,15 @@ int main(){
 		futures->emplace_back(launch());
 		std::this_thread::sleep_for(milliseconds(getArrivalInterval(20)));
 		/*
-		{ //clean up the log of messages
-			decltype(futures) nf{new future_list()};
-			for (auto &f : *futures){
-				if (f.valid()){
-					nf->push_back(f);
-				}
-			}
-			futures.reset(nf.release());
-		}//*/
+		  { //clean up the log of messages
+		  decltype(futures) nf{new future_list()};
+		  for (auto &f : *futures){
+		  if (f.valid()){
+		  nf->push_back(f);
+		  }
+		  }
+		  futures.reset(nf.release());
+		  }//*/
 	}
 	printer.join();
 }

@@ -3,148 +3,148 @@
 
 namespace myria { namespace mtl {
 
-    template<typename T>
-    struct CachedObject : public RemoteObject<Level::strong,T> {
-      std::shared_ptr<T> t;
-      DataStore<Level::strong> &st;
-      int nm;
-      bool is_valid_only;
-      CachedObject(decltype(t) t, DataStore<Level::strong> &st, Name name, bool is_valid_only)
-	:t(std::move(t)),st(st),nm(name),is_valid_only(is_valid_only){}
+		template<typename T>
+		struct CachedObject : public RemoteObject<Level::strong,T> {
+			std::shared_ptr<T> t;
+			DataStore<Level::strong> &st;
+			int nm;
+			bool is_valid_only;
+			CachedObject(decltype(t) t, DataStore<Level::strong> &st, Name name, bool is_valid_only)
+				:t(std::move(t)),st(st),nm(name),is_valid_only(is_valid_only){}
 	
-      TransactionContext* currentTransactionContext(){
-	assert(false && "you probably didn't mean to call this");
-      }
+			TransactionContext* currentTransactionContext(){
+				assert(false && "you probably didn't mean to call this");
+			}
 	
-      void setTransactionContext(TransactionContext* tc){
-	assert(false && "you probably didn't mean to call this");
-      }	
+			void setTransactionContext(TransactionContext* tc){
+				assert(false && "you probably didn't mean to call this");
+			}	
 	
-      const T& get() {
-	assert(!is_valid_only);
-	return *t;
-      }
+			const T& get() {
+				assert(!is_valid_only);
+				return *t;
+			}
 	
-      void put(const T&) {
-	assert(false && "error: modifying strong Handle in causal context! the type system is supposed to prevent this!");
-      }
+			void put(const T&) {
+				assert(false && "error: modifying strong Handle in causal context! the type system is supposed to prevent this!");
+			}
 	
-      bool ro_isValid() const {
-	return t.get() || is_valid_only;
-      }
+			bool ro_isValid() const {
+				return t.get() || is_valid_only;
+			}
 	
-      const DataStore<Level::strong>& store() const {
-	return st;
-      }
+			const DataStore<Level::strong>& store() const {
+				return st;
+			}
 
-      Name name() const {
-	return nm;
-      }
+			Name name() const {
+				return nm;
+			}
 	
-      DataStore<Level::strong>& store() {
-	return st;
-      }
+			DataStore<Level::strong>& store() {
+				return st;
+			}
 	
-      int bytes_size() const {
-	assert(false && "wait why are you ... stop!");
-      }
+			int bytes_size() const {
+				assert(false && "wait why are you ... stop!");
+			}
 	
-      int to_bytes(char* v) const {
-	assert(false && "wait why are you ... stop!");
-      }
+			int to_bytes(char* v) const {
+				assert(false && "wait why are you ... stop!");
+			}
 		
-    };
+		};
 
-    template<HandleAccess ha, typename T>
-    Handle<Level::strong,ha,T> run_ast_strong(const StrongCache& c, const StrongStore&, const Handle<Level::strong,ha,T>& _h) {
+		template<HandleAccess ha, typename T>
+		Handle<Level::strong,ha,T> run_ast_strong(const StrongCache& c, const StrongStore&, const Handle<Level::strong,ha,T>& _h) {
 
-      auto ctx = context::current_context(c);
-      auto h = _h.clone();
+			auto ctx = context::current_context(c);
+			auto h = _h.clone();
 
-      assert(ctx != context::t::unknown);
-      //TODO: this will do extra fetches.  Need to think about whether that's important. 
+			assert(ctx != context::t::unknown);
+			//TODO: this will do extra fetches.  Need to think about whether that's important. 
 
-      if (ctx == context::t::read || ctx == context::t::validity){
-	std::shared_ptr<T> ptr {nullptr};
-	bool valid_only = false;
-	if (ctx == context::t::read){
-	  ptr = mutils::heap_copy(h.get());
-	}
-	else if (ctx == context::t::validity){
-	  valid_only = h.isValid();
-	}
-	return 
-	  make_handle<Level::strong,ha,T,CachedObject<T> >
-	  (ptr,h.store(),h.name(),valid_only);
-      }
-      else return h;
-    }
+			if (ctx == context::t::read || ctx == context::t::validity){
+				std::shared_ptr<T> ptr {nullptr};
+				bool valid_only = false;
+				if (ctx == context::t::read){
+					ptr = mutils::heap_copy(h.get());
+				}
+				else if (ctx == context::t::validity){
+					valid_only = h.isValid();
+				}
+				return 
+					make_handle<Level::strong,ha,T,CachedObject<T> >
+					(ptr,h.store(),h.name(),valid_only);
+			}
+			else return h;
+		}
 
-    template<typename T>
-    struct LocalObject : public RemoteObject<Level::strong,T> {
-      RemoteObject<Level::strong,T>& r;
-      LocalObject(decltype(r) t)
-	:r(t){}
+		template<typename T>
+		struct LocalObject : public RemoteObject<Level::strong,T> {
+			RemoteObject<Level::strong,T>& r;
+			LocalObject(decltype(r) t)
+				:r(t){}
 		
-      TransactionContext* currentTransactionContext(){
-	assert(false && "you probably didn't mean to call this");
-      }
+			TransactionContext* currentTransactionContext(){
+				assert(false && "you probably didn't mean to call this");
+			}
 		
-      void setTransactionContext(TransactionContext* tc){
-	assert(false && "you probably didn't mean to call this");
-      }	
+			void setTransactionContext(TransactionContext* tc){
+				assert(false && "you probably didn't mean to call this");
+			}	
 		
-      const T& get() {
-	//if the assert passes, then this was already fetched.
-	//if the assert fails, then either we shouldn't have gone this deep
-	//with causal calls,
-	//or we have an info-flow violation,
-	//or we can't infer the right level for operations (which would be weird).
+			const T& get() {
+				//if the assert passes, then this was already fetched.
+				//if the assert fails, then either we shouldn't have gone this deep
+				//with causal calls,
+				//or we have an info-flow violation,
+				//or we can't infer the right level for operations (which would be weird).
 
-	if(auto *co = dynamic_cast<CachedObject<T>* >(&r)){
-	  return co->get();
-	}
-	else assert(false && "Error: attempt get on non CachedObject. This should have been cached earlier");
-      }
+				if(auto *co = dynamic_cast<CachedObject<T>* >(&r)){
+					return co->get();
+				}
+				else assert(false && "Error: attempt get on non CachedObject. This should have been cached earlier");
+			}
 		
-      void put(const T&) {
-	assert(false && "error: modifying strong Handle in causal context! the type system is supposed to prevent this!");
-      }
+			void put(const T&) {
+				assert(false && "error: modifying strong Handle in causal context! the type system is supposed to prevent this!");
+			}
 		
-      bool ro_isValid() const {
-	if(auto *co = dynamic_cast<CachedObject<T>* >(&r)){
-	  return co->ro_isValid();
-	}
-	else assert(false && "Error: attempt isValid on non CachedObject. This should have been cached earlier");
-      }
+			bool ro_isValid() const {
+				if(auto *co = dynamic_cast<CachedObject<T>* >(&r)){
+					return co->ro_isValid();
+				}
+				else assert(false && "Error: attempt isValid on non CachedObject. This should have been cached earlier");
+			}
 		
-      const DataStore<Level::strong>& store() const {
-	return r.store();
-      }
+			const DataStore<Level::strong>& store() const {
+				return r.store();
+			}
 		
-      Name name() const {
-	return r.name();
-      }
+			Name name() const {
+				return r.name();
+			}
 		
-      DataStore<Level::strong>& store() {
-	return r.store();
-      }
+			DataStore<Level::strong>& store() {
+				return r.store();
+			}
 		
-      int bytes_size() const {
-	assert(false && "wait why are you ... stop!");
-      }
+			int bytes_size() const {
+				assert(false && "wait why are you ... stop!");
+			}
 		
-      int to_bytes(char* v) const {
-	assert(false && "wait why are you ... stop!");
-      }
+			int to_bytes(char* v) const {
+				assert(false && "wait why are you ... stop!");
+			}
 		
-    };	
+		};	
 
-    template<HandleAccess ha, typename T>
-    Handle<Level::strong,ha,T> run_ast_causal(mtl::CausalCache& cache, const mtl::CausalStore &s, const Handle<Level::strong,ha,T>& h) {
-      return 
-	make_handle<Level::strong,ha,T,LocalObject<T> >
-	(h.remote_object());
-    }
+		template<HandleAccess ha, typename T>
+		Handle<Level::strong,ha,T> run_ast_causal(mtl::CausalCache& cache, const mtl::CausalStore &s, const Handle<Level::strong,ha,T>& h) {
+			return 
+				make_handle<Level::strong,ha,T,LocalObject<T> >
+				(h.remote_object());
+		}
 
-  } }
+	} }

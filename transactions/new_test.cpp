@@ -35,57 +35,57 @@ int main(){
 		//{
 
 
-			//FileStore<Level::causal> fsc;
-			auto &fs = SQLStore<Level::strong>::inst(0);
-			discard(fs);
-			/* this code block only makes sense if you have a "collection" available as a native object
-			auto num_dir = fs.newCollection<HandleAccess::all, int>();
-			{
-				std::set<int> test;
-				test.insert(13);
-				num_dir.put(test);
-				num_dir.get(); //just to see if it'll crash
-			}
+		//FileStore<Level::causal> fsc;
+		auto &fs = SQLStore<Level::strong>::inst(0);
+		discard(fs);
+		/* this code block only makes sense if you have a "collection" available as a native object
+		   auto num_dir = fs.newCollection<HandleAccess::all, int>();
+		   {
+		   std::set<int> test;
+		   test.insert(13);
+		   num_dir.put(test);
+		   num_dir.get(); //just to see if it'll crash
+		   }
 
-			TRANSACTION(
-				let_mutable(tmp2) = true IN (
-				let_mutable(tmp) = true IN (
-					IF (tmp) THEN(
-						do_op(Insert,num_dir,42)
-						),
-					tmp = free_expr(bool,num_dir, num_dir.empty());,
-					WHILE (!tmp) DO (dummy1, tmp = true),
-					IF (isValid(num_dir)) THEN (dummy1;))
-					)
-				);
-		}
+		   TRANSACTION(
+		   let_mutable(tmp2) = true IN (
+		   let_mutable(tmp) = true IN (
+		   IF (tmp) THEN(
+		   do_op(Insert,num_dir,42)
+		   ),
+		   tmp = free_expr(bool,num_dir, num_dir.empty());,
+		   WHILE (!tmp) DO (dummy1, tmp = true),
+		   IF (isValid(num_dir)) THEN (dummy1;))
+		   )
+		   );
+		   }
 
 
-		std::cout << std::endl << "now doing causal" << std::endl << std::endl;
+		   std::cout << std::endl << "now doing causal" << std::endl << std::endl;
 
-		{
+		   {
 
-			auto &fs = SQLStore<Level::causal>::filestore_instance(0);
+		   auto &fs = SQLStore<Level::causal>::filestore_instance(0);
 
-			auto num_dir = fs.newCollection<HandleAccess::all, int>();
-			{
-				std::set<int> test;
-				test.insert(13);
-				num_dir.put(test);
-				num_dir.get(); //just to see if it'll crash
-			}
+		   auto num_dir = fs.newCollection<HandleAccess::all, int>();
+		   {
+		   std::set<int> test;
+		   test.insert(13);
+		   num_dir.put(test);
+		   num_dir.get(); //just to see if it'll crash
+		   }
 
-			TRANSACTION(
-					let_mutable(tmp) = true IN (
-					IF (tmp) THEN(
-						do_op(Insert,num_dir,42)
-						),
-					tmp = free_expr(bool,num_dir, num_dir.empty()),
-					WHILE (!tmp) DO (dummy2, tmp = true),
-					IF (isValid(num_dir)) THEN (dummy2;)
-												 )
-				);
-		}
+		   TRANSACTION(
+		   let_mutable(tmp) = true IN (
+		   IF (tmp) THEN(
+		   do_op(Insert,num_dir,42)
+		   ),
+		   tmp = free_expr(bool,num_dir, num_dir.empty()),
+		   WHILE (!tmp) DO (dummy2, tmp = true),
+		   IF (isValid(num_dir)) THEN (dummy2;)
+		   )
+		   );
+		   }
 
 		//*/
 	}
