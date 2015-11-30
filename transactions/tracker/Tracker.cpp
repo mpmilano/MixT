@@ -13,6 +13,7 @@
 #include <thread>
 #include <unistd.h>
 
+#include "CooperativeCache.hpp"
 #include "Tracker_common.hpp"
 #include "CompactSet.hpp"
 #include "Tracker_support_structs.hpp"
@@ -50,8 +51,12 @@ void Tracker::assert_nonempty_tracking() const {
 	assert (!(i->tracking.empty()));
 }
 
+		namespace{
+			static constexpr int cache_port = (int{CACHE_PORT} > 0 ? int{CACHE_PORT} : 9889);
+		}
+		
 Tracker::Tracker():i{new Internals{}}{
-	i->cache.listen_on(CACHE_PORT);
+	i->cache.listen_on(cache_port);
 }
 
 Tracker::~Tracker(){
@@ -134,7 +139,7 @@ namespace {
 		static int ip_addr{[](){
 				int ret = 0;
 				std::string static_addr {MY_IP};
-				if (static_addr.length == 0) static_addr = "127.0.0.1";
+				if (static_addr.length() == 0) static_addr = "127.0.0.1";
 				char* iparr = (char*) &ret;
 				std::stringstream s(static_addr);
 				char ch; //to temporarily store the '.'
@@ -163,7 +168,7 @@ void Tracker::onWrite(DataStore<Level::strong>& ds_real, Name name){
 		bool always_failed = true;
 		for (int asdf = 0; asdf < 100; ++asdf){
 			try{
-				auto nonce = long_rand();
+				auto nonce = mutils::long_rand();
 				write_lin_metadata(name,nonce,*i);
 				write_causal_tombstone(nonce,*i);
 				always_failed = false;
@@ -217,14 +222,13 @@ void Tracker::onRead(DataStore<Level::strong>& ds, Name name){
 				}
 				else {
 					std::cout << "waiting for " << tomb.name() << " to appear..." << std::endl;
-					if (auto bundle = i->cache.get(tomb, CACHE_PORT)){
+					std::this_thread::sleep_for(10ms);
+					auto bundle = i->cache.get(tomb, cache_port);
 						//bundle contains a set of (object-name, version-timestamp, object-as-bytes)
 						//we shouldn't actually do the bundle fetch here.
 						//what we should do is start the bundle fetch here asynchronously,
 						//and block any subsequent causal operations until either the bundle
 						//fetch completes or the tombstone shows up at causal storage.
-					}
-					else std::this_thread::sleep_for(10ms);
 				}
 			}
 		}

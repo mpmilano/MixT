@@ -5,7 +5,7 @@
 #define CMA ,
 
 /*#define TRANS_CONS(x...) { auto prev2 = append(prev, curr);	\
-	{ auto prev = prev2; { x } } }
+  { auto prev = prev2; { x } } }
 */
 #define TRANS_CONS(x...) {auto curr = x ;{ auto prev2 = append(prev,curr); { auto prev = prev2;
 #define STANDARD_BEGIN(x...) (x);

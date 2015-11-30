@@ -51,50 +51,50 @@
 //this "preserves" x, preventing it from being de-referenced by anything.
 #define $$(x) preserve(x)
 
-#define do_op2(Name, n, _arg...)										\
-	[&](){																\
-		alphabet_assign(_arg);											\
-		using FindUsage = FindUsages<alphabet_on_each(decltype, n)>;	\
-		struct OperateImpl : public FindUsage,							\
-							 public ConStatement<min_level_dref<alphabet_on_each(decltype,n)>::value >{ \
-			const int id = gensym();									\
-			argcnt_shared_ptr(n)										\
-				const std::string name = #Name;							\
-			OperateImpl(alphabet_args(n) /*const decltype(a) &a*/ ):	\
-				FindUsage(alphabet(n)),									\
-				argcnt_on_each_alphabet(n,shared_copy)					\
-				/*arg(shared_copy(a))*/{}								\
-																		\
-			auto handles() const {										\
-				return handles_helper(argcnt(n));						\
-																		\
-			}															\
-																		\
-			auto strongCall(StrongCache& c CMA const StrongStore &s CMA std::true_type*) const { \
-				auto ret = make_PreOp(id,Name(argcnt_map_dref(trans_op_arg,n,c,s,))) \
-					(c,argcnt(n));										\
-				c.emplace<decltype(ret)>(id,ret);						\
-				return ret;												\
-			}															\
-																		\
-			void strongCall(StrongCache& c CMA const StrongStore &s CMA std::false_type*) const { \
-			}															\
-			auto strongCall(StrongCache& c CMA  const StrongStore &s) const { \
-				run_strong_helper(c,s,argcnt(n));						\
-				choose_strong<get_level<OperateImpl>::value> choice{nullptr}; \
-				return strongCall(c,s,choice);							\
-			}															\
-																		\
-			auto causalCall(CausalCache& c CMA  const CausalStore &s) const { \
-				run_causal_helper(c,s,argcnt(n));						\
-				using R = decltype(make_PreOp(id,Name(argcnt_map_dref(trans_op_arg,n,c,s,))) \
-								   (c,argcnt(n)));						\
-				if(runs_with_strong(get_level<OperateImpl>::value)) return c.template get<R>(id); \
-				else return make_PreOp(id,Name(argcnt_map_dref(trans_op_arg,n,c,s,))) \
-									   (c,argcnt(n));		\
-			}															\
-		};																\
-		OperateImpl r{alphabet(n)}; return r;				\
-	} ()
+#define do_op2(Name, n, _arg...)					\
+  [&](){								\
+    alphabet_assign(_arg);						\
+    using FindUsage = FindUsages<alphabet_on_each(decltype, n)>;	\
+    struct OperateImpl : public FindUsage,				\
+			 public ConStatement<min_level_dref<alphabet_on_each(decltype,n)>::value >{ \
+      const int id = gensym();						\
+      argcnt_shared_ptr(n)						\
+	const std::string name = #Name;					\
+      OperateImpl(alphabet_args(n) /*const decltype(a) &a*/ ):		\
+	FindUsage(alphabet(n)),						\
+	argcnt_on_each_alphabet(n,shared_copy)				\
+	/*arg(shared_copy(a))*/{}					\
+									\
+      auto handles() const {						\
+	return handles_helper(argcnt(n));				\
+									\
+      }									\
+									\
+      auto strongCall(StrongCache& c CMA const StrongStore &s CMA std::true_type*) const { \
+	auto ret = make_PreOp(id,Name(argcnt_map_dref(trans_op_arg,n,c,s,))) \
+	  (c,argcnt(n));						\
+	c.emplace<decltype(ret)>(id,ret);				\
+	return ret;							\
+      }									\
+									\
+      void strongCall(StrongCache& c CMA const StrongStore &s CMA std::false_type*) const { \
+      }									\
+      auto strongCall(StrongCache& c CMA  const StrongStore &s) const { \
+	run_strong_helper(c,s,argcnt(n));				\
+	choose_strong<get_level<OperateImpl>::value> choice{nullptr};	\
+	return strongCall(c,s,choice);					\
+      }									\
+									\
+      auto causalCall(CausalCache& c CMA  const CausalStore &s) const { \
+	run_causal_helper(c,s,argcnt(n));				\
+	using R = decltype(make_PreOp(id,Name(argcnt_map_dref(trans_op_arg,n,c,s,))) \
+			   (c,argcnt(n)));				\
+	if(runs_with_strong(get_level<OperateImpl>::value)) return c.template get<R>(id); \
+	else return make_PreOp(id,Name(argcnt_map_dref(trans_op_arg,n,c,s,))) \
+	       (c,argcnt(n));						\
+      }									\
+    };									\
+    OperateImpl r{alphabet(n)}; return r;				\
+  } ()
 
 #define do_op(name,...) STANDARD_BEGIN(do_op2(name,VA_NARGS(__VA_ARGS__), __VA_ARGS__))

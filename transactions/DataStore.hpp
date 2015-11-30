@@ -6,27 +6,27 @@
 
 namespace myria{
 
-template<Level l>
-class DataStore;
+  template<Level l>
+  class DataStore;
 
-template<>
-class DataStore<Level::strong> : public GDataStore{
-public:
+  template<>
+  class DataStore<Level::strong> : public GDataStore{
+  public:
 
-	DataStore():GDataStore{Level::strong}{}
+    DataStore():GDataStore{Level::strong}{}
 	
-	DECLARED_OPERATIONS
-};
+    DECLARED_OPERATIONS
+  };
 
-template<>
-class DataStore<Level::causal> : public GDataStore{
-public:
+  template<>
+  class DataStore<Level::causal> : public GDataStore{
+  public:
 
-	DataStore():GDataStore{Level::causal}{}
+    DataStore():GDataStore{Level::causal}{}
 
-	virtual const std::array<int, NUM_CAUSAL_GROUPS>& local_time() const = 0;
+    virtual const std::array<int, NUM_CAUSAL_GROUPS>& local_time() const = 0;
 	
-	DECLARED_OPERATIONS
+    DECLARED_OPERATIONS
 
-};
+  };
 }

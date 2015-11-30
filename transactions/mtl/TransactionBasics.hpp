@@ -2,18 +2,18 @@
 
 namespace myria {
 	
-struct GDataStore;
-	namespace mtl {
+  struct GDataStore;
+  namespace mtl {
 
 
 
-struct TransactionContext {
+    struct TransactionContext {
 
-	virtual bool commit() = 0;
-	virtual GDataStore& store() = 0 ;
-	virtual ~TransactionContext(){}
+      virtual bool commit() = 0;
+      virtual GDataStore& store() = 0 ;
+      virtual ~TransactionContext(){}
 	
-};
+    };
 
 
-	} }
+  } }
