@@ -42,15 +42,17 @@ struct Tracker::Internals{
 	Clock global_min;
 
 	std::map<int, pair<Clock, vector<char> > > tracking;
-        std::set<int> exceptions;
-	
+	std::set<int> exceptions;
+	CooperativeCache cache;
 };
 
 void Tracker::assert_nonempty_tracking() const {
 	assert (!(i->tracking.empty()));
 }
 
-Tracker::Tracker():i{new Internals{}}{}
+Tracker::Tracker():i{new Internals{}}{
+	i->cache.listen_on(CACHE_PORT);
+}
 
 Tracker::~Tracker(){
 	delete i;
@@ -127,6 +129,20 @@ namespace {
 		const Tracker::Tombstone t {nonce};
 		get<TDS::newTomb>(*i.causalDS)(*i.registeredCausal,t.name(), t);
 	}
+	
+	int get_ip() {
+		static int ip_addr{[](){
+				int ret = 0;
+				std::string static_addr {MY_IP};
+				if (static_addr.length == 0) static_addr = "127.0.0.1";
+				char* iparr = (char*) &ret;
+				std::stringstream s(static_addr);
+				char ch; //to temporarily store the '.'
+				s >> iparr[0] >> ch >> iparr[1] >> ch >> iparr[2] >> ch >> iparr[3];
+				return ret;
+			}()};
+		return ip_addr;
+	}
 }
 
 void Tracker::onWrite(DataStore<Level::strong>& ds_real, Name name){
@@ -134,11 +150,11 @@ void Tracker::onWrite(DataStore<Level::strong>& ds_real, Name name){
         static const wlm_t write_lin_metadata= [](Name name, Tracker::Nonce nonce, Tracker::Internals& t){
             auto meta_name = make_lin_metaname(name);
             if (get<TDS::exists>(*t.strongDS)(*t.registeredStrong,meta_name)){
-                get<TDS::existingTomb>(*t.strongDS)(*t.registeredStrong,meta_name)->put(Tracker::Tombstone{nonce});
+                get<TDS::existingTomb>(*t.strongDS)(*t.registeredStrong,meta_name)->put(Tracker::Tombstone{nonce,get_ip()});
             }
             else get<TDS::newTomb>(*t.strongDS)(*t.registeredStrong,
                                                 meta_name,
-                                                Tracker::Tombstone{nonce});
+                                                Tracker::Tombstone{nonce,get_ip()});
         };
 
 	assert(&ds_real == i->registeredStrong);
@@ -201,7 +217,14 @@ void Tracker::onRead(DataStore<Level::strong>& ds, Name name){
 				}
 				else {
 					std::cout << "waiting for " << tomb.name() << " to appear..." << std::endl;
-					std::this_thread::sleep_for(1ms);
+					if (auto bundle = i->cache.get(tomb, CACHE_PORT)){
+						//bundle contains a set of (object-name, version-timestamp, object-as-bytes)
+						//we shouldn't actually do the bundle fetch here.
+						//what we should do is start the bundle fetch here asynchronously,
+						//and block any subsequent causal operations until either the bundle
+						//fetch completes or the tombstone shows up at causal storage.
+					}
+					else std::this_thread::sleep_for(10ms);
 				}
 			}
 		}

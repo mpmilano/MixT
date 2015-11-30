@@ -69,7 +69,7 @@ ConExpr.o:
 WhileBuilder.o:
 	clang++ -c */WhileBuilder.cpp $(clangFlags)
 CooperativeCache.o:
-	clang++ -c */CooperativeCache.cpp $(clangFlags)
+	clang++ -c -DMAX_THREADS=$(MAX_THREADS)  */CooperativeCache.cpp $(clangFlags)
 
 run: test
 	PGHOST='127.0.0.1' PGPORT='5432' PGDATABASE='DataStore' PGUSER='research' PGPASSWORD='swimsand' ./test

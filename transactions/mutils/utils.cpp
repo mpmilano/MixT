@@ -61,5 +61,6 @@ double better_rand(){
 		discard(init_rand());
 		return lrand48();
 	}
-
+	
 }
+

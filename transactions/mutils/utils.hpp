@@ -320,4 +320,5 @@ double better_rand();
 
 unsigned long long long_rand();
 
+
 }

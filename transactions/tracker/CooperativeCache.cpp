@@ -1,11 +1,13 @@
-//move this into a source file eventually
-#include "CooperativeCache.hpp"
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <unistd.h>
 #include <netdb.h>
 #include <thread>
+#include "ctpl_stl.h"
+#include "CooperativeCache.hpp"
+
+using namespace mutils;
 
 namespace myria { namespace tracker { 
 
@@ -73,84 +75,82 @@ void CooperativeCache::respond_to_request(int socket){
 	else assert(write(socket,&b,sizeof(b)) >= 0);
 }
 
-std::unique_ptr<CooperativeCache::obj_bundle> CooperativeCache::get(Tracker::Nonce nonce, int portno){
-	{
-		lock l{m};
-		if (cache.count(nonce) > 0) return heap_copy(cache.at(nonce));
-	}
-	std::unique_ptr<obj_bundle> nothingness{nullptr};
-	int sockfd;
-	struct sockaddr_in serv_addr;
-	struct hostent *server;
-
-	sockfd = socket(AF_INET, SOCK_STREAM, 0);
-	if (sockfd < 0){
-		std::cerr << ("ERROR opening socket") << std::endl;
-		return nothingness;
-	}
-	
-	AtScopeEnd ase{[&](){close(sockfd);}};
-	discard(ase);
-	server = extract_ip(nonce);
-	bzero((char *) &serv_addr, sizeof(serv_addr));
-	serv_addr.sin_family = AF_INET;
-	bcopy((char *)server->h_addr,
-		  (char *)&serv_addr.sin_addr.s_addr,
-		  server->h_length);
-	serv_addr.sin_port = htons(portno);
-	if (connect(sockfd,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0){
-		std::cerr << ("ERROR connecting");
-		return nothingness;
-	}
-
-	//UGH there's a lot of boilerplate when you do networking.
-#define care_read_s(s,x...)								\
-	{													\
-		int n = read(sockfd,&(x),s);					\
-		if (n < 0) return nothingness;					\
-		while (n < s) {									\
-			int k = read(sockfd,((char*) &(x)) + n,s-n);	\
-			if (k <= 0) return nothingness;				\
-			n += k;										\
-		}}
-	
-#define care_read(x...) {int s = sizeof(x); care_read_s(s,x)}
-
-
-#define care_assert(x...) if (!(x)) return nothingness;
-	try {
-		bool success = false;
-		int num_messages = 0;
-		care_read(success);
-		care_assert(success);
-		care_read(num_messages);
-		care_assert(num_messages > 0);
-		std::unique_ptr<obj_bundle> ret{new obj_bundle{}};
-		for (int i = 0; i < num_messages; ++i){
-			Name name;
-			care_read(name);
-			Tracker::Clock clock;
-			for (int j = 0; j < clock.size(); ++j){
-				care_read(clock[j]);
+		std::future<CooperativeCache::obj_bundle> CooperativeCache::get(const Tracker::Tombstone &tomb, int portno){
+			{
+				lock l{m};
+				if (cache.count(tomb.nonce) > 0) {
+					return std::async(std::launch::deferred, [r = cache.at(tomb.nonce)](){return r;});
+				}
 			}
-			int obj_size;
-			care_read(obj_size);
-			std::vector<char> obj(obj_size,0);
-			assert(obj.size() == obj_size);
-			char* bytes = obj.data();
-			care_read_s(obj_size,bytes);
-			ret->emplace_back(name,clock,obj);
+			return tp.push([tomb,portno,this](int) -> CooperativeCache::obj_bundle {
+					int sockfd;
+					struct sockaddr_in serv_addr;
+					struct hostent *server;
+					
+					sockfd = socket(AF_INET, SOCK_STREAM, 0);
+					if (sockfd < 0){
+						std::cerr << ("ERROR opening socket") << std::endl;
+						throw NetException{};
+					}
+					
+					AtScopeEnd ase{[&](){close(sockfd);}};
+					discard(ase);
+					server = gethostbyaddr(&tomb.ip_addr,sizeof(tomb.ip_addr),AF_INET);
+					bzero((char *) &serv_addr, sizeof(serv_addr));
+					serv_addr.sin_family = AF_INET;
+					bcopy((char *)server->h_addr,
+						  (char *)&serv_addr.sin_addr.s_addr,
+						  server->h_length);
+					serv_addr.sin_port = htons(portno);
+					if (connect(sockfd,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0){
+						std::cerr << ("ERROR connecting");
+						throw NetException{};
+					}
+					
+					//UGH there's a lot of boilerplate when you do networking.
+#define care_read_s(s,x...)								\
+					{									\
+						int n = read(sockfd,&(x),s);	\
+						if (n < 0) throw ProtocolException();		\
+						while (n < s) {								\
+							int k = read(sockfd,((char*) &(x)) + n,s-n); \
+							if (k <= 0) throw ProtocolException();		\
+							n += k;										\
+						}}
+					
+#define care_read(x...) {int s = sizeof(x); care_read_s(s,x)}
+					
+					
+#define care_assert(x...) if (!(x)) throw ProtocolException();
+					bool success = false;
+					int num_messages = 0;
+					care_read(success);
+					care_assert(success);
+					care_read(num_messages);
+					care_assert(num_messages > 0);
+					obj_bundle ret;
+					for (int i = 0; i < num_messages; ++i){
+						Name name;
+						care_read(name);
+						Tracker::Clock clock;
+						for (int j = 0; j < clock.size(); ++j){
+							care_read(clock[j]);
+						}
+						int obj_size;
+						care_read(obj_size);
+						std::vector<char> obj(obj_size,0);
+						assert(obj.size() == obj_size);
+						char* bytes = obj.data();
+						care_read_s(obj_size,bytes);
+						ret.emplace_back(name,clock,obj);
+					}
+					{
+						lock l{m};
+						track_with_eviction(tomb.nonce,ret);
+					}
+					return ret;
+				});
 		}
-		{
-			lock l{m};
-			track_with_eviction(nonce,*ret);
-		}
-		return ret;
-	}
-	catch (...){
-		return nothingness;
-	}
-}
 
 
 void CooperativeCache::listen_on(int portno){
@@ -176,6 +176,7 @@ void CooperativeCache::listen_on(int portno){
 			clilen = sizeof(cli_addr);
 			AtScopeEnd ase{[&](){close(sockfd);}};
 			discard(ase);
+			ctpl::thread_pool pool{tp_size};
 			while (true) {
 				int newsockfd = accept(sockfd,
 									   (struct sockaddr *) &cli_addr,
@@ -184,7 +185,7 @@ void CooperativeCache::listen_on(int portno){
 					std::cerr << "ERROR on accept" << std::endl;
 				}
 				//fork off a new thread to handle the request.
-				std::thread([&](){ respond_to_request(newsockfd);}).detach();
+				std::thread([ignored_future = pool.push([&](int){respond_to_request(newsockfd);})](){}).detach();
 			}
 		}).detach();
 }

@@ -31,6 +31,7 @@ public:
 	using Nonce = int;
 	struct Tombstone{
 		Nonce nonce;
+		int ip_addr;
 		Name name() const;
 	};
 

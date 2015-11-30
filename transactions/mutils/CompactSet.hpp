@@ -1,9 +1,7 @@
 #pragma once
+#include "SerializationSupport.hpp"
 
 namespace mutils {
-
-
-#include "SerializationSupport.hpp"
 
 template<typename T>
 class CompactSet : public ByteRepresentable{
