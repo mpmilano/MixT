@@ -189,4 +189,16 @@ namespace myria { namespace tracker {
 					}
 				}).detach();
 		}
+
+
+		std::vector<char> const * const CooperativeCache::find(const obj_bundle& b,const Name& n, const Tracker::Clock &version){
+			for (auto &e : b){
+				const Name& ename = e.first;
+				if (n == ename){
+					assert(!ends::prec(e.second, version));
+					return &e.third;
+				}
+			}
+			return nullptr;
+		}					
 	}}

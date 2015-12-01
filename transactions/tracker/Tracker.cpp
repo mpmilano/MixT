@@ -200,6 +200,7 @@ namespace myria { namespace tracker {
 						auto nonce = long_rand();
 						write_lin_metadata(name,nonce,*i);
 						write_causal_tombstone(nonce,*i);
+						assert(false); //add things to Cooperative Cache
 						always_failed = false;
 						break;
 					}
@@ -263,7 +264,7 @@ namespace myria { namespace tracker {
 			}
 
 			template<typename P>
-			std::vector<char>* check_applicable(Tracker::Internals &i, Name name, P& p){
+				std::vector<char> const * const check_applicable(Tracker::Internals &i, Name name, P& p, const Tracker::Clock &v){
 				if (get<TDS::exists>(*i.causalDS)(*i.registeredCausal,p.first)){
 					remove_pending(i,p.first);
 					return nullptr;
@@ -271,7 +272,7 @@ namespace myria { namespace tracker {
 				else {
 					try{
 						auto &remote = p.second.get();
-						return CooperativeCache::find(remote,name);
+						return CooperativeCache::find(remote,name,v);
 					}
 					catch (...){
 						//something went wrong with the cooperative caching
@@ -332,7 +333,7 @@ namespace myria { namespace tracker {
 				//for each nonce in the list
 				if (!i->pending_nonces.empty()){
 					for (auto &p : i->pending_nonces){
-						if (check_applicable(*i,name,p)){
+						if (check_applicable(*i,name,p,version)){
 							//hang out until we've caught up to the relevant tombstone
 							sleep_on(*i,p.first);
 						}
@@ -354,7 +355,7 @@ namespace myria { namespace tracker {
 		void* Tracker::onRead(DataStore<Level::causal>&, Name name, const Clock &version,
 							 //these functions all better play well together
 							 void* local_vers,
-							 const std::function<void* (void*)> &construct,
+							 const std::function<void* (void const *)> &construct,
 							 const std::function<void* (void*, void*)> &merge){
 			i->last_onRead_name = heap_copy(name);
 			if (tracking_candidate(*i,name,version)){
@@ -362,7 +363,7 @@ namespace myria { namespace tracker {
 				//for each nonce in the list
 				if (!i->pending_nonces.empty()){
 					for (auto &p : i->pending_nonces){
-						if (auto* remote_vers = check_applicable(*i,name,p)){
+						if (auto* remote_vers = check_applicable(*i,name,p,version)){
 							//build + merge real object; write merge result back to remote
 							auto ret = merge(construct(remote_vers),local_vers);
 							return ret;

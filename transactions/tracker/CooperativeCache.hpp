@@ -31,7 +31,7 @@ namespace myria { namespace tracker {
 			std::future<obj_bundle> get(const Tracker::Tombstone&, int port);
 
 			//this is not an owning pointer
-			static std::vector<char>* find(const obj_bundle&,const Name&);
+			static std::vector<char> const * const find(const obj_bundle&,const Name&, const Tracker::Clock &version);
 			/* be sure to do these checks:
 							//make sure we actually need to find this
 							assert(remote_vers->first == name);

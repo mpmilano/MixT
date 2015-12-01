@@ -58,7 +58,7 @@ namespace myria {
 			Internals *i;
 			void* onRead(DataStore<Level::causal>&, Name name, const Clock &version,
 						 void* local_vers,
-						 const std::function<void* (void*)> &construct,
+						 const std::function<void* (void const *)> &construct,
 						 const std::function<void* (void*, void*)> &merge);
 	
 		public:
