@@ -9,9 +9,11 @@
 
 namespace myria { namespace tracker {
 		class CooperativeCache{
+		public:
+			using obj_bundle = std::vector<Tracker::StampedObject>;
+		private:
 			std::mutex m;
 			using lock = std::unique_lock<std::mutex>;
-			using obj_bundle = std::vector<mutils::TrivialTriple<Name, Tracker::Clock, std::vector<char> > >;
 			std::map<Tracker::Nonce, obj_bundle > cache;
 			std::list<Tracker::Nonce> order;
 			static constexpr int max_size = 43;
@@ -27,6 +29,15 @@ namespace myria { namespace tracker {
 			void insert(Tracker::Nonce, const std::map<int,std::pair<Tracker::Clock, std::vector<char> > > &map);
 			void listen_on(int port);
 			std::future<obj_bundle> get(const Tracker::Tombstone&, int port);
+
+			//this is not an owning pointer
+			static std::vector<char>* find(const obj_bundle&,const Name&);
+			/* be sure to do these checks:
+							//make sure we actually need to find this
+							assert(remote_vers->first == name);
+							assert(!ends::prec(remote_vers->second, version));
+			*/
+			
 		};
 	}
 }

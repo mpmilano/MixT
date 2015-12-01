@@ -11,6 +11,7 @@
 #include <time.h>
 #include "TrivialPair.hpp"
 #include "RemoteObject.hpp"
+#include "Ends.hpp"
 
 namespace myria { 
 
@@ -49,12 +50,16 @@ namespace myria {
 				>;
 			using TrackerDSStrong = TrackerDS<Level::strong>;
 			using TrackerDSCausal = TrackerDS<Level::causal>;
+			using StampedObject = mutils::TrivialTriple<Name, Tracker::Clock, std::vector<char> >;
 
 			//hiding private members of this class. No implementation available.
 			struct Internals;
 		private:
 			Internals *i;
-
+			void* onRead(DataStore<Level::causal>&, Name name, const Clock &version,
+						 void* local_vers,
+						 const std::function<void* (void*)> &construct,
+						 const std::function<void* (void*, void*)> &merge);
 	
 		public:
 			static Tracker& global_tracker();
@@ -83,8 +88,15 @@ namespace myria {
 			void onCreate(DataStore<Level::strong>&, Name name);
 
 			void onRead(DataStore<Level::strong>&, Name name);
-	
-			void onRead(DataStore<Level::causal>&, Name name, const Clock &version, std::vector<char> bytes);
+
+			//return is non-null when read value cannot be used.
+			template<typename DS, typename T>
+			std::unique_ptr<T> onRead(DS&, Name name, const Clock& version, const T& candidate);
+
+			//for when merging locally is too hard or expensive
+			void waitForRead(DataStore<Level::causal>&, Name name, const Clock& version);
+
+			void afterRead(DataStore<Level::causal>&, Name name, const Clock& version);
 
 			//for testing
 			void assert_nonempty_tracking() const;
