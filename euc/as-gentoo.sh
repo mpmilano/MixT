@@ -7,7 +7,7 @@ source pg_env.sh
 killall -9 vm
 rm /tmp/Myria*
 make clean
-concurrencySetting="$2" defineThis="$3" causalGroup="$1" make -j4 vm
+STRONG_REMOTE_IP="128.84.217.31" concurrencySetting="$2" defineThis="$3" causalGroup="$1" make -j4 vm
 sleep 10
 for ((i=1; i <= $2; i++))
 do

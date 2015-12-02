@@ -166,14 +166,9 @@ namespace myria { namespace tracker {
 	
 			int get_ip() {
 				static int ip_addr{[](){
-						int ret = 0;
 						std::string static_addr {MY_IP};
 						if (static_addr.length() == 0) static_addr = "127.0.0.1";
-						char* iparr = (char*) &ret;
-						std::stringstream s(static_addr);
-						char ch; //to temporarily store the '.'
-						s >> iparr[0] >> ch >> iparr[1] >> ch >> iparr[2] >> ch >> iparr[3];
-						return ret;
+						return mutils::decode_ip(static_addr);
 					}()};
 				return ip_addr;
 			}

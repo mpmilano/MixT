@@ -320,5 +320,5 @@ namespace mutils{
 
 	unsigned long long long_rand();
 
-
+	int decode_ip(const std::string&);
 }

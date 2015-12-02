@@ -61,6 +61,15 @@ namespace mutils{
 		discard(init_rand());
 		return lrand48();
 	}
+
+	int decode_ip(const std::string &static_addr){
+		int ret = 0;
+		char* iparr = (char*) &ret;
+		std::stringstream s(static_addr);
+		char ch; //to temporarily store the '.'
+		s >> iparr[0] >> ch >> iparr[1] >> ch >> iparr[2] >> ch >> iparr[3];
+		return ret;
+	}
 	
 }
 

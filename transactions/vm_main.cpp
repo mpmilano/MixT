@@ -59,16 +59,19 @@ int get_name(double alpha){
 const auto launch_clock = high_resolution_clock::now();
 const int mod_constant = 15;
 
+#define strify(x...) #x
+
+int get_strong_ip() {
+	static int ip_addr{[](){
+			std::string static_addr {strify(STRONG_REMOTE_IP)};
+			if (static_addr.length() == 0) static_addr = "127.0.0.1";
+			return mutils::decode_ip(static_addr.c_str());
+		}()};
+	return ip_addr;
+}
+
 int main(){
-	int ip = 0;
-	{
-		char *iparr = (char*)&ip;
-		//128.84.217.31
-		iparr[0] = 128;
-		iparr[1] = 84;
-		iparr[2] = 217;
-		iparr[3] = 31;
-	}
+	int ip = get_strong_ip();	
 	logFile.open(log_name);
 	logFile << "Begin Log for " << log_name << std::endl;
 	std::cout << "hello world from VM "<< my_unique_id << " in group " << CAUSAL_GROUP << std::endl;
