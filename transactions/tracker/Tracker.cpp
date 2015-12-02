@@ -352,11 +352,11 @@ namespace myria { namespace tracker {
 		}
 
 //for when merging is the order of the day
-		void* Tracker::onRead(DataStore<Level::causal>&, Name name, const Clock &version,
-							 //these functions all better play well together
-							 void* local_vers,
-							 const std::function<void* (void const *)> &construct,
-							 const std::function<void* (void*, void*)> &merge){
+		std::unique_ptr<Tracker::MemoryOwner>
+		Tracker::onRead(DataStore<Level::causal>&, Name name, const Clock &version,
+						//these functions all better play well together
+						const std::function<std::unique_ptr<MemoryOwner> ()> &mem,
+						const std::function<void (MemoryOwner&, char const *)> &construct_and_merge){
 			i->last_onRead_name = heap_copy(name);
 			if (tracking_candidate(*i,name,version)){
 				//need to pause here and wait for nonce availability
@@ -364,9 +364,10 @@ namespace myria { namespace tracker {
 				if (!i->pending_nonces.empty()){
 					for (auto &p : i->pending_nonces){
 						if (auto* remote_vers = check_applicable(*i,name,p,version)){
-							//build + merge real object; write merge result back to remote
-							auto ret = merge(construct(remote_vers),local_vers);
-							return ret;
+							auto mo = mem();
+							//build + merge real object
+							construct_and_merge(*mo,remote_vers->data());
+							return mo;
 						}
 					}
 				}

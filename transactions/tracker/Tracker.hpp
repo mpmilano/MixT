@@ -56,18 +56,25 @@ namespace myria {
 			struct Internals;
 		private:
 			Internals *i;
-			void* onRead(DataStore<Level::causal>&, Name name, const Clock &version,
-						 void* local_vers,
-						 const std::function<void* (void const *)> &construct,
-						 const std::function<void* (void*, void*)> &merge);
+			struct MemoryOwner {
+				MemoryOwner(const MemoryOwner&) = delete;
+				MemoryOwner(){}
+				virtual ~MemoryOwner(){}
+			};
+			std::unique_ptr<MemoryOwner> onRead(
+				DataStore<Level::causal>&, Name name, const Clock &version,
+				const std::function<std::unique_ptr<MemoryOwner> ()> &mem,
+				const std::function<void (MemoryOwner&, char const *)> &construct_nd_merge);
 	
 		public:
 			static Tracker& global_tracker();
 
 			bool registered(const GDataStore&) const;
 
-			void registerStore(DataStore<Level::strong> &, std::unique_ptr<TrackerDSStrong>);
-			void registerStore(DataStore<Level::causal> &, std::unique_ptr<TrackerDSCausal>);
+			void registerStore(DataStore<Level::strong> &,
+							   std::unique_ptr<TrackerDSStrong>);
+			void registerStore(DataStore<Level::causal> &,
+							   std::unique_ptr<TrackerDSCausal>);
 
 			template<typename DS>
 			void registerStore(DS &ds);
@@ -91,7 +98,14 @@ namespace myria {
 
 			//return is non-null when read value cannot be used.
 			template<typename DS, typename T>
-			std::unique_ptr<T> onRead(DS&, Name name, const Clock& version, const T& candidate);
+			std::unique_ptr<T>
+			onRead(DS&, Name name,
+				   const Clock& version,
+				   std::unique_ptr<T> candidate,
+				   std::unique_ptr<T> (*merge)(std::unique_ptr<T>,
+											   std::unique_ptr<T>)
+				   = [](std::unique_ptr<T>,std::unique_ptr<T> r){return r;}
+				);
 
 			//for when merging locally is too hard or expensive
 			void waitForRead(DataStore<Level::causal>&, Name name, const Clock& version);

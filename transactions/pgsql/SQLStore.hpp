@@ -54,8 +54,11 @@ namespace myria { namespace pgsql {
 					res = gso.load();
 					assert(res);
 					if (res != nullptr){
-						t = mutils::from_bytes<T>(res);
+						auto &trk = tracker::Tracker::global_tracker();
+						t = trk.onRead(store(),name(),timestamp(),
+										   mutils::from_bytes<T>(res));
 					}
+					
 					return *t;
 				}
 

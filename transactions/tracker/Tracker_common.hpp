@@ -51,4 +51,36 @@ namespace myria { namespace tracker {
 			registerStore(ds,wrapStore(ds));
 		}
 
+		template<typename DS, typename T>
+		std::unique_ptr<T>
+		Tracker::onRead(DS& ds, Name name,
+						const Clock& version,
+						std::unique_ptr<T> candidate,
+						std::unique_ptr<T> (*merge) (std::unique_ptr<T>,
+													 std::unique_ptr<T>)){
+
+			struct Owner : public MemoryOwner {
+				std::unique_ptr<T> candidate;
+				std::unique_ptr<T> merged;
+				Owner(decltype(candidate) &candidate):candidate(std::move(candidate)){}
+			};
+
+			std::function<std::unique_ptr<MemoryOwner> ()> mem =
+				[u = std::move(candidate)]() mutable {
+				assert(u);
+				return std::unique_ptr<MemoryOwner>(new Owner(u));
+			};
+			std::function<void (MemoryOwner&, char const*)> c_merge =
+				[merge](MemoryOwner& mo, char const * arg){
+				auto& o = dynamic_cast<Owner&>(mo);
+				assert(o.candidate);
+				auto &&remote = mutils::from_bytes<T>((char const *) arg);
+				o.merged = merge(remote,std::move(o.candidate));
+			};
+			auto mo = onRead(ds,name,version,mem,c_merge);
+			if (auto *o = dynamic_cast<Owner*>(mo.get()))
+				return std::move(o->merged);
+			else return nullptr;
+		}
+
 	}}
