@@ -74,7 +74,7 @@ namespace myria{
 		template<typename Arg, typename Accum>
 		using Pointerize = mutils::Cons_t<Arg*,Accum>;
 	
-		static std::unique_ptr<RemoteObject> from_bytes(char* _v); 
+		static std::unique_ptr<RemoteObject> from_bytes(char const * _v); 
 
 
 		friend struct mtl::Transaction;

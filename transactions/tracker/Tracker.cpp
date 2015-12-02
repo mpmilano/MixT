@@ -284,7 +284,7 @@ namespace myria { namespace tracker {
 		}
 		
 		
-		void Tracker::onRead(DataStore<Level::strong>& ds, Name name){
+		void Tracker::afterRead(DataStore<Level::strong>& ds, Name name){
 			using update_clock_t = void (*)(Tracker::Internals &t);
 			static update_clock_t update_clock = [](Tracker::Internals &t){
 				auto newc = get<TDS::existingClock>(*t.strongDS)(*t.registeredStrong, bigprime_lin)->get();
@@ -372,6 +372,13 @@ namespace myria { namespace tracker {
 					}
 				}
 			}
+			return nullptr;
+		}
+		
+		std::unique_ptr<Tracker::MemoryOwner> Tracker::onRead(
+			DataStore<Level::strong>&, Name name, const Clock &version,
+			const std::function<std::unique_ptr<MemoryOwner> ()> &mem,
+			const std::function<void (MemoryOwner&, char const *)> &construct_nd_merge){
 			return nullptr;
 		}
 	}}

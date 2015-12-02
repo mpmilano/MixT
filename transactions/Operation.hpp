@@ -162,7 +162,7 @@ namespace myria {
 			auto h_strong_write = mutils::filter_tpl<is_strong_handle>(h_write);
 			auto h_causal_write = mutils::filter_tpl<is_causal_handle>(h_write);
 			mutils::foreach(h_strong_read,
-							[](const auto &h){h.tracker.onRead(h.store(),h.name());});
+							[](const auto &h){h.tracker.afterRead(h.store(),h.name());});
 			mutils::foreach(h_causal_read,
 							[](const auto &h){h.tracker.waitForRead(h.store(),h.name(),h.remote_object().timestamp());});
 			//optimization: track timestamps for causal, only check if they've changed.

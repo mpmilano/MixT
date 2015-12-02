@@ -65,6 +65,10 @@ namespace myria {
 				DataStore<Level::causal>&, Name name, const Clock &version,
 				const std::function<std::unique_ptr<MemoryOwner> ()> &mem,
 				const std::function<void (MemoryOwner&, char const *)> &construct_nd_merge);
+			std::unique_ptr<MemoryOwner> onRead(
+				DataStore<Level::strong>&, Name name, const Clock &version,
+				const std::function<std::unique_ptr<MemoryOwner> ()> &mem,
+				const std::function<void (MemoryOwner&, char const *)> &construct_nd_merge);
 	
 		public:
 			static Tracker& global_tracker();
@@ -94,7 +98,7 @@ namespace myria {
 
 			void onCreate(DataStore<Level::strong>&, Name name);
 
-			void onRead(DataStore<Level::strong>&, Name name);
+			void afterRead(DataStore<Level::strong>&, Name name);
 
 			//return is non-null when read value cannot be used.
 			template<typename DS, typename T>

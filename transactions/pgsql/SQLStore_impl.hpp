@@ -91,7 +91,7 @@ namespace myria { namespace pgsql {
 				//required by ByteRepresentable
 				int bytes_size() const;
 				int to_bytes(char*) const;
-				static GSQLObject from_bytes(char* v);
+				static GSQLObject from_bytes(char const * v);
 				virtual ~GSQLObject();
 			};
 

@@ -14,10 +14,10 @@ namespace myria{
 	}
 
 	template<Level l, typename T>
-	std::unique_ptr<RemoteObject<l,T> > RemoteObject<l,T>::from_bytes(char* _v)
+	std::unique_ptr<RemoteObject<l,T> > RemoteObject<l,T>::from_bytes(char const * _v)
 	{
 		int read_id = ((int*)_v)[0];
-		char *v = _v + sizeof(int);
+		auto *v = _v + sizeof(int);
 		typedef std::tuple<STORE_LIST> stores;
 		typedef mutils::fold_types<Pointerize,stores,std::tuple<> > ptr_stores;
 		ptr_stores lst;

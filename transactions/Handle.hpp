@@ -95,7 +95,7 @@ namespace myria{
 			return sizeof(bool) + (_ro ? _ro->bytes_size() : 0);
 		}
 
-		static std::unique_ptr<Handle> from_bytes(char *v)  {
+		static std::unique_ptr<Handle> from_bytes(char const *v)  {
 			//for de-serializing.
 			assert(v);
 			RemoteObject<l,T> *stupid = nullptr;
@@ -117,7 +117,7 @@ namespace myria{
 		}
 	
 		const T& get(std::true_type*) const {
-			tracker.onRead(_ro->store(),_ro->name());
+			tracker.afterRead(_ro->store(),_ro->name());
 			return _ro->get();
 		}
 	
@@ -337,7 +337,7 @@ namespace mutils{
 	}
 
 	template<typename T>
-	std::enable_if_t<myria::is_handle<T>::value,std::unique_ptr<T> > from_bytes(char *v){
+	std::enable_if_t<myria::is_handle<T>::value,std::unique_ptr<T> > from_bytes(char const *v){
 		return T::from_bytes(v);
 	}
 }
@@ -351,7 +351,7 @@ template<Level, HandleAccess, typename>
 struct Handle;
 
 template<typename T>
-std::enable_if_t<is_handle<T>::value,std::unique_ptr<T> > from_bytes(char *v);
+std::enable_if_t<is_handle<T>::value,std::unique_ptr<T> > from_bytes(char const *v);
 
 template<Level l, HandleAccess ha, typename T>
 int to_bytes(const Handle<l,ha,T>& h, char* v);

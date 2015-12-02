@@ -158,7 +158,7 @@ namespace myria { namespace pgsql {
 			}
 
 			template<typename T>
-			static std::unique_ptr<SQLObject<T> > from_bytes(char* v){
+			static std::unique_ptr<SQLObject<T> > from_bytes(char const * v){
 				return std::make_unique<SQLObject<T> >(GSQLObject::from_bytes(v),
 													   std::unique_ptr<T>());
 			}

@@ -377,7 +377,7 @@ namespace myria{ namespace pgsql {
 			return this->bytes_size();
 		}
 
-		SQLStore_impl::GSQLObject SQLStore_impl::GSQLObject::from_bytes(char *v){
+		SQLStore_impl::GSQLObject SQLStore_impl::GSQLObject::from_bytes(char const *v){
 			int* arr = (int*)v;
 			//arr[0] has already been used to find this implementation
 			Level* arrl = (Level*) (arr + 3);

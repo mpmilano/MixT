@@ -71,20 +71,20 @@ namespace mutils{
 
 	template<typename T>
 	std::enable_if_t<std::is_same<T,std::string>::value, std::unique_ptr<T> >
-	from_bytes(char *v){
+	from_bytes(char const *v){
 		return std::make_unique<T>(v);
 	}
 
 	template<typename T,
 			 restrict(std::is_base_of<ByteRepresentable CMA T>::value)>
-	std::unique_ptr<T> from_bytes(char *v){
+	std::unique_ptr<T> from_bytes(char const *v){
 		return T::from_bytes(v);
 	}
 
 
 	template<typename T,
 			 restrict2(std::is_trivially_copyable<T>::value)>
-	std::unique_ptr<std::decay_t<T> > from_bytes(char *v){
+	std::unique_ptr<std::decay_t<T> > from_bytes(char const *v){
 		using T2 = std::decay_t<T>;
 		auto t = std::make_unique<T2>();
 		if (v) {
@@ -95,7 +95,7 @@ namespace mutils{
 	}
 
 	template<typename T>
-	std::unique_ptr<T> from_bytes_stupid(T* t, char* v) {
+	std::unique_ptr<T> from_bytes_stupid(T* t, char const * v) {
 		return from_bytes<T>(v);
 	}
 
@@ -125,7 +125,7 @@ namespace mutils{
 	struct is_set<std::set<T> > : std::true_type {};
 
 	template<typename T>
-	std::unique_ptr<type_check<is_set,T> > from_bytes(char* _v) {
+	std::unique_ptr<type_check<is_set,T> > from_bytes(char* const _v) {
 		int size = ((int*)_v)[0];
 		char* v = _v + sizeof(int);
 		auto r = std::make_unique<std::set<typename T::key_type> >();
@@ -138,7 +138,7 @@ namespace mutils{
 	}
 
 	template<typename T>
-	std::enable_if_t<is_vector<T>::value,std::unique_ptr<T> > from_bytes(char* v){
+	std::enable_if_t<is_vector<T>::value,std::unique_ptr<T> > from_bytes(char const * v){
 		using member = typename T::value_type;
 		if (std::is_trivially_copyable<typename T::value_type>::value){
 			member const * const start = (member*) (v + sizeof(int));
@@ -147,7 +147,7 @@ namespace mutils{
 		}
 		else{
 			int size = ((int*)v)[0];
-			char* v2 = v + sizeof(int);
+			auto* v2 = v + sizeof(int);
 			int per_item_size = -1;
 			std::unique_ptr<std::vector<member> > accum{new T()};
 			for(int i = 0; i < size; ++i){
