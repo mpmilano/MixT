@@ -4,7 +4,7 @@
 
 int main(){
 	std::vector<std::future<std::unique_ptr<int> > > futures;
-	{
+
 		using namespace mutils;
 		std::function<int (int)> foo = [](int a){ sleep(10); return a + 5;};
 		std::vector<std::function<int (int)> > test_funs{{foo}};
@@ -14,7 +14,7 @@ int main(){
 			std::cout << "launching " << i << std::endl;
 			futures.push_back(p.launch(0,i));
 		}
-	}
+
 	for (auto &f : futures){
 		if (auto p = f.get()){
 			std::cout << *p << std::endl;

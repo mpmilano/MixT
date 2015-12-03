@@ -20,7 +20,7 @@
 #include "Ends.hpp"
 #include "Transaction.hpp"
 namespace {
-	constexpr int bigprime_lin =
+	constexpr unsigned long long bigprime_lin =
 #include "big_prime"
 		;
 }
@@ -134,11 +134,11 @@ namespace myria { namespace tracker {
 
 			//constexpr int bigprime_causal = 2751103;
 	
-			bool is_metaname(int base, Name name){
+			bool is_metaname(unsigned long long base, Name name){
 				return (name % base) == 0;
 			}
 
-			int make_metaname(int base, Name name){
+			int make_metaname(unsigned long long base, Name name){
 				assert(!is_metaname(base,name));
 				int cand;
                 if (name > (5 * base))

@@ -148,7 +148,11 @@ namespace mutils{
 					child.childSpin();
 					exit(0);
 				}
-				else ready.add(&child);
+				else {
+					close(child.child_to_parent[1]);
+					close(child.parent_to_child[0]);
+					ready.add(&child);
+				}
 			}
 			auto this_sp = this->this_sp;
 			return tp.push([this_sp,command,arg...](int) -> std::unique_ptr<Ret>{

@@ -59,13 +59,12 @@ int get_name(double alpha){
 const auto launch_clock = high_resolution_clock::now();
 const int mod_constant = 15;
 
-#define strify(x...) #x
-
 int get_strong_ip() {
 	static int ip_addr{[](){
-			std::string static_addr {strify(STRONG_REMOTE_IP)};
+			std::string static_addr {STRONG_REMOTE_IP};
 			if (static_addr.length() == 0) static_addr = "127.0.0.1";
-			return mutils::decode_ip(static_addr.c_str());
+			std::cout << static_addr << std::endl;
+			return mutils::decode_ip(static_addr);
 		}()};
 	return ip_addr;
 }
@@ -75,9 +74,19 @@ int main(){
 	logFile.open(log_name);
 	logFile << "Begin Log for " << log_name << std::endl;
 	std::cout << "hello world from VM "<< my_unique_id << " in group " << CAUSAL_GROUP << std::endl;
+	printf("connecting to %d.%d.%d.%d\n",((char*)&ip)[0],((char*)&ip)[1],((char*)&ip)[2],((char*)&ip)[3]);
 	AtScopeEnd ase{[&](){logFile << "End" << std::endl;
 			logFile.close();}};
 	discard(ase);
+
+//init
+	SQLStore<Level::strong> &strong = SQLStore<Level::strong>::inst(ip);
+	SQLStore<Level::causal> &causal = SQLStore<Level::causal>::inst(0);
+	for (int i = 0; i < std::numeric_limits<int>::max();++i){
+		strong.template newObject<HandleAccess::all,int>(i,0);
+		causal.template newObject<HandleAccess::all,int>(i,0);
+	}
+	exit(0);
 
 	std::function<std::string (unsigned long long)> pool_fun =
 		[ip](unsigned long long start_time){
@@ -88,7 +97,6 @@ int main(){
 			SQLStore<Level::causal> &causal = SQLStore<Level::causal>::inst(0);
 
 			auto name = get_name(1.5);
-			
 			
 			auto test_fun = [&](const auto &hndl){
 
@@ -124,7 +132,7 @@ int main(){
 		return log_messages.str();
 	};
 	vector<decltype(pool_fun)> pool_v {{pool_fun}};
-	auto &p = *(new ProcessPool<std::string, unsigned long long>(pool_v));
+	auto &p = *(new ProcessPool<std::string, unsigned long long>(pool_v,1));
 	auto start = high_resolution_clock::now();
 
 	auto launch = [&](){return p.launch(0,duration_cast<microseconds>(high_resolution_clock::now() - launch_clock).count());};

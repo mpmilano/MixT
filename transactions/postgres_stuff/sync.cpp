@@ -11,12 +11,14 @@ int main(){
 #include "../big_prime"
 		);
 	try { 
-		pqxx::connection conn_strong("host=128.84.217.31");
+		pqxx::connection conn_strong//("host=128.84.217.31")
+			;
 	conn_strong.prepare("Update",
 						string("update \"BlobStore\" set data=$1,version=$2 where id= ") + id);
 	pqxx::connection conn_causal;
 	conn_causal.prepare("selectit","select max(vc1) as vc1,max(vc2) as vc2,max(vc3) as vc3,max(vc4) as vc4 from (select max(vc1) as vc1,max(vc2) as vc2,max(vc3) as vc3,max(vc4) as vc4 from \"BlobStore\" union select max(vc1) as vc1,max(vc2) as vc2,max(vc3) as vc3,max(vc4) as vc4 from \"IntStore\") as foo");
 
+	std::cout << "beginning loop" << std::endl;
 	while (true){
 		std::array<int,4> tmp;
 		{

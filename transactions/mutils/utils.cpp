@@ -65,9 +65,11 @@ namespace mutils{
 	int decode_ip(const std::string &static_addr){
 		int ret = 0;
 		char* iparr = (char*) &ret;
+		int a, b, c, d;
 		std::stringstream s(static_addr);
 		char ch; //to temporarily store the '.'
-		s >> iparr[0] >> ch >> iparr[1] >> ch >> iparr[2] >> ch >> iparr[3];
+		s >> a >> ch >> b >> ch >> c >> ch >> d;
+		iparr[0] = a, iparr[1] = b, iparr[2] = c, iparr[3] = d;
 		return ret;
 	}
 	
