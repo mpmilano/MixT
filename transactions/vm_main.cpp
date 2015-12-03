@@ -83,7 +83,9 @@ int main(){
 	SQLStore<Level::strong> &strong = SQLStore<Level::strong>::inst(ip);
 	SQLStore<Level::causal> &causal = SQLStore<Level::causal>::inst(0);
 	for (int i = 0; i < std::numeric_limits<int>::max();++i){
-		strong.template newObject<HandleAccess::all,int>(i,0);
+		if (!strong.exists(i))
+			strong.template newObject<HandleAccess::all,int>(i,0);
+		if (!causal.exists(i))
 		causal.template newObject<HandleAccess::all,int>(i,0);
 	}
 	exit(0);
