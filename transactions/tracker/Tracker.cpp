@@ -138,9 +138,9 @@ namespace myria { namespace tracker {
 				return (name % base) == 0;
 			}
 
-			int make_metaname(unsigned long long base, Name name){
+			Name make_metaname(unsigned long long base, Name name){
 				assert(!is_metaname(base,name));
-				int cand;
+				Name cand;
                 if (name > (5 * base))
 					cand = (name / base) * base;
 				else cand = name * base;
@@ -152,7 +152,7 @@ namespace myria { namespace tracker {
 				return is_metaname(bigprime_lin,name);
 			}
 
-			int make_lin_metaname(Name name){
+			Name make_lin_metaname(Name name){
 				return make_metaname(bigprime_lin,name);
 			}
 		}
@@ -251,7 +251,7 @@ namespace myria { namespace tracker {
 			}
 			
 			bool tracking_candidate(Tracker::Internals &i, Name name, const Tracker::Clock &version){
-				if (ends::prec(version,i.global_min)) {
+				if (!ends::is_same(version,{{-1,-1,-1,-1}}) && ends::prec(version,i.global_min)) {
 					i.tracking.erase(name);
 					return false;
 				}

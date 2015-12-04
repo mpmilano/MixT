@@ -53,7 +53,9 @@ int get_name(double alpha){
 	double y = better_rand();
 	double max_pow = pow(max,1 - alpha);
 	double x = pow(max_pow*y,1/(1-alpha));
-	return round(x);
+	int ret = round(x);
+	assert(ret < max);
+	return ret;
 }
 
 const auto launch_clock = high_resolution_clock::now();
@@ -99,7 +101,7 @@ int main(){
 			SQLStore<Level::strong> &strong = SQLStore<Level::strong>::inst(ip);
 			SQLStore<Level::causal> &causal = SQLStore<Level::causal>::inst(0);
 
-			auto name = get_name(1.5);
+			auto name = get_name(0.5);
 			
 			auto test_fun = [&](const auto &hndl){
 
@@ -160,7 +162,8 @@ int main(){
 			}
 		}};
 	while (bound()){
-		futures->emplace_back(launch());
+		//futures->emplace_back(launch());
+		pool_fun(duration_cast<microseconds>(high_resolution_clock::now() - launch_clock).count());
 		std::this_thread::sleep_for(milliseconds(getArrivalInterval(20)));
 		/*
 		  { //clean up the log of messages
