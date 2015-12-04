@@ -49,7 +49,7 @@ long getArrivalInterval(double arrival_rate) {
 
 
 int get_name(double alpha){
-	const int max = 327453;
+	const int max = 230971;
 	double y = better_rand();
 	double max_pow = pow(max,1 - alpha);
 	double x = pow(max_pow*y,1/(1-alpha));
@@ -79,6 +79,7 @@ int main(){
 			logFile.close();}};
 	discard(ase);
 
+	/*
 //init
 	SQLStore<Level::strong> &strong = SQLStore<Level::strong>::inst(ip);
 	SQLStore<Level::causal> &causal = SQLStore<Level::causal>::inst(0);
@@ -88,7 +89,7 @@ int main(){
 		if (!causal.exists(i))
 		causal.template newObject<HandleAccess::all,int>(i,0);
 	}
-	exit(0);
+	exit(0); */
 
 	std::function<std::string (unsigned long long)> pool_fun =
 		[ip](unsigned long long start_time){
