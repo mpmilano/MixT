@@ -201,7 +201,6 @@ namespace myria { namespace tracker {
 						write_lin_metadata(name,nonce,*i);
 						write_causal_tombstone(nonce,*i);
 						i->cache.insert(nonce,i->tracking);
-						assert(false); //add things to Cooperative Cache
 						always_failed = false;
 						break;
 					}
