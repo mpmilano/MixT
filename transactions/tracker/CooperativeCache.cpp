@@ -24,7 +24,7 @@ namespace myria { namespace tracker {
 		}
 
 		CooperativeCache::CooperativeCache(){}
-		void CooperativeCache::insert(Tracker::Nonce n, const std::map<int,std::pair<Tracker::Clock, std::vector<char> > > &map){
+		void CooperativeCache::insert(Tracker::Nonce n, const std::map<Name,std::pair<Tracker::Clock, std::vector<char> > > &map){
 			obj_bundle new_tracking;
 			for (auto &p : map){
 				new_tracking.emplace_back(p.first,p.second.first,p.second.second);

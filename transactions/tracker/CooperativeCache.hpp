@@ -26,7 +26,7 @@ namespace myria { namespace tracker {
 			struct ProtocolException{};
 			CooperativeCache();
 			CooperativeCache(const CooperativeCache&) = delete;
-			void insert(Tracker::Nonce, const std::map<int,std::pair<Tracker::Clock, std::vector<char> > > &map);
+			void insert(Tracker::Nonce, const std::map<Name,std::pair<Tracker::Clock, std::vector<char> > > &map);
 			void listen_on(int port);
 			std::future<obj_bundle> get(const Tracker::Tombstone&, int port);
 

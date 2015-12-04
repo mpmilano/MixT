@@ -35,19 +35,24 @@ namespace myria { namespace tracker {
 
 		namespace{
 			struct Bundle{
-				std::future<CooperativeCache::obj_bundle> f;
-				std::unique_ptr<CooperativeCache::obj_bundle> p;
+			private:
+				std::shared_ptr<std::future<CooperativeCache::obj_bundle> > f;
+				std::shared_ptr<CooperativeCache::obj_bundle> p;
+
+			public:
+				Bundle(std::future<CooperativeCache::obj_bundle> f):f(new decltype(f)(std::move(f))){}
+				Bundle(){}
 				auto& get(){
-					if (f.valid()){
-						p = heap_copy(f.get());
+					if (f->valid()){
+						p = heap_copy(f->get());
 					}
-					assert(!f.valid());
+					assert(!f->valid());
 					return *p;
 				}
 				virtual ~Bundle(){
-					if (f.valid()){
+					if (f->valid()){
 						//toss the future into a wrapper thread and exit
-						std::thread{[ft = move(f)](){}}.detach();
+						std::thread{[ft = move(*f)](){}}.detach();
 					}
 				}
 			};
@@ -63,9 +68,9 @@ namespace myria { namespace tracker {
 
 			Clock global_min;
 
-			std::map<int, Clock > tracking;
+			std::map<Name, std::pair<Clock, std::vector<char> > > tracking;
 			std::map<Name, Bundle> pending_nonces;
-			std::set<int> exceptions;
+			std::set<Name> exceptions;
 			CooperativeCache cache;
 			std::unique_ptr<Name> last_onRead_name{nullptr};
 		};
@@ -195,6 +200,7 @@ namespace myria { namespace tracker {
 						auto nonce = long_rand();
 						write_lin_metadata(name,nonce,*i);
 						write_causal_tombstone(nonce,*i);
+						i->cache.insert(nonce,i->tracking);
 						assert(false); //add things to Cooperative Cache
 						always_failed = false;
 						break;
@@ -285,9 +291,9 @@ namespace myria { namespace tracker {
 				auto newc = get<TDS::existingClock>(*t.strongDS)(*t.registeredStrong, bigprime_lin)->get();
 				assert(ends::prec(t.global_min,newc));
 				t.global_min = newc;
-				list<int> to_remove;
+				list<Name> to_remove;
 				for (auto& p : t.tracking){
-					if (ends::prec(p.second,newc)) to_remove.push_back(p.first);
+					if (ends::prec(p.second.first,newc)) to_remove.push_back(p.first);
 				}
 				for (auto &e : to_remove){
 					t.tracking.erase(e);
@@ -301,9 +307,7 @@ namespace myria { namespace tracker {
 				if (get<TDS::exists>(*i->strongDS)(ds,ts)){
 					auto tomb = get<TDS::existingTomb>(*i->strongDS)(ds,ts)->get();
 					while (!sleep_on(*i,tomb.name(),1)){
-						auto bundle = i->cache.get(tomb, cache_port);
-						//do something with this! TODO
-						assert(false);
+						i->pending_nonces[tomb.name()] = Bundle{i->cache.get(tomb, cache_port)};
 					}
 				}
 			}
@@ -337,12 +341,12 @@ namespace myria { namespace tracker {
 			}
 		}
 		
-		void Tracker::afterRead(DataStore<Level::causal>&, Name name, const Clock& version){
+		void Tracker::afterRead(DataStore<Level::causal>&, Name name, const Clock& version, const std::vector<char> &data){
 			if (tracking_candidate(*i,name,version)){
 				//need to overwrite, not occlude, the previous element.
 				//C++'s map semantics are really stupid. 
 				i->tracking.erase(name);
-				i->tracking.emplace(name,version);
+				i->tracking.emplace(name,std::make_pair(version,data));
 			}
 		}
 
