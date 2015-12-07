@@ -49,11 +49,18 @@ long getArrivalInterval(double arrival_rate) {
 
 
 int get_name(double alpha){
-	const int max = 327453;
+	const int max = 478460;
 	double y = better_rand();
+	assert (y < 1.1);
+	assert (y > -0.1);
 	double max_pow = pow(max,1 - alpha);
 	double x = pow(max_pow*y,1/(1-alpha));
-	return round(x);
+	auto ret = round(x);
+	if (ret > max) {
+		std::cerr << "Name out of range! Trying again" << std::endl;
+		return get_name(alpha);
+	}
+	else return ret;
 }
 
 const auto launch_clock = high_resolution_clock::now();
@@ -82,7 +89,8 @@ int main(){
 //init
 	SQLStore<Level::strong> &strong = SQLStore<Level::strong>::inst(ip);
 	SQLStore<Level::causal> &causal = SQLStore<Level::causal>::inst(0);
-	for (int i = 0; i < std::numeric_limits<int>::max();++i){
+	for (int i = 40743; i < std::numeric_limits<int>::max();++i){
+		std::cout << i << std::endl;
 		if (!strong.exists(i))
 			strong.template newObject<HandleAccess::all,int>(i,0);
 		if (!causal.exists(i))
