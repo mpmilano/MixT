@@ -172,7 +172,7 @@ namespace myria {
 			mutils::foreach(causal_pair,
 							[](const auto &p){
 								if (tracker::ends::is_same(p.first, p.second.remote_object().timestamp())) return;
-								else p.second.tracker.afterRead(p.second.store(),p.second.name(),p.second.remote_object().timestamp());});
+								else p.second.tracker.afterRead(p.second.store(),p.second.name(),p.second.remote_object().timestamp(),p.second.remote_object().bytes());});
 			mutils::foreach(h_strong_write, [](const auto &h){h.tracker.onWrite(h.store(),h.name());});
 			mutils::foreach(h_causal_write, [](const auto &h){h.tracker.onWrite(h.store(),h.name(),h.remote_object().timestamp());});
 			return ret;

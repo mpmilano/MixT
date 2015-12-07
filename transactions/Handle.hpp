@@ -124,7 +124,7 @@ namespace myria{
 		const T& get(std::false_type*) const {
 			tracker.waitForRead(_ro->store(),_ro->name(),_ro->timestamp());
 			auto &ret = _ro->get();
-			tracker.afterRead(_ro->store(),_ro->name(),_ro->timestamp());
+			tracker.afterRead(_ro->store(),_ro->name(),_ro->timestamp(),_ro->bytes());
 			return ret;
 		}
 	

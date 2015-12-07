@@ -86,6 +86,7 @@ int main(){
 			logFile.close();}};
 	discard(ase);
 
+	/*
 //init
 	SQLStore<Level::strong> &strong = SQLStore<Level::strong>::inst(ip);
 	SQLStore<Level::causal> &causal = SQLStore<Level::causal>::inst(0);
@@ -96,7 +97,7 @@ int main(){
 		if (!causal.exists(i))
 		causal.template newObject<HandleAccess::all,int>(i,0);
 	}
-	exit(0);
+	exit(0); */
 
 	std::function<std::string (unsigned long long)> pool_fun =
 		[ip](unsigned long long start_time){
@@ -106,7 +107,7 @@ int main(){
 			SQLStore<Level::strong> &strong = SQLStore<Level::strong>::inst(ip);
 			SQLStore<Level::causal> &causal = SQLStore<Level::causal>::inst(0);
 
-			auto name = get_name(1.5);
+			auto name = get_name(0.5);
 			
 			auto test_fun = [&](const auto &hndl){
 
@@ -167,7 +168,8 @@ int main(){
 			}
 		}};
 	while (bound()){
-		futures->emplace_back(launch());
+		//futures->emplace_back(launch());
+		pool_fun(duration_cast<microseconds>(high_resolution_clock::now() - launch_clock).count());
 		std::this_thread::sleep_for(milliseconds(getArrivalInterval(20)));
 		/*
 		  { //clean up the log of messages
