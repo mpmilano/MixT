@@ -33,6 +33,10 @@ namespace mutils{
 			impl.push_back(t);
 		}
 
+		std::list<T> iterable_copy(){
+			return impl;
+		}
+
 		void remove(const T &t){
 			lock l{m}; discard(l);
 			impl.erase(std::find(impl.begin(), impl.end(),t));

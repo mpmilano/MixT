@@ -159,7 +159,24 @@ namespace mutils{
 
 				this->tp.reset(new ctpl::thread_pool{limit});
 			}
-	
+
+	private:
+		SafeSet<std::pair<std::thread::id, int> > pending_set;
+		void register_pending(std::thread::id id, int name){
+			pending_set.add(std::make_pair(id,name));
+		}
+		void remove_pending(std::thread::id id, int name){
+			pending_set.remove(std::make_pair(id,name));
+		}
+		
+	public:
+
+		void print_pending(){
+			for (auto p : pending_set.iterable_copy()){
+				std::cout << "thread id: " << p.first << " pid: " << p.second << std::endl;
+			}
+		}
+		
 		auto launch(int command, const Arg & ... arg){
 			assert(this_sp.get() == this);
 			auto this_sp = this->this_sp;
@@ -169,6 +186,8 @@ namespace mutils{
 					while (this_sp->pool_alive) {
 						if (Child *cand = this_sp->ready.pop()){
 							cand->command(command,cand->name,arg...);
+							this_sp->register_pending(std::this_thread::get_id(),cand->name);
+							AtScopeEnd ase{[&](){this_sp->remove_pending(std::this_thread::get_id(),cand->name);}};
 							return this_sp->waitOnChild(*cand);
 						}
 					} return nullptr;
@@ -196,6 +215,10 @@ namespace mutils{
 
 		auto launch(int command, const Arg & ... arg){
 			return inst->launch(command,arg...);
+		}
+
+		void print_pending(){
+			return inst->print_pending();
 		}
 	
 		virtual ~ProcessPool(){

@@ -152,7 +152,7 @@ int main(){
 		return log_messages.str();
 	};
 	vector<decltype(pool_fun)> pool_v {{pool_fun}};
-	std::unique_ptr<ProcessPool<std::string, unsigned long long> > powner(new ProcessPool<std::string, unsigned long long>(pool_v,40));
+	std::unique_ptr<ProcessPool<std::string, unsigned long long> > powner(new ProcessPool<std::string, unsigned long long>(pool_v,1));
 	auto &p = *powner;
 	auto start = high_resolution_clock::now();
 
@@ -163,37 +163,31 @@ int main(){
 	//log printer
 	using future_list = std::list<std::future<std::unique_ptr<std::string> > >;
 	std::unique_ptr<future_list> futures{new future_list()};
-	std::thread printer{[&](){
-			while (bound()){
-				for (auto &f : *futures){
-					if (f.valid()){
-						if (f.wait_for(10ms) != future_status::timeout){
-							auto strp = f.get();
-							if (strp){
-								logFile << *strp;
-							}
-						}
-					}
-				}
-				std::this_thread::sleep_for(1s);
-			}
-		}};
 	std::cout << "beginning subtask generation loop" << std::endl;
 	while (bound()){
 		futures->emplace_back(launch());
 		//std::cout << pool_fun(duration_cast<microseconds>(high_resolution_clock::now() - launch_clock).count()) << std::endl;
-		std::this_thread::sleep_for(milliseconds(getArrivalInterval(20)));
-		/*
-		  { //clean up the log of messages
-		  decltype(futures) nf{new future_list()};
-		  for (auto &f : *futures){
-		  if (f.valid()){
-		  nf->push_back(f);
-		  }
-		  }
-		  futures.reset(nf.release());
-		  }//*/
+		auto &fut = futures->front();
+		if (fut.valid() && fut.wait_for(milliseconds(getArrivalInterval(20))) != future_status::timeout){
+			if (auto strp = fut.get()) logFile << *strp;
+			futures->pop_front();
+		}
+		if (!futures->front().valid()) futures->pop_front();
 	}
-	printer.join();
+	//print everything
+	for (auto &f : *futures){
+		if (f.valid()){
+			if (f.wait_for(10s) != future_status::timeout){
+				auto strp = f.get();
+				if (strp){
+					logFile << *strp;
+				}
+			}
+			else {
+				std::cout << "long-running future is blocking me!" << std::endl;
+				p.print_pending();
+			}
+		}
+	}
 }
 	
