@@ -114,7 +114,7 @@ int main(){
 
 				auto name = get_name(0.5);
 			
-				auto test_fun = [&](const auto &hndl){
+				auto test_fun = [&](auto hndl){
 
 					for(int tmp2 = 0; tmp2 < 10; ++tmp2){
 						try{
@@ -156,24 +156,43 @@ int main(){
 	auto &p = *powner;
 	auto start = high_resolution_clock::now();
 
-	auto launch = [&](){return p.launch(0,duration_cast<microseconds>(high_resolution_clock::now() - launch_clock).count());};	
-
 	auto bound = [&](){return (high_resolution_clock::now() - start) < 30s;};
+
+	auto next = [](){return high_resolution_clock::now() + milliseconds(getArrivalInterval(20));};
 
 	//log printer
 	using future_list = std::list<std::future<std::unique_ptr<std::string> > >;
 	std::unique_ptr<future_list> futures{new future_list()};
+
+	auto elapsed_time = [](){return duration_cast<microseconds>(high_resolution_clock::now() - launch_clock).count();};
+	
+	auto launch = [&](){return p.launch(0,elapsed_time());};
+	
+	auto maybe_launch = [&](auto next_event){
+		if (high_resolution_clock::now() <= next_event){
+			//futures->emplace_back(launch());
+			std::cout << pool_fun(1,elapsed_time()) << std::endl;
+		}
+	};
+	
 	std::cout << "beginning subtask generation loop" << std::endl;
 	while (bound()){
-		futures->emplace_back(launch());
-		//std::cout << pool_fun(duration_cast<microseconds>(high_resolution_clock::now() - launch_clock).count()) << std::endl;
-		auto &fut = futures->front();
-		if (fut.valid() && fut.wait_for(milliseconds(getArrivalInterval(20))) != future_status::timeout){
-			if (auto strp = fut.get()) logFile << *strp;
-			futures->pop_front();
+		auto next_event = next();
+		maybe_launch(next_event);
+		std::unique_ptr<future_list> new_futures{new future_list()};
+		for (auto &fut : *futures){
+			if (fut.valid() && fut.wait_for(1us) != future_status::timeout){
+				if (auto strp = fut.get()) std::cout << *strp << std::endl;
+			}
+			else if (fut.valid()){
+				new_futures->push_back(std::move(fut));
+			}
+			maybe_launch(next_event);
+			if (!bound()) break;
 		}
-		if (!futures->front().valid()) futures->pop_front();
+		futures = std::move(new_futures);
 	}
+	
 	//print everything
 	for (auto &f : *futures){
 		if (f.valid()){

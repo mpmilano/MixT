@@ -9,9 +9,9 @@
 #define DOBODY1(decl,Name,args...)										\
 	decl {																\
 		return															\
-			mutils::fold(*mutils::mke_p<std::tuple<STORE_LIST> >(),		\
+			mutils::fold(mutils::fold_types<mutils::Pointerize,std::tuple<STORE_LIST>,std::tuple<> >{}, \
 						 [&](const auto &arg, const auto &accum){		\
-							 typedef std::decay_t<decltype(arg)> Store;	\
+							 typedef std::decay_t<decltype(*arg)> Store;	\
 							 typedef decltype(Store::Name ## _impl(args)) ret_t; \
 							 ret_t def;									\
 							 try {										\

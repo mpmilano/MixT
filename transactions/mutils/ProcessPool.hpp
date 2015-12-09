@@ -126,7 +126,7 @@ namespace mutils{
 				return from_bytes<Ret>(v.data());
 			}
 			else {
-				std::cerr << "child process exited abnormally" << std::endl;
+				std::cerr << "child process " << c.name << " exited abnormally" << std::endl;
 				kill(c.name, SIGKILL);
 				children.remove(c);
 				return nullptr;

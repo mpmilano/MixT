@@ -215,5 +215,7 @@ namespace mutils{
 				return filter_tpl(e,choice,acc);
 			},std::tuple<>());
 	}
-
+	
+	template<typename Arg, typename Accum>
+	using Pointerize = Cons_t<Arg*,Accum>;
 }

@@ -19,7 +19,7 @@ namespace myria{
 		int read_id = ((int*)_v)[0];
 		auto *v = _v + sizeof(int);
 		typedef std::tuple<STORE_LIST> stores;
-		typedef mutils::fold_types<Pointerize,stores,std::tuple<> > ptr_stores;
+		typedef mutils::fold_types<mutils::Pointerize,stores,std::tuple<> > ptr_stores;
 		ptr_stores lst;
 		auto ret = 
 			mutils::fold(lst,[&](const auto &e, const std::shared_ptr<RemoteObject<l,T> > &acc) -> std::shared_ptr<RemoteObject<l,T> > {

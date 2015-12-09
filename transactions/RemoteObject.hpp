@@ -71,9 +71,6 @@ namespace myria{
 		  const Handle<Level::strong,ha,T2>& h);
 		//*/
 	
-		template<typename Arg, typename Accum>
-		using Pointerize = mutils::Cons_t<Arg*,Accum>;
-	
 		static std::unique_ptr<RemoteObject> from_bytes(char const * _v); 
 
 
