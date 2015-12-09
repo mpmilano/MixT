@@ -100,13 +100,15 @@ int main(){
 	exit(0); */
 
 	std::function<std::string (int, unsigned long long)> pool_fun =
-		[ip](int port, unsigned long long start_time){
+		[ip](int pid, unsigned long long start_time){
 		std::stringstream log_messages;
+		tracker::Tracker::global_tracker(pid + 1024);
 		try{
 
 			SQLStore<Level::strong> &strong = SQLStore<Level::strong>::inst(ip);
 			SQLStore<Level::causal> &causal = SQLStore<Level::causal>::inst(0);
-			Tracker::global_tracker(port);
+			//I'm assuming that pid won't get larger than the number of allowable ports...
+			assert(pid + 1024 < 49151);
 
 			auto name = get_name(0.5);
 			
@@ -144,14 +146,13 @@ int main(){
 		return log_messages.str();
 	};
 	vector<decltype(pool_fun)> pool_v {{pool_fun}};
-	std::unique_ptr<ProcessPool<std::string, int, unsigned long long> > powner(new ProcessPool<std::string, int, unsigned long long>(pool_v));
+	std::unique_ptr<ProcessPool<std::string, unsigned long long> > powner(new ProcessPool<std::string, unsigned long long>(pool_v));
 	auto &p = *powner;
 	auto start = high_resolution_clock::now();
 
-	auto launch = [&](int port){return p.launch(0,port,duration_cast<microseconds>(high_resolution_clock::now() - launch_clock).count());};
+	auto launch = [&](){return p.launch(0,duration_cast<microseconds>(high_resolution_clock::now() - launch_clock).count());};	
 
-	
-	auto bound = [&](){return duration_cast<seconds>(high_resolution_clock::now() - start).count() < 120;};
+	auto bound = [&](){return (high_resolution_clock::now() - start) < 30s;};
 
 	//log printer
 	using future_list = std::list<std::future<std::unique_ptr<std::string> > >;

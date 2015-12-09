@@ -154,8 +154,11 @@ namespace myria { namespace tracker {
 
 
 		void CooperativeCache::listen_on(int portno){
+			std::cout << "listening on " << portno << std::endl;
 			//fork off this thread to listen for and respond to cooperative cache requests
 			std::thread([&](){
+					AtScopeEnd ase2{[](){std::cout << "listening done; cache closed" << std::endl;}};
+					discard(ase2);
 					int sockfd;
 					socklen_t clilen;
 					struct sockaddr_in serv_addr, cli_addr;
@@ -173,7 +176,7 @@ namespace myria { namespace tracker {
 						std::cerr << "ERROR on binding" << std::endl;
 						return;
 					}
-					listen(sockfd,5);
+					assert(listen(sockfd,5) == 0);
 					clilen = sizeof(cli_addr);
 					AtScopeEnd ase{[&](){close(sockfd);}};
 					discard(ase);
@@ -184,6 +187,7 @@ namespace myria { namespace tracker {
 											   &clilen);
 						if (newsockfd < 0){
 							std::cerr << "ERROR on accept" << std::endl;
+							continue;
 						}
 						//fork off a new thread to handle the request.
 						std::thread([ignored_future = pool.push([&](int){respond_to_request(newsockfd);})](){}).detach();

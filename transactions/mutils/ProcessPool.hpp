@@ -18,7 +18,7 @@ namespace mutils{
 			pid_t name;
 			int parent_to_child[2];
 			int child_to_parent[2];
-			std::vector<std::function<Ret (Arg...)> > &behaviors;
+			std::vector<std::function<Ret (int, Arg...)> > &behaviors;
 
 			struct ReadError{};
 
@@ -43,17 +43,19 @@ namespace mutils{
 				return _populate_arg(ct).to_std_tuple();
 			}
 
-			static auto behaviorOnPointers(std::vector<std::function<Ret (Arg...)> > const * const behaviors, int command, std::shared_ptr<Arg>... args){
-				return behaviors->at(command)((*args)...);
+			static auto behaviorOnPointers(std::vector<std::function<Ret (int, Arg...)> > const * const behaviors, int command, int name, std::shared_ptr<Arg>... args){
+				return behaviors->at(command)(name,(*args)...);
 			}
 		
 			void childSpin(){
 				int command;
+				int name;
 				try{
 					while (read(parent_to_child[0],&command,sizeof(command)) > 0){
+						assert(read(parent_to_child[0],&name,sizeof(name)) > 0);
 						auto args = populate_arg(ct::tuple<std::shared_ptr<Arg>...>{});
 						auto ret = callFunc(behaviorOnPointers,
-											std::tuple_cat(std::make_tuple(&behaviors,command),args));
+											std::tuple_cat(std::make_tuple(&behaviors,command,name),args));
 						int size = bytes_size(ret);
 						std::vector<char> bytes(size);
 						assert(bytes.size() == to_bytes(ret,bytes.data()));
@@ -77,8 +79,9 @@ namespace mutils{
 				_command(rest...);
 			}
 
-			void command(int com, const Arg & ... arg){
+			void command(int com, int name, const Arg & ... arg){
 				write(parent_to_child[1],&com,sizeof(com));
+				write(parent_to_child[1],&name,sizeof(name));
 				_command(arg...);
 			}
 		public:
@@ -111,7 +114,7 @@ namespace mutils{
 		ctpl::thread_pool tp;
 		SafeSet<Child> children;
 		SafeSet<Child*> ready;
-		std::vector<std::function<Ret (Arg...)> > behaviors;
+		std::vector<std::function<Ret (int, Arg...)> > behaviors;
 
 		std::unique_ptr<Ret> waitOnChild(Child &c){
 			int size;
@@ -136,7 +139,7 @@ namespace mutils{
 		friend class ProcessPool<Ret,Arg...>;
 	
 		ProcessPool_impl (std::shared_ptr<ProcessPool_impl> &pp,
-						  std::vector<std::function<Ret (Arg...)> > beh,
+						  std::vector<std::function<Ret (int, Arg...)> > beh,
 						  int limit):limit(limit),tp(limit),behaviors(beh),pool_alive(true),this_sp(pp)
 			{}
 	
@@ -160,7 +163,7 @@ namespace mutils{
 					//so this should never spin-lock.
 					while (this_sp->pool_alive) {
 						if (Child *cand = this_sp->ready.pop()){
-							cand->command(command,arg...);
+							cand->command(command,cand->name,arg...);
 							return this_sp->waitOnChild(*cand);
 						}
 					} return nullptr;
@@ -183,7 +186,7 @@ namespace mutils{
 	class ProcessPool{
 		std::shared_ptr<ProcessPool_impl<Ret,Arg...> > inst;
 	public:
-		ProcessPool (std::vector<std::function<Ret (Arg...)> > beh,int limit = 200)
+		ProcessPool (std::vector<std::function<Ret (int, Arg...)> > beh,int limit = 200)
 			:inst(new ProcessPool_impl<Ret,Arg...>(inst,beh,limit)){}
 
 		auto launch(int command, const Arg & ... arg){
