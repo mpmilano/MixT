@@ -171,6 +171,7 @@ namespace myria { namespace tracker {
 					if (bind(sockfd, (struct sockaddr *) &serv_addr,
 							 sizeof(serv_addr)) < 0){
 						std::cerr << "ERROR on binding" << std::endl;
+						return;
 					}
 					listen(sockfd,5);
 					clilen = sizeof(cli_addr);
