@@ -15,6 +15,6 @@ mount --make-rslave sys 2>/dev/null
 cp -L /etc/resolv.conf etc/ 2>/dev/null
 cd /mnt/
 #echo "done so far" `pwd`
-chroot gentoo /bin/su -c "/bin/bash /as-gentoo.sh $1 $2 $3" research
+chroot gentoo /bin/su -c "/bin/bash /as-gentoo.sh $1 $2 $3 $4 $5" research
 #chroot gentoo /bin/su -c "/usr/bin/emerge libunwind" root
 
