@@ -49,18 +49,18 @@ long getArrivalInterval(double arrival_rate) {
 
 
 int get_name(double alpha){
-	const int max = 478460;
+	const int max = 478446;
 	double y = better_rand();
 	assert (y < 1.1);
 	assert (y > -0.1);
 	double max_pow = pow(max,1 - alpha);
 	double x = pow(max_pow*y,1/(1-alpha));
 	auto ret = round(x);
-	if (ret > max) {
+	if (ret > (max + 14)) {
 		std::cerr << "Name out of range! Trying again" << std::endl;
 		return get_name(alpha);
 	}
-	else return ret;
+	else return ret + 14;
 }
 
 const auto launch_clock = high_resolution_clock::now();
@@ -143,7 +143,8 @@ int main(){
 		return log_messages.str();
 	};
 	vector<decltype(pool_fun)> pool_v {{pool_fun}};
-	auto &p = *(new ProcessPool<std::string, unsigned long long>(pool_v,1));
+	std::unique_ptr<ProcessPool<std::string, unsigned long long> > powner(new ProcessPool<std::string, unsigned long long>(pool_v,1));
+	auto &p = *powner;
 	auto start = high_resolution_clock::now();
 
 	auto launch = [&](){return p.launch(0,duration_cast<microseconds>(high_resolution_clock::now() - launch_clock).count());};
@@ -168,8 +169,8 @@ int main(){
 			}
 		}};
 	while (bound()){
-		//futures->emplace_back(launch());
-		pool_fun(duration_cast<microseconds>(high_resolution_clock::now() - launch_clock).count());
+		futures->emplace_back(launch());
+		//std::cout << pool_fun(duration_cast<microseconds>(high_resolution_clock::now() - launch_clock).count()) << std::endl;
 		std::this_thread::sleep_for(milliseconds(getArrivalInterval(20)));
 		/*
 		  { //clean up the log of messages
