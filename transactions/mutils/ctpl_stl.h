@@ -29,6 +29,7 @@
 #include <future>
 #include <mutex>
 #include <queue>
+#include <cassert>
 
 
 
@@ -72,7 +73,7 @@ namespace ctpl {
 
     public:
 
-        thread_pool() { this->init(); }
+        thread_pool() { assert(false);this->init(); }
         thread_pool(int nThreads) { this->init(); this->resize(nThreads); }
 
         // the destructor waits for all the functions in the queue to be finished

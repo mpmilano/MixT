@@ -96,6 +96,7 @@ namespace mutils{
 				pipe(parent_to_child);
 				pipe(child_to_parent);
 				name = fork();
+				std::cout << "forking" << std::endl;
 			}
 			Child(const Child&) = delete;
 			virtual ~Child(){
@@ -111,7 +112,7 @@ namespace mutils{
 		};
 	
 		const int limit;
-		ctpl::thread_pool tp;
+		std::unique_ptr<ctpl::thread_pool> tp;
 		SafeSet<Child> children;
 		SafeSet<Child*> ready;
 		std::vector<std::function<Ret (int, Arg...)> > behaviors;
@@ -125,6 +126,7 @@ namespace mutils{
 				return from_bytes<Ret>(v.data());
 			}
 			else {
+				std::cerr << "child process exited abnormally" << std::endl;
 				kill(c.name, SIGKILL);
 				children.remove(c);
 				return nullptr;
@@ -140,25 +142,28 @@ namespace mutils{
 	
 		ProcessPool_impl (std::shared_ptr<ProcessPool_impl> &pp,
 						  std::vector<std::function<Ret (int, Arg...)> > beh,
-						  int limit):limit(limit),tp(limit),behaviors(beh),pool_alive(true),this_sp(pp)
-			{}
+						  int limit):limit(limit),behaviors(beh),pool_alive(true),this_sp(pp)
+			{
+				while (children.size() < limit){
+					auto &child = children.emplace(behaviors);
+					if (child.name == 0) {
+						child.childSpin();
+						exit(0);
+					}
+					else {
+						close(child.child_to_parent[1]);
+						close(child.parent_to_child[0]);
+						ready.add(&child);
+					}
+				}
+
+				this->tp.reset(new ctpl::thread_pool{limit});
+			}
 	
 		auto launch(int command, const Arg & ... arg){
 			assert(this_sp.get() == this);
-			if (children.size() < limit){
-				auto &child = children.emplace(behaviors);
-				if (child.name == 0) {
-					child.childSpin();
-					exit(0);
-				}
-				else {
-					close(child.child_to_parent[1]);
-					close(child.parent_to_child[0]);
-					ready.add(&child);
-				}
-			}
 			auto this_sp = this->this_sp;
-			return tp.push([this_sp,command,arg...](int) -> std::unique_ptr<Ret>{
+			return tp->push([this_sp,command,arg...](int) -> std::unique_ptr<Ret>{
 					//we should only be scheduled when there's something to grab,
 					//so this should never spin-lock.
 					while (this_sp->pool_alive) {

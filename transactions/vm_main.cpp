@@ -101,52 +101,58 @@ int main(){
 
 	std::function<std::string (int, unsigned long long)> pool_fun =
 		[ip](int pid, unsigned long long start_time){
+		//std::cout << "launching task on pid " << pid << std::endl;
+		//AtScopeEnd em{[pid](){std::cout << "finishing task on pid " << pid << std::endl;}};
 		std::stringstream log_messages;
 		tracker::Tracker::global_tracker(pid + 1024);
 		try{
+			std::string str = [&](){
+				SQLStore<Level::strong> &strong = SQLStore<Level::strong>::inst(ip);
+				SQLStore<Level::causal> &causal = SQLStore<Level::causal>::inst(0);
+				//I'm assuming that pid won't get larger than the number of allowable ports...
+				assert(pid + 1024 < 49151);
 
-			SQLStore<Level::strong> &strong = SQLStore<Level::strong>::inst(ip);
-			SQLStore<Level::causal> &causal = SQLStore<Level::causal>::inst(0);
-			//I'm assuming that pid won't get larger than the number of allowable ports...
-			assert(pid + 1024 < 49151);
-
-			auto name = get_name(0.5);
+				auto name = get_name(0.5);
 			
-			auto test_fun = [&](const auto &hndl){
+				auto test_fun = [&](const auto &hndl){
 
-				for(int tmp2 = 0; tmp2 < 10; ++tmp2){
-					try{
-						if ((name % mod_constant) == 0)
-							TRANSACTION(
-								do_op(Increment,hndl)
-								)
-							else hndl.get();
-						auto end = high_resolution_clock::now() - launch_clock;
-						log_messages << "duration: " << duration_cast<microseconds>(end).count() - start_time
-						<< ((name % mod_constant) == 0 ? " read/write" : " read") << std::endl;
-						break;
+					for(int tmp2 = 0; tmp2 < 10; ++tmp2){
+						try{
+							if ((name % mod_constant) == 0)
+								TRANSACTION(
+									do_op(Increment,hndl)
+									)
+								else hndl.get();
+							auto end = high_resolution_clock::now() - launch_clock;
+							log_messages << "duration: " << duration_cast<microseconds>(end).count() - start_time
+							<< ((name % mod_constant) == 0 ? " read/write" : " read") << std::endl;
+							break;
+						}
+						catch(const Transaction::SerializationFailure &r){
+							log_messages << "serialization failure: "
+							<< duration_cast<microseconds>(high_resolution_clock::now() - launch_clock).count() - start_time
+							<< std::endl;
+							continue;
+						}
 					}
-					catch(const Transaction::SerializationFailure &r){
-						log_messages << "serialization failure: "
-						<< duration_cast<microseconds>(high_resolution_clock::now() - launch_clock).count() - start_time
-						<< std::endl;
-						continue;
-					}
+					return log_messages.str();
+				};
+				if (better_rand() > .7 || !causal_enabled){
+					return test_fun(strong.template existingObject<HandleAccess::all,int>(name));
 				}
-				return log_messages.str();
-			};
-			if (better_rand() > .7 || !causal_enabled){
-				return test_fun(strong.template existingObject<HandleAccess::all,int>(name));
-			}
-			else return test_fun(causal.template existingObject<HandleAccess::all,int>(name));
+				else return test_fun(causal.template existingObject<HandleAccess::all,int>(name));
+			}();
+			//std::cout << str << std::endl;
+			return str;
 		}
 		catch(pqxx::pqxx_exception &e){
 			log_messages << "pqxx failure: " << e.base().what() << std::endl;
 		}
+		std::cout << log_messages.str() << std::endl;
 		return log_messages.str();
 	};
 	vector<decltype(pool_fun)> pool_v {{pool_fun}};
-	std::unique_ptr<ProcessPool<std::string, unsigned long long> > powner(new ProcessPool<std::string, unsigned long long>(pool_v));
+	std::unique_ptr<ProcessPool<std::string, unsigned long long> > powner(new ProcessPool<std::string, unsigned long long>(pool_v,40));
 	auto &p = *powner;
 	auto start = high_resolution_clock::now();
 
@@ -161,9 +167,11 @@ int main(){
 			while (bound()){
 				for (auto &f : *futures){
 					if (f.valid()){
-						auto strp = f.get();
-						if (strp){
-							logFile << *strp;
+						if (f.wait_for(10ms) != future_status::timeout){
+							auto strp = f.get();
+							if (strp){
+								logFile << *strp;
+							}
 						}
 					}
 				}
