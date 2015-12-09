@@ -99,13 +99,14 @@ int main(){
 	}
 	exit(0); */
 
-	std::function<std::string (unsigned long long)> pool_fun =
-		[ip](unsigned long long start_time){
+	std::function<std::string (int, unsigned long long)> pool_fun =
+		[ip](int port, unsigned long long start_time){
 		std::stringstream log_messages;
 		try{
 
 			SQLStore<Level::strong> &strong = SQLStore<Level::strong>::inst(ip);
 			SQLStore<Level::causal> &causal = SQLStore<Level::causal>::inst(0);
+			Tracker::global_tracker(port);
 
 			auto name = get_name(0.5);
 			
@@ -143,11 +144,11 @@ int main(){
 		return log_messages.str();
 	};
 	vector<decltype(pool_fun)> pool_v {{pool_fun}};
-	std::unique_ptr<ProcessPool<std::string, unsigned long long> > powner(new ProcessPool<std::string, unsigned long long>(pool_v,1));
+	std::unique_ptr<ProcessPool<std::string, int, unsigned long long> > powner(new ProcessPool<std::string, int, unsigned long long>(pool_v));
 	auto &p = *powner;
 	auto start = high_resolution_clock::now();
 
-	auto launch = [&](){return p.launch(0,duration_cast<microseconds>(high_resolution_clock::now() - launch_clock).count());};
+	auto launch = [&](int port){return p.launch(0,port,duration_cast<microseconds>(high_resolution_clock::now() - launch_clock).count());};
 
 	
 	auto bound = [&](){return duration_cast<seconds>(high_resolution_clock::now() - start).count() < 120;};
@@ -168,6 +169,7 @@ int main(){
 				std::this_thread::sleep_for(1s);
 			}
 		}};
+	std::cout << "beginning subtask generation loop" << std::endl;
 	while (bound()){
 		futures->emplace_back(launch());
 		//std::cout << pool_fun(duration_cast<microseconds>(high_resolution_clock::now() - launch_clock).count()) << std::endl;

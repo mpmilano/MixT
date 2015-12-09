@@ -84,12 +84,9 @@ namespace myria { namespace tracker {
 		void Tracker::assert_nonempty_tracking() const {
 			assert (!(i->tracking.empty()));
 		}
-
-		namespace{
-			static constexpr int cache_port = (int{CACHE_PORT} > 0 ? int{CACHE_PORT} : 9889);
-		}
 		
-		Tracker::Tracker():i{new Internals{}}{
+		Tracker::Tracker(int cache_port):i{new Internals{}},cache_port(cache_port){
+			assert(cache_port > 0 && "error: must specify non-zero cache port for first tracker call");
 			i->cache.listen_on(cache_port);
 		}
 
@@ -101,8 +98,8 @@ namespace myria { namespace tracker {
 			return nonce;
 		}
 
-		Tracker& Tracker::global_tracker(){
-			static Tracker t;
+		Tracker& Tracker::global_tracker(int cache_port){
+			static Tracker t{cache_port};
 			return t;
 		}
 

@@ -71,7 +71,7 @@ namespace myria {
 				const std::function<void (MemoryOwner&, char const *)> &construct_nd_merge);
 	
 		public:
-			static Tracker& global_tracker();
+			static Tracker& global_tracker(int cache_port = -1);
 
 			bool registered(const GDataStore&) const;
 
@@ -120,7 +120,8 @@ namespace myria {
 			void assert_nonempty_tracking() const;
 
 		private:
-			Tracker();
+			const int cache_port;
+			Tracker(int cache_port);
 			virtual ~Tracker();
 
 			Tracker(const Tracker&) = delete;
