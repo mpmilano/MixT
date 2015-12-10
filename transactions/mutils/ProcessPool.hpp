@@ -4,6 +4,7 @@
 #include "SerializationSupport.hpp"
 #include <unistd.h>
 #include <signal.h>
+#include <exception>
 #include "compile-time-tuple.hpp"
 
 namespace mutils{
@@ -18,7 +19,8 @@ namespace mutils{
 			pid_t name;
 			int parent_to_child[2];
 			int child_to_parent[2];
-			std::vector<std::function<Ret (int, Arg...)> > &behaviors;
+			std::vector<std::function<Ret (std::function<void* (void*)>, int, Arg...)> > &behaviors;
+			const std::function<Ret (std::exception_ptr)> &onException;
 
 			struct ReadError{};
 
@@ -43,10 +45,26 @@ namespace mutils{
 				return _populate_arg(ct).to_std_tuple();
 			}
 
-			static auto behaviorOnPointers(std::vector<std::function<Ret (int, Arg...)> > const * const behaviors, int command, int name, std::shared_ptr<Arg>... args){
-				return behaviors->at(command)(name,(*args)...);
+			static auto behaviorOnPointers(std::vector<std::function<Ret (std::function<void* (void*)>, int, Arg...)> > const * const behaviors, std::function<void* (void*)> remember, int command, int name, std::shared_ptr<Arg>... args){
+				return behaviors->at(command)(remember,name,(*args)...);
 			}
-		
+
+			void writeBackResult(const Ret &ret){
+				int size = bytes_size(ret);
+				std::vector<char> bytes(size);
+				assert(bytes.size() == to_bytes(ret,bytes.data()));
+				write(child_to_parent[1],&size,sizeof(size));
+				write(child_to_parent[1],bytes.data(),size);
+			}
+
+			static void* hangOnToThis(void *v){
+				static void* hang = v;
+				if (v) hang = v;
+				return hang;
+			}
+
+			const std::function<void* (void*)> remember{&Child::hangOnToThis};
+			
 			void childSpin(){
 				int command;
 				int name;
@@ -54,13 +72,14 @@ namespace mutils{
 					while (read(parent_to_child[0],&command,sizeof(command)) > 0){
 						assert(read(parent_to_child[0],&name,sizeof(name)) > 0);
 						auto args = populate_arg(ct::tuple<std::shared_ptr<Arg>...>{});
-						auto ret = callFunc(behaviorOnPointers,
-											std::tuple_cat(std::make_tuple(&behaviors,command,name),args));
-						int size = bytes_size(ret);
-						std::vector<char> bytes(size);
-						assert(bytes.size() == to_bytes(ret,bytes.data()));
-						write(child_to_parent[1],&size,sizeof(size));
-						write(child_to_parent[1],bytes.data(),size);
+						try{
+							auto ret = callFunc(behaviorOnPointers,
+												std::tuple_cat(std::make_tuple(&behaviors,remember,command,name),args));
+							writeBackResult(ret);
+						}
+						catch(...){
+							writeBackResult(onException(std::current_exception()));
+						}
 					}
 				}
 				catch (const ReadError&) {/* abort thread*/}
@@ -92,7 +111,8 @@ namespace mutils{
 				return name == c.name;
 			}
 		
-			Child(decltype(behaviors) b):behaviors(b){
+			Child(decltype(behaviors) b, decltype(onException) e)
+				:behaviors(b),onException(e){
 				pipe(parent_to_child);
 				pipe(child_to_parent);
 				name = fork();
@@ -115,7 +135,8 @@ namespace mutils{
 		std::unique_ptr<ctpl::thread_pool> tp;
 		SafeSet<Child> children;
 		SafeSet<Child*> ready;
-		std::vector<std::function<Ret (int, Arg...)> > behaviors;
+		std::vector<std::function<Ret (std::function<void* (void*)>, int, Arg...)> > behaviors;
+		std::function<Ret (std::exception_ptr)> onException;
 
 		std::unique_ptr<Ret> waitOnChild(Child &c){
 			int size;
@@ -141,11 +162,13 @@ namespace mutils{
 		friend class ProcessPool<Ret,Arg...>;
 	
 		ProcessPool_impl (std::shared_ptr<ProcessPool_impl> &pp,
-						  std::vector<std::function<Ret (int, Arg...)> > beh,
-						  int limit):limit(limit),behaviors(beh),pool_alive(true),this_sp(pp)
+						  std::vector<std::function<Ret (std::function<void* (void*)>, int, Arg...)> > beh,
+						  int limit,
+						  std::function<Ret (std::exception_ptr)> onException
+			):limit(limit),behaviors(beh),onException(onException),pool_alive(true),this_sp(pp)
 			{
 				while (children.size() < limit){
-					auto &child = children.emplace(behaviors);
+					auto &child = children.emplace(behaviors,onException);
 					if (child.name == 0) {
 						child.childSpin();
 						exit(0);
@@ -206,12 +229,32 @@ namespace mutils{
 		}
 	};
 
+	template<typename>
+	struct default_on_exn;
+
+	template<>
+	struct default_on_exn<std::string> {
+		static constexpr auto value = "Exception Occurred!";
+	};
+	
 	template<typename Ret, typename... Arg>
 	class ProcessPool{
 		std::shared_ptr<ProcessPool_impl<Ret,Arg...> > inst;
 	public:
-		ProcessPool (std::vector<std::function<Ret (int, Arg...)> > beh,int limit = 200)
-			:inst(new ProcessPool_impl<Ret,Arg...>(inst,beh,limit)){}
+		ProcessPool (std::vector<std::function<Ret (std::function<void* (void*)>, int, Arg...)> > beh,
+					 int limit = 200,
+					 std::function<Ret (std::exception_ptr)> onExn = [](std::exception_ptr exn){
+						 try {
+							 assert(exn);
+							 std::rethrow_exception(exn);
+						 }
+						 catch (...){
+							 return default_on_exn<Ret>::value;
+						 }
+						 assert(false && "exn handler called with no currrent exception?");
+					 }
+			)
+			:inst(new ProcessPool_impl<Ret,Arg...>(inst,beh,limit,onExn)){}
 
 		auto launch(int command, const Arg & ... arg){
 			return inst->launch(command,arg...);

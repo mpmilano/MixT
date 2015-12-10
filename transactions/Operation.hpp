@@ -179,7 +179,7 @@ namespace myria {
 		}
 	};
 
-	struct OperationNotFoundError {};
+	struct OperationNotFoundError : public mutils::StaticMyriaException<MACRO_GET_STR("Error: operation not found")> {};
 
 	struct NoOperation {
 		static constexpr bool built_well = false;

@@ -181,11 +181,15 @@ namespace myria { namespace mtl {
 				return action();
 			}
 
-			struct CannotProceedError {
+			struct CannotProceedError : mutils::MyriaException{
 				const std::string why;
+				CannotProceedError(decltype(why) w):why(w){}
+				const char* what() const _NOEXCEPT {
+					return why.c_str();
+				}
 			};
-			struct SerializationFailure {};
-			struct ClassCastException{};
+			struct SerializationFailure : mutils::StaticMyriaException<MACRO_GET_STR("Error: Serialization Failure")> {};
+			struct ClassCastException : mutils::StaticMyriaException<MACRO_GET_STR("Error: Class Cast Exception")> {};
 		};
 
 

@@ -112,7 +112,7 @@ namespace myria {
 				);
 
 			//for when merging locally is too hard or expensive
-			void waitForRead(DataStore<Level::causal>&, Name name, const Clock& version);
+			bool waitForRead(DataStore<Level::causal>&, Name name, const Clock& version);
 
 			void afterRead(DataStore<Level::causal>&, Name name, const Clock& version, const std::vector<char> &data);
 

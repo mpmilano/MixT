@@ -3,7 +3,7 @@
 
 namespace myria { namespace mtl {
 
-		struct StoreMiss {};
+		struct StoreMiss : public mutils::StaticMyriaException<MACRO_GET_STR("error: Store Miss!")> {};
 
 		enum class StoreType{
 			StrongStore,
