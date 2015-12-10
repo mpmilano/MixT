@@ -197,7 +197,7 @@ namespace myria { namespace mtl {
 		template<typename T>
 		using run_result = decltype(run_ast_causal(std::declval<CausalCache&>(),std::declval<CausalStore&>(),std::declval<T&>()));
 
-		struct CacheLookupFailure {};
+		struct CacheLookupFailure : public mutils::StaticMyriaException<MACRO_GET_STR("Error: cache lookup failed!")> {};
 
 		template<typename T, restrict(is_ConExpr<T>::value && !std::is_scalar<T>::value && !is_handle<T>::value)>
 		auto cached(const StrongCache& cache, const T& ast){

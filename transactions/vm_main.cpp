@@ -86,7 +86,7 @@ int main(){
 	AtScopeEnd ase{[&](){logFile << "End" << std::endl;
 			logFile.close();}};
 	discard(ase);
-
+	
 	/*
 //init
 	SQLStore<Level::strong> &strong = SQLStore<Level::strong>::inst(ip);
@@ -143,7 +143,7 @@ int main(){
 				}
 				else return test_fun(causal.template existingObject<HandleAccess::all,int>(name));
 			}();
-			std::cout << str << std::endl;
+			//std::cout << str << std::endl;
 			return str;
 		}
 		catch(pqxx::pqxx_exception &e){
@@ -152,14 +152,30 @@ int main(){
 		std::cout << log_messages.str() << std::endl;
 		return log_messages.str();
 	};
+	std::function<std::string (std::exception_ptr) > exn_handler = [](std::exception_ptr eptr){
+		std::stringstream log_messages;
+		try {
+			assert(eptr);
+			std::rethrow_exception(eptr);
+		}
+		catch (const pqxx::pqxx_exception &e){
+			log_messages << "pqxx failure: " << e.base().what() << std::endl;
+		}
+		catch (const std::exception &e){
+			log_messages << "non-pqxx failure: " << e.what() << std::endl;
+		}
+		catch (...){
+			log_messages << "Exception occurred which derived from neither pqxx_exception nor std::exception!" << std::endl;
+		}
+		return log_messages.str();
+	};
 	vector<decltype(pool_fun)> pool_v {{pool_fun}};
-	std::unique_ptr<ProcessPool<std::string, unsigned long long> > powner(new ProcessPool<std::string, unsigned long long>(pool_v,1));
+	std::unique_ptr<ProcessPool<std::string, unsigned long long> >
+		powner(new ProcessPool<std::string, unsigned long long>(pool_v,2,exn_handler));
 	auto &p = *powner;
 	auto start = high_resolution_clock::now();
 
 	auto bound = [&](){return (high_resolution_clock::now() - start) < 30s;};
-
-	auto next = [](){return high_resolution_clock::now() + getArrivalInterval(20);};
 
 	//log printer
 	using future_list = std::list<std::future<std::unique_ptr<std::string> > >;
@@ -169,51 +185,29 @@ int main(){
 	
 	auto launch = [&](){return p.launch(0,elapsed_time());};
 	
-	auto maybe_launch = [&](auto next_event){
-		if (high_resolution_clock::now() <= next_event){
-			//futures->emplace_back(launch());
-			pool_fun(1,elapsed_time());
-			//std::cout <<  << std::endl;
-		}
-	};
-	
 	std::cout << "beginning subtask generation loop" << std::endl;
 	while (bound()){
 		std::this_thread::sleep_for(getArrivalInterval(20));
-		//futures->emplace_back(launch());
-		pool_fun(1,elapsed_time());
-		/*
-		auto next_event = next();
-		maybe_launch(next_event);
-		std::unique_ptr<future_list> new_futures{new future_list()};
-		for (auto &fut : *futures){
-			if (fut.valid() && fut.wait_for(1us) != future_status::timeout){
-				if (auto strp = fut.get()) std::cout << *strp << std::endl;
-			}
-			else if (fut.valid()){
-				new_futures->push_back(std::move(fut));
-			}
-			maybe_launch(next_event);
-			if (!bound()) break;
-			} 
-		futures = std::move(new_futures);
-//*/
+		futures->emplace_back(launch());
 	}
 	
 	//print everything
-	for (auto &f : *futures){
-		if (f.valid()){
-			if (f.wait_for(10s) != future_status::timeout){
-				auto strp = f.get();
-				if (strp){
-					logFile << *strp;
+	while (!futures->empty()){
+		std::unique_ptr<future_list> new_futures{new future_list()};
+		for (auto &f : *futures){
+			if (f.valid()){
+				if (f.wait_for(1ms) != future_status::timeout){
+					auto strp = f.get();
+					if (strp){
+						logFile << *strp;
+						std::cout << *strp << std::endl;
+					}
+				}
+				else {
+					new_futures->push_back(std::move(f));
 				}
 			}
-			else {
-				std::cout << "long-running future is blocking me!" << std::endl;
-				p.print_pending();
-			}
 		}
+		futures = std::move(new_futures);
 	}
 }
-	
