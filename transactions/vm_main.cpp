@@ -158,8 +158,8 @@ int main(){
 	auto start = high_resolution_clock::now();
 
 	auto bound = [&](){return (high_resolution_clock::now() - start) < 30s;};
-
-	auto next = [](){return high_resolution_clock::now() + getArrivalInterval(20);};
+	
+	auto next = [](){return high_resolution_clock::now() + getArrivalInterval(20 + 10*int{concurrencySetting});};
 
 	//log printer
 	using future_list = std::list<std::future<std::unique_ptr<std::string> > >;

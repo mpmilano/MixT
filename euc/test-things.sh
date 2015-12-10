@@ -7,7 +7,7 @@ then
 	exit 1
 fi
 
-for num_per in {1..100}
+for num_per in {1..10}
 do
 	echo "iteration " $num_per
 	for configuration in USE_STRONG NO_USE_STRONG
