@@ -171,7 +171,7 @@ int main(){
 	};
 	vector<decltype(pool_fun)> pool_v {{pool_fun}};
 	std::unique_ptr<ProcessPool<std::string, unsigned long long> >
-		powner(new ProcessPool<std::string, unsigned long long>(pool_v,2,exn_handler));
+		powner(new ProcessPool<std::string, unsigned long long>(pool_v,40,exn_handler));
 	auto &p = *powner;
 	auto start = high_resolution_clock::now();
 
@@ -200,7 +200,6 @@ int main(){
 					auto strp = f.get();
 					if (strp){
 						logFile << *strp;
-						std::cout << *strp << std::endl;
 					}
 				}
 				else {
