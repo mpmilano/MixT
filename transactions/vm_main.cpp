@@ -100,8 +100,8 @@ int main(){
 	}
 	exit(0); */
 
-	std::function<std::string (int, unsigned long long)> pool_fun =
-		[ip](int pid, unsigned long long start_time){
+	std::function<std::string (std::function<void* (void*)>, int, unsigned long long)> pool_fun =
+		[ip](std::function<void* (void*) >, int pid, unsigned long long start_time){
 		//std::cout << "launching task on pid " << pid << std::endl;
 		//AtScopeEnd em{[pid](){std::cout << "finishing task on pid " << pid << std::endl;}};
 		std::stringstream log_messages;
