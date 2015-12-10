@@ -186,8 +186,8 @@ namespace mutils{
 					while (this_sp->pool_alive) {
 						if (Child *cand = this_sp->ready.pop()){
 							cand->command(command,cand->name,arg...);
-							this_sp->register_pending(std::this_thread::get_id(),cand->name);
-							AtScopeEnd ase{[&](){this_sp->remove_pending(std::this_thread::get_id(),cand->name);}};
+							//this_sp->register_pending(std::this_thread::get_id(),cand->name);
+							//AtScopeEnd ase{[&](){this_sp->remove_pending(std::this_thread::get_id(),cand->name);}};
 							return this_sp->waitOnChild(*cand);
 						}
 					} return nullptr;

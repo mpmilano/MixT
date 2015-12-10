@@ -39,12 +39,13 @@ const auto log_name = [](){
 ofstream logFile;
 
 //I'm guessing miliseconds.  Here's hoping!
-long getArrivalInterval(double arrival_rate) {
+auto getArrivalInterval(double arrival_rate) {
 	// exponential
 	constexpr double thousand = -1000.0;
 	double U = better_rand();
 	double T = thousand * log(U) / arrival_rate;
-	return round(T);
+	unsigned long l = round(T);
+	return milliseconds(l);
 }
 
 
@@ -142,7 +143,7 @@ int main(){
 				}
 				else return test_fun(causal.template existingObject<HandleAccess::all,int>(name));
 			}();
-			//std::cout << str << std::endl;
+			std::cout << str << std::endl;
 			return str;
 		}
 		catch(pqxx::pqxx_exception &e){
@@ -158,7 +159,7 @@ int main(){
 
 	auto bound = [&](){return (high_resolution_clock::now() - start) < 30s;};
 
-	auto next = [](){return high_resolution_clock::now() + milliseconds(getArrivalInterval(20));};
+	auto next = [](){return high_resolution_clock::now() + getArrivalInterval(20);};
 
 	//log printer
 	using future_list = std::list<std::future<std::unique_ptr<std::string> > >;
@@ -171,12 +172,17 @@ int main(){
 	auto maybe_launch = [&](auto next_event){
 		if (high_resolution_clock::now() <= next_event){
 			//futures->emplace_back(launch());
-			std::cout << pool_fun(1,elapsed_time()) << std::endl;
+			pool_fun(1,elapsed_time());
+			//std::cout <<  << std::endl;
 		}
 	};
 	
 	std::cout << "beginning subtask generation loop" << std::endl;
 	while (bound()){
+		std::this_thread::sleep_for(getArrivalInterval(20));
+		//futures->emplace_back(launch());
+		pool_fun(1,elapsed_time());
+		/*
 		auto next_event = next();
 		maybe_launch(next_event);
 		std::unique_ptr<future_list> new_futures{new future_list()};
@@ -189,8 +195,9 @@ int main(){
 			}
 			maybe_launch(next_event);
 			if (!bound()) break;
-		}
+			} 
 		futures = std::move(new_futures);
+//*/
 	}
 	
 	//print everything
