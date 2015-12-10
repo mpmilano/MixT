@@ -310,9 +310,8 @@ namespace myria { namespace tracker {
 		}
 
 
-
 //for when merging locally is too hard or expensive
-		void Tracker::waitForRead(DataStore<Level::causal>&, Name name, const Clock& version){
+		bool Tracker::waitForRead(DataStore<Level::causal>&, Name name, const Clock& version){
 			//TODO: distinctly not thread-safe
 			//if the user called onRead manually and did a merge,
 			//we don't want to wait here.
@@ -321,8 +320,9 @@ namespace myria { namespace tracker {
 			//we can use this trivial state tracking mechanism
 			if (i->last_onRead_name && *i->last_onRead_name == name){
 				i->last_onRead_name.reset(nullptr);
-				return;
+				return true;
 			}
+
 			if (tracking_candidate(*i,name,version)) {
 				//need to pause here and wait for nonce availability
 				//for each nonce in the list
@@ -334,7 +334,9 @@ namespace myria { namespace tracker {
 						}
 					}
 				}
+				return false;
 			}
+			return true;
 		}
 		
 		void Tracker::afterRead(DataStore<Level::causal>&, Name name, const Clock& version, const std::vector<char> &data){
