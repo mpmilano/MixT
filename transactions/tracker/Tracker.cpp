@@ -13,6 +13,7 @@
 #include <thread>
 #include <unistd.h>
 
+#include "FutureFreePool.hpp"
 #include "CooperativeCache.hpp"
 #include "Tracker_common.hpp"
 #include "CompactSet.hpp"
@@ -52,7 +53,8 @@ namespace myria { namespace tracker {
 				virtual ~Bundle(){
 					if (f->valid()){
 						//toss the future into a wrapper thread and exit
-						std::thread{[ft = move(*f)](){}}.detach();
+						static FutureFreePool p{100};
+						p.take(move(*f));;
 					}
 				}
 			};

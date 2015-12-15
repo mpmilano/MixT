@@ -3,28 +3,29 @@ IP_quad=`ifconfig | sed s/broadcast.*//g | tr " " "\n" | grep 128.84 | rev | sed
 storeList='pgsql::SQLStore<Level::strong>, pgsql::SQLStore<Level::causal>'
 clangFlags= -I$(PWD) -I$(PWD)/mtl -I$(PWD)/mutils -I$(PWD)/pgsql -I$(PWD)/tracker -g -stdlib=libc++ --std=c++14 -Wall -ferror-limit=1 -DNUM_CAUSAL_GROUPS="4" -DSTORE_LIST=$(storeList) -DMY_IP=\"$(MY_IP)\" -DCACHE_PORT=$(CACHE_PORT) -DMAX_THREADS=$(MAX_THREADS) -DDECLARED_OPERATIONS="template<Level l2> DECLARE_OPERATION(Increment, RemoteObject<l2,int>*) template<Level l2, typename T> DECLARE_OPERATION(Insert, RemoteObject<l2,std::set<T> >*, const T& ) "
 linkFlags= -stdlib=libc++ --std=c++14 -lpqxx -lunwind -lm -pthread
+object_files=FutureFreePool.o CooperativeCache.o Ends.o utils.o Tracker.o Ostreams.o SerializationSupport.o WhileBuilder.o ConExpr.o Context.o SQLStore.o TempBuilder.o
 export IP_quad
 export TRANS_DIR
 export clangFlags
 export linkFlags
 
-all: CooperativeCache.o Ends.o utils.o Tracker.o Ostreams.o SerializationSupport.o WhileBuilder.o ConExpr.o Context.o SQLStore.o TempBuilder.o list_example.o
-	clang++ CooperativeCache.o utils.o Ends.o Tracker.o Ostreams.o SerializationSupport.o WhileBuilder.o ConExpr.o Context.o SQLStore.o TempBuilder.o list_example.o -o test $(linkFlags)
+all: $(object_files) list_example.o
+	clang++ $(object_files) list_example.o -o test $(linkFlags)
 
-stress1: CooperativeCache.o Ends.o utils.o Tracker.o Ostreams.o SerializationSupport.o WhileBuilder.o ConExpr.o Context.o SQLStore.o TempBuilder.o stress_test1.o
-	clang++ CooperativeCache.o utils.o Ends.o Tracker.o Ostreams.o SerializationSupport.o WhileBuilder.o ConExpr.o Context.o SQLStore.o TempBuilder.o stress_test.o -o stress1 $(linkFlags)
+stress1: $(object_files) stress_test1.o
+	clang++ $(object_files) stress_test.o -o stress1 $(linkFlags)
 
-stress2: CooperativeCache.o Ends.o utils.o Tracker.o Ostreams.o SerializationSupport.o WhileBuilder.o ConExpr.o Context.o SQLStore.o TempBuilder.o stress_test2.o
-	clang++ CooperativeCache.o utils.o Ends.o Tracker.o Ostreams.o SerializationSupport.o WhileBuilder.o ConExpr.o Context.o SQLStore.o TempBuilder.o stress_test.o -o stress2 $(linkFlags)
+stress2: $(object_files) stress_test2.o
+	clang++ $(object_files) stress_test.o -o stress2 $(linkFlags)
 
-stress3: CooperativeCache.o Ends.o utils.o Tracker.o Ostreams.o SerializationSupport.o WhileBuilder.o ConExpr.o Context.o SQLStore.o TempBuilder.o stress_test3.o
-	clang++ CooperativeCache.o utils.o Ends.o Tracker.o Ostreams.o SerializationSupport.o WhileBuilder.o ConExpr.o Context.o SQLStore.o TempBuilder.o stress_test.o -o stress3 $(linkFlags)
+stress3:  $(object_files) stress_test3.o
+	clang++ $(object_files) stress_test.o -o stress3 $(linkFlags)
 
-vm: CooperativeCache.o Ends.o utils.o Tracker.o Ostreams.o SerializationSupport.o WhileBuilder.o ConExpr.o Context.o SQLStore.o TempBuilder.o vm_main.o
-	clang++ CooperativeCache.o utils.o Ends.o Tracker.o Ostreams.o SerializationSupport.o WhileBuilder.o ConExpr.o Context.o SQLStore.o TempBuilder.o vm_main.o -o vm $(linkFlags)
+vm: $(object_files) vm_main.o
+	clang++ $(object_files) vm_main.o -o vm $(linkFlags)
 
-chat: CooperativeCache.o Ends.o utils.o Ostreams.o Tracker.o SerializationSupport.o WhileBuilder.o ConExpr.o Context.o SQLStore.o TempBuilder.o chat_example.o
-	clang++ CooperativeCache.o utils.o Ends.o Ostreams.o Tracker.o SerializationSupport.o WhileBuilder.o ConExpr.o Context.o SQLStore.o TempBuilder.o chat_example.o -o chat $(linkFlags)
+chat: $(object_files) chat_example.o
+	clang++ $(object_files) chat_example.o -o chat $(linkFlags)
 
 sqlstore: sqlstore_clean all
 	echo "done"
@@ -70,6 +71,8 @@ WhileBuilder.o:
 	clang++ -c */WhileBuilder.cpp $(clangFlags)
 CooperativeCache.o:
 	clang++ -c */CooperativeCache.cpp $(clangFlags)
+FutureFreePool.o:
+	clang++ -c */FutureFreePool.cpp $(clangFlags)
 
 run: test
 	PGHOST='127.0.0.1' PGPORT='5432' PGDATABASE='DataStore' PGUSER='research' PGPASSWORD='swimsand' ./test

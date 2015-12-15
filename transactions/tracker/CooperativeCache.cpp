@@ -6,6 +6,7 @@
 #include <thread>
 #include "ctpl_stl.h"
 #include "CooperativeCache.hpp"
+#include "FutureFreePool.hpp"
 
 using namespace mutils;
 
@@ -156,7 +157,7 @@ namespace myria { namespace tracker {
 		void CooperativeCache::listen_on(int portno){
 			std::cout << "listening on " << portno << std::endl;
 			//fork off this thread to listen for and respond to cooperative cache requests
-			std::thread([&](){
+			static std::thread listener([&](){
 					AtScopeEnd ase2{[](){std::cout << "listening done; cache closed" << std::endl;}};
 					discard(ase2);
 					int sockfd;
@@ -176,11 +177,12 @@ namespace myria { namespace tracker {
 						std::cerr << "ERROR on binding" << std::endl;
 						return;
 					}
+					assert(false && "That 5 is the culprit, probably");
 					assert(listen(sockfd,5) == 0);
 					clilen = sizeof(cli_addr);
 					AtScopeEnd ase{[&](){close(sockfd);}};
 					discard(ase);
-					ctpl::thread_pool pool{tp_size};
+					FutureFreePool pool{tp_size};
 					while (true) {
 						int newsockfd = accept(sockfd,
 											   (struct sockaddr *) &cli_addr,
@@ -190,9 +192,9 @@ namespace myria { namespace tracker {
 							continue;
 						}
 						//fork off a new thread to handle the request.
-						std::thread([ignored_future = pool.push([&](int){respond_to_request(newsockfd);})](){}).detach();
+						pool.launch([&](int){respond_to_request(newsockfd);});
 					}
-				}).detach();
+				});
 		}
 
 
