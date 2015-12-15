@@ -23,6 +23,7 @@
 #include <memory>
 #include <string>
 #include <cstdlib>
+#include "AtScopeEnd.hpp"
 
 namespace mutils{
 
@@ -281,15 +282,6 @@ namespace mutils{
 
 	template<typename... T>
 	constexpr void discard(const T & ...) {}
-
-
-	struct AtScopeEnd {
-		const std::function<void ()> doit;
-		AtScopeEnd(const std::function<void ()> &di):doit(di){}
-		virtual ~AtScopeEnd() {
-			doit();
-		}
-	};
 
 	void break_here();
 

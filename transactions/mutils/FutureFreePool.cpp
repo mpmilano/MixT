@@ -1,5 +1,6 @@
 #include "FutureFreePool.hpp"
 #include <list>
+#include "AtScopeEnd.hpp"
 
 using namespace std;
 
@@ -23,11 +24,13 @@ namespace mutils{
 	void FutureFreePool_impl::launch (function<void (int)> fun){
 		auto pos = get_pos();
 		auto this_p = this->this_p;
-		pending[pos] = internal_pool.push([fun,pos,this_p](int i){
+		AtScopeEnd ase{[pos,this_p](){
+				lock{this_p->m};
+				this_p->available_ids.push_back(pos);
+			}};
+		pending[pos] = internal_pool.push([fun,ase2 = std::move(ase)](int i){
 				fun(i);
-				{ lock{this_p->m};
-					this_p->available_ids.push_back(pos);
-				}
+				assert(ase2.assert_this());
 			});
 	}
 }
