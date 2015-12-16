@@ -20,6 +20,7 @@
 #include "Tracker_support_structs.hpp"
 #include "Ends.hpp"
 #include "Transaction.hpp"
+#include "TransactionBasics.hpp"
 namespace {
 	constexpr unsigned long long bigprime_lin =
 #include "big_prime"
@@ -294,9 +295,9 @@ namespace myria { namespace tracker {
 		}
 		
 		
-		void Tracker::afterRead(TransactionContext &tc, DataStore<Level::strong>& ds, Name name){
+		void Tracker::afterRead(mtl::TransactionContext &tc, DataStore<Level::strong>& ds, Name name){
 			using update_clock_t = void (*)(Tracker::Internals &t);
-			static update_clock_t update_clock = [](Tracker::Internals &t){
+			static update_clock_t update_clock = [](mtl::TransactionContext &tc, Tracker::Internals &t){
 				auto newc = get<TDS::existingClock>(*t.strongDS)(*t.registeredStrong, bigprime_lin)->get();
 				assert(ends::prec(t.global_min,newc));
 				t.global_min = newc;
@@ -305,13 +306,13 @@ namespace myria { namespace tracker {
 					if (ends::prec(p.second.first,newc)) to_remove.push_back(p.first);
 				}
 				for (auto &e : to_remove){
-					t.trackingContext.tracking_erase.add(e);
+					tc.trackingContext.i->tracking_erase.add(e);
 				}
 			};
 			assert(&ds == i->registeredStrong);
 			if (!is_lin_metadata(name)){
 				//TODO: reduce frequency of this call.
-				update_clock(*i);
+				update_clock(tc,*i);
 				auto ts = make_lin_metaname(name);
 				if (get<TDS::exists>(*i->strongDS)(ds,ts)){
 					auto tomb = get<TDS::existingTomb>(*i->strongDS)(ds,ts)->get();

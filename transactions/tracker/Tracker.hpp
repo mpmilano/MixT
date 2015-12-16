@@ -12,6 +12,7 @@
 #include "TrivialPair.hpp"
 #include "RemoteObject.hpp"
 #include "Ends.hpp"
+#include "TransactionBasics.hpp"
 
 namespace myria { 
 
@@ -26,15 +27,7 @@ namespace myria {
 			static constexpr int existingTomb = 3;
 		}
 
-		class Tracker;
-		
-		struct TrackingContext{
-			struct Internals;
-			Internals* i;
-			Tracker &trk;
-			TrackingContext();
-			virtual ~TrackingContext();
-		};
+		struct TrackingContext;
 
 		class Tracker {
 		public:
@@ -102,8 +95,6 @@ namespace myria {
 			}
 
 			TrackingContext& generateContext();
-			void commitContext(TrackingContext &tc);
-			void abortContext(TrackingContext &tc);
 	
 			void onWrite(DataStore<Level::strong>&, Name name);
 
@@ -113,7 +104,8 @@ namespace myria {
 
 			void onCreate(DataStore<Level::strong>&, Name name);
 
-			void afterRead(DataStore<Level::strong>&, Name name);
+			void afterRead(mtl::TransactionContext &tc,
+						   DataStore<Level::strong>&, Name name);
 
 			//return is non-null when read value cannot be used.
 			template<typename DS, typename T>

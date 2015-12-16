@@ -14,9 +14,7 @@ namespace myria{
 		//we'll delete the TransactionContext
 		//when the transaction is over.  Do any cleanup you need to do then.
 		//the parameters to this function should just be passed directly to TransactionContext's constructor.
-		virtual std::unique_ptr<mtl::TransactionContext> begin_transaction(tracker::TrackingContext& trackingContext,
-																		   void (*commitContext) (tracker::TrackingContext&),
-																		   void (*abortContext) (tracker::TrackingContext&)) = 0;
+		virtual std::unique_ptr<mtl::TransactionContext> begin_transaction(tracker::Tracker&) = 0;
 		virtual int ds_id() const = 0;
 		virtual int instance_id() const = 0;
 

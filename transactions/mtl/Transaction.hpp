@@ -1,5 +1,6 @@
 #pragma once
 
+#include <thread>
 #include "args-finder.hpp"
 #include "../BitSet.hpp"
 #include "Transaction_macros.hpp"
@@ -11,6 +12,7 @@
 #include "Assignment.hpp"
 #include "Context.hpp"
 #include "Tracker.hpp"
+
 
 namespace myria { namespace mtl {
 
@@ -96,17 +98,14 @@ namespace myria { namespace mtl {
 											Transaction::collected_objs_insert(collected_objs_s, collected_objs_c,h._ro);
 										});});
 
-							Tracker& trk = tracker::Tracker::global_tracker();
+							auto& trk = tracker::Tracker::global_tracker();
 							auto collected_objs_proc = [&](auto &_ro){
 								auto *sto = &_ro->store();
 								auto *ro = _ro.get();
 								assign_current_context(old_ctx_s,old_ctx_c,ro);
 								if (tc_without(sto)){
 									tc[sto->level]
-										.emplace(sto, sto->begin_transaction(
-													 trk.generateContext(),
-													 [](tracker::TrackingContext& t){t.trk.commitContext(t);},
-													 [](tracker::TrackingContext& y){t.trk.abortContext(t);}));
+										.emplace(sto, sto->begin_transaction(trk));
 								}
 								assert(!tc_without(sto));
 								assert(ro->currentTransactionContext() == nullptr);
@@ -151,7 +150,7 @@ namespace myria { namespace mtl {
 							if (tc.count(Level::strong) != 0){
 								any = true;
 								for (auto &p : tc.at(Level::strong)){
-									ret = ret && p.second->commit();
+									ret = ret && p.second->full_commit();
 								}
 							}
 					
@@ -159,7 +158,20 @@ namespace myria { namespace mtl {
 							if (ret && tc.count(Level::causal) != 0){
 								any = true;
 								for (auto &p : tc.at(Level::causal)){
-									ret = ret && p.second->commit();
+									using namespace std::chrono;
+									auto backoff = 2us;
+									while (true){
+										try{ 
+											ret = ret && p.second->full_commit();
+											assert(ret);
+											break;
+										}
+										catch (...){
+											std::this_thread::sleep_for(backoff);
+											backoff *= 2;
+											//we really don't want this to fail guys.
+										}
+									}
 								}
 							}
 					

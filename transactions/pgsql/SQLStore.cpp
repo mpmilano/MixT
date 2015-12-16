@@ -52,15 +52,16 @@ namespace myria{ namespace pgsql {
 					->exec(l == Level::strong ?
 						   "SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL SERIALIZABLE"
 						   : "SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL REPEATABLE READ");
-				assert(t->commit());
+				assert(t->full_commit());
 			}
 
-		unique_ptr<TransactionContext> SQLStore_impl::begin_transaction() {
+		unique_ptr<TransactionContext> SQLStore_impl::begin_transaction()
+		{
 			assert(default_connection->in_trans == false &&
 				   "Concurrency support doesn't exist yet."
 				);
-			return unique_ptr<TransactionContext>(new SQLTransaction(_store,*default_connection));
-	
+			return unique_ptr<TransactionContext>(
+				new SQLTransaction(tracker::Tracker::global_tracker().generateContext(),_store,*default_connection));
 		}
 
 		namespace {

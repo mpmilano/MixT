@@ -25,8 +25,10 @@ namespace myria{ namespace pgsql {
 			pqxx::work trans;
 		public:
 			bool commit_on_delete = false;
-			SQLTransaction(GDataStore& store, SQLStore_impl::SQLConnection& c)
-				:gstore(store),sql_conn(c),trans(sql_conn.conn){
+			SQLTransaction(tracker::TrackingContext& tc,
+						   GDataStore& store, SQLStore_impl::SQLConnection& c)
+				:mtl::TransactionContext(tc),
+				 gstore(store),sql_conn(c),trans(sql_conn.conn){
 				assert(!sql_conn.in_trans);
 				sql_conn.in_trans = true;
 				sql_conn.current_trans = this;
@@ -66,7 +68,7 @@ namespace myria{ namespace pgsql {
 				default_sqltransaction_catch
 					}
 	
-			bool commit() {
+			bool store_commit() {
 				sql_conn.in_trans = false;
 				sql_conn.current_trans = nullptr;
 				trans.commit();
@@ -84,7 +86,7 @@ namespace myria{ namespace pgsql {
 
 			~SQLTransaction(){
 				if (commit_on_delete) {
-					commit();
+					store_commit();
 				}
 				else sql_conn.in_trans = false;
 				sql_conn.current_trans = nullptr;

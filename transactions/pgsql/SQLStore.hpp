@@ -56,7 +56,7 @@ namespace myria { namespace pgsql {
 					if (res != nullptr){
 						auto &trk = tracker::Tracker::global_tracker();
 						t = trk.onRead(store(),name(),timestamp(),
-										   mutils::from_bytes<T>(res));
+									   mutils::from_bytes<T>(res));
 					}
 					
 					return *t;
@@ -163,10 +163,13 @@ namespace myria { namespace pgsql {
 													   std::unique_ptr<T>());
 			}
 
-			std::unique_ptr<mtl::TransactionContext> begin_transaction(){
-				auto ret = SQLStore_impl::begin_transaction();
-				return ret;
-			}
+			std::unique_ptr<mtl::TransactionContext> begin_transaction(
+				tracker::Tracker& t)
+				{
+					assert(&t == &tracker::Tracker::global_tracker());
+					auto ret = SQLStore_impl::begin_transaction();
+					return ret;
+				}
 
 			int instance_id() const {
 				return SQLStore_impl::instance_id();
