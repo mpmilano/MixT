@@ -10,6 +10,7 @@
 #include "FreeExpr.hpp"
 #include "Assignment.hpp"
 #include "Context.hpp"
+#include "Tracker.hpp"
 
 namespace myria { namespace mtl {
 
@@ -95,13 +96,17 @@ namespace myria { namespace mtl {
 											Transaction::collected_objs_insert(collected_objs_s, collected_objs_c,h._ro);
 										});});
 
+							Tracker& trk = tracker::Tracker::global_tracker();
 							auto collected_objs_proc = [&](auto &_ro){
 								auto *sto = &_ro->store();
 								auto *ro = _ro.get();
 								assign_current_context(old_ctx_s,old_ctx_c,ro);
 								if (tc_without(sto)){
 									tc[sto->level]
-										.emplace(sto, sto->begin_transaction());
+										.emplace(sto, sto->begin_transaction(
+													 trk.generateContext(),
+													 [](tracker::TrackingContext& t){t.trk.commitContext(t);},
+													 [](tracker::TrackingContext& y){t.trk.abortContext(t);}));
 								}
 								assert(!tc_without(sto));
 								assert(ro->currentTransactionContext() == nullptr);

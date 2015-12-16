@@ -26,6 +26,16 @@ namespace myria {
 			static constexpr int existingTomb = 3;
 		}
 
+		class Tracker;
+		
+		struct TrackingContext{
+			struct Internals;
+			Internals* i;
+			Tracker &trk;
+			TrackingContext();
+			virtual ~TrackingContext();
+		};
+
 		class Tracker {
 		public:
 			//support structures, metadata.
@@ -54,6 +64,7 @@ namespace myria {
 
 			//hiding private members of this class. No implementation available.
 			struct Internals;
+			
 		private:
 			Internals *i;
 			struct MemoryOwner {
@@ -89,6 +100,10 @@ namespace myria {
 			void exemptItem(const Handle<l,ha,T>& h){
 				exemptItem(h.name());
 			}
+
+			TrackingContext& generateContext();
+			void commitContext(TrackingContext &tc);
+			void abortContext(TrackingContext &tc);
 	
 			void onWrite(DataStore<Level::strong>&, Name name);
 
