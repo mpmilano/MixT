@@ -193,19 +193,30 @@ namespace myria { namespace tracker {
 			assert(&ds_real == i->registeredStrong);
 			if (!is_lin_metadata(name) && !i->tracking.empty()){
 
+				auto subroutine = [&](){
+					auto nonce = long_rand();
+					write_lin_metadata(name,nonce,*i);
+					write_causal_tombstone(nonce,*i);
+					i->cache.insert(nonce,i->tracking);
+				};
 				bool always_failed = true;
-				for (int asdf = 0; asdf < 100; ++asdf){
+				auto sleep_time = 2ms;
+				for (int asdf = 0; asdf < 10; ++asdf){
 					try{
-						auto nonce = long_rand();
-						write_lin_metadata(name,nonce,*i);
-						write_causal_tombstone(nonce,*i);
-						i->cache.insert(nonce,i->tracking);
+						subroutine();
 						always_failed = false;
 						break;
 					}
 					catch(const mtl::Transaction::CannotProceedError&){
+						this_thread::sleep_for(sleep_time);
+						sleep_time *= 2;
 						//assume we picked a bad nonce, try again
 					}
+				}
+				if (always_failed) {
+					//it's almost certainly going to fail again, but at this point
+					//we are really interested in what the error is.
+					subroutine();
 				}
 				assert(!always_failed);
 				assert(get<TDS::exists>(*i->strongDS)(ds_real,make_lin_metaname(name)));
