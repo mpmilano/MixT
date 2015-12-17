@@ -34,6 +34,8 @@ namespace myria { namespace tracker {
 		using namespace chrono;
 		using namespace TDS;
 		using namespace mutils;
+		using namespace mtl;
+		using namespace tracker;
 
 		namespace{
 			struct Bundle{
@@ -77,6 +79,38 @@ namespace myria { namespace tracker {
 			CooperativeCache cache;
 			std::unique_ptr<Name> last_onRead_name{nullptr};
 		};
+
+		struct TrackingContext {
+			Tracker::Internals &trk;
+			list<Name> tracking_erase;
+			list<pair<Name, pair<Tracker::Clock, vector<char> > > > tracking_add;
+			list<pair<Name,Bundle> >pending_nonces_add;
+		};
+
+		TrackingContext& Tracker::generateContext(){
+			return *(new TrackingContext{*i});
+		}
+
+	}
+	namespace mtl{
+		void TransactionContext::commitContext(){
+			auto &tracker = trackingContext.trk;
+			for (auto &e : trackingContext.tracking_erase){
+				tracker.tracking.erase(e);
+			}
+			for (auto &e : trackingContext.tracking_add){
+				tracker.tracking.emplace(e);
+			}
+			for (auto &e : trackingContext.pending_nonces_add){
+				tracker.pending_nonces.emplace(e);
+			}
+			delete &trackingContext;
+		}
+		void TransactionContext::abortContext(){
+			delete &trackingContext;
+		}
+	}
+	namespace tracker{
 
 		namespace {
 			void remove_pending(Tracker::Internals &i, const Name &name){
@@ -295,9 +329,9 @@ namespace myria { namespace tracker {
 		}
 		
 		
-		void Tracker::afterRead(mtl::TransactionContext &tc, DataStore<Level::strong>& ds, Name name){
-			using update_clock_t = void (*)(Tracker::Internals &t);
-			static update_clock_t update_clock = [](mtl::TransactionContext &tc, Tracker::Internals &t){
+		void Tracker::afterRead(TrackingContext &tc, DataStore<Level::strong>& ds, Name name){
+			using update_clock_t = void (*)(TrackingContext &tc, Tracker::Internals &t);
+			static update_clock_t update_clock = [](TrackingContext &tc, Tracker::Internals &t){
 				auto newc = get<TDS::existingClock>(*t.strongDS)(*t.registeredStrong, bigprime_lin)->get();
 				assert(ends::prec(t.global_min,newc));
 				t.global_min = newc;
@@ -306,7 +340,7 @@ namespace myria { namespace tracker {
 					if (ends::prec(p.second.first,newc)) to_remove.push_back(p.first);
 				}
 				for (auto &e : to_remove){
-					tc.trackingContext.i->tracking_erase.add(e);
+					tc.tracking_erase.push_back(e);
 				}
 			};
 			assert(&ds == i->registeredStrong);
@@ -317,7 +351,7 @@ namespace myria { namespace tracker {
 				if (get<TDS::exists>(*i->strongDS)(ds,ts)){
 					auto tomb = get<TDS::existingTomb>(*i->strongDS)(ds,ts)->get();
 					while (!sleep_on(*i,tomb.name(),1)){
-						tc.trackingContext.pending_nonces_add
+						tc.pending_nonces_add.emplace_back
 							(tomb.name(), Bundle{i->cache.get(tomb, cache_port)});
 					}
 				}
@@ -354,12 +388,12 @@ namespace myria { namespace tracker {
 			return true;
 		}
 		
-		void Tracker::afterRead(TransactionContext &t, DataStore<Level::causal>&, Name name, const Clock& version, const std::vector<char> &data){
+		void Tracker::afterRead(TrackingContext &t, DataStore<Level::causal>&, Name name, const Clock& version, const std::vector<char> &data){
 			if (tracking_candidate(*i,name,version)){
 				//need to overwrite, not occlude, the previous element.
 				//C++'s map semantics are really stupid.
-				t.trackingContext.tracking_erase(name);
-				t.trackingContext.tracking_add(name,std::make_pair(version,data));
+				t.tracking_erase.push_back(name);
+				t.tracking_add.emplace_back(name,std::make_pair(version,data));
 			}
 		}
 

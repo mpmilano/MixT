@@ -162,7 +162,7 @@ namespace myria {
 			auto h_strong_write = mutils::filter_tpl<is_strong_handle>(h_write);
 			auto h_causal_write = mutils::filter_tpl<is_causal_handle>(h_write);
 			mutils::foreach(h_strong_read,
-							[](const auto &h){h.tracker.afterRead(*h._ro->currentTransactionContext(),h.store(),h.name());});
+							[](const auto &h){h.tracker.afterRead(h._ro->currentTransactionContext()->trackingContext,h.store(),h.name());});
 			mutils::foreach(h_causal_read,
 							[](const auto &h){h.tracker.waitForRead(h.store(),h.name(),h.remote_object().timestamp());});
 			//optimization: track timestamps for causal, only check if they've changed.
@@ -172,7 +172,8 @@ namespace myria {
 			mutils::foreach(causal_pair,
 							[](const auto &p){
 								if (tracker::ends::is_same(p.first, p.second.remote_object().timestamp())) return;
-								else p.second.tracker.afterRead(p.second.store(),p.second.name(),p.second.remote_object().timestamp(),p.second.remote_object().bytes());});
+								else p.second.tracker.afterRead(p.second._ro->currentTransactionContext()->trackingContext,
+																p.second.store(),p.second.name(),p.second.remote_object().timestamp(),p.second.remote_object().bytes());});
 			mutils::foreach(h_strong_write, [](const auto &h){h.tracker.onWrite(h.store(),h.name());});
 			mutils::foreach(h_causal_write, [](const auto &h){h.tracker.onWrite(h.store(),h.name(),h.remote_object().timestamp());});
 			return ret;

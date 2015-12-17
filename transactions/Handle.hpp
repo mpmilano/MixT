@@ -117,13 +117,13 @@ namespace myria{
 		}
 	
 		const T& get(std::true_type*) const {
-			tracker.afterRead(*_ro->currentTransactionContext(),_ro->store(),_ro->name());
+			tracker.afterRead(_ro->currentTransactionContext()->trackingContext,_ro->store(),_ro->name());
 			return _ro->get();
 		}
 	
 		const T& get(std::false_type*) const {
 			auto &ret = _ro->get();
-			mutils::AtScopeEnd ase{[&](){tracker.afterRead(_ro->store(),_ro->name(),_ro->timestamp(),_ro->bytes());}};
+			mutils::AtScopeEnd ase{[&](){tracker.afterRead(_ro->currentTransactionContext()->trackingContext,_ro->store(),_ro->name(),_ro->timestamp(),_ro->bytes());}};
 			if (tracker.waitForRead(_ro->store(),_ro->name(),_ro->timestamp())){
 				return ret;
 			}

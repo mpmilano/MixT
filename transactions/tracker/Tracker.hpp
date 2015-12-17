@@ -104,7 +104,7 @@ namespace myria {
 
 			void onCreate(DataStore<Level::strong>&, Name name);
 
-			void afterRead(mtl::TransactionContext &tc,
+			void afterRead(TrackingContext &tc,
 						   DataStore<Level::strong>&, Name name);
 
 			//return is non-null when read value cannot be used.
@@ -121,7 +121,7 @@ namespace myria {
 			//for when merging locally is too hard or expensive
 			bool waitForRead(DataStore<Level::causal>&, Name name, const Clock& version);
 
-			void afterRead(DataStore<Level::causal>&, Name name, const Clock& version, const std::vector<char> &data);
+			void afterRead(TrackingContext &tc,DataStore<Level::causal>&, Name name, const Clock& version, const std::vector<char> &data);
 
 			//for testing
 			void assert_nonempty_tracking() const;

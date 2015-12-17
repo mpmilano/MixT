@@ -9,9 +9,11 @@ namespace myria {
 	}
 	namespace mtl {
 
+		struct Transaction;
+
 		struct TransactionContext {
-		private:
 			tracker::TrackingContext& trackingContext;
+		private:
 			//these two are implemented in Tracker.cpp
 			void commitContext ();
 			void abortContext ();
@@ -37,5 +39,7 @@ namespace myria {
 			virtual ~TransactionContext(){
 				if (!committed) abortContext();
 			}
+
+			friend struct Transaction;
 		};
 	} }
