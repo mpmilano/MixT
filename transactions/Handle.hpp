@@ -117,8 +117,14 @@ namespace myria{
 		}
 	
 		const T& get(std::true_type*) const {
-			tracker.afterRead(_ro->currentTransactionContext()->trackingContext,_ro->store(),_ro->name());
-			return _ro->get();
+			auto& ret =  _ro->get();
+			tracker.afterRead([&](){
+					if (auto *ctx = _ro->currentTransactionContext()){
+						return ctx->trackingContext;
+					}
+					else return tracker.generateContext(true);
+				}(),
+				_ro->store(),_ro->name());
 		}
 	
 		const T& get(std::false_type*) const {

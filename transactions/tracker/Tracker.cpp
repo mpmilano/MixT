@@ -82,32 +82,59 @@ namespace myria { namespace tracker {
 
 		struct TrackingContext {
 			Tracker::Internals &trk;
+			const bool commitOnDelete;
+
+			TrackingContext(decltype(trk) trk, decltype(commitOnDelete) cod)
+				:trk(trk),commitOnDelete(cod){}
+			
 			list<Name> tracking_erase;
 			list<pair<Name, pair<Tracker::Clock, vector<char> > > > tracking_add;
 			list<pair<Name,Bundle> >pending_nonces_add;
+
+			auto _commitContext(){
+				auto &tracker = trk;
+				for (auto &e : tracking_erase){
+					tracker.tracking.erase(e);
+				}
+				for (auto &e : tracking_add){
+					tracker.tracking.emplace(e);
+				}
+				for (auto &e : pending_nonces_add){
+					tracker.pending_nonces.emplace(e);
+				}
+			}
+
+			auto _finalize(){
+				commitOnDelete = false;
+				delete this;
+			}
+			
+			auto commitContext(){
+				_commitContext();
+				_finalize();
+			}
+			auto abortContext(){
+				_finalize();
+			}
+
+			virtual ~TrackingContext(){
+				if (commitOnDelete){
+					_commitContext();
+				}
+			}
 		};
 
-		TrackingContext& Tracker::generateContext(){
-			return *(new TrackingContext{*i});
+		TrackingContext& Tracker::generateContext(bool commitOnDelete = false){
+			return *(new TrackingContext{*i,commitOnDelete});
 		}
 
 	}
 	namespace mtl{
 		void TransactionContext::commitContext(){
-			auto &tracker = trackingContext.trk;
-			for (auto &e : trackingContext.tracking_erase){
-				tracker.tracking.erase(e);
-			}
-			for (auto &e : trackingContext.tracking_add){
-				tracker.tracking.emplace(e);
-			}
-			for (auto &e : trackingContext.pending_nonces_add){
-				tracker.pending_nonces.emplace(e);
-			}
-			delete &trackingContext;
+			trackingContext.commitContext();
 		}
 		void TransactionContext::abortContext(){
-			delete &trackingContext;
+			trackingContext.abortContext();
 		}
 	}
 	namespace tracker{

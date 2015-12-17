@@ -177,12 +177,12 @@ namespace myria { namespace tracker {
 						std::cerr << "ERROR on binding" << std::endl;
 						return;
 					}
-					assert(false && "That 5 is the culprit, probably");
-					assert(listen(sockfd,5) == 0);
+					assert(listen(sockfd,50) == 0);
 					clilen = sizeof(cli_addr);
 					AtScopeEnd ase{[&](){close(sockfd);}};
 					discard(ase);
-					FutureFreePool pool{tp_size};
+					constexpr int tp_size2 = tp_size;
+					FutureFreePool pool{tp_size2};
 					while (true) {
 						int newsockfd = accept(sockfd,
 											   (struct sockaddr *) &cli_addr,

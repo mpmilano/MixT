@@ -28,6 +28,8 @@ std::ostream & operator<<(std::ostream &os, const WeakCons& wc){
 
 int main() {
 
+	Tracker::global_tracker(8765);
+
 	auto &fsc = 
 		SQLStore<Level::causal>::inst(0);
 	auto& fss =
