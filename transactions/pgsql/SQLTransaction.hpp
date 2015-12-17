@@ -25,7 +25,7 @@ namespace myria{ namespace pgsql {
 			pqxx::work trans;
 		public:
 			bool commit_on_delete = false;
-			SQLTransaction(tracker::TrackingContext& tc,
+			SQLTransaction(tracker::TrackingContext tc,
 						   GDataStore& store, SQLStore_impl::SQLConnection& c)
 				:mtl::TransactionContext(tc),
 				 gstore(store),sql_conn(c),trans(sql_conn.conn){

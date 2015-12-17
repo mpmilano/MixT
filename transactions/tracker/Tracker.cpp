@@ -124,7 +124,7 @@ namespace myria { namespace tracker {
 			}
 		};
 
-		TrackingContext& Tracker::generateContext(bool commitOnDelete = false){
+		TrackingContext Tracker::generateContext(bool commitOnDelete = false){
 			return *(new TrackingContext{*i,commitOnDelete});
 		}
 

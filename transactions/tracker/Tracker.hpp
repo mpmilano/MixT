@@ -27,7 +27,13 @@ namespace myria {
 			static constexpr int existingTomb = 3;
 		}
 
-		struct TrackingContext;
+		struct TrackingContext{
+			struct Internals;
+			Internals *i;
+			TrackingContext();
+			virtual ~TrackingContext();
+			TrackingContext(const TrackingContext&) = delete;
+		};
 
 		class Tracker {
 		public:
@@ -94,7 +100,7 @@ namespace myria {
 				exemptItem(h.name());
 			}
 
-			TrackingContext& generateContext();
+			TrackingContext generateContext();
 	
 			void onWrite(DataStore<Level::strong>&, Name name);
 

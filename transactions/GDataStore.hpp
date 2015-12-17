@@ -4,9 +4,6 @@
 
 namespace myria{
 
-	namespace tracker{
-		struct TrackingContext;
-	}
 
 	struct GDataStore {
 		const Level level;

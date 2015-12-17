@@ -12,12 +12,11 @@ namespace myria {
 		struct Transaction;
 
 		struct TransactionContext {
-			tracker::TrackingContext& trackingContext;
+			tracker::TrackingContext trackingContext;
 		private:
 			//these two are implemented in Tracker.cpp
 			void commitContext ();
 			void abortContext ();
-
 			
 			bool committed = false;
 			virtual bool store_commit() = 0;
