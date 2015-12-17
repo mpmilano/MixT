@@ -25,9 +25,9 @@ namespace myria{ namespace pgsql {
 			pqxx::work trans;
 		public:
 			bool commit_on_delete = false;
-			SQLTransaction(tracker::TrackingContext tc,
+			SQLTransaction(std::unique_ptr<tracker::TrackingContext> tc,
 						   GDataStore& store, SQLStore_impl::SQLConnection& c)
-				:mtl::TransactionContext(tc),
+				:mtl::TransactionContext(std::move(tc)),
 				 gstore(store),sql_conn(c),trans(sql_conn.conn){
 				assert(!sql_conn.in_trans);
 				sql_conn.in_trans = true;

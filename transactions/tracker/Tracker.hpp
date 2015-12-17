@@ -13,6 +13,7 @@
 #include "RemoteObject.hpp"
 #include "Ends.hpp"
 #include "TransactionBasics.hpp"
+#include "TrackingContext.hpp"
 
 namespace myria { 
 
@@ -26,14 +27,6 @@ namespace myria {
 			static constexpr int existingClock = 2;
 			static constexpr int existingTomb = 3;
 		}
-
-		struct TrackingContext{
-			struct Internals;
-			Internals *i;
-			TrackingContext();
-			virtual ~TrackingContext();
-			TrackingContext(const TrackingContext&) = delete;
-		};
 
 		class Tracker {
 		public:
@@ -100,7 +93,7 @@ namespace myria {
 				exemptItem(h.name());
 			}
 
-			TrackingContext generateContext();
+			std::unique_ptr<TrackingContext> generateContext(bool commitOnDelete = false);
 	
 			void onWrite(DataStore<Level::strong>&, Name name);
 
@@ -131,6 +124,8 @@ namespace myria {
 
 			//for testing
 			void assert_nonempty_tracking() const;
+
+			friend struct TrackingContext;
 
 		private:
 			const int cache_port;

@@ -1,18 +1,16 @@
 #pragma once
+#include "TrackingContext.hpp"
 
 namespace myria {
 	
 	struct GDataStore;
-	namespace tracker {
-		struct TrackingContext;
-		class Tracker;
-	}
+
 	namespace mtl {
 
 		struct Transaction;
 
 		struct TransactionContext {
-			tracker::TrackingContext trackingContext;
+			std::unique_ptr<tracker::TrackingContext> trackingContext;
 		private:
 			//these two are implemented in Tracker.cpp
 			void commitContext ();
@@ -23,7 +21,7 @@ namespace myria {
 
 		public:
 			TransactionContext(decltype(trackingContext) trackingContext)
-				:trackingContext(trackingContext)
+				:trackingContext(std::move(trackingContext))
 				{}
 			
 			bool full_commit(){

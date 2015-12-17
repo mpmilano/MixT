@@ -80,11 +80,11 @@ namespace myria { namespace tracker {
 			std::unique_ptr<Name> last_onRead_name{nullptr};
 		};
 
-		struct TrackingContext {
+		struct TrackingContext::Internals {
 			Tracker::Internals &trk;
-			const bool commitOnDelete;
+			bool commitOnDelete;
 
-			TrackingContext(decltype(trk) trk, decltype(commitOnDelete) cod)
+			Internals(Tracker::Internals& trk, bool cod)
 				:trk(trk),commitOnDelete(cod){}
 			
 			list<Name> tracking_erase;
@@ -108,33 +108,39 @@ namespace myria { namespace tracker {
 				commitOnDelete = false;
 				delete this;
 			}
-			
-			auto commitContext(){
-				_commitContext();
-				_finalize();
-			}
-			auto abortContext(){
-				_finalize();
-			}
-
-			virtual ~TrackingContext(){
+			virtual ~Internals(){
 				if (commitOnDelete){
 					_commitContext();
 				}
 			}
 		};
 
-		TrackingContext Tracker::generateContext(bool commitOnDelete = false){
-			return *(new TrackingContext{*i,commitOnDelete});
+		void TrackingContext::commitContext(){
+				i->_commitContext();
+				i->_finalize();
+		}
+		void TrackingContext::abortContext(){
+				i->_finalize();
+		}
+
+		TrackingContext::TrackingContext(Tracker &trk, bool cod)
+			:i(new TrackingContext::Internals{*trk.i,cod}){}
+
+		TrackingContext::~TrackingContext(){
+			if (i) delete i;
+		}
+
+		std::unique_ptr<TrackingContext> Tracker::generateContext(bool commitOnDelete){
+			return std::unique_ptr<TrackingContext>{(new TrackingContext{*this,commitOnDelete})};
 		}
 
 	}
 	namespace mtl{
 		void TransactionContext::commitContext(){
-			trackingContext.commitContext();
+			trackingContext->commitContext();
 		}
 		void TransactionContext::abortContext(){
-			trackingContext.abortContext();
+			trackingContext->abortContext();
 		}
 	}
 	namespace tracker{
@@ -367,7 +373,7 @@ namespace myria { namespace tracker {
 					if (ends::prec(p.second.first,newc)) to_remove.push_back(p.first);
 				}
 				for (auto &e : to_remove){
-					tc.tracking_erase.push_back(e);
+					tc.i->tracking_erase.push_back(e);
 				}
 			};
 			assert(&ds == i->registeredStrong);
@@ -378,7 +384,7 @@ namespace myria { namespace tracker {
 				if (get<TDS::exists>(*i->strongDS)(ds,ts)){
 					auto tomb = get<TDS::existingTomb>(*i->strongDS)(ds,ts)->get();
 					while (!sleep_on(*i,tomb.name(),1)){
-						tc.pending_nonces_add.emplace_back
+						tc.i->pending_nonces_add.emplace_back
 							(tomb.name(), Bundle{i->cache.get(tomb, cache_port)});
 					}
 				}
@@ -419,8 +425,8 @@ namespace myria { namespace tracker {
 			if (tracking_candidate(*i,name,version)){
 				//need to overwrite, not occlude, the previous element.
 				//C++'s map semantics are really stupid.
-				t.tracking_erase.push_back(name);
-				t.tracking_add.emplace_back(name,std::make_pair(version,data));
+				t.i->tracking_erase.push_back(name);
+				t.i->tracking_add.emplace_back(name,std::make_pair(version,data));
 			}
 		}
 
