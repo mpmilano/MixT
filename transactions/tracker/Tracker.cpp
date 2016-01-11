@@ -106,7 +106,6 @@ namespace myria { namespace tracker {
 
 			auto _finalize(){
 				commitOnDelete = false;
-				delete this;
 			}
 			virtual ~Internals(){
 				if (commitOnDelete){
