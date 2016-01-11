@@ -57,7 +57,11 @@ namespace mutils{
 		return drand48();
 	}
 
-	unsigned long long long_rand() {
+	long int long_rand() {
+		return int_rand();
+	}
+
+	unsigned int int_rand(){
 		discard(init_rand());
 		return lrand48();
 	}

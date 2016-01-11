@@ -205,16 +205,17 @@ namespace myria { namespace tracker {
 
 			//constexpr int bigprime_causal = 2751103;
 	
-			bool is_metaname(unsigned long long base, Name name){
-				return (name % base) == 0;
+			bool is_metaname(long int base, Name name){
+				return (name > 0) && ((name % base) == 0);
 			}
 
-			Name make_metaname(unsigned long long base, Name name){
+			Name make_metaname(long int base, Name name){
+				assert([=](){Name sanity = numeric_limits<int>::max() * base; return sanity > 0;}());
+				assert(name <= numeric_limits<int>::max());
+				assert(name > 0);
 				assert(!is_metaname(base,name));
-				Name cand;
-                if (name > (5 * base))
-					cand = (name / base) * base;
-				else cand = name * base;
+				Name cand = name * base;
+				assert(cand > 0);
 				assert(is_metaname(base,cand));
 				return cand;
 			}

@@ -136,7 +136,7 @@ namespace myria { namespace pgsql {
 
 			template<HandleAccess ha, typename T>
 			auto newObject(const T& init){
-				return newObject<ha,T>(mutils::long_rand(),init);
+				return newObject<ha,T>(mutils::int_rand(),init);
 			}
 
 			template<HandleAccess ha, typename T>

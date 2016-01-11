@@ -310,7 +310,9 @@ namespace mutils{
 
 	double better_rand();
 
-	unsigned long long long_rand();
+	long int long_rand();
+
+	unsigned int int_rand();
 
 	int decode_ip(const std::string&);
 

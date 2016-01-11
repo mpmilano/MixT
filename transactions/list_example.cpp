@@ -28,6 +28,8 @@ std::ostream & operator<<(std::ostream &os, const WeakCons& wc){
 
 int main() {
 
+	try {
+
 	Tracker::global_tracker(8765);
 
 	auto &fsc = 
@@ -57,4 +59,9 @@ int main() {
 	std::cout << h.get().val.get() << std::endl;
 	assert(h.get().val.get() == 15);
 	return 0;
+
+	}
+	catch(const std::exception & e){
+		std::cout << "Program failure: " << e.what() << std::endl;
+	}
 }

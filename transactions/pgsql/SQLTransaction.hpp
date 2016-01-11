@@ -1,7 +1,6 @@
 #pragma once
 #include "SQLStore.hpp"
 #include "SQLConnection.hpp"
-#include "backtrace.hpp"
 #include <pqxx/pqxx>
 
 namespace myria{ namespace pgsql {
@@ -45,7 +44,7 @@ namespace myria{ namespace pgsql {
 			catch(const pqxx::pqxx_exception &r){						\
 				commit_on_delete = false;								\
 				if (is_serialize_error(r)) throw mtl::Transaction::SerializationFailure{}; \
-				else throw mtl::Transaction::CannotProceedError{r.base().what() + mutils::show_backtrace()}; \
+				else throw mtl::Transaction::CannotProceedError{r.base().what() /*+ mutils::show_backtrace()*/}; \
 			}
 
 	
