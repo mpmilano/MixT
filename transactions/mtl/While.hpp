@@ -131,9 +131,10 @@ namespace myria { namespace mtl {
 				//that means we've already run the condition.
 				//look it up!
 				if (c_old.contains(id)){
-					//so, hopefully this casting is safe.  If not, use the move constructor.
-					for (auto &c : c_old.get<std::list<std::unique_ptr<CausalCache> > >(id)){
-						call_all_causal(*c,s,then);
+					const auto& force_cache_const = c_old;
+					for (const auto &cs : force_cache_const.get<std::list<std::unique_ptr<StrongCache> > >(id)){
+						CausalCache cc{*cs};
+						call_all_causal(cc,s,then);
 					}
 				}
 				else {

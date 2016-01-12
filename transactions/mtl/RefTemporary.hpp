@@ -61,7 +61,7 @@ namespace myria { namespace mtl {
 				//we haven't even done the assignment yet. nothing to see here.
 			}
 
-			auto causalCall(CausalCache& cache, const CausalStore &s) const {
+			auto causalCall(const CausalCache& cache, const CausalStore &s) const {
 		
 				typedef decltype(call<StoreType::CausalStore>(s,t)) R;
 				if (cache.contains(this->id)) {
