@@ -20,14 +20,14 @@
 #define free_expr_IMPL(count, ...) free_expr_IMPL2(count, __VA_ARGS__)
 #define free_expr(...) free_expr_IMPL(VA_NARGS(__VA_ARGS__), __VA_ARGS__)
 
-#define $2(a,b) free_expr(decltype(std::declval<run_result<decltype(a)> >().get().b), a, a.b)
+#define $2(a,b) free_expr(decltype(std::declval<run_result<decltype(a)> >().get(nullptr).b), a, a.b)
 
-#define $1(a) free_expr(decltype(std::declval<run_result<decltype(a)> >().get()), a,a)
+#define $1(a) free_expr(decltype(std::declval<run_result<decltype(a)> >().get(nullptr)), a,a)
 
 #define $_IMPL2(count, ...) $ ## count (__VA_ARGS__)
 #define $_IMPL(count, ...) $_IMPL2(count, __VA_ARGS__)
 #define $(...) $_IMPL(VA_NARGS(__VA_ARGS__), __VA_ARGS__)
 
-#define msg(a,b,c...) free_expr(decltype(std::declval<run_result<decltype(a)> >().get().b(on_each_prn(std::declval<run_result<decltype, c, > >()))), a, c, a.b(c))
+#define msg(a,b,c...) free_expr(decltype(std::declval<run_result<decltype(a)> >().get(nullptr).b(on_each_prn(std::declval<run_result<decltype, c, > >()))), a, c, a.b(c))
 
 #define $bld(T, e...) free_expr(T,e,(T{e}))

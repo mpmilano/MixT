@@ -108,21 +108,20 @@ namespace myria{ namespace pgsql {
 			}
 	
 			pair<unique_ptr<SQLTransaction>, SQLTransaction*>
-				enter_transaction(SQLStore_impl::GSQLObject& gso){
-				SQLTransaction *trns =
-					(SQLTransaction *) gso.currentTransactionContext();
+				enter_transaction(SQLStore_impl &store, mtl::TransactionContext *gso){
+				SQLTransaction *trns = (SQLTransaction *) gso;
 				if (!trns){
-					return enter_store_transaction(gso.store());
+					return enter_store_transaction(store);
 				}
 				else return make_pair(unique_ptr<SQLTransaction>{nullptr},trns);
 			}
-
 		}
 
 		SQLStore_impl::GSQLObject::GSQLObject(SQLStore_impl &ss, Table t, Name id, int size)
 			:i(new Internals{t,id,size,ss,nullptr,nullptr}){
 			i->buf1 = (char*) malloc(size);
-			assert(load());
+			auto b = load(nullptr);
+			assert(b);
 		}
 
 		namespace {
@@ -154,9 +153,9 @@ namespace myria{ namespace pgsql {
 		SQLStore_impl::GSQLObject::GSQLObject(SQLStore_impl& ss, Table t, Name id, const vector<char> &c)
 			:i{new Internals{t,id,(int)c.size(),ss,
 					(char*) malloc(c.size()),nullptr}}{
-			assert(!ro_isValid());
+			assert(!ro_isValid(nullptr));
 			{
-				auto trans_owner = enter_transaction(*this);
+				auto trans_owner = enter_transaction(ss,nullptr);
 				auto *trans = trans_owner.second;
 
 				if (t == Table::BlobStore){
@@ -265,9 +264,9 @@ namespace myria{ namespace pgsql {
 			return this->i->causal_vers;
 		}
 
-		void SQLStore_impl::GSQLObject::save(){
+		void SQLStore_impl::GSQLObject::save(mtl::TransactionContext *gso){
 			char *c = obj_buffer();
-			auto owner = enter_transaction(*this);
+			auto owner = enter_transaction(store(),gso);
 			auto trans = owner.second;
 
 #define upd_23425(x...) cmds::update_data(i->_store.level,*trans,i->table,i->_store.default_connection->repl_group,i->key,i->_store.clock,x)
@@ -291,9 +290,9 @@ namespace myria{ namespace pgsql {
 			}
 		}
 
-		char* SQLStore_impl::GSQLObject::load(){
+		char* SQLStore_impl::GSQLObject::load(mtl::TransactionContext *gso){
 			char* c = obj_buffer();
-			auto owner = enter_transaction(*this);
+			auto owner = enter_transaction(store(),gso);
 			auto trans = owner.second;
 			bool store_same = false;
 			if (i->_store.level == Level::causal){
@@ -331,8 +330,8 @@ namespace myria{ namespace pgsql {
 			}
 		}
 
-		void SQLStore_impl::GSQLObject::increment(){
-			auto owner = enter_transaction(*this);
+		void SQLStore_impl::GSQLObject::increment(mtl::TransactionContext *gso){
+			auto owner = enter_transaction(store(),gso);
 			cmds::increment(i->_store.level,
 							*owner.second,
 							i->table,
@@ -341,8 +340,9 @@ namespace myria{ namespace pgsql {
 							i->_store.clock);
 		}
 
-		bool SQLStore_impl::GSQLObject::ro_isValid() const {
-			auto owner = enter_transaction(*const_cast<GSQLObject*>(this));
+		bool SQLStore_impl::GSQLObject::ro_isValid(mtl::TransactionContext *gso) const {
+			auto& stre = const_cast<GSQLObject&>(*this).store();
+			auto owner = enter_transaction(stre,gso);
 			return obj_exists(i->key,owner.second);
 		}
 

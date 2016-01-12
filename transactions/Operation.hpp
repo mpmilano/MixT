@@ -174,7 +174,11 @@ namespace myria {
 			auto &&ret = fun(Store::tryCast(extract_robj_p(args))...);
 			mutils::foreach(causal_pair,
 							[](const auto &p){
-								assert(p.second._ro->currentTransactionContext());
+								assert([&]() -> bool{
+										if (!p.second._ro->currentTransactionContext())
+											std::cout << "Error: unregistered remote object" << &p.second << std::endl;
+										return p.second._ro->currentTransactionContext();
+									}());
 								if (tracker::ends::is_same(p.first, p.second.remote_object().timestamp())) return;
 								else p.second.tracker.afterRead(*p.second._ro->currentTransactionContext()->trackingContext,
 																p.second.store(),p.second.name(),p.second.remote_object().timestamp(),p.second.remote_object().bytes());});

@@ -20,7 +20,7 @@ namespace myria{
 	const int id = mutils::gensym();									\
 	virtual void setTransactionContext(mtl::TransactionContext*) = 0;	\
 	virtual mtl::TransactionContext* currentTransactionContext() = 0;	\
-	virtual bool ro_isValid() const = 0;								\
+	virtual bool ro_isValid(mtl::TransactionContext*) const = 0;								\
 	virtual const DataStore<level>& store() const = 0;					\
 	virtual DataStore<level>& store() = 0;								\
 	virtual Name name() const = 0;										\
@@ -51,8 +51,8 @@ namespace myria{
 	{
 		//extend this plz!
 
-		virtual const T& get() = 0;
-		virtual void put(const T&) = 0;
+		virtual const T& get(mtl::TransactionContext*) = 0;
+		virtual void put(mtl::TransactionContext*,const T&) = 0;
 
 		//TODO: delete these when you're done hacking around.
 		RemoteObject(const RemoteObject&) = delete;

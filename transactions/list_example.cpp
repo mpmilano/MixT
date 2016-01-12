@@ -16,7 +16,7 @@ using namespace mtl;
 using namespace tracker;
 using namespace pgsql;
 
-template<Level l, typename T> FINALIZE_OPERATION(Increment, 1, (RemoteObject<l, T>* a));
+template<Level l, typename T> FINALIZE_OPERATION(Increment, 1, RemoteObject<l, T>* a);
 
 using WeakCons = RemoteCons<int,Level::strong,Level::causal>;
 
@@ -38,7 +38,7 @@ int main() {
 		SQLStore<Level::strong>::inst(0);
 	auto h = WeakCons::build_list(fss,fsc,12,13,14);
 
-	assert(h.get().val.get() == 14);
+	assert(h.get(nullptr).val.get(nullptr) == 14);
 	TRANSACTION(
 		let(hd) = {h} IN (
 			WHILE (isValid(hd)) DO(
@@ -56,8 +56,8 @@ int main() {
 			)
 		); //*/
 
-	std::cout << h.get().val.get() << std::endl;
-	assert(h.get().val.get() == 15);
+	std::cout << h.get(nullptr).val.get(nullptr) << std::endl;
+	assert(h.get(nullptr).val.get(nullptr) == 15);
 	return 0;
 
 	}

@@ -2,7 +2,7 @@
 #include "macro_utils.hpp"
 #include "restrict.hpp"
 
-#define DECLARE_OPERATION(Name, arg...) static NoOperation Name ## _impl(arg){return NoOperation();}
+#define DECLARE_OPERATION(Name, arg...) static NoOperation Name ## _impl(mtl::TransactionContext* transaction_context, arg){return NoOperation();}
 
 
 
@@ -12,7 +12,7 @@
 			mutils::fold(mutils::fold_types<mutils::Pointerize,std::tuple<STORE_LIST>,std::tuple<> >{}, \
 						 [&](const auto &arg, const auto &accum){		\
 							 typedef std::decay_t<decltype(*arg)> Store;	\
-							 typedef decltype(Store::Name ## _impl(args)) ret_t; \
+							 typedef decltype(Store::Name ## _impl(transaction_context, args)) ret_t; \
 							 ret_t def;									\
 							 try {										\
 								 auto ret = tuple_cons(
@@ -28,17 +28,17 @@
 							 },std::tuple<>());							\
 		}
 				
-#define FINALIZE_OPERATION1(Name, arg)				\
-	DOBODY1(auto Name arg,Name,Store::tryCast(a))	\
-	Store::Name ## _impl(Store::tryCast(a))			\
+#define FINALIZE_OPERATION1(Name, arg...)				\
+	DOBODY1(auto Name (mtl::TransactionContext* transaction_context, arg),Name,Store::tryCast(a))		\
+	Store::Name ## _impl(transaction_context, Store::tryCast(a))			\
 	DOBODY2(Name,a)
 
 	
 
-#define FINALIZE_OPERATION2(Name,args)									\
-	DOBODY1(auto Name args,Name,Store::tryCast(a),Store::tryCast(b))	\
-	Store::Name ## _impl (Store::tryCast(a),Store::tryCast(b))			\
+#define FINALIZE_OPERATION2(Name,args...)									\
+	DOBODY1(auto Name (mtl::TransactionContext* transaction_context, args),Name,Store::tryCast(a),Store::tryCast(b)) \
+	Store::Name ## _impl (transaction_context, Store::tryCast(a),Store::tryCast(b)) \
 	DOBODY2(Name,a,b)
 
 
-#define FINALIZE_OPERATION(Name,count,args) FINALIZE_OPERATION ## count (Name,args)
+#define FINALIZE_OPERATION(Name,count,args...) FINALIZE_OPERATION ## count (Name,args)

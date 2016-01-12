@@ -109,23 +109,22 @@ namespace myria{
 			else return std::make_unique<Handle>();
 		}
 
-		const T& get() const {
+		const T& get(mtl::TransactionContext *tc) const {
 			assert(_ro);
 			choose_strong<l> choice {nullptr};
 			assert(_ro->store().level == l);
-			auto &ret = _ro->get();
-			bool in_trans = _ro->currentTransactionContext();
-			std::unique_ptr<tracker::TrackingContext> owner{in_trans ? nullptr : tracker.generateContext(true)};
-			auto &ctx = (in_trans ? *_ro->currentTransactionContext()->trackingContext : *owner);
-			return get(choice,ctx,ret);
+			auto owner = (tc ? nullptr : _ro->store().begin_transaction(tracker));
+			auto &ctx = (owner ? *owner : *tc);
+			mutils::AtScopeEnd ase{[&](){if (!tc) ctx.commitContext();}};
+			return get(choice,ctx,_ro->get(ctx));
 		}
 	
-		const T& get(std::true_type*, tracker::TrackingContext& ctx, const T& ret) const {
+		const T& get(std::true_type*, mtl::TransactionContext& ctx, const T& ret) const {
 			tracker.afterRead(ctx,_ro->store(),_ro->name());
 			return ret;
 		}
 	
-		const T& get(std::false_type*, tracker::TrackingContext& ctx, const T& ret) const {
+		const T& get(std::false_type*, mtl::TransactionContext& ctx, const T& ret) const {
 			mutils::AtScopeEnd ase{[&](){tracker.afterRead(ctx,_ro->store(),_ro->name(),_ro->timestamp(),_ro->bytes());}};
 			if (tracker.waitForRead(_ro->store(),_ro->name(),_ro->timestamp())){
 				return ret;

@@ -49,9 +49,9 @@ namespace myria { namespace pgsql {
 				SQLObject(GSQLObject gs, std::unique_ptr<T> t):
 					gso(std::move(gs)),t(std::move(t)){}
 		
-				const T& get() {
+				const T& get(mtl::TransactionContext* tc) {
 					char * res = nullptr;
-					res = gso.load();
+					res = gso.load(tc);
 					assert(res);
 					if (res != nullptr){
 						auto &trk = tracker::Tracker::global_tracker();
@@ -72,10 +72,10 @@ namespace myria { namespace pgsql {
 					return ret;
 				}
 
-				void put(const T& t){
+				void put(mtl::TransactionContext* tc, const T& t){
 					this->t = std::make_unique<T>(t);
 					mutils::to_bytes(t,gso.obj_buffer());
-					gso.save();
+					gso.save(tc);
 				}
 
 				//these just forward
@@ -85,8 +85,8 @@ namespace myria { namespace pgsql {
 				mtl::TransactionContext* currentTransactionContext(){
 					return gso.currentTransactionContext();
 				}
-				bool ro_isValid() const{
-					return gso.ro_isValid();
+				bool ro_isValid(mtl::TransactionContext* tc) const{
+					return gso.ro_isValid(tc);
 				}
 				const SQLStore& store() const{
 					return SQLStore::inst(gso.store_instance_id());
@@ -175,8 +175,8 @@ namespace myria { namespace pgsql {
 				return SQLStore_impl::instance_id();
 			}
 
-			OPERATION(Increment, SQLObject<int>* o) {
-				o->gso.increment();
+			OPERATION(Increment, mtl::TransactionContext* transaction_context, SQLObject<int>* o) {
+				o->gso.increment(transaction_context);
 				return true;
 			}
 			END_OPERATION

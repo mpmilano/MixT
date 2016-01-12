@@ -95,7 +95,7 @@ namespace myria {
 
 			std::unique_ptr<TrackingContext> generateContext(bool commitOnDelete = false);
 	
-			void onWrite(DataStore<Level::strong>&, Name name);
+			void onWrite(mtl::TransactionContext*, DataStore<Level::strong>&, Name name);
 
 			void onWrite(DataStore<Level::causal>&, Name name, const Clock &version);
 
@@ -103,7 +103,7 @@ namespace myria {
 
 			void onCreate(DataStore<Level::strong>&, Name name);
 
-			void afterRead(TrackingContext &tc,
+			void afterRead(mtl::TransactionContext &tc,
 						   DataStore<Level::strong>&, Name name);
 
 			//return is non-null when read value cannot be used.

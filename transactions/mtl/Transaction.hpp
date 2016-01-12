@@ -76,6 +76,14 @@ namespace myria { namespace mtl {
 								mutils::foreach(e.handles(),[&](const auto &h){
 										Transaction::collected_objs_insert(collected_objs_s, collected_objs_c,h._ro);
 									});});
+
+						for (auto &o : collected_objs_c){
+							std::cout << "causal object registered: " << o.get() << std::endl;
+						}
+
+						for (auto &o : collected_objs_s){
+							std::cout << "strong object registered: " << o.get() << std::endl;
+						}
 						
 						auto& trk = tracker::Tracker::global_tracker();
 

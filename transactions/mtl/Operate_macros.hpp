@@ -70,28 +70,28 @@
 																		\
 			}															\
 																		\
-			auto strongCall(StrongCache& c CMA const StrongStore &s CMA std::true_type*) const { \
-				auto ret = make_PreOp(id,Name(argcnt_map_dref(trans_op_arg,n,c,s,))) \
-					(c,argcnt(n));										\
+			auto strongCall(mtl::TransactionContext* ctx CMA StrongCache& c CMA const StrongStore &s CMA std::true_type*) const { \
+				auto ret = make_PreOp(id,Name(ctx,argcnt_map_dref(trans_op_arg,n,c,s,))) \
+					(c,*ctx, argcnt(n));									\
 				c.emplace<decltype(ret)>(id,ret);						\
 				return ret;												\
 			}															\
 																		\
-			void strongCall(StrongCache& c CMA const StrongStore &s CMA std::false_type*) const { \
+			void strongCall(mtl::TransactionContext* ctx CMA StrongCache& c CMA const StrongStore &s CMA std::false_type*) const { \
 			}															\
-			auto strongCall(StrongCache& c CMA  const StrongStore &s) const { \
+			auto strongCall(mtl::TransactionContext* ctx CMA StrongCache& c CMA  const StrongStore &s) const { \
 				run_strong_helper(c,s,argcnt(n));						\
 				choose_strong<get_level<OperateImpl>::value> choice{nullptr}; \
-				return strongCall(c,s,choice);							\
+				return strongCall(ctx,c,s,choice);						\
 			}															\
 																		\
-			auto causalCall(CausalCache& c CMA  const CausalStore &s) const { \
+			auto causalCall(mtl::TransactionContext* ctx CMA CausalCache& c CMA  const CausalStore &s) const { \
 				run_causal_helper(c,s,argcnt(n));						\
-				using R = decltype(make_PreOp(id,Name(argcnt_map_dref(trans_op_arg,n,c,s,))) \
-								   (c,argcnt(n)));						\
+				using R = decltype(make_PreOp(id,Name(ctx,argcnt_map_dref(trans_op_arg,n,c,s,))) \
+								   (c,*ctx,argcnt(n)));					\
 				if(runs_with_strong(get_level<OperateImpl>::value)) return c.template get<R>(id); \
-				else return make_PreOp(id,Name(argcnt_map_dref(trans_op_arg,n,c,s,))) \
-						 (c,argcnt(n));									\
+				else return make_PreOp(id,Name(ctx,argcnt_map_dref(trans_op_arg,n,c,s,))) \
+						 (c,*ctx, argcnt(n));							\
 			}															\
 		};																\
 		OperateImpl r{alphabet(n)}; return r;							\
