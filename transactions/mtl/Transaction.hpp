@@ -98,8 +98,10 @@ namespace myria { namespace mtl {
 								tc.at(sto->level).at(sto).get());
 						};
 
+						StrongCache caches;
+						StrongStore stores;
+						bool ret = true;
 						{
-						
 							//strong execution begins
 							
 							//TODO: it'd probably be better to keep the association of RemoteObject
@@ -116,13 +118,10 @@ namespace myria { namespace mtl {
 								assign_transaction_start(&old_ctx_s, nullptr,_ro);
 							}
 							
-							StrongCache caches;
-							StrongStore stores;
 							set_context(caches,context::t::unknown);
 							call_all_strong(caches,stores,s.curr);
 							
 							//todo: REPLICATE THIS COMMIT
-							bool ret = true;
 							{
 								if (tc.count(Level::strong) != 0){
 									for (auto &p : tc.at(Level::strong)){
@@ -155,8 +154,8 @@ namespace myria { namespace mtl {
 							for (auto &ro : collected_objs_c){
 								assign_transaction_start(nullptr, &old_ctx_c, ro);
 							}
-							CausalCache &cachec = *((CausalCache*) (&caches));
-							CausalStore &storec = *((CausalStore*) (&stores));
+							CausalCache cachec{caches};
+							CausalStore storec{stores};
 							call_all_causal(cachec,storec,s.curr);
 							
 							

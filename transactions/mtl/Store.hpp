@@ -22,9 +22,12 @@ namespace myria { namespace mtl {
 		template<StoreType semantic_switch>
 		struct StoreMap {
 		private:
+
 			template<StoreType ss,restrict(ss != semantic_switch)>
 			explicit StoreMap(StoreMap<ss> &&sm)
-				:store_impl(std::move(sm.store_impl)),
+				:looping(sm.looping),
+				 above(sm.above),
+				 store_impl(std::move(sm.store_impl)),
 				 valid_store(sm.valid_store){
 				sm.valid_store = false;
 			}
@@ -36,6 +39,7 @@ namespace myria { namespace mtl {
 			};
 
 			bool looping = false;
+			StoreMap const * const above{nullptr};
 			void in_loop() {
 				assert(is_store(semantic_switch));
 				//yeah, no nested while-loops for now.
@@ -53,12 +57,16 @@ namespace myria { namespace mtl {
 	
 			bool valid_store = true;
 			bool contains(int i) const{
-				return (store_impl.find(i) != store_impl.end());
+				return (store_impl.find(i) != store_impl.end()) ||
+					(above && (above->contains(i)));
 			}
 
 			typedef void** stored;
 
 			StoreMap(){}
+
+			template<StoreType ss,restrict(ss != semantic_switch)>
+			explicit StoreMap(const StoreMap<ss> &sm):above((StoreMap const * const) &sm){}
 
 			StoreMap(const StoreMap&) = delete;
 
@@ -91,29 +99,42 @@ namespace myria { namespace mtl {
 				emplace_ovrt<T>(i,std::forward<Args>(args)...);
 			}
 
-
-#define store_get_impl													\
-			if (!contains(i)) {											\
-				std::cerr << "trying to find something of id " << i << " in a " << (is_store(semantic_switch) ? "store" : "cache" ) <<std::endl; \
-				std::cerr << "we have that here : "	<< lost_and_found()[i] <<std::endl; \
-				throw StoreMiss{};										\
-			}															\
-			T* ret = (T*) (store_impl.at(i).get());						\
-			assert(ret);												\
-			dbg_store_prnt2												\
-			return *ret;
-	
+		private:
+			auto get_assert(int i) const {
+				if (!contains(i)) {
+					std::cerr << "trying to find something of id " << i
+							  << " in a " << (is_store(semantic_switch) ? "store" : "cache" ) <<std::endl;
+					std::cerr << "we have that here : "	<< lost_and_found()[i] <<std::endl;
+					throw StoreMiss{};
+				}	
+			}
+			
+		public:
+			
 			template<typename T>
 			T& get(int i){
-				store_get_impl
-					}
-
+				get_assert(i);
+				if (store_impl.find(i) == store_impl.end())	{
+					assert(false && "failure: causal portion cannot retrieve mutable reference to strong-portion value");
+				}
+				T* ret = (T*) (store_impl.at(i).get());
+				assert(ret);
+				dbg_store_prnt2;
+				return *ret;
+			}
+			
 			template<typename T>
 			const T& get(int i) const{
-				store_get_impl
-					}
-
-
+				get_assert(i);
+				if (store_impl.find(i) == store_impl.end())	{
+					return above->get<T>(i);
+				}
+				T* ret = (T*) (store_impl.at(i).get());
+				assert(ret);
+				dbg_store_prnt2;
+				return *ret;
+			}
+			
 			virtual ~StoreMap() {
 				valid_store = false;
 			}
