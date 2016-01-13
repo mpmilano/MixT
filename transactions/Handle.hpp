@@ -117,16 +117,20 @@ namespace myria{
 			mutils::AtScopeEnd ase{[owner](){if (owner) owner->full_commit(); }};
 			auto &ctx = (owner ? *owner : *tc);
 			assert(ctx.trackingContext);
-			return get(choice,ctx,_ro->get(&ctx));
+
+			//If the Transacion Context does not yet exist for this store, we create it now.
+			auto &store_ctx = *ctx.template get_store_context<l>(_ro->store());
+
+			return get(choice,store_ctx, *ctx.trackingContext, _ro->get(&store_ctx));
 		}
 	
-		const T& get(std::true_type*, mtl::TransactionContext& ctx, const T& ret) const {
-			tracker.afterRead(ctx,_ro->store(),_ro->name());
+		const T& get(std::true_type*, mtl::StoreContext<l>& ctx, tracker::TrackingContext &trkc, const T& ret) const {
+			tracker.afterRead(ctx,trkc,_ro->store(),_ro->name());
 			return ret;
 		}
 	
-		const T& get(std::false_type*, mtl::TransactionContext& ctx, const T& ret) const {
-			mutils::AtScopeEnd ase{[&](){tracker.afterRead(ctx,_ro->store(),_ro->name(),_ro->timestamp(),_ro->bytes());}};
+		const T& get(std::false_type*, mtl::StoreContext<l>& ctx, tracker::TrackingContext &trkc, const T& ret) const {
+			mutils::AtScopeEnd ase{[&](){tracker.afterRead(trkc,_ro->store(),_ro->name(),_ro->timestamp(),_ro->bytes());}};
 			if (tracker.waitForRead(_ro->store(),_ro->name(),_ro->timestamp())){
 				return ret;
 			}
@@ -137,18 +141,22 @@ namespace myria{
 			return *this;
 		}
 
-		void put(mtl::TransactionContext *ctx, const T& t){
+		void put(mtl::TransactionContext *tc, const T& t){
 			choose_strong<l> choice{nullptr};
-			return put(ctx,t,choice);
+			auto owner = (tc ? nullptr : std::make_shared<mtl::TransactionContext>(_ro->store().begin_transaction(),tracker.generateContext()));
+			mutils::AtScopeEnd ase{[owner](){if (owner) owner->full_commit(); }};
+			auto &ctx = (owner ? *owner : *tc);
+			assert(ctx.trackingContext);
+			return put(*ctx.template get_store_context<l>(_ro->store()),*ctx.trackingContext,t,choice);
 		}
 	
-		void put(mtl::TransactionContext *ctx, const T& t, std::true_type*) {
+		void put(mtl::StoreContext<l> &ctx, tracker::TrackingContext& trk, const T& t, std::true_type*) {
 			assert(_ro);
-			tracker.onWrite(_ro->store(),_ro->name());
+			tracker.onWrite(ctx,trk,_ro->store(),_ro->name());
 			_ro->put(ctx,t);
 		}
 
-		void put(mtl::TransactionContext *ctx, const T& t, std::false_type*) {
+		void put(mtl::StoreContext<l> &ctx, tracker::TrackingContext& trk, const T& t, std::false_type*) {
 			assert(_ro);
 			tracker.onWrite(_ro->store(),_ro->name(),_ro->timestamp());
 			_ro->put(ctx,t);
@@ -156,7 +164,8 @@ namespace myria{
 
 		bool isValid(mtl::TransactionContext *ctx) const {
 			if (!_ro) return false;
-			return _ro->ro_isValid(ctx);
+			auto *ptr = (ctx ? ctx->template get_store_context<l>(_ro->store()).get() : nullptr);
+			return _ro->ro_isValid(ptr);
 		}
 
 		DataStore<l>& store() const {
@@ -208,7 +217,7 @@ namespace myria{
 
 	private:
 		static void do_onwrite(mtl::TransactionContext &tc, tracker::Tracker &tr, RemoteObject<Level::strong,T> &ro){
-			tr.onWrite(&tc,ro.store(),ro.name());
+			tr.onWrite(*tc. template get_store_context<l>(ro.store()),*tc.trackingContext,ro.store(),ro.name());
 		}
 		static void do_onwrite(mtl::TransactionContext &tc, tracker::Tracker &tr, RemoteObject<Level::causal,T> &ro){
 			tr.onWrite(ro.store(),ro.name(),ro.timestamp());

@@ -20,8 +20,8 @@ namespace myria {
 
 	//Idea: you can have template<...> above this and it will work!
 
-#define OPERATION(Name, args...) static auto Name ## _impl (args) {	\
-		struct r { static bool f(args)
+#define OPERATION(Name, args...) static auto Name ## _impl (mtl::TransactionContext*, args) {	\
+		struct r { static bool f(mtl::TransactionContext* transaction_context, args)
 
 #define END_OPERATION };												\
 		auto fp = r::f;													\
@@ -173,14 +173,18 @@ namespace myria {
 			auto &&ret = fun(Store::tryCast(extract_robj_p(args))...);
 			mutils::foreach(causal_pair,
 							[&](const auto &p){
+								static_assert(mtl::get_level<decltype(p.second)>::value == Level::strong
+											  || mtl::get_level<decltype(p.second)>::value == Level::causal,"sanity check");
 								if (tracker::ends::is_same(p.first, p.second.remote_object().timestamp())) return;
-								else p.second.tracker.afterRead(ctx,
+								else p.second.tracker.afterRead(*ctx.trackingContext,
 																p.second.store(),p.second.name(),p.second.remote_object().timestamp(),p.second.remote_object().bytes());});
 			mutils::foreach(h_strong_write, [&](const auto &h){h.tracker.onWrite(&ctx,h.store(),h.name());});
 			mutils::foreach(h_causal_write, [&](const auto &h){h.tracker.onWrite(h.store(),h.name(),h.remote_object().timestamp());});
 			return ret;
 		}
 	};
+
+	//ctx.template get_store_context<mtl::get_level<decltype(p.second)>::value>(p.second.store()),
 
 	struct OperationNotFoundError : public mutils::StaticMyriaException<MACRO_GET_STR("Error: operation not found")> {};
 

@@ -246,12 +246,12 @@ namespace myria { namespace tracker {
 			}
 		}
 
-		void Tracker::onWrite(mtl::TransactionContext* tc, DataStore<Level::strong>& ds_real, Name name){
-			using wlm_t = void (*)(mtl::TransactionContext* tc, Name name, Tracker::Nonce nonce, Tracker::Internals& t);
-			static const wlm_t write_lin_metadata= [](mtl::TransactionContext* tc, Name name, Tracker::Nonce nonce, Tracker::Internals& t){
+		void Tracker::onWrite(StoreContext<Level::strong> &sctx, TrackingContext &tctx, DataStore<Level::strong>& ds_real, Name name){
+			using wlm_t = void (*)(StoreContext<Level::strong> &sctx, TrackingContext &tctx, Name name, Tracker::Nonce nonce, Tracker::Internals& t);
+			static const wlm_t write_lin_metadata= [](StoreContext<Level::strong> &sctx, TrackingContext &tctx, Name name, Tracker::Nonce nonce, Tracker::Internals& t){
 				auto meta_name = make_lin_metaname(name);
 				if (get<TDS::exists>(*t.strongDS)(*t.registeredStrong,meta_name)){
-					get<TDS::existingTomb>(*t.strongDS)(*t.registeredStrong,meta_name)->put(tc,Tracker::Tombstone{nonce,get_ip()});
+					get<TDS::existingTomb>(*t.strongDS)(*t.registeredStrong,meta_name)->put(&sctx,Tracker::Tombstone{nonce,get_ip()});
 				}
 				else get<TDS::newTomb>(*t.strongDS)(*t.registeredStrong,
 													meta_name,
@@ -263,7 +263,7 @@ namespace myria { namespace tracker {
 
 				auto subroutine = [&](){
 					auto nonce = long_rand();
-					write_lin_metadata(tc,name,nonce,*i);
+					write_lin_metadata(sctx,tctx,name,nonce,*i);
 					write_causal_tombstone(nonce,*i);
 					i->cache.insert(nonce,i->tracking);
 				};
@@ -362,10 +362,10 @@ namespace myria { namespace tracker {
 		}
 		
 		
-		void Tracker::afterRead(mtl::TransactionContext &tc, DataStore<Level::strong>& ds, Name name){
-			using update_clock_t = void (*)(TransactionContext &tc, Tracker::Internals &t);
-			static update_clock_t update_clock = [](TransactionContext &tc, Tracker::Internals &t){
-				auto newc = get<TDS::existingClock>(*t.strongDS)(*t.registeredStrong, bigprime_lin)->get(&tc);
+		void Tracker::afterRead(mtl::StoreContext<Level::strong> &sctx, TrackingContext &tctx, DataStore<Level::strong>& ds, Name name){
+			using update_clock_t = void (*)(StoreContext<Level::strong> &sctx, TrackingContext &tctx, Tracker::Internals &t);
+			static update_clock_t update_clock = [](StoreContext<Level::strong> &sctx, TrackingContext &tctx, Tracker::Internals &t){
+				auto newc = get<TDS::existingClock>(*t.strongDS)(*t.registeredStrong, bigprime_lin)->get(&sctx);
 				assert(ends::prec(t.global_min,newc));
 				t.global_min = newc;
 				list<Name> to_remove;
@@ -373,18 +373,18 @@ namespace myria { namespace tracker {
 					if (ends::prec(p.second.first,newc)) to_remove.push_back(p.first);
 				}
 				for (auto &e : to_remove){
-					tc.trackingContext->i->tracking_erase.push_back(e);
+					tctx.i->tracking_erase.push_back(e);
 				}
 			};
 			assert(&ds == i->registeredStrong);
 			if (!is_lin_metadata(name)){
 				//TODO: reduce frequency of this call.
-				update_clock(tc,*i);
+				update_clock(sctx,tctx,*i);
 				auto ts = make_lin_metaname(name);
 				if (get<TDS::exists>(*i->strongDS)(ds,ts)){
-					auto tomb = get<TDS::existingTomb>(*i->strongDS)(ds,ts)->get(&tc);
+					auto tomb = get<TDS::existingTomb>(*i->strongDS)(ds,ts)->get(&sctx);
 					while (!sleep_on(*i,tomb.name(),1)){
-						tc.trackingContext->i->pending_nonces_add.emplace_back
+						tctx.i->pending_nonces_add.emplace_back
 							(tomb.name(), Bundle{i->cache.get(tomb, cache_port)});
 					}
 				}
@@ -421,12 +421,12 @@ namespace myria { namespace tracker {
 			return true;
 		}
 		
-		void Tracker::afterRead(TransactionContext &t, DataStore<Level::causal>&, Name name, const Clock& version, const std::vector<char> &data){
+		void Tracker::afterRead(TrackingContext &tctx, DataStore<Level::causal>&, Name name, const Clock& version, const std::vector<char> &data){
 			if (tracking_candidate(*i,name,version)){
 				//need to overwrite, not occlude, the previous element.
 				//C++'s map semantics are really stupid.
-				t.trackingContext->i->tracking_erase.push_back(name);
-				t.trackingContext->i->tracking_add.emplace_back(name,std::make_pair(version,data));
+				tctx.i->tracking_erase.push_back(name);
+				tctx.i->tracking_add.emplace_back(name,std::make_pair(version,data));
 			}
 		}
 

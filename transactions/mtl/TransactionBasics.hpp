@@ -1,6 +1,7 @@
 #pragma once
 #include "TrackingContext.hpp"
 #include "Basics.hpp"
+#include "restrict.hpp"
 
 namespace myria {
 	
@@ -44,6 +45,24 @@ namespace myria {
 				{}
 			
 			bool full_commit();
+
+			template<Level lev, typename Store>
+			auto& get_store_context(Store& str){
+				choose_strong<lev> choice{nullptr}; //true_type when lev == strong
+				auto& store_ctx = get_store_context(choice);
+				if (!store_ctx){
+					store_ctx.reset(str.begin_transaction().release());
+				}
+				return store_ctx;
+			}
+
+			auto& get_store_context(std::true_type*){
+				return strongContext;
+			}			
+
+			auto& get_store_context(std::false_type*){
+				return causalContext;
+			}
 
 			virtual ~TransactionContext(){
 				if (!committed) abortContext();

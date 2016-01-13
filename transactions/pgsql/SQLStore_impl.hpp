@@ -72,8 +72,8 @@ namespace myria { namespace pgsql {
 				GSQLObject(SQLStore_impl &ss, Table t, Name name);
 				GSQLObject(const GSQLObject&) = delete;
 				GSQLObject(GSQLObject&&);
-				void save(mtl::TransactionContext*);
-				char* load(mtl::TransactionContext*);
+				void save(SQLTransaction*);
+				char* load(SQLTransaction*);
 				char* obj_buffer();
 				char const * const obj_buffer() const ;
 				int obj_buffer_size() const;
@@ -81,12 +81,10 @@ namespace myria { namespace pgsql {
 				SQLStore_impl& store();
 
 				//will crash if stored object is non-integral.
-				void increment(mtl::TransactionContext*);
+				void increment(SQLTransaction*);
 
 				//required by GeneralRemoteObject
-				void setTransactionContext(mtl::TransactionContext*);
-				mtl::TransactionContext* currentTransactionContext();
-				bool ro_isValid(mtl::TransactionContext*) const;
+				bool ro_isValid(SQLTransaction*) const;
 				int store_instance_id() const;
 				Name name() const;
 

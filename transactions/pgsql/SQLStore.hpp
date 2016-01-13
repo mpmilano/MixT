@@ -50,9 +50,9 @@ namespace myria { namespace pgsql {
 				SQLObject(GSQLObject gs, std::unique_ptr<T> t):
 					gso(std::move(gs)),t(std::move(t)){}
 		
-				const T& get(mtl::TransactionContext* tc) {
-					char * res = nullptr;
-					res = gso.load(tc);
+				const T& get(mtl::StoreContext<l>* _tc) {
+					SQLTransaction *tc = (_tc ? ((SQLContext*) _tc)->i.get() : nullptr);
+					auto *res = gso.load(tc);
 					assert(res);
 					if (res != nullptr){
 						auto &trk = tracker::Tracker::global_tracker();
@@ -73,20 +73,15 @@ namespace myria { namespace pgsql {
 					return ret;
 				}
 
-				void put(mtl::TransactionContext* tc, const T& t){
+				void put(mtl::StoreContext<l>* _tc, const T& t){
+					SQLTransaction *tc = (_tc ? ((SQLContext*) _tc)->i.get() : nullptr);
 					this->t = std::make_unique<T>(t);
 					mutils::to_bytes(t,gso.obj_buffer());
 					gso.save(tc);
 				}
 
-				//these just forward
-				void setTransactionContext(mtl::TransactionContext* t){
-					gso.setTransactionContext(t);
-				}
-				mtl::TransactionContext* currentTransactionContext(){
-					return gso.currentTransactionContext();
-				}
-				bool ro_isValid(mtl::TransactionContext* tc) const{
+				bool ro_isValid(mtl::StoreContext<l>* _tc) const{
+					SQLTransaction *tc = (_tc ? ((SQLContext*) _tc)->i.get() : nullptr);
 					return gso.ro_isValid(tc);
 				}
 				const SQLStore& store() const{
@@ -164,24 +159,32 @@ namespace myria { namespace pgsql {
 													   std::unique_ptr<T>());
 			}
 
+			struct SQLContext : mtl::StoreContext<l> {
+				std::unique_ptr<SQLTransaction> i;
+				SQLContext(decltype(i) i):i(std::move(i)){}
+				DataStore<l>& store() {return dynamic_cast<DataStore<l>&>( i->gstore);}
+				bool store_commit() {return i->store_commit();}
+			};
+
 			std::unique_ptr<mtl::StoreContext<l> > begin_transaction()
 				{
-					struct StoreContext : mtl::StoreContext<l> {
-						std::unique_ptr<SQLTransaction> i;
-						StoreContext(decltype(i) i):i(std::move(i)){}
-						DataStore<l>& store() {return dynamic_cast<DataStore<l>&>( i->gstore);}
-						bool store_commit() {return i->store_commit();}
-					};
 					auto ret = SQLStore_impl::begin_transaction();
-					return std::unique_ptr<mtl::StoreContext<l> >(new StoreContext{std::move(ret)});
+					return std::unique_ptr<mtl::StoreContext<l> >(new SQLContext{std::move(ret)});
 				}
 
 			int instance_id() const {
 				return SQLStore_impl::instance_id();
 			}
 
-			OPERATION(Increment, mtl::TransactionContext* transaction_context, SQLObject<int>* o) {
-				o->gso.increment(transaction_context);
+			OPERATION(Increment, SQLObject<int>* o) {
+				//TODO: ideally this would be automatically reduced to the correct type,
+				//but for now we'll just manually do it here.
+				assert(transaction_context && "Error: calling operations outside of transactions is disallowed");
+				SQLContext *ctx = (l == Level::strong ?
+								   dynamic_cast<SQLContext*>(transaction_context->strongContext.get()) :
+								   dynamic_cast<SQLContext*>(transaction_context->causalContext.get()));
+				assert(ctx && "error: should have entered transaction before this point!");
+				o->gso.increment(ctx->i.get());
 				return true;
 			}
 			END_OPERATION
