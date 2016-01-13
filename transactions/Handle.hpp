@@ -137,26 +137,26 @@ namespace myria{
 			return *this;
 		}
 
-		void put(const T& t){
+		void put(mtl::TransactionContext *ctx, const T& t){
 			choose_strong<l> choice{nullptr};
-			return put(t,choice);
+			return put(ctx,t,choice);
 		}
 	
-		void put(const T& t, std::true_type*) {
+		void put(mtl::TransactionContext *ctx, const T& t, std::true_type*) {
 			assert(_ro);
 			tracker.onWrite(_ro->store(),_ro->name());
-			_ro->put(t);
+			_ro->put(ctx,t);
 		}
 
-		void put(const T& t, std::false_type*) {
+		void put(mtl::TransactionContext *ctx, const T& t, std::false_type*) {
 			assert(_ro);
 			tracker.onWrite(_ro->store(),_ro->name(),_ro->timestamp());
-			_ro->put(t);
+			_ro->put(ctx,t);
 		}
 
-		bool isValid() const {
+		bool isValid(mtl::TransactionContext *ctx) const {
 			if (!_ro) return false;
-			return _ro->ro_isValid();
+			return _ro->ro_isValid(ctx);
 		}
 
 		DataStore<l>& store() const {

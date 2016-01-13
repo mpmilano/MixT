@@ -25,15 +25,15 @@ namespace myria { namespace mtl {
 				return mtl::handles(t);
 			}
 
-			bool strongCall(StrongCache& a, const StrongStore& b) const {
-				auto ret = mtl::run_ast_strong(a,b,t);
+			bool strongCall(TransactionContext* ctx, StrongCache& a, const StrongStore& b) const {
+				auto ret = mtl::run_ast_strong(ctx,a,b,t);
 				if (runs_with_strong(get_level<T>::value)) {
 					std::cout << ret << std::endl;
 				}
 				return true;
 			}
-			bool causalCall(CausalCache& a, const CausalStore& b) const {
-				auto ret = mtl::run_ast_causal(a,b,t);
+			bool causalCall(TransactionContext* ctx, CausalCache& a, const CausalStore& b) const {
+				auto ret = mtl::run_ast_causal(ctx,a,b,t);
 				if (runs_with_causal(get_level<T>::value)){
 					std::cout << ret << std::endl;
 				}
@@ -81,13 +81,13 @@ namespace myria { namespace mtl {
 				return std::tuple<>();
 			}
 
-			bool strongCall(StrongCache& a, const StrongStore& b) const {
+			bool strongCall(TransactionContext* ctx, StrongCache& a, const StrongStore& b) const {
 				if (print_at_strong)
 					std::cout << t << std::endl;
 				return true;
 			}
 	
-			constexpr bool causalCall(CausalCache& a, const CausalStore& b) const {
+			constexpr bool causalCall(TransactionContext* ctx, CausalCache& a, const CausalStore& b) const {
 				if (!print_at_strong)
 					std::cout << t << std::endl;
 				return true;

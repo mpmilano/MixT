@@ -33,13 +33,13 @@ namespace myria { namespace mtl {
 				return t.handles();
 			}
 
-			auto strongCall(StrongCache& cache, const StrongStore &s) const {
+			auto strongCall(TransactionContext* ctx, StrongCache& cache, const StrongStore &s) const {
 				//TODO - endorsements should happen somewhere around here, right?
 				//todo: dID I want the level of the expression which assigned the temporary?
 		
 				choose_strong<get_level<Temp>::value > choice{nullptr};
 				try {
-					auto ret = strongCall(cache, s,choice);
+					auto ret = strongCall(ctx,cache, s,choice);
 					return ret;
 				}
 				catch (const StoreMiss&){
@@ -48,7 +48,7 @@ namespace myria { namespace mtl {
 				}
 			}
 
-			auto strongCall(StrongCache& cache, const StrongStore &s, std::true_type*) const {
+			auto strongCall(TransactionContext* ctx, StrongCache& cache, const StrongStore &s, std::true_type*) const {
 				//std::cout << "inserting RefTemp " << name << " (" << id<< ") into cache "
 				//		  << &cache << std::endl;
 				auto ret = call<StoreType::StrongStore>(s, t);
@@ -57,11 +57,11 @@ namespace myria { namespace mtl {
 				return ret;
 			}
 
-			void strongCall(StrongCache& cache, const StrongStore &s, std::false_type*) const {
+			void strongCall(TransactionContext* ctx, StrongCache& cache, const StrongStore &s, std::false_type*) const {
 				//we haven't even done the assignment yet. nothing to see here.
 			}
 
-			auto causalCall(const CausalCache& cache, const CausalStore &s) const {
+			auto causalCall(TransactionContext* ctx, const CausalCache& cache, const CausalStore &s) const {
 		
 				typedef decltype(call<StoreType::CausalStore>(s,t)) R;
 				if (cache.contains(this->id)) {

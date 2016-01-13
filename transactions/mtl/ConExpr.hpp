@@ -133,9 +133,9 @@ namespace myria { namespace mtl {
 				return ret;
 			}
 	
-			void strongCall(const StrongCache&, const StrongStore &) const {}
+			void strongCall(TransactionContext* ctx, const StrongCache&, const StrongStore &) const {}
 
-			void causalCall(const CausalCache&, const CausalStore &) const {}	
+			void causalCall(TransactionContext* ctx, const CausalCache&, const CausalStore &) const {}	
 
 		};
 
@@ -154,13 +154,13 @@ namespace myria { namespace mtl {
 		std::integral_constant<bool, is_ConExpr_f(mutils::mke_p<Cls>()) || std::is_scalar<std::decay_t<Cls> >::value>::type {};
 
 		template<typename T, restrict(is_ConExpr<T>::value && !std::is_scalar<T>::value && !is_handle<T>::value)>
-		auto run_ast_strong(StrongCache& c, const StrongStore &s, const T& expr) {
-			return expr.strongCall(c,s);
+		auto run_ast_strong(TransactionContext* ctx, StrongCache& c, const StrongStore &s, const T& expr) {
+			return expr.strongCall(ctx,c,s);
 		}
 
 		template<typename T>
 		typename std::enable_if<std::is_scalar<std::decay_t<T > >::value,T>::type
-		run_ast_strong(const StrongCache &, const StrongStore&, const T& e) {
+		run_ast_strong(TransactionContext* ctx, const StrongCache &, const StrongStore&, const T& e) {
 			return e;
 		}
 

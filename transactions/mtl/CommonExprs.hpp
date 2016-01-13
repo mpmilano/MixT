@@ -17,12 +17,12 @@ namespace myria { namespace mtl {
 			CSConstant(const T& t):val(t){}
 			CSConstant(const CSConstant& cs):val(cs.val){}
 
-			constexpr T causalCall(CausalCache& cache, const CausalStore&) const {
+			constexpr T causalCall(TransactionContext* ctx, CausalCache& cache, const CausalStore&) const {
 				cache.insert(this->id,val);
 				return val;
 			}
 
-			constexpr T strongCall(StrongCache& cache, const StrongStore&) const {
+			constexpr T strongCall(TransactionContext* ctx, StrongCache& cache, const StrongStore&) const {
 				cache.insert(this->id,val);
 				return val;
 			}
@@ -83,30 +83,30 @@ namespace myria { namespace mtl {
 				return std::tuple_cat(mtl::handles(l),mtl::handles(r));
 			}
 
-			auto causalCall(CausalCache& cache, const CausalStore& s) const {
+			auto causalCall(TransactionContext* ctx, CausalCache& cache, const CausalStore& s) const {
 
 				if (cache.contains(this->id) ) return cache.get<res_t>(this->id);
 				else {
-					cache.insert(this->id, run_ast_causal(cache,s,l)
-								 + run_ast_causal(cache,s,r));
-					return run_ast_causal(cache,s,l) + run_ast_causal(cache,s,r);
+					cache.insert(this->id, run_ast_causal(ctx,cache,s,l)
+								 + run_ast_causal(ctx,cache,s,r));
+					return run_ast_causal(ctx,cache,s,l) + run_ast_causal(ctx,cache,s,r);
 				}
 			}
 	
-			auto strongCall(StrongCache& cache, const StrongStore &s) const {
+			auto strongCall(TransactionContext* ctx, StrongCache& cache, const StrongStore &s) const {
 				choose_strong<min_level<T,V>::value> choice{nullptr};
-				return strongCall(cache,s,choice);
+				return strongCall(ctx,cache,s,choice);
 			}
 
-			auto strongCall(StrongCache& cache, const StrongStore& s, std::true_type*) const {
-				auto ret = run_ast_strong(cache,s,l) + run_ast_strong(cache,s,r);
+			auto strongCall(TransactionContext* ctx, StrongCache& cache, const StrongStore& s, std::true_type*) const {
+				auto ret = run_ast_strong(ctx,cache,s,l) + run_ast_strong(ctx,cache,s,r);
 				cache.insert(this->id,ret);
 				return ret;
 			}
 
-			void strongCall(StrongCache &cache, const StrongStore& s, std::false_type*) const {
-				run_ast_strong(cache,s,l);
-				run_ast_strong(cache,s,r);
+			void strongCall(TransactionContext* ctx, StrongCache &cache, const StrongStore& s, std::false_type*) const {
+				run_ast_strong(ctx,cache,s,l);
+				run_ast_strong(ctx,cache,s,r);
 			}
 	
 			template<typename a, typename b>
@@ -165,30 +165,30 @@ namespace myria { namespace mtl {
 				return std::tuple_cat(mtl::handles(l),mtl::handles(r));
 			}
 
-			auto causalCall(CausalCache& cache, const CausalStore& s) const {
+			auto causalCall(TransactionContext* ctx, CausalCache& cache, const CausalStore& s) const {
 
 				if (cache.contains(this->id) ) return cache.get<res_t>(this->id);
 				else {
-					cache.insert(this->id, run_ast_causal(cache,s,l)
-								 == run_ast_causal(cache,s,r));
-					return run_ast_causal(cache,s,l) == run_ast_causal(cache,s,r);
+					cache.insert(this->id, run_ast_causal(ctx,cache,s,l)
+								 == run_ast_causal(ctx,cache,s,r));
+					return run_ast_causal(ctx,cache,s,l) == run_ast_causal(ctx,cache,s,r);
 				}
 			}
 	
-			auto strongCall(StrongCache& cache, const StrongStore &s) const {
+			auto strongCall(TransactionContext* ctx, StrongCache& cache, const StrongStore &s) const {
 				choose_strong<min_level<T,V>::value> choice{nullptr};
-				return strongCall(cache,s,choice);
+				return strongCall(ctx,cache,s,choice);
 			}
 
-			auto strongCall(StrongCache& cache, const StrongStore& s, std::true_type*) const {
-				auto ret = run_ast_strong(cache,s,l) == run_ast_strong(cache,s,r);
+			auto strongCall(TransactionContext* ctx, StrongCache& cache, const StrongStore& s, std::true_type*) const {
+				auto ret = run_ast_strong(ctx,cache,s,l) == run_ast_strong(ctx,cache,s,r);
 				cache.insert(this->id,ret);
 				return ret;
 			}
 
-			void strongCall(StrongCache &cache, const StrongStore& s, std::false_type*) const {
-				run_ast_strong(cache,s,l);
-				run_ast_strong(cache,s,r);
+			void strongCall(TransactionContext* ctx, StrongCache &cache, const StrongStore& s, std::false_type*) const {
+				run_ast_strong(ctx,cache,s,l);
+				run_ast_strong(ctx,cache,s,r);
 			}
 	
 			template<typename a, typename b>
@@ -242,30 +242,30 @@ namespace myria { namespace mtl {
 				return std::tuple_cat(mtl::handles(l),mtl::handles(r));
 			}
 
-			bool causalCall(CausalCache& cache, const CausalStore& s) const {
+			bool causalCall(TransactionContext* ctx, CausalCache& cache, const CausalStore& s) const {
 
 				if (cache.contains(this->id) ) return cache.get<bool>(this->id);
 				else {
-					cache.insert(this->id,run_ast_causal(cache,s,l) ||
-								 run_ast_causal(cache,s,r));
-					return run_ast_causal(cache,s,l) || run_ast_causal(cache,s,r);
+					cache.insert(this->id,run_ast_causal(ctx,cache,s,l) ||
+								 run_ast_causal(ctx,cache,s,r));
+					return run_ast_causal(ctx,cache,s,l) || run_ast_causal(ctx,cache,s,r);
 				}
 			}
 	
-			auto strongCall(StrongCache& cache, const StrongStore &s) const {
+			auto strongCall(TransactionContext* ctx, StrongCache& cache, const StrongStore &s) const {
 				choose_strong<min_level<T,V>::value> choice{nullptr};
-				return strongCall(cache,s,choice);
+				return strongCall(ctx,cache,s,choice);
 			}
 
-			bool strongCall(StrongCache& cache, const StrongStore& s, std::true_type*) const {
-				auto ret = run_ast_strong(cache,s,l) || run_ast_strong(cache,s,r);
+			bool strongCall(TransactionContext* ctx, StrongCache& cache, const StrongStore& s, std::true_type*) const {
+				auto ret = run_ast_strong(ctx,cache,s,l) || run_ast_strong(ctx,cache,s,r);
 				cache.insert(this->id,ret);
 				return ret;
 			}
 
-			void strongCall(StrongCache &cache, const StrongStore& s, std::false_type*) const {
-				run_ast_strong(cache,s,l);
-				run_ast_strong(cache,s,r);
+			void strongCall(TransactionContext* ctx, StrongCache &cache, const StrongStore& s, std::false_type*) const {
+				run_ast_strong(ctx,cache,s,l);
+				run_ast_strong(ctx,cache,s,r);
 			}
 	
 			template<typename a, typename b>
@@ -318,30 +318,30 @@ namespace myria { namespace mtl {
 				return std::tuple_cat(mtl::handles(l),mtl::handles(r));
 			}
 
-			bool causalCall(CausalCache& cache, const CausalStore& s) const {
+			bool causalCall(TransactionContext* ctx, CausalCache& cache, const CausalStore& s) const {
 
 				if (cache.contains(this->id) ) return cache.get<bool>(this->id);
 				else {
 					cache.insert(this->id,run_ast_causal(cache,s,l) &&
-								 run_ast_causal(cache,s,r));
-					return run_ast_causal(cache,s,l) && run_ast_causal(cache,s,r);
+								 run_ast_causal(ctx,cache,s,r));
+					return run_ast_causal(ctx,cache,s,l) && run_ast_causal(ctx,cache,s,r);
 				}
 			}
 	
-			auto strongCall(StrongCache& cache, const StrongStore &s) const {
+			auto strongCall(TransactionContext* ctx, StrongCache& cache, const StrongStore &s) const {
 				choose_strong<min_level<T,V>::value> choice{nullptr};
-				return strongCall(cache,s,choice);
+				return strongCall(ctx,cache,s,choice);
 			}
 
-			bool strongCall(StrongCache& cache, const StrongStore& s, std::true_type*) const {
-				auto ret = run_ast_strong(cache,s,l) && run_ast_strong(cache,s,r);
+			bool strongCall(TransactionContext* ctx, StrongCache& cache, const StrongStore& s, std::true_type*) const {
+				auto ret = run_ast_strong(ctx,cache,s,l) && run_ast_strong(ctx,cache,s,r);
 				cache.insert(this->id,ret);
 				return ret;
 			}
 
-			void strongCall(StrongCache &cache, const StrongStore& s, std::false_type*) const {
-				run_ast_strong(cache,s,l);
-				run_ast_strong(cache,s,r);
+			void strongCall(TransactionContext* ctx, StrongCache &cache, const StrongStore& s, std::false_type*) const {
+				run_ast_strong(ctx,cache,s,l);
+				run_ast_strong(ctx,cache,s,r);
 			}
 	
 			template<typename a, typename b>
@@ -393,28 +393,28 @@ namespace myria { namespace mtl {
 				return v.handles();
 			}
 
-			bool causalCall(CausalCache& cache, const CausalStore& s) const {
+			bool causalCall(TransactionContext* ctx, CausalCache& cache, const CausalStore& s) const {
 
 				if (cache.contains(this->id) ) return cache.get<bool>(this->id);
 				else {
-					cache.insert(this->id,!v.causalCall(cache,s));
-					return !v.causalCall(cache,s);
+					cache.insert(this->id,!v.causalCall(ctx,cache,s));
+					return !v.causalCall(ctx,cache,s);
 				}
 			}
 	
-			auto strongCall(StrongCache& cache, const StrongStore &s) const {
+			auto strongCall(TransactionContext* ctx, StrongCache& cache, const StrongStore &s) const {
 				choose_strong<get_level<T>::value> choice{nullptr};
-				return strongCall(cache,s,choice);
+				return strongCall(ctx,cache,s,choice);
 			}
 
-			bool strongCall(StrongCache& cache, const StrongStore& s, std::true_type*) const {
-				bool ret = !v.strongCall(cache,s);
+			bool strongCall(TransactionContext* ctx, StrongCache& cache, const StrongStore& s, std::true_type*) const {
+				bool ret = !v.strongCall(ctx,cache,s);
 				cache.insert(this->id,ret);
 				return ret;
 			}
 
-			void strongCall(StrongCache &cache, const StrongStore& s, std::false_type*) const {
-				v.strongCall(cache,s);
+			void strongCall(TransactionContext* ctx, StrongCache &cache, const StrongStore& s, std::false_type*) const {
+				v.strongCall(ctx,cache,s);
 			}
 
 
@@ -466,34 +466,34 @@ namespace myria { namespace mtl {
 				return mtl::handles(t);
 			}
 
-			bool causalCall(CausalCache& cache, const CausalStore& s) const {
+			bool causalCall(TransactionContext* ctx, CausalCache& cache, const CausalStore& s) const {
 				if (cache.contains(this->id) ) return cache.get<bool>(this->id);
 				else {
 					auto prev = context::current_context(cache);
 					context::set_context(cache,context::t::validity);
-					bool ret = run_ast_causal(cache,s,t).isValid();
+					bool ret = run_ast_causal(ctx,cache,s,t).isValid(ctx);
 					context::set_context(cache,prev);
 					cache.insert(this->id,ret);
 					return ret;
 				}
 			}
 	
-			auto strongCall(StrongCache& cache, const StrongStore &s) const {
+			auto strongCall(TransactionContext* ctx, StrongCache& cache, const StrongStore &s) const {
 				choose_strong<get_level<T>::value> choice{nullptr};
-				return strongCall(cache,s,choice);
+				return strongCall(ctx,cache,s,choice);
 			}
 
-			bool strongCall(StrongCache& cache, const StrongStore&s, std::true_type*) const {
+			bool strongCall(TransactionContext* ctx, StrongCache& cache, const StrongStore&s, std::true_type*) const {
 				auto prev = context::current_context(cache);
 				context::set_context(cache,context::t::validity);
-				bool ret = run_ast_strong(cache,s,t).isValid();
+				bool ret = run_ast_strong(ctx,cache,s,t).isValid(ctx);
 				context::set_context(cache,prev);
 				cache.insert(this->id,ret);
 				return ret;
 			}
 
-			void strongCall(StrongCache &cache, const StrongStore& s, std::false_type*) const {
-				run_ast_strong(cache,s,t);
+			void strongCall(TransactionContext* ctx, StrongCache &cache, const StrongStore& s, std::false_type*) const {
+				run_ast_strong(ctx,cache,s,t);
 			}
 
 

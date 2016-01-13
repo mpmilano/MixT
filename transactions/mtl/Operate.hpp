@@ -105,14 +105,14 @@ namespace myria { namespace mtl {
 		}
 
 		template<typename T>
-		auto trans_op_arg(CausalCache& c, const CausalStore& s, const T& t) 
+		auto trans_op_arg(TransactionContext *ctx, CausalCache& c, const CausalStore& s, const T& t) 
 		{
-			run_ast_causal(c,s,t);
+			run_ast_causal(ctx,c,s,t);
 			return constify(extract_robj_p(cached(c,t)));
 		}
 
 		template<typename T>
-		auto trans_op_arg(StrongCache& c, const StrongStore& s, const T& t) {
+		auto trans_op_arg(TransactionContext *ctx, StrongCache& c, const StrongStore& s, const T& t) {
 			auto prev_ctx = context::current_context(c);
 			constexpr bool op_mode = is_handle<run_result<std::decay_t<decltype(t)> > >::value &&
 				!is_preserve<std::decay_t<decltype(t)> >::value;
@@ -123,7 +123,7 @@ namespace myria { namespace mtl {
 				context::set_context(c,context::t::data);
 
 	
-			run_ast_strong(c,s,t);
+			run_ast_strong(ctx,c,s,t);
 
 	
 			if (op_mode || data_mode)
@@ -169,7 +169,7 @@ namespace myria { namespace mtl {
 		}
 
 		template<typename Cache, typename Store, typename... T>
-		void run_strong_helper(Cache& c, Store &s, const T& ...t){
+		void run_strong_helper(TransactionContext *tctx, Cache& c, Store &s, const T& ...t){
 			effect_map([&](const auto &t){
 					auto prev_ctx = context::current_context(c);
 					constexpr bool op_mode = is_handle<run_result<std::decay_t<decltype(*t)> > >::value &&
@@ -179,15 +179,15 @@ namespace myria { namespace mtl {
 						context::set_context(c,context::t::operation);
 					else if (data_mode)
 						context::set_context(c,context::t::data);
-					run_ast_strong(c,s,*t);
+					run_ast_strong(tctx,c,s,*t);
 					if (op_mode || data_mode)
 						context::set_context(c,prev_ctx);
 				},t...);
 		}
 
 		template<typename Cache, typename Store, typename... T>
-		void run_causal_helper(Cache& c, Store &s, const T& ...t){
-			effect_map([&](const auto &t){run_ast_causal(c,s,*t);},t...);
+		void run_causal_helper(TransactionContext *tctx, Cache& c, Store &s, const T& ...t){
+			effect_map([&](const auto &t){run_ast_causal(tctx,c,s,*t);},t...);
 		}
 
 		template<unsigned long long ID, typename T>

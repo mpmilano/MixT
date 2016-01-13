@@ -71,7 +71,7 @@
 			}															\
 																		\
 			auto strongCall(mtl::TransactionContext* ctx CMA StrongCache& c CMA const StrongStore &s CMA std::true_type*) const { \
-				auto ret = make_PreOp(id,Name(ctx,argcnt_map_dref(trans_op_arg,n,c,s,))) \
+				auto ret = make_PreOp(id,Name(ctx,argcnt_map_dref(trans_op_arg,n,ctx,c,s,))) \
 					(c,*ctx, argcnt(n));									\
 				c.emplace<decltype(ret)>(id,ret);						\
 				return ret;												\
@@ -80,17 +80,17 @@
 			void strongCall(mtl::TransactionContext* ctx CMA StrongCache& c CMA const StrongStore &s CMA std::false_type*) const { \
 			}															\
 			auto strongCall(mtl::TransactionContext* ctx CMA StrongCache& c CMA  const StrongStore &s) const { \
-				run_strong_helper(c,s,argcnt(n));						\
+				run_strong_helper(ctx,c,s,argcnt(n));					\
 				choose_strong<get_level<OperateImpl>::value> choice{nullptr}; \
 				return strongCall(ctx,c,s,choice);						\
 			}															\
 																		\
 			auto causalCall(mtl::TransactionContext* ctx CMA CausalCache& c CMA  const CausalStore &s) const { \
-				run_causal_helper(c,s,argcnt(n));						\
-				using R = decltype(make_PreOp(id,Name(ctx,argcnt_map_dref(trans_op_arg,n,c,s,))) \
+				run_causal_helper(ctx,c,s,argcnt(n));					\
+				using R = decltype(make_PreOp(id,Name(ctx,argcnt_map_dref(trans_op_arg,n,ctx,c,s,))) \
 								   (c,*ctx,argcnt(n)));					\
 				if(runs_with_strong(get_level<OperateImpl>::value)) return c.template get<R>(id); \
-				else return make_PreOp(id,Name(ctx,argcnt_map_dref(trans_op_arg,n,c,s,))) \
+				else return make_PreOp(id,Name(ctx,argcnt_map_dref(trans_op_arg,n,ctx,c,s,))) \
 						 (c,*ctx, argcnt(n));							\
 			}															\
 		};																\

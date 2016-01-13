@@ -16,33 +16,33 @@ namespace myria { namespace mtl {
 				return mtl::handles(t);
 			}
 	
-			auto strongCall(StrongCache& c, StrongStore &s) const {
+			auto strongCall(TransactionContext* ctx, StrongCache& c, StrongStore &s) const {
 				choose_strong<get_level<T>::value > choice{nullptr};
-				return strongCall(c,s,choice);
+				return strongCall(ctx,c,s,choice);
 			}
 
-			auto strongCall(StrongCache& c, StrongStore &s, std::true_type*) const {
-				typedef typename std::decay<decltype(run_ast_strong(c,s,t))>::type R;
-				s.emplace_ovrt<R>(store_id,run_ast_strong(c,s,t));
+			auto strongCall(TransactionContext* ctx, StrongCache& c, StrongStore &s, std::true_type*) const {
+				typedef typename std::decay<decltype(run_ast_strong(ctx,c,s,t))>::type R;
+				s.emplace_ovrt<R>(store_id,run_ast_strong(ctx,c,s,t));
 				return true;
 			}
 
-			void strongCall(StrongCache& c, const StrongStore &s, std::false_type*) const {
-				t.strongCall(c,s);
+			void strongCall(TransactionContext* ctx, StrongCache& c, const StrongStore &s, std::false_type*) const {
+				t.strongCall(ctx,c,s);
 			}
 
-			auto causalCall(CausalCache& c, CausalStore &s) const {
+			auto causalCall(TransactionContext* ctx, CausalCache& c, CausalStore &s) const {
 				choose_causal<get_level<T>::value > choice{nullptr};
-				return causalCall(c,s,choice);
+				return causalCall(ctx,c,s,choice);
 			}
 
-			auto causalCall(CausalCache& c, CausalStore &s,std::true_type*) const {
-				typedef typename std::decay<decltype(run_ast_causal(c,s,t))>::type R;
-				s.emplace_ovrt<R>(store_id,run_ast_causal(c,s,t));
+			auto causalCall(TransactionContext* ctx, CausalCache& c, CausalStore &s,std::true_type*) const {
+				typedef typename std::decay<decltype(run_ast_causal(ctx,c,s,t))>::type R;
+				s.emplace_ovrt<R>(store_id,run_ast_causal(ctx,c,s,t));
 				return true;
 			}
 
-			auto causalCall(CausalCache& c, CausalStore &s,std::false_type*) const {
+			auto causalCall(TransactionContext* ctx, CausalCache& c, CausalStore &s,std::false_type*) const {
 				//noop.  We've already executed this instruction.
 				return true;
 			}

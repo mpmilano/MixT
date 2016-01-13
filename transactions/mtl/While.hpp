@@ -42,30 +42,30 @@ namespace myria { namespace mtl {
 				return std::tuple_cat(mtl::handles(cond), stmt_handles(then));
 			}
 
-			bool strongCall(StrongCache& c, StrongStore &s) const {
+			bool strongCall(TransactionContext* ctx, StrongCache& c, StrongStore &s) const {
 				s.in_loop();
 				mutils::AtScopeEnd ase{[&](){s.out_of_loop();}};
 				discard(ase);
 				choose_strong<get_level<Cond>::value> choice1{nullptr};
 				choose_strong<min_level<Then>::value> choice2{nullptr};
-				bool ret = strongCall(c,s,choice1,choice2);
+				bool ret = strongCall(ctx,c,s,choice1,choice2);
 				return ret;
 			}
 
-			bool strongCall(StrongCache& c, StrongStore &s, const std::true_type*,const std::true_type*) const {
+			bool strongCall(TransactionContext* ctx, StrongCache& c, StrongStore &s, const std::true_type*,const std::true_type*) const {
 				//nothing causal in this while loop. Do it all at once.
 
 				auto new_cache = std::make_unique<StrongCache>();
-				while (run_ast_strong(*new_cache,s,cond)) {
+				while (run_ast_strong(ctx,*new_cache,s,cond)) {
 					context::set_context(*new_cache,context::current_context(c));
-					call_all_strong(*new_cache,s,then);
+					call_all_strong(ctx,*new_cache,s,then);
 					new_cache = std::make_unique<StrongCache>();
 				}
 				//TODO: error propogation;
 				return true;
 			}
 
-			bool strongCall(StrongCache& c_old_mut, StrongStore &s, const std::true_type*, const std::false_type*) const {
+			bool strongCall(TransactionContext* ctx, StrongCache& c_old_mut, StrongStore &s, const std::true_type*, const std::false_type*) const {
 				//the "hard" case, if you will. a strong condition, but some causal statements inside.
 				c_old_mut.emplace<std::list<std::unique_ptr<StrongCache> > >(id);
 				const auto& c_old = c_old_mut;
@@ -75,8 +75,8 @@ namespace myria { namespace mtl {
 				store_stack.emplace_back(std::make_unique<StrongCache>());
 				context::set_context(*store_stack.back(),context::current_context(c_old));
 				assert(store_stack.back().get() != &c_old_mut);
-				while(run_ast_strong(*store_stack.back(),s,cond)) {
-					call_all_strong(*store_stack.back(),s,then);
+				while(run_ast_strong(ctx,*store_stack.back(),s,cond)) {
+					call_all_strong(ctx,*store_stack.back(),s,then);
 					store_stack.emplace_back(std::make_unique<StrongCache>());
 					context::set_context(*store_stack.back(),context::current_context(c_old));
 					assert(store_stack.front().get() != store_stack.back().get());
@@ -102,7 +102,7 @@ namespace myria { namespace mtl {
 				return true;
 			}
 
-			bool strongCall(StrongCache& c, const StrongStore &s, const std::false_type*, const std::false_type*) const {
+			bool strongCall(TransactionContext* ctx, StrongCache& c, const StrongStore &s, const std::false_type*, const std::false_type*) const {
 				//there aren't any strong mutative things in here.
 				//what if there are strong references?
 				//they can't be mutative,
@@ -119,11 +119,11 @@ namespace myria { namespace mtl {
 				//this is fine, however; the FreeExpr itself would be causal, which means
 				//that its strong-execution behaviour would just cache its strong arguments,
 				//which in this case is exactly what we want.
-				run_ast_strong(c,s,cond);
-				return call_all_strong(c,s,then);
+				run_ast_strong(ctx,s,cond);
+				return call_all_strong(ctx,c,s,then);
 			}
 	
-			bool causalCall(CausalCache& c_old, CausalStore &s) const {
+			bool causalCall(TransactionContext* ctx, CausalCache& c_old, CausalStore &s) const {
 				s.in_loop();
 				mutils::AtScopeEnd ase{[&](){s.out_of_loop();}};
 				discard(ase);
@@ -134,15 +134,15 @@ namespace myria { namespace mtl {
 					const auto& force_cache_const = c_old;
 					for (const auto &cs : force_cache_const.get<std::list<std::unique_ptr<StrongCache> > >(id)){
 						CausalCache cc{*cs};
-						call_all_causal(cc,s,then);
+						call_all_causal(ctx,cc,s,then);
 					}
 				}
 				else {
 					//causal condition, so nothing interesting here.
 					auto new_cache = std::make_unique<CausalCache>();
-					while (run_ast_causal(*new_cache,s,cond)) {
+					while (run_ast_causal(ctx,*new_cache,s,cond)) {
 						context::set_context(*new_cache,context::current_context(c_old));
-						call_all_causal(*new_cache,s,then);
+						call_all_causal(ctx,*new_cache,s,then);
 						new_cache = std::make_unique<CausalCache>();
 					}
 					//TODO: error propogation;

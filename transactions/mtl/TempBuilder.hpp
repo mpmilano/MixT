@@ -6,27 +6,27 @@
 
 namespace myria { namespace mtl {
 
-		bool strongc_helper(StrongCache &, StrongStore &, const std::shared_ptr<const std::nullptr_t>&);
+		bool strongc_helper(TransactionContext *ctx, StrongCache &, StrongStore &, const std::shared_ptr<const std::nullptr_t>&);
 
 		template<typename T, restrict(!std::is_same<T CMA std::nullptr_t>::value &&
 									  runs_with_strong(get_level<T>::value) )>
-		bool strongc_helper(StrongCache& c, StrongStore &s, const std::shared_ptr<const T>& gt){
-			return gt->strongCall(c,s);
+		bool strongc_helper(TransactionContext *ctx, StrongCache& c, StrongStore &s, const std::shared_ptr<const T>& gt){
+			return gt->strongCall(ctx,c,s);
 		}
 
 		template<typename T, restrict2(!std::is_same<T CMA std::nullptr_t>::value &&
 									   runs_with_causal(get_level<T>::value) )>
-		bool strongc_helper(StrongCache& c, StrongStore &s, const std::shared_ptr<const T>& gt){
-			gt->strongCall(c,s);
+		bool strongc_helper(TransactionContext *ctx, StrongCache& c, StrongStore &s, const std::shared_ptr<const T>& gt){
+			gt->strongCall(ctx,c,s);
 			return true;
 		}
 
 
-		bool causalc_helper(CausalCache &, CausalStore &, const std::shared_ptr<const std::nullptr_t>&);
+		bool causalc_helper(TransactionContext *ctx, CausalCache &, CausalStore &, const std::shared_ptr<const std::nullptr_t>&);
 
 		template<typename T, restrict(!std::is_same<T CMA std::nullptr_t>::value)>
-		bool causalc_helper(CausalCache& c, CausalStore &s, const std::shared_ptr<const T>& gt){
-			return gt->causalCall(c,s);
+		bool causalc_helper(TransactionContext *ctx, CausalCache& c, CausalStore &s, const std::shared_ptr<const T>& gt){
+			return gt->causalCall(ctx,c,s);
 		}
 
 		template<unsigned long long ID, Level l, typename T>

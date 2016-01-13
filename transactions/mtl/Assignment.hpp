@@ -45,33 +45,33 @@ namespace myria { namespace mtl {
 				return mtl::handles(e);
 			}
 
-			bool strongCall(StrongCache& c, const StrongStore &s) const {
+			bool strongCall(TransactionContext* ctx, StrongCache& c, const StrongStore &s) const {
 				choose_strong<l> choice1{nullptr};
 				choose_strong<get_level<Expr>::value> choice2{nullptr};
 				strongCall(c,s,choice1,choice2);
 				return true;
 			}
 
-			void strongCall(StrongCache &c, const StrongStore &s, std::false_type*, std::false_type*) const {
+			void strongCall(TransactionContext* ctx, StrongCache &c, const StrongStore &s, std::false_type*, std::false_type*) const {
 				run_ast_strong(c,s,e);
 			}
-			void strongCall(StrongCache &c, const StrongStore &s, std::false_type*, std::true_type*) const {
+			void strongCall(TransactionContext* ctx, StrongCache &c, const StrongStore &s, std::false_type*, std::true_type*) const {
 				c.insert(id,Assignment::hndle_get(run_ast_strong(c,s,e)));
 			}
 
 			template<typename T2>
-			auto strongCall(const StrongCache &c, const StrongStore &s, std::true_type*, T2*) const {
+			auto strongCall(TransactionContext* ctx, const StrongCache &c, const StrongStore &s, std::true_type*, T2*) const {
 				static_assert(runs_with_strong(get_level<Expr>::value),"error: flow violation in assignment");
 				t.clone().put(Assignment::hndle_get(run_ast_strong(c,s,e)));
 			}
 
-			bool causalCall(const CausalCache &c, const CausalStore &s) const {
+			bool causalCall(TransactionContext* ctx, const CausalCache &c, const CausalStore &s) const {
 				choose_strong<l> choice{nullptr};
 				causalCall(c,s,choice);
 				return true;
 			}
 
-			auto causalCall(const CausalCache &c, const CausalStore &s, std::false_type*) const {
+			auto causalCall(TransactionContext* ctx, const CausalCache &c, const CausalStore &s, std::false_type*) const {
 				if (runs_with_strong(get_level<Expr>::value) ){
 					t.clone().put(c.get<HDref<Expr> >(id));
 				}
@@ -80,7 +80,7 @@ namespace myria { namespace mtl {
 				}
 			}
 
-			auto causalCall(const CausalCache &c, const CausalStore &s, std::true_type*) const {
+			auto causalCall(TransactionContext* ctx, const CausalCache &c, const CausalStore &s, std::true_type*) const {
 				static_assert(l == get_level<Expr>::value && l == Level::strong,"static assert failed");
 			}
 

@@ -25,14 +25,14 @@ namespace myria { namespace mtl {
 					stmt_handles(cs));
 			}
 
-			bool strongCall(StrongCache& c, StrongStore &s) const {
+			bool strongCall(TransactionContext* ctx, StrongCache& c, StrongStore &s) const {
 				assert(gt);
-				return strongc_helper(c,s,gt) && call_all_strong(c,s,cs);
+				return strongc_helper(ctx,c,s,gt) && call_all_strong(ctx,c,s,cs);
 			}
 	
-			bool causalCall(CausalCache& c, CausalStore &s) const {
+			bool causalCall(TransactionContext* ctx, CausalCache& c, CausalStore &s) const {
 				assert(gt);
-				return causalc_helper(c,s,gt) && call_all_causal(c,s,cs);
+				return causalc_helper(ctx,c,s,gt) && call_all_causal(ctx,c,s,cs);
 			}
 
 			virtual bool isVirtual() const = 0;

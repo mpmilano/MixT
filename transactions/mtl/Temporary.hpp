@@ -39,14 +39,14 @@ namespace myria { namespace mtl {
 				return mtl::handles(t);
 			}
 
-			auto strongCall(StrongCache& c, StrongStore &s) const {
+			auto strongCall(TransactionContext* ctx, StrongCache& c, StrongStore &s) const {
 
 				choose_strong<get_level<T>::value > choice{nullptr};
-				return strongCall(c,s,choice);
+				return strongCall(ctx,c,s,choice);
 			}
 
-			auto strongCall(StrongCache& c, StrongStore &s, std::true_type*) const {
-				typedef typename std::decay<decltype(run_ast_strong(c,s,t))>::type R;
+			auto strongCall(TransactionContext* ctx, StrongCache& c, StrongStore &s, std::true_type*) const {
+				typedef typename std::decay<decltype(run_ast_strong(ctx,c,s,t))>::type R;
 				//TODO: when we do the great preserve replacements, this (and many other sites)
 				//should change to acknowledge them. Note: we're hoping here that if the
 				//expression to which this temporary is being assigned drefs a handle,
@@ -54,31 +54,31 @@ namespace myria { namespace mtl {
 				//something more appropriate.
 				auto prev = context::current_context(c);
 				if (is_handle<R>::value) context::set_context(c,context::t::data);
-				s.emplace<R>(store_id, run_ast_strong(c,s,t));
+				s.emplace<R>(store_id, run_ast_strong(ctx,c,s,t));
 				if (is_handle<R>::value) context::set_context(c,prev);
 				return true;
 			}
 
-			void strongCall(StrongCache& c, const StrongStore &s, std::false_type*) const {
-				typedef typename std::decay<decltype(run_ast_strong(c,s,t))>::type R;
+			void strongCall(TransactionContext* ctx, StrongCache& c, const StrongStore &s, std::false_type*) const {
+				typedef typename std::decay<decltype(run_ast_strong(ctx,c,s,t))>::type R;
 				auto prev = context::current_context(c);
 				if (is_handle<R>::value) context::set_context(c,context::t::data);
-				run_ast_strong(c,s,t);
+				run_ast_strong(ctx,c,s,t);
 				if (is_handle<R>::value) context::set_context(c,prev);
 			}
 
-			auto causalCall(CausalCache& c, CausalStore &s) const {
+			auto causalCall(TransactionContext* ctx, CausalCache& c, CausalStore &s) const {
 				choose_causal<get_level<T>::value > choice{nullptr};
-				return causalCall(c,s,choice);
+				return causalCall(ctx,c,s,choice);
 			}
 
-			auto causalCall(CausalCache& c, CausalStore &s,std::true_type*) const {
-				typedef typename std::decay<decltype(t.causalCall(c,s))>::type R;
-				s.emplace<R>(store_id,run_ast_causal(c,s,t));
+			auto causalCall(TransactionContext* ctx, CausalCache& c, CausalStore &s,std::true_type*) const {
+				typedef typename std::decay<decltype(t.causalCall(ctx,c,s))>::type R;
+				s.emplace<R>(store_id,run_ast_causal(ctx,c,s,t));
 				return true;
 			}
 
-			auto causalCall(CausalCache& c, CausalStore &s,std::false_type*) const {
+			auto causalCall(TransactionContext* ctx, CausalCache& c, CausalStore &s,std::false_type*) const {
 				//noop.  We've already executed this instruction.
 				return true;
 			}

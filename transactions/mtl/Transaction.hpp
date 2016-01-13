@@ -52,7 +52,7 @@ namespace myria { namespace mtl {
 							//and sets their participating RemoteObjects' current transaction pointers.
 							
 							set_context(caches,context::t::unknown);
-							call_all_strong(ctx,caches,stores,s.curr);
+							call_all_strong(&ctx,caches,stores,s.curr);
 
 						}
 
@@ -61,7 +61,7 @@ namespace myria { namespace mtl {
 							
 							CausalCache cachec{caches};
 							CausalStore storec{stores};
-							call_all_causal(ctx,cachec,storec,s.curr);
+							call_all_causal(&ctx,cachec,storec,s.curr);
 							
 							//causal commits definitionally can't fail!
 							//so we'll just try the causal transaction again if it does!

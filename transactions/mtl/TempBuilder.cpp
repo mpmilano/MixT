@@ -2,13 +2,13 @@
 
 namespace myria { namespace mtl {
 
-		bool strongc_helper(StrongCache &, StrongStore &, const std::shared_ptr<const std::nullptr_t>&){
+		bool strongc_helper(TransactionContext *ctx, StrongCache &, StrongStore &, const std::shared_ptr<const std::nullptr_t>&){
 			return true;
 		}
 
 
 
-		bool causalc_helper(CausalCache &, CausalStore &, const std::shared_ptr<const std::nullptr_t>&){
+		bool causalc_helper(TransactionContext *ctx, CausalCache &, CausalStore &, const std::shared_ptr<const std::nullptr_t>&){
 			return true;
 		}
 
