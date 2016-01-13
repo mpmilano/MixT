@@ -18,6 +18,66 @@ namespace myria{ namespace pgsql {
 		using namespace mutils;
 		using Internals = SQLStore_impl::GSQLObject::Internals;
 
+
+		SQLTransaction::SQLTransaction(GDataStore& store, SQLStore_impl::SQLConnection& c)
+				:gstore(store),sql_conn(c),trans(sql_conn.conn){
+				assert(!sql_conn.in_trans);
+				sql_conn.in_trans = true;
+				sql_conn.current_trans = this;
+			}
+
+		bool SQLTransaction::is_serialize_error(const pqxx::pqxx_exception &r){
+			auto s = std::string(r.base().what());
+			return s.find("could not serialize access") != std::string::npos;
+		}
+#define default_sqltransaction_catch									\
+		catch(const pqxx::pqxx_exception &r){							\
+			commit_on_delete = false;									\
+			if (is_serialize_error(r)) throw mtl::Transaction::SerializationFailure{}; \
+			else throw mtl::Transaction::CannotProceedError{r.base().what() /*+ mutils::show_backtrace()*/}; \
+		}
+
+	
+		template<typename Arg1, typename... Args>
+		auto SQLTransaction::prepared(const std::string &name, const std::string &stmt,
+					  Arg1 && a1, Args && ... args){
+			try{
+				sql_conn.conn.prepare(name,stmt);
+				auto fwd = trans.prepared(name)(std::forward<Arg1>(a1));
+				return exec_prepared_hlpr(fwd,std::forward<Args>(args)...);
+			}
+				default_sqltransaction_catch
+					}
+
+		
+
+		pqxx::result SQLTransaction::exec(const std::string &str){
+				try{
+					return trans.exec(str);
+				}
+				default_sqltransaction_catch
+					}
+		
+	
+		bool SQLTransaction::store_commit() {
+			sql_conn.in_trans = false;
+			sql_conn.current_trans = nullptr;
+			trans.commit();
+			return true;
+		}		
+
+		void SQLTransaction::add_obj(SQLStore_impl::GSQLObject* gso){
+			objs.push_back(gso);
+		}
+		
+		SQLTransaction::~SQLTransaction(){
+			if (commit_on_delete) {
+				store_commit();
+			}
+			else sql_conn.in_trans = false;
+			sql_conn.current_trans = nullptr;
+		}
+		
 		namespace {
 			bool created_causal = false;
 			bool created_strong = false;
@@ -52,7 +112,7 @@ namespace myria{ namespace pgsql {
 					->exec(l == Level::strong ?
 						   "SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL SERIALIZABLE"
 						   : "SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL REPEATABLE READ");
-				assert(t->full_commit());
+				assert(t->store_commit());
 			}
 
 		unique_ptr<SQLTransaction> SQLStore_impl::begin_transaction()
@@ -61,7 +121,7 @@ namespace myria{ namespace pgsql {
 				   "Concurrency support doesn't exist yet."
 				);
 			return unique_ptr<SQLTransaction>(
-				new SQLTransaction(tracker::Tracker::global_tracker().generateContext(),_store,*default_connection));
+				new SQLTransaction(_store,*default_connection));
 		}
 
 		namespace {
@@ -117,7 +177,7 @@ namespace myria{ namespace pgsql {
 		}
 
 		SQLStore_impl::GSQLObject::GSQLObject(SQLStore_impl &ss, Table t, Name id, int size)
-			:i(new Internals{t,id,size,ss,nullptr,nullptr}){
+			:i(new Internals{t,id,size,ss,nullptr}){
 			i->buf1 = (char*) malloc(size);
 			auto b = load(nullptr);
 			assert(b);
@@ -140,7 +200,7 @@ namespace myria{ namespace pgsql {
 				}
 				else if (t == Table::IntStore) size = sizeof(int);
 				return new Internals{t,id,size,ss,
-						(char*) malloc(size),nullptr};
+						(char*) malloc(size)};
 			}
 		}
 
@@ -151,7 +211,7 @@ namespace myria{ namespace pgsql {
 //"named" object
 		SQLStore_impl::GSQLObject::GSQLObject(SQLStore_impl& ss, Table t, Name id, const vector<char> &c)
 			:i{new Internals{t,id,(int)c.size(),ss,
-					(char*) malloc(c.size()),nullptr}}{
+					(char*) malloc(c.size())}}{
 			assert(!ro_isValid(nullptr));
 			{
 				auto trans_owner = enter_transaction(ss,nullptr);

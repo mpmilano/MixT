@@ -67,22 +67,22 @@ namespace myria { namespace mtl {
 
 
 		template<typename... CS>
-		auto call_all_causal(CausalCache& cache, CausalStore &st, const std::tuple<CS...> &t){
+		auto call_all_causal(mtl::TransactionContext &ctx, CausalCache& cache, CausalStore &st, const std::tuple<CS...> &t){
 			static_assert(mutils::forall_types<is_ConStatement, std::tuple<CS...> >::value, "Error: non-statement found in body");
-			bool check = mutils::fold(t,[&cache,&st](const auto &e, bool b)
+			bool check = mutils::fold(t,[&cache,&st,&ctx](const auto &e, bool b)
 									  {assert(! is_ConExpr<std::decay_t<decltype(e)> >::value);
-									   return b && e.causalCall(cache,st);},true);
+									   return b && e.causalCall(ctx,cache,st);},true);
 			assert(check);
 			return check;
 		}
 
 
 		template<typename... CS>
-		auto call_all_strong(StrongCache& cache, StrongStore &st, const std::tuple<CS...> &t){
+		auto call_all_strong(mtl::TransactionContext &ctx, StrongCache& cache, StrongStore &st, const std::tuple<CS...> &t){
 			static_assert(mutils::forall_types<is_ConStatement, std::tuple<CS...> >::value, "Error: non-statement found in body");
 			//TODO: better error propogation please.
-			bool check = mutils::fold(t,[&cache,&st](const auto &e, bool b)
-									  {e.strongCall(cache,st); return true;},true);
+			bool check = mutils::fold(t,[&cache,&st,&ctx](const auto &e, bool b)
+									  {e.strongCall(ctx,cache,st); return true;},true);
 			assert(check);
 			return check;
 		}

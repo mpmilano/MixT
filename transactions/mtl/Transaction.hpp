@@ -20,31 +20,7 @@ namespace myria { namespace mtl {
 		struct Transaction{
 			const std::function<bool ()> action;
 			const std::function<std::ostream & (std::ostream &os)> print;
-
-		private:
-			static void assign_current_context (std::map<GeneralRemoteObject<Level::strong>*, TransactionContext*> &old_ctx_s,
-												const std::map<GeneralRemoteObject<Level::causal>*, TransactionContext*> &,
-												GeneralRemoteObject<Level::strong>* ro){
-				old_ctx_s[ro] = ro->currentTransactionContext();
-			}
-			static void assign_current_context (std::map<GeneralRemoteObject<Level::strong> * , TransactionContext*> &,
-												std::map<GeneralRemoteObject<Level::causal>*, TransactionContext*> &old_ctx_c,
-												GeneralRemoteObject<Level::causal>* ro){
-				old_ctx_c[ro] = ro->currentTransactionContext();
-			}
-
-			static void collected_objs_insert(std::set<std::shared_ptr<GeneralRemoteObject<Level::strong> > > &collected_objs,
-											  const std::set<std::shared_ptr<GeneralRemoteObject<Level::causal> > > &,
-											  const std::shared_ptr<GeneralRemoteObject<Level::strong> > &ro){
-				collected_objs.insert(ro);
-			}
-
-			static void collected_objs_insert(const std::set<std::shared_ptr<GeneralRemoteObject<Level::strong> > > &,
-											  std::set<std::shared_ptr<GeneralRemoteObject<Level::causal> > > &collected_objs,
-											  const std::shared_ptr<GeneralRemoteObject<Level::causal> > &ro){
-				collected_objs.insert(ro);
-			}
-	
+			
 		public:
 	
 			template<typename Cmds>
@@ -59,56 +35,11 @@ namespace myria { namespace mtl {
 						//By which we mean if they need to handle in-a-transaction
 						//in a special way, they do that for themselves.
 
-						std::map<Level,
-								 std::map< GDataStore*,
-										   std::unique_ptr<TransactionContext> > > tc;
-
-						std::set<std::shared_ptr<GeneralRemoteObject<Level::causal> > > collected_objs_c;
-						std::set<std::shared_ptr<GeneralRemoteObject<Level::strong> > > collected_objs_s;
-
-						auto tc_without = [&](auto* sto){
-							return
-							(tc.count(sto->level) == 0) ||
-							tc.at(sto->level).count(sto) == 0;
-						};
-
-						mutils::foreach(s.curr, [&](const auto &e){
-								mutils::foreach(e.handles(),[&](const auto &h){
-										Transaction::collected_objs_insert(collected_objs_s, collected_objs_c,h._ro);
-									});});
-
-						for (auto &o : collected_objs_c){
-							std::cout << "causal object registered: " << o.get() << std::endl;
-						}
-
-						for (auto &o : collected_objs_s){
-							std::cout << "strong object registered: " << o.get() << std::endl;
-						}
-						
 						auto& trk = tracker::Tracker::global_tracker();
-
-													
-						auto assign_transaction_start = [&](
-							std::map<GeneralRemoteObject<Level::strong>*, TransactionContext*> *old_ctx_s,
-							std::map<GeneralRemoteObject<Level::causal>*, TransactionContext*> *old_ctx_c, auto &_ro){
-							auto *sto = &_ro->store();
-							auto *ro = _ro.get();
-							assign_current_context(*old_ctx_s,*old_ctx_c,ro);
-							if (tc_without(sto)){
-								tc[sto->level]
-									.emplace(sto, sto->begin_transaction(trk));
-							}
-							assert(!tc_without(sto));
-							assert(ro->currentTransactionContext() == nullptr);
-							assert(&ro->store() == sto);
-							assert(sto == &tc.at(sto->level).at(sto)->store());
-							ro->setTransactionContext(
-								tc.at(sto->level).at(sto).get());
-						};
+						TransactionContext ctx{trk.generateContext()};
 
 						StrongCache caches;
 						StrongStore stores;
-						bool ret = true;
 						{
 							//strong execution begins
 							
@@ -119,80 +50,40 @@ namespace myria { namespace mtl {
 							
 							//this loop finds all stores, calls begin_transaction on them exactly once,
 							//and sets their participating RemoteObjects' current transaction pointers.
-
-							std::map<GeneralRemoteObject<Level::strong>*, TransactionContext*> old_ctx_s;
-
-							for (auto &_ro : collected_objs_s){
-								assign_transaction_start(&old_ctx_s, nullptr,_ro);
-							}
 							
 							set_context(caches,context::t::unknown);
-							call_all_strong(caches,stores,s.curr);
-							
-							//todo: REPLICATE THIS COMMIT
-							{
-								if (tc.count(Level::strong) != 0){
-									for (auto &p : tc.at(Level::strong)){
-										ret = ret && p.second->full_commit();
-									}
-								}
-							}
+							call_all_strong(ctx,caches,stores,s.curr);
 
-							//restore the old transaction pointers
-							
-							for (auto &p : old_ctx_s){
-								p.first->setTransactionContext(p.second);
-								assert(p.first->currentTransactionContext() == nullptr);
-							}
 						}
 
 						do {
-								//causal execution.  it can't fail.
-
-							std::map<GeneralRemoteObject<Level::causal>*, TransactionContext*> old_ctx_c;
-
-							mutils::AtScopeEnd ase{[&](){
-									//restore old pointers at end; ready for retry
-									for (auto &p : old_ctx_c){
-										p.first->setTransactionContext(p.second);
-										assert(p.first->currentTransactionContext() == nullptr);
-									}
-								}};
+							//causal execution.  it can't fail.
 							
-							for (auto &ro : collected_objs_c){
-								assign_transaction_start(nullptr, &old_ctx_c, ro);
-							}
 							CausalCache cachec{caches};
 							CausalStore storec{stores};
-							call_all_causal(cachec,storec,s.curr);
-							
+							call_all_causal(ctx,cachec,storec,s.curr);
 							
 							//causal commits definitionally can't fail!
 							//so we'll just try the causal transaction again if it does!
-							if (ret && tc.count(Level::causal) != 0){
-								for (auto &p : tc.at(Level::causal)){
-									using namespace std::chrono;
-									auto backoff = 2us;
-									
-									try{ 
-										ret = ret && p.second->full_commit();
-										assert(ret);
-										break;
-									}
-									catch (...){
-										std::this_thread::sleep_for(backoff);
-										backoff *= 2;
-										//we really don't want this to fail guys.
-									}
-									
-								}
+							using namespace std::chrono;
+							auto backoff = 2us;
+							
+							try{ 
+								ctx.full_commit();
+								break;
+							}
+							catch (const StrongFailureError& e){
+								//the strong component has failed, and that's not getting re-executed, so let's bail.
+								throw e;
+							}
+							catch (...){
+								std::this_thread::sleep_for(backoff);
+								backoff *= 2;
+								//we really don't want this to fail guys.
 							}
 						} while (true);
 						
-						assert(ret);
-						//TODO: exception here instead of boolean?
-						return ret;
-				
+						return true;
 					}),
 				print([s](std::ostream &os) -> std::ostream& {
 						os << "printing AST!" << std::endl;
@@ -208,6 +99,8 @@ namespace myria { namespace mtl {
 			bool operator()() const {
 				return action();
 			}
+
+			struct StrongFailureError: mutils::StaticMyriaException<MACRO_GET_STR("Error: Commit failure on strong portion") >{};
 
 			struct CannotProceedError : mutils::MyriaException{
 				const std::string why;

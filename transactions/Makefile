@@ -3,7 +3,7 @@ IP_quad=`ifconfig | sed s/broadcast.*//g | tr " " "\n" | grep 128.84 | rev | sed
 storeList='pgsql::SQLStore<Level::strong>, pgsql::SQLStore<Level::causal>'
 clangFlags= -I$(PWD) -I$(PWD)/mtl -I$(PWD)/mutils -I$(PWD)/pgsql -I$(PWD)/tracker -g -stdlib=libc++ --std=c++14 -Wall -ferror-limit=1 -DNUM_CAUSAL_GROUPS="4" -DSTORE_LIST=$(storeList) -DMY_IP=\"$(MY_IP)\" -DCACHE_PORT=$(CACHE_PORT) -DMAX_THREADS=$(MAX_THREADS) -DDECLARED_OPERATIONS="template<Level l2> DECLARE_OPERATION(Increment, RemoteObject<l2,int>*) template<Level l2, typename T> DECLARE_OPERATION(Insert, RemoteObject<l2,std::set<T> >*, const T& ) "
 linkFlags= -stdlib=libc++ --std=c++14 -lpqxx -lm -pthread
-object_files=FutureFreePool.o CooperativeCache.o Ends.o utils.o Tracker.o Ostreams.o SerializationSupport.o WhileBuilder.o ConExpr.o Context.o SQLStore.o TempBuilder.o
+object_files=FutureFreePool.o CooperativeCache.o Ends.o utils.o Tracker.o Ostreams.o SerializationSupport.o WhileBuilder.o ConExpr.o Context.o SQLStore.o TempBuilder.o TransactionBasics.o
 export IP_quad
 export TRANS_DIR
 export clangFlags
@@ -55,6 +55,8 @@ Ends.o:
 	clang++ -c */Ends.cpp $(clangFlags)
 Tracker.o:
 	clang++ -c */Tracker.cpp $(clangFlags)
+TransactionBasics.o:
+	clang++ -c */TransactionBasics.cpp $(clangFlags)
 Ostreams.o:
 	clang++ -c Ostreams.cpp $(clangFlags)
 SerializationSupport.o:

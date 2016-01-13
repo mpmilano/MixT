@@ -1,9 +1,10 @@
 #pragma once
-#include "SQLStore.hpp"
 #include "SQLConnection.hpp"
 #include <pqxx/pqxx>
 
 namespace myria{ namespace pgsql {
+
+		
 
 		template<typename E>
 		auto exec_prepared_hlpr(E &e){
@@ -17,83 +18,31 @@ namespace myria{ namespace pgsql {
 		}
 
 
-		struct SQLTransaction : public mtl::StoreContext<Level::strong>, public mtl::StoreContext<Level::causal> {
-		private:
+		struct SQLTransaction {
 			GDataStore& gstore;
+		private:
 			SQLStore_impl::SQLConnection& sql_conn;
 			pqxx::work trans;
 		public:
 			bool commit_on_delete = false;
-			SQLTransaction(GDataStore& store, SQLStore_impl::SQLConnection& c)
-				:gstore(store),sql_conn(c),trans(sql_conn.conn){
-				assert(!sql_conn.in_trans);
-				sql_conn.in_trans = true;
-				sql_conn.current_trans = this;
-			}
+			SQLTransaction(GDataStore& store, SQLStore_impl::SQLConnection& c);
 
-			bool is_serialize_error(const pqxx::pqxx_exception &r){
-				auto s = std::string(r.base().what());
-				return s.find("could not serialize access") != std::string::npos;
-			}
+			bool is_serialize_error(const pqxx::pqxx_exception &r);
 	
 			SQLTransaction(const SQLTransaction&) = delete;
-
-#define default_sqltransaction_catch									\
-			catch(const pqxx::pqxx_exception &r){						\
-				commit_on_delete = false;								\
-				if (is_serialize_error(r)) throw mtl::Transaction::SerializationFailure{}; \
-				else throw mtl::Transaction::CannotProceedError{r.base().what() /*+ mutils::show_backtrace()*/}; \
-			}
-
 	
 			template<typename Arg1, typename... Args>
 			auto prepared(const std::string &name, const std::string &stmt,
-						  Arg1 && a1, Args && ... args){
-				try{
-					sql_conn.conn.prepare(name,stmt);
-					auto fwd = trans.prepared(name)(std::forward<Arg1>(a1));
-					return exec_prepared_hlpr(fwd,std::forward<Args>(args)...);
-				}
-				default_sqltransaction_catch
-					}
+						  Arg1 && a1, Args && ... args);
 
-
-			auto exec(const std::string &str){
-				try{
-					return trans.exec(str);
-				}
-				default_sqltransaction_catch
-					}
+			pqxx::result exec(const std::string &str);
 	
-			bool store_commit() {
-				sql_conn.in_trans = false;
-				sql_conn.current_trans = nullptr;
-				trans.commit();
-				return true;
-			}
-
-			DataStore<Level::strong>& store() {
-				assert(gstore.level == Level::strong);
-				return dynamic_cast<DataStore<Level::strong>&>(gstore);
-			}
-
-			DataStore<Level::causal>& store() {
-				assert(gstore.level == Level::causal);
-				return dynamic_cast<DataStore<Level::causal>&>(gstore);
-			}
+			bool store_commit(); 
 
 			std::list<SQLStore_impl::GSQLObject*> objs;
-			void add_obj(SQLStore_impl::GSQLObject* gso){
-				objs.push_back(gso);
-			}
+			void add_obj(SQLStore_impl::GSQLObject* gso);
 
-			~SQLTransaction(){
-				if (commit_on_delete) {
-					store_commit();
-				}
-				else sql_conn.in_trans = false;
-				sql_conn.current_trans = nullptr;
-			}
+			~SQLTransaction();
 		};
 
 	}}

@@ -22,6 +22,8 @@ namespace myria { namespace pgsql {
 		template<Level l>
 		class SQLStore;
 
+		struct SQLTransaction;
+
 		enum class Table{
 			BlobStore = 0,IntStore = 1
 				};
@@ -50,7 +52,7 @@ namespace myria { namespace pgsql {
 	
 			SQLStore_impl(const SQLStore_impl&) = delete;
 	
-			std::unique_ptr<mtl::TransactionContext> begin_transaction();
+			std::unique_ptr<SQLTransaction> begin_transaction();
 	
 			int instance_id() const;
 			bool exists(Name id);

@@ -421,12 +421,12 @@ namespace myria { namespace tracker {
 			return true;
 		}
 		
-		void Tracker::afterRead(TrackingContext &t, DataStore<Level::causal>&, Name name, const Clock& version, const std::vector<char> &data){
+		void Tracker::afterRead(TransactionContext &t, DataStore<Level::causal>&, Name name, const Clock& version, const std::vector<char> &data){
 			if (tracking_candidate(*i,name,version)){
 				//need to overwrite, not occlude, the previous element.
 				//C++'s map semantics are really stupid.
-				t.i->tracking_erase.push_back(name);
-				t.i->tracking_add.emplace_back(name,std::make_pair(version,data));
+				t.trackingContext->i->tracking_erase.push_back(name);
+				t.trackingContext->i->tracking_add.emplace_back(name,std::make_pair(version,data));
 			}
 		}
 

@@ -1,9 +1,12 @@
 #pragma once
 #include "TrackingContext.hpp"
+#include "Basics.hpp"
 
 namespace myria {
 	
 	struct GDataStore;
+	template<Level l>
+	class DataStore;
 
 	namespace mtl {
 
@@ -17,8 +20,8 @@ namespace myria {
 
 		struct TransactionContext {
 			std::unique_ptr<tracker::TrackingContext> trackingContext;
-			std::unique_ptr<StoreContext<Level::strong> > strongContext;
-			std::unique_ptr<StoreContext<Level::causal> > causalContext;
+			std::unique_ptr<StoreContext<Level::strong> > strongContext{nullptr};
+			std::unique_ptr<StoreContext<Level::causal> > causalContext{nullptr};
 			
 		private:
 			//these two are implemented in Tracker.cpp
@@ -31,15 +34,16 @@ namespace myria {
 			TransactionContext(decltype(trackingContext) trackingContext)
 				:trackingContext(std::move(trackingContext))
 				{}
+
+			TransactionContext(decltype(strongContext) sc, decltype(trackingContext) trackingContext)
+				:trackingContext(std::move(trackingContext)),strongContext(std::move(sc))
+				{}
+
+			TransactionContext(decltype(causalContext) cc, decltype(trackingContext) trackingContext)
+				:trackingContext(std::move(trackingContext)),causalContext(std::move(cc))
+				{}
 			
-			bool full_commit(){
-				auto ret = store_commit();
-				if (ret){
-					commitContext();
-					committed = true;
-				}
-				return ret;
-			}
+			bool full_commit();
 
 			virtual ~TransactionContext(){
 				if (!committed) abortContext();

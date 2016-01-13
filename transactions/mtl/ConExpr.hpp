@@ -165,18 +165,18 @@ namespace myria { namespace mtl {
 		}
 
 		template<HandleAccess ha, typename T>
-		void run_ast_strong(const StrongCache& c, const StrongStore&, const Handle<Level::causal,ha,T>& h) {
+		void run_ast_strong(TransactionContext *ctx, const StrongCache& c, const StrongStore&, const Handle<Level::causal,ha,T>& h) {
 		}
 		//*/
 
 
-		std::string run_ast_strong(const StrongCache &, const StrongStore&, const std::string& e);
+		std::string run_ast_strong(TransactionContext *ctx, const StrongCache &, const StrongStore&, const std::string& e);
 
-		std::string run_ast_causal(const CausalCache &, const CausalStore&, const std::string& e);
+		std::string run_ast_causal(TransactionContext *ctx, const CausalCache &, const CausalStore&, const std::string& e);
 
 
 		template<HandleAccess ha, typename T>
-		Handle<Level::causal,ha,T> run_ast_causal(const CausalCache& c, const CausalStore &, const Handle<Level::causal,ha,T>& t) {
+		Handle<Level::causal,ha,T> run_ast_causal(TransactionContext *ctx, const CausalCache& c, const CausalStore &, const Handle<Level::causal,ha,T>& t) {
 			return t;
 		}
 		//*/
@@ -184,18 +184,18 @@ namespace myria { namespace mtl {
 		template<typename T, restrict(is_ConExpr<T>::value &&
 									  !std::is_scalar<T>::value
 									  && !is_handle<T>::value)>
-		auto run_ast_causal(CausalCache& c, const CausalStore &s, const T& expr) {
-			return expr.causalCall(c,s);
+		auto run_ast_causal(TransactionContext *ctx, CausalCache& c, const CausalStore &s, const T& expr) {
+			return expr.causalCall(ctx,c,s);
 		}
 
 		template<typename T>
 		typename std::enable_if<std::is_scalar<std::decay_t<T > >::value,T>::type
-		run_ast_causal(const CausalCache &, const CausalStore&, const T& e) {
+		run_ast_causal(TransactionContext *ctx, const CausalCache &, const CausalStore&, const T& e) {
 			return e;
 		}
 
 		template<typename T>
-		using run_result = decltype(run_ast_causal(std::declval<CausalCache&>(),std::declval<CausalStore&>(),std::declval<T&>()));
+		using run_result = decltype(run_ast_causal(std::declval<TransactionContext*>(), std::declval<CausalCache&>(),std::declval<CausalStore&>(),std::declval<T&>()));
 
 		struct CacheLookupFailure : public mutils::StaticMyriaException<MACRO_GET_STR("Error: cache lookup failed!")> {};
 

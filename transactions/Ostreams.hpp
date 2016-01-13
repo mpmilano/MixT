@@ -184,9 +184,6 @@ namespace myria{
 	template<Level l, HandleAccess ha, typename T>
 	std::ostream & operator<<(std::ostream &os, const Handle<l,ha,T>& h){
 		os << "Handle<" << levelStr<l>() << ">";
-		if (h.isValid()){
-			os << "(" << h.get() << ")";
-		}
 		return os;
 	}
 

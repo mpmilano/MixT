@@ -90,7 +90,7 @@ namespace myria { namespace mtl {
 							}
 							else {
 								assert(e.built_well);
-								return std::pair<bool,bool>(true,e(&tc,cached_withfail(c,*args)...));
+								return std::pair<bool,bool>(true,e(tc,&tc,cached_withfail(c,*args)...));
 							}
 						},std::pair<bool,bool>(false,false));
 				if (!result.first) throw mutils::NoOverloadFoundError{mutils::type_name<decltype(t)>()};
@@ -147,15 +147,15 @@ namespace myria { namespace mtl {
 		}
 
 		template<typename T>
-		void run_ast_causal(CausalCache &a, const CausalStore &b, const Preserve<T> &t){
-			run_ast_causal(a,b,t.t);
+		void run_ast_causal(TransactionContext *ctx, CausalCache &a, const CausalStore &b, const Preserve<T> &t){
+			run_ast_causal(ctx,a,b,t.t);
 		}
 
 		template<typename T>
-		void run_ast_strong(StrongCache &a, const StrongStore &b, const Preserve<T> &t){
+		void run_ast_strong(TransactionContext *ctx, StrongCache &a, const StrongStore &b, const Preserve<T> &t){
 			auto prev = context::current_context(a);
 			context::set_context(a,context::t::data);
-			run_ast_strong(a,b,t.t);
+			run_ast_strong(ctx,a,b,t.t);
 			context::set_context(a,prev);
 		}
 

@@ -120,7 +120,7 @@ namespace myria {
 			//for when merging locally is too hard or expensive
 			bool waitForRead(DataStore<Level::causal>&, Name name, const Clock& version);
 
-			void afterRead(TrackingContext &tc,DataStore<Level::causal>&, Name name, const Clock& version, const std::vector<char> &data);
+			void afterRead(mtl::TransactionContext &tc,DataStore<Level::causal>&, Name name, const Clock& version, const std::vector<char> &data);
 
 			//for testing
 			void assert_nonempty_tracking() const;

@@ -2,6 +2,7 @@
 #include "SQLStore_impl.hpp"
 #include "Tracker_common.hpp"
 #include "Tracker_support_structs.hpp"
+#include "SQLTransaction.hpp"
 
 namespace myria { namespace pgsql {
 	
@@ -163,12 +164,16 @@ namespace myria { namespace pgsql {
 													   std::unique_ptr<T>());
 			}
 
-			std::unique_ptr<mtl::TransactionContext> begin_transaction(
-				tracker::Tracker& t)
+			std::unique_ptr<mtl::StoreContext<l> > begin_transaction()
 				{
-					assert(&t == &tracker::Tracker::global_tracker());
+					struct StoreContext : mtl::StoreContext<l> {
+						std::unique_ptr<SQLTransaction> i;
+						StoreContext(decltype(i) i):i(std::move(i)){}
+						DataStore<l>& store() {return dynamic_cast<DataStore<l>&>( i->gstore);}
+						bool store_commit() {return i->store_commit();}
+					};
 					auto ret = SQLStore_impl::begin_transaction();
-					return ret;
+					return std::unique_ptr<mtl::StoreContext<l> >(new StoreContext{std::move(ret)});
 				}
 
 			int instance_id() const {

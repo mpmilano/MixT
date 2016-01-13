@@ -8,12 +8,12 @@
 namespace myria { namespace mtl {
 
 		template<typename T, Level l, HandleAccess ha>
-		auto get_if_handle(Handle<l,ha,T> h){
-			return h.get();
+		auto get_if_handle(TransactionContext *ctx, Handle<l,ha,T> h){
+			return h.get(ctx);
 		}
 
 		template<typename T, restrict(!is_handle<T>::value)>
-		T get_if_handle(const T&t){
+		T get_if_handle(TransactionContext *ctx, const T&t){
 			return t;
 		}
 
@@ -54,17 +54,17 @@ namespace myria { namespace mtl {
 			const std::tuple<Exprs...> params;
 			using level = std::integral_constant<Level, min_level_dref<Exprs...>::value>;
 			using Cache = std::conditional_t<runs_with_strong(level::value),StrongCache,CausalCache>;
-			const std::function<T (const Cache&, const std::tuple<Exprs ...>& )> f;
+			const std::function<T (TransactionContext *, const Cache&, const std::tuple<Exprs ...>& )> f;
 			const int id = mutils::gensym();
 
 			FreeExpr(int,
 					 std::function<T (const typename extract_type<std::decay_t<Exprs> >::type & ... )> _f,
 					 Exprs... h)
 				:params(std::make_tuple(h...)),
-				 f([_f](const Cache& c, const std::tuple<Exprs...> &t){
+				 f([_f](TransactionContext *ctx, const Cache& c, const std::tuple<Exprs...> &t){
 						 auto retrieved = fold(
 							 t,
-							 [&](const auto &e, const auto &acc){return std::tuple_cat(acc,std::make_tuple(get_if_handle(debug_failon_not_cached(c,e))));}
+							 [&](const auto &e, const auto &acc){return std::tuple_cat(acc,std::make_tuple(get_if_handle(ctx,debug_failon_not_cached(c,e))));}
 							 ,std::tuple<>());
 						 static_assert(std::tuple_size<decltype(retrieved)>::value == sizeof...(Exprs),"You lost some arguments");
 						 return callFunc(_f,retrieved);
@@ -77,23 +77,23 @@ namespace myria { namespace mtl {
 				return mtl::handles(params);
 			}
 	
-			auto strongCall(StrongCache& cache, const StrongStore &heap) const{
+			auto strongCall(TransactionContext *ctx, StrongCache& cache, const StrongStore &heap) const{
 				choose_strong<level::value> choice{nullptr};
-				return strongCall(cache,heap,choice);
+				return strongCall(ctx,cache,heap,choice);
 			}
 
-			T strongCall(StrongCache& cache, const StrongStore &heap, std::true_type*) const{
+			T strongCall(TransactionContext *ctx, StrongCache& cache, const StrongStore &heap, std::true_type*) const{
 				//everything is strong, run it now; but f assumes everything
 				//already cached, which means strongCall for caching first
 				std::false_type* false_t(nullptr);
-				strongCall(cache,heap,false_t);
-				auto ret = f(cache,params);
+				strongCall(ctx,cache,heap,false_t);
+				auto ret = f(ctx,cache,params);
 				assert(!cache.contains(this->id));
 				cache.insert(this->id,ret);
 				return ret;
 			}
 
-			void strongCall(StrongCache& cache, const StrongStore &heap,std::false_type*) const{
+			void strongCall(TransactionContext *ctx, StrongCache& cache, const StrongStore &heap,std::false_type*) const{
 				foreach(params,[&](const auto &e){
 						assert(!is_cached(cache,e) || is_handle<std::decay_t<decltype(e)> >::value);
 				
@@ -106,7 +106,7 @@ namespace myria { namespace mtl {
 						else if (data_mode)
 							context::set_context(cache,context::t::data);
 				
-						run_ast_strong(cache,heap,e);
+						run_ast_strong(ctx,cache,heap,e);
 				
 						if (read_mode || data_mode)
 							context::set_context(cache,prev_ctx);
@@ -117,19 +117,19 @@ namespace myria { namespace mtl {
 						assert(is_cached(cache,e));});
 			}
 
-			auto causalCall(CausalCache& cache, const CausalStore &heap) const {
+			auto causalCall(TransactionContext *ctx, CausalCache& cache, const CausalStore &heap) const {
 				choose_causal<level::value> choice{nullptr};
-				return causalCall(cache,heap,choice);
+				return causalCall(ctx,cache,heap,choice);
 			}
 
-			auto causalCall(CausalCache& cache, const CausalStore &heap, std::true_type*) const {
+			auto causalCall(TransactionContext *ctx, CausalCache& cache, const CausalStore &heap, std::true_type*) const {
 				fold(params,[&](const auto &e, bool){
-						run_ast_causal(cache,heap,e);
+						run_ast_causal(ctx,cache,heap,e);
 						return false;},false);
-				return f(cache,params);
+				return f(ctx,cache,params);
 			}
 
-			T causalCall(CausalCache& cache, const CausalStore &heap, std::false_type*) const {
+			T causalCall(TransactionContext *ctx, CausalCache& cache, const CausalStore &heap, std::false_type*) const {
 				assert(cache.contains(this->id));
 				return cache.get<T>(this->id);
 			}

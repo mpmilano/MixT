@@ -28,11 +28,11 @@ namespace myria{
 		struct Transaction;
 
 		template<HandleAccess ha2, typename T2>
-		Handle<Level::strong,ha2,T2> run_ast_causal(const mtl::CausalCache& cache, const mtl::CausalStore &, const Handle<Level::strong,ha2,T2>& h);
+		Handle<Level::strong,ha2,T2> run_ast_causal(TransactionContext *ctx, const mtl::CausalCache& cache, const mtl::CausalStore &, const Handle<Level::strong,ha2,T2>& h);
 		
 		template<HandleAccess ha, typename T2>
 		Handle<Level::strong,ha,T2>
-		run_ast_causal(mtl::CausalCache& cache, const mtl::CausalStore &s,
+		run_ast_causal(TransactionContext *ctx, mtl::CausalCache& cache, const mtl::CausalStore &s,
 					   const Handle<Level::strong,ha,T2>& h);
 
 
@@ -113,10 +113,11 @@ namespace myria{
 			assert(_ro);
 			choose_strong<l> choice {nullptr};
 			assert(_ro->store().level == l);
-			auto owner = (tc ? nullptr : _ro->store().begin_transaction(tracker));
+			auto owner = (tc ? nullptr : std::make_shared<mtl::TransactionContext>(_ro->store().begin_transaction(),tracker.generateContext()));
+			mutils::AtScopeEnd ase{[owner](){if (owner) owner->full_commit(); }};
 			auto &ctx = (owner ? *owner : *tc);
-			mutils::AtScopeEnd ase{[&](){if (!tc) ctx.commitContext();}};
-			return get(choice,ctx,_ro->get(ctx));
+			assert(ctx.trackingContext);
+			return get(choice,ctx,_ro->get(&ctx));
 		}
 	
 		const T& get(std::true_type*, mtl::TransactionContext& ctx, const T& ret) const {
@@ -129,7 +130,7 @@ namespace myria{
 			if (tracker.waitForRead(_ro->store(),_ro->name(),_ro->timestamp())){
 				return ret;
 			}
-			else return _ro->get();
+			else return _ro->get(&ctx);
 		}
 	
 		Handle clone() const {
@@ -206,10 +207,10 @@ namespace myria{
 		friend struct mtl::Transaction;
 
 	private:
-		static void do_onwrite(tracker::Tracker &tr, RemoteObject<Level::strong,T> &ro){
-			tr.onWrite(ro.store(),ro.name());
+		static void do_onwrite(mtl::TransactionContext &tc, tracker::Tracker &tr, RemoteObject<Level::strong,T> &ro){
+			tr.onWrite(&tc,ro.store(),ro.name());
 		}
-		static void do_onwrite(tracker::Tracker &tr, RemoteObject<Level::causal,T> &ro){
+		static void do_onwrite(mtl::TransactionContext &tc, tracker::Tracker &tr, RemoteObject<Level::causal,T> &ro){
 			tr.onWrite(ro.store(),ro.name(),ro.timestamp());
 		}
 	public:
@@ -221,7 +222,9 @@ namespace myria{
 			RemoteObject<l,T> *rop = new RO(std::forward<Args>(ca)...);
 			std::shared_ptr<RemoteObject<l,T> > sp(rop);
 			Handle<l,HA,T> ret(sp);
-			do_onwrite(ret.tracker,*rop);
+			auto ctx = std::make_shared<mtl::TransactionContext>(rop->store().begin_transaction(),ret.tracker.generateContext());
+			mutils::AtScopeEnd ase{[ctx](){ctx->full_commit();}};
+			do_onwrite(*ctx,ret.tracker,*rop);
 			return ret;
 		}
 	

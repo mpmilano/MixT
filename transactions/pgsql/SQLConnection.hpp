@@ -1,5 +1,5 @@
 #pragma once
-#include "SQLStore.hpp"
+#include "SQLStore_impl.hpp"
 #include <pqxx/pqxx>
 
 namespace myria{ namespace pgsql {
