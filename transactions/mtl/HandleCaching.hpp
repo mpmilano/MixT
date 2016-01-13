@@ -12,16 +12,16 @@ namespace myria { namespace mtl {
 			CachedObject(decltype(t) t, DataStore<Level::strong> &st, Name name, bool is_valid_only)
 				:t(std::move(t)),st(st),nm(name),is_valid_only(is_valid_only){}
 	
-			const T& get(TransactionContext *ctx) {
+			const T& get(StoreContext<Level::strong>*ctx) {
 				assert(!is_valid_only);
 				return *t;
 			}
 	
-			void put(TransactionContext *ctx, const T&) {
+			void put(StoreContext<Level::strong> *ctx, const T&) {
 				assert(false && "error: modifying strong Handle in causal context! the type system is supposed to prevent this!");
 			}
 	
-			bool ro_isValid(TransactionContext *ctx) const {
+			bool ro_isValid(StoreContext<Level::strong> *ctx) const {
 				return t.get() || is_valid_only;
 			}
 	
@@ -78,7 +78,7 @@ namespace myria { namespace mtl {
 			LocalObject(decltype(r) t)
 				:r(t){}
 			
-			const T& get(TransactionContext *ctx) {
+			const T& get(StoreContext<Level::strong> *ctx) {
 				//if the assert passes, then this was already fetched.
 				//if the assert fails, then either we shouldn't have gone this deep
 				//with causal calls,
@@ -91,11 +91,11 @@ namespace myria { namespace mtl {
 				else assert(false && "Error: attempt get on non CachedObject. This should have been cached earlier");
 			}
 		
-			void put(TransactionContext *ctx, const T&) {
+			void put(StoreContext<Level::strong> *ctx, const T&) {
 				assert(false && "error: modifying strong Handle in causal context! the type system is supposed to prevent this!");
 			}
 		
-			bool ro_isValid(TransactionContext *ctx) const {
+			bool ro_isValid(StoreContext<Level::strong> *ctx) const {
 				if(auto *co = dynamic_cast<CachedObject<T>* >(&r)){
 					return co->ro_isValid(ctx);
 				}
