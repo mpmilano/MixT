@@ -62,12 +62,6 @@ namespace myria{
 		friend struct Handle;
 
 		using type = T;
-		/*
-		  template<HandleAccess ha, typename T2>
-		  friend Handle<Level::strong,ha,T2>
-		  run_ast_causal(CausalCache& cache, const CausalStore &s,
-		  const Handle<Level::strong,ha,T2>& h);
-		//*/
 	
 		static std::unique_ptr<RemoteObject> from_bytes(char const * _v); 
 

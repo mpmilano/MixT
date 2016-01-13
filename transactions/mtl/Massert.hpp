@@ -25,14 +25,14 @@ namespace myria { namespace mtl {
 			}
 
 			bool strongCall(TransactionContext* ctx, StrongCache& a, const StrongStore& b) const {
-				auto ret = mtl::run_ast_strong(a,b,t);
+				auto ret = mtl::run_ast_strong(ctx, a,b,t);
 				if (runs_with_strong(get_level<T>::value)){
 					assert(ret);
 				}
 				return true;
 			}
 			bool causalCall(TransactionContext* ctx, CausalCache& a, const CausalStore& b) const {
-				auto ret = mtl::run_ast_causal(a,b,t);
+				auto ret = mtl::run_ast_causal(ctx, a,b,t);
 				if (runs_with_causal(get_level<T>::value)){
 					assert(ret);
 				}

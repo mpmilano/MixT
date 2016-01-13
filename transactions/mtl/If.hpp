@@ -47,23 +47,23 @@ namespace myria { namespace mtl {
 
 			bool strongCall(TransactionContext* ctx, StrongCache& c, StrongStore &s) const {
 				choose_strong<get_level<Cond>::value> choice{nullptr};
-				return strongCall(c,s,choice);
+				return strongCall(ctx, c,s,choice);
 			}
 
 			bool strongCall(TransactionContext* ctx, StrongCache& c, StrongStore &s, const std::true_type*) const {
-				return (run_ast_strong(c,s,cond) ? call_all_strong(c,s,then) : call_all_strong(c,s,els));
+				return (run_ast_strong(ctx, c,s,cond) ? call_all_strong(ctx, c,s,then) : call_all_strong(ctx, c,s,els));
 			}
 
 			//just caching can happen here;
 			//any mutative action would violate information flow.
 			bool strongCall(TransactionContext* ctx, StrongCache& c, StrongStore &s, const std::false_type*) const {
-				run_ast_strong(c,s,cond);
-				return (call_all_strong(c,s,then) &&
-						call_all_strong(c,s,els));
+				run_ast_strong(ctx, c,s,cond);
+				return (call_all_strong(ctx, c,s,then) &&
+						call_all_strong(ctx, c,s,els));
 			}
 	
 			bool causalCall(TransactionContext* ctx, CausalCache& c, CausalStore &s) const {
-				return (run_ast_causal(c,s,cond) ? call_all_causal(c,s,then) : call_all_causal(c,s,els));
+				return (run_ast_causal(ctx, c,s,cond) ? call_all_causal(ctx, c,s,then) : call_all_causal(ctx, c,s,els));
 			}
 	
 		};

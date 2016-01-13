@@ -48,15 +48,15 @@ namespace myria { namespace mtl {
 			bool strongCall(TransactionContext* ctx, StrongCache& c, const StrongStore &s) const {
 				choose_strong<l> choice1{nullptr};
 				choose_strong<get_level<Expr>::value> choice2{nullptr};
-				strongCall(c,s,choice1,choice2);
+				strongCall(ctx, c,s,choice1,choice2);
 				return true;
 			}
 
 			void strongCall(TransactionContext* ctx, StrongCache &c, const StrongStore &s, std::false_type*, std::false_type*) const {
-				run_ast_strong(c,s,e);
+				run_ast_strong(ctx, c,s,e);
 			}
 			void strongCall(TransactionContext* ctx, StrongCache &c, const StrongStore &s, std::false_type*, std::true_type*) const {
-				c.insert(id,Assignment::hndle_get(run_ast_strong(c,s,e)));
+				c.insert(id,Assignment::hndle_get(run_ast_strong(ctx, c,s,e)));
 			}
 
 			template<typename T2>
@@ -76,7 +76,7 @@ namespace myria { namespace mtl {
 					t.clone().put(c.get<HDref<Expr> >(id));
 				}
 				else {
-					t.clone().put(Assignment::hndle_get(run_ast_causal(c,s,e)));
+					t.clone().put(Assignment::hndle_get(run_ast_causal(ctx, c,s,e)));
 				}
 			}
 

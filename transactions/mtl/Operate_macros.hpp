@@ -1,8 +1,6 @@
 #pragma once
 #include "macro_utils.hpp"
 
-//#define trans_op_arg(c,s,x) constify(op_arg(run_ast_causal(c, s, op_arg(x))))
-
 #define alphabet1 a
 #define alphabet2 a, b
 #define alphabet3 a, b, c
