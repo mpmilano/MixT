@@ -55,12 +55,12 @@ namespace myria{ namespace pgsql {
 				assert(t->full_commit());
 			}
 
-		unique_ptr<TransactionContext> SQLStore_impl::begin_transaction()
+		unique_ptr<SQLTransaction> SQLStore_impl::begin_transaction()
 		{
 			assert(default_connection->in_trans == false &&
 				   "Concurrency support doesn't exist yet."
 				);
-			return unique_ptr<TransactionContext>(
+			return unique_ptr<SQLTransaction>(
 				new SQLTransaction(tracker::Tracker::global_tracker().generateContext(),_store,*default_connection));
 		}
 
@@ -81,13 +81,12 @@ namespace myria{ namespace pgsql {
 			const Level level;
 			SQLStore_impl &_store;
 			char* buf1;
-			SQLTransaction* curr_ctx;
 			int vers;
 			std::array<int,4> causal_vers;
 			Internals(Table table, Name key, int size,
-					  SQLStore_impl& store,char* buf, SQLTransaction* ctx)
+					  SQLStore_impl& store,char* buf)
 				:table(table),key(key),size(size),store_id(store.instance_id()),level(store.level),_store(store),
-				 buf1(buf),curr_ctx(ctx),vers(-1),causal_vers{{-1,-1,-1,-1}}
+				 buf1(buf),vers(-1),causal_vers{{-1,-1,-1,-1}}
 				{}
 		};
 
@@ -196,26 +195,6 @@ namespace myria{ namespace pgsql {
 				free(i->buf1);
 				delete i;
 			}
-		}
-
-		void SQLStore_impl::GSQLObject::setTransactionContext(TransactionContext* tc){
-			assert(i->curr_ctx == nullptr || tc == nullptr);
-			if (tc == nullptr) {
-				i->curr_ctx = nullptr;
-				return;
-			}
-			//we can't support nested transactions right now,
-			//so it's really quite bad if there is already a transactions context here
-			if (auto* ptr = dynamic_cast<SQLTransaction*>(tc)){
-				i->curr_ctx = ptr;
-				ptr->add_obj(this);
-			} else assert(false && "Error: gave SQLObject wrong kind of TransactionContext");
-
-		}
-		TransactionContext* SQLStore_impl::GSQLObject::currentTransactionContext(){
-			if (i)
-				return i->curr_ctx;
-			else return nullptr;
 		}
 
 		int SQLStore_impl::ds_id() const{

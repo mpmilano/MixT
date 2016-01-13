@@ -9,15 +9,23 @@ namespace myria {
 
 		struct Transaction;
 
+		template<Level l>
+		struct StoreContext{
+			virtual DataStore<l>& store() = 0;
+			virtual bool store_commit() = 0;
+		};
+
 		struct TransactionContext {
 			std::unique_ptr<tracker::TrackingContext> trackingContext;
+			std::unique_ptr<StoreContext<Level::strong> > strongContext;
+			std::unique_ptr<StoreContext<Level::causal> > causalContext;
+			
 		private:
 			//these two are implemented in Tracker.cpp
 			void commitContext ();
 			void abortContext ();
 			
 			bool committed = false;
-			virtual bool store_commit() = 0;
 
 		public:
 			TransactionContext(decltype(trackingContext) trackingContext)
@@ -32,7 +40,7 @@ namespace myria {
 				}
 				return ret;
 			}
-			virtual GDataStore& store() = 0;
+
 			virtual ~TransactionContext(){
 				if (!committed) abortContext();
 			}

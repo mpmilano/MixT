@@ -17,17 +17,15 @@ namespace myria{ namespace pgsql {
 		}
 
 
-		struct SQLTransaction : public mtl::TransactionContext {
+		struct SQLTransaction : public mtl::StoreContext<Level::strong>, public mtl::StoreContext<Level::causal> {
 		private:
 			GDataStore& gstore;
 			SQLStore_impl::SQLConnection& sql_conn;
 			pqxx::work trans;
 		public:
 			bool commit_on_delete = false;
-			SQLTransaction(std::unique_ptr<tracker::TrackingContext> tc,
-						   GDataStore& store, SQLStore_impl::SQLConnection& c)
-				:mtl::TransactionContext(std::move(tc)),
-				 gstore(store),sql_conn(c),trans(sql_conn.conn){
+			SQLTransaction(GDataStore& store, SQLStore_impl::SQLConnection& c)
+				:gstore(store),sql_conn(c),trans(sql_conn.conn){
 				assert(!sql_conn.in_trans);
 				sql_conn.in_trans = true;
 				sql_conn.current_trans = this;
@@ -74,8 +72,14 @@ namespace myria{ namespace pgsql {
 				return true;
 			}
 
-			GDataStore& store() {
-				return gstore;
+			DataStore<Level::strong>& store() {
+				assert(gstore.level == Level::strong);
+				return dynamic_cast<DataStore<Level::strong>&>(gstore);
+			}
+
+			DataStore<Level::causal>& store() {
+				assert(gstore.level == Level::causal);
+				return dynamic_cast<DataStore<Level::causal>&>(gstore);
 			}
 
 			std::list<SQLStore_impl::GSQLObject*> objs;
@@ -89,11 +93,7 @@ namespace myria{ namespace pgsql {
 				}
 				else sql_conn.in_trans = false;
 				sql_conn.current_trans = nullptr;
-				for (auto gso : objs)
-					if (gso->currentTransactionContext() == this)
-						gso->setTransactionContext(nullptr);
 			}
-	
 		};
 
 	}}

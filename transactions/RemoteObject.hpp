@@ -18,9 +18,7 @@ namespace myria{
 
 #define GeneralRemoteObject_body										\
 	const int id = mutils::gensym();									\
-	virtual void setTransactionContext(mtl::TransactionContext*) = 0;	\
-	virtual mtl::TransactionContext* currentTransactionContext() = 0;	\
-	virtual bool ro_isValid(mtl::TransactionContext*) const = 0;								\
+	virtual bool ro_isValid(mtl::TransactionContext*) const = 0;		\
 	virtual const DataStore<level>& store() const = 0;					\
 	virtual DataStore<level>& store() = 0;								\
 	virtual Name name() const = 0;										\
