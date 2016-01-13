@@ -62,12 +62,12 @@ namespace myria { namespace mtl {
 			template<typename T2>
 			auto strongCall(TransactionContext* ctx, const StrongCache &c, const StrongStore &s, std::true_type*, T2*) const {
 				static_assert(runs_with_strong(get_level<Expr>::value),"error: flow violation in assignment");
-				t.clone().put(Assignment::hndle_get(run_ast_strong(c,s,e)));
+				t.clone().put(Assignment::hndle_get(run_ast_strong(ctx, c,s,e)));
 			}
 
 			bool causalCall(TransactionContext* ctx, const CausalCache &c, const CausalStore &s) const {
 				choose_strong<l> choice{nullptr};
-				causalCall(c,s,choice);
+				causalCall(ctx, c,s,choice);
 				return true;
 			}
 

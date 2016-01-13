@@ -163,7 +163,6 @@ namespace myria {
 			auto h_causal_write = mutils::filter_tpl<is_causal_handle>(h_write);
 			mutils::foreach(h_strong_read,
 							[&](const auto &h){
-								assert(h._ro->currentTransactionContext());
 								h.tracker.afterRead(ctx,h.store(),h.name());});
 			mutils::foreach(h_causal_read,
 							[&](const auto &h){
@@ -177,7 +176,7 @@ namespace myria {
 								if (tracker::ends::is_same(p.first, p.second.remote_object().timestamp())) return;
 								else p.second.tracker.afterRead(ctx,
 																p.second.store(),p.second.name(),p.second.remote_object().timestamp(),p.second.remote_object().bytes());});
-			mutils::foreach(h_strong_write, [&](const auto &h){h.tracker.onWrite(h.store(),h.name());});
+			mutils::foreach(h_strong_write, [&](const auto &h){h.tracker.onWrite(&ctx,h.store(),h.name());});
 			mutils::foreach(h_causal_write, [&](const auto &h){h.tracker.onWrite(h.store(),h.name(),h.remote_object().timestamp());});
 			return ret;
 		}

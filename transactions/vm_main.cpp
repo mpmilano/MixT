@@ -123,7 +123,7 @@ int main(){
 								TRANSACTION(
 									do_op(Increment,hndl)
 									)
-								else hndl.get();
+								else hndl.get(nullptr);
 							auto end = high_resolution_clock::now() - launch_clock;
 							log_messages << "duration: " << duration_cast<microseconds>(end).count() - start_time
 							<< ((name % mod_constant) == 0 ? " read/write" : " read") << std::endl;

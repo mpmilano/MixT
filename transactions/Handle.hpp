@@ -229,11 +229,11 @@ namespace myria{
 		}
 	
 		template<HandleAccess ha2, typename T2>
-		friend Handle<Level::strong,ha2,T2> mtl::run_ast_causal(const mtl::CausalCache& cache, const mtl::CausalStore &, const Handle<Level::strong,ha2,T2>& h);
+		friend Handle<Level::strong,ha2,T2> mtl::run_ast_causal(mtl::TransactionContext *, const mtl::CausalCache& cache, const mtl::CausalStore &, const Handle<Level::strong,ha2,T2>& h);
 
 		template<HandleAccess ha, typename T2>
 		friend Handle<Level::strong,ha,T2>
-		mtl::run_ast_causal(mtl::CausalCache& cache, const mtl::CausalStore &s,
+		mtl::run_ast_causal(mtl::TransactionContext *, mtl::CausalCache& cache, const mtl::CausalStore &s,
 							const Handle<Level::strong,ha,T2>& h);
 
 		template<typename, typename>

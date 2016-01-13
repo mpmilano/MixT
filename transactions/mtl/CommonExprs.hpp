@@ -322,7 +322,7 @@ namespace myria { namespace mtl {
 
 				if (cache.contains(this->id) ) return cache.get<bool>(this->id);
 				else {
-					cache.insert(this->id,run_ast_causal(cache,s,l) &&
+					cache.insert(this->id,run_ast_causal(ctx,cache,s,l) &&
 								 run_ast_causal(ctx,cache,s,r));
 					return run_ast_causal(ctx,cache,s,l) && run_ast_causal(ctx,cache,s,r);
 				}
