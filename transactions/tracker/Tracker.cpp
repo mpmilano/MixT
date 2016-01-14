@@ -13,7 +13,6 @@
 #include <thread>
 #include <unistd.h>
 
-#include "FutureFreePool.hpp"
 #include "CooperativeCache.hpp"
 #include "Tracker_common.hpp"
 #include "CompactSet.hpp"
@@ -21,6 +20,7 @@
 #include "Ends.hpp"
 #include "Transaction.hpp"
 #include "TransactionBasics.hpp"
+#include "SafeSet.hpp"
 namespace {
 	constexpr unsigned long long bigprime_lin =
 #include "big_prime"
@@ -42,6 +42,20 @@ namespace myria { namespace tracker {
 			private:
 				std::shared_ptr<std::future<CooperativeCache::obj_bundle> > f;
 				std::shared_ptr<CooperativeCache::obj_bundle> p;
+				static std::shared_ptr<MonotoneSafeSet<std::future<bool> > >& destroyed_bundles(bool reset = false){
+					static auto log = make_shared<MonotoneSafeSet<std::future<bool> > >();
+					if (reset) log = make_shared<MonotoneSafeSet<std::future<bool> > >();
+					return log;
+				}
+				static void cleanup_loop(){
+					auto waiting_collection = destroyed_bundles();
+					destroyed_bundles(true);
+					std::this_thread::sleep_for(5ms); //well this is bad practice
+					for (auto &f : waiting_collection->iterable_reference()){
+						if (f.wait_for(1ms) != future_status::timeout) assert(f.get());
+						else destroyed_bundles()->emplace(std::move(f));
+					}
+				}
 
 			public:
 				Bundle(std::future<CooperativeCache::obj_bundle> f):f(new decltype(f)(std::move(f))){}
@@ -55,9 +69,11 @@ namespace myria { namespace tracker {
 				}
 				virtual ~Bundle(){
 					if (f->valid()){
-						//toss the future into a wrapper thread and exit
-						static FutureFreePool p{100};
-						p.take(move(*f));;
+						std::cout << "TODO: create background thread to clean these up" << std::endl;
+						destroyed_bundles()->emplace(std::async(std::launch::deferred,[f = this->f]() -> bool {
+									while (!(f->wait_for(1ms) != future_status::timeout)) {}
+									return true;
+								}));
 					}
 				}
 			};

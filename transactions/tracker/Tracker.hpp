@@ -3,6 +3,8 @@
 
 #pragma once
 
+#define USE_CACHE yay
+
 #include "CompactSet.hpp"
 #include "GDataStore.hpp"
 #include "compile-time-lambda.hpp"

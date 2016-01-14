@@ -37,6 +37,10 @@ namespace mutils{
 			return impl;
 		}
 
+		std::list<T>& iterable_reference(){
+			return impl;
+		}
+
 		void remove(const T &t){
 			lock l{m}; discard(l);
 			impl.erase(std::find(impl.begin(), impl.end(),t));
