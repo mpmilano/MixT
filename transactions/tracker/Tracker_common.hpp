@@ -11,7 +11,7 @@ namespace myria { namespace tracker {
 		auto wrapStore(DS &ds){
 			constexpr Level l = ds_level(mutils::mke_p<DS>());
 			using newTomb_t = Handle<l, HandleAccess::all, Tracker::Tombstone>
-				(*) (DataStore<l>&, Name, const Tracker::Tombstone&);
+				(*) (mtl::TransactionContext& ctx, DataStore<l>&, Name, const Tracker::Tombstone&);
 			using existingClock_t = std::unique_ptr<RemoteObject<l, Tracker::Clock> >
 				(*) (DataStore<l>&, Name);
 			using existingTomb_t = std::unique_ptr<RemoteObject<l, Tracker::Tombstone> >
@@ -24,9 +24,9 @@ namespace myria { namespace tracker {
 										 existingClock_t,
 										 existingTomb_t
 										 >;
-			static newTomb_t newTomb = [](DataStore<l> &_ds, Name name, auto &e){
+			static newTomb_t newTomb = [](mtl::TransactionContext& ctx, DataStore<l> &_ds, Name name, auto &e){
 				auto &ds = dynamic_cast<DS&>(_ds);
-				return ds.template newObject<HandleAccess::all>(name,e);
+				return ds.template newObject<HandleAccess::all>(&ctx, name,e);
 			};
 			static exists_t exists = [](DataStore<l> &_ds, Name name){
 				auto &ds = dynamic_cast<DS&>(_ds);

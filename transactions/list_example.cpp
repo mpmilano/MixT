@@ -36,7 +36,7 @@ int main() {
 		SQLStore<Level::causal>::inst(0);
 	auto& fss =
 		SQLStore<Level::strong>::inst(0);
-	auto h = WeakCons::build_list(fss,fsc,12,13,14);
+	auto h = WeakCons::build_list(nullptr,fss,fsc,12,13,14);
 
 	assert(h.get(nullptr).val.get(nullptr) == 14);
 	TRANSACTION(

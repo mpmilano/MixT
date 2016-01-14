@@ -139,9 +139,9 @@ int main(){
 					return log_messages.str();
 				};
 				if (better_rand() > .7 || !causal_enabled){
-					return test_fun(strong.template existingObject<HandleAccess::all,int>(name));
+					return test_fun(strong.template existingObject<HandleAccess::all,int>(nullptr,name));
 				}
-				else return test_fun(causal.template existingObject<HandleAccess::all,int>(name));
+				else return test_fun(causal.template existingObject<HandleAccess::all,int>(nullptr,name));
 			}();
 			//std::cout << str << std::endl;
 			return str;

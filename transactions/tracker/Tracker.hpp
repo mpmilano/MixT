@@ -46,7 +46,7 @@ namespace myria {
 			using TrackerDS =
 				std::tuple<
 				Handle<l, HandleAccess::all, Tombstone> (*)
-				(DataStore<l>&, Name, const Tombstone&), //newTomb
+				(mtl::TransactionContext& ctx, DataStore<l>&, Name, const Tombstone&), //newTomb
 				bool (*) (DataStore<l>&, Name), //exists
 				std::unique_ptr<RemoteObject<l, Clock> > (*)
 				(DataStore<l>&, Name), //existingClock
@@ -98,7 +98,7 @@ namespace myria {
 
 			std::unique_ptr<TrackingContext> generateContext(bool commitOnDelete = false);
 	
-			void onWrite(mtl::StoreContext<Level::strong>&, TrackingContext&, DataStore<Level::strong>&, Name name);
+			void onWrite(mtl::TransactionContext&, DataStore<Level::strong>&, Name name);
 
 			void onWrite(DataStore<Level::causal>&, Name name, const Clock &version);
 

@@ -67,7 +67,7 @@ namespace myria { namespace mtl {
 				}
 				return 
 					make_handle<Level::strong,ha,T,CachedObject<T> >
-					(ptr,h.store(),h.name(),valid_only);
+					(tctx,ptr,h.store(),h.name(),valid_only);
 			}
 			else return h;
 		}
@@ -125,10 +125,10 @@ namespace myria { namespace mtl {
 		};	
 
 		template<HandleAccess ha, typename T>
-		Handle<Level::strong,ha,T> run_ast_causal(mtl::TransactionContext *, mtl::CausalCache& cache, const mtl::CausalStore &s, const Handle<Level::strong,ha,T>& h) {
+		Handle<Level::strong,ha,T> run_ast_causal(mtl::TransactionContext *tctx, mtl::CausalCache& cache, const mtl::CausalStore &s, const Handle<Level::strong,ha,T>& h) {
 			return 
 				make_handle<Level::strong,ha,T,LocalObject<T> >
-				(h.remote_object());
+				(tctx,h.remote_object());
 		}
 
 	} }

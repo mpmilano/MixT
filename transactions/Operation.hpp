@@ -182,9 +182,7 @@ namespace myria {
 								if (tracker::ends::is_same(p.first, p.second.remote_object().timestamp())) return;
 								else p.second.tracker.afterRead(*ctx.trackingContext,
 																p.second.store(),p.second.name(),p.second.remote_object().timestamp(),p.second.remote_object().bytes());});
-			mutils::foreach(h_strong_write, [&](const auto &h){h.tracker.onWrite(
-						*ctx.template get_store_context<mtl::get_level<decltype(h)>::value>(h.store()),
-						*ctx.trackingContext,h.store(),h.name());});
+			mutils::foreach(h_strong_write, [&](const auto &h){h.tracker.onWrite(ctx,h.store(),h.name());});
 			mutils::foreach(h_causal_write, [&](const auto &h){h.tracker.onWrite(h.store(),h.name(),h.remote_object().timestamp());});
 			return ret;
 		}

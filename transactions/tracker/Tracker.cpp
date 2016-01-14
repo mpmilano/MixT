@@ -246,10 +246,10 @@ namespace myria { namespace tracker {
 		}
 
 		namespace {
-			void write_causal_tombstone(Tracker::Nonce nonce, Tracker::Internals &i){
+			void write_causal_tombstone(mtl::TransactionContext& ctx, Tracker::Nonce nonce, Tracker::Internals &i){
 				using namespace TDS;
 				const Tracker::Tombstone t {nonce};
-				get<TDS::newTomb>(*i.causalDS)(*i.registeredCausal,t.name(), t);
+				get<TDS::newTomb>(*i.causalDS)(ctx,*i.registeredCausal,t.name(), t);
 			}
 	
 			int get_ip() {
@@ -262,14 +262,17 @@ namespace myria { namespace tracker {
 			}
 		}
 
-		void Tracker::onWrite(StoreContext<Level::strong> &sctx, TrackingContext &tctx, DataStore<Level::strong>& ds_real, Name name){
-			using wlm_t = void (*)(StoreContext<Level::strong> &sctx, TrackingContext &tctx, Name name, Tracker::Nonce nonce, Tracker::Internals& t);
-			static const wlm_t write_lin_metadata= [](StoreContext<Level::strong> &sctx, TrackingContext &tctx, Name name, Tracker::Nonce nonce, Tracker::Internals& t){
+		void Tracker::onWrite(mtl::TransactionContext& ctx, DataStore<Level::strong>& ds_real, Name name){
+			using wlm_t = void (*)(mtl::TransactionContext& ctx, DataStore<Level::strong> &ds_real,
+								   Name name, Tracker::Nonce nonce, Tracker::Internals& t);
+			static const wlm_t write_lin_metadata= [](mtl::TransactionContext& ctx, DataStore<Level::strong> &ds_real,
+													  Name name, Tracker::Nonce nonce, Tracker::Internals& t){
+				auto &sctx = *ctx.template get_store_context<Level::strong>(ds_real);
 				auto meta_name = make_lin_metaname(name);
 				if (get<TDS::exists>(*t.strongDS)(*t.registeredStrong,meta_name)){
 					get<TDS::existingTomb>(*t.strongDS)(*t.registeredStrong,meta_name)->put(&sctx,Tracker::Tombstone{nonce,get_ip()});
 				}
-				else get<TDS::newTomb>(*t.strongDS)(*t.registeredStrong,
+				else get<TDS::newTomb>(*t.strongDS)(ctx,*t.registeredStrong,
 													meta_name,
 													Tracker::Tombstone{nonce,get_ip()});
 			};
@@ -279,8 +282,8 @@ namespace myria { namespace tracker {
 
 				auto subroutine = [&](){
 					auto nonce = long_rand();
-					write_lin_metadata(sctx,tctx,name,nonce,*i);
-					write_causal_tombstone(nonce,*i);
+					write_lin_metadata(ctx,ds_real,name,nonce,*i);
+					write_causal_tombstone(ctx,nonce,*i);
 					i->cache.insert(nonce,i->tracking);
 				};
 				bool always_failed = true;

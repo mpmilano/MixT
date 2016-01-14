@@ -219,7 +219,7 @@ namespace myria{
 
 	private:
 		static void do_onwrite(mtl::TransactionContext &tc, tracker::Tracker &tr, RemoteObject<Level::strong,T> &ro){
-			tr.onWrite(*tc. template get_store_context<l>(ro.store()),*tc.trackingContext,ro.store(),ro.name());
+			tr.onWrite(tc,ro.store(),ro.name());
 		}
 		static void do_onwrite(mtl::TransactionContext &tc, tracker::Tracker &tr, RemoteObject<Level::causal,T> &ro){
 			tr.onWrite(ro.store(),ro.name(),ro.timestamp());
@@ -227,15 +227,16 @@ namespace myria{
 	public:
 
 		template<typename RO, typename... Args>
-		static Handle<l,HA,T> make_handle(Args && ... ca){
+		static Handle<l,HA,T> make_handle(mtl::TransactionContext *tc, Args && ... ca){
 			static_assert(std::is_base_of<RemoteObject<l,T>,RO >::value,
 						  "Error: must template on valid RemoteObject extender");
 			RemoteObject<l,T> *rop = new RO(std::forward<Args>(ca)...);
 			std::shared_ptr<RemoteObject<l,T> > sp(rop);
 			Handle<l,HA,T> ret(sp);
-			assert(!rop->store().in_transaction());
-			mtl::TransactionContext ctx{rop->store().begin_transaction(),ret.tracker.generateContext()};
-			ctx.commit_on_delete = true;
+			assert(tc || !rop->store().in_transaction());
+			auto owner = (tc ? nullptr : std::make_unique<mtl::TransactionContext>(rop->store().begin_transaction(),ret.tracker.generateContext()));
+			if (owner) owner->commit_on_delete = true;
+			auto &ctx = (tc ? *tc : *owner);
 			do_onwrite(ctx,ret.tracker,*rop);
 			return ret;
 		}
@@ -278,9 +279,9 @@ namespace myria{
 
 	template<Level l, HandleAccess HA, typename T,
 			 typename RO, typename... Args>
-	Handle<l,HA,T> make_handle(Args && ... ca)
+	Handle<l,HA,T> make_handle(mtl::TransactionContext *tc, Args && ... ca)
 	{
-		return Handle<l,HA,T>::template make_handle<RO, Args...>(std::forward<Args>(ca)...);
+		return Handle<l,HA,T>::template make_handle<RO, Args...>(tc,std::forward<Args>(ca)...);
 	}
 
 

@@ -120,7 +120,7 @@ namespace myria { namespace pgsql {
 			}
 	
 			template<HandleAccess ha, typename T>
-			auto newObject(Name name, const T& init){
+			auto newObject(mtl::TransactionContext *tc, Name name, const T& init){
 				static constexpr Table t =
 					(std::is_same<T,int>::value ? Table::IntStore : Table::BlobStore);
 				int size = mutils::bytes_size(init);
@@ -129,24 +129,24 @@ namespace myria { namespace pgsql {
 				GSQLObject gso(*this,t,name,v);
 				auto ret = make_handle
 					<l,ha,T,SQLObject<T> >
-					(std::move(gso),mutils::heap_copy(init) );
+					(tc,std::move(gso),mutils::heap_copy(init) );
 				ret.tracker.onCreate(*this,name);
 				return ret;
 			}
 
 			template<HandleAccess ha, typename T>
-			auto newObject(const T& init){
-				return newObject<ha,T>(mutils::int_rand(),init);
+			auto newObject(mtl::TransactionContext *tc, const T& init){
+				return newObject<ha,T>(tc, mutils::int_rand(),init);
 			}
 
 			template<HandleAccess ha, typename T>
-			auto existingObject(Name name, T* for_inf = nullptr){
+			auto existingObject(mtl::TransactionContext *tc, Name name, T* for_inf = nullptr){
 				static constexpr Table t =
 					(std::is_same<T,int>::value ? Table::IntStore : Table::BlobStore);
 				GSQLObject gso(*this,t,name);
 				return make_handle
 					<l,ha,T,SQLObject<T> >
-					(std::move(gso),nullptr);
+					(tc,std::move(gso),nullptr);
 			}
 
 			template<typename T>
