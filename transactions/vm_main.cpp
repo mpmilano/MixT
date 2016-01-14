@@ -183,7 +183,11 @@ int main(){
 
 	auto elapsed_time = [](){return duration_cast<microseconds>(high_resolution_clock::now() - launch_clock).count();};
 	
-	auto launch = [&](){return p.launch(0,elapsed_time());};
+	//auto launch = [&](){return p.launch(0,elapsed_time());};
+	auto launch = [&](){
+		auto str = pool_fun([](void*v){return v;}),400,elapsed_time();
+		return std::async(std::launch::deferred,[str](){return str;});
+	};
 	
 	std::cout << "beginning subtask generation loop" << std::endl;
 	while (bound()){

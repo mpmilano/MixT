@@ -37,6 +37,8 @@ namespace myria {
 				:trackingContext(std::move(trackingContext))
 				{}
 
+			TransactionContext(const TransactionContext&) = delete;
+
 			TransactionContext(decltype(strongContext) sc, decltype(trackingContext) trackingContext)
 				:trackingContext(std::move(trackingContext)),strongContext(std::move(sc))
 				{}
