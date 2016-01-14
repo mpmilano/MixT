@@ -8,10 +8,10 @@ namespace myria{ namespace pgsql {
 
 
 		struct SQLStore_impl::SQLConnection {
-			bool in_trans = false;
 			SQLTransaction* current_trans = nullptr;
 			const int ip_addr;
 			const int repl_group;
+			bool in_trans();
 	
 			//hoping specifying nothing means
 			//env will be used.

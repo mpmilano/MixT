@@ -20,11 +20,10 @@ namespace myria{ namespace pgsql {
 
 
 		SQLTransaction::SQLTransaction(GDataStore& store, SQLStore_impl::SQLConnection& c)
-				:gstore(store),sql_conn(c),trans(sql_conn.conn){
-				assert(!sql_conn.in_trans);
-				sql_conn.in_trans = true;
-				sql_conn.current_trans = this;
-			}
+			:gstore(store),sql_conn(c),trans(sql_conn.conn){
+			assert(!sql_conn.in_trans());
+			sql_conn.current_trans = this;
+		}
 
 		bool SQLTransaction::is_serialize_error(const pqxx::pqxx_exception &r){
 			auto s = std::string(r.base().what());
@@ -60,11 +59,19 @@ namespace myria{ namespace pgsql {
 		
 	
 		bool SQLTransaction::store_commit() {
-			sql_conn.in_trans = false;
 			sql_conn.current_trans = nullptr;
 			trans.commit();
 			return true;
-		}		
+		}
+
+		bool SQLStore_impl::SQLConnection::in_trans(){
+			try {
+				return (current_trans) &&
+					(current_trans->exec("select count(*) from pg_stat_activity").columns() > 0);
+			} catch(...){
+				return false;
+			}
+		}
 
 		void SQLTransaction::add_obj(SQLStore_impl::GSQLObject* gso){
 			objs.push_back(gso);
@@ -74,7 +81,6 @@ namespace myria{ namespace pgsql {
 			if (commit_on_delete) {
 				store_commit();
 			}
-			else sql_conn.in_trans = false;
 			sql_conn.current_trans = nullptr;
 		}
 		
@@ -117,7 +123,7 @@ namespace myria{ namespace pgsql {
 
 		unique_ptr<SQLTransaction> SQLStore_impl::begin_transaction()
 		{
-			assert(default_connection->in_trans == false &&
+			assert(!default_connection->in_trans() &&
 				   "Concurrency support doesn't exist yet."
 				);
 			return unique_ptr<SQLTransaction>(
@@ -158,7 +164,7 @@ namespace myria{ namespace pgsql {
 			auto enter_store_transaction(SQLStore_impl& store){
 				unique_ptr<SQLTransaction> t_owner;
 				SQLTransaction *trns = nullptr;
-				if ((store).default_connection->in_trans == false){
+				if (!(store).default_connection->in_trans()){
 					t_owner = small_transaction(store);
 					trns = t_owner.get();
 				}

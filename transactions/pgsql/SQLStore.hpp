@@ -38,11 +38,11 @@ namespace myria { namespace pgsql {
 			}
 
 			bool in_transaction() const {
-				bool it = this->default_connection->in_trans;
+				bool it = this->default_connection->in_trans();
 				assert ([&](){
 						bool ct = this->default_connection->current_trans;						
 						return (it ? ct : true);}());
-				return this->default_connection->in_trans;
+				return it;
 			}
 
 			const std::array<int, NUM_CAUSAL_GROUPS>& local_time() const {
