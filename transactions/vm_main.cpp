@@ -110,6 +110,8 @@ int main(){
 			std::string str = [&](){
 				SQLStore<Level::strong> &strong = SQLStore<Level::strong>::inst(ip);
 				SQLStore<Level::causal> &causal = SQLStore<Level::causal>::inst(0);
+				assert(!strong.in_transaction());
+				assert(!causal.in_transaction());
 				//I'm assuming that pid won't get larger than the number of allowable ports...
 				assert(pid + 1024 < 49151);
 
@@ -171,11 +173,11 @@ int main(){
 	};
 	vector<decltype(pool_fun)> pool_v {{pool_fun}};
 	std::unique_ptr<ProcessPool<std::string, unsigned long long> >
-		powner(new ProcessPool<std::string, unsigned long long>(pool_v,20,exn_handler));
+		powner(new ProcessPool<std::string, unsigned long long>(pool_v,1,exn_handler));
 	auto &p = *powner;
 	auto start = high_resolution_clock::now();
 
-	auto bound = [&](){return (high_resolution_clock::now() - start) < 30s;};
+	auto bound = [&](){return (high_resolution_clock::now() - start) < 15s;};
 
 	//log printer
 	using future_list = std::list<std::future<std::unique_ptr<std::string> > >;
@@ -183,11 +185,13 @@ int main(){
 
 	auto elapsed_time = [](){return duration_cast<microseconds>(high_resolution_clock::now() - launch_clock).count();};
 	
-	//auto launch = [&](){return p.launch(0,elapsed_time());};
-	auto launch = [&]() -> decltype(p.launch(0,elapsed_time())){
-		auto str = pool_fun([](void*v){return v;},400,elapsed_time());
-		return std::async(std::launch::deferred,[str](){return heap_copy(str);});
-	};
+	std::function<decltype(p.launch(0,elapsed_time())) ()> launch1 {[&](){return p.launch(0,elapsed_time());}};
+	
+	decltype(launch1) launch2 {[&]() -> decltype(p.launch(0,elapsed_time())){
+			auto str = pool_fun([](void*v){return v;},400,elapsed_time());
+						return std::async(std::launch::deferred,[str](){return heap_copy(str);});}};
+	
+	auto launch  = (true ? launch1 : launch2);
 	
 	std::cout << "beginning subtask generation loop" << std::endl;
 	while (bound()){

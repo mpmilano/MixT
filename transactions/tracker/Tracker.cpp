@@ -44,6 +44,8 @@ namespace myria { namespace tracker {
 				std::shared_ptr<CooperativeCache::obj_bundle> p;
 				static std::shared_ptr<MonotoneSafeSet<std::future<bool> > >& destroyed_bundles(bool reset = false){
 					static auto log = make_shared<MonotoneSafeSet<std::future<bool> > >();
+					static bool run_once = [](){std::thread(Bundle::cleanup_loop).detach();return true;}();
+					assert(run_once);
 					if (reset) log = make_shared<MonotoneSafeSet<std::future<bool> > >();
 					return log;
 				}
@@ -69,9 +71,8 @@ namespace myria { namespace tracker {
 				}
 				virtual ~Bundle(){
 					if (f->valid()){
-						std::cout << "TODO: create background thread to clean these up" << std::endl;
-						destroyed_bundles()->emplace(std::async(std::launch::deferred,[f = this->f]() -> bool {
-									while (!(f->wait_for(1ms) != future_status::timeout)) {}
+						destroyed_bundles()->emplace(std::async(std::launch::async,[f = this->f]() -> bool {
+									while (f->wait_for(1ms) == future_status::timeout) {}
 									return true;
 								}));
 					}
@@ -95,6 +96,16 @@ namespace myria { namespace tracker {
 			CooperativeCache cache;
 			std::unique_ptr<Name> last_onRead_name{nullptr};
 		};
+
+		const DataStore<Level::strong>& Tracker::get_StrongStore() const {
+			assert(i->registeredStrong);
+			return *i->registeredStrong;
+		}
+		
+		const DataStore<Level::causal>& Tracker::get_CausalStore() const {
+			assert(i->registeredCausal);
+			return *i->registeredCausal;
+		}
 
 		struct TrackingContext::Internals {
 			Tracker::Internals &trk;

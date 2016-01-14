@@ -52,6 +52,8 @@ namespace myria { namespace mtl {
 							//and sets their participating RemoteObjects' current transaction pointers.
 							
 							set_context(caches,context::t::unknown);
+							//nobody should be in a transaction yet
+							assert(!trk.get_StrongStore().in_transaction());
 							call_all_strong(&ctx,caches,stores,s.curr);
 
 						}
@@ -61,6 +63,8 @@ namespace myria { namespace mtl {
 							
 							CausalCache cachec{caches};
 							CausalStore storec{stores};
+							//causal should also not be in a transaction yet
+							assert(!trk.get_CausalStore().in_transaction());
 							call_all_causal(&ctx,cachec,storec,s.curr);
 							
 							//causal commits definitionally can't fail!
