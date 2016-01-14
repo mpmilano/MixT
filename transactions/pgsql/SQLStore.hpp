@@ -37,6 +37,10 @@ namespace myria { namespace pgsql {
 				return *this;
 			}
 
+			bool in_transaction() const {
+				return this->default_connection->in_trans;
+			}
+
 			const std::array<int, NUM_CAUSAL_GROUPS>& local_time() const {
 				return this->clock;
 			}

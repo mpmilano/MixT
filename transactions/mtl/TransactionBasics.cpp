@@ -4,6 +4,7 @@
 namespace myria { namespace mtl {
 
 		bool TransactionContext::full_commit() {
+			commit_on_delete = false;
 			if (strongContext){
 				try {
 					if (!strongContext->store_commit()){

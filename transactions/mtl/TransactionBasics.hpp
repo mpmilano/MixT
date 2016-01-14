@@ -23,6 +23,7 @@ namespace myria {
 			std::unique_ptr<tracker::TrackingContext> trackingContext;
 			std::unique_ptr<StoreContext<Level::strong> > strongContext{nullptr};
 			std::unique_ptr<StoreContext<Level::causal> > causalContext{nullptr};
+			bool commit_on_delete = false;
 			
 		private:
 			//these two are implemented in Tracker.cpp
@@ -51,6 +52,7 @@ namespace myria {
 				choose_strong<lev> choice{nullptr}; //true_type when lev == strong
 				auto& store_ctx = get_store_context(choice);
 				if (!store_ctx){
+					assert(!str.in_transaction());
 					store_ctx.reset(str.begin_transaction().release());
 				}
 				return store_ctx;
@@ -65,7 +67,8 @@ namespace myria {
 			}
 
 			virtual ~TransactionContext(){
-				if (!committed) abortContext();
+				if ((!committed) && commit_on_delete) full_commit();
+				else if (!committed) abortContext();
 			}
 
 			friend struct Transaction;

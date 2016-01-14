@@ -113,8 +113,9 @@ namespace myria{
 			assert(_ro);
 			choose_strong<l> choice {nullptr};
 			assert(_ro->store().level == l);
-			auto owner = (tc ? nullptr : std::make_shared<mtl::TransactionContext>(_ro->store().begin_transaction(),tracker.generateContext()));
-			mutils::AtScopeEnd ase{[owner](){if (owner) owner->full_commit(); }};
+			assert(tc || !_ro->store().in_transaction());
+			auto owner = (tc ? nullptr : std::make_unique<mtl::TransactionContext>(_ro->store().begin_transaction(),tracker.generateContext()));
+			if (owner) owner->commit_on_delete = true;
 			auto &ctx = (owner ? *owner : *tc);
 			assert(ctx.trackingContext);
 
@@ -143,8 +144,9 @@ namespace myria{
 
 		void put(mtl::TransactionContext *tc, const T& t){
 			choose_strong<l> choice{nullptr};
-			auto owner = (tc ? nullptr : std::make_shared<mtl::TransactionContext>(_ro->store().begin_transaction(),tracker.generateContext()));
-			mutils::AtScopeEnd ase{[owner](){if (owner) owner->full_commit(); }};
+			assert(tc || !_ro->store().in_transaction());
+			auto owner = (tc ? nullptr : std::make_unique<mtl::TransactionContext>(_ro->store().begin_transaction(),tracker.generateContext()));
+			if (owner) owner->commit_on_delete = true;
 			auto &ctx = (owner ? *owner : *tc);
 			assert(ctx.trackingContext);
 			return put(*ctx.template get_store_context<l>(_ro->store()),*ctx.trackingContext,t,choice);
@@ -231,9 +233,10 @@ namespace myria{
 			RemoteObject<l,T> *rop = new RO(std::forward<Args>(ca)...);
 			std::shared_ptr<RemoteObject<l,T> > sp(rop);
 			Handle<l,HA,T> ret(sp);
-			auto ctx = std::make_shared<mtl::TransactionContext>(rop->store().begin_transaction(),ret.tracker.generateContext());
-			mutils::AtScopeEnd ase{[ctx](){ctx->full_commit();}};
-			do_onwrite(*ctx,ret.tracker,*rop);
+			assert(!rop->store().in_transaction());
+			mtl::TransactionContext ctx{rop->store().begin_transaction(),ret.tracker.generateContext()};
+			ctx.commit_on_delete = true;
+			do_onwrite(ctx,ret.tracker,*rop);
 			return ret;
 		}
 	
