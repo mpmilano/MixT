@@ -108,7 +108,8 @@ namespace myria { namespace mtl {
 		auto trans_op_arg(TransactionContext *ctx, CausalCache& c, const CausalStore& s, const T& t) 
 		{
 			run_ast_causal(ctx,c,s,t);
-			return constify(extract_robj_p(cached(c,t)));
+			assert(ctx);
+			return constify(extract_robj_p(*ctx,cached(c,t)));
 		}
 
 		template<typename T>
@@ -128,8 +129,9 @@ namespace myria { namespace mtl {
 	
 			if (op_mode || data_mode)
 				context::set_context(c,prev_ctx);
-	
-			return constify(extract_robj_p(cached(c,t)));
+
+			assert(ctx);
+			return constify(extract_robj_p(*ctx,cached(c,t)));
 		}
 
 		template<typename T, restrict(is_ConExpr<T>::value)>

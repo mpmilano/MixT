@@ -76,17 +76,19 @@ namespace myria {
 	}
 
 	template<typename C, typename T>
-	auto extract_robj_p(const Preserve2<C,T> &t){
+	auto extract_robj_p(mtl::TransactionContext &ctx, const Preserve2<C,T> &t){
 		return cached(t.c,t.t);
 	}
 
 	template<typename T, restrict(!is_handle<std::decay_t<T> >::value && !is_preserve<T>::value )>
-	auto extract_robj_p(T&& t) {
+	auto extract_robj_p(mtl::TransactionContext &ctx, T&& t) {
 		return std::forward<T>(t);
 	}
 
 	template<HandleAccess ha, Level l, typename T>
-	auto extract_robj_p(const Handle<l,ha,T>& t)  {
+	auto extract_robj_p(mtl::TransactionContext &ctx, const Handle<l,ha,T>& t)  {
+		//enter a transaction now if we're not already in one
+		ctx.template get_store_context<l>(t.remote_object().store());
 		return &t.remote_object();
 	}
 
@@ -153,7 +155,7 @@ namespace myria {
 			assert(can_flow(min,max));
 		
 			//do this here so we abort before causal tracking happens
-			discard(Store::tryCast(extract_robj_p(args))...);			
+			discard(Store::tryCast(extract_robj_p(ctx,args))...);			
 
 			auto h_read = mutils::filter_tpl<is_readable_handle>(std::make_tuple(args...));
 			auto h_strong_read = mutils::filter_tpl<is_strong_handle>(h_read);
@@ -172,7 +174,7 @@ namespace myria {
 			//optimization: track timestamps for causal, only check if they've changed.
 			auto causal_pair = mutils::fold(h_causal_read,[](const auto &a, const auto &acc){
 					return mutils::tuple_cons(std::make_pair(a.remote_object().timestamp(),a),acc);},std::tuple<>{});
-			auto &&ret = fun(Store::tryCast(extract_robj_p(args))...);
+			auto &&ret = fun(Store::tryCast(extract_robj_p(ctx,args))...);
 			mutils::foreach(causal_pair,
 							[&](const auto &p){
 								static_assert(mtl::get_level<decltype(p.second)>::value == Level::strong
@@ -203,9 +205,5 @@ namespace myria {
 			return false;
 		}
 	};
-
-
-
-#define op_arg(x...) extract_robj_p(x)
 
 } 
