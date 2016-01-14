@@ -110,7 +110,8 @@ namespace myria { namespace mtl {
 			}
 			
 		public:
-			
+
+			/*
 			template<typename T>
 			T& get(int i){
 				get_assert(i);
@@ -121,7 +122,7 @@ namespace myria { namespace mtl {
 				assert(ret);
 				dbg_store_prnt2;
 				return *ret;
-			}
+			} //*/
 			
 			template<typename T>
 			const T& get(int i) const{

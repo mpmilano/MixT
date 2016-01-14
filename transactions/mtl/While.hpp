@@ -67,10 +67,10 @@ namespace myria { namespace mtl {
 
 			bool strongCall(TransactionContext* ctx, StrongCache& c_old_mut, StrongStore &s, const std::true_type*, const std::false_type*) const {
 				//the "hard" case, if you will. a strong condition, but some causal statements inside.
-				c_old_mut.emplace<std::list<std::unique_ptr<StrongCache> > >(id);
+				auto store_stack_p = std::make_shared<std::list<std::unique_ptr<StrongCache> > >();
+				auto& store_stack = *store_stack_p;
+				c_old_mut.insert(id,store_stack_p);
 				const auto& c_old = c_old_mut;
-		
-				auto &store_stack = c_old_mut.get<std::list<std::unique_ptr<StrongCache> > >(id);
 
 				store_stack.emplace_back(std::make_unique<StrongCache>());
 				context::set_context(*store_stack.back(),context::current_context(c_old));
@@ -132,7 +132,7 @@ namespace myria { namespace mtl {
 				//look it up!
 				if (c_old.contains(id)){
 					const auto& force_cache_const = c_old;
-					for (const auto &cs : force_cache_const.get<std::list<std::unique_ptr<StrongCache> > >(id)){
+					for (const auto &cs : *force_cache_const.get<std::shared_ptr<std::list<std::unique_ptr<StrongCache> > > >(id)){
 						CausalCache cc{*cs};
 						call_all_causal(ctx,cc,s,then);
 					}
