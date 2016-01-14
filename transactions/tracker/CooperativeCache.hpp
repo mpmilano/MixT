@@ -11,15 +11,17 @@ namespace myria { namespace tracker {
 		class CooperativeCache{
 		public:
 			using obj_bundle = std::vector<Tracker::StampedObject>;
-		private:
-			std::mutex m;
 			using lock = std::unique_lock<std::mutex>;
-			std::map<Tracker::Nonce, obj_bundle > cache;
+			using cache_t = std::map<Tracker::Nonce, obj_bundle >;
+		private:
+			std::shared_ptr<std::mutex> m{std::make_shared<std::mutex>()};
+			std::shared_ptr<cache_t> cache{ std::make_shared<cache_t>()};
 			std::list<Tracker::Nonce> order;
 			static constexpr int max_size = 43;
 			static constexpr int tp_size = (int{MAX_THREADS} > 0 ? int{MAX_THREADS} : 50);
+			#ifdef MAKE_CACHE_REQUESTS
 			ctpl::thread_pool tp{tp_size};
-			void respond_to_request(int socket);
+			#endif
 			void track_with_eviction(Tracker::Nonce, const obj_bundle &);
 		public:
 			struct NetException : public mutils::StaticMyriaException<MACRO_GET_STR("Error! Cooperative Cache Net Exception!")>{};

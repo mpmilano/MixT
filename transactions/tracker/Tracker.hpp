@@ -3,7 +3,8 @@
 
 #pragma once
 
-#define USE_CACHE yay
+//#define MAKE_CACHE_REQUESTS yay
+#define ACCEPT_CACHE_REQUESTS yay
 
 #include "CompactSet.hpp"
 #include "GDataStore.hpp"
