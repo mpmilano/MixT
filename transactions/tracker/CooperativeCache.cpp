@@ -45,40 +45,39 @@ namespace myria { namespace tracker {
    - size of obj
    - obj
 */
-		
 		namespace {
 		
 			void respond_to_request(std::shared_ptr<std::mutex> m, std::shared_ptr<CooperativeCache::cache_t> cache, int socket){
-			AtScopeEnd ase{[&](){close(socket);}}; discard(ase);
-			Tracker::Nonce requested = 0;
-			int n = read(socket,&requested,sizeof(Tracker::Nonce));
-			if (n < 0) std::cerr << "ERROR reading from socket" << std::endl;
-			assert(n >= 0);
-			bool b = false;
-			if (cache->count(requested) > 0){
-				b = true;
-				CooperativeCache::obj_bundle o;
-				{
-					CooperativeCache::lock l{*m};
-					o = cache->at(requested);
-				}
-				assert(write(socket,&b,sizeof(b)) >= 0);
-				int size = o.size();
-				assert(write(socket,&(size),sizeof(&(size))) >= 0);
-				for (auto &m : o){
-					assert(write(socket,&(m.first),sizeof(m.first)) >= 0);
-					for (auto i : m.second){
-						assert(write(socket,&i,sizeof(i)) >= 0);
+				AtScopeEnd ase{[&](){close(socket);}}; discard(ase);
+				Tracker::Nonce requested = 0;
+				int n = read(socket,&requested,sizeof(Tracker::Nonce));
+				if (n < 0) std::cerr << "ERROR reading from socket" << std::endl;
+				assert(n >= 0);
+				bool b = false;
+				if (cache->count(requested) > 0){
+					b = true;
+					CooperativeCache::obj_bundle o;
+					{
+						CooperativeCache::lock l{*m};
+						o = cache->at(requested);
 					}
-					auto s = m.third.size();
-					assert(write(socket,&(s),sizeof(s)) >= 0);
-					assert(write(socket,m.third.data(),s) >= 0);
+					assert(write(socket,&b,sizeof(b)) >= 0);
+					int size = o.size();
+					assert(write(socket,&(size),sizeof(&(size))) >= 0);
+					for (auto &m : o){
+						assert(write(socket,&(m.first),sizeof(m.first)) >= 0);
+						for (auto i : m.second){
+							assert(write(socket,&i,sizeof(i)) >= 0);
+						}
+						auto s = m.third.size();
+						assert(write(socket,&(s),sizeof(s)) >= 0);
+						assert(write(socket,m.third.data(),s) >= 0);
+					}
 				}
+				else assert(write(socket,&b,sizeof(b)) >= 0);
 			}
-			else assert(write(socket,&b,sizeof(b)) >= 0);
 		}
-		}
-
+		
 		std::future<CooperativeCache::obj_bundle> CooperativeCache::get(const Tracker::Tombstone &tomb, int portno){
 			{
 				lock l{*m};
@@ -167,10 +166,9 @@ namespace myria { namespace tracker {
 			#ifdef ACCEPT_CACHE_REQUESTS
 			auto cache = this->cache;
 			auto m = this->m;
-			static std::thread listener([m,portno,cache](){
+			std::thread([m,portno,cache](){
 					try {
 						AtScopeEnd ase2{[](){std::cout << "listening done; cache closed" << std::endl;}};
-						discard(ase2);
 						int sockfd;
 						socklen_t clilen;
 						struct sockaddr_in serv_addr, cli_addr;
@@ -191,7 +189,6 @@ namespace myria { namespace tracker {
 						assert(listen(sockfd,50) == 0);
 						clilen = sizeof(cli_addr);
 						AtScopeEnd ase{[&](){close(sockfd);}};
-						discard(ase);
 						constexpr int tp_size2 = tp_size;
 						FutureFreePool pool{tp_size2};
 						while (true) {
@@ -212,7 +209,7 @@ namespace myria { namespace tracker {
 					catch(...){
 						std::cout << "Cache accept thread failure!" << std::endl;
 					}
-				});
+				}).detach();
 			#endif
 		}
 
