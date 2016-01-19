@@ -160,6 +160,13 @@ namespace myria{
 			return os << "Noop@" << l;
 		}
 
+		template<typename T>
+		std::ostream & operator<<(std::ostream &os, const mtl::Ignore<T>& i){
+	
+			return os << "Ignoring " << i.t;
+		}
+
+		
 		template<typename T, restrict(std::is_base_of<mtl::BaseFindUsages CMA T>::value)>
 		std::ostream & operator<<(std::ostream &os, const T& op){
 			return os << op.name << "<" << mtl::get_level<T>::value << ">";

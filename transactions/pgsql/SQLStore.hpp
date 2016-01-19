@@ -10,6 +10,7 @@ namespace myria { namespace pgsql {
 		class SQLStore : public SQLStore_impl, public DataStore<l> {
 
 			SQLStore(int inst_id):SQLStore_impl(*this,inst_id,l) {
+				assert(first_fork);
 				tracker::Tracker::global_tracker().registerStore(*this);
 			}
 		public:

@@ -271,30 +271,6 @@ namespace myria { namespace mtl {
 		template<unsigned long long id>
 		struct contains_temporary<id,bool> : std::false_type {};
 
-		template<Level l, HandleAccess ha, typename T>
-		auto handles(const Handle<l,ha,T>& h) {
-			return std::make_tuple(h);
-		}
-
-		template<typename T>
-		std::enable_if_t<std::is_scalar<T>::value, std::tuple<> > handles(const T&){
-			return std::tuple<>();
-		}
-
-
-		template<typename T, restrict(is_ConExpr<T>::value && !std::is_scalar<T>::value)>
-		auto handles(const T &e){
-			return e.handles();
-		}
-
-		template<typename... T>
-		auto handles(const std::tuple<T...> &params){
-			return fold(params,
-						[](const auto &e, const auto &acc){
-							return std::tuple_cat(mtl::handles(e),acc);
-						}
-						,std::tuple<>());
-		}
 
 		template<typename T>
 		using is_AST_Expr = typename std::integral_constant<

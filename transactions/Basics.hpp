@@ -1,6 +1,8 @@
 #pragma once
 #include <string>
 
+extern bool first_fork;
+
 namespace myria{
 
 	enum class Level { causal, strong, undef};

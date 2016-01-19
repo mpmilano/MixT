@@ -28,7 +28,7 @@
 #define TRANS_SEQ(...) TRANS_SEQ_IMPL(VA_NARGS(__VA_ARGS__), __VA_ARGS__)
 
 
-#define TRANSACTION(args...) { mtl::TransactionBuilder<std::tuple<> > prev; TRANS_SEQ(args, END_TRANSACTION)}
+#define TRANSACTION(args...) { using namespace mtl; using namespace mutils; mtl::TransactionBuilder<std::tuple<> > prev; TRANS_SEQ(args, END_TRANSACTION)}
 
 //change these - mutable can use, just not dref.
 #define let(x) [&]() { auto decl = MutDeclaration(#x); auto x = (mtl::MutAssigner(#x)

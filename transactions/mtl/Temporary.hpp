@@ -73,7 +73,7 @@ namespace myria { namespace mtl {
 			}
 
 			auto causalCall(TransactionContext* ctx, CausalCache& c, CausalStore &s,std::true_type*) const {
-				typedef typename std::decay<decltype(t.causalCall(ctx,c,s))>::type R;
+				typedef typename std::decay<decltype(run_ast_causal(ctx,c,s,t))>::type R;
 				s.emplace<R>(store_id,run_ast_causal(ctx,c,s,t));
 				return true;
 			}

@@ -1,3 +1,5 @@
+bool first_fork;
+
 #include "ProcessPool.hpp"
 #include <iostream>
 #include <fstream>
@@ -12,9 +14,10 @@
 #include <sys/types.h>
 #include <chrono>
 #include <cmath>
-#include <unistd.h>//*/
-#include "ProcessPool.hpp"
+#include <unistd.h>
+#include "ProcessPool.hpp"//*/
 #include "Operate_macros.hpp"
+#include "Transaction_macros.hpp"
 
 constexpr int my_unique_id = int{IP_QUAD};
 
@@ -78,6 +81,7 @@ int get_strong_ip() {
 }
 
 int main(){
+	first_fork = false;
 	int ip = get_strong_ip();	
 	logFile.open(log_name);
 	logFile << "Begin Log for " << log_name << std::endl;
@@ -112,6 +116,9 @@ int main(){
 				SQLStore<Level::causal> &causal = SQLStore<Level::causal>::inst(0);
 				assert(!strong.in_transaction());
 				assert(!causal.in_transaction());
+				auto& trk = tracker::Tracker::global_tracker();
+				TransactionContext ctx{trk.generateContext()};
+				assert(!trk.get_StrongStore().in_transaction());
 				//I'm assuming that pid won't get larger than the number of allowable ports...
 				assert(pid + 1024 < 49151);
 
@@ -121,19 +128,24 @@ int main(){
 
 					for(int tmp2 = 0; tmp2 < 10; ++tmp2){
 						try{
-							if ((name % mod_constant) == 0)
+							if ((name % mod_constant) == 0){
 								TRANSACTION(
 									do_op(Increment,hndl)
 									)
-								else hndl.get(nullptr);
+							}
+							else TRANSACTION(
+								let_remote(tmp) = hndl IN(mtl_ignore(tmp))
+								)
 							auto end = high_resolution_clock::now() - launch_clock;
-							log_messages << "duration: " << duration_cast<microseconds>(end).count() - start_time
+							log_messages << "duration: " <<
+							duration_cast<microseconds>(end).count() - start_time
 							<< ((name % mod_constant) == 0 ? " read/write" : " read") << std::endl;
 							break;
 						}
 						catch(const Transaction::SerializationFailure &r){
 							log_messages << "serialization failure: "
-							<< duration_cast<microseconds>(high_resolution_clock::now() - launch_clock).count() - start_time
+							<< duration_cast<microseconds>(high_resolution_clock::now()
+														   - launch_clock).count() - start_time
 							<< std::endl;
 							continue;
 						}
@@ -154,6 +166,7 @@ int main(){
 		std::cout << log_messages.str() << std::endl;
 		return log_messages.str();
 	};
+	
 	std::function<std::string (std::exception_ptr) > exn_handler = [](std::exception_ptr eptr){
 		std::stringstream log_messages;
 		try {
@@ -167,7 +180,9 @@ int main(){
 			log_messages << "non-pqxx failure: " << e.what() << std::endl;
 		}
 		catch (...){
-			log_messages << "Exception occurred which derived from neither pqxx_exception nor std::exception!" << std::endl;
+			log_messages
+			<< "Exception occurred which derived from neither pqxx_exception nor std::exception!"
+			<< std::endl;
 		}
 		return log_messages.str();
 	};
@@ -183,9 +198,11 @@ int main(){
 	using future_list = std::list<std::future<std::unique_ptr<std::string> > >;
 	std::unique_ptr<future_list> futures{new future_list()};
 
-	auto elapsed_time = [](){return duration_cast<microseconds>(high_resolution_clock::now() - launch_clock).count();};
+	auto elapsed_time = [](){return duration_cast<microseconds>(high_resolution_clock::now()
+																- launch_clock).count();};
 	
-	std::function<decltype(p.launch(0,elapsed_time())) ()> launch1 {[&](){return p.launch(0,elapsed_time());}};
+	std::function<decltype(p.launch(0,elapsed_time())) ()>
+		launch1 {[&](){return p.launch(0,elapsed_time());}};
 	
 	decltype(launch1) launch2 {[&]() -> decltype(p.launch(0,elapsed_time())){
 			auto str = pool_fun([](void*v){return v;},400,elapsed_time());

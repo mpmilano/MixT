@@ -27,6 +27,8 @@ namespace myria { namespace mtl {
 			Transaction(const TransactionBuilder<Cmds> &s):
 				action([s]() -> bool{
 
+						static bool first_transaction = true;
+						
 						debug_forbid_copy = true;
 						mutils::AtScopeEnd ase{[](){debug_forbid_copy = false;}};
 						discard(ase);
@@ -53,6 +55,8 @@ namespace myria { namespace mtl {
 							
 							set_context(caches,context::t::unknown);
 							//nobody should be in a transaction yet
+							assert(trk.get_StrongStore().in_transaction() ? first_transaction : true);
+							first_transaction = false;
 							assert(!trk.get_StrongStore().in_transaction());
 							call_all_strong(&ctx,caches,stores,s.curr);
 

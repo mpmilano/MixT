@@ -116,6 +116,7 @@ namespace mutils{
 				pipe(parent_to_child);
 				pipe(child_to_parent);
 				name = fork();
+				first_fork = true;
 				std::cout << "forking" << std::endl;
 			}
 			Child(const Child&) = delete;

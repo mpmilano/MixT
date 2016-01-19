@@ -39,8 +39,7 @@ namespace myria { namespace mtl {
 		
 				choose_strong<get_level<Temp>::value > choice{nullptr};
 				try {
-					auto ret = strongCall(ctx,cache, s,choice);
-					return ret;
+					return strongCall(ctx,cache, s,choice);
 				}
 				catch (const StoreMiss&){
 					std::cerr << "tried to reference variable " << name << std::endl;
@@ -110,7 +109,7 @@ namespace myria { namespace mtl {
 
 		template<unsigned long long ID, Level l, typename T, typename Temp>
 		auto find_usage(const RefTemporary<ID,l,T,Temp> &rt){
-			return shared_copy(rt.t);
+			return mutils::shared_copy(rt.t);
 		}
 
 		template<unsigned long long ID, unsigned long long ID2, Level l, typename T, typename Temp>
