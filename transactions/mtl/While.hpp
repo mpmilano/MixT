@@ -90,8 +90,6 @@ namespace myria { namespace mtl {
 					auto it = store_stack.begin();
 					for (auto &c : c_old.get<std::list<std::unique_ptr<CausalCache> > >(id)){
 						assert (((void*)c.get()) == ((void*)it->get()));
-						assert(c->store_impl == (*it)->store_impl);
-						assert(&(c->store_impl) == &((*it)->store_impl));
 						++it;
 					}
 					//Debugging!
