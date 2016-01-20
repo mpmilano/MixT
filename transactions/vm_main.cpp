@@ -1,5 +1,3 @@
-bool first_fork;
-
 #include "ProcessPool.hpp"
 #include <iostream>
 #include <fstream>
@@ -81,7 +79,6 @@ int get_strong_ip() {
 }
 
 int main(){
-	first_fork = false;
 	int ip = get_strong_ip();	
 	logFile.open(log_name);
 	logFile << "Begin Log for " << log_name << std::endl;
@@ -117,7 +114,6 @@ int main(){
 				assert(!strong.in_transaction());
 				assert(!causal.in_transaction());
 				auto& trk = tracker::Tracker::global_tracker();
-				TransactionContext ctx{trk.generateContext()};
 				assert(!trk.get_StrongStore().in_transaction());
 				//I'm assuming that pid won't get larger than the number of allowable ports...
 				assert(pid + 1024 < 49151);
