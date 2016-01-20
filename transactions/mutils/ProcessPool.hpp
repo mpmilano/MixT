@@ -173,16 +173,6 @@ namespace mutils{
 						exit(0);
 					}
 					else {
-						std::thread([&](){
-								while (true){
-									using namespace std::chrono;
-									std::this_thread::sleep_for(1s);
-									std::string command{"cat /proc/"};
-									command += std::to_string(child.name);
-									command += "/status | grep Threads >> /tmp/debugging_logged_foo";
-									system(command.c_str());
-								}
-							}).detach();
 						close(child.child_to_parent[1]);
 						close(child.parent_to_child[0]);
 						ready.add(&child);
