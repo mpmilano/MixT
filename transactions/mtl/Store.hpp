@@ -32,6 +32,29 @@ namespace myria { namespace mtl {
 				:above(&ss),semantic_switch(st){}
 
 			StoreMap_base(StoreType st):semantic_switch(st){}
+
+			template<typename T>
+			void insert_b(int i, const T &item) {
+				assert(valid_store);
+				assert(!contains(i));
+				store_impl.template mut<T>(i).reset(mutils::heap_copy(item).release());
+				assert(contains(i));
+			}
+
+			template<typename T, typename... Args>
+			void emplace_ovrt_b(int i, Args && ... args){
+				assert(valid_store);
+				store_impl.template mut<T>(i).reset(new T(std::forward<Args>(args)...));
+				assert(contains(i));
+			}
+
+			template<typename T, typename... Args>
+			void emplace_b(int i, Args && ... args){
+				assert(valid_store);
+				assert(!contains(i));
+				emplace_ovrt_b<T>(i,std::forward<Args>(args)...);
+			}
+
 		public:
 			StoreMap_base(const StoreMap_base&) = delete;
 			
@@ -40,27 +63,6 @@ namespace myria { namespace mtl {
 					(above && (above->contains(i)));
 			}
 
-			template<typename T>
-			void insert(int i, const T &item) {
-				assert(valid_store);
-				assert(!contains(i));
-				store_impl.template mut<T>(i).reset(mutils::heap_copy(item).release());
-				assert(contains(i));
-			}
-
-			template<typename T, typename... Args>
-			void emplace_ovrt(int i, Args && ... args){
-				assert(valid_store);
-				store_impl.template mut<T>(i).reset(new T(std::forward<Args>(args)...));
-				assert(contains(i));
-			}
-
-			template<typename T, typename... Args>
-			void emplace(int i, Args && ... args){
-				assert(valid_store);
-				assert(!contains(i));
-				emplace_ovrt<T>(i,std::forward<Args>(args)...);
-			}
 			
 			template<typename T>
 			const T& get(int i) const{
@@ -86,12 +88,57 @@ namespace myria { namespace mtl {
 
 		};
 
+#define sm_common(st) 			template<StoreType ss,restrict(ss != st)> \
+		explicit StoreMap(const StoreMap<ss> &sm):StoreMap_base(sm,st){} \
+		StoreMap():StoreMap_base(st){}
+		
 		template<StoreType st>
-		struct StoreMap : public StoreMap_base{
-			template<StoreType ss,restrict(ss != st)>
-			explicit StoreMap(const StoreMap<ss> &sm):StoreMap_base(sm,st){}
-			StoreMap():StoreMap_base(st){}
+		struct StoreMap;
+
+#define store_common												\
+		template<typename T, typename... Args>						\
+		void emplace(int i, Args && ... args){						\
+			this->emplace_ovrt_b<T>(i,std::forward<Args>(args)...);	\
+		}
+		
+		template<>
+		struct StoreMap<StoreType::StrongStore>
+			: public StoreMap_base{
+			sm_common(StoreType::StrongStore)
+			store_common
 		};
+		
+		template<>
+		struct StoreMap<StoreType::CausalStore>
+			: public StoreMap_base{
+			sm_common(StoreType::CausalStore)
+			store_common
+		};
+
+#define cache_common 			template<typename T>	\
+		void insert(int i, const T &item) {				\
+			this->insert_b(i,item);						\
+		}												\
+														\
+		template<typename T, typename... Args>			\
+		void emplace(int i, Args && ... args){						\
+			this->emplace_b<T>(i,std::forward<Args>(args)...);		\
+		}
+
+		template<>
+		struct StoreMap<StoreType::StrongCache>
+			: public StoreMap_base{
+			sm_common(StoreType::StrongCache)
+			cache_common
+
+		};
+		template<>
+		struct StoreMap<StoreType::CausalCache>
+			: public StoreMap_base{
+			sm_common(StoreType::CausalCache)
+			cache_common
+		};
+
 
 		using StrongStore = StoreMap<StoreType::StrongStore>;
 		using StrongCache = StoreMap<StoreType::StrongCache>;
