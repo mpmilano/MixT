@@ -43,9 +43,6 @@ namespace myria { namespace mtl {
 			}
 
 			bool strongCall(TransactionContext* ctx, StrongCache& c, StrongStore &s) const {
-				s.in_loop();
-				mutils::AtScopeEnd ase{[&](){s.out_of_loop();}};
-				discard(ase);
 				choose_strong<get_level<Cond>::value> choice1{nullptr};
 				choose_strong<min_level<Then>::value> choice2{nullptr};
 				bool ret = strongCall(ctx,c,s,choice1,choice2);
@@ -122,9 +119,6 @@ namespace myria { namespace mtl {
 			}
 	
 			bool causalCall(TransactionContext* ctx, CausalCache& c_old, CausalStore &s) const {
-				s.in_loop();
-				mutils::AtScopeEnd ase{[&](){s.out_of_loop();}};
-				discard(ase);
 				//if there's a cache for this AST node, then
 				//that means we've already run the condition.
 				//look it up!

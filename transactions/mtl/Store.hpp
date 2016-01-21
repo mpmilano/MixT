@@ -21,15 +21,17 @@ namespace myria { namespace mtl {
 		struct StoreMap_base {
 		private:
 			StoreMap_base const * const above{nullptr};
-			HeteroMap<int> store_impl;
+			mutils::HeteroMap<int> store_impl;
 	
 			bool valid_store = true;
+			const StoreType semantic_switch;
 			
 		protected:
 
-			explicit StoreMap_base(const StoreMap_base& ss, bool ThisIsNotACopyConstructor):above(ss){}
+			explicit StoreMap_base(const StoreMap_base& ss, StoreType st)
+				:above(&ss),semantic_switch(st){}
 
-			StoreMap_base(){}
+			StoreMap_base(StoreType st):semantic_switch(st){}
 		public:
 			StoreMap_base(const StoreMap_base&) = delete;
 			
@@ -66,7 +68,6 @@ namespace myria { namespace mtl {
 				if (!contains(i)) {
 					std::cerr << "trying to find something of id " << i
 							  << " in a " << (is_store(semantic_switch) ? "store" : "cache" ) <<std::endl;
-					std::cerr << "we have that here : "	<< lost_and_found()[i] <<std::endl;
 					throw StoreMiss{};
 				}
 
@@ -79,7 +80,7 @@ namespace myria { namespace mtl {
 				return *ret;
 			}
 		
-			virtual ~StoreMap() {
+			virtual ~StoreMap_base() {
 				valid_store = false;
 			}
 
@@ -87,9 +88,9 @@ namespace myria { namespace mtl {
 
 		template<StoreType st>
 		struct StoreMap : public StoreMap_base{
-			template<StoreType ss,restrict(ss != semantic_switch)>
-			explicit StoreMap(const StoreMap<ss> &sm):StoreMap_base(sm,true){}
-			StoreMap(){}
+			template<StoreType ss,restrict(ss != st)>
+			explicit StoreMap(const StoreMap<ss> &sm):StoreMap_base(sm,st){}
+			StoreMap():StoreMap_base(st){}
 		};
 
 		using StrongStore = StoreMap<StoreType::StrongStore>;

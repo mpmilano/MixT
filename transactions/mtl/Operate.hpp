@@ -43,8 +43,6 @@ namespace myria { namespace mtl {
 				std::cerr << "RefTemp ID referenced: " << rt.id << std::endl;
 				std::cerr << "RefTemp name referenced: " << rt.name << std::endl;
 				std::cerr << "address of cache: " << &c << std::endl;
-				std::cerr << "Where it might be (strongCache): " << StrongCache::lost_and_found()[rt.id] << std::endl;
-				std::cerr << "Where it might be (causalCache): " << CausalCache::lost_and_found()[rt.id] << std::endl;
 				return cached(c,rt);
 			}
 		}
