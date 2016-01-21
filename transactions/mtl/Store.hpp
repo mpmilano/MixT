@@ -1,4 +1,5 @@
 #pragma once
+#include <list>
 #include "utils.hpp"
 
 namespace myria { namespace mtl {
@@ -22,75 +23,74 @@ namespace myria { namespace mtl {
 		template<StoreType semantic_switch>
 		struct StoreMap {
 		private:
-
-		
-			static int max_id_counter = 0;
-			static std::list<int> free_map_ids;
-		
-			static int new_id(){
-				return
-					(free_map_ids.empty() ? 
-					 //take current max_id_counter, increment it
-					 max_id_counter++
-					 : 
-					 //grab an id from the list
-					 [&](){auto ret = free_map_ids.front();
-						free_map_ids.pop_front();
-						return ret;}());
-			}
-			
-			template<typename T>
-			static std::map<int,std::unique_ptr<T> >& type_specific_store(int id, bool delete){
-				static std::map<int, std::map<int,std::unique_ptr<T> > > in_use_maps;
-				if (delete) {
-					free_map_ids.push_back(id);
-					in_use_maps[id].clear();
-				}
-				return in_use_maps[id];
-			}
-
 			struct internal_store{
+				static int new_id(int reset_id = -1){
+					static int max_id_counter = 0;
+					static std::list<int> free_map_ids;
+					if (reset_id != -1){
+						//reset things
+						free_map_ids.push_back(reset_id);
+						return -1;
+					}
+					else 
+						return
+							(free_map_ids.empty() ? 
+							 //take current max_id_counter, increment it
+							 max_id_counter++
+							 : 
+							 //grab an id from the list
+							 [&](){auto ret = free_map_ids.front();
+								free_map_ids.pop_front();
+								return ret;}());
+				}
+				
+				template<typename T>
+				static std::map<int,std::unique_ptr<T> >& type_specific_store(int id, bool del){
+					static std::map<int, std::map<int,std::unique_ptr<T> > > in_use_maps;
+					if (del) {
+						new_id(id); //release this id
+						in_use_maps[id].clear();
+					}
+					return in_use_maps[id];
+				}
+
 				const int store_id{new_id()};
 				struct internal_store_shared{
-					const int store_id;
-					internal_store_shared(const internal_store_shared&) = delete;
-					internal_store_shared(int store_id):store_id(store_id){
-						type_specific_store(store_id,false);
-					}
 					template<typename T>
-					const auto& at(int id, T*){
-						return type_specific_store(store_id,false).at(id);
+					static const auto& at(int store_id, int id, T*) {
+						return internal_store::type_specific_store<T>(store_id,false).at(id);
 					}
 					
 					template<typename T>
-					auto& mut(int id, T*){
-						return type_specific_store(store_id,false)[id];
-					}
-					
-					virtual ~internal_store_shared(){
-						type_specific_store(store_id,true);
+					static auto& mut(int store_id, int id, T*){
+						return internal_store::type_specific_store<T>(store_id,false)[id];
 					}
 				};
-				std::map<int,std::shared_ptr<internal_store_shared> > sub_maps;
-				//object ids --> type_specific_store
+				std::set<int> contains_set; //keys that we can map
 
 				template<typename T>
 				const std::unique_ptr<T>& at(int i) const{
 					T* dummy{nullptr};
-					return sub_maps.at(i).at(i,dummy)
+					assert(contains(i));
+					return internal_store_shared::at(store_id, i,dummy);
 				}
 
 				template<typename T>
 				auto &mut(int id){
-					if (sub_maps.count(id) == 0)
-						sub_maps.emplace(id,internal_store{store_id});
 					T* dummy{nullptr};
-					return sub_maps[i].mut(id,dummy);
+					return internal_store_shared::mut(store_id,id,dummy);
 				}
 
 				bool contains(int i) const{
-					bool ret = (sub_maps.count(i) > 0);
-					if (ret) assert(sub_maps.at(i).count(i) > 0);
+					return (contains_set.count(i) > 0);
+				}
+
+				int count(int i) const {
+					return contains_set.count(i);
+				}
+
+				virtual ~internal_store(){
+					new_id(store_id);
 				}
 				
 			};
@@ -148,7 +148,7 @@ namespace myria { namespace mtl {
 			void insert(int i, const T &item) {
 				assert(valid_store);
 				if (!looping) assert(!contains(i));
-				store_impl.mut<T>(i).reset(mutils::heap_copy(item).release());
+				store_impl.template mut<T>(i).reset(mutils::heap_copy(item).release());
 				lost_and_found()[i] = this;
 				assert(contains(i));
 				dbg_store_prnt("Storing",item)
@@ -157,7 +157,7 @@ namespace myria { namespace mtl {
 			template<typename T, typename... Args>
 			void emplace_ovrt(int i, Args && ... args){
 				assert(valid_store);
-				store_impl.mut<T>(i).reset(new T(std::forward<Args>(args)...));
+				store_impl.template mut<T>(i).reset(new T(std::forward<Args>(args)...));
 				lost_and_found()[i] = this;
 				assert(contains(i));
 				dbg_store_prnt("Emplacing",*((T*) store_impl.at<T>(i).get()))
@@ -187,9 +187,9 @@ namespace myria { namespace mtl {
 			const T& get(int i) const{
 				get_assert(i);
 				if (!store_impl.contains(i)) {
-					return above->get<T>(i);
+					return above->template get<T>(i);
 				}
-				T* ret = (store_impl.at<T>(i).get());
+				T* ret = (store_impl.template at<T>(i).get());
 				assert(ret);
 				dbg_store_prnt2;
 				return *ret;
