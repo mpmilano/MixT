@@ -84,7 +84,7 @@ namespace myria { namespace mtl {
 
 				{
 					auto it = cache_stack.begin();
-					for (auto &c : c_old.get<std::list<std::unique_ptr<CausalCache> > >(id)){
+					for (auto &c : *c_old.get<std::unique_ptr<std::list<std::unique_ptr<StrongCache> > > >(id)){
 						assert (((void*)c.get()) == ((void*)it->get()));
 						++it;
 					}

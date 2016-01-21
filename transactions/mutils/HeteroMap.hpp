@@ -1,6 +1,7 @@
 #pragma once
 #include <map>
 #include <set>
+#include "utils.hpp"
 
 namespace mutils {
 
@@ -26,26 +27,28 @@ namespace mutils {
 			return id_for_T;
 		}
 		
-		std::map<type_id, std::tuple<void*, count, destructor> > sub_maps;
+		std::map<type_id, std::tuple<void*, count, destructor,std::string> > sub_maps;
 		std::map<Key,type_id> member_set; //for membership queries, when we do not know the type
 		
 		template<typename T>
-		auto* get_submap(){
+		submap<T>* get_submap(){
 			auto tid = get_type_id<T>();
 			if (sub_maps.count(tid) == 0){
 				submap<T>* newmap = new submap<T>{};
 				sub_maps.emplace(
 					tid,
-					std::tuple<void*,count,destructor>{
+					std::tuple<void*,count,destructor,std::string>{
 						newmap,
 							[newmap](Key k){return newmap->count(k);},
-							[newmap](){delete newmap;}});
+							[newmap](){delete newmap;},
+								type_name<T>()
+								});
 			}
 			return (submap<T>*) std::get<0>(sub_maps[tid]);
 		}
 		
 		template<typename T>
-		auto get_submap() const {
+		submap<T> const * const get_submap() const {
 			return (submap<T>*) std::get<0>(sub_maps.at(get_type_id<T>()));
 		}
 	public:
@@ -53,6 +56,23 @@ namespace mutils {
 		template<typename T>
 		auto& at(Key i) const {
 			auto tid = get_type_id<T>();
+			assert([&]() -> bool {
+					if (sub_maps.count(tid) == 0){
+						if (member_set.count(i) != 0){
+							//this would indicate that there's a disagreement between the type mapping in
+							//member_set and the static type_id assignment
+							assert(get_type_id<T>() == get_type_id<T>());
+							assert(sub_maps.count(member_set.at(i)) > 0);
+							std::cerr << "we have type ("
+									  << std::get<3>(sub_maps.at(member_set.at(i)))
+									  << ") for this key; you asked for ("
+									  << type_name<T>() << ")" << std::endl;
+							assert(false && "HeteroMap failure");
+						}
+					}
+					return true;
+				}());
+			//this is just a normal failure of at() when there's no element to retrieve.
 			assert(sub_maps.count(tid) > 0);
 			return get_submap<T>()->at(i);
 		}
