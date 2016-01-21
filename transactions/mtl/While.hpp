@@ -64,35 +64,33 @@ namespace myria { namespace mtl {
 
 			bool strongCall(TransactionContext* ctx, StrongCache& c_old_mut, StrongStore &s, const std::true_type*, const std::false_type*) const {
 				//the "hard" case, if you will. a strong condition, but some causal statements inside.
-				auto store_stack_p = std::make_shared<std::list<std::unique_ptr<StrongCache> > >();
-				auto& store_stack = *store_stack_p;
-				c_old_mut.insert(id,store_stack_p);
+				auto cache_stack_p = std::make_unique<std::list<std::unique_ptr<StrongCache> > >();
+				auto& cache_stack = *cache_stack_p;
+				c_old_mut.emplace<decltype(cache_stack_p)>(id,cache_stack_p.release());
 				const auto& c_old = c_old_mut;
 
-				store_stack.emplace_back(std::make_unique<StrongCache>());
-				context::set_context(*store_stack.back(),context::current_context(c_old));
-				assert(store_stack.back().get() != &c_old_mut);
-				while(run_ast_strong(ctx,*store_stack.back(),s,cond)) {
-					call_all_strong(ctx,*store_stack.back(),s,then);
-					store_stack.emplace_back(std::make_unique<StrongCache>());
-					context::set_context(*store_stack.back(),context::current_context(c_old));
-					assert(store_stack.front().get() != store_stack.back().get());
+				cache_stack.emplace_back(std::make_unique<StrongCache>());
+				context::set_context(*cache_stack.back(),context::current_context(c_old));
+				assert(cache_stack.back().get() != &c_old_mut);
+				while(run_ast_strong(ctx,*cache_stack.back(),s,cond)) {
+					call_all_strong(ctx,*cache_stack.back(),s,then);
+					cache_stack.emplace_back(std::make_unique<StrongCache>());
+					context::set_context(*cache_stack.back(),context::current_context(c_old));
+					assert(cache_stack.front().get() != cache_stack.back().get());
 				}
 				//there's one too many in here.
-				store_stack.pop_back();
+				cache_stack.pop_back();
 
 				assert(c_old.contains(id));
 
 				{
-					auto it = store_stack.begin();
+					auto it = cache_stack.begin();
 					for (auto &c : c_old.get<std::list<std::unique_ptr<CausalCache> > >(id)){
 						assert (((void*)c.get()) == ((void*)it->get()));
 						++it;
 					}
 					//Debugging!
 				}
-
-
 				//TODO: error propogation
 				return true;
 			}
@@ -124,7 +122,7 @@ namespace myria { namespace mtl {
 				//look it up!
 				if (c_old.contains(id)){
 					const auto& force_cache_const = c_old;
-					for (const auto &cs : *force_cache_const.get<std::shared_ptr<std::list<std::unique_ptr<StrongCache> > > >(id)){
+					for (const auto &cs : *force_cache_const.get<std::unique_ptr<std::list<std::unique_ptr<StrongCache> > > >(id)){
 						CausalCache cc{*cs};
 						call_all_causal(ctx,cc,s,then);
 					}

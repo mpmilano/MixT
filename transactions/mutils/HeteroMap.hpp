@@ -9,6 +9,7 @@ namespace mutils {
 	private:
 		
 		using type_id = int;
+		using count = std::function<int (Key)>;
 		using destructor = std::function<void ()>;
 		template<typename T>
 		using submap = std::map<Key, std::unique_ptr<T> >;
@@ -25,8 +26,8 @@ namespace mutils {
 			return id_for_T;
 		}
 		
-		std::map<type_id, std::pair<void*, destructor> > sub_maps;
-		std::set<Key> member_set; //for membership queries, when we do not know the type
+		std::map<type_id, std::tuple<void*, count, destructor> > sub_maps;
+		std::map<Key,type_id> member_set; //for membership queries, when we do not know the type
 		
 		template<typename T>
 		auto* get_submap(){
@@ -35,14 +36,17 @@ namespace mutils {
 				submap<T>* newmap = new submap<T>{};
 				sub_maps.emplace(
 					tid,
-					std::pair<void*,destructor>(newmap,[newmap](){delete newmap;}));
+					std::tuple<void*,count,destructor>{
+						newmap,
+							[newmap](Key k){return newmap->count(k);},
+							[newmap](){delete newmap;}});
 			}
-			return (submap<T>*) sub_maps[tid].first;
+			return (submap<T>*) std::get<0>(sub_maps[tid]);
 		}
 		
 		template<typename T>
 		auto get_submap() const {
-			return (submap<T>*) sub_maps.at(get_type_id<T>()).first;
+			return (submap<T>*) std::get<0>(sub_maps.at(get_type_id<T>()));
 		}
 	public:
 		
@@ -55,17 +59,19 @@ namespace mutils {
 		
 		template<typename T>
 		auto& mut(Key i){
-			member_set.insert(i);
+			member_set.emplace(i,get_type_id<T>());
 			return (*get_submap<T>())[i];
 		}
 		
 		bool contains(Key i) const {
-			return member_set.count(i) > 0;
+			bool ret = member_set.count(i) > 0;
+			assert(!ret || (ret && std::get<1>(sub_maps.at(member_set.at(i)))(i) > 0));
+			return ret;
 		}
 		
 		virtual ~HeteroMap(){
 			for (auto& p : sub_maps){
-				p.second.second();
+				std::get<2>(p.second)();
 			}
 		}
 	};
