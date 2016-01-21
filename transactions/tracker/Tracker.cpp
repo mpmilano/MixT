@@ -350,13 +350,18 @@ namespace myria { namespace tracker {
 		namespace{
 
 			bool sleep_on(Tracker::Internals& i, const Name &tomb_name, const int how_long = -1){
+				bool first_skip = true;
 				for (int cntr = 0; (cntr < how_long) || how_long == -1; ++cntr){
 					if (get<TDS::exists>(*i.causalDS)(*i.registeredCausal,tomb_name)){
+						if (!first_skip) std::cout << "done waiting" << std::endl;
 						remove_pending(i,tomb_name);
 						return true;
 					}
 					else {
-						std::cout << "waiting for " << tomb_name << " to appear..." << std::endl;
+						if (first_skip){
+							std::cout << "waiting for " << tomb_name << " to appear..." << std::endl;
+							first_skip = false;
+						}
 						std::this_thread::sleep_for(10ms);
 					}
 				}
