@@ -54,7 +54,6 @@ namespace myria { namespace mtl {
 
 				auto new_cache = std::make_unique<StrongCache>();
 				while (run_ast_strong(ctx,*new_cache,s,cond)) {
-					context::set_context(*new_cache,context::current_context(c));
 					call_all_strong(ctx,*new_cache,s,then);
 					new_cache = std::make_unique<StrongCache>();
 				}
@@ -70,12 +69,12 @@ namespace myria { namespace mtl {
 				const auto& c_old = c_old_mut;
 
 				cache_stack.emplace_back(std::make_unique<StrongCache>());
-				context::set_context(*cache_stack.back(),context::current_context(c_old));
+
 				assert(cache_stack.back().get() != &c_old_mut);
 				while(run_ast_strong(ctx,*cache_stack.back(),s,cond)) {
 					call_all_strong(ctx,*cache_stack.back(),s,then);
 					cache_stack.emplace_back(std::make_unique<StrongCache>());
-					context::set_context(*cache_stack.back(),context::current_context(c_old));
+
 					assert(cache_stack.front().get() != cache_stack.back().get());
 				}
 				//there's one too many in here.
@@ -131,7 +130,6 @@ namespace myria { namespace mtl {
 					//causal condition, so nothing interesting here.
 					auto new_cache = std::make_unique<CausalCache>();
 					while (run_ast_causal(ctx,*new_cache,s,cond)) {
-						context::set_context(*new_cache,context::current_context(c_old));
 						call_all_causal(ctx,*new_cache,s,then);
 						new_cache = std::make_unique<CausalCache>();
 					}

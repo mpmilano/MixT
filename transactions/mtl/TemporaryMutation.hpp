@@ -23,7 +23,7 @@ namespace myria { namespace mtl {
 
 			auto strongCall(TransactionContext* ctx, StrongCache& c, StrongStore &s, std::true_type*) const {
 				typedef typename std::decay<decltype(run_ast_strong(ctx,c,s,t))>::type R;
-				s.emplace_ovrt<R>(store_id,run_ast_strong(ctx,c,s,t));
+				s.emplace<R>(store_id,run_ast_strong(ctx,c,s,t));
 				return true;
 			}
 
@@ -38,7 +38,7 @@ namespace myria { namespace mtl {
 
 			auto causalCall(TransactionContext* ctx, CausalCache& c, CausalStore &s,std::true_type*) const {
 				typedef typename std::decay<decltype(run_ast_causal(ctx,c,s,t))>::type R;
-				s.emplace_ovrt<R>(store_id,run_ast_causal(ctx,c,s,t));
+				s.emplace<R>(store_id,run_ast_causal(ctx,c,s,t));
 				return true;
 			}
 

@@ -4,7 +4,6 @@
 #include "Operate_macros.hpp"
 #include "ConExpr.hpp"
 #include "RefTemporary.hpp"
-#include "Context.hpp"
 
 namespace myria { namespace mtl {
 
@@ -112,21 +111,21 @@ namespace myria { namespace mtl {
 
 		template<typename T>
 		auto trans_op_arg(TransactionContext *ctx, StrongCache& c, const StrongStore& s, const T& t) {
-			auto prev_ctx = context::current_context(c);
+			assert(ctx);
+			auto prev_ctx = ctx->execution_context;
 			constexpr bool op_mode = is_handle<run_result<std::decay_t<decltype(t)> > >::value &&
 				!is_preserve<std::decay_t<decltype(t)> >::value;
 			constexpr bool data_mode = is_preserve<std::decay_t<decltype(t)> >::value;
 			if (op_mode)
-				context::set_context(c,context::t::operation);
+				ctx->execution_context = context::t::operation;
 			else if (data_mode)
-				context::set_context(c,context::t::data);
-
+				ctx->execution_context = context::t::data;
 	
 			run_ast_strong(ctx,c,s,t);
 
 	
 			if (op_mode || data_mode)
-				context::set_context(c,prev_ctx);
+				ctx->execution_context = prev_ctx;
 
 			assert(ctx);
 			return constify(extract_robj_p(*ctx,cached(c,t)));
@@ -153,10 +152,11 @@ namespace myria { namespace mtl {
 
 		template<typename T>
 		void run_ast_strong(TransactionContext *ctx, StrongCache &a, const StrongStore &b, const Preserve<T> &t){
-			auto prev = context::current_context(a);
-			context::set_context(a,context::t::data);
+			assert(ctx);
+			auto prev = ctx->execution_context;
+			ctx->execution_context = context::t::data;
 			run_ast_strong(ctx,a,b,t.t);
-			context::set_context(a,prev);
+			ctx->execution_context = prev;
 		}
 
 		template<typename F>
@@ -171,17 +171,18 @@ namespace myria { namespace mtl {
 		template<typename Cache, typename Store, typename... T>
 		void run_strong_helper(TransactionContext *tctx, Cache& c, Store &s, const T& ...t){
 			effect_map([&](const auto &t){
-					auto prev_ctx = context::current_context(c);
+					assert(tctx);
+					auto prev_ctx = tctx->execution_context;
 					constexpr bool op_mode = is_handle<run_result<std::decay_t<decltype(*t)> > >::value &&
 						!is_preserve<std::decay_t<decltype(*t)> >::value;
 					constexpr bool data_mode = is_preserve<std::decay_t<decltype(*t)> >::value;
 					if (op_mode)
-						context::set_context(c,context::t::operation);
+						tctx->execution_context = context::t::operation;
 					else if (data_mode)
-						context::set_context(c,context::t::data);
+						tctx->execution_context = context::t::data;
 					run_ast_strong(tctx,c,s,*t);
 					if (op_mode || data_mode)
-						context::set_context(c,prev_ctx);
+						tctx->execution_context = prev_ctx;
 				},t...);
 		}
 

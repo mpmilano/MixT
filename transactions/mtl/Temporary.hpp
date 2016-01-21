@@ -52,19 +52,21 @@ namespace myria { namespace mtl {
 				//expression to which this temporary is being assigned drefs a handle,
 				//that this target expression will actually change the context back to
 				//something more appropriate.
-				auto prev = context::current_context(c);
-				if (is_handle<R>::value) context::set_context(c,context::t::data);
+				assert(ctx);
+				auto prev = ctx->execution_context;
+				if (is_handle<R>::value) ctx->execution_context = context::t::data;
 				s.emplace<R>(store_id, run_ast_strong(ctx,c,s,t));
-				if (is_handle<R>::value) context::set_context(c,prev);
+				if (is_handle<R>::value) ctx->execution_context = prev;
 				return true;
 			}
 
 			void strongCall(TransactionContext* ctx, StrongCache& c, const StrongStore &s, std::false_type*) const {
 				typedef typename std::decay<decltype(run_ast_strong(ctx,c,s,t))>::type R;
-				auto prev = context::current_context(c);
-				if (is_handle<R>::value) context::set_context(c,context::t::data);
+				auto prev = ctx->execution_context;
+				assert(ctx);
+				if (is_handle<R>::value) ctx->execution_context = context::t::data;
 				run_ast_strong(ctx,c,s,t);
-				if (is_handle<R>::value) context::set_context(c,prev);
+				if (is_handle<R>::value) ctx->execution_context = prev;
 			}
 
 			auto causalCall(TransactionContext* ctx, CausalCache& c, CausalStore &s) const {

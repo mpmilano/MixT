@@ -19,7 +19,15 @@ namespace myria {
 			virtual bool store_commit() = 0;
 		};
 
+		namespace context{
+			
+			enum class t{
+				unknown, read, write, operation, data, validity
+					};
+		}
+
 		struct TransactionContext {
+			context::t execution_context = context::t::unknown;
 			std::unique_ptr<tracker::TrackingContext> trackingContext;
 			std::unique_ptr<StoreContext<Level::strong> > strongContext{nullptr};
 			std::unique_ptr<StoreContext<Level::causal> > causalContext{nullptr};

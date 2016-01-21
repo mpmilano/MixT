@@ -10,7 +10,6 @@
 #include "TempBuilder.hpp"
 #include "FreeExpr.hpp"
 #include "Assignment.hpp"
-#include "Context.hpp"
 #include "Tracker.hpp"
 
 
@@ -49,9 +48,8 @@ namespace myria { namespace mtl {
 
 							
 							//this loop finds all stores, calls begin_transaction on them exactly once,
-							//and sets their participating RemoteObjects' current transaction pointers.
-							
-							set_context(caches,context::t::unknown);
+							//and sets their participating RemoteObjects' current transaction pointers.							
+
 							//nobody should be in a transaction yet
 							assert(trk.get_StrongStore().in_transaction() ?
 								   [](){static bool first_transaction = true;

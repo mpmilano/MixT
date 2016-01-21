@@ -96,20 +96,21 @@ namespace myria { namespace mtl {
 			void strongCall(TransactionContext *ctx, StrongCache& cache, const StrongStore &heap,std::false_type*) const{
 				foreach(params,[&](const auto &e){
 						assert(!is_cached(cache,e) || is_handle<std::decay_t<decltype(e)> >::value);
-				
-						auto prev_ctx = context::current_context(cache);
+
+						assert(ctx);
+						auto prev_ctx = ctx->execution_context;
 						constexpr bool read_mode = is_handle<run_result<std::decay_t<decltype(e)> > >::value &&
 							!is_preserve<std::decay_t<decltype(e)> >::value;
 						constexpr bool data_mode = is_preserve<std::decay_t<decltype(e)> >::value;
 						if (read_mode)
-							context::set_context(cache,context::t::read);
+							ctx->execution_context = context::t::read;
 						else if (data_mode)
-							context::set_context(cache,context::t::data);
-				
+							ctx->execution_context = context::t::data;
+						
 						run_ast_strong(ctx,cache,heap,e);
 				
 						if (read_mode || data_mode)
-							context::set_context(cache,prev_ctx);
+							ctx->execution_context = prev_ctx;
 
 					});
 

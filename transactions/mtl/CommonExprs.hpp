@@ -1,7 +1,6 @@
 #pragma once
 #include "ConExpr.hpp"
 #include "../BitSet.hpp"
-#include "Context.hpp"
 
 namespace myria { namespace mtl {
 
@@ -469,10 +468,11 @@ namespace myria { namespace mtl {
 			bool causalCall(TransactionContext* ctx, CausalCache& cache, const CausalStore& s) const {
 				if (cache.contains(this->id) ) return cache.get<bool>(this->id);
 				else {
-					auto prev = context::current_context(cache);
-					context::set_context(cache,context::t::validity);
+					assert(ctx);
+					auto prev = ctx->execution_context;
+					ctx->execution_context = context::t::validity;
 					bool ret = run_ast_causal(ctx,cache,s,t).isValid(ctx);
-					context::set_context(cache,prev);
+					ctx->execution_context = prev;
 					cache.insert(this->id,ret);
 					return ret;
 				}
@@ -484,10 +484,10 @@ namespace myria { namespace mtl {
 			}
 
 			bool strongCall(TransactionContext* ctx, StrongCache& cache, const StrongStore&s, std::true_type*) const {
-				auto prev = context::current_context(cache);
-				context::set_context(cache,context::t::validity);
+				auto prev = ctx->execution_context;
+				ctx->execution_context = context::t::validity;
 				bool ret = run_ast_strong(ctx,cache,s,t).isValid(ctx);
-				context::set_context(cache,prev);
+				ctx->execution_context = prev;
 				cache.insert(this->id,ret);
 				return ret;
 			}

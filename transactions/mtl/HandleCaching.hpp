@@ -50,7 +50,8 @@ namespace myria { namespace mtl {
 		template<HandleAccess ha, typename T>
 		Handle<Level::strong,ha,T> run_ast_strong(TransactionContext* tctx, const StrongCache& c, const StrongStore&, const Handle<Level::strong,ha,T>& _h) {
 
-			auto ctx = context::current_context(c);
+			assert(tctx);
+			auto ctx = tctx->execution_context;
 			auto h = _h.clone();
 
 			assert(ctx != context::t::unknown);

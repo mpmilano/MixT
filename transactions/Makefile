@@ -3,7 +3,7 @@ IP_quad=`ifconfig | sed s/broadcast.*//g | tr " " "\n" | grep 128.84 | rev | sed
 storeList='pgsql::SQLStore<Level::strong>, pgsql::SQLStore<Level::causal>'
 clangFlags= -I$(PWD) -I$(PWD)/mtl -I$(PWD)/mutils -I$(PWD)/pgsql -I$(PWD)/tracker -g -stdlib=libc++ --std=c++14 -Wall -ferror-limit=1 -DNUM_CAUSAL_GROUPS="4" -DSTORE_LIST=$(storeList) -DMY_IP=\"$(MY_IP)\" -DCACHE_PORT=$(CACHE_PORT) -DMAX_THREADS=$(MAX_THREADS) -DDECLARED_OPERATIONS="template<Level l2> DECLARE_OPERATION(Increment, RemoteObject<l2,int>*) template<Level l2, typename T> DECLARE_OPERATION(Insert, RemoteObject<l2,std::set<T> >*, const T& ) "
 linkFlags= -stdlib=libc++ --std=c++14 -lpqxx -lm -pthread
-object_files=FutureFreePool.o CooperativeCache.o Ends.o utils.o Tracker.o Ostreams.o SerializationSupport.o WhileBuilder.o ConExpr.o Context.o SQLStore.o TempBuilder.o TransactionBasics.o
+object_files=FutureFreePool.o CooperativeCache.o Ends.o utils.o Tracker.o Ostreams.o SerializationSupport.o WhileBuilder.o ConExpr.o SQLStore.o TempBuilder.o TransactionBasics.o
 export IP_quad
 export TRANS_DIR
 export clangFlags
@@ -63,8 +63,6 @@ SerializationSupport.o:
 	clang++ -c */SerializationSupport.cpp $(clangFlags)
 SQLStore.o:
 	clang++ -c */SQLStore.cpp -DNUM_CAUSAL_MASTERS="2" -DCAUSAL_GROUP=$(causalGroup) $(clangFlags)
-Context.o:
-	clang++ -c */Context.cpp $(clangFlags)
 TempBuilder.o:
 	clang++ -c */TempBuilder.cpp $(clangFlags)
 ConExpr.o:
@@ -82,10 +80,10 @@ run: test
 debug: test
 	PGHOST='127.0.0.1' PGPORT='5432' PGDATABASE='DataStore' PGUSER='research' PGPASSWORD='swimsand'  gdb ./test
 
-testing: utils.o Tracker.o SerializationSupport.o WhileBuilder.o ConExpr.o Context.o SQLStore.o TempBuilder.o
+testing: utils.o Tracker.o SerializationSupport.o WhileBuilder.o ConExpr.o SQLStore.o TempBuilder.o
 	export TRANS_DIR=$(TRANS_DIR); $(MAKE) -C tests
 
-sql_testing: utils.o Tracker.o SerializationSupport.o WhileBuilder.o ConExpr.o Context.o SQLStore.o TempBuilder.o
+sql_testing: utils.o Tracker.o SerializationSupport.o WhileBuilder.o ConExpr.o SQLStore.o TempBuilder.o
 	export TRANS_DIR=$(TRANS_DIR); cd tests && $(MAKE) sql
 
 
