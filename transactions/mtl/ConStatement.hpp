@@ -44,7 +44,7 @@ namespace myria { namespace mtl {
 
 		template<typename... T>
 		auto environment_expressions(const std::tuple<T...> &params){
-			return fold(params,
+			return mutils::fold(params,
 						[](const auto &e, const auto &acc){
 							return std::tuple_cat(mtl::environment_expressions(e),acc);
 						}

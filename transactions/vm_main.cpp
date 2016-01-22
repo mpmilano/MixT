@@ -125,11 +125,11 @@ int main(){
 					for(int tmp2 = 0; tmp2 < 10; ++tmp2){
 						try{
 							if ((name % mod_constant) == 0){
-								TRANSACTION(
+								TRANSACTION(hndl,
 									do_op(Increment,hndl)
 									)
 							}
-							else TRANSACTION(
+							else TRANSACTION(hndl,
 								let_remote(tmp) = hndl IN(mtl_ignore(tmp))
 								)
 							auto end = high_resolution_clock::now() - launch_clock;

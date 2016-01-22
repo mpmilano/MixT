@@ -68,6 +68,7 @@ namespace myria { namespace mtl{
 				assert(ctx);
 				assert(ctx->parameter);
 				T &ret = *((T*)ctx->parameter);
+				assert(!cache.contains(this->id));
 				cache.insert(this->id,ret);
 				return ret;
 			}

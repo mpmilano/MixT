@@ -19,7 +19,7 @@
 #define TRANS_SEQ(...) TRANS_SEQ_IMPL(VA_NARGS(__VA_ARGS__), __VA_ARGS__)
 
 
-#define TRANSACTION(capture_name,args...) { using capture_t = std::decay_t<decltype(capture_name) >; static const auto this_transaction = [capture_name = EnvironmentExpression<capture_t>{}](){using namespace mtl; using namespace mutils; mtl::TransactionBuilder<std::tuple<> > prev; TRANS_SEQ(args, END_TRANSACTION(capture_t))}(); this_transaction(&capture_name);}
+#define TRANSACTION(capture_name,args...) { using capture_t = std::decay_t<decltype(capture_name) >; static const auto this_transaction = [capture_name = EnvironmentExpression<capture_t>{}](){using namespace mtl; using namespace mutils; mtl::TransactionBuilder<std::tuple<> > prev; TRANS_SEQ(args, END_TRANSACTION(capture_t))}(); std::cout << this_transaction<<std::endl; this_transaction(&capture_name);}
 
 //change these - mutable can use, just not dref.
 #define let(x) [&]() { auto decl = MutDeclaration(#x); auto x = (mtl::MutAssigner(#x)
