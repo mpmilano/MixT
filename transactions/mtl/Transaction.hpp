@@ -11,10 +11,20 @@
 #include "FreeExpr.hpp"
 #include "Assignment.hpp"
 #include "Tracker.hpp"
-
+#include "EnvironmentExpression.hpp"
 
 namespace myria { namespace mtl {
 
+		struct StrongFailureError: mutils::StaticMyriaException<MACRO_GET_STR("Error: Commit failure on strong portion") >{};
+		
+		struct CannotProceedError : mutils::MyriaException{
+			const std::string why;
+			CannotProceedError(decltype(why) w):why(w){}
+			const char* what() const _NOEXCEPT {
+				return why.c_str();
+			}
+		};
+		
 		template<typename T>
 		struct Transaction{
 			const std::function<bool (T const * const)> action;
@@ -104,22 +114,15 @@ namespace myria { namespace mtl {
 				{}
 
 			Transaction(const Transaction&) = delete;
-
+			Transaction(const Transaction&& t):action(std::move(t.action)),print(std::move(t.print)){}
+			
 			bool operator()(T const * const t) const {
 				return action(t);
 			}
-
-			struct StrongFailureError: mutils::StaticMyriaException<MACRO_GET_STR("Error: Commit failure on strong portion") >{};
-
-			struct CannotProceedError : mutils::MyriaException{
-				const std::string why;
-				CannotProceedError(decltype(why) w):why(w){}
-				const char* what() const _NOEXCEPT {
-					return why.c_str();
-				}
-			};
-			struct SerializationFailure : mutils::StaticMyriaException<MACRO_GET_STR("Error: Serialization Failure")> {};
-			struct ClassCastException : mutils::StaticMyriaException<MACRO_GET_STR("Error: Class Cast Exception")> {};
+			
 		};
+		
+		struct SerializationFailure : mutils::StaticMyriaException<MACRO_GET_STR("Error: Serialization Failure")> {};
+		struct ClassCastException : mutils::StaticMyriaException<MACRO_GET_STR("Error: Class Cast Exception")> {};
 
 	} }

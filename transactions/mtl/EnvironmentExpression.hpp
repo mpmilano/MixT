@@ -39,9 +39,6 @@ Summary:
  - instead we'll go with queue option; assign parameters to Hetero queue (probably tuple-backed)
  - which is member of TransactionContext and is itself passed around.
 
-
-Dependencies accumulating:
- - transaction's operator() needs to take a T* and assign it to the queue (just one T for now? yes. Macro limitations, seems easy to change later {famous last words})
 //*/
 
 namespace myria { namespace mtl{
@@ -49,14 +46,16 @@ namespace myria { namespace mtl{
 		struct EnvironmentExpression : public ConExpr<T, Level::undef> { //local, so no info-flow restrictions should apply.
 
 			static_assert(!std::is_lvalue_reference<T>::value && !std::is_rvalue_reference<T>::value, "Error: transaction capture only available by value");
-			static_assert(!is_ConExpr<T>::value, "Error: environment capture for use on *external* resources.  Come on man.");
+			static_assert(!is_AST_Expr<T>::value, "Error: environment capture for use on *external* resources.  Come on man.");
+
+			using t = T;
 			
 			const int id = mutils::gensym();
 			EnvironmentExpression(){}
 			EnvironmentExpression(const EnvironmentExpression& n){}
 
 			auto environment_expressions() const {
-				return *this;
+				return std::tuple<EnvironmentExpression>{*this};
 			}
 
 			auto causalCall(TransactionContext* ctx, CausalCache& cache, const CausalStore& s) const {

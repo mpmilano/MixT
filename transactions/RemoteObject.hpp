@@ -9,7 +9,7 @@
 namespace myria{
 
 	namespace mtl {
-		struct Transaction;
+		template<typename> struct Transaction;
 	}
 
 	namespace tracker {
@@ -66,7 +66,7 @@ namespace myria{
 		static std::unique_ptr<RemoteObject> from_bytes(char const * _v); 
 
 
-		friend struct mtl::Transaction;
+		template<typename> friend struct mtl::Transaction;
 		friend class tracker::Tracker;
 
 	};

@@ -138,7 +138,7 @@ int main(){
 							<< ((name % mod_constant) == 0 ? " read/write" : " read") << std::endl;
 							break;
 						}
-						catch(const Transaction::SerializationFailure &r){
+						catch(const SerializationFailure &r){
 							log_messages << "serialization failure: "
 							<< duration_cast<microseconds>(high_resolution_clock::now()
 														   - launch_clock).count() - start_time

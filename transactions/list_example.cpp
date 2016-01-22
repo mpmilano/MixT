@@ -39,8 +39,8 @@ int main() {
 	auto h = WeakCons::build_list(nullptr,fss,fsc,12,13,14);
 
 	assert(h.get(nullptr).val.get(nullptr) == 14);
-	TRANSACTION(
-		let(hd) = {h} IN (
+	TRANSACTION(h,
+		let(hd) = h IN (
 			WHILE (isValid(hd)) DO(
 				print_str("loop"),
 				print_str("hd"),

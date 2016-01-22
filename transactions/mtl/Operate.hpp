@@ -132,13 +132,13 @@ namespace myria { namespace mtl {
 		}
 
 		template<typename T, restrict(is_ConExpr<T>::value)>
-		auto handles_helper_2(const T &t){
+		auto env_expr_helper_2(const T &t){
 			return mtl::environment_expressions(t);
 		}
 
 		template<typename... T>
-		auto handles_helper(const T&... t){
-			auto ret = std::tuple_cat(handles_helper_2(*t)...);
+		auto env_expr_helper(const T&... t){
+			auto ret = std::tuple_cat(env_expr_helper_2(*t)...);
 			static_assert(std::tuple_size<decltype(ret)>::value > 0,
 						  "Error: operation call with no handles");
 			assert(std::tuple_size<decltype(ret)>::value > 0);

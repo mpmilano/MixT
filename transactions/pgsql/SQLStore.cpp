@@ -32,8 +32,8 @@ namespace myria{ namespace pgsql {
 #define default_sqltransaction_catch									\
 		catch(const pqxx::pqxx_exception &r){							\
 			commit_on_delete = false;									\
-			if (is_serialize_error(r)) throw mtl::Transaction::SerializationFailure{}; \
-			else throw mtl::Transaction::CannotProceedError{r.base().what() /*+ mutils::show_backtrace()*/}; \
+			if (is_serialize_error(r)) throw mtl::SerializationFailure{}; \
+			else throw mtl::CannotProceedError{r.base().what() /*+ mutils::show_backtrace()*/}; \
 		}
 
 	

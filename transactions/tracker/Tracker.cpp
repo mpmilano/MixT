@@ -305,7 +305,7 @@ namespace myria { namespace tracker {
 						always_failed = false;
 						break;
 					}
-					catch(const mtl::Transaction::CannotProceedError&){
+					catch(const mtl::CannotProceedError&){
 						this_thread::sleep_for(sleep_time);
 						sleep_time *= 2;
 						//assume we picked a bad nonce, try again

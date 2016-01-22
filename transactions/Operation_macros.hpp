@@ -22,7 +22,7 @@
 										"Did you actually implement this operation?"); \
 								 return ret;							\
 						 }												\
-							 catch (mtl::Transaction::ClassCastException e){ \
+							 catch (mtl::ClassCastException e){ \
 								 return tuple_cons(def,accum);			\
 							 }											\
 							 },std::tuple<>());							\

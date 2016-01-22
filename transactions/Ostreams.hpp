@@ -93,7 +93,10 @@ namespace myria{
 					  << "){" << i.then << "}";
 		}
 
-		std::ostream & operator<<(std::ostream &os, mtl::Transaction& t);
+		template<typename T>
+		std::ostream & operator<<(std::ostream &os, mtl::Transaction<T>& t){
+			return t.print(os);
+		}
 
 		template<Level l, typename i>
 		std::ostream & operator<<(std::ostream &os, const mtl::CSConstant<l,i>& c){

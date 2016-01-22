@@ -11,7 +11,7 @@ namespace myria {
 
 	namespace mtl {
 
-		struct Transaction;
+		template<typename> struct Transaction;
 
 		template<Level l>
 		struct StoreContext{
@@ -56,7 +56,7 @@ namespace myria {
 
 			template<typename T>
 			TransactionContext(T const * const param, decltype(causalContext) cc, decltype(trackingContext) trackingContext)
-				:parameter(param)trackingContext(std::move(trackingContext)),causalContext(std::move(cc))
+				:parameter(param),trackingContext(std::move(trackingContext)),causalContext(std::move(cc))
 				{}
 			
 			bool full_commit();
@@ -85,6 +85,6 @@ namespace myria {
 				else if (!committed) abortContext();
 			}
 
-			friend struct Transaction;
+			template<typename> friend struct Transaction;
 		};
 	} }

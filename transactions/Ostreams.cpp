@@ -14,12 +14,7 @@ namespace myria{
 		return "aaaaaa";
 	}
 
-	namespace mtl {
-	
-		std::ostream & operator<<(std::ostream &os, Transaction& t){
-			//see Transaction.hpp
-			return t.print(os);
-		}
+	namespace mtl {	
 
 		std::ostream & operator<<(std::ostream &os, const Print_Str& op){
 			return os << "print " << op.t << std::endl;

@@ -8,10 +8,10 @@ namespace myria { namespace mtl {
 			if (strongContext){
 				try {
 					if (!strongContext->store_commit()){
-						throw Transaction::StrongFailureError();
+						throw StrongFailureError();
 					}
 				} catch (...){
-					throw Transaction::StrongFailureError();
+					throw StrongFailureError();
 				}
 			}
 			auto ret = (causalContext ? causalContext->store_commit(): true);

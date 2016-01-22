@@ -25,7 +25,7 @@ namespace myria{
 		template<typename>
 		struct get_level;
 
-		struct Transaction;
+		template<typename> struct Transaction;
 
 		template<HandleAccess ha2, typename T2>
 		Handle<Level::strong,ha2,T2> run_ast_causal(TransactionContext *ctx, const mtl::CausalCache& cache, const mtl::CausalStore &, const Handle<Level::strong,ha2,T2>& h);
@@ -114,7 +114,7 @@ namespace myria{
 			choose_strong<l> choice {nullptr};
 			assert(_ro->store().level == l);
 			assert(tc || !_ro->store().in_transaction());
-			auto owner = (tc ? nullptr : std::make_unique<mtl::TransactionContext>(_ro->store().begin_transaction(),tracker.generateContext()));
+			auto owner = (tc ? nullptr : std::make_unique<mtl::TransactionContext>((void*)nullptr,_ro->store().begin_transaction(),tracker.generateContext()));
 			if (owner) owner->commit_on_delete = true;
 			auto &ctx = (owner ? *owner : *tc);
 			assert(ctx.trackingContext);
@@ -145,7 +145,7 @@ namespace myria{
 		void put(mtl::TransactionContext *tc, const T& t){
 			choose_strong<l> choice{nullptr};
 			assert(tc || !_ro->store().in_transaction());
-			auto owner = (tc ? nullptr : std::make_unique<mtl::TransactionContext>(_ro->store().begin_transaction(),tracker.generateContext()));
+			auto owner = (tc ? nullptr : std::make_unique<mtl::TransactionContext>(nullptr,_ro->store().begin_transaction(),tracker.generateContext()));
 			if (owner) owner->commit_on_delete = true;
 			auto &ctx = (owner ? *owner : *tc);
 			assert(ctx.trackingContext);
@@ -215,7 +215,7 @@ namespace myria{
 		template<Level l2, HandleAccess ha2, typename T2>
 		friend struct Handle;
 
-		friend struct mtl::Transaction;
+		template<typename> friend struct mtl::Transaction;
 
 	private:
 		static void do_onwrite(mtl::TransactionContext &tc, tracker::Tracker &tr, RemoteObject<Level::strong,T> &ro){
@@ -234,7 +234,8 @@ namespace myria{
 			std::shared_ptr<RemoteObject<l,T> > sp(rop);
 			Handle<l,HA,T> ret(sp);
 			assert(tc || !rop->store().in_transaction());
-			auto owner = (tc ? nullptr : std::make_unique<mtl::TransactionContext>(rop->store().begin_transaction(),ret.tracker.generateContext()));
+			//make a transaction with no environment expressions for only the requested store
+			auto owner = (tc ? nullptr : std::make_unique<mtl::TransactionContext>((void*)nullptr,rop->store().begin_transaction(),ret.tracker.generateContext()));
 			if (owner) owner->commit_on_delete = true;
 			auto &ctx = (tc ? *tc : *owner);
 			do_onwrite(ctx,ret.tracker,*rop);

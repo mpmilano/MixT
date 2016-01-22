@@ -16,7 +16,7 @@ struct Eiger{
 		const T& get() const {
 			if (cache_valid) return local_cached;
 			else if (current_transaction){
-				throw Transaction::CannotProceedError();
+				throw CannotProceedError();
 			}
 			//do some underlying eiger-specific fetch.
 		}

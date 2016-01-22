@@ -115,7 +115,7 @@ namespace myria { namespace pgsql {
 					assert(l2 == l);
 					return ret;
 				}
-				else throw mtl::Transaction::ClassCastException();
+				else throw mtl::ClassCastException();
 			}
 	
 			template<typename T, restrict(!(is_RemoteObj_ptr<T>::value))>
