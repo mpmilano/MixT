@@ -10,16 +10,7 @@
 #define TRANS_CONS(x...) {auto curr = x ;{ auto prev2 = append(prev,curr); { auto prev = prev2;
 #define STANDARD_BEGIN(x...) (x);
 
-#define END_TRNS_STRT mtl::Transaction ____transaction(prev);
-#define END_TRNS_CALL ____transaction();
-
-#ifdef PRINT_TRANS
-#define END_TRANSACTION END_TRNS_STRT std::cout << ____transaction << std::endl << "all done printing" << std::endl; END_TRNS_CALL
-#endif
-
-#ifndef PRINT_TRANS
-#define END_TRANSACTION END_TRNS_STRT END_TRNS_CALL
-#endif
+#define END_TRANSACTION return mtl::Transaction{prev}; 
 
 #include "trans_seq_generated.hpp"
 
@@ -28,7 +19,7 @@
 #define TRANS_SEQ(...) TRANS_SEQ_IMPL(VA_NARGS(__VA_ARGS__), __VA_ARGS__)
 
 
-#define TRANSACTION(args...) { using namespace mtl; using namespace mutils; mtl::TransactionBuilder<std::tuple<> > prev; TRANS_SEQ(args, END_TRANSACTION)}
+#define TRANSACTION(capture_name,args...) { static const auto captured = env_expr(&capture_name); static const auto this_transaction = [capture_name = captured](){using namespace mtl; using namespace mutils; mtl::TransactionBuilder<std::tuple<> > prev; TRANS_SEQ(args, END_TRANSACTION)}(); this_transaction(&capture_name);}
 
 //change these - mutable can use, just not dref.
 #define let(x) [&]() { auto decl = MutDeclaration(#x); auto x = (mtl::MutAssigner(#x)
