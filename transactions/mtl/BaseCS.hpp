@@ -21,7 +21,7 @@ namespace myria { namespace mtl {
 				else return false;
 			}
 
-			std::tuple<> handles() const {
+			std::tuple<> environment_expressions() const {
 				return std::tuple<>();
 			}
 
@@ -72,8 +72,8 @@ namespace myria { namespace mtl {
 				else return false;
 			}
 
-			auto handles() const {
-				return mtl::handles(t);
+			auto environment_expressions() const {
+				return mtl::environment_expressions(t);
 			}
 
 			bool strongCall(TransactionContext* ctx, StrongCache& c, const StrongStore& s) const {

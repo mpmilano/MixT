@@ -16,26 +16,26 @@ namespace myria { namespace mtl {
 		struct is_ConExpr;
 
 		template<Level l, HandleAccess ha, typename T>
-		auto handles(const Handle<l,ha,T>& h) {
-			return std::make_tuple(h);
+		auto environment_expressions(const Handle<l,ha,T>& h) {
+			return std::tuple<>{};
 		}
 
 		template<typename T>
-		std::enable_if_t<std::is_scalar<T>::value, std::tuple<> > handles(const T&){
+		std::enable_if_t<std::is_scalar<T>::value, std::tuple<> > environment_expressions(const T&){
 			return std::tuple<>();
 		}
 
 
 		template<typename T, restrict(is_ConExpr<T>::value && !std::is_scalar<T>::value)>
-		auto handles(const T &e){
-			return e.handles();
+		auto environment_expressions(const T &e){
+			return e.environment_expressions();
 		}
 
 		template<typename... T>
-		auto handles(const std::tuple<T...> &params){
+		auto environment_expressions(const std::tuple<T...> &params){
 			return fold(params,
 						[](const auto &e, const auto &acc){
-							return std::tuple_cat(mtl::handles(e),acc);
+							return std::tuple_cat(mtl::environment_expressions(e),acc);
 						}
 						,std::tuple<>());
 		}
@@ -117,9 +117,9 @@ namespace myria { namespace mtl {
 		}
 
 		template<typename... T>
-		auto stmt_handles(const std::tuple<T...> &cs){
+		auto stmt_environment_expressions(const std::tuple<T...> &cs){
 			return mutils::fold(cs,[](const auto &e, const auto &acc){
-					return std::tuple_cat(e.handles(),acc);
+					return std::tuple_cat(e.environment_expressions(),acc);
 				},
 				std::tuple<>());
 		}

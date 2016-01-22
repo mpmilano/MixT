@@ -28,6 +28,7 @@ namespace myria {
 
 		struct TransactionContext {
 			context::t execution_context = context::t::unknown;
+			void const * const parameter; //yay safety?
 			std::unique_ptr<tracker::TrackingContext> trackingContext;
 			std::unique_ptr<StoreContext<Level::strong> > strongContext{nullptr};
 			std::unique_ptr<StoreContext<Level::causal> > causalContext{nullptr};
@@ -41,18 +42,21 @@ namespace myria {
 			bool committed = false;
 
 		public:
-			TransactionContext(decltype(trackingContext) trackingContext)
-				:trackingContext(std::move(trackingContext))
+			template<typename T>
+			TransactionContext(T const * const param, decltype(trackingContext) trackingContext)
+				:parameter(param),trackingContext(std::move(trackingContext))
 				{}
 
 			TransactionContext(const TransactionContext&) = delete;
 
-			TransactionContext(decltype(strongContext) sc, decltype(trackingContext) trackingContext)
-				:trackingContext(std::move(trackingContext)),strongContext(std::move(sc))
+			template<typename T>
+			TransactionContext(T const * const param, decltype(strongContext) sc, decltype(trackingContext) trackingContext)
+				:parameter(param),trackingContext(std::move(trackingContext)),strongContext(std::move(sc))
 				{}
 
-			TransactionContext(decltype(causalContext) cc, decltype(trackingContext) trackingContext)
-				:trackingContext(std::move(trackingContext)),causalContext(std::move(cc))
+			template<typename T>
+			TransactionContext(T const * const param, decltype(causalContext) cc, decltype(trackingContext) trackingContext)
+				:parameter(param)trackingContext(std::move(trackingContext)),causalContext(std::move(cc))
 				{}
 			
 			bool full_commit();

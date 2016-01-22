@@ -128,7 +128,7 @@ namespace myria { namespace mtl {
 		template<Level l>
 		struct DummyConExpr : public ConExpr<void,l> {
 
-			std::tuple<> handles() const {
+			std::tuple<> environment_expressions() const {
 				static std::tuple<> ret;
 				return ret;
 			}

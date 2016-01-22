@@ -20,8 +20,8 @@ namespace myria { namespace mtl {
 				else return false;
 			}
 
-			auto handles() const {
-				return mtl::handles(t);
+			auto environment_expressions() const {
+				return mtl::environment_expressions(t);
 			}
 
 			bool strongCall(TransactionContext* ctx, StrongCache& a, const StrongStore& b) const {

@@ -73,8 +73,8 @@ namespace myria { namespace mtl {
 					static_assert(level::value == get_level<FreeExpr>::value, "Error: FreeExpr level determined inconsistently");
 				}
 
-			auto handles() const {
-				return mtl::handles(params);
+			auto environment_expressions() const {
+				return mtl::environment_expressions(params);
 			}
 	
 			auto strongCall(TransactionContext *ctx, StrongCache& cache, const StrongStore &heap) const{

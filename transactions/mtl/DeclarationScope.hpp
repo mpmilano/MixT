@@ -18,11 +18,11 @@ namespace myria { namespace mtl {
 			DeclarationScope(const DeclarationScope& ds):
 				name(ds.name),gt(ds.gt),cs(ds.cs){}
 
-			auto handles() const {
+			auto environment_expressions() const {
 				assert(gt);
 				return std::tuple_cat(
-					gt_handles(gt.get()),
-					stmt_handles(cs));
+					gt_environment_expressions(gt.get()),
+					stmt_environment_expressions(cs));
 			}
 
 			bool strongCall(TransactionContext* ctx, StrongCache& c, StrongStore &s) const {

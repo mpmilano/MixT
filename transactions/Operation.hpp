@@ -72,7 +72,7 @@ namespace myria {
 
 	template<typename T>
 	auto handles_helper_2(const Preserve<T>& t){
-		return mtl::handles(t.t);
+		return mtl::environment_expressions(t.t);
 	}
 
 	template<typename C, typename T>

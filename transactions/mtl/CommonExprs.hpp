@@ -26,7 +26,7 @@ namespace myria { namespace mtl {
 				return val;
 			}
 
-			std::tuple<> handles() const {
+			std::tuple<> environment_expressions() const {
 				static std::tuple<> ret;
 				return ret;
 			}
@@ -78,8 +78,8 @@ namespace myria { namespace mtl {
 			Sum(const T& l, const V& r):l(l),r(r){}
 			Sum(const Sum& s):l(s.l),r(s.r){}
 
-			auto handles() const {
-				return std::tuple_cat(mtl::handles(l),mtl::handles(r));
+			auto environment_expressions() const {
+				return std::tuple_cat(mtl::environment_expressions(l),mtl::environment_expressions(r));
 			}
 
 			auto causalCall(TransactionContext* ctx, CausalCache& cache, const CausalStore& s) const {
@@ -160,8 +160,8 @@ namespace myria { namespace mtl {
 			Equals(const T& l, const V& r):l(l),r(r){}
 			Equals(const Equals& e):l(e.l),r(e.r){}
 
-			auto handles() const {
-				return std::tuple_cat(mtl::handles(l),mtl::handles(r));
+			auto environment_expressions() const {
+				return std::tuple_cat(mtl::environment_expressions(l),mtl::environment_expressions(r));
 			}
 
 			auto causalCall(TransactionContext* ctx, CausalCache& cache, const CausalStore& s) const {
@@ -237,8 +237,8 @@ namespace myria { namespace mtl {
 			BinaryOr(const T& l, const V& r):l(l),r(r){}
 			BinaryOr(const BinaryOr& b):l(b.l),r(b.r){}
 
-			auto handles() const {
-				return std::tuple_cat(mtl::handles(l),mtl::handles(r));
+			auto environment_expressions() const {
+				return std::tuple_cat(mtl::environment_expressions(l),mtl::environment_expressions(r));
 			}
 
 			bool causalCall(TransactionContext* ctx, CausalCache& cache, const CausalStore& s) const {
@@ -313,8 +313,8 @@ namespace myria { namespace mtl {
 			BinaryAnd(const T& l, const V& r):l(l),r(r){}
 			BinaryAnd(const BinaryAnd &ba):l(ba.l),r(ba.r){}
 
-			auto handles() const {
-				return std::tuple_cat(mtl::handles(l),mtl::handles(r));
+			auto environment_expressions() const {
+				return std::tuple_cat(mtl::environment_expressions(l),mtl::environment_expressions(r));
 			}
 
 			bool causalCall(TransactionContext* ctx, CausalCache& cache, const CausalStore& s) const {
@@ -388,8 +388,8 @@ namespace myria { namespace mtl {
 			Not(const T& t):v(t){}
 			Not(const Not& n):v(n.v){}
 
-			auto handles() const {
-				return v.handles();
+			auto environment_expressions() const {
+				return v.environment_expressions();
 			}
 
 			bool causalCall(TransactionContext* ctx, CausalCache& cache, const CausalStore& s) const {
@@ -461,8 +461,8 @@ namespace myria { namespace mtl {
 			IsValid(const T &t):t(t){}
 			IsValid(const IsValid &i):t(i.t){}
 
-			auto handles() const {
-				return mtl::handles(t);
+			auto environment_expressions() const {
+				return mtl::environment_expressions(t);
 			}
 
 			bool causalCall(TransactionContext* ctx, CausalCache& cache, const CausalStore& s) const {

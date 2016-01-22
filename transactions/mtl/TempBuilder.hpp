@@ -30,12 +30,12 @@ namespace myria { namespace mtl {
 		}
 
 		template<unsigned long long ID, Level l, typename T>
-		auto gt_handles(Temporary<ID,l,T> const * const tmp){
+		auto gt_environment_expressions(Temporary<ID,l,T> const * const tmp){
 			assert(tmp);
-			return tmp->handles();
+			return tmp->environment_expressions();
 		}
 
-		std::tuple<> gt_handles(std::nullptr_t const * const);
+		std::tuple<> gt_environment_expressions(std::nullptr_t const * const);
 
 
 		template<unsigned long long ID, unsigned long long ID2,

@@ -15,16 +15,16 @@
 
 namespace myria { namespace mtl {
 
-
+		template<typename T>
 		struct Transaction{
-			const std::function<bool ()> action;
+			const std::function<bool (T const * const)> action;
 			const std::function<std::ostream & (std::ostream &os)> print;
 			
 		public:
 	
 			template<typename Cmds>
 			Transaction(const TransactionBuilder<Cmds> &s):
-				action([s]() -> bool{
+				action([s, env_exprs = mtl::environment_expressions(s.curr)](T const * const param) -> bool{
 
 						debug_forbid_copy = true;
 						mutils::AtScopeEnd ase{[](){debug_forbid_copy = false;}};
@@ -35,7 +35,9 @@ namespace myria { namespace mtl {
 						//in a special way, they do that for themselves.
 
 						auto& trk = tracker::Tracker::global_tracker();
-						TransactionContext ctx{trk.generateContext()};
+						TransactionContext ctx{*param,trk.generateContext()};
+
+						const std::tuple<EnvironmentExpression<T> > &justCheckingType = env_exprs;
 
 						StrongCache caches;
 						StrongStore stores;
@@ -103,8 +105,8 @@ namespace myria { namespace mtl {
 
 			Transaction(const Transaction&) = delete;
 
-			bool operator()() const {
-				return action();
+			bool operator()(T const * const t) const {
+				return action(t);
 			}
 
 			struct StrongFailureError: mutils::StaticMyriaException<MACRO_GET_STR("Error: Commit failure on strong portion") >{};
@@ -119,8 +121,5 @@ namespace myria { namespace mtl {
 			struct SerializationFailure : mutils::StaticMyriaException<MACRO_GET_STR("Error: Serialization Failure")> {};
 			struct ClassCastException : mutils::StaticMyriaException<MACRO_GET_STR("Error: Class Cast Exception")> {};
 		};
-
-
-
 
 	} }

@@ -29,8 +29,8 @@ namespace myria { namespace mtl {
 				return RefTemporary(t,name,id);
 			}
 
-			auto handles() const {
-				return t.handles();
+			auto environment_expressions() const {
+				return t.environment_expressions();
 			}
 
 			auto strongCall(TransactionContext* ctx, StrongCache& cache, const StrongStore &s) const {

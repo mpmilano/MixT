@@ -12,8 +12,8 @@ namespace myria { namespace mtl {
 			TemporaryMutation(const std::string &name, int id, const T& t)
 				:name(name),store_id(id),t(t) {}
 
-			auto handles() const {
-				return mtl::handles(t);
+			auto environment_expressions() const {
+				return mtl::environment_expressions(t);
 			}
 	
 			auto strongCall(TransactionContext* ctx, StrongCache& c, StrongStore &s) const {

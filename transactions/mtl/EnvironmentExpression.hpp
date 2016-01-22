@@ -34,7 +34,7 @@ Query: Are we even using handles anymore?  Could repurpose for this.  Answer: We
 
 Summary: 
  - restrict transactions to eliminate environment capture
- - collect EnvironmentExpression via handles() mechanisms
+ - collect EnvironmentExpression via environment_expressions() mechanisms
  - assign parameters before beginning of transaction execution. ERROR: Const.
  - instead we'll go with queue option; assign parameters to Hetero queue (probably tuple-backed)
  - which is member of TransactionContext and is itself passed around.
@@ -52,12 +52,11 @@ namespace myria { namespace mtl{
 			static_assert(!is_ConExpr<T>::value, "Error: environment capture for use on *external* resources.  Come on man.");
 			
 			const int id = mutils::gensym();
-			T* v;
 			EnvironmentExpression(){}
-			EnvironmentExpression(const EnvironmentExpression& n):v(n.v){}
+			EnvironmentExpression(const EnvironmentExpression& n){}
 
-			auto handles() const {
-				return v.handles();
+			auto environment_expressions() const {
+				return *this;
 			}
 
 			auto causalCall(TransactionContext* ctx, CausalCache& cache, const CausalStore& s) const {
@@ -67,8 +66,9 @@ namespace myria { namespace mtl{
 			}
 
 			auto strongCall(TransactionContext* ctx, StrongCache& cache, const StrongStore& s) const {
-				assert(v);
-				auto ret = *v;
+				assert(ctx);
+				assert(ctx->parameter);
+				T &ret = *((T*)ctx->parameter);
 				cache.insert(this->id,ret);
 				return ret;
 			}

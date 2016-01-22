@@ -41,8 +41,8 @@ namespace myria { namespace mtl {
 					static_assert(std::is_same<HDref<Expr>, T>::value, "Error: Assignment of incompatible types (no subtyping applies here)" );
 				}
 
-			auto handles() const{
-				return mtl::handles(e);
+			auto environment_expressions() const{
+				return mtl::environment_expressions(e);
 			}
 
 			bool strongCall(TransactionContext* ctx, StrongCache& c, const StrongStore &s) const {

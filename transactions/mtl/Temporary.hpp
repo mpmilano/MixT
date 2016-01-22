@@ -35,8 +35,8 @@ namespace myria { namespace mtl {
 				static_assert(get_level<Temporary>::value == get_level<T>::value,"error: you overrode get_level wrong for Temporaries");
 			}
 
-			auto handles() const {
-				return mtl::handles(t);
+			auto environment_expressions() const {
+				return mtl::environment_expressions(t);
 			}
 
 			auto strongCall(TransactionContext* ctx, StrongCache& c, StrongStore &s) const {

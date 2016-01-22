@@ -38,8 +38,8 @@ namespace myria { namespace mtl {
 			While(const While& w)
 				:cond(w.cond),then(w.then){}
 
-			auto handles() const {
-				return std::tuple_cat(mtl::handles(cond), stmt_handles(then));
+			auto environment_expressions() const {
+				return std::tuple_cat(mtl::environment_expressions(cond), stmt_environment_expressions(then));
 			}
 
 			bool strongCall(TransactionContext* ctx, StrongCache& c, StrongStore &s) const {

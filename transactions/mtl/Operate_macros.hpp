@@ -63,7 +63,7 @@
 				argcnt_on_each_alphabet(n,shared_copy)					\
 				/*arg(shared_copy(a))*/{}								\
 																		\
-			auto handles() const {										\
+			auto environment_expressions() const {										\
 				return handles_helper(argcnt(n));						\
 																		\
 			}															\

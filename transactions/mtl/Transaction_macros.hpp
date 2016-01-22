@@ -10,7 +10,7 @@
 #define TRANS_CONS(x...) {auto curr = x ;{ auto prev2 = append(prev,curr); { auto prev = prev2;
 #define STANDARD_BEGIN(x...) (x);
 
-#define END_TRANSACTION return mtl::Transaction{prev}; 
+#define END_TRANSACTION return mtl::Transaction<decltype(std::decay_t<capture_name>)>{prev}; 
 
 #include "trans_seq_generated.hpp"
 

@@ -12,7 +12,7 @@ namespace myria { namespace mtl {
 			return true;
 		}
 
-		std::tuple<> gt_handles(std::nullptr_t const * const){
+		std::tuple<> gt_environment_expressions(std::nullptr_t const * const){
 			assert(false && "cannot retrieve handles, replacement failed!");
 		}
 
