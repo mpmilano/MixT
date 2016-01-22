@@ -35,7 +35,7 @@ namespace myria { namespace mtl {
 			template<typename Cmds>
 			Transaction(const TransactionBuilder<Cmds> &s):
 				action([s, env_exprs = mtl::environment_expressions(s.curr)](T const * const param) -> bool{
-
+						
 						debug_forbid_copy = true;
 						mutils::AtScopeEnd ase{[](){debug_forbid_copy = false;}};
 						discard(ase);
@@ -45,9 +45,10 @@ namespace myria { namespace mtl {
 						//in a special way, they do that for themselves.
 
 						auto& trk = tracker::Tracker::global_tracker();
-						TransactionContext ctx{*param,trk.generateContext()};
+						TransactionContext ctx{param,trk.generateContext()};
 
-						const std::tuple<EnvironmentExpression<T> > &justCheckingType = env_exprs;
+						static_assert(std::is_same<std::decay_t<decltype(std::get<0>(env_exprs))>,EnvironmentExpression<T> >::value,
+									  "Type error on Transaction parameter!");
 
 						StrongCache caches;
 						StrongStore stores;
@@ -111,7 +112,8 @@ namespace myria { namespace mtl {
 						os << "done printing AST!" << std::endl;
 						return os;
 					})
-				{}
+				{
+				}
 
 			Transaction(const Transaction&) = delete;
 			Transaction(const Transaction&& t):action(std::move(t.action)),print(std::move(t.print)){}

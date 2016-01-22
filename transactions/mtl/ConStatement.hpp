@@ -15,6 +15,17 @@ namespace myria { namespace mtl {
 		template<typename>
 		struct is_ConExpr;
 
+		template<typename>
+		struct is_ConStatement;
+
+		template<typename T>
+		using is_AST_Expr = typename std::integral_constant<
+			bool,
+			is_ConExpr<T>::value &&
+			!std::is_scalar<T>::value &&
+			!is_handle<T>::value >::type;
+
+
 		template<Level l, HandleAccess ha, typename T>
 		auto environment_expressions(const Handle<l,ha,T>& h) {
 			return std::tuple<>{};
@@ -26,7 +37,7 @@ namespace myria { namespace mtl {
 		}
 
 
-		template<typename T, restrict(is_AST_Expr<T>::value)>
+		template<typename T, restrict(is_AST_Expr<T>::value || is_ConStatement<T>::value)>
 		auto environment_expressions(const T &e){
 			return e.environment_expressions();
 		}

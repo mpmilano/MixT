@@ -98,6 +98,11 @@ namespace myria{
 			return t.print(os);
 		}
 
+		template<typename i2>
+		std::ostream & operator<<(std::ostream &os, const EnvironmentExpression<i2>&){
+			return os << "evironment_expression<" << mutils::type_name<i2>() << ">";
+		}
+
 		template<Level l, typename i>
 		std::ostream & operator<<(std::ostream &os, const mtl::CSConstant<l,i>& c){
 			return os << c.val;

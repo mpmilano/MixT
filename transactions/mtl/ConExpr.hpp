@@ -271,14 +271,6 @@ namespace myria { namespace mtl {
 		template<unsigned long long id>
 		struct contains_temporary<id,bool> : std::false_type {};
 
-
-		template<typename T>
-		using is_AST_Expr = typename std::integral_constant<
-			bool,
-			is_ConExpr<T>::value &&
-			!std::is_scalar<T>::value &&
-			!is_handle<T>::value >::type;
-
 		template<typename T, restrict(std::is_scalar<T>::value)>
 		T extract_type_f(T *t){
 			assert(false);

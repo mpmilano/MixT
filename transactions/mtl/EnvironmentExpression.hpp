@@ -87,11 +87,7 @@ namespace myria { namespace mtl{
 
 		//TODO: figure out why this needs to be here
 		template<typename T>
-		struct is_ConExpr<EnvironmentExpression<T> > : std::true_type {};
- 
-		template<typename T>
-		EnvironmentExpression<T> env_expr(T const * const){
-			return EnvironmentExpression<T>{};
-		}
+		struct is_ConExpr<EnvironmentExpression<T> > : std::true_type {}; 
+
 	}
 }

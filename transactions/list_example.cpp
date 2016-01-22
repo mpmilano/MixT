@@ -25,7 +25,6 @@ std::ostream & operator<<(std::ostream &os, const WeakCons& wc){
 	return os << "WeakCons{ " << wc.val << ", " << wc.next << "}";
 }
 
-
 int main() {
 
 	try {
@@ -39,7 +38,8 @@ int main() {
 	auto h = WeakCons::build_list(nullptr,fss,fsc,12,13,14);
 
 	assert(h.get(nullptr).val.get(nullptr) == 14);
-	TRANSACTION(h,
+	auto do_test = [](auto h){
+		TRANSACTION(h,
 		let(hd) = h IN (
 			WHILE (isValid(hd)) DO(
 				print_str("loop"),
@@ -54,10 +54,18 @@ int main() {
 					hd = $(tmp,next)
 					))
 			)
-		); //*/
+			);}; //*/
+	do_test(h);
 
 	std::cout << h.get(nullptr).val.get(nullptr) << std::endl;
 	assert(h.get(nullptr).val.get(nullptr) == 15);
+
+	auto h2 = WeakCons::build_list(nullptr,fss,fsc,18,19,20);
+	
+	do_test(h2);
+	std::cout << h2.get(nullptr).val.get(nullptr) << std::endl;
+	assert(h2.get(nullptr).val.get(nullptr) == 21);
+	
 	return 0;
 
 	}
