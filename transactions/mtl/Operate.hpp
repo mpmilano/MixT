@@ -140,7 +140,7 @@ namespace myria { namespace mtl {
 		auto env_expr_helper(const T&... t){
 			auto ret = std::tuple_cat(env_expr_helper_2(*t)...);
 			static_assert(std::tuple_size<decltype(ret)>::value > 0,
-						  "Error: operation call with no handles");
+						  "Error: operation call with no parameters");
 			assert(std::tuple_size<decltype(ret)>::value > 0);
 			return ret;
 		}

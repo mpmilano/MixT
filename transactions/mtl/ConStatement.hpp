@@ -26,7 +26,7 @@ namespace myria { namespace mtl {
 		}
 
 
-		template<typename T, restrict(is_ConExpr<T>::value && !std::is_scalar<T>::value)>
+		template<typename T, restrict(is_AST_Expr<T>::value)>
 		auto environment_expressions(const T &e){
 			return e.environment_expressions();
 		}
