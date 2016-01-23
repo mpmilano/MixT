@@ -125,9 +125,53 @@ int main(){
 					for(int tmp2 = 0; tmp2 < 10; ++tmp2){
 						try{
 							if (true && (name % mod_constant) == 0){
+								/*
 								TRANSACTION(hndl,
 									do_op(Increment,hndl)
-									)
+									)//*/
+								using capture_t = std::decay_t<decltype(hndl) >;
+								static const auto this_transaction = [hndl = EnvironmentExpression<capture_t>{}]()
+								{
+									using namespace mtl; using namespace mutils;
+									mtl::TransactionBuilder<std::tuple<> > prev; {
+										auto curr = ([&](){
+												auto a = hndl;;
+												using FindUsage = FindUsages<decltype (a)>;
+												struct OperateImpl : public FindUsage, public ConStatement<min_level_dref<decltype (a)>::value >{
+													const int id = gensym();
+													const std::shared_ptr<decltype(a)> arg1;
+													const std::string name = "Increment";
+													OperateImpl(const decltype(a) &a )
+														: FindUsage(a), arg1(shared_copy(a)) {}
+													auto environment_expressions() const { return env_expr_helper(arg1); }
+													auto strongCall(mtl::TransactionContext* ctx , StrongCache& c , const StrongStore &s , std::true_type*) const {
+														assert(false && "failed on choice 1");
+														auto is_this_forced = trans_op_arg(ctx,c,s, *arg1);
+														auto ret = make_PreOp(id,Increment(ctx,is_this_forced)) (c,*ctx, arg1);
+														c.emplace<decltype(ret)>(id,ret); return ret;
+													}
+													void strongCall(mtl::TransactionContext* ctx , StrongCache& c , const StrongStore &s , std::false_type*) const {
+														assert(false && "failed on choice 2");
+													}
+													auto strongCall(mtl::TransactionContext* ctx , StrongCache& c , const StrongStore &s) const {
+														run_strong_helper(ctx,c,s,arg1);
+														choose_strong<get_level<OperateImpl>::value> choice{nullptr};
+														return strongCall(ctx,c,s,choice);
+													}
+													auto causalCall(mtl::TransactionContext* ctx , CausalCache& c , const CausalStore &s) const {
+														run_causal_helper(ctx,c,s,arg1);
+														using R = decltype(make_PreOp(id,Increment(ctx,trans_op_arg(ctx,c,s, *arg1))) (c,*ctx,arg1));
+														if(runs_with_strong(get_level<OperateImpl>::value))
+															return c.template get<R>(id);
+														else return make_PreOp(id,Increment(ctx,trans_op_arg(ctx,c,s, *arg1))) (c,*ctx, arg1);
+													}
+												}; OperateImpl r{a};
+												return r;
+											} ()); ;
+										{ auto prev2 = append(prev,curr);
+											{ auto prev = prev2;
+												return mtl::Transaction<capture_t>{prev};}}}}();
+								this_transaction(&hndl);
 							}
 							else TRANSACTION(hndl,
 								let_remote(tmp) = hndl IN(mtl_ignore(tmp))
