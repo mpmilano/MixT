@@ -1,3 +1,4 @@
+#pragma once
 #define UNW_LOCAL_ONLY
 #include <cxxabi.h>
 #include <libunwind.h>

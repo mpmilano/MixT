@@ -94,7 +94,7 @@ namespace myria{
 		}
 
 		template<typename T>
-		std::ostream & operator<<(std::ostream &os, mtl::Transaction<T>& t){
+		std::ostream & operator<<(std::ostream &os, const mtl::Transaction<T>& t){
 			return t.print(os);
 		}
 

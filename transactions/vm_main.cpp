@@ -124,7 +124,7 @@ int main(){
 
 					for(int tmp2 = 0; tmp2 < 10; ++tmp2){
 						try{
-							if ((name % mod_constant) == 0){
+							if (true && (name % mod_constant) == 0){
 								TRANSACTION(hndl,
 									do_op(Increment,hndl)
 									)
@@ -188,7 +188,7 @@ int main(){
 	auto &p = *powner;
 	auto start = high_resolution_clock::now();
 
-	auto bound = [&](){return (high_resolution_clock::now() - start) < 15s;};
+	auto bound = [&](){return (high_resolution_clock::now() - start) < 60s;};
 
 	//log printer
 	using future_list = std::list<std::future<std::unique_ptr<std::string> > >;
