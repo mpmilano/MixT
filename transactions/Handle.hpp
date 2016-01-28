@@ -88,7 +88,8 @@ namespace myria{
 				return sizeof(bool);
 			}
 
-			assert(from_bytes(v));
+			auto b = from_bytes(v);
+			assert(b);
 		}
 
 		int bytes_size_hndl() const {

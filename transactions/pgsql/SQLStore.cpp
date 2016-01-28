@@ -118,7 +118,8 @@ namespace myria{ namespace pgsql {
 					->exec(l == Level::strong ?
 						   "SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL SERIALIZABLE"
 						   : "SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL REPEATABLE READ");
-				assert(t->store_commit());
+				auto cres = t->store_commit();
+				assert(cres);
 			}
 
 		unique_ptr<SQLTransaction> SQLStore_impl::begin_transaction()

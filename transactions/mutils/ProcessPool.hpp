@@ -31,7 +31,8 @@ namespace mutils{
 			template<typename A, typename... Elts>
 			auto _populate_arg(const ct::tuple<std::shared_ptr<A>, std::shared_ptr<Elts>... > &arg){
 				int size = -1;
-				assert(read(parent_to_child[0],&size,sizeof(size)) > 0);
+				auto readres = read(parent_to_child[0],&size,sizeof(size));
+				assert(readres > 0);
 				std::vector<char> recv (size);
 				if (read(parent_to_child[0],recv.data(),size) <= 0)
 					throw ReadError{};
@@ -52,7 +53,8 @@ namespace mutils{
 			void writeBackResult(const Ret &ret){
 				int size = bytes_size(ret);
 				std::vector<char> bytes(size);
-				assert(bytes.size() == to_bytes(ret,bytes.data()));
+				auto tbs = to_bytes(ret,bytes.data());
+				assert(bytes.size() == tbs);
 				write(child_to_parent[1],&size,sizeof(size));
 				write(child_to_parent[1],bytes.data(),size);
 			}
@@ -70,7 +72,8 @@ namespace mutils{
 				int name;
 				try{
 					while (read(parent_to_child[0],&command,sizeof(command)) > 0){
-						assert(read(parent_to_child[0],&name,sizeof(name)) > 0);
+						auto readres = read(parent_to_child[0],&name,sizeof(name));
+						assert(readres > 0);
 						auto args = populate_arg(ct::tuple<std::shared_ptr<Arg>...>{});
 						try{
 							auto ret = callFunc(behaviorOnPointers,
@@ -92,7 +95,8 @@ namespace mutils{
 			void _command(const Arg1 & arg, const Arg2 & ... rest){
 				int size = bytes_size(arg);
 				std::vector<char> bytes(size);
-				assert(bytes.size() == to_bytes(arg,bytes.data()));
+				auto tbs = to_bytes(arg,bytes.data());
+				assert(bytes.size() == tbs);
 				write(parent_to_child[1],&size,sizeof(size));
 				write(parent_to_child[1],bytes.data(),size);
 				_command(rest...);

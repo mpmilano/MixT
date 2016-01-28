@@ -45,6 +45,8 @@ namespace myria { namespace tracker {
    - size of obj
    - obj
 */
+
+#define fail_on_false(a...) {auto bawef = a; assert(bawef);}
 		namespace {
 		
 			void respond_to_request(std::shared_ptr<std::mutex> m, std::shared_ptr<CooperativeCache::cache_t> cache, int socket){
@@ -61,20 +63,20 @@ namespace myria { namespace tracker {
 						CooperativeCache::lock l{*m};
 						o = cache->at(requested);
 					}
-					assert(write(socket,&b,sizeof(b)) >= 0);
+					fail_on_false(write(socket,&b,sizeof(b)) >= 0);
 					int size = o.size();
-					assert(write(socket,&(size),sizeof(&(size))) >= 0);
+					fail_on_false(write(socket,&(size),sizeof(&(size))) >= 0);
 					for (auto &m : o){
-						assert(write(socket,&(m.first),sizeof(m.first)) >= 0);
+						fail_on_false(write(socket,&(m.first),sizeof(m.first)) >= 0);
 						for (auto i : m.second){
-							assert(write(socket,&i,sizeof(i)) >= 0);
+							fail_on_false(write(socket,&i,sizeof(i)) >= 0);
 						}
 						auto s = m.third.size();
-						assert(write(socket,&(s),sizeof(s)) >= 0);
-						assert(write(socket,m.third.data(),s) >= 0);
+						fail_on_false(write(socket,&(s),sizeof(s)) >= 0);
+						fail_on_false(write(socket,m.third.data(),s) >= 0);
 					}
 				}
-				else assert(write(socket,&b,sizeof(b)) >= 0);
+				else fail_on_false(write(socket,&b,sizeof(b)) >= 0);
 			}
 		}
 		
@@ -186,7 +188,7 @@ namespace myria { namespace tracker {
 							std::cerr << "ERROR on binding" << std::endl;
 							return;
 						}
-						assert(listen(sockfd,50) == 0);
+						fail_on_false(listen(sockfd,50) == 0);
 						clilen = sizeof(cli_addr);
 						AtScopeEnd ase{[&](){close(sockfd);}};
 						constexpr int tp_size2 = tp_size;

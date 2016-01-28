@@ -73,7 +73,8 @@ namespace{
 			vers = -1;
 			auto r = trans.prepared(s,s,id);
 			assert(!r.empty());
-			assert(r[0][0].to(vers));
+			auto res = r[0][0].to(vers);
+			assert(res);
 			assert(vers != -1);
 		}
 
@@ -159,10 +160,14 @@ namespace{
 			auto &s = v.at((int)t);
 			auto r = trans.prepared(s.first,s.second,id);
 			assert(!r.empty());
-			assert(r[0][0].to(vers[0]));
-			assert(r[0][1].to(vers[1]));
-			assert(r[0][2].to(vers[2]));
-			assert(r[0][3].to(vers[3]));
+			auto res1 = r[0][0].to(vers[0]);
+			assert(res1);
+			auto res2 = r[0][1].to(vers[1]);
+			assert(res2);
+			auto res3 = r[0][2].to(vers[2]);
+			assert(res3);
+			auto res4 = r[0][3].to(vers[3]);
+			assert(res4);
 			assert(vers[2] < 30);
 		}
 		

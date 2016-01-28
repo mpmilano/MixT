@@ -60,7 +60,8 @@ namespace mutils{
 
 	template<typename T, restrict(std::is_trivially_copyable<T>::value)>
 	int to_bytes(const T &t, char* v){
-		assert(memcpy(v,&t,sizeof(T)));
+		auto res = memcpy(v,&t,sizeof(T));
+		assert(res);
 		return sizeof(T);
 	}
 
