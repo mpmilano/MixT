@@ -1,6 +1,5 @@
 #pragma once
 #include "CommonExprs.hpp"
-#include "backtrace.hpp"
 
 /*
 
@@ -65,23 +64,7 @@ namespace myria { namespace mtl{
 				return cache.get<T>(this->id);;
 			}
 
-			auto strongCall(TransactionContext* ctx, StrongCache& cache, const StrongStore& _s) const {
-				StrongStore &s = const_cast<StrongStore&>(_s);
-				if (!s.contains(-2)) s.emplace<int>(-2,0);
-				auto callcount = s.get<int>(-2);
-				if (callcount == 0)
-				{
-					s.emplace<std::string>(-3,mutils::show_backtrace());
-				}
-				if (callcount > 0) {
-					std::cout << "call number " << ++callcount << std::endl << std::endl
-							  << "backtrace for first" << std::endl << std::endl
-							  << s.get<std::string>(-3) << std::endl << std::endl
-							  << "backtrace for second" << std::endl << std::endl
-							  << mutils::show_backtrace() << std::endl << std::endl;
-				}
-				else ++callcount;
-				s.emplace<int>(-2,callcount);
+			auto strongCall(TransactionContext* ctx, StrongCache& cache, const StrongStore& s) const {
 				assert(ctx);
 				assert(ctx->parameter);
 				T &ret = *((T*)ctx->parameter);
