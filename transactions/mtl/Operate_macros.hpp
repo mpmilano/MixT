@@ -76,9 +76,9 @@
 			}															\
 																		\
 			void strongCall(mtl::TransactionContext* ctx CMA StrongCache& c CMA const StrongStore &s CMA std::false_type*) const { \
+				run_strong_helper(ctx,c,s,argcnt(n));					\
 			}															\
 			auto strongCall(mtl::TransactionContext* ctx CMA StrongCache& c CMA  const StrongStore &s) const { \
-				run_strong_helper(ctx,c,s,argcnt(n));					\
 				choose_strong<get_level<OperateImpl>::value> choice{nullptr}; \
 				return strongCall(ctx,c,s,choice);						\
 			}															\
