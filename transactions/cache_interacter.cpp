@@ -35,16 +35,20 @@ using ExtraParam2 = int;
 
 Ret firstFunction(ExtraParam1, ExtraParam2, Param){
 	CooperativeCache cc;
+	std::map<Name,std::pair<Tracker::Clock, std::vector<char> > > testMap;
+	testMap.emplace(2,pair<Tracker::Clock, vector<char> >{{{1,1,1,1}},{'c','a','f','e'}});
 	cc.listen_on(5000);
-	cc.insert(1,{});
+	cc.insert(1,testMap);
 	return make_pair(true,"");
 }
 
 Ret secondFunction(ExtraParam1, ExtraParam2, Param){
 	CooperativeCache cc;
 	future<std::vector<Tracker::StampedObject> > res = cc.get({1,mutils::decode_ip("127.0.0.1")},5000);
-	bool b = (res.get().size() == 0);
-	return make_pair(b,string("Actual size of returned object: ") + to_string(res.get().size()));
+	auto obj = res.get();
+	std::cout << "we received: " << obj << std::endl;
+	assert((obj.front() == Tracker::StampedObject{2,{{1,1,1,1}},{'c','a','f','e'}}));
+	return make_pair(true,"");
 }
 
 int main(){

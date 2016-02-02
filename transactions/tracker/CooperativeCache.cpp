@@ -7,6 +7,7 @@
 #include "ctpl_stl.h"
 #include "CooperativeCache.hpp"
 #include "FutureFreePool.hpp"
+#include "Ostreams.hpp"
 
 using namespace mutils;
 
@@ -38,6 +39,7 @@ namespace myria { namespace tracker {
 
 /* 
    protocol order:
+   - Nonce indicating requested element
    - boolean indicating success
    - int indicating number of messages
    - name
@@ -52,7 +54,7 @@ namespace myria { namespace tracker {
 			void respond_to_request(std::shared_ptr<std::mutex> m, std::shared_ptr<CooperativeCache::cache_t> cache, int socket){
 				AtScopeEnd ase{[&](){close(socket);}}; discard(ase);
 				Tracker::Nonce requested = 0;
-				std::cout << "responding to request" << std::endl;
+				std::cout << "responding to request: expecting to read a request Nonce" << std::endl;
 				int n = read(socket,&requested,sizeof(Tracker::Nonce));
 				if (n < 0) std::cerr << "ERROR reading from socket" << std::endl;
 				assert(n >= 0);
@@ -66,10 +68,12 @@ namespace myria { namespace tracker {
 						CooperativeCache::lock l{*m};
 						o = cache->at(requested);
 					}
+					std::cout << "here is what we found: " << o;
 					fail_on_false(write(socket,&b,sizeof(b)) >= 0);
 					int size = o.size();
+					std::cout << "indicating number of entries which match: " << o.size() << std::endl;
 					fail_on_false(write(socket,&(size),sizeof(&(size))) >= 0);
-					for (auto &m : o){
+					for (const Tracker::StampedObject &m : o){
 						fail_on_false(write(socket,&(m.first),sizeof(m.first)) >= 0);
 						for (auto i : m.second){
 							fail_on_false(write(socket,&i,sizeof(i)) >= 0);
@@ -144,7 +148,12 @@ namespace myria { namespace tracker {
 #define care_read(x...) {int s = sizeof(x); care_read_s(s,x)}
 					
 					
-#define care_assert(x...) if (!(x)) throw ProtocolException(#x);
+#define care_assert(x...) if (!(x)) throw ProtocolException(std::string("Assert failed: ") + #x);
+
+					std::cout << "Connection established: writing nonce" << std::endl;
+					auto tname = tomb.name();
+					fail_on_false(write(sockfd,&tname,sizeof(tname)) >= 0);
+					std::cout << "expecting to read a boolean" << std::endl;
 					bool success = false;
 					int num_messages = 0;
 					care_read(success);
