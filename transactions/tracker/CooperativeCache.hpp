@@ -25,7 +25,13 @@ namespace myria { namespace tracker {
 			void track_with_eviction(Tracker::Nonce, const obj_bundle &);
 		public:
 			struct NetException : public mutils::StaticMyriaException<MACRO_GET_STR("Error! Cooperative Cache Net Exception!")>{};
-			struct ProtocolException : public mutils::StaticMyriaException<MACRO_GET_STR("Error! Cooperative Cache Protocol Exception!")>{};
+			struct ProtocolException : public mutils::MyriaException{
+				std::string emsg;
+				ProtocolException(decltype(emsg) emsg):emsg(emsg){}
+				const char* what() const _NOEXCEPT {
+					return emsg.c_str();
+				}
+			};
 			CooperativeCache();
 			CooperativeCache(const CooperativeCache&) = delete;
 			void insert(Tracker::Nonce, const std::map<Name,std::pair<Tracker::Clock, std::vector<char> > > &map);

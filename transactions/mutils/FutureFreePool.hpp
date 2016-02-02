@@ -24,19 +24,24 @@ namespace mutils{
 		friend class FutureFreePool;
 	};
 
+//TODO: disable when done debugging
+
 	class FutureFreePool{
-		std::shared_ptr<FutureFreePool_impl> inst;
+		//std::shared_ptr<FutureFreePool_impl> inst;
 	public:
 		template<typename ... T>
-		FutureFreePool(T && ... t):inst(new FutureFreePool_impl(inst,std::forward<T>(t)...)){}
-		auto launch (std::function<void (int)> fun){
-			return inst->launch(fun);
+		FutureFreePool(T && ... t)//:inst(new FutureFreePool_impl(inst,std::forward<T>(t)...))
+			{}
+		
+		void launch (std::function<void (int)> fun){
+			std::thread([fun](){fun(-1);}).detach();
+			//return inst->launch(fun);
 		}
 
 		template<typename T>
-		auto take (T fut){
+		void take (T fut){
 			std::shared_ptr<T> hide{new T(std::move(fut))};
-			return inst->launch([hide](int){});
+			launch([hide](int){});
 		}
 	};
 }

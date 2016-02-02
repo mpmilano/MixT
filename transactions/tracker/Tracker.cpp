@@ -257,11 +257,6 @@ namespace myria { namespace tracker {
 		}
 
 		namespace {
-			void write_causal_tombstone(mtl::TransactionContext& ctx, Tracker::Nonce nonce, Tracker::Internals &i){
-				using namespace TDS;
-				const Tracker::Tombstone t {nonce};
-				get<TDS::newTomb>(*i.causalDS)(ctx,*i.registeredCausal,t.name(), t);
-			}
 	
 			int get_ip() {
 				static int ip_addr{[](){
@@ -270,6 +265,12 @@ namespace myria { namespace tracker {
 						return mutils::decode_ip(static_addr);
 					}()};
 				return ip_addr;
+			}
+
+			void write_causal_tombstone(mtl::TransactionContext& ctx, Tracker::Nonce nonce, Tracker::Internals &i){
+				using namespace TDS;
+				const Tracker::Tombstone t {nonce,get_ip()};
+				get<TDS::newTomb>(*i.causalDS)(ctx,*i.registeredCausal,t.name(), t);
 			}
 		}
 

@@ -102,7 +102,8 @@ int main(){
 	exit(0); */
 
 	std::function<std::string (std::function<void* (void*)>, int, unsigned long long)> pool_fun =
-		[ip](std::function<void* (void*) >, int pid, unsigned long long start_time){
+		[ip](std::function<void* (void*) >, int pid, unsigned long long _start_time){
+		microseconds start_time(_start_time);
 		//std::cout << "launching task on pid " << pid << std::endl;
 		//AtScopeEnd em{[pid](){std::cout << "finishing task on pid " << pid << std::endl;}};
 		std::stringstream log_messages;
@@ -134,14 +135,14 @@ int main(){
 								)
 							auto end = high_resolution_clock::now() - launch_clock;
 							log_messages << "duration: " <<
-							duration_cast<microseconds>(end).count() - start_time
-							<< ((name % mod_constant) == 0 ? " read/write" : " read") << std::endl;
+							duration_cast<milliseconds>(end - start_time).count()
+							<< ((name % mod_constant) == 0 ? "ms read/write" : "ms read") << std::endl;
 							break;
 						}
 						catch(const SerializationFailure &r){
 							log_messages << "serialization failure: "
-							<< duration_cast<microseconds>(high_resolution_clock::now()
-														   - launch_clock).count() - start_time
+							<< duration_cast<milliseconds>(high_resolution_clock::now()
+														   - launch_clock - start_time).count()
 							<< std::endl;
 							continue;
 						}
@@ -208,7 +209,7 @@ int main(){
 	
 	std::cout << "beginning subtask generation loop" << std::endl;
 	while (bound()){
-		std::this_thread::sleep_for(getArrivalInterval(20 + 10*int{concurrencySetting}));
+		std::this_thread::sleep_for(getArrivalInterval(4000 + 10*int{concurrencySetting}));
 		futures->emplace_back(launch());
 	}
 	

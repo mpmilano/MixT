@@ -3,8 +3,8 @@
 
 #pragma once
 
-//#define MAKE_CACHE_REQUESTS yay
-//#define ACCEPT_CACHE_REQUESTS yay
+#define MAKE_CACHE_REQUESTS yay
+#define ACCEPT_CACHE_REQUESTS yay
 
 #include "CompactSet.hpp"
 #include "GDataStore.hpp"
@@ -36,9 +36,16 @@ namespace myria {
 			//support structures, metadata.
 			using Nonce = int;
 			struct Tombstone{
-				Nonce nonce;
-				int ip_addr;
+				const Nonce nonce;
+				const int ip_addr;
 				Name name() const;
+
+				/*
+				int to_bytes(char* v) const;
+				int bytes_size() const;
+				static std::unique_ptr<Tombstone> from_bytes(char const* v);
+				Tombstone(Nonce n,int ip):nonce(n),ip_addr(ip){}
+				Tombstone(const Tombstone& t):nonce(t.nonce),ip_addr(t.ip_addr){} //*/
 			};
 
 			using Clock = std::array<int,NUM_CAUSAL_GROUPS>;
@@ -139,7 +146,6 @@ namespace myria {
 			virtual ~Tracker();
 
 			Tracker(const Tracker&) = delete;
-		};
-
+		};		
 
 	}}

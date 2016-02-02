@@ -24,6 +24,12 @@ stress3:  $(object_files) stress_test3.o
 vm: $(object_files) vm_main.o
 	clang++ $(object_files) vm_main.o -o vm $(linkFlags)
 
+cache_test: $(object_files) cache_interacter.o
+	clang++ $(object_files) cache_interacter.o -o cache_test $(linkFlags)
+
+cache_interacter.o:
+	clang++ -c cache_interacter.cpp $(clangFlags)
+
 chat: $(object_files) chat_example.o
 	clang++ $(object_files) chat_example.o -o chat $(linkFlags)
 

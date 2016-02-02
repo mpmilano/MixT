@@ -52,11 +52,14 @@ namespace myria { namespace tracker {
 			void respond_to_request(std::shared_ptr<std::mutex> m, std::shared_ptr<CooperativeCache::cache_t> cache, int socket){
 				AtScopeEnd ase{[&](){close(socket);}}; discard(ase);
 				Tracker::Nonce requested = 0;
+				std::cout << "responding to request" << std::endl;
 				int n = read(socket,&requested,sizeof(Tracker::Nonce));
 				if (n < 0) std::cerr << "ERROR reading from socket" << std::endl;
 				assert(n >= 0);
 				bool b = false;
+				std::cout << "requested: " << requested << std::endl;
 				if (cache->count(requested) > 0){
+					std::cout << "we have it!" << std::endl;
 					b = true;
 					CooperativeCache::obj_bundle o;
 					{
@@ -76,7 +79,10 @@ namespace myria { namespace tracker {
 						fail_on_false(write(socket,m.third.data(),s) >= 0);
 					}
 				}
-				else fail_on_false(write(socket,&b,sizeof(b)) >= 0);
+				else {
+					std::cout << "we don't have it, apologizing" << std::endl;
+					fail_on_false(write(socket,&b,sizeof(b)) >= 0);
+				}
 			}
 		}
 		
@@ -98,6 +104,8 @@ namespace myria { namespace tracker {
 						std::cerr << ("ERROR opening socket") << std::endl;
 						throw NetException{};
 					}
+					linger lingerStruct{0,0};
+					setsockopt(sockfd, SOL_SOCKET, SO_LINGER, (void *)&lingerStruct, sizeof(lingerStruct));
 					
 					AtScopeEnd ase{[&](){close(sockfd);}};
 					discard(ase);
@@ -117,17 +125,26 @@ namespace myria { namespace tracker {
 #define care_read_s(s,x...)												\
 					{													\
 						int n = read(sockfd,&(x),s);					\
-						if (n < 0) throw ProtocolException();			\
+						std::stringstream err;							\
+						if (n < 0) {									\
+							std::stringstream err;						\
+							err << "expected " << s << " bytes, received " << n << " accompanying error: " << std::strerror(errno); \
+							throw ProtocolException(err.str());			\
+						}												\
 						while (n < s) {									\
 							int k = read(sockfd,((char*) &(x)) + n,s-n); \
-							if (k <= 0) throw ProtocolException();		\
+							if (k <= 0) {								\
+							std::stringstream err;						\
+							err << "expected " << s << " bytes, received " << n << " accompanying error: " << std::strerror(errno); \
+							throw ProtocolException(err.str());			\
+							}											\
 							n += k;										\
 						}}
 					
 #define care_read(x...) {int s = sizeof(x); care_read_s(s,x)}
 					
 					
-#define care_assert(x...) if (!(x)) throw ProtocolException();
+#define care_assert(x...) if (!(x)) throw ProtocolException(#x);
 					bool success = false;
 					int num_messages = 0;
 					care_read(success);
@@ -175,6 +192,8 @@ namespace myria { namespace tracker {
 						socklen_t clilen;
 						struct sockaddr_in serv_addr, cli_addr;
 						sockfd = socket(AF_INET, SOCK_STREAM, 0);
+						linger lingerStruct{0,0};
+						setsockopt(sockfd, SOL_SOCKET, SO_LINGER, (void *)&lingerStruct, sizeof(lingerStruct));
 						if (sockfd < 0){
 							std::cerr << "ERROR opening socket" << std::endl;
 							return;
@@ -202,7 +221,7 @@ namespace myria { namespace tracker {
 								continue;
 							}
 							//fork off a new thread to handle the request.
-							pool.launch([&](int){respond_to_request(m,cache,newsockfd);});
+							pool.launch([=](int){respond_to_request(m,cache,newsockfd);});
 						}
 					}
 					catch(const std::exception & e){

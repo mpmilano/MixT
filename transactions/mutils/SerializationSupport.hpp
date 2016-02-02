@@ -69,6 +69,18 @@ namespace mutils{
 	auto bytes_size(const T&){
 		return sizeof(T);
 	}
+	
+	template<typename T, typename V>
+	int to_bytes(const std::pair<T,V> &pair, char* v){
+		auto offset = to_bytes(pair.first,v);
+		auto offset2 = to_bytes(pair.second,v + offset);
+		return offset + offset2;
+	}
+
+	template<typename T, typename V>
+	int bytes_size (const std::pair<T,V> &pair){
+		return bytes_size(pair.first) + bytes_size(pair.second);
+	}
 
 	template<typename T>
 	std::enable_if_t<std::is_same<T,std::string>::value, std::unique_ptr<T> >
@@ -87,9 +99,9 @@ namespace mutils{
 			 restrict2(std::is_trivially_copyable<T>::value)>
 	std::unique_ptr<std::decay_t<T> > from_bytes(char const *v){
 		using T2 = std::decay_t<T>;
-		auto t = std::make_unique<T2>();
 		if (v) {
-			std::memcpy(t.get(),v,sizeof(T));
+			auto t = std::make_unique<T2>(*(T2*)v);
+			//std::memcpy(t.get(),v,sizeof(T));
 			return std::move(t);
 		}
 		else return nullptr;
@@ -125,6 +137,12 @@ namespace mutils{
 	template<typename T>
 	struct is_set<std::set<T> > : std::true_type {};
 
+	template<typename>
+	struct is_pair : std::false_type {};
+
+	template<typename T, typename U>
+	struct is_pair<std::pair<T,U> > : std::true_type {};
+
 	template<typename T>
 	std::unique_ptr<type_check<is_set,T> > from_bytes(char* const _v) {
 		int size = ((int*)_v)[0];
@@ -136,6 +154,15 @@ namespace mutils{
 			r->insert(*e);
 		}
 		return std::move(r);
+	}
+
+	template<typename T>
+	std::unique_ptr<type_check<is_pair,T > > from_bytes(char const * v){
+		using ft = typename T::first_type;
+		using st = typename T::second_type;
+		auto fst = from_bytes<ft>(v);
+		return std::make_unique<std::pair<ft,st> >
+			(*fst, *from_bytes<st>(v + bytes_size(*fst)));
 	}
 
 	template<typename T>
