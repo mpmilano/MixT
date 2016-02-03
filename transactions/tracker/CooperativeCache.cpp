@@ -9,6 +9,13 @@
 #include "FutureFreePool.hpp"
 #include "Ostreams.hpp"
 
+namespace{
+	std::mutex& debugging_lock(){
+		static std::mutex m;
+		return m;
+	}
+}
+
 using namespace mutils;
 
 namespace myria { namespace tracker { 
@@ -54,37 +61,77 @@ namespace myria { namespace tracker {
 			void respond_to_request(std::shared_ptr<std::mutex> m, std::shared_ptr<CooperativeCache::cache_t> cache, int socket){
 				AtScopeEnd ase{[&](){close(socket);}}; discard(ase);
 				Tracker::Nonce requested = 0;
-				std::cout << "responding to request: expecting to read a request Nonce" << std::endl;
 				int n = read(socket,&requested,sizeof(Tracker::Nonce));
+				{
+					CooperativeCache::lock l{debugging_lock()}; 
+				std::cout << "responding to request: hopefully just read a request Nonce" << std::endl;
+				}
+
 				if (n < 0) std::cerr << "ERROR reading from socket" << std::endl;
 				assert(n >= 0);
 				bool b = false;
+				{
+					CooperativeCache::lock l{debugging_lock()}; 
 				std::cout << "requested: " << requested << std::endl;
+				}
 				if (cache->count(requested) > 0){
+					{
+						CooperativeCache::lock l{debugging_lock()}; 
 					std::cout << "we have it!" << std::endl;
+					}
 					b = true;
 					CooperativeCache::obj_bundle o;
 					{
-						CooperativeCache::lock l{*m};
+						CooperativeCache::CooperativeCache::lock l{*m};
 						o = cache->at(requested);
 					}
-					std::cout << "here is what we found: " << o;
-					fail_on_false(write(socket,&b,sizeof(b)) >= 0);
+					{
+						CooperativeCache::lock l{debugging_lock()}; 
+						std::cout << "here is what we found: " << o << std::endl;
+					}
+					{
+						CooperativeCache::lock l{debugging_lock()}; 
+						std::cout << "writing boolean: " << b << " of size " << sizeof(b) << std::endl;
+					}
+#define care_write(x...) fail_on_false(write(socket,&(x),sizeof((x))) == sizeof((x)))
+					care_write(b);
 					int size = o.size();
-					std::cout << "indicating number of entries which match: " << o.size() << std::endl;
-					fail_on_false(write(socket,&(size),sizeof(&(size))) >= 0);
+					{
+						CooperativeCache::lock l{debugging_lock()}; 
+						std::cout << "indicating number of entries which match: " << size << " of size " << sizeof(size) << std::endl;
+					}
+					care_write(size)
 					for (const Tracker::StampedObject &m : o){
-						fail_on_false(write(socket,&(m.first),sizeof(m.first)) >= 0);
-						for (auto i : m.second){
-							fail_on_false(write(socket,&i,sizeof(i)) >= 0);
+						{
+							CooperativeCache::lock l{debugging_lock()};
+							std::cout << "writing name: " << m.first << " of size " << sizeof(m.first) << std::endl;
 						}
-						auto s = m.third.size();
-						fail_on_false(write(socket,&(s),sizeof(s)) >= 0);
-						fail_on_false(write(socket,m.third.data(),s) >= 0);
+						care_write(m.first);
+						for (auto i : m.second){
+							{
+								CooperativeCache::lock l{debugging_lock()}; 
+								std::cout << "writing clock entry: " << i << " of size " << sizeof(i) << std::endl;
+							}
+							care_write(i);
+						}
+						int s = m.third.size();
+						{
+							CooperativeCache::lock l{debugging_lock()}; 
+							std::cout << "writing num bytes in object " << s << " of size " << sizeof(s) << std::endl;
+						}
+						care_write(s);
+						{
+							CooperativeCache::lock l{debugging_lock()}; 
+							std::cout << "writing object" << m.third << std::endl;
+						}
+						fail_on_false(write(socket,m.third.data(),s) == s);
 					}
 				}
 				else {
+					{
+						CooperativeCache::lock l{debugging_lock()}; 
 					std::cout << "we don't have it, apologizing" << std::endl;
+					}
 					fail_on_false(write(socket,&b,sizeof(b)) >= 0);
 				}
 			}
@@ -136,6 +183,8 @@ namespace myria { namespace tracker {
 							throw ProtocolException(err.str());			\
 						}												\
 						while (n < s) {									\
+							std::cout << "WARNING: only got " << n << " bytes, expected " << s << " bytes" <<std::endl; \
+							std::cout << "value read so far: " << (x) << std::endl;	\
 							int k = read(sockfd,((char*) &(x)) + n,s-n); \
 							if (k <= 0) {								\
 							std::stringstream err;						\
@@ -149,31 +198,58 @@ namespace myria { namespace tracker {
 					
 					
 #define care_assert(x...) if (!(x)) throw ProtocolException(std::string("Assert failed: ") + #x);
-
-					std::cout << "Connection established: writing nonce" << std::endl;
+					
 					auto tname = tomb.name();
+					{
+						lock l{debugging_lock()}; 
+						std::cout << "Connection established: writing nonce " << tname << " of size " << sizeof(tname) << std::endl;
+					}
 					fail_on_false(write(sockfd,&tname,sizeof(tname)) >= 0);
-					std::cout << "expecting to read a boolean" << std::endl;
+					
 					bool success = false;
 					int num_messages = 0;
 					care_read(success);
+					{
+						lock l{debugging_lock()}; 
+						std::cout << "hopefully just read to read a boolean: " << success << " of size " << sizeof(success) << std::endl;
+					}
 					care_assert(success);
 					care_read(num_messages);
+					{
+						lock l{debugging_lock()}; 
+						std::cout << "hopefully just read number of objects: " << num_messages << " of size " << sizeof(num_messages) << std::endl;
+					}
 					care_assert(num_messages > 0);
 					obj_bundle ret;
 					for (int i = 0; i < num_messages; ++i){
 						Name name;
 						care_read(name);
+						{
+							lock l{debugging_lock()}; 
+							std::cout << "hopefully just read name: " << name << " of size " << sizeof(name) << std::endl;
+						}
 						Tracker::Clock clock;
 						for (int j = 0; j < clock.size(); ++j){
 							care_read(clock[j]);
+							{
+								lock l{debugging_lock()}; 
+								std::cout << "hopefully just read part of a clock: " << clock[j] << " of size " << sizeof(clock[j]) << std::endl;
+							}
 						}
 						int obj_size;
 						care_read(obj_size);
+						{
+							lock l{debugging_lock()}; 
+							std::cout << "hopefully just read object size: " << obj_size << " of size " << sizeof(obj_size) << std::endl;
+						}
 						std::vector<char> obj(obj_size,0);
 						assert(obj.size() == obj_size);
 						char* bytes = obj.data();
 						care_read_s(obj_size,bytes);
+						{
+							lock l{debugging_lock()}; 
+							std::cout << "grabbed some object bytes: " << obj << std::endl;
+						}
 						ret.emplace_back(name,clock,obj);
 					}
 					{
