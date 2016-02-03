@@ -244,11 +244,12 @@ namespace myria { namespace tracker {
 						}
 						std::vector<char> obj(obj_size,0);
 						assert(obj.size() == obj_size);
-						char* bytes = obj.data();
-						care_read_s(obj_size,bytes);
+						//char bytes[obj_size];
+						care_read_s(obj_size,*obj.data());
 						{
 							lock l{debugging_lock()}; 
-							std::cout << "grabbed some object bytes: " << obj << std::endl;
+							//std::cout << "grabbed some object bytes: " << bytes << std::endl;
+							std::cout << "bytes in a vector : " << obj << std::endl;
 						}
 						ret.emplace_back(name,clock,obj);
 					}
