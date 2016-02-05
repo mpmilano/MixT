@@ -32,6 +32,7 @@ namespace myria { namespace tracker {
 					return emsg.c_str();
 				}
 			};
+			struct CacheMiss : public mutils::StaticMyriaException<MACRO_GET_STR("Cooperative Cache Did not contain the desired object")>{};
 			CooperativeCache();
 			CooperativeCache(const CooperativeCache&) = delete;
 			void insert(Tracker::Nonce, const std::map<Name,std::pair<Tracker::Clock, std::vector<char> > > &map);

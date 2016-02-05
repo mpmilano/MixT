@@ -170,7 +170,7 @@ namespace myria {
 													h.store(),h.name());});
 			mutils::foreach(h_causal_read,
 							[&](const auto &h){
-								h.tracker.waitForRead(h.store(),h.name(),h.remote_object().timestamp());});
+								h.tracker.waitForRead(*ctx.trackingContext,h.store(),h.name(),h.remote_object().timestamp());});
 			//optimization: track timestamps for causal, only check if they've changed.
 			auto causal_pair = mutils::fold(h_causal_read,[](const auto &a, const auto &acc){
 					return mutils::tuple_cons(std::make_pair(a.remote_object().timestamp(),a),acc);},std::tuple<>{});

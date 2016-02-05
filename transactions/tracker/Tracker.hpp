@@ -75,10 +75,12 @@ namespace myria {
 				virtual ~MemoryOwner(){}
 			};
 			std::unique_ptr<MemoryOwner> onRead(
+				TrackingContext&,
 				DataStore<Level::causal>&, Name name, const Clock &version,
 				const std::function<std::unique_ptr<MemoryOwner> ()> &mem,
 				const std::function<void (MemoryOwner&, char const *)> &construct_nd_merge);
 			std::unique_ptr<MemoryOwner> onRead(
+				TrackingContext&,
 				DataStore<Level::strong>&, Name name, const Clock &version,
 				const std::function<std::unique_ptr<MemoryOwner> ()> &mem,
 				const std::function<void (MemoryOwner&, char const *)> &construct_nd_merge);
@@ -122,7 +124,7 @@ namespace myria {
 			//return is non-null when read value cannot be used.
 			template<typename DS, typename T>
 			std::unique_ptr<T>
-			onRead(DS&, Name name,
+			onRead(TrackingContext&, DS&, Name name,
 				   const Clock& version,
 				   std::unique_ptr<T> candidate,
 				   std::unique_ptr<T> (*merge)(std::unique_ptr<T>,
@@ -131,7 +133,7 @@ namespace myria {
 				);
 
 			//for when merging locally is too hard or expensive
-			bool waitForRead(DataStore<Level::causal>&, Name name, const Clock& version);
+			bool waitForRead(TrackingContext&, DataStore<Level::causal>&, Name name, const Clock& version);
 
 			void afterRead(TrackingContext&, DataStore<Level::causal>&, Name name, const Clock& version, const std::vector<char> &data);
 

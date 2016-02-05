@@ -172,7 +172,8 @@ namespace myria { namespace tracker {
 	namespace tracker{
 
 		namespace {
-			void remove_pending(Tracker::Internals &i, const Name &name){
+			void remove_pending(TrackingContext::Internals& ctx, Tracker::Internals &i, const Name &name){
+				ctx.pending_nonces_add.remove_if([&](auto &e){return e.first == name;});
 				i.pending_nonces.erase(name);
 			}
 		}
@@ -350,12 +351,12 @@ namespace myria { namespace tracker {
 
 		namespace{
 
-			bool sleep_on(Tracker::Internals& i, const Name &tomb_name, const int how_long = -1){
+			bool sleep_on(TrackingContext::Internals &ctx, Tracker::Internals& i, const Name &tomb_name, const int how_long = -1){
 				bool first_skip = true;
 				for (int cntr = 0; (cntr < how_long) || how_long == -1; ++cntr){
 					if (get<TDS::exists>(*i.causalDS)(*i.registeredCausal,tomb_name)){
 						if (!first_skip) std::cout << "done waiting" << std::endl;
-						remove_pending(i,tomb_name);
+						remove_pending(ctx,i,tomb_name);
 						return true;
 					}
 					else {
@@ -378,9 +379,9 @@ namespace myria { namespace tracker {
 			}
 
 			template<typename P>
-				std::vector<char> const * const check_applicable(Tracker::Internals &i, Name name, P& p, const Tracker::Clock &v){
+				std::vector<char> const * const wait_for_available(TrackingContext::Internals &ctx, Tracker::Internals &i, Name name, P& p, const Tracker::Clock &v){
 				if (get<TDS::exists>(*i.causalDS)(*i.registeredCausal,p.first)){
-					remove_pending(i,p.first);
+					remove_pending(ctx,i,p.first);
 					return nullptr;
 				}
 				else {
@@ -390,7 +391,7 @@ namespace myria { namespace tracker {
 					}
 					catch (...){
 						//something went wrong with the cooperative caching
-						sleep_on(i,p.first);
+						sleep_on(ctx,i,p.first);
 						return nullptr;
 					}
 				}
@@ -421,7 +422,7 @@ namespace myria { namespace tracker {
 				auto ts = make_lin_metaname(name);
 				if (get<TDS::exists>(*i->strongDS)(ds,ts)){
 					auto tomb = get<TDS::existingTomb>(*i->strongDS)(ds,ts)->get(&sctx);
-					if (!sleep_on(*i,tomb.name(),2)){
+					if (!sleep_on(*tctx.i,*i,tomb.name(),2)){
 						
 						tctx.i->pending_nonces_add.emplace_back
 							(tomb.name(), Bundle{i->cache.get(tomb, cache_port)});
@@ -430,9 +431,17 @@ namespace myria { namespace tracker {
 			}
 		}
 
+#define for_each_pending_nonce(ctx,i,f...)			\
+		{for (auto &p : i->pending_nonces){			\
+			f(p);									\
+		}													\
+		for (auto &p : ctx->pending_nonces_add){			\
+			f(p);											\
+		}}													\
 
+		
 //for when merging locally is too hard or expensive
-		bool Tracker::waitForRead(DataStore<Level::causal>&, Name name, const Clock& version){
+		bool Tracker::waitForRead(TrackingContext &ctx, DataStore<Level::causal>&, Name name, const Clock& version){
 			//TODO: distinctly not thread-safe
 			//if the user called onRead manually and did a merge,
 			//we don't want to wait here.
@@ -447,14 +456,14 @@ namespace myria { namespace tracker {
 			if (tracking_candidate(*i,name,version)) {
 				//need to pause here and wait for nonce availability
 				//for each nonce in the list
-				if (!i->pending_nonces.empty()){
-					for (auto &p : i->pending_nonces){
-						if (check_applicable(*i,name,p,version)){
+				for_each_pending_nonce(ctx.i,i,
+						if (wait_for_available(*ctx.i,*i,name,p,version)){
+							//I know we've gotten a cached version of the object,
+							//but we can't merge it, so we're gonna have to
 							//hang out until we've caught up to the relevant tombstone
-							sleep_on(*i,p.first);
+							sleep_on(*ctx.i,*i,p.first);
 						}
-					}
-				}
+					);
 				return false;
 			}
 			return true;
@@ -471,7 +480,7 @@ namespace myria { namespace tracker {
 
 //for when merging is the order of the day
 		std::unique_ptr<Tracker::MemoryOwner>
-		Tracker::onRead(DataStore<Level::causal>&, Name name, const Clock &version,
+		Tracker::onRead(TrackingContext &ctx, DataStore<Level::causal>&, Name name, const Clock &version,
 						//these functions all better play well together
 						const std::function<std::unique_ptr<MemoryOwner> ()> &mem,
 						const std::function<void (MemoryOwner&, char const *)> &construct_and_merge){
@@ -479,21 +488,29 @@ namespace myria { namespace tracker {
 			if (tracking_candidate(*i,name,version)){
 				//need to pause here and wait for nonce availability
 				//for each nonce in the list
-				if (!i->pending_nonces.empty()){
-					for (auto &p : i->pending_nonces){
-						if (auto* remote_vers = check_applicable(*i,name,p,version)){
-							auto mo = mem();
-							//build + merge real object
-							construct_and_merge(*mo,remote_vers->data());
-							return mo;
+				for_each_pending_nonce(
+					ctx.i,i,
+					if (auto* remote_vers = wait_for_available(*ctx.i,*i,name,p,version)){
+						auto mo = mem();
+						//build + merge real object
+						construct_and_merge(*mo,remote_vers->data());
+						return mo;
+						
+							/**
+							   There are many pending nonces; any of them could be in our tracking set
+							   due to a dependency on this object. Cycle through them until we find one
+							   that is (or fail to find any that are); this one will tell us a place to get
+							   the object from the cooperative cache. Grab the object from the cache there.
+							   If that fails, then too bad; handling that comes later.
+							 */
 						}
-					}
-				}
+					);
 			}
 			return nullptr;
 		}
 		
 		std::unique_ptr<Tracker::MemoryOwner> Tracker::onRead(
+			TrackingContext&,
 			DataStore<Level::strong>&, Name name, const Clock &version,
 			const std::function<std::unique_ptr<MemoryOwner> ()> &mem,
 			const std::function<void (MemoryOwner&, char const *)> &construct_nd_merge){

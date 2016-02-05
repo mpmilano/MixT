@@ -167,7 +167,7 @@ namespace myria { namespace tracker {
 					int num_messages = 0;
 					care_read(success);
 					
-					care_assert(success);
+					if (!success) throw CacheMiss{};
 					care_read(num_messages);
 					
 					care_assert(num_messages > 0);

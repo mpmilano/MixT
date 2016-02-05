@@ -53,7 +53,7 @@ namespace myria { namespace tracker {
 
 		template<typename DS, typename T>
 		std::unique_ptr<T>
-		Tracker::onRead(DS& ds, Name name,
+		Tracker::onRead(TrackingContext &ctx, DS& ds, Name name,
 						const Clock& version,
 						std::unique_ptr<T> candidate,
 						std::unique_ptr<T> (*merge) (std::unique_ptr<T>,
@@ -78,7 +78,7 @@ namespace myria { namespace tracker {
 				o.merged = merge(mutils::from_bytes<T>((char const *) arg),
 								 std::move(o.candidate));
 				}};
-			auto mo = onRead(ds,name,version,mem,c_merge);
+			auto mo = onRead(ctx,ds,name,version,mem,c_merge);
 			if (auto *o = dynamic_cast<Owner*>(mo.get()))
 				return std::move(o->merged);
 			else {
