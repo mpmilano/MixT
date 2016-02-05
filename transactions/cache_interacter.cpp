@@ -48,6 +48,7 @@ Ret secondFunction(ExtraParam1, ExtraParam2, Param){
 	auto obj = res.get();
 	std::cout << "we received: " << obj << std::endl;
 	assert((obj.front() == Tracker::StampedObject{2,{{1,1,1,1}},{'c','a','f','e',0}}));
+	cc.get({12,mutils::decode_ip("127.0.0.1")},5000).get();
 	return make_pair(true,"");
 }
 

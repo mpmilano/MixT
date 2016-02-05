@@ -400,6 +400,7 @@ namespace myria { namespace tracker {
 		
 		void Tracker::afterRead(mtl::StoreContext<Level::strong> &sctx, TrackingContext &tctx, DataStore<Level::strong>& ds, Name name){
 			using update_clock_t = void (*)(StoreContext<Level::strong> &sctx, TrackingContext &tctx, Tracker::Internals &t);
+			
 			static update_clock_t update_clock = [](StoreContext<Level::strong> &sctx, TrackingContext &tctx, Tracker::Internals &t){
 				auto newc = get<TDS::existingClock>(*t.strongDS)(*t.registeredStrong, bigprime_lin)->get(&sctx);
 				assert(ends::prec(t.global_min,newc));
@@ -412,6 +413,7 @@ namespace myria { namespace tracker {
 					tctx.i->tracking_erase.push_back(e);
 				}
 			};
+			
 			assert(&ds == i->registeredStrong);
 			if (!is_lin_metadata(name)){
 				//TODO: reduce frequency of this call.
@@ -419,7 +421,8 @@ namespace myria { namespace tracker {
 				auto ts = make_lin_metaname(name);
 				if (get<TDS::exists>(*i->strongDS)(ds,ts)){
 					auto tomb = get<TDS::existingTomb>(*i->strongDS)(ds,ts)->get(&sctx);
-					while (!sleep_on(*i,tomb.name(),1)){
+					if (!sleep_on(*i,tomb.name(),2)){
+						
 						tctx.i->pending_nonces_add.emplace_back
 							(tomb.name(), Bundle{i->cache.get(tomb, cache_port)});
 					}
