@@ -120,7 +120,7 @@ namespace myria{
 			//If the Transacion Context does not yet exist for this store, we create it now.
 			auto &store_ctx = *ctx.template get_store_context<l>(_ro->store());
 
-			return get(choice,tracker,store_ctx, *ctx.trackingContext, _ro->get(&store_ctx));
+			return get(choice,tracker,store_ctx, *ctx.trackingContext, _ro->get(&store_ctx,&tracker,ctx.trackingContext.get()));
 		}
 	
 		const T& get(std::true_type*, tracker::Tracker& tracker, mtl::StoreContext<l>& ctx, tracker::TrackingContext &trkc, const T& ret) const {
@@ -133,7 +133,7 @@ namespace myria{
 			if (tracker.waitForRead(trkc,_ro->store(),_ro->name(),_ro->timestamp())){
 				return ret;
 			}
-			else return _ro->get(&ctx);
+			else return _ro->get(&ctx,&tracker,&trkc);
 		}
 	
 		Handle clone() const {

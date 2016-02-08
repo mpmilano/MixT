@@ -276,7 +276,7 @@ namespace myria { namespace tracker {
 		}
 
 		void Tracker::onWrite(mtl::TransactionContext& ctx, DataStore<Level::strong>& ds_real, Name name){
-			static const auto write_lin_metadata= [this](mtl::TransactionContext& ctx, DataStore<Level::strong> &ds_real,
+			const auto write_lin_metadata= [this](mtl::TransactionContext& ctx, DataStore<Level::strong> &ds_real,
 													  Name name, Tracker::Nonce nonce, Tracker::Internals& t){
 				auto &sctx = *ctx.template get_store_context<Level::strong>(ds_real);
 				auto meta_name = make_lin_metaname(name);
@@ -398,10 +398,9 @@ namespace myria { namespace tracker {
 		
 		
 		void Tracker::afterRead(mtl::StoreContext<Level::strong> &sctx, TrackingContext &tctx, DataStore<Level::strong>& ds, Name name){
-			using update_clock_t = void (*)(StoreContext<Level::strong> &sctx, TrackingContext &tctx, Tracker::Internals &t);
 			
-			static update_clock_t update_clock = [](StoreContext<Level::strong> &sctx, TrackingContext &tctx, Tracker::Internals &t){
-				auto newc = get<TDS::existingClock>(*t.strongDS)(*t.registeredStrong, bigprime_lin)->get(&sctx);
+			auto update_clock = [this](StoreContext<Level::strong> &sctx, TrackingContext &tctx, Tracker::Internals &t){
+				auto newc = get<TDS::existingClock>(*t.strongDS)(*t.registeredStrong, bigprime_lin)->get(&sctx,this,&tctx);
 				assert(ends::prec(t.global_min,newc));
 				t.global_min = newc;
 				list<Name> to_remove;
@@ -419,7 +418,7 @@ namespace myria { namespace tracker {
 				update_clock(sctx,tctx,*i);
 				auto ts = make_lin_metaname(name);
 				if (get<TDS::exists>(*i->strongDS)(ds,ts)){
-					auto tomb = get<TDS::existingTomb>(*i->strongDS)(ds,ts)->get(&sctx);
+					auto tomb = get<TDS::existingTomb>(*i->strongDS)(ds,ts)->get(&sctx,this,&tctx);
 					if (!sleep_on(*tctx.i,*i,tomb.name(),2)){
 						
 						tctx.i->pending_nonces_add.emplace_back
