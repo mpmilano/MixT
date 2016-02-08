@@ -51,11 +51,8 @@ namespace myria{
 
 	private:
 		const std::shared_ptr<RemoteObject<l,T> > _ro;
-	public:
-		tracker::Tracker &tracker;
 	private:
-		Handle(std::shared_ptr<RemoteObject<l,T> > _ro):_ro(_ro),tracker(tracker::Tracker::global_tracker()){
-			assert(tracker.registered(_ro->store()));
+		Handle(std::shared_ptr<RemoteObject<l,T> > _ro):_ro(_ro){
 			assert(_ro->store().level == l);
 		}
 	public:
@@ -70,8 +67,8 @@ namespace myria{
 			return *_ro;
 		}
 
-		Handle():tracker(tracker::Tracker::global_tracker()) {}
-		Handle(const Handle& h):_ro(h._ro),tracker(tracker::Tracker::global_tracker()){}
+		Handle() {}
+		Handle(const Handle& h):_ro(h._ro){}
 		
 		static constexpr Level level = l;
 		static constexpr HandleAccess ha = HA;
@@ -110,7 +107,7 @@ namespace myria{
 			else return std::make_unique<Handle>();
 		}
 
-		const T& get(mtl::TransactionContext *tc) const {
+		const T& get(tracker::Tracker& tracker, mtl::TransactionContext *tc) const {
 			assert(_ro);
 			choose_strong<l> choice {nullptr};
 			assert(_ro->store().level == l);
@@ -123,17 +120,17 @@ namespace myria{
 			//If the Transacion Context does not yet exist for this store, we create it now.
 			auto &store_ctx = *ctx.template get_store_context<l>(_ro->store());
 
-			return get(choice,store_ctx, *ctx.trackingContext, _ro->get(&store_ctx));
+			return get(choice,tracker,store_ctx, *ctx.trackingContext, _ro->get(&store_ctx));
 		}
 	
-		const T& get(std::true_type*, mtl::StoreContext<l>& ctx, tracker::TrackingContext &trkc, const T& ret) const {
+		const T& get(std::true_type*, tracker::Tracker& tracker, mtl::StoreContext<l>& ctx, tracker::TrackingContext &trkc, const T& ret) const {
 			tracker.afterRead(ctx,trkc,_ro->store(),_ro->name());
 			return ret;
 		}
 	
-		const T& get(std::false_type*, mtl::StoreContext<l>& ctx, tracker::TrackingContext &trkc, const T& ret) const {
+		const T& get(std::false_type*, tracker::Tracker& tracker, mtl::StoreContext<l>& ctx, tracker::TrackingContext &trkc, const T& ret) const {
 			mutils::AtScopeEnd ase{[&](){tracker.afterRead(trkc,_ro->store(),_ro->name(),_ro->timestamp(),_ro->bytes());}};
-			if (tracker.waitForRead(_ro->store(),_ro->name(),_ro->timestamp())){
+			if (tracker.waitForRead(trkc,_ro->store(),_ro->name(),_ro->timestamp())){
 				return ret;
 			}
 			else return _ro->get(&ctx);
@@ -143,23 +140,23 @@ namespace myria{
 			return *this;
 		}
 
-		void put(mtl::TransactionContext *tc, const T& t){
+		void put(tracker::Tracker& tracker, mtl::TransactionContext *tc, const T& t){
 			choose_strong<l> choice{nullptr};
 			assert(tc || !_ro->store().in_transaction());
 			auto owner = (tc ? nullptr : std::make_unique<mtl::TransactionContext>(nullptr,_ro->store().begin_transaction(),tracker.generateContext()));
 			if (owner) owner->commit_on_delete = true;
 			auto &ctx = (owner ? *owner : *tc);
 			assert(ctx.trackingContext);
-			return put(*ctx.template get_store_context<l>(_ro->store()),*ctx.trackingContext,t,choice);
+			return put(tracker, *ctx.template get_store_context<l>(_ro->store()),*ctx.trackingContext,t,choice);
 		}
 	
-		void put(mtl::StoreContext<l> &ctx, tracker::TrackingContext& trk, const T& t, std::true_type*) {
+		void put(tracker::Tracker& tracker, mtl::StoreContext<l> &ctx, tracker::TrackingContext& trk, const T& t, std::true_type*) {
 			assert(_ro);
 			tracker.onWrite(ctx,trk,_ro->store(),_ro->name());
 			_ro->put(ctx,t);
 		}
 
-		void put(mtl::StoreContext<l> &ctx, tracker::TrackingContext& trk, const T& t, std::false_type*) {
+		void put(tracker::Tracker& tracker, mtl::StoreContext<l> &ctx, tracker::TrackingContext& trk, const T& t, std::false_type*) {
 			assert(_ro);
 			tracker.onWrite(_ro->store(),_ro->name(),_ro->timestamp());
 			_ro->put(ctx,t);
@@ -228,7 +225,7 @@ namespace myria{
 	public:
 
 		template<typename RO, typename... Args>
-		static Handle<l,HA,T> make_handle(mtl::TransactionContext *tc, Args && ... ca){
+		static Handle<l,HA,T> make_handle(tracker::Tracker &trk, mtl::TransactionContext *tc, Args && ... ca){
 			static_assert(std::is_base_of<RemoteObject<l,T>,RO >::value,
 						  "Error: must template on valid RemoteObject extender");
 			RemoteObject<l,T> *rop = new RO(std::forward<Args>(ca)...);
@@ -236,10 +233,10 @@ namespace myria{
 			Handle<l,HA,T> ret(sp);
 			assert(tc || !rop->store().in_transaction());
 			//make a transaction with no environment expressions for only the requested store
-			auto owner = (tc ? nullptr : std::make_unique<mtl::TransactionContext>((void*)nullptr,rop->store().begin_transaction(),ret.tracker.generateContext()));
+			auto owner = (tc ? nullptr : std::make_unique<mtl::TransactionContext>((void*)nullptr,rop->store().begin_transaction(),trk.generateContext()));
 			if (owner) owner->commit_on_delete = true;
 			auto &ctx = (tc ? *tc : *owner);
-			do_onwrite(ctx,ret.tracker,*rop);
+			do_onwrite(ctx,trk,*rop);
 			return ret;
 		}
 	
@@ -281,9 +278,9 @@ namespace myria{
 
 	template<Level l, HandleAccess HA, typename T,
 			 typename RO, typename... Args>
-	Handle<l,HA,T> make_handle(mtl::TransactionContext *tc, Args && ... ca)
+	Handle<l,HA,T> make_handle(tracker::Tracker &trk, mtl::TransactionContext *tc, Args && ... ca)
 	{
-		return Handle<l,HA,T>::template make_handle<RO, Args...>(tc,std::forward<Args>(ca)...);
+		return Handle<l,HA,T>::template make_handle<RO, Args...>(trk,tc,std::forward<Args>(ca)...);
 	}
 
 

@@ -49,7 +49,7 @@ namespace myria{
 		//extend this plz!
 
 		virtual bool ro_isValid(mtl::StoreContext<l>*) const = 0;
-		virtual const T& get(mtl::StoreContext<l>*) = 0;
+		virtual const T& get(mtl::StoreContext<l>*, tracker::Tracker* = nullptr, tracker::TrackingContext* = nullptr) = 0;
 		virtual void put(mtl::StoreContext<l>*,const T&) = 0;
 
 		//TODO: delete these when you're done hacking around.

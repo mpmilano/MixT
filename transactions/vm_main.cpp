@@ -107,14 +107,14 @@ int main(){
 		//std::cout << "launching task on pid " << pid << std::endl;
 		//AtScopeEnd em{[pid](){std::cout << "finishing task on pid " << pid << std::endl;}};
 		std::stringstream log_messages;
-		tracker::Tracker::global_tracker(pid + 1024);
+		tracker::Tracker global_tracker{pid + 1024};
 		try{
 			std::string str = [&](){
-				SQLStore<Level::strong> &strong = SQLStore<Level::strong>::inst(ip);
-				SQLStore<Level::causal> &causal = SQLStore<Level::causal>::inst(0);
+				SQLStore<Level::strong> &strong = SQLStore<Level::strong>::inst(ip,&global_tracker);
+				SQLStore<Level::causal> &causal = SQLStore<Level::causal>::inst(0,&global_tracker);
 				assert(!strong.in_transaction());
 				assert(!causal.in_transaction());
-				auto& trk = tracker::Tracker::global_tracker();
+				auto& trk = global_tracker;
 				assert(!trk.get_StrongStore().in_transaction());
 				//I'm assuming that pid won't get larger than the number of allowable ports...
 				assert(pid + 1024 < 49151);
@@ -126,11 +126,11 @@ int main(){
 					for(int tmp2 = 0; tmp2 < 10; ++tmp2){
 						try{
 							if ((name % mod_constant) == 0){
-								TRANSACTION(hndl,
+								TRANSACTION(global_tracker,hndl,
 									do_op(Increment,hndl)
 									)//*/
 							}
-							else TRANSACTION(hndl,
+							else TRANSACTION(global_tracker,hndl,
 								let_remote(tmp) = hndl IN(mtl_ignore(tmp))
 								)
 							auto end = high_resolution_clock::now() - launch_clock;
@@ -150,9 +150,9 @@ int main(){
 					return log_messages.str();
 				};
 				if (better_rand() > .7 || !causal_enabled){
-					return test_fun(strong.template existingObject<HandleAccess::all,int>(nullptr,name));
+					return test_fun(strong.template existingObject<HandleAccess::all,int>(global_tracker, nullptr,name));
 				}
-				else return test_fun(causal.template existingObject<HandleAccess::all,int>(nullptr,name));
+				else return test_fun(causal.template existingObject<HandleAccess::all,int>(global_tracker, nullptr,name));
 			}();
 			//std::cout << str << std::endl;
 			return str;

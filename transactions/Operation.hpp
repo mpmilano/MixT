@@ -136,7 +136,7 @@ namespace myria {
 									  > > ;
 	
 		template<typename... Args>
-		auto operator()(mtl::TransactionContext &ctx, Args && ... args) const {
+		auto operator()(tracker::Tracker& tracker, mtl::TransactionContext &ctx, Args && ... args) const {
 			assert(this);
 			assert(built_well && "Calling operation constructed with default constructor is evil!");
 			static_assert(sizeof...(Args) == arity, "Error: arity violation");
@@ -165,12 +165,12 @@ namespace myria {
 			auto h_causal_write = mutils::filter_tpl<is_causal_handle>(h_write);
 			mutils::foreach(h_strong_read,
 							[&](const auto &h){
-								h.tracker.afterRead(*ctx.template get_store_context<mtl::get_level<decltype(h)>::value>(h.store()),
+								tracker.afterRead(*ctx.template get_store_context<mtl::get_level<decltype(h)>::value>(h.store()),
 													*ctx.trackingContext,
 													h.store(),h.name());});
 			mutils::foreach(h_causal_read,
 							[&](const auto &h){
-								h.tracker.waitForRead(*ctx.trackingContext,h.store(),h.name(),h.remote_object().timestamp());});
+								tracker.waitForRead(*ctx.trackingContext,h.store(),h.name(),h.remote_object().timestamp());});
 			//optimization: track timestamps for causal, only check if they've changed.
 			auto causal_pair = mutils::fold(h_causal_read,[](const auto &a, const auto &acc){
 					return mutils::tuple_cons(std::make_pair(a.remote_object().timestamp(),a),acc);},std::tuple<>{});
@@ -180,10 +180,10 @@ namespace myria {
 								static_assert(mtl::get_level<decltype(p.second)>::value == Level::strong
 											  || mtl::get_level<decltype(p.second)>::value == Level::causal,"sanity check");
 								if (tracker::ends::is_same(p.first, p.second.remote_object().timestamp())) return;
-								else p.second.tracker.afterRead(*ctx.trackingContext,
-																p.second.store(),p.second.name(),p.second.remote_object().timestamp(),p.second.remote_object().bytes());});
-			mutils::foreach(h_strong_write, [&](const auto &h){h.tracker.onWrite(ctx,h.store(),h.name());});
-			mutils::foreach(h_causal_write, [&](const auto &h){h.tracker.onWrite(h.store(),h.name(),h.remote_object().timestamp());});
+								else tracker.afterRead(*ctx.trackingContext,
+													   p.second.store(),p.second.name(),p.second.remote_object().timestamp(),p.second.remote_object().bytes());});
+			mutils::foreach(h_strong_write, [&](const auto &h){tracker.onWrite(ctx,h.store(),h.name());});
+			mutils::foreach(h_causal_write, [&](const auto &h){tracker.onWrite(h.store(),h.name(),h.remote_object().timestamp());});
 			return ret;
 		}
 	};

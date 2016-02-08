@@ -55,22 +55,25 @@
 		using FindUsage = FindUsages<alphabet_on_each(decltype, n)>;	\
 		struct OperateImpl : public FindUsage,							\
 							 public ConStatement<min_level_dref<alphabet_on_each(decltype,n)>::value >{ \
+			tracker::Tracker &active_tracker;							\
 			const int id = gensym();									\
 			argcnt_shared_ptr(n)										\
 				const std::string name = #Name;							\
-			OperateImpl(alphabet_args(n) /*const decltype(a) &a*/ ):	\
+																		\
+			OperateImpl(tracker::Tracker &trk, alphabet_args(n) /*const decltype(a) &a*/ ):	\
 				FindUsage(alphabet(n)),									\
+				active_tracker(trk),									\
 				argcnt_on_each_alphabet(n,shared_copy)					\
 				/*arg(shared_copy(a))*/{}								\
 																		\
-			auto environment_expressions() const {										\
+			auto environment_expressions() const {						\
 				return env_expr_helper(argcnt(n));						\
 																		\
 			}															\
 																		\
 			auto strongCall(mtl::TransactionContext* ctx CMA StrongCache& c CMA const StrongStore &s CMA std::true_type*) const { \
 				auto ret = make_PreOp(id,Name(ctx,argcnt_map_dref(trans_op_arg,n,ctx,c,s,))) \
-					(c,*ctx, argcnt(n));									\
+					(c,active_tracker, *ctx, argcnt(n));				\
 				c.emplace<decltype(ret)>(id,ret);						\
 				return ret;												\
 			}															\
@@ -86,13 +89,13 @@
 			auto causalCall(mtl::TransactionContext* ctx CMA CausalCache& c CMA  const CausalStore &s) const { \
 				run_causal_helper(ctx,c,s,argcnt(n));					\
 				using R = decltype(make_PreOp(id,Name(ctx,argcnt_map_dref(trans_op_arg,n,ctx,c,s,))) \
-								   (c,*ctx,argcnt(n)));					\
+								   (c,active_tracker, *ctx,argcnt(n)));					\
 				if(runs_with_strong(get_level<OperateImpl>::value)) return c.template get<R>(id); \
 				else return make_PreOp(id,Name(ctx,argcnt_map_dref(trans_op_arg,n,ctx,c,s,))) \
-						 (c,*ctx, argcnt(n));							\
+						 (c,active_tracker, *ctx, argcnt(n));							\
 			}															\
 		};																\
-		OperateImpl r{alphabet(n)}; return r;							\
+		OperateImpl r{active_tracker, alphabet(n)}; return r;			\
 	} ()
 
 #define do_op(name,...) STANDARD_BEGIN(do_op2(name,VA_NARGS(__VA_ARGS__), __VA_ARGS__))

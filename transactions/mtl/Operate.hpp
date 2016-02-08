@@ -73,7 +73,7 @@ namespace myria { namespace mtl {
 			}
 
 			template<typename Cache, typename... Args>
-			auto operator()(Cache &c, mtl::TransactionContext& tc, Args && ... args) const {
+			auto operator()(Cache &c, tracker::Tracker& tracker, mtl::TransactionContext& tc, Args && ... args) const {
 				assert(fold(t,[](const auto &e, bool acc){return e.built_well || acc;},false));
 				auto t_ptr = shared_copy(t);
 				assert(fold(*t_ptr,[](const auto &e, bool acc){return e.built_well || acc;},false));
@@ -87,7 +87,7 @@ namespace myria { namespace mtl {
 							}
 							else {
 								assert(e.built_well);
-								return std::pair<bool,bool>(true,e(tc,&tc,cached_withfail(c,*args)...));
+								return std::pair<bool,bool>(true,e(tracker,tc,&tc,cached_withfail(c,*args)...));
 							}
 						},std::pair<bool,bool>(false,false));
 				if (!result.first) throw mutils::NoOverloadFoundError{mutils::type_name<decltype(t)>()};

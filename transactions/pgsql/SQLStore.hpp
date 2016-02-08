@@ -9,17 +9,18 @@ namespace myria { namespace pgsql {
 		template<Level l>
 		class SQLStore : public SQLStore_impl, public DataStore<l> {
 
-			SQLStore(int inst_id):SQLStore_impl(*this,inst_id,l) {
-				tracker::Tracker::global_tracker().registerStore(*this);
+			SQLStore(tracker::Tracker& trk, int inst_id):SQLStore_impl(*this,inst_id,l) {
+				trk.registerStore(*this);
 			}
 		public:
 
 			using Store = SQLStore;
 	
-			static SQLStore& inst(int instance_id){
+			static SQLStore& inst(int instance_id, tracker::Tracker* trk){
 				static std::map<int,SQLStore* > ss;
 				if (ss.count(instance_id) == 0){
-					ss[instance_id] = new SQLStore(instance_id);
+					assert(trk);
+					ss[instance_id] = new SQLStore(*trk,instance_id);
 				}
 				return *ss.at(instance_id);
 			}
@@ -58,14 +59,13 @@ namespace myria { namespace pgsql {
 				SQLObject(GSQLObject gs, std::unique_ptr<T> t):
 					gso(std::move(gs)),t(std::move(t)){}
 		
-				const T& get(mtl::StoreContext<l>* _tc) {
+				const T& get(mtl::StoreContext<l>* _tc, tracker::Tracker* trk, tracker::TrackingContext* trkc) {
 					SQLTransaction *tc = (_tc ? ((SQLContext*) _tc)->i.get() : nullptr);
 					auto *res = gso.load(tc);
 					assert(res);
-					if (res != nullptr){
-						auto &trk = tracker::Tracker::global_tracker();
-						t = trk.onRead(store(),name(),timestamp(),
-									   mutils::from_bytes<T>(res));
+					if (res != nullptr && trk != nullptr && trkc != nullptr){
+						t = trk->onRead(*trkc,store(),name(),timestamp(),
+										mutils::from_bytes<T>(res));
 					}
 					
 					return *t;
@@ -93,10 +93,10 @@ namespace myria { namespace pgsql {
 					return gso.ro_isValid(tc);
 				}
 				const SQLStore& store() const{
-					return SQLStore::inst(gso.store_instance_id());
+					return SQLStore::inst(gso.store_instance_id(),nullptr);
 				}
 				SQLStore& store(){
-					return SQLStore::inst(gso.store_instance_id());
+					return SQLStore::inst(gso.store_instance_id(),nullptr);
 				}
 				Name name() const {
 					return gso.name();
@@ -124,7 +124,7 @@ namespace myria { namespace pgsql {
 			}
 	
 			template<HandleAccess ha, typename T>
-			auto newObject(mtl::TransactionContext *tc, Name name, const T& init){
+			auto newObject(tracker::Tracker &trk, mtl::TransactionContext *tc, Name name, const T& init){
 				static constexpr Table t =
 					(std::is_same<T,int>::value ? Table::IntStore : Table::BlobStore);
 				int size = mutils::bytes_size(init);
@@ -133,24 +133,24 @@ namespace myria { namespace pgsql {
 				GSQLObject gso(*this,t,name,v);
 				auto ret = make_handle
 					<l,ha,T,SQLObject<T> >
-					(tc,std::move(gso),mutils::heap_copy(init) );
-				ret.tracker.onCreate(*this,name);
+					(trk,tc,std::move(gso),mutils::heap_copy(init) );
+				trk.onCreate(*this,name);
 				return ret;
 			}
 
 			template<HandleAccess ha, typename T>
-			auto newObject(mtl::TransactionContext *tc, const T& init){
-				return newObject<ha,T>(tc, mutils::int_rand(),init);
+			auto newObject(tracker::Tracker &trk, mtl::TransactionContext *tc, const T& init){
+				return newObject<ha,T>(trk,tc, mutils::int_rand(),init);
 			}
 
 			template<HandleAccess ha, typename T>
-			auto existingObject(mtl::TransactionContext *tc, Name name, T* for_inf = nullptr){
+			auto existingObject(tracker::Tracker &trk, mtl::TransactionContext *tc, Name name, T* for_inf = nullptr){
 				static constexpr Table t =
 					(std::is_same<T,int>::value ? Table::IntStore : Table::BlobStore);
 				GSQLObject gso(*this,t,name);
 				return make_handle
 					<l,ha,T,SQLObject<T> >
-					(tc,std::move(gso),nullptr);
+					(trk,tc,std::move(gso),nullptr);
 			}
 
 			template<typename T>

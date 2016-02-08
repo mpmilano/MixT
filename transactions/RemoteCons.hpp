@@ -41,12 +41,12 @@ namespace myria{
 		}
 
 		template<typename Backbone, typename Data, typename... Args>
-		static p build_list(mtl::TransactionContext *tc, Backbone& b, Data& d, const Args & ... args){
+		static p build_list(tracker::Tracker& trk, mtl::TransactionContext *tc, Backbone& b, Data& d, const Args & ... args){
 			auto tpl = std::make_tuple(args...);
 			return fold(tpl,[&](const T &e, const auto & acc){
-					RemoteCons initial{d.template newObject<HandleAccess::all,T>(tc,e),acc};
-					return b.template newObject<HandleAccess::all,RemoteCons>(tc,initial);
-				},p());
+					RemoteCons initial{d.template newObject<HandleAccess::all,T>(trk,tc,e),acc};
+					return b.template newObject<HandleAccess::all,RemoteCons>(trk,tc,initial);
+				},p{});
 		}
 
 		bool operator==(RemoteCons wc) {

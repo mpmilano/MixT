@@ -29,17 +29,17 @@ int main() {
 
 	try {
 
-	Tracker::global_tracker(8765);
+	Tracker global_tracker(8765);
 
 	auto &fsc = 
-		SQLStore<Level::causal>::inst(0);
+		SQLStore<Level::causal>::inst(0,&global_tracker);
 	auto& fss =
-		SQLStore<Level::strong>::inst(0);
-	auto h = WeakCons::build_list(nullptr,fss,fsc,12,13,14);
+		SQLStore<Level::strong>::inst(0,&global_tracker);
+	auto h = WeakCons::build_list(global_tracker,nullptr,fss,fsc,12,13,14);
 
-	assert(h.get(nullptr).val.get(nullptr) == 14);
-	auto do_test = [](auto h){
-		TRANSACTION(h,
+	assert(h.get(global_tracker,nullptr).val.get(global_tracker,nullptr) == 14);
+	auto do_test = [&global_tracker](auto h){
+		TRANSACTION(global_tracker,h,
 		let(hd) = h IN (
 			WHILE (isValid(hd)) DO(
 				print_str("loop"),
@@ -57,14 +57,14 @@ int main() {
 			);}; //*/
 	do_test(h);
 
-	std::cout << h.get(nullptr).val.get(nullptr) << std::endl;
-	assert(h.get(nullptr).val.get(nullptr) == 15);
+	std::cout << h.get(global_tracker,nullptr).val.get(global_tracker,nullptr) << std::endl;
+	assert(h.get(global_tracker,nullptr).val.get(global_tracker,nullptr) == 15);
 
-	auto h2 = WeakCons::build_list(nullptr,fss,fsc,18,19,20);
+	auto h2 = WeakCons::build_list(global_tracker,nullptr,fss,fsc,18,19,20);
 	
 	do_test(h2);
-	std::cout << h2.get(nullptr).val.get(nullptr) << std::endl;
-	assert(h2.get(nullptr).val.get(nullptr) == 21);
+	std::cout << h2.get(global_tracker,nullptr).val.get(global_tracker,nullptr) << std::endl;
+	assert(h2.get(global_tracker,nullptr).val.get(global_tracker,nullptr) == 21);
 	
 	return 0;
 

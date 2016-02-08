@@ -53,7 +53,7 @@ namespace myria {
 			using TrackerDS =
 				std::tuple<
 				Handle<l, HandleAccess::all, Tombstone> (*)
-				(mtl::TransactionContext& ctx, DataStore<l>&, Name, const Tombstone&), //newTomb
+				(tracker::Tracker &trk, mtl::TransactionContext& ctx, DataStore<l>&, Name, const Tombstone&), //newTomb
 				bool (*) (DataStore<l>&, Name), //exists
 				std::unique_ptr<RemoteObject<l, Clock> > (*)
 				(DataStore<l>&, Name), //existingClock
@@ -86,7 +86,7 @@ namespace myria {
 				const std::function<void (MemoryOwner&, char const *)> &construct_nd_merge);
 	
 		public:
-			static Tracker& global_tracker(int cache_port = -1);
+			//static Tracker& global_tracker(int cache_port = -1);
 
 			bool registered(const GDataStore&) const;
 
@@ -142,12 +142,14 @@ namespace myria {
 
 			friend struct TrackingContext;
 
-		private:
-			const int cache_port;
 			Tracker(int cache_port);
 			virtual ~Tracker();
 
 			Tracker(const Tracker&) = delete;
+
+		private:
+			const int cache_port;
+
 		};		
 
 	}}

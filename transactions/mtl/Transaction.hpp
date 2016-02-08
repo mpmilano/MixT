@@ -27,14 +27,14 @@ namespace myria { namespace mtl {
 		
 		template<typename T>
 		struct Transaction{
-			const std::function<bool (T const * const)> action;
+			const std::function<bool (tracker::Tracker&, T const * const)> action;
 			const std::function<std::ostream & (std::ostream &os)> print;
 			
 		public:
 	
 			template<typename Cmds>
 			Transaction(const TransactionBuilder<Cmds> &s):
-				action([s, env_exprs = mtl::environment_expressions(s.curr)](T const * const param) -> bool{
+				action([s, env_exprs = mtl::environment_expressions(s.curr)](tracker::Tracker& trk, T const * const param) -> bool{
 						
 						debug_forbid_copy = true;
 						mutils::AtScopeEnd ase{[](){debug_forbid_copy = false;}};
@@ -44,7 +44,6 @@ namespace myria { namespace mtl {
 						//By which we mean if they need to handle in-a-transaction
 						//in a special way, they do that for themselves.
 
-						auto& trk = tracker::Tracker::global_tracker();
 						TransactionContext ctx{param,trk.generateContext()};
 
 						static_assert(std::is_same<std::decay_t<decltype(std::get<0>(env_exprs))>,EnvironmentExpression<T> >::value,
@@ -118,8 +117,8 @@ namespace myria { namespace mtl {
 			Transaction(const Transaction&) = delete;
 			Transaction(const Transaction&& t):action(std::move(t.action)),print(std::move(t.print)){}
 			
-			bool operator()(T const * const t) const {
-				return action(t);
+			bool operator()(tracker::Tracker& trk, T const * const t) const {
+				return action(trk,t);
 			}
 			
 		};
