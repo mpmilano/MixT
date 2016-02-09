@@ -95,5 +95,23 @@ int main(){
 		}
 		assert(ffres && ffres->first);
 	}
+
+
+	{
+		std::thread t1{[](){
+				//has the objects we need
+				Tracker t{5001};
+				TrackerTestingStore s{t};
+			}}
+
+		std::thread{[](){
+				//wants the objects
+				Tracker t{5002};
+				TrackerTestingStore s{t};
+			}}.join();
+
+		t1.join();
+	}
+	
 	assert(sfres.first);
 }
