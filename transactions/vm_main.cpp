@@ -102,19 +102,20 @@ int main(){
 	exit(0); */
 
 	std::function<std::string (std::function<void* (void*)>, int, unsigned long long)> pool_fun =
-		[ip](std::function<void* (void*) >, int pid, unsigned long long _start_time){
+		[ip](std::function<void* (void*) > global_memory, int pid, unsigned long long _start_time){
+		if (!global_memory(nullptr)) global_memory(new tracker::Tracker{pid + 1024});
+		assert(global_memory(nullptr));
 		microseconds start_time(_start_time);
 		//std::cout << "launching task on pid " << pid << std::endl;
 		//AtScopeEnd em{[pid](){std::cout << "finishing task on pid " << pid << std::endl;}};
 		std::stringstream log_messages;
-		tracker::Tracker global_tracker{pid + 1024};
 		try{
 			std::string str = [&](){
-				SQLStore<Level::strong> &strong = SQLStore<Level::strong>::inst(ip,&global_tracker);
-				SQLStore<Level::causal> &causal = SQLStore<Level::causal>::inst(0,&global_tracker);
+				auto& trk = *((tracker::Tracker*) global_memory(nullptr));
+				SQLStore<Level::strong> &strong = SQLStore<Level::strong>::inst(ip,&trk);
+				SQLStore<Level::causal> &causal = SQLStore<Level::causal>::inst(0,&trk);
 				assert(!strong.in_transaction());
 				assert(!causal.in_transaction());
-				auto& trk = global_tracker;
 				assert(!trk.get_StrongStore().in_transaction());
 				//I'm assuming that pid won't get larger than the number of allowable ports...
 				assert(pid + 1024 < 49151);
@@ -126,11 +127,11 @@ int main(){
 					for(int tmp2 = 0; tmp2 < 10; ++tmp2){
 						try{
 							if ((name % mod_constant) == 0){
-								TRANSACTION(global_tracker,hndl,
+								TRANSACTION(trk,hndl,
 									do_op(Increment,hndl)
 									)//*/
 							}
-							else TRANSACTION(global_tracker,hndl,
+							else TRANSACTION(trk,hndl,
 								let_remote(tmp) = hndl IN(mtl_ignore(tmp))
 								)
 							auto end = high_resolution_clock::now() - launch_clock;
@@ -150,9 +151,9 @@ int main(){
 					return log_messages.str();
 				};
 				if (better_rand() > .7 || !causal_enabled){
-					return test_fun(strong.template existingObject<HandleAccess::all,int>(global_tracker, nullptr,name));
+					return test_fun(strong.template existingObject<HandleAccess::all,int>(trk, nullptr,name));
 				}
-				else return test_fun(causal.template existingObject<HandleAccess::all,int>(global_tracker, nullptr,name));
+				else return test_fun(causal.template existingObject<HandleAccess::all,int>(trk, nullptr,name));
 			}();
 			//std::cout << str << std::endl;
 			return str;
@@ -189,7 +190,7 @@ int main(){
 	auto &p = *powner;
 	auto start = high_resolution_clock::now();
 
-	auto bound = [&](){return (high_resolution_clock::now() - start) < 60s;};
+	auto bound = [&](){return (high_resolution_clock::now() - start) < 15s;};
 
 	//log printer
 	using future_list = std::list<std::future<std::unique_ptr<std::string> > >;
@@ -202,10 +203,10 @@ int main(){
 		launch1 {[&](){return p.launch(0,elapsed_time());}};
 	
 	decltype(launch1) launch2 {[&]() -> decltype(p.launch(0,elapsed_time())){
-			auto str = pool_fun([](void*v){return v;},400,elapsed_time());
+			auto str = pool_fun([](void*v){static auto* mem = v; if (v) mem = v; return mem;},400,elapsed_time());
 						return std::async(std::launch::deferred,[str](){return heap_copy(str);});}};
 	
-	auto launch  = (true ? launch1 : launch2);
+	auto launch  = ( false ? launch1 : launch2);
 	
 	std::cout << "beginning subtask generation loop" << std::endl;
 	while (bound()){

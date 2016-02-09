@@ -185,6 +185,7 @@ namespace myria { namespace tracker {
 		Tracker::Tracker(int cache_port):i{new Internals{}},cache_port(cache_port){
 			assert(cache_port > 0 && "error: must specify non-zero cache port for first tracker call");
 			i->cache.listen_on(cache_port);
+			std::cout << "tracker built" << std::endl;
 		}
 
 		Tracker::~Tracker(){
