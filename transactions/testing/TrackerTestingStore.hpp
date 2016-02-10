@@ -50,9 +50,15 @@ namespace myria { namespace testing {
 				return false;
 			}
 
-			static mutils::HeteroMap<Name>& remote_store(){
+			static auto remote_store(){
 				static mutils::HeteroMap<Name> rs;
-				return rs;
+				static std::mutex mut;
+				using lock_t = std::unique_lock<std::mutex>;
+				struct LockedMapAccess{
+					mutils::HeteroMap<Name> &rs;
+					lock_t lock;
+				};
+				return LockedMapAccess{rs,lock_t{mut}};
 			}
 			
 			template<typename T>
@@ -65,7 +71,7 @@ namespace myria { namespace testing {
 			public:
 
 				TrackerTestingObject(TrackerTestingStore& tts, Name nam)
-					:tts(tts),nam(nam),t(new T{*remote_store().template at<T>(nam)}){}
+					:tts(tts),nam(nam),t(new T{*remote_store().rs.template at<T>(nam)}){}
 				
 				TrackerTestingObject(TrackerTestingStore& tts, Name nam, T t)
 					:tts(tts),nam(nam),t(new T{t}){}
@@ -80,13 +86,13 @@ namespace myria { namespace testing {
 				}
 				
 				const T& get(mtl::StoreContext<l>*, tracker::Tracker*/* = nullptr*/, tracker::TrackingContext*/* = nullptr*/) {
-					this->t = std::make_shared<T>(*remote_store().template at<T>(nam));
+					this->t = std::make_shared<T>(*remote_store().rs.template at<T>(nam));
 					return *t;
 				}
 				
 				void put(mtl::StoreContext<l>*,const T& to) {
 					this->t = std::make_shared<T>(to);
-					remote_store().template mut<T>(nam).reset(new T(*t));
+					remote_store().rs.template mut<T>(nam).reset(new T(*t));
 				}
 				
 				const DataStore<l>& store() const {
@@ -146,7 +152,7 @@ namespace myria { namespace testing {
 			}
 
 			bool exists(Name name){
-				return remote_store().contains(name);
+				return remote_store().rs.contains(name);
 			}
 
 		};

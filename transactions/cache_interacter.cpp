@@ -98,6 +98,16 @@ int main(){
 		assert(ffres && ffres->first);
 	}
 
+	{
+		Tracker t_here{5003};
+		Tracker t_there{5004};
+		TrackerTestingStore<Level::strong> strong_here{t_here};
+		TrackerTestingStore<Level::strong> strong_there{t_there};
+		auto h1 = strong_here.newObject<HandleAccess::all>(t_here,nullptr,1,string("foo"));
+		auto h2 = strong_here.existingObject<HandleAccess::all,string>(t_here,nullptr,1);
+		assert(h1.get(t_here,nullptr) == h2.get(t_here,nullptr));
+	}
+	
 
 	{
 		std::thread t1{[](){
