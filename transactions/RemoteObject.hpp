@@ -37,7 +37,6 @@ namespace myria{
 		static constexpr Level level = Level::causal;
 		GeneralRemoteObject_body
 		virtual const std::array<int,NUM_CAUSAL_GROUPS>& timestamp() const = 0;
-		virtual std::vector<char> bytes() const = 0;
 	};
 
 
@@ -63,8 +62,14 @@ namespace myria{
 
 		using type = T;
 	
-		static std::unique_ptr<RemoteObject> from_bytes(char const * _v); 
+		static std::unique_ptr<RemoteObject> from_bytes(char const * _v);
 
+		std::vector<char> bytes() const {
+			std::vector<char> ret;
+			ret.reserve(this->bytes_size());
+			this->to_bytes(ret.data());
+			return ret;
+		}
 
 		template<typename> friend struct mtl::Transaction;
 		friend class tracker::Tracker;

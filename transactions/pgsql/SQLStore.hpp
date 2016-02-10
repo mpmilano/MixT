@@ -75,11 +75,12 @@ namespace myria { namespace pgsql {
 					return gso.timestamp();
 				}
 
+				/*
 				std::vector<char> bytes() const {
 					std::vector<char> ret(gso.obj_buffer_size());
 					memcpy(ret.data(),gso.obj_buffer(),gso.obj_buffer_size());
 					return ret;
-				}
+				}//*/
 
 				void put(mtl::StoreContext<l>* _tc, const T& t){
 					SQLTransaction *tc = (_tc ? ((SQLContext*) _tc)->i.get() : nullptr);

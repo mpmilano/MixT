@@ -14,6 +14,7 @@
 #include <chrono>
 #include <cmath>
 #include <unistd.h>
+#include "TrackerTestingStore.hpp"
 #include "ProcessPool.hpp"//*/
 #include "Operate_macros.hpp"
 #include "Transaction_macros.hpp"
@@ -25,6 +26,7 @@ using namespace myria;
 using namespace tracker;
 using namespace mtl;
 using namespace pgsql;
+using namespace testing;
 
 //test file for working with the cooperative cache.
 
@@ -101,13 +103,16 @@ int main(){
 		std::thread t1{[](){
 				//has the objects we need
 				Tracker t{5001};
-				TrackerTestingStore s{t};
-			}}
+				TrackerTestingStore<Level::strong> strong{t};
+				TrackerTestingStore<Level::causal> causal{t};
+			}};
 
 		std::thread{[](){
 				//wants the objects
 				Tracker t{5002};
-				TrackerTestingStore s{t};
+				TrackerTestingStore<Level::strong> strong{t};
+				TrackerTestingStore<Level::causal> causal{t};
+
 			}}.join();
 
 		t1.join();
