@@ -150,7 +150,7 @@ namespace myria { namespace tracker {
 		}
 
 		TrackingContext::TrackingContext(Tracker &trk, bool cod)
-			:i(new TrackingContext::Internals{*trk.i,cod}){}
+			:i(new TrackingContext::Internals{*trk.i,cod}),trk(trk){}
 
 		TrackingContext::~TrackingContext(){
 			if (i) delete i;

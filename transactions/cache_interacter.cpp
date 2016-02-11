@@ -105,9 +105,12 @@ int main(){
 		TrackerTestingStore<Level::strong> strong_there{t_there};
 		auto h1 = strong_here.newObject<HandleAccess::all>(t_here,nullptr,1,string("foo"));
 		auto h2 = strong_here.existingObject<HandleAccess::all,string>(t_here,nullptr,1);
+		std::cerr << "Got to the assert" << std::endl;
 		assert(h1.get(t_here,nullptr) == h2.get(t_here,nullptr));
+		std::cerr << "Got past the assert" << std::endl;
 	}
-	
+
+	assert(false && "checkpoint");
 
 	{
 		std::thread t1{[](){

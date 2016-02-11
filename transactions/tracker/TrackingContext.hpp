@@ -7,6 +7,7 @@ namespace myria { namespace tracker {
 		struct TrackingContext{
 			struct Internals;
 			Internals *i{nullptr};
+			Tracker &trk;
 			TrackingContext(Tracker& t, bool commitOnDelete = false);
 			void commitContext();
 			void abortContext();

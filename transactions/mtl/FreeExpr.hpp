@@ -57,14 +57,18 @@ namespace myria { namespace mtl {
 			const std::function<T (TransactionContext *, const Cache&, const std::tuple<Exprs ...>& )> f;
 			const int id = mutils::gensym();
 
-			FreeExpr(int,tracker::Tracker &trk, 
+			FreeExpr(int,
 					 std::function<T (const typename extract_type<std::decay_t<Exprs> >::type & ... )> _f,
 					 Exprs... h)
 				:params(std::make_tuple(h...)),
-				 f([&trk,_f](TransactionContext *ctx, const Cache& c, const std::tuple<Exprs...> &t){
+				 f([_f](TransactionContext *ctx, const Cache& c, const std::tuple<Exprs...> &t){
 						 auto retrieved = fold(
 							 t,
-							 [&](const auto &e, const auto &acc){return std::tuple_cat(acc,std::make_tuple(get_if_handle(trk, ctx,debug_failon_not_cached(c,e))));}
+							 [&](const auto &e, const auto &acc){
+								 return std::tuple_cat(
+									 acc,std::make_tuple(
+										 get_if_handle(
+											 ctx->trackingContext->trk, ctx,debug_failon_not_cached(c,e))));}
 							 ,std::tuple<>());
 						 static_assert(std::tuple_size<decltype(retrieved)>::value == sizeof...(Exprs),"You lost some arguments");
 						 return callFunc(_f,retrieved);
@@ -136,7 +140,7 @@ namespace myria { namespace mtl {
 			}
 	
 			template<typename F>
-			FreeExpr(tracker::Tracker &trk, F f, Exprs... h):FreeExpr(0, trk,mutils::convert(f), h...){}
+			FreeExpr(F f, Exprs... h):FreeExpr(0, mutils::convert(f), h...){}
 		};
 
 		template<typename T, typename... H>
