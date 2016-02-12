@@ -73,6 +73,7 @@ namespace mutils {
 					return true;
 				}());
 			//this is just a normal failure of at() when there's no element to retrieve.
+			if (sub_maps.count(tid) == 0) std::cout << "missing key: " << i << std::endl;
 			assert(sub_maps.count(tid) > 0);
 			return get_submap<T>()->at(i);
 		}

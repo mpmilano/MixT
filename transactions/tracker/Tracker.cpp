@@ -399,6 +399,8 @@ namespace myria { namespace tracker {
 		
 		
 		void Tracker::afterRead(mtl::StoreContext<Level::strong> &sctx, TrackingContext &tctx, DataStore<Level::strong>& ds, Name name){
+
+			assert(name != 1);
 			
 			auto update_clock = [this](StoreContext<Level::strong> &sctx, TrackingContext &tctx, Tracker::Internals &t){
 				auto newc = get<TDS::existingClock>(*t.strongDS)(*t.registeredStrong, bigprime_lin)->get(&sctx,this,&tctx);
