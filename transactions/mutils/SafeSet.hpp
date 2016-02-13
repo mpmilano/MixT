@@ -7,7 +7,7 @@
 namespace mutils{
 
 	template<typename T>
-	void discard(const T&){}
+	constexpr void discard(const T&){}
 
 	template<typename T>
 	struct MonotoneSafeSet {

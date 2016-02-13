@@ -25,18 +25,33 @@ namespace myria { namespace mtl {
 				return mtl::environment_expressions(t);
 			}
 
+			void print_this(void){
+				
+			}
+
+			void print_this(const std::string& s) const{
+				std::cout << s << std::endl;
+			}
+
 			bool strongCall(TransactionContext* ctx, StrongCache& a, const StrongStore& b) const {
-				auto ret = mtl::run_ast_strong(ctx,a,b,t);
-				if (runs_with_strong(get_level<T>::value)) {
-					std::cout << ret << std::endl;
-				}
+				return strongCall(ctx,a,b,choose_strong<get_level<T>::value>{nullptr});
+			}
+
+			bool strongCall(TransactionContext* ctx, StrongCache& a, const StrongStore& b, std::true_type*) const {
+				print_this(run_ast_strong(ctx,a,b,t));
 				return true;
 			}
+
+			bool strongCall(TransactionContext* ctx, StrongCache& a, const StrongStore& b, std::false_type*) const {
+				run_ast_strong(ctx,a,b,t);
+				return true;
+			}
+			
 			bool causalCall(TransactionContext* ctx, CausalCache& a, const CausalStore& b) const {
-				auto ret = mtl::run_ast_causal(ctx,a,b,t);
 				if (runs_with_causal(get_level<T>::value)){
-					std::cout << ret << std::endl;
+					print_this(run_ast_causal(ctx,a,b,t));
 				}
+				else run_ast_causal(ctx,a,b,t);
 				return true;
 			}
 

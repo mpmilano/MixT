@@ -3,6 +3,8 @@
 #include "tuple_extras.hpp"
 #include "type_utils.hpp"
 #include "ConExpr.hpp"
+#include "RefTemporary.hpp"
+#include "Operation.hpp"
 #include "FreeExpr_macros.hpp"
 
 namespace myria { namespace mtl {
@@ -47,8 +49,19 @@ namespace myria { namespace mtl {
 			}
 		}
 
+		template<typename T, typename... Exprs> struct FreeExpr;
+
+		template<typename T, typename... Exprs> struct FreeExpr<T&, Exprs...> : public FreeExpr<T,Exprs...>{
+			template<typename F>
+			FreeExpr(F f, Exprs... h):FreeExpr<T,Exprs...>(std::forward<F>(f),std::forward<Exprs>(h)...){}
+		};
+		template<typename T, typename... Exprs> struct FreeExpr<T&&, Exprs...> : public FreeExpr<T,Exprs...>{
+			template<typename F>
+				FreeExpr(F f, Exprs... h):FreeExpr<T,Exprs...>(std::forward<F>(f),std::forward<Exprs>(h)...){}
+		};
+
 		template<typename T, typename... Exprs>
-		struct FreeExpr : public ConExpr<T, min_level_dref<Exprs...>::value > {
+		struct FreeExpr : public ConExpr<std::decay_t<T>, min_level_dref<Exprs...>::value > {
 
 			//this one is just for temp-var-finding
 			const std::tuple<Exprs...> params;
@@ -62,7 +75,7 @@ namespace myria { namespace mtl {
 					 Exprs... h)
 				:params(std::make_tuple(h...)),
 				 f([_f](TransactionContext *ctx, const Cache& c, const std::tuple<Exprs...> &t){
-						 auto retrieved = fold(
+						 auto retrieved = mutils::fold(
 							 t,
 							 [&](const auto &e, const auto &acc){
 								 return std::tuple_cat(
@@ -71,7 +84,7 @@ namespace myria { namespace mtl {
 											 ctx->trackingContext->trk, ctx,debug_failon_not_cached(c,e))));}
 							 ,std::tuple<>());
 						 static_assert(std::tuple_size<decltype(retrieved)>::value == sizeof...(Exprs),"You lost some arguments");
-						 return callFunc(_f,retrieved);
+						 return mutils::callFunc(_f,retrieved);
 					 })
 				{
 					static_assert(level::value == get_level<FreeExpr>::value, "Error: FreeExpr level determined inconsistently");
@@ -86,7 +99,7 @@ namespace myria { namespace mtl {
 				return strongCall(ctx,cache,heap,choice);
 			}
 
-			T strongCall(TransactionContext *ctx, StrongCache& cache, const StrongStore &heap, std::true_type*) const{
+			std::decay_t<T&> strongCall(TransactionContext *ctx, StrongCache& cache, const StrongStore &heap, std::true_type*) const{
 				//everything is strong, run it now; but f assumes everything
 				//already cached, which means strongCall for caching first
 				std::false_type* false_t(nullptr);
@@ -98,7 +111,7 @@ namespace myria { namespace mtl {
 			}
 
 			void strongCall(TransactionContext *ctx, StrongCache& cache, const StrongStore &heap,std::false_type*) const{
-				foreach(params,[&](const auto &e){
+				mutils::foreach(params,[&](const auto &e){
 						assert(!is_cached(cache,e) || is_handle<std::decay_t<decltype(e)> >::value);
 
 						assert(ctx);
@@ -118,7 +131,7 @@ namespace myria { namespace mtl {
 
 					});
 
-				foreach(params,[&cache](const auto &e){
+				mutils::foreach(params,[&cache](const auto &e){
 						assert(is_cached(cache,e));});
 			}
 
@@ -128,7 +141,7 @@ namespace myria { namespace mtl {
 			}
 
 			auto causalCall(TransactionContext *ctx, CausalCache& cache, const CausalStore &heap, std::true_type*) const {
-				fold(params,[&](const auto &e, bool){
+				mutils::fold(params,[&](const auto &e, bool){
 						run_ast_causal(ctx,cache,heap,e);
 						return false;},false);
 				return f(ctx,cache,params);

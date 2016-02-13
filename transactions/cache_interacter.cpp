@@ -1,3 +1,4 @@
+#include "FreeExpr.hpp"
 #include "ProcessPool.hpp"
 #include <iostream>
 #include <fstream>
