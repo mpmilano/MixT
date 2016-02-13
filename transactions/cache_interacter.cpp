@@ -119,6 +119,11 @@ int main(){
 		TRANSACTION(t_here, h1, let_remote(tmp) = h1 IN(mtl_ignore($(tmp))));
 		TRANSACTION(t_here, h3, let_remote(tmp) = h3 IN(mtl_ignore($(tmp))));
 		TRANSACTION(t_here, h2, let_remote(tmp) = h2 IN(mtl_ignore($(tmp))));
+
+		TRANSACTION(t_here, h1, let_remote(tmp) = h1 IN( tmp = string("foo1") ));
+		TRANSACTION(t_here, h3, let_remote(tmp) = h3 IN( tmp = string("foo2") ));
+		TRANSACTION(t_here, h2, let_remote(tmp) = h2 IN( tmp = string("foo3") ));
+		
 		t_here.assert_nonempty_tracking();
 		assert(h1.get(t_here,nullptr) == h2.get(t_here,nullptr));
 

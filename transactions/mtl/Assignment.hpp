@@ -3,6 +3,7 @@
 #include "Temporary.hpp"
 #include "RefTemporary.hpp"
 #include "HandleCaching.hpp"
+#include "EnvironmentExpression.hpp"
 
 namespace myria { namespace mtl {
 
@@ -89,6 +90,15 @@ namespace myria { namespace mtl {
 		template<unsigned long long ID, Level l, typename T, HandleAccess HA, typename E>
 		auto operator<<(const RefTemporary<ID,l,Handle<l,HA,T>,Temporary<ID,l,Handle<l,HA,T> > >& rt, const E &e){
 			return Assignment<l,HA,T,E>{rt.t.t,e};
+		}
+
+		template<unsigned long long ID, Level l1, Level l2, typename T, HandleAccess HA, typename E>
+		auto operator<<(const RefTemporary<ID,l1,EnvironmentExpression<Handle<l2,HA,T> >,
+						Temporary<ID,l1,EnvironmentExpression<Handle<l2,HA,T> > > >& rt,
+						const E &e){
+			static_assert(runs_with_strong(l1) ? runs_with_strong(l2) : runs_with_causal(l1), "Mismatch levels in Handle and Reference? ");
+			assert(false);
+			return Assignment<l1,HandleAccess::all,T,E>{rt.t.t,e};
 		}
 
 		template<unsigned long long ID, Level l, HandleAccess ha, typename T, typename Expr>
