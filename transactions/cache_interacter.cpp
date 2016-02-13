@@ -109,9 +109,9 @@ int main(){
 		auto h1 = strong_here.newObject<HandleAccess::all>(t_here,nullptr,3,string("foo"));
 		auto h2 = strong_here.existingObject<HandleAccess::all,string>(t_here,nullptr,3);
 		auto h3 = causal_here.newObject<HandleAccess::all>(t_here,nullptr,4,string("foofoo"));
-		TRANSACTION(t_here, h1, let_remote(tmp) = h1 IN(print(tmp)));
-		TRANSACTION(t_here, h3, let_remote(tmp) = h3 IN(print(tmp)));
-		TRANSACTION(t_here, h2, let_remote(tmp) = h2 IN(print(tmp)));
+		TRANSACTION(t_here, h1, let_remote(tmp) = h1 IN(print($(tmp))));
+		TRANSACTION(t_here, h3, let_remote(tmp) = h3 IN(print($(tmp))));
+		TRANSACTION(t_here, h2, let_remote(tmp) = h2 IN(print($(tmp))));
 		t_here.assert_nonempty_tracking();
 		assert(h1.get(t_here,nullptr) == h2.get(t_here,nullptr));
 	}
