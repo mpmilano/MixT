@@ -470,6 +470,7 @@ namespace myria { namespace tracker {
 		}
 		
 		void Tracker::afterRead(TrackingContext &tctx, DataStore<Level::causal>&, Name name, const Clock& version, const std::vector<char> &data){
+			assert(false);
 			if (tracking_candidate(*i,name,version)){
 				//need to overwrite, not occlude, the previous element.
 				//C++'s map semantics are really stupid.

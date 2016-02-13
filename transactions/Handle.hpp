@@ -108,6 +108,7 @@ namespace myria{
 		}
 
 		const T& get(tracker::Tracker& tracker, mtl::TransactionContext *tc) const {
+			assert(false);
 			assert(_ro);
 			choose_strong<l> choice {nullptr};
 			assert(_ro->store().level == l);

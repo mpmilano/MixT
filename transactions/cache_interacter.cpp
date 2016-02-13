@@ -102,13 +102,18 @@ int main(){
 		Tracker t_here{5003};
 		Tracker t_there{5004};
 		TrackerTestingStore<Level::strong> strong_here{t_here};
+		TrackerTestingStore<Level::causal> causal_here{t_here};
 		TrackerTestingStore<Level::strong> strong_there{t_there};
+		TrackerTestingStore<Level::causal> causal_there{t_there};
 		strong_here.newObject<HandleAccess::all>(t_here,nullptr,2147483659L,Tracker::Clock{{0,0,0,0}});
 		auto h1 = strong_here.newObject<HandleAccess::all>(t_here,nullptr,3,string("foo"));
 		auto h2 = strong_here.existingObject<HandleAccess::all,string>(t_here,nullptr,3);
-		std::cerr << "Got to the assert" << std::endl;
+		auto h3 = causal_here.newObject<HandleAccess::all>(t_here,nullptr,4,string("foofoo"));
+		TRANSACTION(t_here, h1, let_remote(tmp) = h1 IN(print(tmp)));
+		TRANSACTION(t_here, h3, let_remote(tmp) = h3 IN(print(tmp)));
+		TRANSACTION(t_here, h2, let_remote(tmp) = h2 IN(print(tmp)));
+		t_here.assert_nonempty_tracking();
 		assert(h1.get(t_here,nullptr) == h2.get(t_here,nullptr));
-		std::cerr << "Got past the assert" << std::endl;
 	}
 
 	assert(false && "checkpoint");
