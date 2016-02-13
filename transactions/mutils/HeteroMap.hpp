@@ -13,7 +13,7 @@ namespace mutils {
 		using count = std::function<int (Key)>;
 		using destructor = std::function<void ()>;
 		template<typename T>
-		using submap = std::map<Key, std::unique_ptr<T> >;
+		using submap = std::map<Key, std::unique_ptr<std::decay_t<T> > >;
 		
 		static type_id type_id_counter(bool increment){
 			static type_id counter = 0;
@@ -31,42 +31,42 @@ namespace mutils {
 		std::map<Key,type_id> member_set; //for membership queries, when we do not know the type
 		
 		template<typename T>
-		submap<T>* get_submap(){
-			auto tid = get_type_id<T>();
+		submap<std::decay_t<T> >* get_submap(){
+			auto tid = get_type_id<std::decay_t<T> >();
 			if (sub_maps.count(tid) == 0){
-				submap<T>* newmap = new submap<T>{};
+				submap<std::decay_t<T> >* newmap = new submap<std::decay_t<T> >{};
 				sub_maps.emplace(
 					tid,
 					std::tuple<void*,count,destructor,std::string>{
 						newmap,
 							[newmap](Key k){return newmap->count(k);},
 							[newmap](){delete newmap;},
-								type_name<T>()
+								type_name<std::decay_t<T> >()
 								});
 			}
-			return (submap<T>*) std::get<0>(sub_maps[tid]);
+			return (submap<std::decay_t<T> >*) std::get<0>(sub_maps[tid]);
 		}
 		
 		template<typename T>
-		submap<T> const * const get_submap() const {
-			return (submap<T>*) std::get<0>(sub_maps.at(get_type_id<T>()));
+		submap<std::decay_t<T> > const * const get_submap() const {
+			return (submap<T>*) std::get<0>(sub_maps.at(get_type_id<std::decay_t<T> >()));
 		}
 	public:
 		
 		template<typename T>
 		auto& at(Key i) const {
-			auto tid = get_type_id<T>();
+			auto tid = get_type_id<std::decay_t<T> >();
 			assert([&]() -> bool {
 					if (sub_maps.count(tid) == 0){
 						if (member_set.count(i) != 0){
 							//this would indicate that there's a disagreement between the type mapping in
 							//member_set and the static type_id assignment
-							assert(get_type_id<T>() == get_type_id<T>());
+							assert(get_type_id<std::decay_t<T> >() == get_type_id<std::decay_t<T> >());
 							assert(sub_maps.count(member_set.at(i)) > 0);
 							std::cerr << "we have type ("
 									  << std::get<3>(sub_maps.at(member_set.at(i)))
 									  << ") for this key; you asked for ("
-									  << type_name<T>() << ")" << std::endl;
+									  << type_name<std::decay_t<T> >() << ")" << std::endl;
 							assert(false && "HeteroMap failure");
 						}
 					}
@@ -75,13 +75,13 @@ namespace mutils {
 			//this is just a normal failure of at() when there's no element to retrieve.
 			if (sub_maps.count(tid) == 0) std::cout << "missing key: " << i << std::endl;
 			assert(sub_maps.count(tid) > 0);
-			return get_submap<T>()->at(i);
+			return get_submap<std::decay_t<T> >()->at(i);
 		}
 		
 		template<typename T>
 		auto& mut(Key i){
-			member_set.emplace(i,get_type_id<T>());
-			return (*get_submap<T>())[i];
+			member_set.emplace(i,get_type_id<std::decay_t<T> >());
+			return (*get_submap<std::decay_t<T> >())[i];
 		}
 		
 		bool contains(Key i) const {
