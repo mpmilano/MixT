@@ -42,20 +42,17 @@ namespace myria {
 			bool committed = false;
 
 		public:
-			template<typename T>
-			TransactionContext(T const * const param, decltype(trackingContext) trackingContext)
+			TransactionContext(void const * const param, decltype(trackingContext) trackingContext)
 				:parameter(param),trackingContext(std::move(trackingContext))
 				{}
 
 			TransactionContext(const TransactionContext&) = delete;
 
-			template<typename T>
-			TransactionContext(T const * const param, decltype(strongContext) sc, decltype(trackingContext) trackingContext)
+			TransactionContext(void const * const param, decltype(strongContext) sc, decltype(trackingContext) trackingContext)
 				:parameter(param),trackingContext(std::move(trackingContext)),strongContext(std::move(sc))
 				{}
 
-			template<typename T>
-			TransactionContext(T const * const param, decltype(causalContext) cc, decltype(trackingContext) trackingContext)
+			TransactionContext(void const * const param, decltype(causalContext) cc, decltype(trackingContext) trackingContext)
 				:parameter(param),trackingContext(std::move(trackingContext)),causalContext(std::move(cc))
 				{}
 			

@@ -143,23 +143,23 @@ namespace myria{
 		void put(tracker::Tracker& tracker, mtl::TransactionContext *tc, const T& t){
 			choose_strong<l> choice{nullptr};
 			assert(tc || !_ro->store().in_transaction());
-			auto owner = (tc ? nullptr : std::make_unique<mtl::TransactionContext>(nullptr,_ro->store().begin_transaction(),tracker.generateContext()));
+			auto owner = (tc ? nullptr : std::make_unique<mtl::TransactionContext>((T*)nullptr,_ro->store().begin_transaction(),tracker.generateContext()));
 			if (owner) owner->commit_on_delete = true;
 			auto &ctx = (owner ? *owner : *tc);
 			assert(ctx.trackingContext);
-			return put(tracker, *ctx.template get_store_context<l>(_ro->store()),*ctx.trackingContext,t,choice);
+			return put(tracker, ctx,t,choice);
 		}
 	
-		void put(tracker::Tracker& tracker, mtl::StoreContext<l> &ctx, tracker::TrackingContext& trk, const T& t, std::true_type*) {
+		void put(tracker::Tracker& tracker, mtl::TransactionContext &ctx, const T& t, std::true_type*) {
 			assert(_ro);
-			tracker.onWrite(ctx,trk,_ro->store(),_ro->name());
-			_ro->put(ctx,t);
+			tracker.onWrite(ctx,_ro->store(),_ro->name());
+			_ro->put(ctx.template get_store_context<l>(_ro->store()).get(),t);
 		}
 
-		void put(tracker::Tracker& tracker, mtl::StoreContext<l> &ctx, tracker::TrackingContext& trk, const T& t, std::false_type*) {
+		void put(tracker::Tracker& tracker, mtl::TransactionContext &ctx, const T& t, std::false_type*) {
 			assert(_ro);
 			tracker.onWrite(_ro->store(),_ro->name(),_ro->timestamp());
-			_ro->put(ctx,t);
+			_ro->put(ctx.template get_store_context<l>(_ro->store()).get(),t);
 		}
 
 		bool isValid(mtl::TransactionContext *ctx) const {

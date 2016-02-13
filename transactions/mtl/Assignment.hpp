@@ -12,12 +12,12 @@ namespace myria { namespace mtl {
 		private:
 
 			template<Level l2, HandleAccess ha2>
-			static auto hndle_get(Handle<l2,ha2,T> h){
-				return h.get();
+			static auto hndle_get(TransactionContext* ctx, Handle<l2,ha2,T> h){
+				return h.get(ctx->trackingContext->trk,ctx);
 			}
 
 			template<typename T2, restrict(!is_handle<T2>::value)>
-			static auto hndle_get(const T2 &t2){
+			static auto hndle_get(TransactionContext*, const T2 &t2){
 				return t2;
 			}
 
@@ -53,7 +53,7 @@ namespace myria { namespace mtl {
 				}
 
 			auto environment_expressions() const{
-				return mtl::environment_expressions(e);
+				return std::tuple_cat(mtl::environment_expressions(e),mtl::environment_expressions(t));
 			}
 
 			bool strongCall(TransactionContext* ctx, StrongCache& c, const StrongStore &s) const {
@@ -74,31 +74,31 @@ namespace myria { namespace mtl {
 			}
 
 			template<typename T2>
-			auto strongCall(TransactionContext* ctx, const StrongCache &c, const StrongStore &s, std::true_type*, T2*, std::true_type*) const {
+			auto strongCall(TransactionContext* ctx, StrongCache &c, const StrongStore &s, std::true_type*, T2*, std::true_type*) const {
 				static_assert(runs_with_strong(get_level<Expr>::value),"error: flow violation in assignment");
 				auto hndl = run_ast_strong(ctx,c,s,t);
-				hndl.put(Assignment::hndle_get(run_ast_strong(ctx, c,s,e)));
+				hndl.put(ctx->trackingContext->trk,ctx,Assignment::hndle_get(ctx,run_ast_strong(ctx, c,s,e)));
 			}
 
-			bool causalCall(TransactionContext* ctx, const CausalCache &c, const CausalStore &s) const {
+			bool causalCall(TransactionContext* ctx, CausalCache &c, const CausalStore &s) const {
 				choose_strong<get_level<T>::value > choice1{nullptr};
 				choose_strong<get_level<run_result<T> >::value> choice2{nullptr};
 				causalCall(ctx, c,s,choice1,choice2);
 				return true;
 			}
 
-			auto causalCall(TransactionContext* ctx, const CausalCache &c, const CausalStore &s, std::false_type*,std::false_type*) const {
+			auto causalCall(TransactionContext* ctx, CausalCache &c, const CausalStore &s, std::false_type*,std::false_type*) const {
 				if (runs_with_strong(get_level<Expr>::value) ){
-					run_ast_causal(ctx,c,s,t).put(c.get<HDref<Expr> >(id));
+					run_ast_causal(ctx,c,s,t).put(ctx->trackingContext->trk,ctx,c.get<HDref<Expr> >(id));
 				}
 				else {
-					run_ast_causal(ctx,c,s,t).put(Assignment::hndle_get(run_ast_causal(ctx, c,s,e)));
+					run_ast_causal(ctx,c,s,t).put(ctx->trackingContext->trk,ctx,Assignment::hndle_get(run_ast_causal(ctx, c,s,e)));
 				}
 			}
 
 			auto causalCall(TransactionContext* ctx, const CausalCache &c, const CausalStore &s, std::true_type*,std::true_type*) const {
 				constexpr auto l = get_level<T>::value;
-				static_assert(l == get_level<Expr>::value && l == Level::strong,"static assert failed");
+				static_assert(l == get_level<Expr>::value && runs_with_strong(l),"Error: assignment of strong to causal");
 			}
 
 		};
