@@ -94,7 +94,7 @@ namespace myria { namespace mtl {
 
 		template<unsigned long long ID, typename T>
 		auto find_usage(const Ignore<T>& i){
-			return find_usage(i.t);
+			return find_usage<ID>(i.t);
 		}
 
 		template<typename T>

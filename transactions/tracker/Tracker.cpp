@@ -181,6 +181,10 @@ namespace myria { namespace tracker {
 		void Tracker::assert_nonempty_tracking() const {
 			assert (!(i->tracking.empty()));
 		}
+
+		const CooperativeCache& Tracker::getcache() const {
+			return i->cache;
+		}
 		
 		Tracker::Tracker(int cache_port):i{new Internals{}},cache_port(cache_port){
 			assert(cache_port > 0 && "error: must specify non-zero cache port for first tracker call");
@@ -470,7 +474,6 @@ namespace myria { namespace tracker {
 		}
 		
 		void Tracker::afterRead(TrackingContext &tctx, DataStore<Level::causal>&, Name name, const Clock& version, const std::vector<char> &data){
-			assert(false);
 			if (tracking_candidate(*i,name,version)){
 				//need to overwrite, not occlude, the previous element.
 				//C++'s map semantics are really stupid.

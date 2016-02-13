@@ -115,8 +115,8 @@ namespace myria { namespace tracker {
 						std::cerr << ("ERROR opening socket") << std::endl;
 						throw NetException{};
 					}
-					linger lingerStruct{0,0};
-					setsockopt(sockfd, SOL_SOCKET, SO_LINGER, (void *)&lingerStruct, sizeof(lingerStruct));
+					//linger lingerStruct{0,0};
+					//setsockopt(sockfd, SOL_SOCKET, SO_LINGER, (void *)&lingerStruct, sizeof(lingerStruct));
 					
 					AtScopeEnd ase{[&](){close(sockfd);}};
 					discard(ase);
@@ -216,8 +216,8 @@ namespace myria { namespace tracker {
 						socklen_t clilen;
 						struct sockaddr_in serv_addr, cli_addr;
 						sockfd = socket(AF_INET, SOCK_STREAM, 0);
-						linger lingerStruct{0,0};
-						setsockopt(sockfd, SOL_SOCKET, SO_LINGER, (void *)&lingerStruct, sizeof(lingerStruct));
+						//linger lingerStruct{0,0};
+						//setsockopt(sockfd, SOL_SOCKET, SO_LINGER, (void *)&lingerStruct, sizeof(lingerStruct));
 						if (sockfd < 0){
 							std::cerr << "ERROR opening socket" << std::endl;
 							return;

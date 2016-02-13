@@ -24,6 +24,8 @@ namespace myria {
 	struct Handle;
 	namespace tracker {
 
+		class CooperativeCache;
+
 		namespace TDS{
 			static constexpr int newTomb = 0;
 			static constexpr int exists = 1;
@@ -139,6 +141,7 @@ namespace myria {
 
 			//for testing
 			void assert_nonempty_tracking() const;
+			const CooperativeCache& getcache() const;
 
 			friend struct TrackingContext;
 

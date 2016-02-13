@@ -13,7 +13,7 @@ namespace myria { namespace tracker {
 			using obj_bundle = std::vector<Tracker::StampedObject>;
 			using lock = std::unique_lock<std::mutex>;
 			using cache_t = std::map<Tracker::Nonce, obj_bundle >;
-		private:
+			//private:
 			std::shared_ptr<std::mutex> m{std::make_shared<std::mutex>()};
 			std::shared_ptr<cache_t> cache{ std::make_shared<cache_t>()};
 			std::list<Tracker::Nonce> order;

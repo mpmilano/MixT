@@ -47,12 +47,18 @@ Ret firstFunction(ExtraParam1, ExtraParam2, Param){
 
 Ret secondFunction(ExtraParam1, ExtraParam2, Param){
 	CooperativeCache cc;
-	future<std::vector<Tracker::StampedObject> > res = cc.get({1,mutils::decode_ip("127.0.0.1")},5000);
-	auto obj = res.get();
-	std::cout << "we received: " << obj << std::endl;
-	assert((obj.front() == Tracker::StampedObject{2,{{1,1,1,1}},{'c','a','f','e',0}}));
-	cc.get({12,mutils::decode_ip("127.0.0.1")},5000).get();
-	return make_pair(true,"");
+	while (true) try{
+			future<std::vector<Tracker::StampedObject> > res = cc.get({1,mutils::decode_ip("127.0.0.1")},5000);
+			auto obj = res.get();
+			std::cout << "we received: " << obj << std::endl;
+			assert((obj.front() == Tracker::StampedObject{2,{{1,1,1,1}},{'c','a','f','e',0}}));
+			cc.get({12,mutils::decode_ip("127.0.0.1")},5000).get();
+			return make_pair(true,"");
+			break;
+		}
+		catch (const CooperativeCache::ProtocolException& e){
+			std::cout << e.what() << " (protocol exception, trying again...)" << std::endl;
+		}
 }
 
 int main(){
@@ -101,20 +107,43 @@ int main(){
 
 	{
 		Tracker t_here{5003};
-		Tracker t_there{5004};
+		//Tracker t_there{5004};
 		TrackerTestingStore<Level::strong> strong_here{t_here};
 		TrackerTestingStore<Level::causal> causal_here{t_here};
-		TrackerTestingStore<Level::strong> strong_there{t_there};
-		TrackerTestingStore<Level::causal> causal_there{t_there};
+		//TrackerTestingStore<Level::strong> strong_there{t_there};
+		//TrackerTestingStore<Level::causal> causal_there{t_there};
 		strong_here.newObject<HandleAccess::all>(t_here,nullptr,2147483659L,Tracker::Clock{{0,0,0,0}});
 		auto h1 = strong_here.newObject<HandleAccess::all>(t_here,nullptr,3,string("foo"));
 		auto h2 = strong_here.existingObject<HandleAccess::all,string>(t_here,nullptr,3);
 		auto h3 = causal_here.newObject<HandleAccess::all>(t_here,nullptr,4,string("foofoo"));
-		TRANSACTION(t_here, h1, let_remote(tmp) = h1 IN(print($(tmp))));
-		TRANSACTION(t_here, h3, let_remote(tmp) = h3 IN(print($(tmp))));
-		TRANSACTION(t_here, h2, let_remote(tmp) = h2 IN(print($(tmp))));
+		TRANSACTION(t_here, h1, let_remote(tmp) = h1 IN(mtl_ignore($(tmp))));
+		TRANSACTION(t_here, h3, let_remote(tmp) = h3 IN(mtl_ignore($(tmp))));
+		TRANSACTION(t_here, h2, let_remote(tmp) = h2 IN(mtl_ignore($(tmp))));
 		t_here.assert_nonempty_tracking();
 		assert(h1.get(t_here,nullptr) == h2.get(t_here,nullptr));
+
+		auto& cchere = t_here.getcache();
+
+		assert(!cchere.cache->empty());
+		for (auto& e : *cchere.cache){
+			std::cout << e.first << " --> " << e.second << std::endl;
+		}
+		
+		CooperativeCache cc;
+		while (true) try{
+				future<std::vector<Tracker::StampedObject> > res = cc.get({4,mutils::decode_ip("127.0.0.1")},5003);
+				auto obj = res.get();
+				std::cout << "we received: " << obj << std::endl;
+				cc.get({12,mutils::decode_ip("127.0.0.1")},5000).get();
+				break;
+			}
+			catch (const CooperativeCache::ProtocolException& e){
+				std::cout << e.what() << " (protocol exception, trying again...)" << std::endl;
+			}
+			catch (const CooperativeCache::CacheMiss& e){
+				std::cout << e.what() << std::endl;
+				break;
+			}
 	}
 
 	assert(false && "checkpoint");
