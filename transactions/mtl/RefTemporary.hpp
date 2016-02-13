@@ -88,10 +88,10 @@ namespace myria { namespace mtl {
 
 			template<typename E2>
 			std::enable_if_t<std::is_same<Temporary<ID,l,T>, Temp>::value,
-							 decltype(std::declval<RefTemporary>() << std::declval<E2>())>
+							 decltype(std::declval<RefTemporary>() << wrap_constants(std::declval<E2>()))>
 			operator=(const E2 &e) const {
-				static_assert(is_ConExpr<E2>::value,"Error: attempt to assign non-Expr");
-				return *this << e;
+				static_assert(is_ConExpr<std::decay_t<decltype(wrap_constants(e))> >::value,"Error: attempt to assign non-Expr");
+				return *this << wrap_constants(e);
 			}//*/
 
 

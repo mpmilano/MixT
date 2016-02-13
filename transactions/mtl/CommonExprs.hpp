@@ -58,6 +58,10 @@ namespace myria { namespace mtl {
 			return t;
 		}
 
+		auto wrap_constants(const std::string &s){
+			return CSConstant<Level::undef,std::string>{s};
+		}
+
 		//TODO: figure out why this needs to be here
 		template<Level l, typename T>
 		struct is_ConExpr<CSConstant<l,T> > : std::true_type {};

@@ -7,7 +7,7 @@
 
 namespace myria { namespace mtl {
 
-		template<Level l, HandleAccess ha, typename T, typename Expr>
+		template<typename T, typename Expr>
 		struct Assignment : public ConStatement<get_level<Expr>::value>{
 		private:
 
@@ -23,23 +23,33 @@ namespace myria { namespace mtl {
 
 			template<typename T2>
 			struct HDref_i {using t = T2;};
-			template<Level l2, HandleAccess ha2>
-			struct HDref_i<Handle<l2,ha2,T> > {using t = T;};
+			template<typename T2, Level l2, HandleAccess ha2>
+			struct HDref_i<Handle<l2,ha2,T2> > {using t = T2;};
 			template<typename T2>
 			using HDref = typename HDref_i<run_result<T2> >::t;
+
+			template<typename T2>
+			struct is_string : public std::is_same<T2, std::string> {};
 	
 		public:
-			const Handle<l,ha,T> t;
+			const T t;
 			const Expr e;
 			const int id = mutils::gensym();
-			Assignment(const Handle<l,ha,T> &t, const Expr & e)
+			Assignment(const T &t, const Expr & e)
 				:t(t),e(e)
 				{
+					static_assert(is_handle<run_result<T> >::value,"Error: Assignment construct only for modifying handles!");
 					static_assert(
-						can_flow(get_level<Expr>::value, l),
+						can_flow(get_level<Expr>::value, get_level<run_result<T> >::value),
 						"Error: assignment to strong member from causal expression!"
 						);
-					static_assert(std::is_same<HDref<Expr>, T>::value, "Error: Assignment of incompatible types (no subtyping applies here)" );
+					static_assert(
+						can_flow(get_level<Expr>::value, get_level<T>::value),
+						"Error: deduction of assignment LHS requires strong context; causal expression forces causal context!"
+						);
+					static_assert(mutils::error_helper<is_string, HDref<Expr> >::value,"");
+					static_assert(mutils::error_helper<is_string, HDref<T> >::value,"");
+					static_assert(std::is_same<HDref<Expr>, HDref<T> >::value, "Error: Assignment of incompatible types (no subtyping applies here)" );
 				}
 
 			auto environment_expressions() const{
@@ -47,41 +57,47 @@ namespace myria { namespace mtl {
 			}
 
 			bool strongCall(TransactionContext* ctx, StrongCache& c, const StrongStore &s) const {
-				choose_strong<l> choice1{nullptr};
+				choose_strong<get_level<T>::value > choice1{nullptr};
 				choose_strong<get_level<Expr>::value> choice2{nullptr};
-				strongCall(ctx, c,s,choice1,choice2);
+				choose_strong<get_level<run_result<T> >::value> choice3{nullptr};
+				strongCall(ctx, c,s,choice1,choice2,choice3);
 				return true;
 			}
 
-			void strongCall(TransactionContext* ctx, StrongCache &c, const StrongStore &s, std::false_type*, std::false_type*) const {
+			void strongCall(TransactionContext* ctx, StrongCache &c, const StrongStore &s, std::false_type*, std::false_type*, std::false_type*) const {
+				run_ast_strong(ctx,c,s,t);
 				run_ast_strong(ctx, c,s,e);
 			}
-			void strongCall(TransactionContext* ctx, StrongCache &c, const StrongStore &s, std::false_type*, std::true_type*) const {
+			void strongCall(TransactionContext* ctx, StrongCache &c, const StrongStore &s, std::false_type*, std::true_type*, std::false_type*) const {
+				run_ast_strong(ctx,c,s,t);
 				c.insert(id,Assignment::hndle_get(run_ast_strong(ctx, c,s,e)));
 			}
 
 			template<typename T2>
-			auto strongCall(TransactionContext* ctx, const StrongCache &c, const StrongStore &s, std::true_type*, T2*) const {
+			auto strongCall(TransactionContext* ctx, const StrongCache &c, const StrongStore &s, std::true_type*, T2*, std::true_type*) const {
 				static_assert(runs_with_strong(get_level<Expr>::value),"error: flow violation in assignment");
-				t.clone().put(Assignment::hndle_get(run_ast_strong(ctx, c,s,e)));
+				auto hndl = run_ast_strong(ctx,c,s,t);
+				hndl.put(Assignment::hndle_get(run_ast_strong(ctx, c,s,e)));
 			}
 
 			bool causalCall(TransactionContext* ctx, const CausalCache &c, const CausalStore &s) const {
-				choose_strong<l> choice{nullptr};
-				causalCall(ctx, c,s,choice);
+				choose_strong<get_level<T>::value > choice1{nullptr};
+				choose_strong<get_level<run_result<T> >::value> choice2{nullptr};
+				causalCall(ctx, c,s,choice1,choice2);
 				return true;
 			}
 
-			auto causalCall(TransactionContext* ctx, const CausalCache &c, const CausalStore &s, std::false_type*) const {
+			auto causalCall(TransactionContext* ctx, const CausalCache &c, const CausalStore &s, std::false_type*,std::false_type*) const {
 				if (runs_with_strong(get_level<Expr>::value) ){
-					t.clone().put(c.get<HDref<Expr> >(id));
+					run_ast_causal(ctx,c,s,t).put(c.get<HDref<Expr> >(id));
 				}
 				else {
-					t.clone().put(Assignment::hndle_get(run_ast_causal(ctx, c,s,e)));
+					run_ast_causal(ctx,c,s,t).put(Assignment::hndle_get(run_ast_causal(ctx, c,s,e)));
 				}
 			}
 
-			auto causalCall(TransactionContext* ctx, const CausalCache &c, const CausalStore &s, std::true_type*) const {
+			auto causalCall(TransactionContext* ctx, const CausalCache &c, const CausalStore &s, std::true_type*,std::true_type*) const {
+				constexpr auto l = get_level<T>::value;
 				static_assert(l == get_level<Expr>::value && l == Level::strong,"static assert failed");
 			}
 
@@ -89,20 +105,19 @@ namespace myria { namespace mtl {
 
 		template<unsigned long long ID, Level l, typename T, HandleAccess HA, typename E>
 		auto operator<<(const RefTemporary<ID,l,Handle<l,HA,T>,Temporary<ID,l,Handle<l,HA,T> > >& rt, const E &e){
-			return Assignment<l,HA,T,E>{rt.t.t,e};
+			return Assignment<Handle<l,HA,T>,E>{rt.t.t,e};
 		}
 
 		template<unsigned long long ID, Level l1, Level l2, typename T, HandleAccess HA, typename E>
 		auto operator<<(const RefTemporary<ID,l1,EnvironmentExpression<Handle<l2,HA,T> >,
 						Temporary<ID,l1,EnvironmentExpression<Handle<l2,HA,T> > > >& rt,
 						const E &e){
-			static_assert(runs_with_strong(l1) ? runs_with_strong(l2) : runs_with_causal(l1), "Mismatch levels in Handle and Reference? ");
 			assert(false);
-			return Assignment<l1,HandleAccess::all,T,E>{rt.t.t,e};
+			return Assignment<EnvironmentExpression<Handle<l2,HA,T> >,E>{rt.t.t,e};
 		}
 
-		template<unsigned long long ID, Level l, HandleAccess ha, typename T, typename Expr>
-		auto find_usage(const Assignment<l,ha,T,Expr> &rt){
+		template<unsigned long long ID, typename T, typename Expr>
+		auto find_usage(const Assignment<T,Expr> &rt){
 			return find_usage<ID>(rt.e);
 		}
 
