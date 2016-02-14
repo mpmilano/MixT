@@ -57,10 +57,8 @@ namespace myria { namespace mtl {
 		std::enable_if_t<!std::is_scalar<T>::value, T> wrap_constants(const T& t){
 			return t;
 		}
-
-		auto wrap_constants(const std::string &s){
-			return CSConstant<Level::undef,std::string>{s};
-		}
+		
+		CSConstant<Level::undef,std::string> wrap_constants(const std::string &s);
 
 		//TODO: figure out why this needs to be here
 		template<Level l, typename T>
