@@ -41,15 +41,15 @@ namespace mutils{
 
 	void break_here(){}
 
-	namespace{
-		bool init_rand(){
-			static bool init = [&](){
-				timespec ts;
-				clock_gettime(CLOCK_REALTIME,&ts);
-				srand48(ts.tv_nsec);
-				return true;}();
-			return init;
-		}
+	
+	bool init_rand(int seed = 0){
+		static bool init = [&](){
+			timespec ts;
+			clock_gettime(CLOCK_REALTIME,&ts);
+			if (seed) srand48(seed);
+			else srand48(ts.tv_nsec);
+			return true;}();
+		return init;
 	}
 	
 	double better_rand(){

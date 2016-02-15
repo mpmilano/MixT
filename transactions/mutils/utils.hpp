@@ -308,6 +308,8 @@ namespace mutils{
 	using is_vector = std::is_same<T, std::vector< typename T::value_type,
 												   typename T::allocator_type > >;
 
+	bool init_rand(int seed);
+	
 	double better_rand();
 
 	long int long_rand();

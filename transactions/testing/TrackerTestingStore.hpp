@@ -88,13 +88,15 @@ namespace myria { namespace testing {
 				}
 				
 				const T& get(mtl::StoreContext<l>*, tracker::Tracker*/* = nullptr*/, tracker::TrackingContext*/* = nullptr*/) {
-					this->t = std::make_shared<T>(*remote_store().rs.template at<T>(nam));
+					if (*remote_store().rs.contains(nam))
+						this->t = std::make_shared<T>(*remote_store().rs.template at<T>(nam));
 					return *t;
 				}
 				
 				void put(mtl::StoreContext<l>*,const T& to) {
 					this->t = std::make_shared<T>(to);
-					remote_store().rs.template mut<T>(nam).reset(new T(*t));
+					if (l == Level::strong)
+						remote_store().rs.template mut<T>(nam).reset(new T(*t));
 				}
 				
 				const DataStore<l>& store() const {
@@ -128,7 +130,10 @@ namespace myria { namespace testing {
 
 			template<typename T>
 			static std::unique_ptr<TrackerTestingObject<T> > from_bytes(char const * v){
-				return std::make_unique<TrackerTestingObject<T> >(((TrackerTestingObject<T>**) v)[0]);
+				TrackerTestingObject<T> *ptr = ((TrackerTestingObject<T>**) v)[0];
+				auto ret = std::make_unique<TrackerTestingObject<T> >(*ptr);
+				delete ptr;
+				return ret;
 			}
 
 			

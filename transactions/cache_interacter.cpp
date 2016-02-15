@@ -63,6 +63,8 @@ Ret secondFunction(ExtraParam1, ExtraParam2, Param){
 
 int main(){
 
+	init_rand(5);
+
 	std::vector<std::function<Ret (ExtraParam1, ExtraParam2, Param)> > functions;
 	functions.emplace_back(firstFunction);
 	functions.emplace_back(secondFunction);
@@ -136,10 +138,9 @@ int main(){
 		
 		CooperativeCache cc;
 		while (true) try{
-				future<std::vector<Tracker::StampedObject> > res = cc.get({4,mutils::decode_ip("127.0.0.1")},5003);
+				future<std::vector<Tracker::StampedObject> > res = cc.get({585950151,mutils::decode_ip("127.0.0.1")},5003);
 				auto obj = res.get();
 				std::cout << "we received: " << obj << std::endl;
-				cc.get({12,mutils::decode_ip("127.0.0.1")},5000).get();
 				break;
 			}
 			catch (const CooperativeCache::ProtocolException& e){
@@ -149,6 +150,18 @@ int main(){
 				std::cout << e.what() << std::endl;
 				break;
 			}
+
+		{
+			Tracker t_there{5004};
+			TrackerTestingStore<Level::strong> strong_there{t_there};
+			TrackerTestingStore<Level::causal> causal_there{t_there};
+			auto h2 = strong_there.existingObject<HandleAccess::all,string>(t_there,nullptr,3);
+			//auto h3 = causal_here.newObject<HandleAccess::all>(t_here,nullptr,4,string("foofoo"));
+			//TRANSACTION(t_there, h1, let_remote(tmp) = h1 IN(mtl_ignore($(tmp))));
+			//TRANSACTION(t_here, h3, let_remote(tmp) = h3 IN(mtl_ignore($(tmp))));
+			TRANSACTION(t_there, h2, let_remote(tmp) = h2 IN(mtl_ignore($(tmp))));
+		}
+
 	}
 
 	assert(false && "checkpoint");
