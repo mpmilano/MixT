@@ -88,7 +88,7 @@ namespace myria { namespace testing {
 				}
 				
 				const T& get(mtl::StoreContext<l>*, tracker::Tracker*/* = nullptr*/, tracker::TrackingContext*/* = nullptr*/) {
-					if (*remote_store().rs.contains(nam))
+					if (remote_store().rs.contains(nam))
 						this->t = std::make_shared<T>(*remote_store().rs.template at<T>(nam));
 					return *t;
 				}

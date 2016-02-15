@@ -156,9 +156,9 @@ int main(){
 			TrackerTestingStore<Level::strong> strong_there{t_there};
 			TrackerTestingStore<Level::causal> causal_there{t_there};
 			auto h2 = strong_there.existingObject<HandleAccess::all,string>(t_there,nullptr,3);
-			//auto h3 = causal_here.newObject<HandleAccess::all>(t_here,nullptr,4,string("foofoo"));
+			auto h3 = causal_there.existingObject<HandleAccess::all,string>(t_there,nullptr,4);
 			//TRANSACTION(t_there, h1, let_remote(tmp) = h1 IN(mtl_ignore($(tmp))));
-			//TRANSACTION(t_here, h3, let_remote(tmp) = h3 IN(mtl_ignore($(tmp))));
+			TRANSACTION(t_there, h3, let_remote(tmp) = h3 IN(mtl_ignore($(tmp))));
 			TRANSACTION(t_there, h2, let_remote(tmp) = h2 IN(mtl_ignore($(tmp))));
 		}
 
