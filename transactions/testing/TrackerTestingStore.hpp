@@ -75,7 +75,8 @@ namespace myria { namespace testing {
 				
 				TrackerTestingObject(TrackerTestingStore& tts, Name nam, T t)
 					:tts(tts),nam(nam),t(new T{t}){
-					remote_store().rs.template mut<T>(nam).reset(new T{t});
+					if (l == Level::strong || nam < 10)
+						remote_store().rs.template mut<T>(nam).reset(new T{t});
 				}
 
 				TrackerTestingObject(const TrackerTestingObject& tto)

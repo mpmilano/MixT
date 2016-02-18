@@ -101,6 +101,7 @@ namespace myria { namespace tracker {
 			{
 				lock l{*m};
 				if (cache->count(tomb.nonce) > 0) {
+					std::cout << "retrieved " << tomb.nonce << " via Cache" << std::endl;
 					return std::async(std::launch::deferred, [r = cache->at(tomb.nonce)](){return r;});
 				}
 			}
@@ -195,6 +196,7 @@ namespace myria { namespace tracker {
 						lock l{*m};
 						track_with_eviction(tomb.nonce,ret);
 					}
+					std::cout << "retrieved " << tomb.nonce << " via Cache" << std::endl;
 					return ret;
 				});
 			#else

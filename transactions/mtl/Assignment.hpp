@@ -143,7 +143,7 @@ namespace myria { namespace mtl {
 
 		template<unsigned long long ID, typename T, typename Expr>
 		auto find_usage(const Assignment<T,Expr> &rt){
-			return find_usage<ID>(rt.e);
+			return mutils::choose_non_np(find_usage<ID>(rt.t),find_usage<ID>(rt.e));
 		}
 
 	} }
