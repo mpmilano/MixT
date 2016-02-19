@@ -395,6 +395,8 @@ namespace myria { namespace tracker {
 					catch (...){
 						//something went wrong with the cooperative caching
 						sleep_on(ctx,i,p.first);
+						assert(get<TDS::exists>(*i.causalDS)(*i.registeredCausal,p.first));
+						remove_pending(ctx,i,p.first);
 						return nullptr;
 					}
 				}
@@ -427,7 +429,7 @@ namespace myria { namespace tracker {
 				if (get<TDS::exists>(*i->strongDS)(ds,ts)){
 					auto tomb = get<TDS::existingTomb>(*i->strongDS)(ds,ts)->get(&sctx,this,&tctx);
 					if (!sleep_on(*tctx.i,*i,tomb.name(),2)){
-						
+						std::cout << "Nonce isn't immediately available, adding to pending_nonces" << std::endl;
 						tctx.i->pending_nonces_add.emplace_back
 							(tomb.name(), Bundle{i->cache.get(tomb, cache_port)});
 					}
@@ -466,6 +468,8 @@ namespace myria { namespace tracker {
 							//but we can't merge it, so we're gonna have to
 							//hang out until we've caught up to the relevant tombstone
 							sleep_on(*ctx.i,*i,p.first);
+							assert(get<TDS::exists>(*i->causalDS)(*i->registeredCausal,p.first));
+							
 						}
 					);
 				return false;
