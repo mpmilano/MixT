@@ -93,9 +93,9 @@ namespace myria { namespace mtl {
 		template<unsigned long long ID, Level l, typename Temp>
 		struct chld_max_level<Temporary<ID,l,Temp> > : level_constant<l> {};
 
-		template<unsigned long long ID, Level l, typename T, typename Temp>
+		template<unsigned long long ID, Level l, typename T>
 		auto find_usage(const Temporary<ID,l,T> &rt){
-			return shared_copy(rt);
+			return mutils::shared_copy(rt);
 		}
 
 		template<unsigned long long ID, unsigned long long ID2, Level l, typename T>

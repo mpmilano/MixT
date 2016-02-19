@@ -267,6 +267,11 @@ namespace mutils{
 		if (t1) return t1; else return t2;
 	}
 
+	template<typename A, typename B, typename C, typename... D>
+	auto choose_non_np(const A& a, const B &b, const C &c, const D & ... d){
+		return choose_non_np(choose_non_np(a,b),c,d...);
+	}
+
 	std::nullptr_t dref_np(std::nullptr_t*);
 
 	template<typename T, restrict(!(std::is_same<T,std::nullptr_t>::value))>
