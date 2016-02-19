@@ -158,8 +158,15 @@ int main(){
 			auto h2 = strong_there.existingObject<HandleAccess::all,string>(t_there,nullptr,3);
 			auto h3 = causal_there.existingObject<HandleAccess::all,string>(t_there,nullptr,4);
 			//TRANSACTION(t_there, h1, let_remote(tmp) = h1 IN(mtl_ignore($(tmp))));
+			TRANSACTION(t_there, h3, let_remote(tmp1) = h3 IN( tmp1 = string("foo2") ));
+			TRANSACTION(t_there, h2, let_remote(tmp1) = h2 IN( tmp1 = string("foo3") ));
 			TRANSACTION(t_there, h3, let_remote(tmp) = h3 IN(mtl_ignore($(tmp))));
 			TRANSACTION(t_there, h2, let_remote(tmp) = h2 IN(mtl_ignore($(tmp))));
+			TRANSACTION(t_there, h3, let_remote(tmp1) = h3 IN( tmp1 = string("foo2") ));
+			TRANSACTION(t_there, h2, let_remote(tmp1) = h2 IN( tmp1 = string("foo3") ));
+			TRANSACTION(t_there, h3, let_remote(tmp) = h3 IN(mtl_ignore($(tmp))));
+			TRANSACTION(t_there, h2, let_remote(tmp) = h2 IN(mtl_ignore($(tmp))));
+
 		}
 
 	}

@@ -432,6 +432,7 @@ namespace myria { namespace tracker {
 						std::cout << "Nonce isn't immediately available, adding to pending_nonces" << std::endl;
 						tctx.i->pending_nonces_add.emplace_back
 							(tomb.name(), Bundle{i->cache.get(tomb, cache_port)});
+						std::cout << "added; does it dissappear? " << std::endl;
 					}
 				}
 			}
@@ -439,10 +440,10 @@ namespace myria { namespace tracker {
 
 #define for_each_pending_nonce(ctx,i,f...)			\
 		{for (auto &p : i->pending_nonces){			\
-			f(p);									\
+				f/*(p)*/;									\
 		}													\
 		for (auto &p : ctx->pending_nonces_add){			\
-			f(p);											\
+			f/*(p)*/;										\
 		}}													\
 
 		
@@ -454,16 +455,21 @@ namespace myria { namespace tracker {
 			//since this is always called directly after
 			//the user had the chance to use onRead,
 			//we can use this trivial state tracking mechanism
+			std::cout << "break 1!" << std::endl;
 			if (i->last_onRead_name && *i->last_onRead_name == name){
+				std::cout << "break 1: we used onRead, so we're skipping this" << std::endl;
 				i->last_onRead_name.reset(nullptr);
 				return true;
 			}
 
 			if (tracking_candidate(*i,name,version)) {
+				std::cout << "break 1: this is a tracking candidate" << std::endl;
 				//need to pause here and wait for nonce availability
 				//for each nonce in the list
 				for_each_pending_nonce(ctx.i,i,
+									   std::cout << "break 1: checking wait_for_available" << std::endl;
 						if (wait_for_available(*ctx.i,*i,name,p,version)){
+							std::cout << "break 1: wait_for_available in if-condition" << std::endl;
 							//I know we've gotten a cached version of the object,
 							//but we can't merge it, so we're gonna have to
 							//hang out until we've caught up to the relevant tombstone
@@ -512,6 +518,7 @@ namespace myria { namespace tracker {
 							   If that fails, then too bad; handling that comes later.
 							 */
 						}
+					else assert(get<TDS::exists>(*i->causalDS)(*i->registeredCausal,p.first));
 					);
 			}
 			return nullptr;

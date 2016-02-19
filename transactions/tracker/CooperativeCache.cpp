@@ -200,7 +200,7 @@ namespace myria { namespace tracker {
 					return ret;
 				});
 			#else
-			return std::async(std::launch::deferred,[]() -> CooperativeCache::obj_bundle {assert(false && "cache is inactive!");});
+			return std::async(std::launch::deferred,[]() -> CooperativeCache::obj_bundle {throw CacheMiss{};});
 			#endif
 		}
 
