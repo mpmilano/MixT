@@ -19,6 +19,7 @@ namespace myria { namespace tracker {
 			std::list<Tracker::Nonce> order;
 			static constexpr int max_size = 43;
 			static constexpr int tp_size = (int{MAX_THREADS} > 0 ? int{MAX_THREADS} : 50);
+			const CacheBehaviors active_behavior;
 			#ifdef MAKE_CACHE_REQUESTS
 			ctpl::thread_pool tp{tp_size};
 			#endif
@@ -33,7 +34,7 @@ namespace myria { namespace tracker {
 				}
 			};
 			struct CacheMiss : public mutils::StaticMyriaException<MACRO_GET_STR("Cooperative Cache Did not contain the desired object")>{};
-			CooperativeCache();
+			CooperativeCache(CacheBehaviors beh = CacheBehaviors::full);
 			CooperativeCache(const CooperativeCache&) = delete;
 			void insert(Tracker::Nonce, const std::map<Name,std::pair<Tracker::Clock, std::vector<char> > > &map);
 			void listen_on(int port);

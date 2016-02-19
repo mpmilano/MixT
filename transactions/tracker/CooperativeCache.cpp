@@ -11,7 +11,17 @@
 
 using namespace mutils;
 
-namespace myria { namespace tracker { 
+namespace myria { namespace tracker {
+
+		namespace{
+			bool behavior_accept_requests(CacheBehaviors beh){
+				return beh != CacheBehaviors::onlymake;
+			}
+
+			bool behavior_make_requests(CacheBehaviors beh){
+				return beh !=CacheBehaviors::onlyaccept;
+			}
+		}
 
 		struct hostent * extract_ip(Tracker::Nonce n);
 
@@ -25,7 +35,8 @@ namespace myria { namespace tracker {
 			(*cache)[n] = o;
 		}
 
-		CooperativeCache::CooperativeCache(){}
+		CooperativeCache::CooperativeCache(CacheBehaviors beh):active_behavior(beh){}
+		
 		void CooperativeCache::insert(Tracker::Nonce n, const std::map<Name,std::pair<Tracker::Clock, std::vector<char> > > &map){
 			obj_bundle new_tracking;
 			for (auto &p : map){
@@ -105,33 +116,33 @@ namespace myria { namespace tracker {
 					return std::async(std::launch::deferred, [r = cache->at(tomb.nonce)](){return r;});
 				}
 			}
-#ifdef MAKE_CACHE_REQUESTS 
-			return tp.push([tomb,portno,this](int) -> CooperativeCache::obj_bundle {
-					int sockfd;
-					struct sockaddr_in serv_addr;
-					struct hostent *server;
-					
-					sockfd = socket(AF_INET, SOCK_STREAM, 0);
-					if (sockfd < 0){
-						std::cerr << ("ERROR opening socket") << std::endl;
-						throw NetException{};
-					}
-					//linger lingerStruct{0,0};
-					//setsockopt(sockfd, SOL_SOCKET, SO_LINGER, (void *)&lingerStruct, sizeof(lingerStruct));
-					
-					AtScopeEnd ase{[&](){close(sockfd);}};
-					discard(ase);
-					server = gethostbyaddr(&tomb.ip_addr,sizeof(tomb.ip_addr),AF_INET);
-					bzero((char *) &serv_addr, sizeof(serv_addr));
-					serv_addr.sin_family = AF_INET;
-					bcopy((char *)server->h_addr,
-						  (char *)&serv_addr.sin_addr.s_addr,
-						  server->h_length);
-					serv_addr.sin_port = htons(portno);
-					if (connect(sockfd,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0){
-						std::cerr << ("ERROR connecting");
-						throw NetException{};
-					}
+			if (behavior_make_requests(active_behavior)){
+				return tp.push([tomb,portno,this](int) -> CooperativeCache::obj_bundle {
+						int sockfd;
+						struct sockaddr_in serv_addr;
+						struct hostent *server;
+						
+						sockfd = socket(AF_INET, SOCK_STREAM, 0);
+						if (sockfd < 0){
+							std::cerr << ("ERROR opening socket") << std::endl;
+							throw NetException{};
+						}
+						//linger lingerStruct{0,0};
+						//setsockopt(sockfd, SOL_SOCKET, SO_LINGER, (void *)&lingerStruct, sizeof(lingerStruct));
+						
+						AtScopeEnd ase{[&](){close(sockfd);}};
+						discard(ase);
+						server = gethostbyaddr(&tomb.ip_addr,sizeof(tomb.ip_addr),AF_INET);
+						bzero((char *) &serv_addr, sizeof(serv_addr));
+						serv_addr.sin_family = AF_INET;
+						bcopy((char *)server->h_addr,
+							  (char *)&serv_addr.sin_addr.s_addr,
+							  server->h_length);
+						serv_addr.sin_port = htons(portno);
+						if (connect(sockfd,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0){
+							std::cerr << ("ERROR connecting");
+							throw NetException{};
+						}
 					
 					//UGH there's a lot of boilerplate when you do networking.
 #define care_read_s(s,x...)												\
@@ -159,107 +170,105 @@ namespace myria { namespace tracker {
 					
 					
 #define care_assert(x...) if (!(x)) throw ProtocolException(std::string("Assert failed: ") + #x);
-					
-					auto tname = tomb.name();
-					
-					fail_on_false(write(sockfd,&tname,sizeof(tname)) >= 0);
-					
-					bool success = false;
-					int num_messages = 0;
-					care_read(success);
-					
-					if (!success) throw CacheMiss{};
-					care_read(num_messages);
-					
-					care_assert(num_messages > 0);
-					obj_bundle ret;
-					for (int i = 0; i < num_messages; ++i){
-						Name name;
-						care_read(name);
 						
-						Tracker::Clock clock;
-						for (int j = 0; j < clock.size(); ++j){
-							care_read(clock[j]);
+						auto tname = tomb.name();
+						
+						fail_on_false(write(sockfd,&tname,sizeof(tname)) >= 0);
+						
+						bool success = false;
+						int num_messages = 0;
+						care_read(success);
+						
+						if (!success) throw CacheMiss{};
+						care_read(num_messages);
+						
+						care_assert(num_messages > 0);
+						obj_bundle ret;
+						for (int i = 0; i < num_messages; ++i){
+							Name name;
+							care_read(name);
 							
+							Tracker::Clock clock;
+							for (int j = 0; j < clock.size(); ++j){
+								care_read(clock[j]);
+								
+							}
+							int obj_size;
+							care_read(obj_size);
+							
+							std::vector<char> obj(obj_size,0);
+							assert(obj.size() == obj_size);
+							//char bytes[obj_size];
+							care_read_s(obj_size,*obj.data());
+							
+							ret.emplace_back(name,clock,obj);
 						}
-						int obj_size;
-						care_read(obj_size);
-						
-						std::vector<char> obj(obj_size,0);
-						assert(obj.size() == obj_size);
-						//char bytes[obj_size];
-						care_read_s(obj_size,*obj.data());
-						
-						ret.emplace_back(name,clock,obj);
-					}
-					{
-						lock l{*m};
-						track_with_eviction(tomb.nonce,ret);
-					}
-					std::cout << "retrieved " << tomb.nonce << " via Cache" << std::endl;
-					return ret;
-				});
-			#else
-			return std::async(std::launch::deferred,[]() -> CooperativeCache::obj_bundle {throw CacheMiss{};});
-			#endif
+						{
+							lock l{*m};
+							track_with_eviction(tomb.nonce,ret);
+						}
+						std::cout << "retrieved " << tomb.nonce << " via Cache" << std::endl;
+						return ret;
+					});
+			}
+			else return std::async(std::launch::deferred,[]() -> CooperativeCache::obj_bundle {throw CacheMiss{};});
 		}
 
 
 		void CooperativeCache::listen_on(int portno){
 			std::cout << "listening on " << portno << std::endl;
 			//fork off this thread to listen for and respond to cooperative cache requests
-			#ifdef ACCEPT_CACHE_REQUESTS
-			auto cache = this->cache;
-			auto m = this->m;
-			std::thread([m,portno,cache](){
-					try {
-						AtScopeEnd ase2{[](){std::cout << "listening done; cache closed" << std::endl;}};
-						int sockfd;
-						socklen_t clilen;
-						struct sockaddr_in serv_addr, cli_addr;
-						sockfd = socket(AF_INET, SOCK_STREAM, 0);
-						//linger lingerStruct{0,0};
-						//setsockopt(sockfd, SOL_SOCKET, SO_LINGER, (void *)&lingerStruct, sizeof(lingerStruct));
-						if (sockfd < 0){
-							std::cerr << "ERROR opening socket" << std::endl;
-							return;
-						}
-						bzero((char *) &serv_addr, sizeof(serv_addr));
-						serv_addr.sin_family = AF_INET;
-						serv_addr.sin_addr.s_addr = INADDR_ANY;
-						serv_addr.sin_port = htons(portno);
-						if (bind(sockfd, (struct sockaddr *) &serv_addr,
-								 sizeof(serv_addr)) < 0){
-							std::cerr << "ERROR on binding" << std::endl;
-							return;
-						}
-						fail_on_false(listen(sockfd,50) == 0);
-						clilen = sizeof(cli_addr);
-						AtScopeEnd ase{[&](){close(sockfd);}};
-						constexpr int tp_size2 = tp_size;
-						FutureFreePool pool{tp_size2};
-						while (true) {
-							int newsockfd = accept(sockfd,
-												   (struct sockaddr *) &cli_addr,
-												   &clilen);
-							if (newsockfd < 0){
-								std::cerr << "ERROR on accept" << std::endl;
-								continue;
+			if (behavior_accept_requests(active_behavior)){
+				auto cache = this->cache;
+				auto m = this->m;
+				std::thread([m,portno,cache](){
+						try {
+							AtScopeEnd ase2{[](){std::cout << "listening done; cache closed" << std::endl;}};
+							int sockfd;
+							socklen_t clilen;
+							struct sockaddr_in serv_addr, cli_addr;
+							sockfd = socket(AF_INET, SOCK_STREAM, 0);
+							//linger lingerStruct{0,0};
+							//setsockopt(sockfd, SOL_SOCKET, SO_LINGER, (void *)&lingerStruct, sizeof(lingerStruct));
+							if (sockfd < 0){
+								std::cerr << "ERROR opening socket" << std::endl;
+								return;
 							}
-							//fork off a new thread to handle the request.
-							pool.launch([=](int){respond_to_request(m,cache,newsockfd);});
+							bzero((char *) &serv_addr, sizeof(serv_addr));
+							serv_addr.sin_family = AF_INET;
+							serv_addr.sin_addr.s_addr = INADDR_ANY;
+							serv_addr.sin_port = htons(portno);
+							if (bind(sockfd, (struct sockaddr *) &serv_addr,
+									 sizeof(serv_addr)) < 0){
+								std::cerr << "ERROR on binding" << std::endl;
+								return;
+							}
+							fail_on_false(listen(sockfd,50) == 0);
+							clilen = sizeof(cli_addr);
+							AtScopeEnd ase{[&](){close(sockfd);}};
+							constexpr int tp_size2 = tp_size;
+							FutureFreePool pool{tp_size2};
+							while (true) {
+								int newsockfd = accept(sockfd,
+													   (struct sockaddr *) &cli_addr,
+													   &clilen);
+								if (newsockfd < 0){
+									std::cerr << "ERROR on accept" << std::endl;
+									continue;
+								}
+								//fork off a new thread to handle the request.
+								pool.launch([=](int){respond_to_request(m,cache,newsockfd);});
+							}
 						}
-					}
-					catch(const std::exception & e){
-						std::cout << "Cache accept thread failure: " << e.what() << std::endl;
-					}
-					catch(...){
-						std::cout << "Cache accept thread failure!" << std::endl;
-					}
-				}).detach();
-			#endif
-		}
-
+						catch(const std::exception & e){
+							std::cout << "Cache accept thread failure: " << e.what() << std::endl;
+						}
+						catch(...){
+							std::cout << "Cache accept thread failure!" << std::endl;
+						}
+					}).detach();
+			}
+		}	
 
 		std::vector<char> const * const CooperativeCache::find(const obj_bundle& b,const Name& n, const Tracker::Clock &version){
 			for (auto &e : b){

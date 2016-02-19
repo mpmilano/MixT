@@ -110,8 +110,8 @@ int main(){
 	{
 		Tracker t_here{5003};
 		//Tracker t_there{5004};
-		TrackerTestingStore<Level::strong> strong_here{t_here};
-		TrackerTestingStore<Level::causal> causal_here{t_here};
+		TrackerTestingStore<TrackerTestingMode::manual_sync, Level::strong> strong_here{t_here};
+		TrackerTestingStore<TrackerTestingMode::manual_sync, Level::causal> causal_here{t_here};
 		//TrackerTestingStore<Level::strong> strong_there{t_there};
 		//TrackerTestingStore<Level::causal> causal_there{t_there};
 		strong_here.newObject<HandleAccess::all>(t_here,nullptr,2147483659L,Tracker::Clock{{0,0,0,0}});
@@ -153,8 +153,8 @@ int main(){
 
 		{
 			Tracker t_there{5004};
-			TrackerTestingStore<Level::strong> strong_there{t_there};
-			TrackerTestingStore<Level::causal> causal_there{t_there};
+			TrackerTestingStore<TrackerTestingMode::manual_sync, Level::strong> strong_there{t_there};
+			TrackerTestingStore<TrackerTestingMode::manual_sync, Level::causal> causal_there{t_there};
 			auto h2 = strong_there.existingObject<HandleAccess::all,string>(t_there,nullptr,3);
 			auto h3 = causal_there.existingObject<HandleAccess::all,string>(t_there,nullptr,4);
 			//TRANSACTION(t_there, h1, let_remote(tmp) = h1 IN(mtl_ignore($(tmp))));
@@ -171,26 +171,39 @@ int main(){
 
 	}
 
-	assert(false && "checkpoint");
-
 	{
-		std::thread t1{[](){
-				//has the objects we need
-				Tracker t{5001};
-				TrackerTestingStore<Level::strong> strong{t};
-				TrackerTestingStore<Level::causal> causal{t};
-			}};
+		Tracker t_here{5005};
+		Tracker t_there{5006};
+		TrackerTestingStore<TrackerTestingMode::manual_sync, Level::strong> strong_here{t_here};
+		TrackerTestingStore<TrackerTestingMode::manual_sync, Level::causal> causal_here{t_here};
+		TrackerTestingStore<TrackerTestingMode::manual_sync, Level::strong> strong_there{t_there};
+		TrackerTestingStore<TrackerTestingMode::manual_sync, Level::causal> causal_there{t_there};
+		strong_here.newObject<HandleAccess::all>(t_here,nullptr,2147483659L,Tracker::Clock{{0,0,0,0}});
 
-		std::thread{[](){
-				//wants the objects
-				Tracker t{5002};
-				TrackerTestingStore<Level::strong> strong{t};
-				TrackerTestingStore<Level::causal> causal{t};
+		{
+			// "here" transactions
+			auto h1 = strong_here.newObject<HandleAccess::all>(t_here,nullptr,3,string("foo"));
+			auto h3 = causal_here.newObject<HandleAccess::all>(t_here,nullptr,4,string("foofoo"));
+			TRANSACTION(t_here, h1, let_remote(tmp) = h1 IN(mtl_ignore($(tmp))));
+			TRANSACTION(t_here, h3, let_remote(tmp) = h3 IN(mtl_ignore($(tmp))));
+			
+			TRANSACTION(t_here, h1, let_remote(tmp1) = h1 IN( tmp1 = string("foo1") ));
+			TRANSACTION(t_here, h3, let_remote(tmp1) = h3 IN( tmp1 = string("foo2") ));
+		}
 
-			}}.join();
-
-		t1.join();
+		{
+			//"there" transactions
+			auto h2 = strong_there.existingObject<HandleAccess::all,string>(t_there,nullptr,3);
+			auto h3 = causal_there.existingObject<HandleAccess::all,string>(t_there,nullptr,4);
+			TRANSACTION(t_there, h3, let_remote(tmp1) = h3 IN( tmp1 = string("foo2") ));
+			TRANSACTION(t_there, h2, let_remote(tmp1) = h2 IN( tmp1 = string("foo3") ));
+			TRANSACTION(t_there, h3, let_remote(tmp) = h3 IN(mtl_ignore($(tmp))));
+			TRANSACTION(t_there, h2, let_remote(tmp) = h2 IN(mtl_ignore($(tmp))));
+			TRANSACTION(t_there, h3, let_remote(tmp1) = h3 IN( tmp1 = string("foo2") ));
+			TRANSACTION(t_there, h2, let_remote(tmp1) = h2 IN( tmp1 = string("foo3") ));
+			TRANSACTION(t_there, h3, let_remote(tmp) = h3 IN(mtl_ignore($(tmp))));
+			TRANSACTION(t_there, h2, let_remote(tmp) = h2 IN(mtl_ignore($(tmp))));
+		}
+		
 	}
-	
-	assert(sfres.first);
 }

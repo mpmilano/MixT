@@ -3,7 +3,11 @@
 #include <map>
 
 namespace myria { namespace testing {
-		template<Level l>
+		enum class TrackerTestingMode {
+			perfect, manual_sync
+		};
+		
+		template<TrackerTestingMode mode, Level l>
 		class TrackerTestingStore : public DataStore<l>{
 		public:
 			TrackerTestingStore(tracker::Tracker& t){
@@ -60,6 +64,35 @@ namespace myria { namespace testing {
 				};
 				return LockedMapAccess{rs,lock_t{mut}};
 			}
+
+			template<typename T>
+			static void remote_store_set(Name nam, const T &t){
+				remote_store().rs.template mut<T>(nam).reset(new T{t});
+			}
+
+			std::list<std::function<void ()> > deferred_commits;
+
+			template<typename T>
+			void causal_remote_propogation(const Name nam, const T &t){
+				//various modes are possible, controlled by class template parameter
+				switch(mode){
+				case TrackerTestingMode::perfect:
+					remote_store_set(nam,t);
+					break;
+				case TrackerTestingMode::manual_sync:
+					deferred_commits.push_back([=](){
+							remote_store_set(nam,t);
+						});
+					break;
+				}
+			}
+
+			void flush_deferred(){
+				for (const auto &f : deferred_commits){
+					f();
+				}
+				deferred_commits.clear();
+			}
 			
 			template<typename T>
 			class TrackerTestingObject : public RemoteObject<l,T> {
@@ -76,7 +109,10 @@ namespace myria { namespace testing {
 				TrackerTestingObject(TrackerTestingStore& tts, Name nam, T t)
 					:tts(tts),nam(nam),t(new T{t}){
 					if (l == Level::strong || nam < 10)
-						remote_store().rs.template mut<T>(nam).reset(new T{t});
+						remote_store_set(nam,t);
+					else {
+						tts.causal_remote_propogation(nam,t);
+					}
 				}
 
 				TrackerTestingObject(const TrackerTestingObject& tto)
@@ -97,7 +133,10 @@ namespace myria { namespace testing {
 				void put(mtl::StoreContext<l>*,const T& to) {
 					this->t = std::make_shared<T>(to);
 					if (l == Level::strong)
-						remote_store().rs.template mut<T>(nam).reset(new T(*t));
+						remote_store_set(nam,t);
+					else {
+						tts.causal_remote_propogation(nam,t);
+					}
 				}
 				
 				const DataStore<l>& store() const {
