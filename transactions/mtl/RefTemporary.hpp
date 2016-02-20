@@ -1,12 +1,13 @@
 #pragma once
 #include "TemporaryMutation.hpp"
+#include "MutableTemporary.hpp"
 
 namespace myria { namespace mtl {
 
 		template<unsigned long long ID, Level l, typename T, typename Temp>
-		struct RefTemporary : public ConExpr<run_result<T>,l> {
+		struct RefTemporaryCommon : public ConExpr<run_result<T>,l> {
 		private:
-			RefTemporary(const Temp& t, const std::string& name, int id):t(t),name(name),id(id){}
+			RefTemporaryCommon(const Temp& t, const std::string& name, int id):t(t),name(name),id(id){}
 		public:
 	
 			const Temp t;
@@ -17,16 +18,16 @@ namespace myria { namespace mtl {
 			//every copy should have a unique ID.
 			const int id = mutils::gensym();
 
-			RefTemporary(const Temp &t):t(t),name(t.name) {}
+			RefTemporaryCommon(const Temp &t):t(t),name(t.name) {}
 
-			RefTemporary(const RefTemporary& rt):t(rt.t),name(rt.name){
+			RefTemporaryCommon(const RefTemporaryCommon& rt):t(rt.t),name(rt.name){
 				assert(!debug_forbid_copy);
 			}
 	
-			RefTemporary(RefTemporary&& rt):t(rt.t),name(rt.name),id(rt.id){}
+			RefTemporaryCommon(RefTemporaryCommon&& rt):t(rt.t),name(rt.name),id(rt.id){}
 
-			RefTemporary clone() const {
-				return RefTemporary(t,name,id);
+			RefTemporaryCommon clone() const {
+				return RefTemporaryCommon(t,name,id);
 			}
 
 			auto environment_expressions() const {
@@ -77,23 +78,6 @@ namespace myria { namespace mtl {
 				}
 			}
 
-			template<typename E>
-			std::enable_if_t<!std::is_same<Temporary<ID,l,T>, Temp>::value, TemporaryMutation<decltype(wrap_constants(*mutils::mke_p<E>()))> >
-			operator=(const E &e) const {
-				static_assert(is_ConExpr<E>::value,"Error: attempt to assign non-Expr");
-				auto wrapped = wrap_constants(e);
-				TemporaryMutation<decltype(wrapped)> r{name,t.store_id,wrapped};
-				return r;
-			}
-			
-			template<typename E2>
-			auto operator=(const std::enable_if_t<std::is_same<Temporary<ID,l,T>, Temp>::value,E2> &e) const {
-				static_assert(is_ConExpr<std::decay_t<decltype(wrap_constants(e))> >::value,"Error: attempt to assign non-Expr");
-				return *this << wrap_constants(e);
-			}//*/
-
-
-
 		private:
 			template<StoreType st, restrict(is_store(st))>
 			static auto call(const StoreMap<st> &s, const Temporary<ID,l,T> &t) ->
@@ -106,12 +90,55 @@ namespace myria { namespace mtl {
 		};
 
 		template<unsigned long long ID, Level l, typename T, typename Temp>
-		auto find_usage(const RefTemporary<ID,l,T,Temp> &rt){
+		struct RefTemporary;
+		
+		template<unsigned long long ID, Level l, typename T>
+		struct RefTemporary<ID,l,T,Temporary<ID,l,T > > : public RefTemporaryCommon<ID,l,T,Temporary<ID,l,T > > {
+			using super_t = RefTemporaryCommon<ID,l,T,Temporary<ID,l,T > >;
+			using Temp = Temporary<ID,l,T >;
+		private:
+			RefTemporary(const Temp& t, const std::string& name, int id):super_t(t,name,id){}
+		public:
+			RefTemporary(const Temp &t):super_t(t){}
+
+			RefTemporary(const RefTemporary& rt):super_t(rt){}
+	
+			template<typename E2>
+			auto operator=(const E2 &e) const {
+				static_assert(is_ConExpr<std::decay_t<decltype(wrap_constants(e))> >::value,"Error: attempt to assign non-Expr");
+				return *this << wrap_constants(e);
+			}//*/
+
+		};
+
+		template<unsigned long long ID, Level l, typename T>
+		struct RefTemporary<ID,l,T,MutableTemporary<ID,l,T > > : public RefTemporaryCommon<ID,l,T,MutableTemporary<ID,l,T > > {
+			using super_t = RefTemporaryCommon<ID,l,T,MutableTemporary<ID,l,T > >;
+			using Temp = MutableTemporary<ID,l,T >;
+		private:
+			RefTemporary(const Temp& t, const std::string& name, int id):super_t(t,name,id){}
+		public:
+			RefTemporary(const Temp &t):super_t(t){}
+
+			RefTemporary(const RefTemporary& rt):super_t(rt){}
+			
+			template<typename E>
+			auto operator=(const E &e) const {
+				static_assert(is_ConExpr<E>::value,"Error: attempt to assign non-Expr");
+				auto wrapped = wrap_constants(e);
+				TemporaryMutation<decltype(wrapped)> r{this->name,this->t.store_id,wrapped};
+				return r;
+			}
+
+		};
+
+		template<unsigned long long ID, Level l, typename T, typename Temp>
+		auto find_usage(const RefTemporaryCommon<ID,l,T,Temp> &rt){
 			return mutils::shared_copy(rt.t);
 		}
 
 		template<unsigned long long ID, unsigned long long ID2, Level l, typename T, typename Temp>
-		std::enable_if_t<ID != ID2, std::nullptr_t> find_usage(const RefTemporary<ID2,l,T,Temp> &rt){
+		std::enable_if_t<ID != ID2, std::nullptr_t> find_usage(const RefTemporaryCommon<ID2,l,T,Temp> &rt){
 			return nullptr;
 		}
 
@@ -127,7 +154,7 @@ namespace myria { namespace mtl {
 		};
 
 		template<Level l, typename T, typename E, unsigned long long id>
-		constexpr bool is_reftemp(const RefTemporary<id,l,T, E> *){
+		constexpr bool is_reftemp(const RefTemporaryCommon<id,l,T, E> *){
 			return true;
 		}
 
