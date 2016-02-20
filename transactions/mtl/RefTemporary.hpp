@@ -85,11 +85,9 @@ namespace myria { namespace mtl {
 				TemporaryMutation<decltype(wrapped)> r{name,t.store_id,wrapped};
 				return r;
 			}
-
+			
 			template<typename E2>
-			std::enable_if_t<std::is_same<Temporary<ID,l,T>, Temp>::value,
-							 decltype(std::declval<RefTemporary>() << wrap_constants(std::declval<E2>()))>
-			operator=(const E2 &e) const {
+			auto operator=(const std::enable_if_t<std::is_same<Temporary<ID,l,T>, Temp>::value,E2> &e) const {
 				static_assert(is_ConExpr<std::decay_t<decltype(wrap_constants(e))> >::value,"Error: attempt to assign non-Expr");
 				return *this << wrap_constants(e);
 			}//*/

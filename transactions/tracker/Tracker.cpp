@@ -71,6 +71,7 @@ namespace myria { namespace tracker {
 				}
 				virtual ~Bundle(){
 					if (f->valid()){
+						assert(f.use_count() > 0);
 						destroyed_bundles()->emplace(std::async(std::launch::async,[f = this->f]() -> bool {
 									while (f->wait_for(1ms) == future_status::timeout) {}
 									return true;
@@ -88,7 +89,7 @@ namespace myria { namespace tracker {
 			DataStore<Level::causal> *registeredCausal {nullptr};
 			std::unique_ptr<TrackerDSCausal > causalDS;
 
-			Clock global_min;
+			Clock global_min{{0,0,0,0}};
 
 			std::map<Name, std::pair<Clock, std::vector<char> > > tracking;
 			std::map<Name, Bundle> pending_nonces;
@@ -394,12 +395,19 @@ namespace myria { namespace tracker {
 						auto &remote = p.second.get();
 						return CooperativeCache::find(remote,name,v);
 					}
-					catch (...){
+					catch (const std::exception &e){
 						//something went wrong with the cooperative caching
+						std::cout << "Cache request failed! Waiting for tombstone" << std::endl;
+						std::cout << e.what() << std::endl;
+						
 						sleep_on(ctx,i,p.first);
 						assert(get<TDS::exists>(*i.causalDS)(*i.registeredCausal,p.first));
 						remove_pending(ctx,i,p.first);
 						return nullptr;
+					}
+					catch(...){
+						std::cerr << "this is a very bad error" << std::endl;
+						assert(false && "whaaat");
 					}
 				}
 			}
@@ -411,7 +419,9 @@ namespace myria { namespace tracker {
 			assert(name != 1);
 			
 			auto update_clock = [this](StoreContext<Level::strong> &sctx, TrackingContext &tctx, Tracker::Internals &t){
-				auto newc = get<TDS::existingClock>(*t.strongDS)(*t.registeredStrong, bigprime_lin)->get(&sctx,this,&tctx);
+				auto clock_ro = get<TDS::existingClock>(*t.strongDS)(*t.registeredStrong, bigprime_lin);
+				assert(clock_ro);
+				auto newc = clock_ro->get(&sctx,this,&tctx);
 				assert(ends::prec(t.global_min,newc));
 				t.global_min = newc;
 				list<Name> to_remove;
@@ -475,6 +485,8 @@ namespace myria { namespace tracker {
 							//I know we've gotten a cached version of the object,
 							//but we can't merge it, so we're gonna have to
 							//hang out until we've caught up to the relevant tombstone
+							std::cout << "Cache request succeeded!  But we don't know how to merge.."
+									  << std::endl;
 							sleep_on(*ctx.i,*i,p.first);
 							assert(get<TDS::exists>(*i->causalDS)(*i->registeredCausal,p.first));
 							

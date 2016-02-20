@@ -63,6 +63,10 @@ namespace myria { namespace tracker {
 		namespace {
 		
 			void respond_to_request(std::shared_ptr<std::mutex> m, std::shared_ptr<CooperativeCache::cache_t> cache, int socket){
+				std::cout << "Responding to request.  Our contents are:" << std::endl;
+				for (auto& e : *cache){
+					std::cout << e.first << " --> " << e.second << std::endl;
+				}
 				AtScopeEnd ase{[&](){close(socket);}}; discard(ase);
 				Tracker::Nonce requested = 0;
 				int n = read(socket,&requested,sizeof(Tracker::Nonce));
@@ -109,6 +113,10 @@ namespace myria { namespace tracker {
 		}
 		
 		std::future<CooperativeCache::obj_bundle> CooperativeCache::get(const Tracker::Tombstone &tomb, int portno){
+
+			std::cout << "Requesting object " << tomb.name() << std::endl;
+			
+			
 			{
 				lock l{*m};
 				if (cache->count(tomb.nonce) > 0) {
@@ -211,7 +219,9 @@ namespace myria { namespace tracker {
 						return ret;
 					});
 			}
-			else return std::async(std::launch::deferred,[]() -> CooperativeCache::obj_bundle {throw CacheMiss{};});
+			else return std::async(std::launch::deferred,[]() -> CooperativeCache::obj_bundle {
+					std::cerr << "ERROR: CACHE DISABLED" << std::endl;
+					throw CacheMiss{};});
 		}
 
 

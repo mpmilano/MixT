@@ -33,6 +33,11 @@ namespace myria { namespace mtl {
 				std::cout << s << std::endl;
 			}
 
+			template<typename T3>
+			void print_this(const T3 &t) const {
+				std::cout << t << std::endl;
+			}
+
 			bool strongCall(TransactionContext* ctx, StrongCache& a, const StrongStore& b) const {
 				return strongCall(ctx,a,b,choose_strong<get_level<T>::value>{nullptr});
 			}
