@@ -63,7 +63,7 @@ namespace myria { namespace tracker {
 		namespace {
 		
 			void respond_to_request(std::shared_ptr<std::mutex> m, std::shared_ptr<CooperativeCache::cache_t> cache, int socket){
-				std::cout << "Responding to request.  Our contents are:" << std::endl;
+				std::cout << "Responding to request (" << cache << ").  Our contents are:" << std::endl;
 				for (auto& e : *cache){
 					std::cout << e.first << " --> " << e.second << std::endl;
 				}
@@ -111,10 +111,19 @@ namespace myria { namespace tracker {
 				}
 			}
 		}
-		
+
+		bool CooperativeCache::contains(const Tracker::Tombstone& tomb) const{
+			return (cache->count(tomb.nonce) > 0);
+		}
+
+		bool CooperativeCache::contains(const Tracker::Nonce& tomb) const{
+			return (cache->count(tomb) > 0);
+		}
+
 		std::future<CooperativeCache::obj_bundle> CooperativeCache::get(const Tracker::Tombstone &tomb, int portno){
 
-			std::cout << "Requesting object " << tomb.name() << std::endl;
+			
+			std::cout << "Requesting object " << tomb.name() << " (" << cache << ")" << std::endl;
 			
 			
 			{

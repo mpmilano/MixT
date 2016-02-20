@@ -39,6 +39,8 @@ namespace myria { namespace tracker {
 			void insert(Tracker::Nonce, const std::map<Name,std::pair<Tracker::Clock, std::vector<char> > > &map);
 			void listen_on(int port);
 			std::future<obj_bundle> get(const Tracker::Tombstone&, int port);
+			bool contains(const Tracker::Tombstone&) const;
+			bool contains(const Tracker::Nonce&) const;
 
 			//this is not an owning pointer
 			static std::vector<char> const * const find(const obj_bundle&,const Name&, const Tracker::Clock &version);
