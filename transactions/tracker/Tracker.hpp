@@ -75,21 +75,14 @@ namespace myria {
 			
 		private:
 			Internals *i;
-			struct MemoryOwner {
-				MemoryOwner(const MemoryOwner&) = delete;
-				MemoryOwner(){}
-				virtual ~MemoryOwner(){}
-			};
-			std::unique_ptr<MemoryOwner> onRead(
+			void onRead(
 				TrackingContext&,
 				DataStore<Level::causal>&, Name name, const Clock &version,
-				const std::function<std::unique_ptr<MemoryOwner> ()> &mem,
-				const std::function<void (MemoryOwner&, char const *)> &construct_nd_merge);
-			std::unique_ptr<MemoryOwner> onRead(
+				const std::function<void (char const *)> &construct_nd_merge);
+			void onRead(
 				TrackingContext&,
 				DataStore<Level::strong>&, Name name, const Clock &version,
-				const std::function<std::unique_ptr<MemoryOwner> ()> &mem,
-				const std::function<void (MemoryOwner&, char const *)> &construct_nd_merge);
+				const std::function<void (char const *)> &construct_nd_merge);
 	
 		public:
 			//static Tracker& global_tracker(int cache_port = -1);

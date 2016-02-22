@@ -547,11 +547,8 @@ namespace myria { namespace tracker {
 		}
 
 //for when merging is the order of the day
-		std::unique_ptr<Tracker::MemoryOwner>
-		Tracker::onRead(TrackingContext &ctx, DataStore<Level::causal>&, Name name, const Clock &version,
-						//these functions all better play well together
-						const std::function<std::unique_ptr<MemoryOwner> ()> &mem,
-						const std::function<void (MemoryOwner&, char const *)> &construct_and_merge){
+		void Tracker::onRead(TrackingContext &ctx, DataStore<Level::causal>&, Name name, const Clock &version,
+							 const std::function<void (MemoryOwner&, char const *)> &construct_and_merge){
 			i->last_onRead_name = heap_copy(name);
 			if (tracking_candidate(*i,name,version)){
 				//need to pause here and wait for nonce availability
@@ -559,10 +556,9 @@ namespace myria { namespace tracker {
 				for_each_pending_nonce(
 					ctx.i,i,
 					if (auto* remote_vers = wait_for_available(*ctx.i,*i,name,p,version)){
-						auto mo = mem();
 						//build + merge real object
-						construct_and_merge(*mo,remote_vers->data());
-						return mo;
+						construct_and_merge(remote_vers->data());
+						return;
 						
 							/**
 							   There are many pending nonces; any of them could be in our tracking set
@@ -575,14 +571,13 @@ namespace myria { namespace tracker {
 					else assert(get<TDS::exists>(*i->causalDS)(*i->registeredCausal,p.first));
 					);
 			}
-			return nullptr;
+			return;
 		}
 		
-		std::unique_ptr<Tracker::MemoryOwner> Tracker::onRead(
+		void Tracker::onRead(
 			TrackingContext&,
 			DataStore<Level::strong>&, Name name, const Clock &version,
-			const std::function<std::unique_ptr<MemoryOwner> ()> &mem,
-			const std::function<void (MemoryOwner&, char const *)> &construct_nd_merge){
-			return nullptr;
+			const std::function<void (char const *)> &construct_nd_merge){
+			return;
 		}
 	}}

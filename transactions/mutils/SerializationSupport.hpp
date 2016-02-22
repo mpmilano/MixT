@@ -148,6 +148,7 @@ namespace mutils{
 	
 	template<typename T>
 	std::unique_ptr<type_check<is_string,T> > from_bytes(char const *v){
+		assert(v);
 		return std::make_unique<T>(v);
 	}
 	

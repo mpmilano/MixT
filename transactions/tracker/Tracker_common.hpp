@@ -73,32 +73,24 @@ namespace myria { namespace tracker {
 						std::unique_ptr<T> (*merge) (std::unique_ptr<T>,
 													 std::unique_ptr<T>)){
 
-			struct Owner : public MemoryOwner {
+			struct Owner {
 				std::unique_ptr<T> candidate;
-				std::unique_ptr<T> merged;
+				std::unique_ptr<T> merged{nullptr};
 				Owner(decltype(candidate) &candidate):candidate(std::move(candidate)){}
 			};
-			std::shared_ptr<std::unique_ptr<T> >
-				cand{new std::unique_ptr<T>(std::move(candidate))};
-			std::function<std::unique_ptr<MemoryOwner> ()> mem = 
-				[=]() {
-				assert(*cand);
-				return std::unique_ptr<MemoryOwner>(new Owner(*cand));
-			};
-			std::function<void (MemoryOwner&, char const*)> c_merge{
-				[merge](MemoryOwner& mo, char const * arg){
-				auto& o = dynamic_cast<Owner&>(mo);
-				assert(o.candidate);
-				o.merged = merge(mutils::from_bytes<T>((char const *) arg),
-								 std::move(o.candidate));
+			Owner mem{candidate};
+			
+			std::function<void (char const*)> c_merge{
+				[merge,&mem](char const * arg){
+				assert(mem.candidate);
+				assert(!mem.merged);
+				mem.merged = merge(mutils::from_bytes<T>((char const *) arg),
+								   std::move(mem.candidate));
 				}};
-			auto mo = onRead(ctx,ds,name,version,mem,c_merge);
-			if (auto *o = dynamic_cast<Owner*>(mo.get()))
-				return std::move(o->merged);
-			else {
-				auto mo = mem();
-				return std::move(dynamic_cast<Owner&>(*mo).candidate);
-			}
+			
+			onRead(ctx,ds,name,version,c_merge);
+			if (mem.merged) return std::move(mem.merged);
+			else return std::move(mem.candidate);
 		}
 
 	}}
