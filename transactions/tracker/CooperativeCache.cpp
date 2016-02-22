@@ -300,7 +300,14 @@ namespace myria { namespace tracker {
 			for (auto &e : b){
 				const Name& ename = e.first;
 				if (n == ename){
-					assert(!ends::prec(e.second, version));
+					assert(ends::prec(version, e.second) || [&](){
+							if (ends::prec(e.second, version)){
+							std::cout << "Error: found version predates known version" << std::endl;
+							std::cout << "Found version: " << e.second << std::endl;
+							std::cout << "Known version: " << version << std::endl;
+						}
+						return !ends::prec(e.second, version);
+						}());
 					return &e.third;
 				}
 			}

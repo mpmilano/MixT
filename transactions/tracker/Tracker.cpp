@@ -70,13 +70,15 @@ namespace myria { namespace tracker {
 					return *p;
 				}
 				virtual ~Bundle(){
+					//TODO: there's a memory error here somewhere.  Just leak for now.
+					/*
 					if (f->valid()){
 						assert(f.use_count() > 0);
 						destroyed_bundles()->emplace(std::async(std::launch::async,[f = this->f]() -> bool {
 									while (f->wait_for(1ms) == future_status::timeout) {}
 									return true;
 								}));
-					}
+								}//*/
 				}
 			};
 		}
