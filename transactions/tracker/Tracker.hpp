@@ -115,17 +115,38 @@ namespace myria {
 			}
 
 			std::unique_ptr<TrackingContext> generateContext(bool commitOnDelete = false);
-	
-			void onWrite(mtl::TransactionContext&, DataStore<Level::strong>&, Name name);
 
-			void onWrite(DataStore<Level::causal>&, Name name, const Clock &version);
+			/**
+			   The primary interface methods here are tripled.  
+			   The purpose of doing this is to special-case the Tracker's own
+			   datastructures; we don't really want to invoke tracking code on the
+			   nonces or tombstones, since those are either guaranteed unique or 
+			   guaranteed up-to-date.
+			 */
 
-			void onCreate(DataStore<Level::causal>&, Name name);
+			void onWrite(mtl::TransactionContext&, DataStore<Level::strong>&, Name name, Tombstone*);
+			void onWrite(mtl::TransactionContext&, DataStore<Level::strong>&, Name name, Clock*);
+			void onWrite(mtl::TransactionContext&, DataStore<Level::strong>&, Name name, void*);
+			
 
-			void onCreate(DataStore<Level::strong>&, Name name);
+			void onWrite(DataStore<Level::causal>&, Name name, const Clock &version, Tombstone*);
+			void onWrite(DataStore<Level::causal>&, Name name, const Clock &version, Clock*);
+			void onWrite(DataStore<Level::causal>&, Name name, const Clock &version, void*);
+
+			void onCreate(DataStore<Level::causal>&, Name name,Tombstone*);
+			void onCreate(DataStore<Level::causal>&, Name name,Clock*);
+			void onCreate(DataStore<Level::causal>&, Name name,void*);
+			
+			void onCreate(DataStore<Level::strong>&, Name name, Tombstone*);
+			void onCreate(DataStore<Level::strong>&, Name name, Clock*);
+			void onCreate(DataStore<Level::strong>&, Name name, void*);
 
 			void afterRead(mtl::StoreContext<Level::strong>&, TrackingContext&, 
-						   DataStore<Level::strong>&, Name name);
+						   DataStore<Level::strong>&, Name name, Tombstone*);
+			void afterRead(mtl::StoreContext<Level::strong>&, TrackingContext&, 
+						   DataStore<Level::strong>&, Name name, Clock*);
+			void afterRead(mtl::StoreContext<Level::strong>&, TrackingContext&, 
+						   DataStore<Level::strong>&, Name name, void*);
 
 			//return is non-null when read value cannot be used.
 			template<typename DS, typename T>
@@ -133,15 +154,44 @@ namespace myria {
 			onRead(TrackingContext&, DS&, Name name,
 				   const Clock& version,
 				   std::unique_ptr<T> candidate,
+				   Tombstone*,
+				   std::unique_ptr<T> (*merge)(std::unique_ptr<T>,
+											   std::unique_ptr<T>)
+				   = [](std::unique_ptr<T>,std::unique_ptr<T> r){return r;}
+				);
+
+			//return is non-null when read value cannot be used.
+			template<typename DS, typename T>
+			std::unique_ptr<T>
+			onRead(TrackingContext&, DS&, Name name,
+				   const Clock& version,
+				   std::unique_ptr<T> candidate,
+				   Clock*,
+				   std::unique_ptr<T> (*merge)(std::unique_ptr<T>,
+											   std::unique_ptr<T>)
+				   = [](std::unique_ptr<T>,std::unique_ptr<T> r){return r;}
+				);
+
+						//return is non-null when read value cannot be used.
+			template<typename DS, typename T>
+			std::unique_ptr<T>
+			onRead(TrackingContext&, DS&, Name name,
+				   const Clock& version,
+				   std::unique_ptr<T> candidate,
+				   void*,
 				   std::unique_ptr<T> (*merge)(std::unique_ptr<T>,
 											   std::unique_ptr<T>)
 				   = [](std::unique_ptr<T>,std::unique_ptr<T> r){return r;}
 				);
 
 			//for when merging locally is too hard or expensive
-			bool waitForRead(TrackingContext&, DataStore<Level::causal>&, Name name, const Clock& version);
+			bool waitForRead(TrackingContext&, DataStore<Level::causal>&, Name name, const Clock& version, Tombstone*);
+			bool waitForRead(TrackingContext&, DataStore<Level::causal>&, Name name, const Clock& version, Clock*);
+			bool waitForRead(TrackingContext&, DataStore<Level::causal>&, Name name, const Clock& version, void*);
 
-			void afterRead(TrackingContext&, DataStore<Level::causal>&, Name name, const Clock& version, const std::vector<char> &data);
+			void afterRead(TrackingContext&, DataStore<Level::causal>&, Name name, const Clock& version, const std::vector<char> &data, Tombstone*);
+			void afterRead(TrackingContext&, DataStore<Level::causal>&, Name name, const Clock& version, const std::vector<char> &data, Clock*);
+			void afterRead(TrackingContext&, DataStore<Level::causal>&, Name name, const Clock& version, const std::vector<char> &data, void*);
 
 			//for testing
 			void assert_nonempty_tracking() const;

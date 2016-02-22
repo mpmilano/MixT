@@ -99,8 +99,15 @@ namespace myria { namespace testing {
 
 				TrackerTestingStore &tts;
 				const Name nam;
-				std::shared_ptr<const T> t;
+				std::unique_ptr<const T> t;
 				const std::array<int,4> causal_vers{{5,5,5,5}};
+
+				TrackerTestingObject(TrackerTestingStore &tts,
+									 Name nam,
+									 const T& t,
+									 const decltype(causal_vers)& cv
+					):tts(tts),nam(nam),t(new T(t)),causal_vers(cv){}
+				
 			public:
 
 				TrackerTestingObject(TrackerTestingStore& tts, Name nam)
@@ -115,27 +122,37 @@ namespace myria { namespace testing {
 					}
 				}
 
+				TrackerTestingObject* clone() const {
+					auto &tts2 = const_cast<TrackerTestingStore&>(tts);
+					return new TrackerTestingObject(tts2,nam,*t,causal_vers);
+				}
+
+				/*
 				TrackerTestingObject(const TrackerTestingObject& tto)
 					:tts(tto.tts),nam(tto.nam),t(tto.t),causal_vers(tto.causal_vers)
 					{
 					}
+				*/
 
 				bool ro_isValid(mtl::StoreContext<l>*) const {
 					return true;
 				}
 				
-				const T& get(mtl::StoreContext<l>*, tracker::Tracker*/* = nullptr*/, tracker::TrackingContext*/* = nullptr*/) {
+				const T& get(mtl::StoreContext<l>*, tracker::Tracker* trk/* = nullptr*/,
+							 tracker::TrackingContext* trkc/* = nullptr*/) {
 					if (remote_store().rs.contains(nam))
-						this->t = std::make_shared<T>(*remote_store().rs.template at<T>(nam));
+						this->t = std::make_unique<T>(*remote_store().rs.template at<T>(nam));
+					assert(trkc);
+					this->t = trk->onRead(*trkc,store(),name(),timestamp(),std::move(t),(T*)nullptr);
 					return *t;
 				}
 				
 				void put(mtl::StoreContext<l>*,const T& to) {
-					this->t = std::make_shared<T>(to);
+					this->t = std::make_unique<T>(to);
 					if (l == Level::strong)
-						remote_store_set(nam,t);
+						remote_store_set(nam,to);
 					else {
-						tts.causal_remote_propogation(nam,t);
+						tts.causal_remote_propogation(nam,to);
 					}
 				}
 				
@@ -158,7 +175,7 @@ namespace myria { namespace testing {
 				int to_bytes(char *c) const {
 					int* iarr = ((int*)c);
 					iarr[0] = tts.ds_id();
-					((TrackerTestingObject**)(iarr + 1))[0] = new TrackerTestingObject(*this);
+					((TrackerTestingObject**)(iarr + 1))[0] = clone();
 					return bytes_size();
 				}
 				
@@ -181,7 +198,7 @@ namespace myria { namespace testing {
 			auto newObject(tracker::Tracker &trk, mtl::TransactionContext *tc, Name name, const T& init){
 				auto ret = make_handle<l,ha,T,TrackerTestingObject<T> >
 					(trk,tc,*this,name,init);
-				trk.onCreate(*this,name);
+				trk.onCreate(*this,name, (T*)nullptr);
 				return ret;
 			}
 

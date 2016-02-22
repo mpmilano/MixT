@@ -286,7 +286,10 @@ namespace myria { namespace tracker {
 			}
 		}
 
-		void Tracker::onWrite(mtl::TransactionContext& ctx, DataStore<Level::strong>& ds_real, Name name){
+		
+		void Tracker::onWrite(mtl::TransactionContext& ctx, DataStore<Level::strong>& ds_real, Name name, Tombstone*){}
+		void Tracker::onWrite(mtl::TransactionContext& ctx, DataStore<Level::strong>& ds_real, Name name, Clock*){}
+		void Tracker::onWrite(mtl::TransactionContext& ctx, DataStore<Level::strong>& ds_real, Name name, void*){
 			const auto write_lin_metadata= [this](mtl::TransactionContext& ctx, DataStore<Level::strong> &ds_real,
 													  Name name, Tracker::Nonce nonce, Tracker::Internals& t){
 				auto &sctx = *ctx.template get_store_context<Level::strong>(ds_real);
@@ -350,15 +353,21 @@ namespace myria { namespace tracker {
 */
 
 
-		void Tracker::onCreate(DataStore<Level::causal>& ds, Name name){
+		void Tracker::onCreate(DataStore<Level::causal>& ds, Name name,Tombstone*){}
+		void Tracker::onCreate(DataStore<Level::causal>& ds, Name name,Clock*){}
+		void Tracker::onCreate(DataStore<Level::causal>& ds, Name name,void*){
 			//there's nothing to do for a strong datastore right now. maybe there will be later.
 		}
 
-		void Tracker::onCreate(DataStore<Level::strong>& , Name ){
+		void Tracker::onCreate(DataStore<Level::strong>& , Name, Tombstone*){}
+		void Tracker::onCreate(DataStore<Level::strong>& , Name, Clock*){}
+		void Tracker::onCreate(DataStore<Level::strong>& , Name, void*){
 			//there's nothing to do for a strong datastore right now. maybe there will be later.
 		}
 
-		void Tracker::onWrite(DataStore<Level::causal>&, Name name, const Clock &version){
+		void Tracker::onWrite(DataStore<Level::causal>&, Name name, const Clock &version, Tombstone*){}
+		void Tracker::onWrite(DataStore<Level::causal>&, Name name, const Clock &version, Clock*){}
+		void Tracker::onWrite(DataStore<Level::causal>&, Name name, const Clock &version, void*){
 			//there's nothing to do for a strong datastore right now. maybe there will be later.	
 		}
 
@@ -422,8 +431,9 @@ namespace myria { namespace tracker {
 			}
 		}
 		
-		
-		void Tracker::afterRead(mtl::StoreContext<Level::strong> &sctx, TrackingContext &tctx, DataStore<Level::strong>& ds, Name name){
+		void Tracker::afterRead(mtl::StoreContext<Level::strong> &sctx, TrackingContext &tctx, DataStore<Level::strong>& ds, Name name, Tombstone*){}
+		void Tracker::afterRead(mtl::StoreContext<Level::strong> &sctx, TrackingContext &tctx, DataStore<Level::strong>& ds, Name name, Clock*){}
+		void Tracker::afterRead(mtl::StoreContext<Level::strong> &sctx, TrackingContext &tctx, DataStore<Level::strong>& ds, Name name, void*){
 
 			assert(name != 1);
 			
@@ -466,9 +476,15 @@ namespace myria { namespace tracker {
 			f/*(p)*/;										\
 		}}													\
 
-		
+
+		bool Tracker::waitForRead(TrackingContext &ctx, DataStore<Level::causal>&, Name name, const Clock& version, Tombstone*){
+			return true;
+		}
+		bool Tracker::waitForRead(TrackingContext &ctx, DataStore<Level::causal>&, Name name, const Clock& version, Clock*){
+			return true;
+		}
 //for when merging locally is too hard or expensive
-		bool Tracker::waitForRead(TrackingContext &ctx, DataStore<Level::causal>&, Name name, const Clock& version){
+		bool Tracker::waitForRead(TrackingContext &ctx, DataStore<Level::causal>&, Name name, const Clock& version, void*){
 			//TODO: distinctly not thread-safe
 			//if the user called onRead manually and did a merge,
 			//we don't want to wait here.This has been ongoing for a couple weeks
@@ -512,15 +528,16 @@ namespace myria { namespace tracker {
 									  << std::endl;
 							sleep_on(*ctx.i,*i,p.first);
 							assert(get<TDS::exists>(*i->causalDS)(*i->registeredCausal,p.first));
-							
 						}
 					}}											
 				return false;
 			}
 			return true;
 		}
-		
-		void Tracker::afterRead(TrackingContext &tctx, DataStore<Level::causal>&, Name name, const Clock& version, const std::vector<char> &data){
+
+		void Tracker::afterRead(TrackingContext &tctx, DataStore<Level::causal>&, Name name, const Clock& version, const std::vector<char> &data, Tombstone*){}
+		void Tracker::afterRead(TrackingContext &tctx, DataStore<Level::causal>&, Name name, const Clock& version, const std::vector<char> &data, Clock*){}
+		void Tracker::afterRead(TrackingContext &tctx, DataStore<Level::causal>&, Name name, const Clock& version, const std::vector<char> &data, void*){
 			if (tracking_candidate(*i,name,version)){
 				//need to overwrite, not occlude, the previous element.
 				//C++'s map semantics are really stupid.

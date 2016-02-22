@@ -65,7 +65,7 @@ namespace myria { namespace pgsql {
 					assert(res);
 					if (res != nullptr && trk != nullptr && trkc != nullptr){
 						t = trk->onRead(*trkc,store(),name(),timestamp(),
-										mutils::from_bytes<T>(res));
+										mutils::from_bytes<T>(res),(T*)nullptr);
 					}
 					
 					return *t;
@@ -135,7 +135,7 @@ namespace myria { namespace pgsql {
 				auto ret = make_handle
 					<l,ha,T,SQLObject<T> >
 					(trk,tc,std::move(gso),mutils::heap_copy(init) );
-				trk.onCreate(*this,name);
+				trk.onCreate(*this,name,(T*)nullptr);
 				return ret;
 			}
 

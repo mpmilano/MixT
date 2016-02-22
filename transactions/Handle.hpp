@@ -124,13 +124,13 @@ namespace myria{
 		}
 	
 		const T& get(std::true_type*, tracker::Tracker& tracker, mtl::StoreContext<l>& ctx, tracker::TrackingContext &trkc, const T& ret) const {
-			tracker.afterRead(ctx,trkc,_ro->store(),_ro->name());
+			tracker.afterRead(ctx,trkc,_ro->store(),_ro->name(),(T*)nullptr);
 			return ret;
 		}
 	
 		const T& get(std::false_type*, tracker::Tracker& tracker, mtl::StoreContext<l>& ctx, tracker::TrackingContext &trkc, const T& ret) const {
-			mutils::AtScopeEnd ase{[&](){tracker.afterRead(trkc,_ro->store(),_ro->name(),_ro->timestamp(),_ro->bytes());}};
-			if (tracker.waitForRead(trkc,_ro->store(),_ro->name(),_ro->timestamp())){
+			mutils::AtScopeEnd ase{[&](){tracker.afterRead(trkc,_ro->store(),_ro->name(),_ro->timestamp(),_ro->bytes(),(T*)nullptr);}};
+			if (tracker.waitForRead(trkc,_ro->store(),_ro->name(),_ro->timestamp(),(T*)nullptr)){
 				return ret;
 			}
 			else return _ro->get(&ctx,&tracker,&trkc);
@@ -152,13 +152,13 @@ namespace myria{
 	
 		void put(tracker::Tracker& tracker, mtl::TransactionContext &ctx, const T& t, std::true_type*) {
 			assert(_ro);
-			tracker.onWrite(ctx,_ro->store(),_ro->name());
+			tracker.onWrite(ctx,_ro->store(),_ro->name(),(T*)nullptr);
 			_ro->put(ctx.template get_store_context<l>(_ro->store()).get(),t);
 		}
 
 		void put(tracker::Tracker& tracker, mtl::TransactionContext &ctx, const T& t, std::false_type*) {
 			assert(_ro);
-			tracker.onWrite(_ro->store(),_ro->name(),_ro->timestamp());
+			tracker.onWrite(_ro->store(),_ro->name(),_ro->timestamp(),(T*)nullptr);
 			_ro->put(ctx.template get_store_context<l>(_ro->store()).get(),t);
 		}
 
@@ -217,10 +217,10 @@ namespace myria{
 
 	private:
 		static void do_onwrite(mtl::TransactionContext &tc, tracker::Tracker &tr, RemoteObject<Level::strong,T> &ro){
-			tr.onWrite(tc,ro.store(),ro.name());
+			tr.onWrite(tc,ro.store(),ro.name(),(T*)nullptr);
 		}
 		static void do_onwrite(mtl::TransactionContext &tc, tracker::Tracker &tr, RemoteObject<Level::causal,T> &ro){
-			tr.onWrite(ro.store(),ro.name(),ro.timestamp());
+			tr.onWrite(ro.store(),ro.name(),ro.timestamp(),(T*)nullptr);
 		}
 	public:
 

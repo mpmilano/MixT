@@ -82,12 +82,6 @@ namespace mutils{
 		return bytes_size(pair.first) + bytes_size(pair.second);
 	}
 
-	template<typename T>
-	std::enable_if_t<std::is_same<T,std::string>::value, std::unique_ptr<T> >
-	from_bytes(char const *v){
-		return std::make_unique<T>(v);
-	}
-
 	template<typename T,
 			 restrict(std::is_base_of<ByteRepresentable CMA T>::value)>
 	std::unique_ptr<T> from_bytes(char const *v){
@@ -143,6 +137,20 @@ namespace mutils{
 	template<typename T, typename U>
 	struct is_pair<std::pair<T,U> > : std::true_type {};
 
+	template<typename>
+	struct is_string : std::false_type {};
+
+	template<>
+	struct is_string<std::string> : std::true_type {};
+
+	template<>
+	struct is_string<const std::string> : std::true_type {};
+	
+	template<typename T>
+	std::unique_ptr<type_check<is_string,T> > from_bytes(char const *v){
+		return std::make_unique<T>(v);
+	}
+	
 	template<typename T>
 	std::unique_ptr<type_check<is_set,T> > from_bytes(char* const _v) {
 		int size = ((int*)_v)[0];

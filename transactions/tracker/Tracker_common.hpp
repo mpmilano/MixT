@@ -53,9 +53,23 @@ namespace myria { namespace tracker {
 
 		template<typename DS, typename T>
 		std::unique_ptr<T>
+		Tracker::onRead(TrackingContext&, DS&, Name, const Clock&, std::unique_ptr<T> candidate,
+						Tombstone*, std::unique_ptr<T> (*) (std::unique_ptr<T>, std::unique_ptr<T>)){
+			return candidate;
+		}
+		template<typename DS, typename T>
+		std::unique_ptr<T>
+		Tracker::onRead(TrackingContext&, DS&, Name, const Clock&, std::unique_ptr<T> candidate,
+						Clock*, std::unique_ptr<T> (*) (std::unique_ptr<T>, std::unique_ptr<T>)){
+			return candidate;
+		}
+		
+		template<typename DS, typename T>
+		std::unique_ptr<T>
 		Tracker::onRead(TrackingContext &ctx, DS& ds, Name name,
 						const Clock& version,
 						std::unique_ptr<T> candidate,
+						void*,
 						std::unique_ptr<T> (*merge) (std::unique_ptr<T>,
 													 std::unique_ptr<T>)){
 
