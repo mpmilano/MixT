@@ -189,9 +189,9 @@ namespace myria { namespace tracker {
 			return i->cache;
 		}
 		
-		Tracker::Tracker(int cache_port, CacheBehaviors beh):i{new Internals{beh}},cache_port(cache_port){
+		Tracker::Tracker(int my_cache_port, int foreign_cache_port, CacheBehaviors beh):i{new Internals{beh}},cache_port(foreign_cache_port){
 			assert(cache_port > 0 && "error: must specify non-zero cache port for first tracker call");
-			i->cache.listen_on(cache_port);
+			i->cache.listen_on(my_cache_port);
 			std::cout << "tracker built" << std::endl;
 		}
 
@@ -291,12 +291,14 @@ namespace myria { namespace tracker {
 				auto meta_name = make_lin_metaname(name);
 				if (get<TDS::exists>(*t.strongDS)(*t.registeredStrong,meta_name)){
 					get<TDS::existingTomb>(*t.strongDS)(*t.registeredStrong,meta_name)->put(&sctx,Tracker::Tombstone{nonce,get_ip()});
+					i->cache.insert(nonce,i->tracking);
 					assert(i->cache.contains(nonce));
 				}
 				else {
 					get<TDS::newTomb>(*t.strongDS)(*this,ctx,*t.registeredStrong,
 												   meta_name,
 												   Tracker::Tombstone{nonce,get_ip()});
+					i->cache.insert(nonce,i->tracking);
 					assert(i->cache.contains(nonce));
 				}
 			};
@@ -308,7 +310,6 @@ namespace myria { namespace tracker {
 					auto nonce = long_rand();
 					write_lin_metadata(ctx,ds_real,name,nonce,*i);
 					write_causal_tombstone(*this,ctx,nonce,*i);
-					i->cache.insert(nonce,i->tracking);
 				};
 				bool always_failed = true;
 				auto sleep_time = 2ms;
@@ -404,7 +405,7 @@ namespace myria { namespace tracker {
 					catch (const std::exception &e){
 						//something went wrong with the cooperative caching
 						std::cout << "Cache request failed! Waiting for tombstone" << std::endl;
-						std::cout << e.what() << std::endl;
+						std::cout << "error message: " << e.what() << std::endl;
 						
 						sleep_on(ctx,i,p.first);
 						assert(get<TDS::exists>(*i.causalDS)(*i.registeredCausal,p.first));

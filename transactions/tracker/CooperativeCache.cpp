@@ -135,103 +135,110 @@ namespace myria { namespace tracker {
 			}
 			if (behavior_make_requests(active_behavior)){
 				return tp.push([tomb,portno,this](int) -> CooperativeCache::obj_bundle {
-						int sockfd;
-						struct sockaddr_in serv_addr;
-						struct hostent *server;
-						
-						sockfd = socket(AF_INET, SOCK_STREAM, 0);
-						if (sockfd < 0){
-							std::cerr << ("ERROR opening socket") << std::endl;
-							throw NetException{};
-						}
-						//linger lingerStruct{0,0};
-						//setsockopt(sockfd, SOL_SOCKET, SO_LINGER, (void *)&lingerStruct, sizeof(lingerStruct));
-						
-						AtScopeEnd ase{[&](){close(sockfd);}};
-						discard(ase);
-						server = gethostbyaddr(&tomb.ip_addr,sizeof(tomb.ip_addr),AF_INET);
-						bzero((char *) &serv_addr, sizeof(serv_addr));
-						serv_addr.sin_family = AF_INET;
-						bcopy((char *)server->h_addr,
-							  (char *)&serv_addr.sin_addr.s_addr,
-							  server->h_length);
-						serv_addr.sin_port = htons(portno);
-						if (connect(sockfd,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0){
-							std::cerr << ("ERROR connecting");
-							throw NetException{};
-						}
-					
-					//UGH there's a lot of boilerplate when you do networking.
-#define care_read_s(s,x...)												\
-					{													\
-						int n = read(sockfd,&(x),s);					\
-						std::stringstream err;							\
-						if (n < 0) {									\
-							std::stringstream err;						\
-							err << "expected " << s << " bytes, received " << n << " accompanying error: " << std::strerror(errno); \
-							throw ProtocolException(err.str());			\
-						}												\
-						while (n < s) {									\
-							std::cout << "WARNING: only got " << n << " bytes, expected " << s << " bytes" <<std::endl; \
-							std::cout << "value read so far: " << (x) << std::endl;	\
-							int k = read(sockfd,((char*) &(x)) + n,s-n); \
-							if (k <= 0) {								\
-							std::stringstream err;						\
-							err << "expected " << s << " bytes, received " << n << " accompanying error: " << std::strerror(errno); \
-							throw ProtocolException(err.str());			\
-							}											\
-							n += k;										\
-						}}
-					
-#define care_read(x...) {int s = sizeof(x); care_read_s(s,x)}
-					
-					
-#define care_assert(x...) if (!(x)) throw ProtocolException(std::string("Assert failed: ") + #x);
-						
-						auto tname = tomb.name();
-						
-						fail_on_false(write(sockfd,&tname,sizeof(tname)) >= 0);
-						
-						bool success = false;
-						int num_messages = 0;
-						care_read(success);
-						
-						if (!success) throw CacheMiss{};
-						care_read(num_messages);
-						
-						care_assert(num_messages > 0);
-						obj_bundle ret;
-						for (int i = 0; i < num_messages; ++i){
-							Name name;
-							care_read(name);
-							
-							Tracker::Clock clock;
-							for (int j = 0; j < clock.size(); ++j){
-								care_read(clock[j]);
+						while (true)
+							try {
+								int sockfd;
+								struct sockaddr_in serv_addr;
+								struct hostent *server;
 								
+								sockfd = socket(AF_INET, SOCK_STREAM, 0);
+								if (sockfd < 0){
+									std::cerr << ("ERROR opening socket") << std::endl;
+									throw NetException{};
+								}
+								//linger lingerStruct{0,0};
+								//setsockopt(sockfd, SOL_SOCKET, SO_LINGER, (void *)&lingerStruct, sizeof(lingerStruct));
+								
+								AtScopeEnd ase{[&](){close(sockfd);}};
+								discard(ase);
+								server = gethostbyaddr(&tomb.ip_addr,sizeof(tomb.ip_addr),AF_INET);
+								bzero((char *) &serv_addr, sizeof(serv_addr));
+								serv_addr.sin_family = AF_INET;
+								bcopy((char *)server->h_addr,
+									  (char *)&serv_addr.sin_addr.s_addr,
+									  server->h_length);
+								serv_addr.sin_port = htons(portno);
+								if (connect(sockfd,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0){
+									std::cerr << ("ERROR connecting");
+									throw NetException{};
+								}
+								
+								//UGH there's a lot of boilerplate when you do networking.
+#define care_read_s(s,x...)												\
+								{										\
+									int n = read(sockfd,&(x),s);		\
+									std::stringstream err;				\
+									if (n < 0) {						\
+										std::stringstream err;			\
+										err << "expected " << s << " bytes, received " << n << " accompanying error: " << std::strerror(errno); \
+										throw ProtocolException(err.str());	\
+									}									\
+									while (n < s) {						\
+										std::cout << "WARNING: only got " << n << " bytes, expected " << s << " bytes" <<std::endl; \
+										std::cout << "value read so far: " << (x) << std::endl;	\
+										int k = read(sockfd,((char*) &(x)) + n,s-n); \
+										if (k <= 0) {					\
+											std::stringstream err;		\
+											err << "expected " << s << " bytes, received " << n << " accompanying error: " << std::strerror(errno); \
+											throw ProtocolException(err.str());	\
+										}								\
+										n += k;							\
+									}}
+								
+#define care_read(x...) {int s = sizeof(x); care_read_s(s,x)}
+								
+								
+#define care_assert(x...) if (!(x)) throw ProtocolException(std::string("Assert failed: ") + #x);
+								
+								auto tname = tomb.name();
+								
+								fail_on_false(write(sockfd,&tname,sizeof(tname)) >= 0);
+								
+								bool success = false;
+								int num_messages = 0;
+								care_read(success);
+								
+								if (!success) throw CacheMiss{};
+								care_read(num_messages);
+								
+								care_assert(num_messages > 0);
+								obj_bundle ret;
+								for (int i = 0; i < num_messages; ++i){
+									Name name;
+									care_read(name);
+									
+									Tracker::Clock clock;
+									for (int j = 0; j < clock.size(); ++j){
+										care_read(clock[j]);
+										
+									}
+									int obj_size;
+									care_read(obj_size);
+									
+									std::vector<char> obj(obj_size,0);
+									assert(obj.size() == obj_size);
+									//char bytes[obj_size];
+									care_read_s(obj_size,*obj.data());
+									
+									ret.emplace_back(name,clock,obj);
+								}
+								{
+									lock l{*m};
+									track_with_eviction(tomb.nonce,ret);
+								}
+								std::cout << "retrieved " << tomb.nonce << " via Cache" << std::endl;
+								return ret;
 							}
-							int obj_size;
-							care_read(obj_size);
-							
-							std::vector<char> obj(obj_size,0);
-							assert(obj.size() == obj_size);
-							//char bytes[obj_size];
-							care_read_s(obj_size,*obj.data());
-							
-							ret.emplace_back(name,clock,obj);
-						}
-						{
-							lock l{*m};
-							track_with_eviction(tomb.nonce,ret);
-						}
-						std::cout << "retrieved " << tomb.nonce << " via Cache" << std::endl;
-						return ret;
-					});
-			}
-			else return std::async(std::launch::deferred,[]() -> CooperativeCache::obj_bundle {
+							catch (const ProtocolException &e){
+								std::cout << "Protocol exception: " << e.what() << ", trying again" << std::endl;
+								continue;
+							}
+							});
+					}
+				else return std::async(std::launch::deferred,[]() -> CooperativeCache::obj_bundle {
 					std::cerr << "ERROR: CACHE DISABLED" << std::endl;
 					throw CacheMiss{};});
-		}
+			}
 
 
 		void CooperativeCache::listen_on(int portno){

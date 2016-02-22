@@ -149,7 +149,7 @@ namespace myria {
 
 			friend struct TrackingContext;
 
-			Tracker(int cache_port, CacheBehaviors behavior = CacheBehaviors::full);
+			Tracker(int my_cache_port, int foreign_cache_port, CacheBehaviors behavior = CacheBehaviors::full);
 			virtual ~Tracker();
 
 			Tracker(const Tracker&) = delete;

@@ -108,7 +108,7 @@ int main(){
 	}
 
 	{
-		Tracker t_here{5003};
+		Tracker t_here{5003,5004};
 		//Tracker t_there{5004};
 		TrackerTestingStore<TrackerTestingMode::manual_sync, Level::strong> strong_here{t_here};
 		TrackerTestingStore<TrackerTestingMode::manual_sync, Level::causal> causal_here{t_here};
@@ -154,7 +154,7 @@ int main(){
 			}
 
 		{
-			Tracker t_there{5004};
+			Tracker t_there{5004,5003};
 			TrackerTestingStore<TrackerTestingMode::manual_sync, Level::strong> strong_there{t_there};
 			TrackerTestingStore<TrackerTestingMode::manual_sync, Level::causal> causal_there{t_there};
 			auto h2 = strong_there.existingObject<HandleAccess::all,string>(t_there,nullptr,3);
@@ -178,8 +178,8 @@ int main(){
 	assert(false && "oh boy");
 
 	{
-		Tracker t_here{5005};
-		Tracker t_there{5006};
+		Tracker t_here{5005,5006};
+		Tracker t_there{5006,5005};
 		TrackerTestingStore<TrackerTestingMode::manual_sync, Level::strong> strong_here{t_here};
 		TrackerTestingStore<TrackerTestingMode::manual_sync, Level::causal> causal_here{t_here};
 		TrackerTestingStore<TrackerTestingMode::manual_sync, Level::strong> strong_there{t_there};
