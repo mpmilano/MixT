@@ -41,17 +41,18 @@ namespace myria {
 		public:
 			//support structures, metadata.
 			using Nonce = int;
-			struct Tombstone{
+			struct Tombstone {
 				const Nonce nonce;
 				const int ip_addr;
+				const int portno;
 				Name name() const;
 
 				/*
 				int to_bytes(char* v) const;
 				int bytes_size() const;
 				static std::unique_ptr<Tombstone> from_bytes(char const* v);
-				Tombstone(Nonce n,int ip):nonce(n),ip_addr(ip){}
-				Tombstone(const Tombstone& t):nonce(t.nonce),ip_addr(t.ip_addr){} //*/
+				Tombstone(Nonce n,int ip, int portno):nonce(n),ip_addr(ip),portno(portno){}
+				Tombstone(const Tombstone& t):nonce(t.nonce),ip_addr(t.ip_addr),portno(t.portno){} //*/
 			};
 
 			using Clock = std::array<int,NUM_CAUSAL_GROUPS>;
@@ -192,12 +193,11 @@ namespace myria {
 
 			friend struct TrackingContext;
 
-			Tracker(int my_cache_port, int foreign_cache_port, CacheBehaviors behavior = CacheBehaviors::full);
+			Tracker(int cache_port, CacheBehaviors behavior = CacheBehaviors::full);
 			virtual ~Tracker();
 
 			Tracker(const Tracker&) = delete;
 
-		private:
 			const int cache_port;
 
 		};		

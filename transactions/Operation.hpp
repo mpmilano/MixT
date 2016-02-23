@@ -167,10 +167,10 @@ namespace myria {
 							[&](const auto &h){
 								tracker.afterRead(*ctx.template get_store_context<mtl::get_level<decltype(h)>::value>(h.store()),
 													*ctx.trackingContext,
-													h.store(),h.name());});
+												  h.store(),h.name(),(extract_type_t<decltype(h)>*)nullptr);});
 			mutils::foreach(h_causal_read,
 							[&](const auto &h){
-								tracker.waitForRead(*ctx.trackingContext,h.store(),h.name(),h.remote_object().timestamp());});
+								tracker.waitForRead(*ctx.trackingContext,h.store(),h.name(),h.remote_object().timestamp(),(extract_type_t<decltype(h)>*)nullptr);});
 			//optimization: track timestamps for causal, only check if they've changed.
 			auto causal_pair = mutils::fold(h_causal_read,[](const auto &a, const auto &acc){
 					return mutils::tuple_cons(std::make_pair(a.remote_object().timestamp(),a),acc);},std::tuple<>{});
@@ -181,9 +181,12 @@ namespace myria {
 											  || mtl::get_level<decltype(p.second)>::value == Level::causal,"sanity check");
 								if (tracker::ends::is_same(p.first, p.second.remote_object().timestamp())) return;
 								else tracker.afterRead(*ctx.trackingContext,
-													   p.second.store(),p.second.name(),p.second.remote_object().timestamp(),p.second.remote_object().bytes());});
-			mutils::foreach(h_strong_write, [&](const auto &h){tracker.onWrite(ctx,h.store(),h.name());});
-			mutils::foreach(h_causal_write, [&](const auto &h){tracker.onWrite(h.store(),h.name(),h.remote_object().timestamp());});
+													   p.second.store(),p.second.name(),p.second.remote_object().timestamp(),
+													   p.second.remote_object().o_bytes(ctx.causalContext.get(),&ctx.trackingContext->trk,ctx.trackingContext.get()),
+													   (extract_type_t<decltype(p.second)>*) nullptr
+									);});
+			mutils::foreach(h_strong_write, [&](const auto &h){tracker.onWrite(ctx,h.store(),h.name(),(extract_type_t<decltype(h)>*)nullptr);});
+			mutils::foreach(h_causal_write, [&](const auto &h){tracker.onWrite(h.store(),h.name(),h.remote_object().timestamp(),(extract_type_t<decltype(h)>*)nullptr);});
 			return ret;
 		}
 	};

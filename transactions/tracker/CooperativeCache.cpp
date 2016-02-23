@@ -130,9 +130,9 @@ namespace myria { namespace tracker {
 			return (cache->count(tomb) > 0);
 		}
 
-		std::future<CooperativeCache::obj_bundle> CooperativeCache::get(const Tracker::Tombstone &tomb, int portno){
+		std::future<CooperativeCache::obj_bundle> CooperativeCache::get(const Tracker::Tombstone &tomb){
 
-			
+			const int portno = tomb.portno;
 			std::cout << "Requesting object " << tomb.name() << " (" << cache << ")" << std::endl;
 			
 			

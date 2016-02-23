@@ -38,7 +38,7 @@ namespace myria { namespace tracker {
 			CooperativeCache(const CooperativeCache&) = delete;
 			void insert(Tracker::Nonce, const std::map<Name,std::pair<Tracker::Clock, std::vector<char> > > &map);
 			void listen_on(int port);
-			std::future<obj_bundle> get(const Tracker::Tombstone&, int port);
+			std::future<obj_bundle> get(const Tracker::Tombstone&);
 			bool contains(const Tracker::Tombstone&) const;
 			bool contains(const Tracker::Nonce&) const;
 

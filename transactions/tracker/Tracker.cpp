@@ -192,9 +192,9 @@ namespace myria { namespace tracker {
 			return i->cache;
 		}
 		
-		Tracker::Tracker(int my_cache_port, int foreign_cache_port, CacheBehaviors beh):i{new Internals{beh}},cache_port(foreign_cache_port){
+		Tracker::Tracker(int cache_port, CacheBehaviors beh):i{new Internals{beh}},cache_port(cache_port){
 			assert(cache_port > 0 && "error: must specify non-zero cache port for first tracker call");
-			i->cache.listen_on(my_cache_port);
+			i->cache.listen_on(cache_port);
 			std::cout << "tracker built" << std::endl;
 		}
 
@@ -281,7 +281,7 @@ namespace myria { namespace tracker {
 
 			void write_causal_tombstone(tracker::Tracker& trk, mtl::TransactionContext& ctx, Tracker::Nonce nonce, Tracker::Internals &i){
 				using namespace TDS;
-				const Tracker::Tombstone t {nonce,get_ip()};
+				const Tracker::Tombstone t {nonce,get_ip(),trk.cache_port};
 				assert(i.cache.contains(nonce));
 				get<TDS::newTomb>(*i.causalDS)(trk, ctx,*i.registeredCausal,t.name(), t);
 			}
@@ -296,12 +296,12 @@ namespace myria { namespace tracker {
 				auto &sctx = *ctx.template get_store_context<Level::strong>(ds_real);
 				auto meta_name = make_lin_metaname(name);
 				if (get<TDS::exists>(*t.strongDS)(*t.registeredStrong,meta_name)){
-					get<TDS::existingTomb>(*t.strongDS)(*t.registeredStrong,meta_name)->put(&sctx,Tracker::Tombstone{nonce,get_ip()});
+					get<TDS::existingTomb>(*t.strongDS)(*t.registeredStrong,meta_name)->put(&sctx,Tracker::Tombstone{nonce,get_ip(),cache_port});
 				}
 				else {
 					get<TDS::newTomb>(*t.strongDS)(*this,ctx,*t.registeredStrong,
 												   meta_name,
-												   Tracker::Tombstone{nonce,get_ip()});
+												   Tracker::Tombstone{nonce,get_ip(),cache_port});
 				}
 				for (auto &p: i->tracking){
 					assert(p.second.second.data());
@@ -465,7 +465,7 @@ namespace myria { namespace tracker {
 					if (!sleep_on(*tctx.i,*i,tomb.name(),2)){
 						std::cout << "Nonce isn't immediately available, adding to pending_nonces" << std::endl;
 						tctx.i->pending_nonces_add.emplace_back
-							(tomb.name(), Bundle{i->cache.get(tomb, cache_port)});
+							(tomb.name(), Bundle{i->cache.get(tomb)});
 					}
 				}
 			}

@@ -48,11 +48,11 @@ Ret firstFunction(ExtraParam1, ExtraParam2, Param){
 Ret secondFunction(ExtraParam1, ExtraParam2, Param){
 	CooperativeCache cc;
 	while (true) try{
-			future<std::vector<Tracker::StampedObject> > res = cc.get({1,mutils::decode_ip("127.0.0.1")},5000);
+			future<std::vector<Tracker::StampedObject> > res = cc.get({1,mutils::decode_ip("127.0.0.1"),5000});
 			auto obj = res.get();
 			std::cout << "we received: " << obj << std::endl;
 			assert((obj.front() == Tracker::StampedObject{2,{{1,1,1,1}},{'c','a','f','e',0}}));
-			cc.get({12,mutils::decode_ip("127.0.0.1")},5000).get();
+			cc.get({12,mutils::decode_ip("127.0.0.1"),5000}).get();
 			return make_pair(true,"");
 			break;
 		}
@@ -108,7 +108,7 @@ int main(){
 	}
 
 	{
-		Tracker t_here{5003,5004};
+		Tracker t_here{5003};
 		//Tracker t_there{5004};
 		TrackerTestingStore<TrackerTestingMode::manual_sync, Level::strong> strong_here{t_here};
 		TrackerTestingStore<TrackerTestingMode::manual_sync, Level::causal> causal_here{t_here};
@@ -140,7 +140,7 @@ int main(){
 		
 		CooperativeCache cc;
 		while (true) try{
-				future<std::vector<Tracker::StampedObject> > res = cc.get({585950151,mutils::decode_ip("127.0.0.1")},5003);
+				future<std::vector<Tracker::StampedObject> > res = cc.get({585950151,mutils::decode_ip("127.0.0.1"),5003});
 				auto obj = res.get();
 				std::cout << "we received: " << obj << std::endl;
 				break;
@@ -154,7 +154,7 @@ int main(){
 			}
 
 		{
-			Tracker t_there{5004,5003};
+			Tracker t_there{5004};
 			TrackerTestingStore<TrackerTestingMode::manual_sync, Level::strong> strong_there{t_there};
 			TrackerTestingStore<TrackerTestingMode::manual_sync, Level::causal> causal_there{t_there};
 			auto h2 = strong_there.existingObject<HandleAccess::all,string>(t_there,nullptr,3);
@@ -178,8 +178,8 @@ int main(){
 	assert(false && "oh boy");
 
 	{
-		Tracker t_here{5005,5006};
-		Tracker t_there{5006,5005};
+		Tracker t_here{5005};
+		Tracker t_there{5006};
 		TrackerTestingStore<TrackerTestingMode::manual_sync, Level::strong> strong_here{t_here};
 		TrackerTestingStore<TrackerTestingMode::manual_sync, Level::causal> causal_here{t_here};
 		TrackerTestingStore<TrackerTestingMode::manual_sync, Level::strong> strong_there{t_there};

@@ -306,6 +306,15 @@ namespace myria{
 
 	template<Level l, HandleAccess ha, typename T>
 	struct mtl::extract_type<Handle<l,ha,T> > {typedef T type;};
+	template<Level l, HandleAccess ha, typename T>
+	struct mtl::extract_type<const Handle<l,ha,T> > {typedef T type;};
+	template<Level l, HandleAccess ha, typename T>
+	struct mtl::extract_type<const Handle<l,ha,T>& > {typedef T type;};
+	template<Level l, HandleAccess ha, typename T>
+	struct mtl::extract_type<Handle<l,ha,T>& > {typedef T type;};
+
+	template<typename T>
+	using extract_type_t = typename mtl::extract_type<T>::type ;
 
 	template<typename H>
 	struct extract_access;
