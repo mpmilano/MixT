@@ -40,8 +40,15 @@ namespace myria { namespace tracker {
 		void CooperativeCache::insert(Tracker::Nonce n, const std::map<Name,std::pair<Tracker::Clock, std::vector<char> > > &map){
 			obj_bundle new_tracking;
 			for (auto &p : map){
+				assert(p.second.second.data());
 				new_tracking.emplace_back(p.first,p.second.first,p.second.second);
 			}
+			assert([&]() -> bool{
+					for (auto &e : new_tracking){
+						assert(e.third.data());
+					}
+					return true;
+				}());
 			{
 				lock l{*m};
 				track_with_eviction(n,new_tracking);
@@ -83,6 +90,9 @@ namespace myria { namespace tracker {
 					{
 						CooperativeCache::CooperativeCache::lock l{*m};
 						o = cache->at(requested);
+					}
+					for (auto &e : o){
+						assert(e.third.data());
 					}
 					
 					
@@ -227,6 +237,9 @@ namespace myria { namespace tracker {
 									track_with_eviction(tomb.nonce,ret);
 								}
 								std::cout << "retrieved " << tomb.nonce << " via Cache" << std::endl;
+								for (auto &e : ret){
+									assert(e.third.data());
+								}
 								return ret;
 							}
 							catch (const ProtocolException &e){
@@ -298,6 +311,7 @@ namespace myria { namespace tracker {
 
 		std::vector<char> const * const CooperativeCache::find(const obj_bundle& b,const Name& n, const Tracker::Clock &version){
 			for (auto &e : b){
+				assert(e.third.data());
 				const Name& ename = e.first;
 				if (n == ename){
 					assert(ends::prec(version, e.second) || [&](){

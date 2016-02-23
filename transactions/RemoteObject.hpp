@@ -64,10 +64,33 @@ namespace myria{
 	
 		static std::unique_ptr<RemoteObject> from_bytes(char const * _v);
 
+		/*
 		std::vector<char> bytes() const {
+			assert(false && "ERROR! you're using this when you wanted the *stored* type,"
+				   && "but this thing returns the pointer as bytes!  this is a problem!"
+				&& "incidentally, this also means that the TrackerTestingStore has a problem with"
+				&& "tobytes, so you should fix that too");
 			std::vector<char> ret;
-			ret.reserve(this->bytes_size());
+			ret.resize(this->bytes_size());
 			this->to_bytes(ret.data());
+			assert(ret.size() > 0);
+			return ret;
+			}//*/
+
+		std::vector<char> o_bytes(mtl::StoreContext<l>* sc, tracker::Tracker* trk, tracker::TrackingContext* tc) {
+			std::vector<char> ret;
+			auto &retT = get(sc,trk,tc);
+			ret.resize(mutils::bytes_size(retT));
+			mutils::to_bytes(retT,ret.data());
+			assert([&](){
+					if (ret.size() == 0){
+						std::cout << retT << std::endl;
+						std::cout << mutils::type_name<T>() << std::endl;
+						std::cout << mutils::bytes_size(retT) << std::endl;
+					}
+					return true;}());
+			assert(ret.data());
+			assert(ret.size() > 0);
 			return ret;
 		}
 

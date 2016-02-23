@@ -21,6 +21,7 @@
 #include "Transaction.hpp"
 #include "TransactionBasics.hpp"
 #include "SafeSet.hpp"
+#include "Ostreams.hpp"
 namespace {
 	constexpr unsigned long long bigprime_lin =
 #include "big_prime"
@@ -296,16 +297,17 @@ namespace myria { namespace tracker {
 				auto meta_name = make_lin_metaname(name);
 				if (get<TDS::exists>(*t.strongDS)(*t.registeredStrong,meta_name)){
 					get<TDS::existingTomb>(*t.strongDS)(*t.registeredStrong,meta_name)->put(&sctx,Tracker::Tombstone{nonce,get_ip()});
-					i->cache.insert(nonce,i->tracking);
-					assert(i->cache.contains(nonce));
 				}
 				else {
 					get<TDS::newTomb>(*t.strongDS)(*this,ctx,*t.registeredStrong,
 												   meta_name,
 												   Tracker::Tombstone{nonce,get_ip()});
-					i->cache.insert(nonce,i->tracking);
-					assert(i->cache.contains(nonce));
 				}
+				for (auto &p: i->tracking){
+					assert(p.second.second.data());
+				}
+				i->cache.insert(nonce,i->tracking);
+				assert(i->cache.contains(nonce));
 			};
 
 			assert(&ds_real == i->registeredStrong);
@@ -410,8 +412,9 @@ namespace myria { namespace tracker {
 				else {
 					try{
 						auto &remote = p.second.get();
-                                                auto ret = CooperativeCache::find(remote,name,v);
-                                                return ret;
+						auto ret = CooperativeCache::find(remote,name,v);
+						assert(ret->data());
+						return ret;
 					}
 					catch (const std::exception &e){
 						//something went wrong with the cooperative caching
@@ -483,7 +486,7 @@ namespace myria { namespace tracker {
 		bool Tracker::waitForRead(TrackingContext &ctx, DataStore<Level::causal>&, Name name, const Clock& version, Clock*){
 			return true;
 		}
-//for when merging locally is too hard or expensive
+//for when merging locally is too hard or expensive.  Returns "true" when candidate version is fine to return, "false" otherwise
 		bool Tracker::waitForRead(TrackingContext &ctx, DataStore<Level::causal>&, Name name, const Clock& version, void*){
 			//TODO: distinctly not thread-safe
 			//if the user called onRead manually and did a merge,
@@ -542,13 +545,18 @@ namespace myria { namespace tracker {
 				//need to overwrite, not occlude, the previous element.
 				//C++'s map semantics are really stupid.
 				tctx.i->tracking_erase.push_back(name);
+				assert(data.data());
+				assert(data.size() > 0);
+				std::cout << data << std::endl;
 				tctx.i->tracking_add.emplace_back(name,std::make_pair(version,data));
+				std::cout << tctx.i->tracking_add.back().second.second << std::endl;
+				assert(tctx.i->tracking_add.back().second.second.data());
 			}
 		}
 
 //for when merging is the order of the day
 		void Tracker::onRead(TrackingContext &ctx, DataStore<Level::causal>&, Name name, const Clock &version,
-							 const std::function<void (MemoryOwner&, char const *)> &construct_and_merge){
+							 const std::function<void (char const *)> &construct_and_merge){
 			i->last_onRead_name = heap_copy(name);
 			if (tracking_candidate(*i,name,version)){
 				//need to pause here and wait for nonce availability
@@ -557,6 +565,7 @@ namespace myria { namespace tracker {
 					ctx.i,i,
 					if (auto* remote_vers = wait_for_available(*ctx.i,*i,name,p,version)){
 						//build + merge real object
+						assert(remote_vers->data());
 						construct_and_merge(remote_vers->data());
 						return;
 						
@@ -574,10 +583,6 @@ namespace myria { namespace tracker {
 			return;
 		}
 		
-		void Tracker::onRead(
-			TrackingContext&,
-			DataStore<Level::strong>&, Name name, const Clock &version,
-			const std::function<void (char const *)> &construct_nd_merge){
-			return;
-		}
+		void Tracker::onRead(TrackingContext&,DataStore<Level::strong>&, Name, const Clock &,
+							 const std::function<void (char const *)> &construct_nd_merge){}
 	}}

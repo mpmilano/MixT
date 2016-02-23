@@ -129,7 +129,7 @@ namespace myria{
 		}
 	
 		const T& get(std::false_type*, tracker::Tracker& tracker, mtl::StoreContext<l>& ctx, tracker::TrackingContext &trkc, const T& ret) const {
-			mutils::AtScopeEnd ase{[&](){tracker.afterRead(trkc,_ro->store(),_ro->name(),_ro->timestamp(),_ro->bytes(),(T*)nullptr);}};
+			mutils::AtScopeEnd ase{[&](){tracker.afterRead(trkc,_ro->store(),_ro->name(),_ro->timestamp(),_ro->o_bytes(&ctx,&tracker,&trkc),(T*)nullptr);}};
 			if (tracker.waitForRead(trkc,_ro->store(),_ro->name(),_ro->timestamp(),(T*)nullptr)){
 				return ret;
 			}
