@@ -195,7 +195,7 @@ namespace myria { namespace tracker {
 		Tracker::Tracker(int cache_port, CacheBehaviors beh):i{new Internals{beh}},cache_port(cache_port){
 			assert(cache_port > 0 && "error: must specify non-zero cache port for first tracker call");
 			i->cache.listen_on(cache_port);
-			std::cout << "tracker built" << std::endl;
+			//std::cout << "tracker built" << std::endl;
 		}
 
 		Tracker::~Tracker(){
@@ -380,13 +380,13 @@ namespace myria { namespace tracker {
 				bool first_skip = true;
 				for (int cntr = 0; (cntr < how_long) || how_long == -1; ++cntr){
 					if (get<TDS::exists>(*i.causalDS)(*i.registeredCausal,tomb_name)){
-						if (!first_skip) std::cout << "done waiting" << std::endl;
+						//if (!first_skip) std::cout << "done waiting" << std::endl;
 						remove_pending(ctx,i,tomb_name);
 						return true;
 					}
 					else {
 						if (first_skip){
-							std::cout << "waiting for " << tomb_name << " to appear..." << std::endl;
+							//std::cout << "waiting for " << tomb_name << " to appear..." << std::endl;
 							first_skip = false;
 						}
 						std::this_thread::sleep_for(10ms);
@@ -418,8 +418,8 @@ namespace myria { namespace tracker {
 					}
 					catch (const std::exception &e){
 						//something went wrong with the cooperative caching
-						std::cout << "Cache request failed! Waiting for tombstone" << std::endl;
-						std::cout << "error message: " << e.what() << std::endl;
+						//std::cout << "Cache request failed! Waiting for tombstone" << std::endl;
+						//std::cout << "error message: " << e.what() << std::endl;
 						
 						sleep_on(ctx,i,p.first);
 						assert(get<TDS::exists>(*i.causalDS)(*i.registeredCausal,p.first));
@@ -463,7 +463,7 @@ namespace myria { namespace tracker {
 				if (get<TDS::exists>(*i->strongDS)(ds,ts)){
 					auto tomb = get<TDS::existingTomb>(*i->strongDS)(ds,ts)->get(&sctx,this,&tctx);
 					if (!sleep_on(*tctx.i,*i,tomb.name(),2)){
-						std::cout << "Nonce isn't immediately available, adding to pending_nonces" << std::endl;
+						//std::cout << "Nonce isn't immediately available, adding to pending_nonces" << std::endl;
 						tctx.i->pending_nonces_add.emplace_back
 							(tomb.name(), Bundle{i->cache.get(tomb)});
 					}
@@ -494,41 +494,41 @@ namespace myria { namespace tracker {
 			//since this is always called directly after
 			//the user had the chance to use onRead,
 			//we can use this trivial state tracking mechanism
-			std::cout << "break 1!" << std::endl;
+			//std::cout << "break 1!" << std::endl;
 			if (i->last_onRead_name && *i->last_onRead_name == name){
-				std::cout << "break 1: we used onRead, so we're skipping this" << std::endl;
+				//std::cout << "break 1: we used onRead, so we're skipping this" << std::endl;
 				i->last_onRead_name.reset(nullptr);
 				return true;
 			}
 
 			if (tracking_candidate(*i,name,version)) {
-				std::cout << "break 1: this is a tracking candidate" << std::endl;
+				//std::cout << "break 1: this is a tracking candidate" << std::endl;
 				//need to pause here and wait for nonce availability
 				//for each nonce in the list
 
 				{for (auto &p : i->pending_nonces){
-						std::cout << "break 1: checking wait_for_available" << std::endl;
+						//std::cout << "break 1: checking wait_for_available" << std::endl;
 						if (wait_for_available(*ctx.i,*i,name,p,version)){
-							std::cout << "break 1: wait_for_available in if-condition" << std::endl;
+							//std::cout << "break 1: wait_for_available in if-condition" << std::endl;
 							//I know we've gotten a cached version of the object,
 							//but we can't merge it, so we're gonna have to
 							//hang out until we've caught up to the relevant tombstone
-							std::cout << "Cache request succeeded!  But we don't know how to merge.."
-									  << std::endl;
+							//std::cout << "Cache request succeeded!  But we don't know how to merge.."
+							//		  << std::endl;
 							sleep_on(*ctx.i,*i,p.first);
 							assert(get<TDS::exists>(*i->causalDS)(*i->registeredCausal,p.first));
 							
 						}
 					}
 					for (auto &p : ctx.i->pending_nonces_add){
-						std::cout << "break 1: checking wait_for_available" << std::endl;
+						//std::cout << "break 1: checking wait_for_available" << std::endl;
 						if (wait_for_available(*ctx.i,*i,name,p,version)){
-							std::cout << "break 1: wait_for_available in if-condition" << std::endl;
+							//std::cout << "break 1: wait_for_available in if-condition" << std::endl;
 							//I know we've gotten a cached version of the object,
 							//but we can't merge it, so we're gonna have to
 							//hang out until we've caught up to the relevant tombstone
-							std::cout << "Cache request succeeded!  But we don't know how to merge.."
-									  << std::endl;
+							//std::cout << "Cache request succeeded!  But we don't know how to merge.."
+							//		  << std::endl;
 							sleep_on(*ctx.i,*i,p.first);
 							assert(get<TDS::exists>(*i->causalDS)(*i->registeredCausal,p.first));
 						}
@@ -547,9 +547,9 @@ namespace myria { namespace tracker {
 				tctx.i->tracking_erase.push_back(name);
 				assert(data.data());
 				assert(data.size() > 0);
-				std::cout << data << std::endl;
+				//std::cout << data << std::endl;
 				tctx.i->tracking_add.emplace_back(name,std::make_pair(version,data));
-				std::cout << tctx.i->tracking_add.back().second.second << std::endl;
+				//std::cout << tctx.i->tracking_add.back().second.second << std::endl;
 				assert(tctx.i->tracking_add.back().second.second.data());
 			}
 		}

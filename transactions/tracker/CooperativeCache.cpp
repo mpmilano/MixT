@@ -70,10 +70,10 @@ namespace myria { namespace tracker {
 		namespace {
 		
 			void respond_to_request(std::shared_ptr<std::mutex> m, std::shared_ptr<CooperativeCache::cache_t> cache, int socket){
-				std::cout << "Responding to request (" << cache << ").  Our contents are:" << std::endl;
-				for (auto& e : *cache){
-					std::cout << e.first << " --> " << e.second << std::endl;
-				}
+				//std::cout << "Responding to request (" << cache << ").  Our contents are:" << std::endl;
+				//for (auto& e : *cache){
+					//std::cout << e.first << " --> " << e.second << std::endl;
+				//}
 				AtScopeEnd ase{[&](){close(socket);}}; discard(ase);
 				Tracker::Nonce requested = 0;
 				int n = read(socket,&requested,sizeof(Tracker::Nonce));
@@ -133,13 +133,13 @@ namespace myria { namespace tracker {
 		std::future<CooperativeCache::obj_bundle> CooperativeCache::get(const Tracker::Tombstone &tomb){
 
 			const int portno = tomb.portno;
-			std::cout << "Requesting object " << tomb.name() << " (" << cache << ")" << std::endl;
+			//std::cout << "Requesting object " << tomb.name() << " (" << cache << ")" << std::endl;
 			
 			
 			{
 				lock l{*m};
 				if (cache->count(tomb.nonce) > 0) {
-					std::cout << "retrieved " << tomb.nonce << " via Cache" << std::endl;
+					//std::cout << "retrieved " << tomb.nonce << " via Cache" << std::endl;
 					return std::async(std::launch::deferred, [r = cache->at(tomb.nonce)](){return r;});
 				}
 			}
@@ -184,8 +184,8 @@ namespace myria { namespace tracker {
 										throw ProtocolException(err.str());	\
 									}									\
 									while (n < s) {						\
-										std::cout << "WARNING: only got " << n << " bytes, expected " << s << " bytes" <<std::endl; \
-										std::cout << "value read so far: " << (x) << std::endl;	\
+										/*std::cout << "WARNING: only got " << n << " bytes, expected " << s << " bytes" <<std::endl; \
+										  std::cout << "value read so far: " << (x) << std::endl; */ \
 										int k = read(sockfd,((char*) &(x)) + n,s-n); \
 										if (k <= 0) {					\
 											std::stringstream err;		\
@@ -236,7 +236,7 @@ namespace myria { namespace tracker {
 									lock l{*m};
 									track_with_eviction(tomb.nonce,ret);
 								}
-								std::cout << "retrieved " << tomb.nonce << " via Cache" << std::endl;
+								//std::cout << "retrieved " << tomb.nonce << " via Cache" << std::endl;
 								for (auto &e : ret){
 									assert(e.third.data());
 								}
@@ -255,7 +255,7 @@ namespace myria { namespace tracker {
 
 
 		void CooperativeCache::listen_on(int portno){
-			std::cout << "listening on " << portno << std::endl;
+			//std::cout << "listening on " << portno << std::endl;
 			//fork off this thread to listen for and respond to cooperative cache requests
 			if (behavior_accept_requests(active_behavior)){
 				auto cache = this->cache;
