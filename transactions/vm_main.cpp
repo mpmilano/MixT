@@ -34,9 +34,9 @@ constexpr bool causal_enabled = true;
 constexpr bool causal_enabled = false;
 #endif
 
-constexpr int num_processes = 500;
+constexpr int num_processes = 10;
 static_assert(num_processes <= 500,"Error: you are at risk of too many open files");
-constexpr auto arrival_rate = 40000_Hz;
+constexpr auto arrival_rate = 1_kHz;
 
 const auto log_name = [](){
 	auto pid = getpid();
@@ -88,7 +88,7 @@ int main(){
 	logFile.open(log_name);
 	logFile << "Begin Log for " << log_name << std::endl;
 	std::cout << "hello world from VM "<< my_unique_id << " in group " << CAUSAL_GROUP << std::endl;
-	printf("connecting to %d.%d.%d.%d\n",((char*)&ip)[0],((char*)&ip)[1],((char*)&ip)[2],((char*)&ip)[3]);
+	std::cout << "connecting to " << string_of_ip(ip) << std::endl;
 	AtScopeEnd ase{[&](){logFile << "End" << std::endl;
 			logFile.close();}};
 	discard(ase);

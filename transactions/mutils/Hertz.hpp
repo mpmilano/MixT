@@ -22,6 +22,11 @@ namespace mutils{
 		unsigned long long coerce = khz * 1000;
 		return Frequency{coerce};
 	}
+	constexpr Frequency operator"" _kHz(unsigned long long khz)
+	{
+		unsigned long long coerce = khz * 1000;
+		return Frequency{coerce};
+	}
 
 	constexpr Frequency as_hertz(unsigned long long hz){
 		return Frequency{hz};

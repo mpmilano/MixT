@@ -1,4 +1,5 @@
 #include "utils.hpp"
+#include <arpa/inet.h>
 
 namespace mutils{
 
@@ -74,8 +75,20 @@ namespace mutils{
 		char ch; //to temporarily store the '.'
 		s >> a >> ch >> b >> ch >> c >> ch >> d;
 		iparr[0] = a, iparr[1] = b, iparr[2] = c, iparr[3] = d;
+		assert(string_of_ip(ret) == static_addr);
 		return ret;
 	}
-	
+
+	std::string string_of_ip(unsigned int i){
+		if (i == 0) return "127.0.0.1";
+		else {
+			in_addr a;
+			char str[INET_ADDRSTRLEN];
+			a.s_addr = i;
+			assert(a.s_addr == i);
+			inet_ntop(AF_INET,&a,str,INET_ADDRSTRLEN);
+			return std::string(str);
+		}
+	}
 }
 

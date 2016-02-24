@@ -271,21 +271,6 @@ namespace myria{ namespace pgsql {
 			return default_connection->ip_addr;
 		}
 
-		namespace {
-			std::string string_of_ip(unsigned int i){
-				if (i == 0) return "127.0.0.1";
-				else {
-					in_addr a;
-					char str[INET_ADDRSTRLEN];
-					a.s_addr = i;
-					assert(a.s_addr == i);
-					inet_ntop(AF_INET,&a,str,INET_ADDRSTRLEN);
-					return std::string(str);
-				}
-			}
-		}
-
-
 		SQLStore_impl::SQLConnection::SQLConnection(int ip):ip_addr(ip),repl_group(CAUSAL_GROUP),conn{std::string("host=") + string_of_ip(ip)}{
 			static_assert(int{CAUSAL_GROUP} > 0, "errorr: did not set CAUSAL_GROUP or failed to 1-index");
 			assert(conn.is_open());

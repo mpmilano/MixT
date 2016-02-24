@@ -358,5 +358,7 @@ namespace mutils{
 		}
 	};
 	
+	std::string string_of_ip(unsigned int i);
+	
 }
 
