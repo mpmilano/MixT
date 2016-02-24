@@ -289,7 +289,7 @@ namespace myria{ namespace pgsql {
 		SQLStore_impl::SQLConnection::SQLConnection(int ip):ip_addr(ip),repl_group(CAUSAL_GROUP),conn{std::string("host=") + string_of_ip(ip)}{
 			static_assert(int{CAUSAL_GROUP} > 0, "errorr: did not set CAUSAL_GROUP or failed to 1-index");
 			assert(conn.is_open());
-			std::cout << string_of_ip(ip) << std::endl;
+			//std::cout << string_of_ip(ip) << std::endl;
 		}
 
 		int SQLStore_impl::GSQLObject::store_instance_id() const {

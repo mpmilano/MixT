@@ -292,7 +292,9 @@ namespace myria { namespace tracker {
 													   (struct sockaddr *) &cli_addr,
 													   &clilen);
 								if (newsockfd < 0){
-									std::cerr << "ERROR on accept" << std::endl;
+									std::cerr << "ERROR on accept: "
+											  << std::strerror(errno)
+											  << std::endl;
 									continue;
 								}
 								//fork off a new thread to handle the request.

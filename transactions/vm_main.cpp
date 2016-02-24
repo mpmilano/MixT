@@ -16,6 +16,7 @@
 #include "ProcessPool.hpp"//*/
 #include "Operate_macros.hpp"
 #include "Transaction_macros.hpp"
+#include "Hertz.hpp"
 
 constexpr int my_unique_id = int{IP_QUAD};
 
@@ -33,6 +34,10 @@ constexpr bool causal_enabled = true;
 constexpr bool causal_enabled = false;
 #endif
 
+constexpr int num_processes = 500;
+static_assert(num_processes <= 500,"Error: you are at risk of too many open files");
+constexpr auto arrival_rate = 40000_Hz;
+
 const auto log_name = [](){
 	auto pid = getpid();
 	return std::string("/tmp/MyriaStore-output-") + std::to_string(pid);
@@ -40,11 +45,11 @@ const auto log_name = [](){
 ofstream logFile;
 
 //I'm guessing miliseconds.  Here's hoping!
-auto getArrivalInterval(double arrival_rate) {
+auto getArrivalInterval(Frequency arrival_rate) {
 	// exponential
 	constexpr double thousand = -1000.0;
 	double U = better_rand();
-	double T = thousand * log(U) / arrival_rate;
+	double T = thousand * log(U) / arrival_rate.hertz;
 	unsigned long l = round(T);
 	return milliseconds(l);
 }
@@ -186,7 +191,7 @@ int main(){
 	};
 	vector<decltype(pool_fun)> pool_v {{pool_fun}};
 	std::unique_ptr<ProcessPool<std::string, unsigned long long> >
-		powner(new ProcessPool<std::string, unsigned long long>(pool_v,10,exn_handler));
+		powner(new ProcessPool<std::string, unsigned long long>(pool_v,num_processes,exn_handler));
 	auto &p = *powner;
 	auto start = high_resolution_clock::now();
 
@@ -210,7 +215,7 @@ int main(){
 	
 	std::cout << "beginning subtask generation loop" << std::endl;
 	while (bound()){
-		std::this_thread::sleep_for(getArrivalInterval(4000 + 10*int{concurrencySetting}));
+		std::this_thread::sleep_for(getArrivalInterval(arrival_rate + 10_Hz*as_hertz(int{concurrencySetting})));
 		futures->emplace_back(launch());
 	}
 	
