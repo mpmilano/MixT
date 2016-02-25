@@ -136,8 +136,9 @@ int main(){
 									do_op(Increment,hndl)
 									)//*/
 							}
-							else TRANSACTION(trk,hndl,
-								let_remote(tmp) = hndl IN(mtl_ignore(tmp))
+							else TRANSACTION(
+								trk,hndl,
+								let_remote(tmp) = hndl IN(mtl_ignore($(tmp)))
 								)
 							auto end = high_resolution_clock::now() - launch_clock;
 							log_messages << "duration: " <<
