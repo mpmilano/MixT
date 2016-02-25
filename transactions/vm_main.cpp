@@ -215,7 +215,7 @@ int main(){
 	
 	std::cout << "beginning subtask generation loop" << std::endl;
 	while (bound()){
-		std::this_thread::sleep_for(getArrivalInterval(arrival_rate + 10_Hz*as_hertz(int{concurrencySetting})));
+		std::this_thread::sleep_for(getArrivalInterval(arrival_rate * as_hertz(1 + int{concurrencySetting})));
 		futures->emplace_back(launch());
 	}
 	
