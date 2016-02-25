@@ -12,6 +12,7 @@ do
 	echo "iteration " $num_per
 	for configuration in USE_STRONG NO_USE_STRONG
 	do
+		i=0
 		echo $configuration
 		for foo in $instance_list
 		do
@@ -19,6 +20,7 @@ do
 			/bin/bash test-things-loop-body.sh $i $foo $num_per $configuration $strong_target &
 		done
 		wait
+		i=0
 		echo "all done"
 		for foo in $instance_list
 		do
