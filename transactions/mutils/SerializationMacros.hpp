@@ -16,13 +16,13 @@
 	}
 
 #define DEFAULT_DESERIALIZE3(Name,a,b)									\
-	static std::unique_ptr<Name> from_bytes(DeserializationManager* p, char const * v){		\
+	static std::unique_ptr<Name> from_bytes(mutils::DeserializationManager* p, char const * v){		\
 		auto a2 = mutils::from_bytes<std::decay_t<decltype(a)> >(p,v);	\
 		Name r{*a2,*(mutils::from_bytes<std::decay_t<decltype(b)> >(p,v + mutils::bytes_size(*a2)))}; \
 		return mutils::heap_copy(r);									\
 	}
 #define DEFAULT_DESERIALIZE4(Name,a,b,c)								\
-	static std::unique_ptr<Name> from_bytes(DeserializationManager* p, char const * v){					\
+	static std::unique_ptr<Name> from_bytes(mutils::DeserializationManager* p, char const * v){					\
 		auto a2 = mutils::from_bytes<std::decay_t<decltype(a)> >(p,v);	\
 		auto size_a2 = mutils::bytes_size(*a2);							\
 		auto b2 = mutils::from_bytes<std::decay_t<decltype(b)> >(p,v + size_a2); \
@@ -38,7 +38,7 @@
 	}
 
 #define DEFAULT_DESERIALIZE2(Name,a)									\
-	static std::unique_ptr<Name> from_bytes(DeserializationManager* p, char const * v){					\
+	static std::unique_ptr<Name> from_bytes(mutils::DeserializationManager* p, char const * v){ \
 		auto a2 = mutils::from_bytes<std::decay_t<decltype(a)> >(p,v);	\
 		Name r{*a2};													\
 		return mutils::heap_copy(r);									\

@@ -49,7 +49,7 @@ namespace myria{
 				},p{});
 		}
 
-		bool operator==(RemoteCons wc) {
+		bool operator==(const RemoteCons &wc) {
 			std::stringstream ss1;
 			std::stringstream ss2;
 			ss1 << val << next;
@@ -57,7 +57,7 @@ namespace myria{
 			return ss1.str() == ss2.str();
 		}
 
-		bool equals(RemoteCons wc) const {
+		bool equals(const RemoteCons &wc) const {
 			RemoteCons copy = *this;
 			return copy == wc;
 		}
