@@ -7,18 +7,71 @@
 
 namespace mutils{
 
+	struct DeserializationManager;
 
 	struct ByteRepresentable {
 		virtual int to_bytes(char* v) const = 0;
 		virtual int bytes_size() const = 0;
+		virtual void ensure_registered(DeserializationManager&) = 0;
 		virtual ~ByteRepresentable(){}
 		//needs to exist, but can't declare virtual statics
-		//virtual static T* from_bytes(char *v) const  = 0;
+		//virtual static T* from_bytes(pointer p, char *v) const  = 0;
+	};
+
+	struct RemoteDeserializationContext{
+		DeserializationManager* this_mgr{nullptr};
+		virtual ~RemoteDeserializationContext(){}
+	};
+	
+	using RemoteDeserializationContext_p =
+		std::unique_ptr<RemoteDeserializationContext>;
+	using RemoteDeserialization_v =
+		std::vector<RemoteDeserializationContext_p>;
+	
+	struct DeserializationManager {
+		RemoteDeserialization_v registered_v;
+		DeserializationManager(RemoteDeserialization_v rv):registered_v(std::move(rv)){
+			for (auto &r : registered_v) r->this_mgr = this;
+		}
+
+		template<typename T>
+		T& mgr() {
+			for (auto& candidate : registered_v){
+				if (dynamic_cast<T*>(candidate.get()))
+					return dynamic_cast<T&>(*candidate);
+				
+			}
+			assert(false && "Error: no registered manager exists");
+		}
+
+		template<typename T>
+		const T& mgr() const {
+			for (auto& candidate : registered_v){
+				if (dynamic_cast<T*>(candidate.get()))
+					return dynamic_cast<T&>(*candidate);
+			}
+			assert(false && "Error: no registered manager exists");
+		}
+
+		template<typename T>
+		bool registered() const {
+			for (auto& candidate : registered_v){
+				if (dynamic_cast<T const *>(candidate.get()))
+					return true;
+			}
+			return false;
+		}
 	};
 
 
 	//end forward-declaring
 
+	void ensure_registered(ByteRepresentable& b, DeserializationManager& dm){
+		b.ensure_registered(dm);
+	}
+
+	template<typename T, restrict(std::is_trivially_copyable<T>::value)>
+	void ensure_registered(const T&, DeserializationManager&){}
 
 	int to_bytes(const ByteRepresentable& b, char* v);
 
@@ -82,16 +135,16 @@ namespace mutils{
 		return bytes_size(pair.first) + bytes_size(pair.second);
 	}
 
-	template<typename T,
+	template<typename P, typename T,
 			 restrict(std::is_base_of<ByteRepresentable CMA T>::value)>
-	std::unique_ptr<T> from_bytes(char const *v){
-		return T::from_bytes(v);
+	std::unique_ptr<T> from_bytes(P* ctx, char const *v){
+		return T::from_bytes(ctx,v);
 	}
 
 
 	template<typename T,
 			 restrict2(std::is_trivially_copyable<T>::value)>
-	std::unique_ptr<std::decay_t<T> > from_bytes(char const *v){
+	std::unique_ptr<std::decay_t<T> > from_bytes(DeserializationManager*, char const *v){
 		using T2 = std::decay_t<T>;
 		if (v) {
 			auto t = std::make_unique<T2>(*(T2*)v);
@@ -101,9 +154,9 @@ namespace mutils{
 		else return nullptr;
 	}
 
-	template<typename T>
-	std::unique_ptr<T> from_bytes_stupid(T* t, char const * v) {
-		return from_bytes<T>(v);
+	template<typename T, typename P>
+	std::unique_ptr<T> from_bytes_stupid(P* p, T* t, char const * v) {
+		return from_bytes<T>(p,v);
 	}
 
 	template<typename T>
@@ -147,35 +200,35 @@ namespace mutils{
 	struct is_string<const std::string> : std::true_type {};
 	
 	template<typename T>
-	std::unique_ptr<type_check<is_string,T> > from_bytes(char const *v){
+	std::unique_ptr<type_check<is_string,T> > from_bytes(DeserializationManager*, char const *v){
 		assert(v);
 		return std::make_unique<T>(v);
 	}
 	
-	template<typename T>
-	std::unique_ptr<type_check<is_set,T> > from_bytes(char* const _v) {
+	template<typename P, typename T>
+	std::unique_ptr<type_check<is_set,T> > from_bytes(P* ctx, char* const _v) {
 		int size = ((int*)_v)[0];
 		char* v = _v + sizeof(int);
 		auto r = std::make_unique<std::set<typename T::key_type> >();
 		for (int i = 0; i < size; ++i){
-			auto e = from_bytes<typename T::key_type>(v);
+			auto e = from_bytes<typename T::key_type>(ctx,v);
 			v += bytes_size(*e);
 			r->insert(*e);
 		}
 		return std::move(r);
 	}
 
-	template<typename T>
-	std::unique_ptr<type_check<is_pair,T > > from_bytes(char const * v){
+	template<typename P, typename T>
+	std::unique_ptr<type_check<is_pair,T > > from_bytes(P* ctx, char const * v){
 		using ft = typename T::first_type;
 		using st = typename T::second_type;
-		auto fst = from_bytes<ft>(v);
+		auto fst = from_bytes<ft>(ctx,v);
 		return std::make_unique<std::pair<ft,st> >
-			(*fst, *from_bytes<st>(v + bytes_size(*fst)));
+			(*fst, *from_bytes<st>(ctx,v + bytes_size(*fst)));
 	}
 
-	template<typename T>
-	std::enable_if_t<is_vector<T>::value,std::unique_ptr<T> > from_bytes(char const * v){
+	template<typename P, typename T>
+	std::enable_if_t<is_vector<T>::value,std::unique_ptr<T> > from_bytes(P* ctx, char const * v){
 		using member = typename T::value_type;
 		if (std::is_trivially_copyable<typename T::value_type>::value){
 			member const * const start = (member*) (v + sizeof(int));
@@ -188,7 +241,7 @@ namespace mutils{
 			int per_item_size = -1;
 			std::unique_ptr<std::vector<member> > accum{new T()};
 			for(int i = 0; i < size; ++i){
-				std::unique_ptr<member> item = from_bytes<typename T::value_type>(v2 + (i * per_item_size));
+				std::unique_ptr<member> item = from_bytes<typename T::value_type>(ctx,v2 + (i * per_item_size));
 				if (per_item_size == -1)
 					per_item_size = bytes_size(*item);
 				accum->push_back(*item);

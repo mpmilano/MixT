@@ -314,6 +314,15 @@ namespace mutils{
 												   typename T::allocator_type > >;
 
 	bool init_rand(int seed);
+
+	template<typename Lock, typename T>
+	auto trylock(Lock &l, const std::function<T ()> &then, const std::function<T ()> &els){
+		if (std::try_lock(l) == -1) {
+			AtScopeEnd ase{[&](){l.unlock();}};
+			return then();
+		}
+		else return els();
+	}
 	
 	double better_rand();
 

@@ -278,12 +278,6 @@ namespace myria{ namespace pgsql {
 		}
 
 		int SQLStore_impl::GSQLObject::store_instance_id() const {
-			assert([&](){
-					if (i->level == Level::strong)
-						assert(&SQLStore<Level::strong>::inst(i->store_id,nullptr) == &i->_store);
-					else if (i->level == Level::causal){
-						assert(&SQLStore<Level::causal>::inst(i->store_id,nullptr) == &i->_store);
-					} return true;}());
 			return i->store_id;
 		}
 
@@ -408,8 +402,14 @@ namespace myria{ namespace pgsql {
 			arrt[0] = i->table;
 			return this->bytes_size();
 		}
+		
+		SQLStore_impl& SQLInstanceManager_abs::inst(Level l, int store_id){
+			if (l == Level::strong) return this->inst_strong(store_id);
+			else if (l == Level::causal) return this->inst_causal(store_id);
+			else assert(false && "what?");
+		}
 
-		SQLStore_impl::GSQLObject SQLStore_impl::GSQLObject::from_bytes(char const *v){
+		SQLStore_impl::GSQLObject SQLStore_impl::GSQLObject::from_bytes(SQLInstanceManager_abs& mgr, char const *v){
 			int* arr = (int*)v;
 			//arr[0] has already been used to find this implementation
 			Level* arrl = (Level*) (arr + 3);
@@ -417,13 +417,8 @@ namespace myria{ namespace pgsql {
 			//of from_bytes
 			Level lvl = arrl[0];
 			//Tracker trk{-1}; //don't register any stores we create here with a real tracker
-			if (lvl == Level::strong){
-				return GSQLObject(SQLStore<Level::strong>::inst(arr[2],nullptr),
-								  arrt[0],arr[0],arr[1]);
-			} else {
-				return GSQLObject(SQLStore<Level::causal>::inst(arr[2],nullptr),
-								  arrt[0],arr[0],arr[1]);
-			}
+			return GSQLObject(mgr.inst(lvl,arr[2]),
+							  arrt[0],arr[0],arr[1]);
 		}
 
 		SQLStore_impl::~SQLStore_impl(){

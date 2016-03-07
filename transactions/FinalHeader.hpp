@@ -14,7 +14,7 @@ namespace myria{
 	}
 
 	template<Level l, typename T>
-	std::unique_ptr<RemoteObject<l,T> > RemoteObject<l,T>::from_bytes(char const * _v)
+	std::unique_ptr<RemoteObject<l,T> > RemoteObject<l,T>::from_bytes(mutils::DeserializationManager* dm, char const * _v)
 	{
 		int read_id = ((int*)_v)[0];
 		auto *v = _v + sizeof(int);
@@ -26,7 +26,7 @@ namespace myria{
 					using DS = std::decay_t<decltype(*e)>;
 					if (read_id == DS::id()) {
 						assert(!acc);
-						auto fold_ret = DS::template from_bytes<T>(v);
+						auto fold_ret = DS::template from_bytes<T>(dm,v);
 						assert(fold_ret);
 						return release_delete<l>(fold_ret.release());
 					}

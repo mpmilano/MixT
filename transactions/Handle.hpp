@@ -84,21 +84,18 @@ namespace myria{
 				((bool*)v)[0] = false;
 				return sizeof(bool);
 			}
-
-			auto b = from_bytes(v);
-			assert(b);
 		}
 
 		int bytes_size_hndl() const {
 			return sizeof(bool) + (_ro ? _ro->bytes_size() : 0);
 		}
 
-		static std::unique_ptr<Handle> from_bytes(char const *v)  {
+		static std::unique_ptr<Handle> from_bytes(mutils::DeserializationManager* rdc, char const *v)  {
 			//for de-serializing.
 			assert(v);
 			RemoteObject<l,T> *stupid = nullptr;
 			if (((bool*)v)[0]) {
-				auto ro = from_bytes_stupid(stupid,v + sizeof(bool) );
+				auto ro = from_bytes_stupid(rdc,stupid,v + sizeof(bool) );
 				assert(ro);
 				return std::unique_ptr<Handle>(
 					new Handle(
@@ -364,9 +361,9 @@ namespace mutils{
 		return h.bytes_size_hndl();
 	}
 
-	template<typename T>
-	std::enable_if_t<myria::is_handle<T>::value,std::unique_ptr<T> > from_bytes(char const *v){
-		return T::from_bytes(v);
+	template<typename P, typename T>
+	std::enable_if_t<myria::is_handle<T>::value,std::unique_ptr<T> > from_bytes(P* p, char const *v){
+		return T::from_bytes(p,v);
 	}
 }
 

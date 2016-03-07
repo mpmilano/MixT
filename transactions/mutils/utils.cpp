@@ -12,6 +12,8 @@ namespace mutils{
 	}
 
 	int gensym() {
+		static std::mutex m;
+		std::unique_lock<std::mutex> lock{m};
 		static int counter = 0;
 		assert(counter < (std::numeric_limits<int>::max() - 1));
 		return ++counter;
@@ -44,7 +46,9 @@ namespace mutils{
 
 	
 	bool init_rand(int seed = 0){
+		static std::mutex m;
 		static bool init = [&](){
+			std::unique_lock<std::mutex> lock{m};
 			timespec ts;
 			clock_gettime(CLOCK_REALTIME,&ts);
 			if (seed) srand48(seed);

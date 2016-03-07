@@ -62,7 +62,7 @@ namespace myria{
 
 		using type = T;
 	
-		static std::unique_ptr<RemoteObject> from_bytes(char const * _v);
+		static std::unique_ptr<RemoteObject> from_bytes(mutils::DeserializationManager* dm, char const * _v);
 
 		/*
 		std::vector<char> bytes() const {

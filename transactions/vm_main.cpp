@@ -34,9 +34,9 @@ constexpr bool causal_enabled = true;
 constexpr bool causal_enabled = false;
 #endif
 
-constexpr int num_processes = 10;
+constexpr int num_processes = 1;
 static_assert(num_processes <= 500,"Error: you are at risk of too many open files");
-constexpr auto arrival_rate = 1_kHz;
+constexpr auto arrival_rate = 10_Hz;
 
 const auto log_name = [](){
 	auto pid = getpid();
@@ -108,7 +108,14 @@ int main(){
 
 	std::function<std::string (std::function<void* (void*)>, int, unsigned long long)> pool_fun =
 		[ip](std::function<void* (void*) > global_memory, int pid, unsigned long long _start_time){
-		if (!global_memory(nullptr)) global_memory(new tracker::Tracker{pid + 1024});
+		if (!global_memory(nullptr)) {
+			auto trk = new tracker::Tracker{pid + 1024};
+			RemoteDeserialization_v rdv;
+			rdv.emplace_back(new SQLStore<Level::strong>::SQLInstanceManager(trk));
+			rdv.emplace_back(new SQLStore<Level::causal>::SQLInstanceManager(trk));
+			global_memory(
+				new DeserializationManager{std::move(rdv)});
+		}
 		assert(global_memory(nullptr));
 		microseconds start_time(_start_time);
 		//std::cout << "launching task on pid " << pid << std::endl;
@@ -116,9 +123,10 @@ int main(){
 		std::stringstream log_messages;
 		try{
 			std::string str = [&](){
-				auto& trk = *((tracker::Tracker*) global_memory(nullptr));
-				SQLStore<Level::strong> &strong = SQLStore<Level::strong>::inst(ip,&trk);
-				SQLStore<Level::causal> &causal = SQLStore<Level::causal>::inst(0,&trk);
+				DeserializationManager &dsm = *((DeserializationManager*) global_memory(nullptr));
+				SQLStore<Level::strong> &strong = dsm. template mgr<SQLStore<Level::strong>::SQLInstanceManager>().inst_strong(ip);
+				SQLStore<Level::causal> &causal = dsm. template mgr<SQLStore<Level::causal>::SQLInstanceManager>().inst_causal(0);
+				auto &trk = *dsm. template mgr<SQLStore<Level::causal>::SQLInstanceManager>().trk;
 				assert(!strong.in_transaction());
 				assert(!causal.in_transaction());
 				assert(!trk.get_StrongStore().in_transaction());

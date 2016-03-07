@@ -8,22 +8,73 @@ namespace myria { namespace pgsql {
 	
 		template<Level l>
 		class SQLStore : public SQLStore_impl, public DataStore<l> {
+		public:
 
-			SQLStore(tracker::Tracker& trk, int inst_id):SQLStore_impl(*this,inst_id,l) {
+			
+			struct SQLInstanceManager : public SQLInstanceManager_abs{
+			public:
+				tracker::Tracker* trk;
+				SQLInstanceManager(tracker::Tracker* trk):trk(trk){}
+				virtual ~SQLInstanceManager(){}
+			private:
+				std::map<int,std::unique_ptr<SQLStore> > ss;
+				
+				void inst(Level l2, int instance_id){
+					assert(l == l2);
+					if (ss.count(instance_id) == 0){
+						assert(trk);
+						assert(this->this_mgr);
+						ss[instance_id].reset(new SQLStore(*trk,instance_id,*this->this_mgr));
+					}
+				}
+
+				SQLStore<Level::strong>& choose_s(int instance_id, std::true_type*){
+					return *ss.at(instance_id);
+				}
+				
+				SQLStore<Level::strong>& choose_s(int instance_id, std::false_type*){
+					assert(false && "Error: This is not a strong instance manager");
+				}
+				
+				SQLStore<Level::causal>& choose_c(int instance_id, std::true_type*){
+					return *ss.at(instance_id);
+				}
+				
+				SQLStore<Level::causal>& choose_c(int instance_id, std::false_type*){
+					assert(false && "Error: This is not a causal instance manager");
+				}
+				
+			public:
+				
+				SQLStore<Level::strong>& inst_strong(int instance_id){
+					inst(Level::strong,instance_id);
+					choose_strong<l> choice{nullptr};
+					return choose_s(instance_id, choice);
+				}
+				
+				SQLStore<Level::causal>& inst_causal(int instance_id){
+					inst(Level::causal,instance_id);
+					choose_causal<l> choice{nullptr};
+					return choose_c(instance_id, choice);
+				}
+
+				auto& inst(int instance_id){
+					inst(l,instance_id);
+					return *ss.at(instance_id);
+				}
+			};
+
+			mutils::DeserializationManager &this_mgr;
+
+		private:
+			SQLStore(tracker::Tracker& trk, int inst_id, mutils::DeserializationManager &this_mgr):SQLStore_impl(*this,inst_id,l),this_mgr(this_mgr) {
 				trk.registerStore(*this);
 			}
 		public:
 
-			using Store = SQLStore;
-	
-			static SQLStore& inst(int instance_id, tracker::Tracker* trk){
-				static std::map<int,SQLStore* > ss;
-				if (ss.count(instance_id) == 0){
-					assert(trk);
-					ss[instance_id] = new SQLStore(*trk,instance_id);
-				}
-				return *ss.at(instance_id);
-			}
+			using deserialization_context = SQLInstanceManager;
+
+			using Store = SQLStore;	
 
 			static constexpr int id() {
 				return SQLStore_impl::ds_id_nl() + (int) l;
@@ -55,17 +106,19 @@ namespace myria { namespace pgsql {
 				using Store = SQLStore;
 				GSQLObject gso;
 				std::unique_ptr<T> t;
+				mutils::DeserializationManager &tds;
 
-				SQLObject(GSQLObject gs, std::unique_ptr<T> t):
-					gso(std::move(gs)),t(std::move(t)){}
+				SQLObject(GSQLObject gs, std::unique_ptr<T> t, mutils::DeserializationManager &tds):
+					gso(std::move(gs)),t(std::move(t)),tds(tds){mutils::ensure_registered(*this->t,tds);}
 		
 				const T& get(mtl::StoreContext<l>* _tc, tracker::Tracker* trk, tracker::TrackingContext* trkc) {
-					SQLTransaction *tc = (_tc ? ((SQLContext*) _tc)->i.get() : nullptr);
+					SQLContext *sctx = (SQLContext*) _tc;
+					SQLTransaction *tc = (_tc ? sctx->i.get() : nullptr);
 					auto *res = gso.load(tc);
 					assert(res);
 					if (res != nullptr && trk != nullptr && trkc != nullptr){
 						t = trk->onRead(*trkc,store(),name(),timestamp(),
-										mutils::from_bytes<T>(res),(T*)nullptr);
+										mutils::from_bytes<T>(&tds,res),(T*)nullptr);
 					}
 					
 					return *t;
@@ -94,10 +147,10 @@ namespace myria { namespace pgsql {
 					return gso.ro_isValid(tc);
 				}
 				const SQLStore& store() const{
-					return SQLStore::inst(gso.store_instance_id(),nullptr);
+					return tds.template mgr<SQLInstanceManager>().inst(gso.store_instance_id());
 				}
 				SQLStore& store(){
-					return SQLStore::inst(gso.store_instance_id(),nullptr);
+					return tds.template mgr<SQLInstanceManager>().inst(gso.store_instance_id());
 				}
 				Name name() const {
 					return gso.name();
@@ -107,6 +160,9 @@ namespace myria { namespace pgsql {
 				}
 				int to_bytes(char* c) const {
 					return gso.to_bytes(c);
+				}
+				void ensure_registered(mutils::DeserializationManager &m){
+					assert(m. template registered<deserialization_context>());
 				}
 			};
 
@@ -134,7 +190,7 @@ namespace myria { namespace pgsql {
 				GSQLObject gso(*this,t,name,v);
 				auto ret = make_handle
 					<l,ha,T,SQLObject<T> >
-					(trk,tc,std::move(gso),mutils::heap_copy(init) );
+					(trk,tc,std::move(gso),mutils::heap_copy(init),this_mgr);
 				trk.onCreate(*this,name,(T*)nullptr);
 				return ret;
 			}
@@ -151,7 +207,7 @@ namespace myria { namespace pgsql {
 				GSQLObject gso(*this,t,name);
 				return make_handle
 					<l,ha,T,SQLObject<T> >
-					(trk,tc,std::move(gso),nullptr);
+					(trk,tc,std::move(gso),nullptr,this_mgr);
 			}
 
 			template<typename T>
@@ -159,18 +215,20 @@ namespace myria { namespace pgsql {
 				static constexpr Table t =
 					(std::is_same<T,int>::value ? Table::IntStore : Table::BlobStore);
 				return std::unique_ptr<SQLObject<T> >
-				{new SQLObject<T>{GSQLObject{*this,t,name},nullptr}};
+				{new SQLObject<T>{GSQLObject{*this,t,name},nullptr,this_mgr}};
 			}
 
+			//deserializing this RemoteObject, not its stored thing.
 			template<typename T>
-			static std::unique_ptr<SQLObject<T> > from_bytes(char const * v){
-				return std::make_unique<SQLObject<T> >(GSQLObject::from_bytes(v),
+			static std::unique_ptr<SQLObject<T> > from_bytes(mutils::DeserializationManager* mngr, char const * v){
+				return std::make_unique<SQLObject<T> >(GSQLObject::from_bytes(mngr->template mgr<deserialization_context>(),v),
 													   std::unique_ptr<T>());
 			}
 
 			struct SQLContext : mtl::StoreContext<l> {
 				std::unique_ptr<SQLTransaction> i;
-				SQLContext(decltype(i) i):i(std::move(i)){}
+				mutils::DeserializationManager & mngr;
+				SQLContext(decltype(i) i, mutils::DeserializationManager& mngr):i(std::move(i)),mngr(mngr){}
 				DataStore<l>& store() {return dynamic_cast<DataStore<l>&>( i->gstore);}
 				bool store_commit() {return i->store_commit();}
 			};
@@ -178,7 +236,7 @@ namespace myria { namespace pgsql {
 			std::unique_ptr<mtl::StoreContext<l> > begin_transaction()
 				{
 					auto ret = SQLStore_impl::begin_transaction();
-					return std::unique_ptr<mtl::StoreContext<l> >(new SQLContext{std::move(ret)});
+					return std::unique_ptr<mtl::StoreContext<l> >(new SQLContext{std::move(ret),this_mgr});
 				}
 
 			int instance_id() const {

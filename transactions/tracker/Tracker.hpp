@@ -50,7 +50,7 @@ namespace myria {
 				/*
 				int to_bytes(char* v) const;
 				int bytes_size() const;
-				static std::unique_ptr<Tombstone> from_bytes(char const* v);
+				static std::unique_ptr<Tombstone> from_bytes(DeserializationManager*,char const* v);
 				Tombstone(Nonce n,int ip, int portno):nonce(n),ip_addr(ip),portno(portno){}
 				Tombstone(const Tombstone& t):nonce(t.nonce),ip_addr(t.ip_addr),portno(t.portno){} //*/
 			};
@@ -149,9 +149,9 @@ namespace myria {
 				   const Clock& version,
 				   std::unique_ptr<T> candidate,
 				   Tombstone*,
-				   std::unique_ptr<T> (*merge)(std::unique_ptr<T>,
+				   std::unique_ptr<T> (*merge)(char const *,
 											   std::unique_ptr<T>)
-				   = [](std::unique_ptr<T>,std::unique_ptr<T> r){return r;}
+				   = [](char const *,std::unique_ptr<T> r){return r;}
 				);
 
 			//return is non-null when read value cannot be used.
@@ -161,9 +161,9 @@ namespace myria {
 				   const Clock& version,
 				   std::unique_ptr<T> candidate,
 				   Clock*,
-				   std::unique_ptr<T> (*merge)(std::unique_ptr<T>,
+				   std::unique_ptr<T> (*merge)(char const *,
 											   std::unique_ptr<T>)
-				   = [](std::unique_ptr<T>,std::unique_ptr<T> r){return r;}
+				   = [](char const *,std::unique_ptr<T> r){return r;}
 				);
 
 						//return is non-null when read value cannot be used.
@@ -173,9 +173,9 @@ namespace myria {
 				   const Clock& version,
 				   std::unique_ptr<T> candidate,
 				   void*,
-				   std::unique_ptr<T> (*merge)(std::unique_ptr<T>,
+				   std::unique_ptr<T> (*merge)(char const*,
 											   std::unique_ptr<T>)
-				   = [](std::unique_ptr<T>,std::unique_ptr<T> r){return r;}
+				   = [](char const*,std::unique_ptr<T> r){return r;}
 				);
 
 			//for when merging locally is too hard or expensive

@@ -29,9 +29,18 @@ namespace myria { namespace pgsql {
 				};
 
 		static constexpr int Table_max = 2;
-
+		
 		const std::string& table_name(Table t);
 
+		struct SQLStore_impl;
+		
+		struct SQLInstanceManager_abs : public mutils::RemoteDeserializationContext {
+			virtual SQLStore<Level::strong>& inst_strong(int store_id) = 0;
+			virtual SQLStore<Level::causal>& inst_causal(int store_id) = 0;
+			SQLStore_impl& inst(Level l, int store_id);
+			virtual ~SQLInstanceManager_abs(){}
+		};
+		
 		struct SQLStore_impl {
 		private:
 	
@@ -91,7 +100,7 @@ namespace myria { namespace pgsql {
 				//required by ByteRepresentable
 				int bytes_size() const;
 				int to_bytes(char*) const;
-				static GSQLObject from_bytes(char const * v);
+				static GSQLObject from_bytes(SQLInstanceManager_abs&, char const * v);
 				virtual ~GSQLObject();
 			};
 

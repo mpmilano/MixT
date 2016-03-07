@@ -24,20 +24,20 @@ namespace myria { namespace tracker {
 										 existingClock_t,
 										 existingTomb_t
 										 >;
-			static newTomb_t newTomb = [](tracker::Tracker &trk, mtl::TransactionContext& ctx, DataStore<l> &_ds, Name name, auto &e){
+			static const newTomb_t newTomb = [](tracker::Tracker &trk, mtl::TransactionContext& ctx, DataStore<l> &_ds, Name name, auto &e){
 				auto &ds = dynamic_cast<DS&>(_ds);
 				return ds.template newObject<HandleAccess::all>(trk,&ctx, name,e);
 			};
-			static exists_t exists = [](DataStore<l> &_ds, Name name){
+			static const exists_t exists = [](DataStore<l> &_ds, Name name){
 				auto &ds = dynamic_cast<DS&>(_ds);
 				return ds.exists(name);
 			};
-			static existingClock_t existClock =
+			static const existingClock_t existClock =
 				[](DataStore<l> &_ds, Name name) -> std::unique_ptr<RemoteObject<l, Tracker::Clock> >{
 				auto &ds = dynamic_cast<DS&>(_ds);
 				return ds.template existingRaw<Tracker::Clock>(name);
 			};
-			static existingTomb_t existTomb =
+			static const existingTomb_t existTomb =
 				[](DataStore<l> &_ds, Name name) -> std::unique_ptr<RemoteObject<l, Tracker::Tombstone> >{
 				auto &ds = dynamic_cast<DS&>(_ds);
 				return ds.template existingRaw<Tracker::Tombstone>(name);
@@ -54,13 +54,13 @@ namespace myria { namespace tracker {
 		template<typename DS, typename T>
 		std::unique_ptr<T>
 		Tracker::onRead(TrackingContext&, DS&, Name, const Clock&, std::unique_ptr<T> candidate,
-						Tombstone*, std::unique_ptr<T> (*) (std::unique_ptr<T>, std::unique_ptr<T>)){
+						Tombstone*, std::unique_ptr<T> (*) (char const*, std::unique_ptr<T>)){
 			return candidate;
 		}
 		template<typename DS, typename T>
 		std::unique_ptr<T>
 		Tracker::onRead(TrackingContext&, DS&, Name, const Clock&, std::unique_ptr<T> candidate,
-						Clock*, std::unique_ptr<T> (*) (std::unique_ptr<T>, std::unique_ptr<T>)){
+						Clock*, std::unique_ptr<T> (*) (char const*, std::unique_ptr<T>)){
 			return candidate;
 		}
 		
@@ -70,7 +70,7 @@ namespace myria { namespace tracker {
 						const Clock& version,
 						std::unique_ptr<T> candidate,
 						void*,
-						std::unique_ptr<T> (*merge) (std::unique_ptr<T>,
+						std::unique_ptr<T> (*merge) (char const *,
 													 std::unique_ptr<T>)){
 
 			struct Owner {
@@ -84,8 +84,7 @@ namespace myria { namespace tracker {
 				[merge,&mem](char const * arg){
 				assert(mem.candidate);
 				assert(!mem.merged);
-				mem.merged = merge(mutils::from_bytes<T>((char const *) arg),
-								   std::move(mem.candidate));
+				mem.merged = merge((char const *) arg, std::move(mem.candidate));
 				}};
 			
 			onRead(ctx,ds,name,version,c_merge);

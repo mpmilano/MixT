@@ -206,11 +206,6 @@ namespace myria { namespace tracker {
 			return nonce;
 		}
 
-/*		Tracker& Tracker::global_tracker(int cache_port){
-			static Tracker t{cache_port};
-			return t;
-		}//*/
-
 		void Tracker::registerStore(DataStore<Level::strong>& ds, std::unique_ptr<TrackerDSStrong> wds){
 			assert(i->registeredStrong == nullptr);
 			assert(i->strongDS.get() == nullptr);

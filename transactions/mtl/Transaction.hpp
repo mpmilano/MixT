@@ -34,7 +34,8 @@ namespace myria { namespace mtl {
 	
 			template<typename Cmds>
 			Transaction(const TransactionBuilder<Cmds> &s):
-				action([s, env_exprs = mtl::environment_expressions(s.curr)](tracker::Tracker& trk, T const * const param) -> bool{
+				action([s, env_exprs = mtl::environment_expressions(s.curr)]
+					   (tracker::Tracker& trk, T const * const param) -> bool{
 						
 						debug_forbid_copy = true;
 						mutils::AtScopeEnd ase{[](){debug_forbid_copy = false;}};

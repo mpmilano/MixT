@@ -37,7 +37,8 @@ namespace mutils{
 				if (read(parent_to_child[0],recv.data(),size) <= 0)
 					throw ReadError{};
 				else{
-					return ct::cons(std::shared_ptr<A>(from_bytes<A>(recv.data()).release()),_populate_arg(arg.rest));
+					return ct::cons(std::shared_ptr<A>(from_bytes<A>(nullptr,
+																	 recv.data()).release()),_populate_arg(arg.rest));
 				}
 			};
 		
@@ -147,7 +148,7 @@ namespace mutils{
 				std::vector<char> v(size);
 				read(c.child_to_parent[0],v.data(),size);
 				ready.add(&c);
-				return from_bytes<Ret>(v.data());
+				return from_bytes<Ret>(nullptr,v.data());
 			}
 			else {
 				std::cerr << "child process " << c.name << " exited abnormally" << std::endl;

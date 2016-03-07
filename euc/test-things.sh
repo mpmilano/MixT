@@ -1,9 +1,16 @@
 #!/bin/bash
 i=0
-
 if [[ -z $strong_target ]]
 then
 	echo "failure: specify strong target as environment variable"
+	exit 1
+elif [[ -z $causal_target_1 || -z $causal_target_2 ]]
+then
+	echo "failure: specify causal target as environment variable"
+	exit 1
+elif [[ -z "$instance_list" ]]
+then
+	echo "failure: specify instance_list as environment variable"
 	exit 1
 fi
 
@@ -17,7 +24,7 @@ do
 		for foo in $instance_list
 		do
 			i=$[i%4 + 1]
-			/bin/bash test-things-loop-body.sh $i $foo $num_per $configuration $strong_target &
+			/bin/bash test-things-loop-body.sh $i $foo $num_per $configuration $strong_target $causal_target_1 $causal_target_2&
 		done
 		wait
 		i=0
@@ -25,7 +32,7 @@ do
 		for foo in $instance_list
 		do
 			i=$[i%4 + 1]
-			/bin/bash test-things-loop-body2.sh $i $foo $num_per $configuration $strong_target &
+			/bin/bash test-things-loop-body2.sh $i $foo $num_per $configuration&
 		done
 		wait
 		echo copy done
