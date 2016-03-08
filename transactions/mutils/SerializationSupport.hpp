@@ -20,24 +20,27 @@ namespace mutils{
 
 	struct RemoteDeserializationContext{
 		DeserializationManager* this_mgr{nullptr};
+                RemoteDeserializationContext(const RemoteDeserializationContext&) = delete;
 		virtual ~RemoteDeserializationContext(){}
+                RemoteDeserializationContext(){}
 	};
 	
 	using RemoteDeserializationContext_p =
-		std::unique_ptr<RemoteDeserializationContext>;
+                RemoteDeserializationContext*;
 	using RemoteDeserialization_v =
 		std::vector<RemoteDeserializationContext_p>;
 	
 	struct DeserializationManager {
-		RemoteDeserialization_v registered_v;
-		DeserializationManager(RemoteDeserialization_v rv):registered_v(std::move(rv)){
+                const RemoteDeserialization_v registered_v;
+                DeserializationManager(RemoteDeserialization_v rv):registered_v(rv){
 			for (auto &r : registered_v) r->this_mgr = this;
 		}
+                DeserializationManager(const DeserializationManager&) = delete;
 
 		template<typename T>
 		T& mgr() {
 			for (auto& candidate : registered_v){
-				if (dynamic_cast<T*>(candidate.get()))
+                                if (dynamic_cast<T*>(candidate))
 					return dynamic_cast<T&>(*candidate);
 				
 			}
@@ -47,7 +50,7 @@ namespace mutils{
 		template<typename T>
 		const T& mgr() const {
 			for (auto& candidate : registered_v){
-				if (dynamic_cast<T*>(candidate.get()))
+                                if (dynamic_cast<T*>(candidate))
 					return dynamic_cast<T&>(*candidate);
 			}
 			assert(false && "Error: no registered manager exists");
@@ -56,7 +59,7 @@ namespace mutils{
 		template<typename T>
 		bool registered() const {
 			for (auto& candidate : registered_v){
-				if (dynamic_cast<T const *>(candidate.get()))
+                                if (dynamic_cast<T const *>(candidate))
 					return true;
 			}
 			return false;
@@ -66,9 +69,7 @@ namespace mutils{
 
 	//end forward-declaring
 
-	void ensure_registered(ByteRepresentable& b, DeserializationManager& dm){
-		b.ensure_registered(dm);
-	}
+        void ensure_registered(ByteRepresentable& b, DeserializationManager& dm);
 
 	template<typename T, restrict(std::is_trivially_copyable<T>::value)>
 	void ensure_registered(const T&, DeserializationManager&){}

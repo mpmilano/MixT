@@ -110,11 +110,9 @@ int main(){
 		[ip](std::function<void* (void*) > global_memory, int pid, unsigned long long _start_time){
 		if (!global_memory(nullptr)) {
 			auto trk = new tracker::Tracker{pid + 1024};
-			RemoteDeserialization_v rdv;
-			rdv.emplace_back(new SQLStore<Level::strong>::SQLInstanceManager(trk));
-			rdv.emplace_back(new SQLStore<Level::causal>::SQLInstanceManager(trk));
-			global_memory(
-				new DeserializationManager{std::move(rdv)});
+                        auto ss = new SQLStore<Level::strong>::SQLInstanceManager(*trk);
+                        auto sc = new SQLStore<Level::causal>::SQLInstanceManager(*trk);
+                        global_memory(new DeserializationManager{{ss,sc}});
 		}
 		assert(global_memory(nullptr));
 		microseconds start_time(_start_time);
@@ -126,7 +124,7 @@ int main(){
 				DeserializationManager &dsm = *((DeserializationManager*) global_memory(nullptr));
 				SQLStore<Level::strong> &strong = dsm. template mgr<SQLStore<Level::strong>::SQLInstanceManager>().inst_strong(ip);
 				SQLStore<Level::causal> &causal = dsm. template mgr<SQLStore<Level::causal>::SQLInstanceManager>().inst_causal(0);
-				auto &trk = *dsm. template mgr<SQLStore<Level::causal>::SQLInstanceManager>().trk;
+				auto &trk = dsm. template mgr<SQLStore<Level::causal>::SQLInstanceManager>().trk;
 				assert(!strong.in_transaction());
 				assert(!causal.in_transaction());
 				assert(!trk.get_StrongStore().in_transaction());

@@ -13,18 +13,18 @@ namespace myria { namespace pgsql {
 			
 			struct SQLInstanceManager : public SQLInstanceManager_abs{
 			public:
-				tracker::Tracker* trk;
-				SQLInstanceManager(tracker::Tracker* trk):trk(trk){}
-				virtual ~SQLInstanceManager(){}
+                                tracker::Tracker &trk;
+                                SQLInstanceManager(tracker::Tracker &trk):trk(trk){}
+                                SQLInstanceManager(const SQLInstanceManager&) = delete;
+                                virtual ~SQLInstanceManager(){}
 			private:
 				std::map<int,std::unique_ptr<SQLStore> > ss;
 				
 				void inst(Level l2, int instance_id){
 					assert(l == l2);
 					if (ss.count(instance_id) == 0){
-						assert(trk);
 						assert(this->this_mgr);
-						ss[instance_id].reset(new SQLStore(*trk,instance_id,*this->this_mgr));
+                                                ss[instance_id].reset(new SQLStore(trk,instance_id,*this->this_mgr));
 					}
 				}
 
@@ -108,8 +108,16 @@ namespace myria { namespace pgsql {
 				std::unique_ptr<T> t;
 				mutils::DeserializationManager &tds;
 
-				SQLObject(GSQLObject gs, std::unique_ptr<T> t, mutils::DeserializationManager &tds):
-					gso(std::move(gs)),t(std::move(t)),tds(tds){mutils::ensure_registered(*this->t,tds);}
+                                SQLObject(GSQLObject gs, std::unique_ptr<T> _t, mutils::DeserializationManager &tds):
+                                        gso(std::move(gs)),tds(tds){
+                                    assert(this);
+                                    if (_t){
+                                        mutils::ensure_registered(*_t,tds);
+                                        this->t = std::move(_t);
+                                    }
+                                }
+                                int fail_counter = 0;
+
 		
 				const T& get(mtl::StoreContext<l>* _tc, tracker::Tracker* trk, tracker::TrackingContext* trkc) {
 					SQLContext *sctx = (SQLContext*) _tc;
@@ -120,8 +128,11 @@ namespace myria { namespace pgsql {
 						t = trk->onRead(*trkc,store(),name(),timestamp(),
 										mutils::from_bytes<T>(&tds,res),(T*)nullptr);
 					}
-					
-					return *t;
+
+                                        std::cout << "gets so far: " << ++fail_counter << "("<< *t << ")" << std::endl;
+                                        //assert(fail_counter < 0 && "fail counter: do we store this one?");
+                                        return *(new T(*t));
+                                        //return *t;
 				}
 
 				const std::array<int,NUM_CAUSAL_GROUPS>& timestamp() const {
@@ -223,7 +234,7 @@ namespace myria { namespace pgsql {
 			static std::unique_ptr<SQLObject<T> > from_bytes(mutils::DeserializationManager* mngr, char const * v){
                             assert(mngr);
                             return std::make_unique<SQLObject<T> >(GSQLObject::from_bytes(mngr->template mgr<deserialization_context>(),v),
-                                                                                                           std::unique_ptr<T>(),*mngr);
+                                                                                                           nullptr,*mngr);
 			}
 
 			struct SQLContext : mtl::StoreContext<l> {

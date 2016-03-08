@@ -31,15 +31,17 @@ int main() {
 
 	Tracker global_tracker(8765);
     RemoteDeserialization_v rdv;
-    rdv.emplace_back(new SQLStore<Level::strong>::SQLInstanceManager(&global_tracker));
-    rdv.emplace_back(new SQLStore<Level::causal>::SQLInstanceManager(&global_tracker));
-    DeserializationManager dsm{std::move(rdv)};
+    SQLStore<Level::strong>::SQLInstanceManager sm{global_tracker};
+    SQLStore<Level::causal>::SQLInstanceManager cm{global_tracker};
+    DeserializationManager dsm{{&sm,&cm}};
 
-    SQLStore<Level::strong> &fss = dsm. template mgr<SQLStore<Level::strong>::SQLInstanceManager>().inst_strong(0);
-    SQLStore<Level::causal> &fsc = dsm. template mgr<SQLStore<Level::causal>::SQLInstanceManager>().inst_causal(0);
+    SQLStore<Level::strong> &fss = sm.inst_strong(0);
+    SQLStore<Level::causal> &fsc = cm.inst_causal(0);
 	auto h = WeakCons::build_list(global_tracker,nullptr,fss,fsc,12,13,14);
 
+    //std::cout << h.get(global_tracker,nullptr).val.get(global_tracker,nullptr) << std::endl;
 	assert(h.get(global_tracker,nullptr).val.get(global_tracker,nullptr) == 14);
+    return 0;
 	auto do_test = [&global_tracker](auto h){
 		TRANSACTION(global_tracker,h,
 		let(hd) = h IN (

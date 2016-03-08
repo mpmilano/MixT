@@ -18,5 +18,8 @@ namespace mutils {
 	int bytes_size(const std::string& b){
 		return b.length() + 1;
 	}
+        void ensure_registered(ByteRepresentable& b, DeserializationManager& dm){
+                b.ensure_registered(dm);
+        }
 
 }
