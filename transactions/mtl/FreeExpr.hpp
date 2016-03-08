@@ -11,6 +11,7 @@ namespace myria { namespace mtl {
 
 		template<typename T, Level l, HandleAccess ha>
 		auto get_if_handle(tracker::Tracker &trk, TransactionContext *ctx, Handle<l,ha,T> h){
+			assert(ctx);
 			return h.get(trk,ctx);
 		}
 

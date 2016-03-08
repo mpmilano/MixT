@@ -361,7 +361,7 @@ namespace mutils{
 		return h.bytes_size_hndl();
 	}
 
-	template<typename P, typename T>
+    template<typename T, typename P>
 	std::enable_if_t<myria::is_handle<T>::value,std::unique_ptr<T> > from_bytes(P* p, char const *v){
 		return T::from_bytes(p,v);
 	}

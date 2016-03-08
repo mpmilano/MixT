@@ -220,7 +220,7 @@ int main(){
 			auto str = pool_fun([](void*v){static auto* mem = v; if (v) mem = v; return mem;},400,elapsed_time());
 						return std::async(std::launch::deferred,[str](){return heap_copy(str);});}};
 	
-	auto launch  = ( true ? launch1 : launch2);
+	auto launch  = ( false ? launch1 : launch2);
 	
 	std::cout << "beginning subtask generation loop" << std::endl;
 	while (bound()){

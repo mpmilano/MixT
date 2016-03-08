@@ -221,8 +221,9 @@ namespace myria { namespace pgsql {
 			//deserializing this RemoteObject, not its stored thing.
 			template<typename T>
 			static std::unique_ptr<SQLObject<T> > from_bytes(mutils::DeserializationManager* mngr, char const * v){
-				return std::make_unique<SQLObject<T> >(GSQLObject::from_bytes(mngr->template mgr<deserialization_context>(),v),
-													   std::unique_ptr<T>());
+                            assert(mngr);
+                            return std::make_unique<SQLObject<T> >(GSQLObject::from_bytes(mngr->template mgr<deserialization_context>(),v),
+                                                                                                           std::unique_ptr<T>(),*mngr);
 			}
 
 			struct SQLContext : mtl::StoreContext<l> {

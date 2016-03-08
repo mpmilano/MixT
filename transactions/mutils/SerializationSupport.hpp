@@ -135,7 +135,7 @@ namespace mutils{
 		return bytes_size(pair.first) + bytes_size(pair.second);
 	}
 
-	template<typename P, typename T,
+        template<typename T, typename P,
 			 restrict(std::is_base_of<ByteRepresentable CMA T>::value)>
 	std::unique_ptr<T> from_bytes(P* ctx, char const *v){
 		return T::from_bytes(ctx,v);
@@ -205,7 +205,7 @@ namespace mutils{
 		return std::make_unique<T>(v);
 	}
 	
-	template<typename P, typename T>
+        template<typename T, typename P>
 	std::unique_ptr<type_check<is_set,T> > from_bytes(P* ctx, char* const _v) {
 		int size = ((int*)_v)[0];
 		char* v = _v + sizeof(int);
@@ -218,7 +218,7 @@ namespace mutils{
 		return std::move(r);
 	}
 
-	template<typename P, typename T>
+        template<typename T, typename P>
 	std::unique_ptr<type_check<is_pair,T > > from_bytes(P* ctx, char const * v){
 		using ft = typename T::first_type;
 		using st = typename T::second_type;
@@ -227,7 +227,7 @@ namespace mutils{
 			(*fst, *from_bytes<st>(ctx,v + bytes_size(*fst)));
 	}
 
-	template<typename P, typename T>
+        template<typename T, typename P>
 	std::enable_if_t<is_vector<T>::value,std::unique_ptr<T> > from_bytes(P* ctx, char const * v){
 		using member = typename T::value_type;
 		if (std::is_trivially_copyable<typename T::value_type>::value){

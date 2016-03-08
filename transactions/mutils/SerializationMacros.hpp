@@ -56,6 +56,7 @@
 
 
 #define DEFAULT_SERIALIZATION_SUPPORT(a,b...)		\
-	DEFAULT_SERIALIZE(b) DEFAULT_DESERIALIZE(a,b)
+        DEFAULT_SERIALIZE(b) DEFAULT_DESERIALIZE(a,b)   \
+    void ensure_registered(mutils::DeserializationManager&){}
 
 
