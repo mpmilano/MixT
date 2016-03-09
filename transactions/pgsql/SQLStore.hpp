@@ -105,7 +105,7 @@ namespace myria { namespace pgsql {
 			struct SQLObject : public RemoteObject<l,T> {
 				using Store = SQLStore;
 				GSQLObject gso;
-				std::unique_ptr<T> t;
+				std::shared_ptr<T> t;
 				mutils::DeserializationManager &tds;
 
                                 SQLObject(GSQLObject gs, std::unique_ptr<T> _t, mutils::DeserializationManager &tds):
@@ -113,13 +113,13 @@ namespace myria { namespace pgsql {
                                     assert(this);
                                     if (_t){
                                         mutils::ensure_registered(*_t,tds);
-                                        this->t = std::move(_t);
+                                        this->t = std::shared_ptr<T>{_t.release()};
                                     }
                                 }
                                 int fail_counter = 0;
 
 		
-				const T& get(mtl::StoreContext<l>* _tc, tracker::Tracker* trk, tracker::TrackingContext* trkc) {
+				std::shared_ptr<T> get(mtl::StoreContext<l>* _tc, tracker::Tracker* trk, tracker::TrackingContext* trkc) {
 					SQLContext *sctx = (SQLContext*) _tc;
 					SQLTransaction *tc = (_tc ? sctx->i.get() : nullptr);
 					auto *res = gso.load(tc);
@@ -128,11 +128,7 @@ namespace myria { namespace pgsql {
 						t = trk->onRead(*trkc,store(),name(),timestamp(),
 										mutils::from_bytes<T>(&tds,res),(T*)nullptr);
 					}
-
-                                        std::cout << "gets so far: " << ++fail_counter << "("<< *t << ")" << std::endl;
-                                        //assert(fail_counter < 0 && "fail counter: do we store this one?");
-                                        return *(new T(*t));
-                                        //return *t;
+                                        return t;
 				}
 
 				const std::array<int,NUM_CAUSAL_GROUPS>& timestamp() const {
@@ -148,7 +144,7 @@ namespace myria { namespace pgsql {
 
 				void put(mtl::StoreContext<l>* _tc, const T& t){
 					SQLTransaction *tc = (_tc ? ((SQLContext*) _tc)->i.get() : nullptr);
-					this->t = std::make_unique<T>(t);
+					this->t = std::make_shared<T>(t);
 					mutils::to_bytes(t,gso.obj_buffer());
 					gso.save(tc);
 				}

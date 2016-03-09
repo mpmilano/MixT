@@ -48,7 +48,7 @@ namespace myria{
 		//extend this plz!
 
 		virtual bool ro_isValid(mtl::StoreContext<l>*) const = 0;
-		virtual const T& get(mtl::StoreContext<l>*, tracker::Tracker*/* = nullptr*/, tracker::TrackingContext*/* = nullptr*/) = 0;
+		virtual std::shared_ptr<T> get(mtl::StoreContext<l>*, tracker::Tracker*/* = nullptr*/, tracker::TrackingContext*/* = nullptr*/) = 0;
 		virtual void put(mtl::StoreContext<l>*,const T&) = 0;
 
 		//TODO: delete these when you're done hacking around.
@@ -79,14 +79,14 @@ namespace myria{
 
 		std::vector<char> o_bytes(mtl::StoreContext<l>* sc, tracker::Tracker* trk, tracker::TrackingContext* tc) {
 			std::vector<char> ret;
-			auto &retT = get(sc,trk,tc);
-			ret.resize(mutils::bytes_size(retT));
-			mutils::to_bytes(retT,ret.data());
+			auto retT = get(sc,trk,tc);
+			ret.resize(mutils::bytes_size(*retT));
+			mutils::to_bytes(*retT,ret.data());
 			assert([&](){
 					if (ret.size() == 0){
-						std::cout << retT << std::endl;
+						std::cout << *retT << std::endl;
 						std::cout << mutils::type_name<T>() << std::endl;
-						std::cout << mutils::bytes_size(retT) << std::endl;
+						std::cout << mutils::bytes_size(*retT) << std::endl;
 					}
 					return true;}());
 			assert(ret.data());

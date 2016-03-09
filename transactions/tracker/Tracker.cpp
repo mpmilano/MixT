@@ -438,7 +438,8 @@ namespace myria { namespace tracker {
 			auto update_clock = [this](StoreContext<Level::strong> &sctx, TrackingContext &tctx, Tracker::Internals &t){
 				auto clock_ro = get<TDS::existingClock>(*t.strongDS)(*t.registeredStrong, bigprime_lin);
 				assert(clock_ro);
-				auto newc = clock_ro->get(&sctx,this,&tctx);
+				auto newc_p = clock_ro->get(&sctx,this,&tctx);
+				auto &newc = *newc_p;
 				assert(ends::prec(t.global_min,newc));
 				t.global_min = newc;
 				list<Name> to_remove;
@@ -456,7 +457,8 @@ namespace myria { namespace tracker {
 				update_clock(sctx,tctx,*i);
 				auto ts = make_lin_metaname(name);
 				if (get<TDS::exists>(*i->strongDS)(ds,ts)){
-					auto tomb = get<TDS::existingTomb>(*i->strongDS)(ds,ts)->get(&sctx,this,&tctx);
+					auto tomb_p = get<TDS::existingTomb>(*i->strongDS)(ds,ts)->get(&sctx,this,&tctx);
+					auto &tomb = *tomb_p;
 					if (!sleep_on(*tctx.i,*i,tomb.name(),2)){
 						//std::cout << "Nonce isn't immediately available, adding to pending_nonces" << std::endl;
 						tctx.i->pending_nonces_add.emplace_back

@@ -40,8 +40,9 @@ int main() {
 	auto h = WeakCons::build_list(global_tracker,nullptr,fss,fsc,12,13,14);
 
     //std::cout << h.get(global_tracker,nullptr).val.get(global_tracker,nullptr) << std::endl;
-	assert(h.get(global_tracker,nullptr).val.get(global_tracker,nullptr) == 14);
+	assert(*h.get(global_tracker,nullptr)->val.get(global_tracker,nullptr) == 14);
     return 0;
+	
 	auto do_test = [&global_tracker](auto h){
 		TRANSACTION(global_tracker,h,
 		let(hd) = h IN (
@@ -58,17 +59,18 @@ int main() {
 					hd = $(tmp,next)
 					))
 			)
-			);}; //*/
-	do_test(h);
+			);}; 
+	do_test(h);//*/
+	
 
-	std::cout << h.get(global_tracker,nullptr).val.get(global_tracker,nullptr) << std::endl;
-	assert(h.get(global_tracker,nullptr).val.get(global_tracker,nullptr) == 15);
+	std::cout << *h.get(global_tracker,nullptr)->val.get(global_tracker,nullptr) << std::endl;
+	assert(*h.get(global_tracker,nullptr)->val.get(global_tracker,nullptr) == 15);
 
 	auto h2 = WeakCons::build_list(global_tracker,nullptr,fss,fsc,18,19,20);
 	
 	do_test(h2);
-	std::cout << h2.get(global_tracker,nullptr).val.get(global_tracker,nullptr) << std::endl;
-	assert(h2.get(global_tracker,nullptr).val.get(global_tracker,nullptr) == 21);
+	std::cout << *h2.get(global_tracker,nullptr)->val.get(global_tracker,nullptr) << std::endl;
+	assert(*h2.get(global_tracker,nullptr)->val.get(global_tracker,nullptr) == 21);
 	
 	return 0;
 
