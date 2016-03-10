@@ -41,7 +41,6 @@ int main() {
 
     //std::cout << h.get(global_tracker,nullptr).val.get(global_tracker,nullptr) << std::endl;
 	assert(*h.get(global_tracker,nullptr)->val.get(global_tracker,nullptr) == 14);
-    return 0;
 	
 	auto do_test = [&global_tracker](auto h){
 		TRANSACTION(global_tracker,h,
