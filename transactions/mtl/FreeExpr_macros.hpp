@@ -22,7 +22,7 @@
 
 #define $2(a,b) free_expr(decltype(std::declval<run_result<decltype(a)> >().get(*std::declval<tracker::Tracker*>(),nullptr)->b), a, a.b)
 
-#define $1(a) free_expr(decltype(std::declval<*run_result<decltype(a)> >().get(*std::declval<tracker::Tracker*>(),nullptr)), a,a)
+#define $1(a) free_expr(decltype(*std::declval<run_result<decltype(a)> >().get(*std::declval<tracker::Tracker*>(),nullptr)), a,a)
 
 #define $_IMPL2(count, ...) $ ## count (__VA_ARGS__)
 #define $_IMPL(count, ...) $_IMPL2(count, __VA_ARGS__)

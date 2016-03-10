@@ -119,7 +119,7 @@ namespace myria { namespace pgsql {
                                 int fail_counter = 0;
 
 		
-				std::shared_ptr<T> get(mtl::StoreContext<l>* _tc, tracker::Tracker* trk, tracker::TrackingContext* trkc) {
+				std::shared_ptr<const T> get(mtl::StoreContext<l>* _tc, tracker::Tracker* trk, tracker::TrackingContext* trkc) {
 					SQLContext *sctx = (SQLContext*) _tc;
 					SQLTransaction *tc = (_tc ? sctx->i.get() : nullptr);
 					auto *res = gso.load(tc);

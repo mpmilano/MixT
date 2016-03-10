@@ -241,9 +241,7 @@ namespace myria{
 	}
 
     namespace tracker {
-    std::ostream& operator<<(std::ostream& os, const Tracker::Tombstone &tmb){
-        return os << "tombstone";
-    }
+		std::ostream& operator<<(std::ostream& os, const Tracker::Tombstone &tmb);
 
     }
 

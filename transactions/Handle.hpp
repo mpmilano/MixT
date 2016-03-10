@@ -120,12 +120,12 @@ namespace myria{
 			return get(choice,tracker,store_ctx, *ctx.trackingContext, _ro->get(&store_ctx,&tracker,ctx.trackingContext.get()));
 		}
 	
-		std::shared_ptr<const T> get(std::true_type*, tracker::Tracker& tracker, mtl::StoreContext<l>& ctx, tracker::TrackingContext &trkc, const T& ret) const {
+		std::shared_ptr<const T> get(std::true_type*, tracker::Tracker& tracker, mtl::StoreContext<l>& ctx, tracker::TrackingContext &trkc, std::shared_ptr<const T> ret) const{
 			tracker.afterRead(ctx,trkc,_ro->store(),_ro->name(),(T*)nullptr);
 			return ret;
 		}
 	
-		std::shared_ptr<const T> get(std::false_type*, tracker::Tracker& tracker, mtl::StoreContext<l>& ctx, tracker::TrackingContext &trkc, const T& ret) const {
+		std::shared_ptr<const T> get(std::false_type*, tracker::Tracker& tracker, mtl::StoreContext<l>& ctx, tracker::TrackingContext &trkc, std::shared_ptr<const T> ret)const{
 			mutils::AtScopeEnd ase{[&](){tracker.afterRead(trkc,_ro->store(),_ro->name(),_ro->timestamp(),_ro->o_bytes(&ctx,&tracker,&trkc),(T*)nullptr);}};
 			if (tracker.waitForRead(trkc,_ro->store(),_ro->name(),_ro->timestamp(),(T*)nullptr)){
 				return ret;
