@@ -13,11 +13,8 @@
 
 namespace mutils{
 
-	template<typename, typename...>
-	class ProcessPool;
-
 	template<typename Ret, typename... Arg>
-	class ProcessPool_impl{
+	class ProcessPool_impl : public TaskPool_impl<ProcessPool_impl<Ret,Arg...>,Ret,Arg...>{
 
 		class Child{
 			pid_t name;
@@ -139,12 +136,9 @@ namespace mutils{
 			friend class ProcessPool_impl;
 		};
 	
-		const int limit;
-		std::unique_ptr<ctpl::thread_pool> tp;
+
 		SafeSet<Child> children;
 		SafeSet<Child*> ready;
-		std::vector<std::function<Ret (std::function<void* (void*)>, int, Arg...)> > behaviors;
-		std::function<Ret (std::exception_ptr)> onException;
 
 		std::unique_ptr<Ret> waitOnChild(Child &c){
 			int size;
@@ -161,22 +155,17 @@ namespace mutils{
 				return nullptr;
 			}
 		}
-
-		bool pool_alive;
-		std::shared_ptr<ProcessPool_impl> &this_sp;
 	
 	public:
-
-		friend class ProcessPool<Ret,Arg...>;
 	
 		ProcessPool_impl (std::shared_ptr<ProcessPool_impl> &pp,
 						  std::vector<std::function<Ret (std::function<void* (void*)>, int, Arg...)> > beh,
 						  int limit,
 						  std::function<Ret (std::exception_ptr)> onException
-			):limit(limit),behaviors(beh),onException(onException),pool_alive(true),this_sp(pp)
+			):TaskPool_impl<ProcessPool_impl<Ret,Arg...>,Ret,Arg...>(pp,beh,limit,onException)
 			{
 				while (children.size() < limit){
-					auto &child = children.emplace(behaviors,onException);
+					auto &child = children.emplace(this->behaviors,this->onException);
 					if (child.name == 0) {
 						child.childSpin();
 						exit(0);
@@ -188,30 +177,13 @@ namespace mutils{
 					}
 				}
 
-				this->tp.reset(new ctpl::thread_pool{limit});
+				//this->tp.reset(new ctpl::thread_pool{limit});
 			}
-
-	private:
-		SafeSet<std::pair<std::thread::id, int> > pending_set;
-		void register_pending(std::thread::id id, int name){
-			pending_set.add(std::make_pair(id,name));
-		}
-		void remove_pending(std::thread::id id, int name){
-			pending_set.remove(std::make_pair(id,name));
-		}
-		
-	public:
-
-		void print_pending(){
-			for (auto p : pending_set.iterable_copy()){
-				std::cout << "thread id: " << p.first << " pid: " << p.second << std::endl;
-			}
-		}
 		
 		std::future<std::unique_ptr<Ret> > launch(int command, const Arg & ... arg){
-			assert(this_sp.get() == this);
 			auto this_sp = this->this_sp;
-			return tp->push([this_sp,command,arg...](int) -> std::unique_ptr<Ret>{
+			assert(this_sp.get() == this);
+			return this->tp->push([this_sp,command,arg...](int) -> std::unique_ptr<Ret>{
 					//we should only be scheduled when there's something to grab,
 					//so this should never spin-lock.
 					while (this_sp->pool_alive) {
@@ -226,7 +198,7 @@ namespace mutils{
 		}
 
 		virtual ~ProcessPool_impl(){
-			assert(pool_alive == false);
+			assert(this->pool_alive == false);
 			typename decltype(children)::lock l{children.m};
 			discard(l);
 			for (auto &c : children.impl){
@@ -236,38 +208,8 @@ namespace mutils{
 			std::cout << "process pool destroyed" << std::endl;
 		}
 	};
-	
+
 	template<typename Ret, typename... Arg>
-	class ProcessPool : public TaskPool<Ret,Arg...> {
-		std::shared_ptr<ProcessPool_impl<Ret,Arg...> > inst;
-	public:
-		ProcessPool (std::vector<std::function<Ret (std::function<void* (void*)>, int, Arg...)> > beh,
-					 int limit = 200,
-					 std::function<Ret (std::exception_ptr)> onExn = [](std::exception_ptr exn){
-						 try {
-							 assert(exn);
-							 std::rethrow_exception(exn);
-						 }
-						 catch (...){
-							 return default_on_exn<Ret>::value;
-						 }
-						 assert(false && "exn handler called with no currrent exception?");
-					 }
-			)
-			:inst(new ProcessPool_impl<Ret,Arg...>(inst,beh,limit,onExn)){}
-
-		std::future<std::unique_ptr<Ret> > launch(int command, const Arg & ... arg){
-			return inst->launch(command,arg...);
-		}
-
-		void print_pending(){
-			return inst->print_pending();
-		}
-	
-		virtual ~ProcessPool(){
-			inst->pool_alive = false;
-			std::cout << "sent process pool destroy" << std::endl;
-		}
-	};
+	using ProcessPool = TaskPool<ProcessPool_impl<Ret,Arg...>,Ret,Arg...>;
 
 }
