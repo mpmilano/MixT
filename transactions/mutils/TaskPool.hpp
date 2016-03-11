@@ -4,6 +4,16 @@
 
 //generic interface implemented by ProcessPool, ThreadPool, and NetworkedProcessPool.  
 
+
+template<typename>
+struct default_on_exn;
+
+template<>
+struct default_on_exn<std::string> {
+	static constexpr auto value = "Exception Occurred!";
+};
+
+
 template<typename Ret, typename... Arg>
 class TaskPool {
 

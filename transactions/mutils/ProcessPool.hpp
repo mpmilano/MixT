@@ -236,14 +236,6 @@ namespace mutils{
 			std::cout << "process pool destroyed" << std::endl;
 		}
 	};
-
-	template<typename>
-	struct default_on_exn;
-
-	template<>
-	struct default_on_exn<std::string> {
-		static constexpr auto value = "Exception Occurred!";
-	};
 	
 	template<typename Ret, typename... Arg>
 	class ProcessPool : public TaskPool<Ret,Arg...> {
