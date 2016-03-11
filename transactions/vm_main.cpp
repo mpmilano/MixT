@@ -198,8 +198,8 @@ int main(){
 		return log_messages.str();
 	};
 	vector<decltype(pool_fun)> pool_v {{pool_fun}};
-	std::unique_ptr<ProcessPool<std::string, unsigned long long> >
-		powner(new ProcessPool<std::string, unsigned long long>(pool_v,num_processes,exn_handler));
+	std::unique_ptr<ThreadPool<std::string, unsigned long long> >
+		powner(new ThreadPool<std::string, unsigned long long>(pool_v,num_processes,exn_handler));
 	auto &p = *powner;
 	auto start = high_resolution_clock::now();
 
