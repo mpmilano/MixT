@@ -129,8 +129,7 @@ namespace myria { namespace mtl {
 		struct DummyConExpr : public ConExpr<void,l> {
 
 			std::tuple<> environment_expressions() const {
-				static std::tuple<> ret;
-				return ret;
+				return std::tuple<>{};
 			}
 	
 			void strongCall(TransactionContext* ctx, const StrongCache&, const StrongStore &) const {}

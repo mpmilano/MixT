@@ -226,13 +226,6 @@ namespace mutils{
 		return std::shared_ptr<const std::nullptr_t>();
 	}
 
-
-	template<typename T>
-	T& realmke(){
-		static T t;
-		return t;
-	}
-
 	template<typename T>
 	const T& constify(const T& t){
 		return t;

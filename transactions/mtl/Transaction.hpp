@@ -64,11 +64,6 @@ namespace myria { namespace mtl {
 							//and sets their participating RemoteObjects' current transaction pointers.							
 
 							//nobody should be in a transaction yet
-							assert(trk.get_StrongStore().in_transaction() ?
-								   [](){static bool first_transaction = true;
-									   bool ret = first_transaction;
-									   first_transaction = false;
-									   return ret;}() : true);
 							assert(!trk.get_StrongStore().in_transaction());
 							call_all_strong(&ctx,caches,stores,s.curr);
 

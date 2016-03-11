@@ -27,8 +27,7 @@ namespace myria { namespace mtl {
 			}
 
 			std::tuple<> environment_expressions() const {
-				static std::tuple<> ret;
-				return ret;
+				return std::tuple<>{};
 			}
 
 			static_assert(!std::is_scalar<CSConstant<l,T> >::value,"Static assert failed");

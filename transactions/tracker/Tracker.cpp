@@ -43,6 +43,7 @@ namespace myria { namespace tracker {
 			private:
 				std::shared_ptr<std::future<CooperativeCache::obj_bundle> > f;
 				std::shared_ptr<CooperativeCache::obj_bundle> p;
+				/*
 				static std::shared_ptr<MonotoneSafeSet<std::future<bool> > >& destroyed_bundles(bool reset = false){
 					static auto log = make_shared<MonotoneSafeSet<std::future<bool> > >();
 					static bool run_once = [](){std::thread(Bundle::cleanup_loop).detach();return true;}();
@@ -58,7 +59,7 @@ namespace myria { namespace tracker {
 						if (f.wait_for(1ms) != future_status::timeout) assert(f.get());
 						else destroyed_bundles()->emplace(std::move(f));
 					}
-				}
+					}*/
 
 			public:
 				Bundle(std::future<CooperativeCache::obj_bundle> f):f(new decltype(f)(std::move(f))){}

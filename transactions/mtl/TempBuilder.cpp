@@ -17,8 +17,7 @@ namespace myria { namespace mtl {
 		}
 
 		VarScopeEnd end_var_scope() {
-			static VarScopeEnd vse;
-			return vse;
+			return VarScopeEnd{};
 		}
 
 	} }
