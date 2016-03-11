@@ -6,6 +6,10 @@
 #include <signal.h>
 #include <exception>
 #include "compile-time-tuple.hpp"
+#include "TaskPool.hpp"
+
+
+//ProcessPool is for times when your libraries just really like static memory, but remember to only call async_signal_safe things!
 
 namespace mutils{
 
@@ -204,7 +208,7 @@ namespace mutils{
 			}
 		}
 		
-		auto launch(int command, const Arg & ... arg){
+		std::future<std::unique_ptr<Ret> > launch(int command, const Arg & ... arg){
 			assert(this_sp.get() == this);
 			auto this_sp = this->this_sp;
 			return tp->push([this_sp,command,arg...](int) -> std::unique_ptr<Ret>{
@@ -242,7 +246,7 @@ namespace mutils{
 	};
 	
 	template<typename Ret, typename... Arg>
-	class ProcessPool{
+	class ProcessPool : public TaskPool<Ret,Arg...> {
 		std::shared_ptr<ProcessPool_impl<Ret,Arg...> > inst;
 	public:
 		ProcessPool (std::vector<std::function<Ret (std::function<void* (void*)>, int, Arg...)> > beh,
@@ -260,7 +264,7 @@ namespace mutils{
 			)
 			:inst(new ProcessPool_impl<Ret,Arg...>(inst,beh,limit,onExn)){}
 
-		auto launch(int command, const Arg & ... arg){
+		std::future<std::unique_ptr<Ret> > launch(int command, const Arg & ... arg){
 			return inst->launch(command,arg...);
 		}
 
