@@ -85,7 +85,6 @@ namespace myria{
 
 		template<unsigned long long ID,typename CS, Level l, typename temp>
 		std::ostream & operator<<(std::ostream &os, const mtl::DeclarationScope<ID,CS,l,temp> &t){
-			mtl::debug_forbid_copy = false;
 			//	static_assert(!std::is_same<std::decay_t<decltype(*t.gt)>, std::nullptr_t>::value,"Attempting to print DeclarationScope which has failed to find replacement!");
 			//	static_assert(!std::is_same<std::decay_t<decltype(t.gt.get())>, std::nullptr_t>::value,"Attempting to print DeclarationScope which has failed to find replacement!");
 			assert(t.gt && "Error: we found a replacement, but gt is still null!");
@@ -94,7 +93,6 @@ namespace myria{
 			mutils::fold(t.cs,[&os](const auto &e, int) -> int
 						 {os << "  " << e << std::endl; return 0; },0);
 			os << "}" << std::endl;
-			mtl::debug_forbid_copy = true;
 			return os;
 		}
 

@@ -241,6 +241,7 @@ namespace myria { namespace pgsql {
 				SQLContext(decltype(i) i, mutils::DeserializationManager& mngr):i(std::move(i)),mngr(mngr){}
 				DataStore<l>& store() {return dynamic_cast<DataStore<l>&>( i->gstore);}
 				bool store_commit() {return i->store_commit();}
+				void store_abort() {i->store_abort();}
 			};
 
 			std::unique_ptr<mtl::StoreContext<l> > begin_transaction()

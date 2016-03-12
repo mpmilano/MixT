@@ -6,7 +6,7 @@ namespace myria { namespace mtl {
 		bool TransactionContext::full_commit() {
 			commit_on_delete = false;
 			bool abort_needed = true;
-			AtScopeEnd ase{[&](){
+			mutils::AtScopeEnd ase{[&](){
 					if (strongContext && abort_needed) strongContext->store_abort();
 					if (causalContext && abort_needed) causalContext->store_abort();
 				}};

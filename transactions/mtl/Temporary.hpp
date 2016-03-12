@@ -101,9 +101,4 @@ namespace myria { namespace mtl {
 		template<unsigned long long ID, unsigned long long ID2, Level l, typename T>
 		struct contains_temporary<ID, Temporary<ID2,l,T> > : std::integral_constant<bool, ID == ID2> {};
 
-		namespace{
-			bool debug_forbid_copy = false;
-		}
-
-
 	} }

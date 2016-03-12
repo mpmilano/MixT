@@ -21,7 +21,6 @@ namespace myria { namespace mtl {
 			RefTemporaryCommon(const Temp &t):t(t),name(t.name) {}
 
 			RefTemporaryCommon(const RefTemporaryCommon& rt):t(rt.t),name(rt.name){
-				assert(!debug_forbid_copy);
 			}
 	
 			RefTemporaryCommon(RefTemporaryCommon&& rt):t(rt.t),name(rt.name),id(rt.id){}

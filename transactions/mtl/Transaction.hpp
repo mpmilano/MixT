@@ -37,9 +37,6 @@ namespace myria { namespace mtl {
 				action([s, env_exprs = mtl::environment_expressions(s.curr)]
 					   (tracker::Tracker& trk, T const * const param) -> bool{
 						
-						debug_forbid_copy = true;
-						mutils::AtScopeEnd ase{[](){debug_forbid_copy = false;}};
-						discard(ase);
 
 						//We're assuming that operations behave normally,
 						//By which we mean if they need to handle in-a-transaction
