@@ -5,6 +5,11 @@ namespace myria { namespace mtl {
 
 		bool TransactionContext::full_commit() {
 			commit_on_delete = false;
+			bool abort_needed = true;
+			AtScopeEnd ase{[&](){
+					if (strongContext && abort_needed) strongContext->store_abort();
+					if (causalContext && abort_needed) causalContext->store_abort();
+				}};
 			if (strongContext){
 				try {
 					if (!strongContext->store_commit()){
@@ -19,6 +24,7 @@ namespace myria { namespace mtl {
 				commitContext();
 				committed = true;
 			}
+			abort_needed = false;
 			return ret;
 		}
 	}

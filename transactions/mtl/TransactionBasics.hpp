@@ -17,6 +17,7 @@ namespace myria {
 		struct StoreContext{
 			virtual DataStore<l>& store() = 0;
 			virtual bool store_commit() = 0;
+			virtual void store_abort() = 0;
 		};
 
 		namespace context{

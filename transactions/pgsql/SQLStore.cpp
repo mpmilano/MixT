@@ -71,12 +71,19 @@ namespace myria{ namespace pgsql {
 		void SQLTransaction::add_obj(SQLStore_impl::GSQLObject* gso){
 			objs.push_back(gso);
 		}
+
+		void SQLTransaction::store_abort(){
+			commit_on_delete = false;
+		}
 		
 		SQLTransaction::~SQLTransaction(){
+			auto &sql_conn = this->sql_conn;
+			AtScopeEnd ase{[&sql_conn](){
+					sql_conn.current_trans = nullptr;
+				}};
 			if (commit_on_delete) {
 				store_commit();
 			}
-			sql_conn.current_trans = nullptr;
 		}		
 
 		const std::string& table_name(Table t){

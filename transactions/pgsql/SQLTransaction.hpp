@@ -37,7 +37,9 @@ namespace myria{ namespace pgsql {
 
 			pqxx::result exec(const std::string &str);
 	
-			bool store_commit(); 
+			bool store_commit();
+
+			void store_abort();
 
 			std::list<SQLStore_impl::GSQLObject*> objs;
 			void add_obj(SQLStore_impl::GSQLObject* gso);
