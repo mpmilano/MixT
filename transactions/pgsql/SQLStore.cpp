@@ -65,12 +65,7 @@ namespace myria{ namespace pgsql {
 		}
 
 		bool SQLStore_impl::SQLConnection::in_trans(){
-			try {
-				return (current_trans) &&
-					(current_trans->exec("select count(*) from pg_stat_activity").columns() > 0);
-			} catch(...){
-				return false;
-			}
+			return current_trans;
 		}
 
 		void SQLTransaction::add_obj(SQLStore_impl::GSQLObject* gso){
@@ -82,12 +77,7 @@ namespace myria{ namespace pgsql {
 				store_commit();
 			}
 			sql_conn.current_trans = nullptr;
-		}
-		
-		namespace {
-			bool created_causal = false;
-			bool created_strong = false;
-		}
+		}		
 
 		const std::string& table_name(Table t){
 			static const std::string bs = "\"BlobStore\"";
@@ -101,14 +91,6 @@ namespace myria{ namespace pgsql {
 
 		SQLStore_impl::SQLStore_impl(GDataStore &store, int instanceID, Level l)
 			:_store(store),clock{{0,0,0,0}},level(l),default_connection{new SQLConnection(instanceID)} {
-				if (l == Level::strong) {
-					assert(!created_strong);
-					created_strong = true;
-				}
-				if (l == Level::causal) {
-					assert(!created_causal);
-					created_causal = true;
-				}
 				auto t = begin_transaction();
 				((SQLTransaction*)t.get())
 					->exec(l == Level::strong ?

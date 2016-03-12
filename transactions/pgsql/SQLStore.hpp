@@ -94,7 +94,7 @@ namespace myria { namespace pgsql {
 			bool in_transaction() const {
 				bool it = this->default_connection->in_trans();
 				assert ([&](){
-						bool ct = this->default_connection->current_trans;						
+						bool ct = this->default_connection->current_trans;
 						return (it ? ct : true);}());
 				return it;
 			}
