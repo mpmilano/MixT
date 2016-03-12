@@ -13,14 +13,14 @@
 
 namespace mutils{
 
-	template<typename Ret, typename... Arg>
-	class ProcessPool_impl : public TaskPool_impl<ProcessPool_impl<Ret,Arg...>,Ret,Arg...>{
+	template<typename Mem, typename Ret, typename... Arg>
+	class ProcessPool_impl : public TaskPool_impl<ProcessPool_impl<Mem,Ret,Arg...>,Mem,Ret,Arg...>{
 
 		class Child{
 			pid_t name;
 			int parent_to_child[2];
 			int child_to_parent[2];
-			std::vector<std::function<Ret (std::function<void* (void*)>, int, Arg...)> > &behaviors;
+			std::vector<std::function<Ret (std::unique_ptr<Mem>&, int, Arg...)> > &behaviors;
 			const std::function<Ret (std::exception_ptr)> &onException;
 
 			struct ReadError{};
@@ -48,8 +48,8 @@ namespace mutils{
 				return _populate_arg(ct).to_std_tuple();
 			}
 
-			static auto behaviorOnPointers(std::vector<std::function<Ret (std::function<void* (void*)>, int, Arg...)> > const * const behaviors, std::function<void* (void*)> remember, int command, int name, std::shared_ptr<Arg>... args){
-				return behaviors->at(command)(remember,name,(*args)...);
+			static auto behaviorOnPointers(std::vector<std::function<Ret (std::unique_ptr<Mem>&, int, Arg...)> > const * const behaviors, std::unique_ptr<Mem>* remember, int command, int name, std::shared_ptr<Arg>... args){
+				return behaviors->at(command)(*remember,name,(*args)...);
 			}
 
 			void writeBackResult(const Ret &ret){
@@ -61,13 +61,7 @@ namespace mutils{
 				write(child_to_parent[1],bytes.data(),size);
 			}
 
-			static void* hangOnToThis(void *v){
-				static void* hang = v;
-				if (v) hang = v;
-				return hang;
-			}
-
-			const std::function<void* (void*)> remember{&Child::hangOnToThis};
+			std::unique_ptr<Mem> remember;
 			
 			void childSpin(){
 				int command;
@@ -79,7 +73,7 @@ namespace mutils{
 						auto args = populate_arg(ct::tuple<std::shared_ptr<Arg>...>{});
 						try{
 							auto ret = callFunc(behaviorOnPointers,
-												std::tuple_cat(std::make_tuple(&behaviors,remember,command,name),args));
+												std::tuple_cat(std::make_tuple(&behaviors,&remember,command,name),args));
 							writeBackResult(ret);
 						}
 						catch(...){
@@ -159,10 +153,10 @@ namespace mutils{
 	public:
 	
 		ProcessPool_impl (std::shared_ptr<ProcessPool_impl> &pp,
-						  std::vector<std::function<Ret (std::function<void* (void*)>, int, Arg...)> > beh,
+						  std::vector<std::function<Ret (std::unique_ptr<Mem>&, int, Arg...)> > beh,
 						  int limit,
 						  std::function<Ret (std::exception_ptr)> onException
-			):TaskPool_impl<ProcessPool_impl<Ret,Arg...>,Ret,Arg...>(pp,beh,limit,onException)
+			):TaskPool_impl<ProcessPool_impl<Mem,Ret,Arg...>,Mem,Ret,Arg...>(pp,beh,limit,onException)
 			{
 				while (children.size() < limit){
 					auto &child = children.emplace(this->behaviors,this->onException);
@@ -209,7 +203,7 @@ namespace mutils{
 		}
 	};
 
-	template<typename Ret, typename... Arg>
-	using ProcessPool = TaskPool<ProcessPool_impl<Ret,Arg...>,Ret,Arg...>;
+	template<typename Mem, typename Ret, typename... Arg>
+	using ProcessPool = TaskPool<ProcessPool_impl<Mem, Ret,Arg...>,Mem, Ret,Arg...>;
 
 }

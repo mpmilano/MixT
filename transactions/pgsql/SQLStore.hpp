@@ -14,7 +14,9 @@ namespace myria { namespace pgsql {
 			struct SQLInstanceManager : public SQLInstanceManager_abs{
 			public:
                                 tracker::Tracker &trk;
-                                SQLInstanceManager(tracker::Tracker &trk):trk(trk){}
+                                SQLInstanceManager(tracker::Tracker &trk):trk(trk){
+									std::cout << "new SQLInstance manager created" << std::endl;
+								}
                                 SQLInstanceManager(const SQLInstanceManager&) = delete;
                                 virtual ~SQLInstanceManager(){}
 			private:
@@ -24,7 +26,7 @@ namespace myria { namespace pgsql {
 					assert(l == l2);
 					if (ss.count(instance_id) == 0){
 						assert(this->this_mgr);
-                                                ss[instance_id].reset(new SQLStore(trk,instance_id,*this->this_mgr));
+						ss[instance_id].reset(new SQLStore(trk,instance_id,*this->this_mgr));
 					}
 				}
 

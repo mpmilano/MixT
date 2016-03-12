@@ -14,22 +14,22 @@ namespace mutils{
 		static constexpr auto value = "Exception Occurred!";
 	};
 	
-	template<typename Impl, typename Ret, typename... Arg>
+	template<typename Impl, typename Mem, typename Ret, typename... Arg>
 	class TaskPool;
 	
-	template<typename Impl, typename Ret, typename... Arg>
+	template<typename Impl, typename Mem, typename Ret, typename... Arg>
 	class TaskPool_impl {
 
 	protected:
 		const int limit;
 		std::unique_ptr<ctpl::thread_pool> tp;
-		std::vector<std::function<Ret (std::function<void* (void*)>, int, Arg...)> > behaviors;
+		std::vector<std::function<Ret (std::unique_ptr<Mem>&, int, Arg...)> > behaviors;
 		std::function<Ret (std::exception_ptr)> onException;
 		bool pool_alive;
 		std::shared_ptr<Impl> &this_sp;
 
 		TaskPool_impl (std::shared_ptr<Impl> &pp,
-					   std::vector<std::function<Ret (std::function<void* (void*)>, int, Arg...)> > beh,
+					   std::vector<std::function<Ret (std::unique_ptr<Mem>&, int, Arg...)> > beh,
 					   int limit,
 					   std::function<Ret (std::exception_ptr)> onException
 			):limit(limit),tp(new ctpl::thread_pool{limit}),behaviors(beh),onException(onException),pool_alive(true),this_sp(pp){}
@@ -56,17 +56,20 @@ namespace mutils{
 		}
 		
 		virtual ~TaskPool_impl(){}
-		template<typename Impl2, typename Ret2, typename... Arg2>
+		template<typename Mem2, typename Impl2, typename Ret2, typename... Arg2>
 		friend class TaskPool;
 	};
 	
-	template<class Impl, typename Ret, typename... Arg>
+	template<class Impl, typename Mem, typename Ret, typename... Arg>
 	class TaskPool {
 		std::shared_ptr<Impl > inst;
 	public:
-		
 
-	TaskPool (std::vector<std::function<Ret (std::function<void* (void*)>, int, Arg...)> > beh,
+
+		//The "memory" cell is guaranteed to be passed in queue order; we make the *longest*
+		//possible duration elapse 
+
+		TaskPool (std::vector<std::function<Ret (std::unique_ptr<Mem>&, int, Arg...)> > beh,
 			  int limit = 200,
 			  std::function<Ret (std::exception_ptr)> onExn = [](std::exception_ptr exn){
 				  try {

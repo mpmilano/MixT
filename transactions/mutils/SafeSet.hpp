@@ -20,6 +20,7 @@ namespace mutils{
 			impl.emplace_back(std::forward<Args>(args)...);
 			return impl.back();
 		}
+
 		bool empty() const{
 			return impl.empty();
 		}

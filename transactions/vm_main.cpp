@@ -35,7 +35,7 @@ constexpr bool causal_enabled = true;
 constexpr bool causal_enabled = false;
 #endif
 
-constexpr int num_processes = 1;
+constexpr int num_processes = 10;
 static_assert(num_processes <= 500,"Error: you are at risk of too many open files");
 constexpr auto arrival_rate = 10_Hz;
 
@@ -107,31 +107,36 @@ int main(){
 	}
 	exit(0); */
 
-	std::function<std::string (std::function<void* (void*)>, int, unsigned long long)> pool_fun =
-		[ip](std::function<void* (void*) > global_memory, int pid, unsigned long long _start_time){
-		if (!global_memory(nullptr)) {
-			auto trk = new tracker::Tracker{pid + 1024};
-                        auto ss = new SQLStore<Level::strong>::SQLInstanceManager(*trk);
-                        auto sc = new SQLStore<Level::causal>::SQLInstanceManager(*trk);
-                        global_memory(new DeserializationManager{{ss,sc}});
+	struct Remember {
+		tracker::Tracker trk;
+		SQLStore<Level::strong>::SQLInstanceManager ss;
+		SQLStore<Level::causal>::SQLInstanceManager sc;
+		DeserializationManager dsm;
+		
+		Remember(int id):trk(id + 1024),ss(trk),sc(trk),dsm({&ss,&sc}){}
+	};
+	
+	std::function<std::string (std::unique_ptr<Remember>&, int, unsigned long long)> pool_fun =
+		[ip](std::unique_ptr<Remember>& mem, int pid, unsigned long long _start_time){
+		if (!mem) {
+			mem.reset(new Remember(pid));
 		}
-		assert(global_memory(nullptr));
+		assert(mem);
 		microseconds start_time(_start_time);
 		//std::cout << "launching task on pid " << pid << std::endl;
 		//AtScopeEnd em{[pid](){std::cout << "finishing task on pid " << pid << std::endl;}};
 		std::stringstream log_messages;
 		try{
 			std::string str = [&](){
-				DeserializationManager &dsm = *((DeserializationManager*) global_memory(nullptr));
-				SQLStore<Level::strong> &strong = dsm. template mgr<SQLStore<Level::strong>::SQLInstanceManager>().inst_strong(ip);
-				SQLStore<Level::causal> &causal = dsm. template mgr<SQLStore<Level::causal>::SQLInstanceManager>().inst_causal(0);
-				auto &trk = dsm. template mgr<SQLStore<Level::causal>::SQLInstanceManager>().trk;
+				SQLStore<Level::strong> &strong = mem->ss.inst_strong(ip);
+				SQLStore<Level::causal> &causal = mem->sc.inst_causal(0);
+				auto &trk = mem->trk;
 				assert(!strong.in_transaction());
 				assert(!causal.in_transaction());
 				assert(!trk.get_StrongStore().in_transaction());
 				//I'm assuming that pid won't get larger than the number of allowable ports...
 				assert(pid + 1024 < 49151);
-
+				
 				auto name = get_name(0.5);
 			
 				auto test_fun = [&](auto hndl){
@@ -198,8 +203,8 @@ int main(){
 		return log_messages.str();
 	};
 	vector<decltype(pool_fun)> pool_v {{pool_fun}};
-	std::unique_ptr<ThreadPool<std::string, unsigned long long> >
-		powner(new ThreadPool<std::string, unsigned long long>(pool_v,num_processes,exn_handler));
+	std::unique_ptr<ProcessPool<Remember,std::string, unsigned long long> >
+		powner(new ProcessPool<Remember,std::string, unsigned long long>(pool_v,num_processes,exn_handler));
 	auto &p = *powner;
 	auto start = high_resolution_clock::now();
 
@@ -214,12 +219,14 @@ int main(){
 	
 	std::function<decltype(p.launch(0,elapsed_time())) ()>
 		launch1 {[&](){return p.launch(0,elapsed_time());}};
-	
+
+	std::unique_ptr<Remember> launch2_mem;
 	decltype(launch1) launch2 {[&]() -> decltype(p.launch(0,elapsed_time())){
-			auto str = pool_fun([](void*v){static auto* mem = v; if (v) mem = v; return mem;},400,elapsed_time());
+			auto str = pool_fun(launch2_mem,400,elapsed_time());
 						return std::async(std::launch::deferred,[str](){return heap_copy(str);});}};
-	
-	auto launch  = ( false ? launch1 : launch2);
+	bool launch_with_threading = true;
+	if (!launch_with_threading) std::cout << "Warning: threading disabled!" << std::endl;
+	auto launch  = ( launch_with_threading ? launch1 : launch2);
 	
 	std::cout << "beginning subtask generation loop" << std::endl;
 	while (bound()){
