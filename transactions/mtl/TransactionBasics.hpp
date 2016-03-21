@@ -58,6 +58,7 @@ namespace myria {
 				{}
 			
 			bool full_commit();
+			void full_abort();
 
 			template<Level lev, typename Store>
 			auto& get_store_context(Store& str){
@@ -80,7 +81,9 @@ namespace myria {
 
 			virtual ~TransactionContext(){
 				if ((!committed) && commit_on_delete) full_commit();
-				else if (!committed) abortContext();
+				else if (!committed) {
+					full_abort();
+				}
 			}
 
 			template<typename> friend struct Transaction;

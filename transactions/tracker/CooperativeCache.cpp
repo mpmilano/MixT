@@ -15,11 +15,11 @@ namespace myria { namespace tracker {
 
 		namespace{
 			bool behavior_accept_requests(CacheBehaviors beh){
-				return beh != CacheBehaviors::onlymake;
+				return beh == CacheBehaviors::onlyaccept || beh == CacheBehaviors::full;
 			}
 
 			bool behavior_make_requests(CacheBehaviors beh){
-				return beh !=CacheBehaviors::onlyaccept;
+				return beh == CacheBehaviors::onlymake || beh == CacheBehaviors::full;
 			}
 		}
 
@@ -35,7 +35,9 @@ namespace myria { namespace tracker {
 			(*cache)[n] = o;
 		}
 
-		CooperativeCache::CooperativeCache(CacheBehaviors beh):active_behavior(beh){}
+		CooperativeCache::CooperativeCache(CacheBehaviors beh)
+			:active_behavior(beh),
+			 tp(behavior_make_requests(beh) ? new ctpl::thread_pool(tp_size) : nullptr){}
 		
 		void CooperativeCache::insert(Tracker::Nonce n, const std::map<Name,std::pair<Tracker::Clock, std::vector<char> > > &map){
 			obj_bundle new_tracking;
@@ -144,7 +146,7 @@ namespace myria { namespace tracker {
 				}
 			}
 			if (behavior_make_requests(active_behavior)){
-				return tp.push([tomb,portno,this](int) -> CooperativeCache::obj_bundle {
+				return tp->push([tomb,portno,this](int) -> CooperativeCache::obj_bundle {
 						while (true)
 							try {
 								int sockfd;

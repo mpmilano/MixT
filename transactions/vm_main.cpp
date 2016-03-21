@@ -35,7 +35,7 @@ constexpr bool causal_enabled = true;
 constexpr bool causal_enabled = false;
 #endif
 
-constexpr int num_processes = 10;
+constexpr int num_processes = 0;
 static_assert(num_processes <= 500,"Error: you are at risk of too many open files");
 constexpr auto arrival_rate = 10_Hz;
 
@@ -113,11 +113,13 @@ int main(){
 		SQLStore<Level::causal>::SQLInstanceManager sc;
 		DeserializationManager dsm;
 		
-		Remember(int id):trk(id + 1024),ss(trk),sc(trk),dsm({&ss,&sc}){}
+		Remember(int id):trk(id + 1024, tracker::CacheBehaviors::none),ss(trk),sc(trk),dsm({&ss,&sc}){}
 	};
 	
 	std::function<std::string (std::unique_ptr<Remember>&, int, unsigned long long)> pool_fun =
-		[ip](std::unique_ptr<Remember>& mem, int pid, unsigned long long _start_time){
+		[ip](std::unique_ptr<Remember>& mem, int _pid, unsigned long long _start_time){
+		auto pid = _pid % (65535 - 1025); //make sure this can be used as a port number
+		
 		if (!mem) {
 			mem.reset(new Remember(pid));
 		}
@@ -203,8 +205,8 @@ int main(){
 		return log_messages.str();
 	};
 	vector<decltype(pool_fun)> pool_v {{pool_fun}};
-	std::unique_ptr<ThreadPool<Remember,std::string, unsigned long long> >
-		powner(new ThreadPool<Remember,std::string, unsigned long long>(pool_v,num_processes,exn_handler));
+        std::unique_ptr<ThreadPool<Remember,std::string, unsigned long long> >
+                powner(new ThreadPool<Remember,std::string, unsigned long long>(pool_v,num_processes,exn_handler));
 	auto &p = *powner;
 	auto start = high_resolution_clock::now();
 
@@ -222,9 +224,9 @@ int main(){
 
 	std::unique_ptr<Remember> launch2_mem;
 	decltype(launch1) launch2 {[&]() -> decltype(p.launch(0,elapsed_time())){
-			auto str = pool_fun(launch2_mem,400,elapsed_time());
+                        auto str = pool_fun(launch2_mem,400,elapsed_time());
 						return std::async(std::launch::deferred,[str](){return heap_copy(str);});}};
-	bool launch_with_threading = true;
+        bool launch_with_threading = false;
 	if (!launch_with_threading) std::cout << "Warning: threading disabled!" << std::endl;
 	auto launch  = ( launch_with_threading ? launch1 : launch2);
 	
@@ -252,4 +254,5 @@ int main(){
 		}
 		futures = std::move(new_futures);
 	}
+	std::cout << "all tasks done" << std::endl;
 }

@@ -231,9 +231,9 @@ namespace myria{
 			assert(tc || !rop->store().in_transaction());
 			//make a transaction with no environment expressions for only the requested store
 			auto owner = (tc ? nullptr : std::make_unique<mtl::TransactionContext>((void*)nullptr,rop->store().begin_transaction(),trk.generateContext()));
-			if (owner) owner->commit_on_delete = true;
 			auto &ctx = (tc ? *tc : *owner);
 			do_onwrite(ctx,trk,*rop);
+            if (owner) owner->full_commit();
 			return ret;
 		}
 	

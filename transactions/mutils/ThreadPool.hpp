@@ -19,6 +19,8 @@ namespace mutils{
 	class ThreadPool_impl : public TaskPool_impl<ThreadPool_impl<Mem,Ret,Arg...>,Mem,Ret,Arg...>{
 
 		std::vector<std::unique_ptr<Mem> > remember_these;
+		std::unique_ptr<Mem> remember_this_single;
+		
 		SafeSet<int> indices;
 	
 	public:
@@ -27,24 +29,30 @@ namespace mutils{
 						  std::vector<std::function<Ret (std::unique_ptr<Mem>&, int, Arg...)> > beh,
 						  int limit,
 						  std::function<Ret (std::exception_ptr)> onException
-			):TaskPool_impl<ThreadPool_impl<Mem,Ret,Arg...>,Mem,Ret,Arg...>(pp,beh,limit,onException),remember_these(limit){
-			for (int i = 0; i < limit; ++i)
+			):TaskPool_impl<ThreadPool_impl<Mem,Ret,Arg...>,Mem,Ret,Arg...>(pp,beh,limit,onException),remember_these(this->tp ? limit : 1){
+			for (int i = 0; i < (this->tp ? limit : 1); ++i)
 				indices.add(i);
 		}
 		
 		std::future<std::unique_ptr<Ret> > launch(int command, const Arg & ... arg){
 			auto this_sp = this->this_sp;
 			assert(this_sp.get() == this);
-			auto mem_indx = indices.pop();
-			return this->tp->push([mem_indx,this_sp,command,arg...](int id) -> std::unique_ptr<Ret>{
-					AtScopeEnd ase{[&](){this_sp->indices.add(mem_indx);}};
-					try{
-						return heap_copy(this_sp->behaviors.at(command)(this_sp->remember_these.at(mem_indx),id,arg...));
-					}
-					catch(...){
-						return heap_copy(this_sp->onException(std::current_exception()));
-					}
-				});
+			auto fun =
+				[this_sp,command,arg...](int id) -> std::unique_ptr<Ret>{
+				auto mem_indx = this_sp->indices.pop();
+				AtScopeEnd ase{[&](){this_sp->indices.add(mem_indx);}};
+				try{
+					return heap_copy(this_sp->behaviors.at(command)(this_sp->remember_these.at(mem_indx),id,arg...));
+				}
+				catch(...){
+					return heap_copy(this_sp->onException(std::current_exception()));
+				}
+			};
+			if (this->tp) return this->tp->push(fun);
+			else {
+				int id = std::hash<std::thread::id>{}(std::this_thread::get_id());
+				return std::async(std::launch::deferred, std::move(fun),id);
+			}
 		}
 
 		virtual ~ThreadPool_impl(){

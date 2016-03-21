@@ -27,5 +27,11 @@ namespace myria { namespace mtl {
 			abort_needed = false;
 			return ret;
 		}
+
+		void TransactionContext::full_abort(){
+			mutils::AtScopeEnd ase{[&](){abortContext();}};
+			mutils::AtScopeEnd ase2{[&](){if (strongContext) strongContext->store_abort();}};
+			mutils::AtScopeEnd ase3{[&](){if (causalContext) causalContext->store_abort();}};
+		}
 	}
 }

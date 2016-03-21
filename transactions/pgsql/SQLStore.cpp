@@ -20,7 +20,13 @@ namespace myria{ namespace pgsql {
 
 
 		SQLTransaction::SQLTransaction(GDataStore& store, SQLStore_impl::SQLConnection& c)
-			:gstore(store),sql_conn(c),trans(sql_conn.conn){
+                        :gstore(store),sql_conn(c),conn_lock(
+                            [](auto& l) -> auto& {
+                                assert(l.try_lock());
+                                l.unlock();
+                                return l;
+                        }(c.con_guard)),
+                        trans(sql_conn.conn){
 			assert(!sql_conn.in_trans());
 			sql_conn.current_trans = this;
 		}
@@ -65,6 +71,10 @@ namespace myria{ namespace pgsql {
 		}
 
 		bool SQLStore_impl::SQLConnection::in_trans(){
+                        if (current_trans){/*
+				assert(con_guard.try_lock());
+                                con_guard.unlock();*/
+			}
 			return current_trans;
 		}
 

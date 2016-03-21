@@ -32,7 +32,7 @@ namespace mutils{
 					   std::vector<std::function<Ret (std::unique_ptr<Mem>&, int, Arg...)> > beh,
 					   int limit,
 					   std::function<Ret (std::exception_ptr)> onException
-			):limit(limit),tp(new ctpl::thread_pool{limit}),behaviors(beh),onException(onException),pool_alive(true),this_sp(pp){}
+			):limit(limit),tp(limit > 0 ? new ctpl::thread_pool{limit} : nullptr),behaviors(beh),onException(onException),pool_alive(true),this_sp(pp){}
 		
 		//it is intended for the constructor to take the same types as TaskPool
 	public:

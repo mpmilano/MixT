@@ -3,8 +3,8 @@
 
 #pragma once
 
-#define MAKE_CACHE_REQUESTS yay
-#define ACCEPT_CACHE_REQUESTS yay
+//#define MAKE_CACHE_REQUESTS yay
+//#define ACCEPT_CACHE_REQUESTS yay
 
 #include "CompactSet.hpp"
 #include "GDataStore.hpp"
@@ -27,7 +27,7 @@ namespace myria {
 		class CooperativeCache;
 
 		enum CacheBehaviors{
-			full,onlymake,onlyaccept
+			full,onlymake,onlyaccept,none
 		};
 
 		namespace TDS{
@@ -193,7 +193,7 @@ namespace myria {
 
 			friend struct TrackingContext;
 
-			Tracker(int cache_port, CacheBehaviors behavior = CacheBehaviors::full);
+			Tracker(int cache_port, CacheBehaviors behavior /*= CacheBehaviors::full*/);
 			virtual ~Tracker();
 
 			Tracker(const Tracker&) = delete;
