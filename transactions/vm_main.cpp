@@ -35,8 +35,8 @@ constexpr bool causal_enabled = true;
 constexpr bool causal_enabled = false;
 #endif
 
-constexpr int num_processes = 300;
-static_assert(num_processes <= 300,"Error: you are at risk of too many open files");
+constexpr int num_processes = 100;
+static_assert(num_processes <= 100,"Error: you are at risk of too many open files");
 constexpr auto arrival_rate = 10_Hz;
 
 const auto log_name = [](){
@@ -119,15 +119,16 @@ int main(){
 	std::function<std::string (std::unique_ptr<Remember>&, int, unsigned long long)> pool_fun =
 		[ip](std::unique_ptr<Remember>& mem, int _pid, unsigned long long _start_time){
 		auto pid = _pid % (65535 - 1025); //make sure this can be used as a port number
-		
+
+		std::stringstream log_messages;
 		if (!mem) {
 			mem.reset(new Remember(pid));
+			log_messages << "(startup) ";
 		}
 		assert(mem);
 		microseconds start_time(_start_time);
 		//std::cout << "launching task on pid " << pid << std::endl;
 		//AtScopeEnd em{[pid](){std::cout << "finishing task on pid " << pid << std::endl;}};
-		std::stringstream log_messages;
 		try{
 			std::string str = [&](){
 				SQLStore<Level::strong> &strong = mem->ss.inst_strong(ip);
