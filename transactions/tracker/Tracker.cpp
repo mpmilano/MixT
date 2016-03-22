@@ -279,7 +279,8 @@ namespace myria { namespace tracker {
 				using namespace TDS;
 				const Tracker::Tombstone t {nonce,get_ip(),trk.cache_port};
 				assert(i.cache.contains(nonce));
-				get<TDS::newTomb>(*i.causalDS)(trk, ctx,*i.registeredCausal,t.name(), t);
+                                if (get<TDS::exists>(*i.causalDS)(*i.registeredCausal,t.name())) throw mtl::CannotProceedError{"Tomb name collission"};
+                                else get<TDS::newTomb>(*i.causalDS)(trk, ctx,*i.registeredCausal,t.name(), t);
 			}
 		}
 

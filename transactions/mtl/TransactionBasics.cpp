@@ -28,9 +28,6 @@ namespace myria { namespace mtl {
 			return ret;
 		}
 
-                template<Level l>
-                StoreContext<l>::~StoreContext(){}
-
 		void TransactionContext::full_abort(){
 			mutils::AtScopeEnd ase{[&](){abortContext();}};
 			mutils::AtScopeEnd ase2{[&](){if (strongContext) strongContext->store_abort();}};

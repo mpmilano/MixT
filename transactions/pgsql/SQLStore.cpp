@@ -217,10 +217,11 @@ namespace myria{ namespace pgsql {
 		SQLStore_impl::GSQLObject::GSQLObject(SQLStore_impl& ss, Table t, Name id, const vector<char> &c)
 			:i{new Internals{t,id,(int)c.size(),ss,
 					(char*) malloc(c.size())}}{
-			assert(!ro_isValid(nullptr));
+
 			{
 				auto trans_owner = enter_transaction(ss,nullptr);
 				auto *trans = trans_owner.second;
+                                assert(!ro_isValid(trans));
 
 				if (t == Table::BlobStore){
 					binarystring blob(&c.at(0),c.size());

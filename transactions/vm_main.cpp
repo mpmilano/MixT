@@ -35,7 +35,7 @@ constexpr bool causal_enabled = true;
 constexpr bool causal_enabled = false;
 #endif
 
-constexpr int num_processes = 0;
+constexpr int num_processes = 500;
 static_assert(num_processes <= 500,"Error: you are at risk of too many open files");
 constexpr auto arrival_rate = 10_Hz;
 
@@ -113,7 +113,7 @@ int main(){
 		SQLStore<Level::causal>::SQLInstanceManager sc;
 		DeserializationManager dsm;
 		
-		Remember(int id):trk(id + 1024, tracker::CacheBehaviors::none),ss(trk),sc(trk),dsm({&ss,&sc}){}
+		Remember(int id):trk(id + 1024, tracker::CacheBehaviors::full),ss(trk),sc(trk),dsm({&ss,&sc}){}
 	};
 	
 	std::function<std::string (std::unique_ptr<Remember>&, int, unsigned long long)> pool_fun =
@@ -226,7 +226,7 @@ int main(){
 	decltype(launch1) launch2 {[&]() -> decltype(p.launch(0,elapsed_time())){
                         auto str = pool_fun(launch2_mem,400,elapsed_time());
 						return std::async(std::launch::deferred,[str](){return heap_copy(str);});}};
-        bool launch_with_threading = false;
+        bool launch_with_threading = true;
 	if (!launch_with_threading) std::cout << "Warning: threading disabled!" << std::endl;
 	auto launch  = ( launch_with_threading ? launch1 : launch2);
 	
