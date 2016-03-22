@@ -35,8 +35,8 @@ constexpr bool causal_enabled = true;
 constexpr bool causal_enabled = false;
 #endif
 
-constexpr int num_processes = 500;
-static_assert(num_processes <= 500,"Error: you are at risk of too many open files");
+constexpr int num_processes = 300;
+static_assert(num_processes <= 300,"Error: you are at risk of too many open files");
 constexpr auto arrival_rate = 10_Hz;
 
 const auto log_name = [](){
