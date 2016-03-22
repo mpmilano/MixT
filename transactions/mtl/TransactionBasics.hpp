@@ -18,6 +18,7 @@ namespace myria {
 			virtual DataStore<l>& store() = 0;
 			virtual bool store_commit() = 0;
 			virtual void store_abort() = 0;
+			virtual ~StoreContext();
 		};
 
 		namespace context{

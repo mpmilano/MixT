@@ -29,7 +29,7 @@ int main() {
 
 	try {
 
-	Tracker global_tracker(8765);
+    Tracker global_tracker(8765,CacheBehaviors::full);
     RemoteDeserialization_v rdv;
     SQLStore<Level::strong>::SQLInstanceManager sm{global_tracker};
     SQLStore<Level::causal>::SQLInstanceManager cm{global_tracker};
