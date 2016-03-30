@@ -23,16 +23,19 @@ namespace mutils{
 	protected:
 		const int limit;
 		std::unique_ptr<ctpl::thread_pool> tp;
+		std::function<void (std::unique_ptr<Mem>&, int)> init;
 		std::vector<std::function<Ret (std::unique_ptr<Mem>&, int, Arg...)> > behaviors;
 		std::function<Ret (std::exception_ptr)> onException;
 		bool pool_alive;
 		std::shared_ptr<Impl> &this_sp;
 
 		TaskPool_impl (std::shared_ptr<Impl> &pp,
+					   std::function<void (std::unique_ptr<Mem>&, int)> &init,
 					   std::vector<std::function<Ret (std::unique_ptr<Mem>&, int, Arg...)> > beh,
 					   int limit,
 					   std::function<Ret (std::exception_ptr)> onException
-			):limit(limit),tp(limit > 0 ? new ctpl::thread_pool{limit} : nullptr),behaviors(beh),onException(onException),pool_alive(true),this_sp(pp){}
+			):limit(limit),tp(limit > 0 ? new ctpl::thread_pool{limit} : nullptr),
+			  init(init),behaviors(beh),onException(onException),pool_alive(true),this_sp(pp){}
 		
 		//it is intended for the constructor to take the same types as TaskPool
 	public:
@@ -69,7 +72,9 @@ namespace mutils{
 		//The "memory" cell is guaranteed to be passed in queue order; we make the *longest*
 		//possible duration elapse 
 
-		TaskPool (std::vector<std::function<Ret (std::unique_ptr<Mem>&, int, Arg...)> > beh,
+		TaskPool (
+			std::function<void (std::unique_ptr<Mem>&, int)> init_mem,
+			std::vector<std::function<Ret (std::unique_ptr<Mem>&, int, Arg...)> > beh,
 			  int limit = 200,
 			  std::function<Ret (std::exception_ptr)> onExn = [](std::exception_ptr exn){
 				  try {
@@ -81,7 +86,7 @@ namespace mutils{
 				  }
 				  assert(false && "exn handler called with no currrent exception?");
 			  })
-		:inst(new Impl(inst,beh,limit,onExn)){}
+			:inst(new Impl(inst,init_mem,beh,limit,onExn)){}
 		
 		std::future<std::unique_ptr<Ret> > launch(int command, const Arg & ... arg){
 			return inst->launch(command,arg...);

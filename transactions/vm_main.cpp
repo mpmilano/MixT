@@ -84,6 +84,16 @@ int get_strong_ip() {
 	return ip_addr;
 }
 
+template<typename A, typename B>
+auto micros(duration<A,B> time){
+	return duration_cast<microseconds>(time).count();
+}
+
+//was as microseconds
+auto elapsed_time() {
+	return high_resolution_clock::now() - launch_clock;
+};
+
 int main(){
 	int ip = get_strong_ip();	
 	logFile.open(log_name);
@@ -117,16 +127,13 @@ int main(){
 	};
 	
 	std::function<std::string (std::unique_ptr<Remember>&, int, unsigned long long)> pool_fun =
-		[ip](std::unique_ptr<Remember>& mem, int _pid, unsigned long long _start_time){
-		auto pid = _pid % (65535 - 1025); //make sure this can be used as a port number
-
+		[ip](std::unique_ptr<Remember>& mem, int, unsigned long long _start_time){
 		std::stringstream log_messages;
-		if (!mem) {
-			mem.reset(new Remember(pid));
-			log_messages << "(startup) ";
-		}
 		assert(mem);
 		microseconds start_time(_start_time);
+		auto run_time = elapsed_time();
+		log_messages << "(submitted at " << duration_cast<milliseconds>(start_time).count() << "ms) ";
+		log_messages << "(running at " << duration_cast<milliseconds>(run_time).count() << "ms) ";
 		//std::cout << "launching task on pid " << pid << std::endl;
 		//AtScopeEnd em{[pid](){std::cout << "finishing task on pid " << pid << std::endl;}};
 		try{
@@ -137,8 +144,6 @@ int main(){
 				assert(!strong.in_transaction());
 				assert(!causal.in_transaction());
 				assert(!trk.get_StrongStore().in_transaction());
-				//I'm assuming that pid won't get larger than the number of allowable ports...
-				assert(pid + 1024 < 49151);
 				
 				auto name = get_name(0.5);
 			
@@ -154,17 +159,19 @@ int main(){
 							else TRANSACTION(
 								trk,hndl,
 								let_remote(tmp) = hndl IN(mtl_ignore($(tmp)))
-								)
-							auto end = high_resolution_clock::now() - launch_clock;
+								);
+							auto end = elapsed_time();
+							log_messages << "(done at " << duration_cast<milliseconds>(end).count() << "ms) ";
 							log_messages << "duration: " <<
 							duration_cast<milliseconds>(end - start_time).count()
 							<< ((name % mod_constant) == 0 ? "ms read/write" : "ms read") << std::endl;
 							break;
 						}
 						catch(const SerializationFailure &r){
+							auto end = elapsed_time();
+							log_messages << "(done at " << duration_cast<milliseconds>(end).count() << "ms) ";
 							log_messages << "serialization failure: "
-							<< duration_cast<milliseconds>(high_resolution_clock::now()
-														   - launch_clock - start_time).count()
+							<< duration_cast<milliseconds>(end - start_time).count()
 							<< std::endl;
 							continue;
 						}
@@ -205,9 +212,21 @@ int main(){
 		}
 		return log_messages.str();
 	};
+
+	std::function<void (std::unique_ptr<Remember>&, int)> pool_mem_init =
+		[](std::unique_ptr<Remember>& mem, int _pid){
+		auto pid = _pid % (65535 - 1025); //make sure this can be used as a port number
+		if (!mem) {
+			mem.reset(new Remember(pid));
+		}
+		//I'm assuming that pid won't get larger than the number of allowable ports...
+		assert(pid + 1024 < 49151);
+	};
+	
 	vector<decltype(pool_fun)> pool_v {{pool_fun}};
         std::unique_ptr<ThreadPool<Remember,std::string, unsigned long long> >
-                powner(new ThreadPool<Remember,std::string, unsigned long long>(pool_v,num_processes,exn_handler));
+			powner(new ThreadPool<Remember,std::string, unsigned long long>
+				   (pool_mem_init,pool_v,num_processes,exn_handler));
 	auto &p = *powner;
 	auto start = high_resolution_clock::now();
 
@@ -217,16 +236,13 @@ int main(){
 	using future_list = std::list<std::future<std::unique_ptr<std::string> > >;
 	std::unique_ptr<future_list> futures{new future_list()};
 
-	auto elapsed_time = [](){return duration_cast<microseconds>(high_resolution_clock::now()
-																- launch_clock).count();};
-	
-	std::function<decltype(p.launch(0,elapsed_time())) ()>
-		launch1 {[&](){return p.launch(0,elapsed_time());}};
+	std::function<decltype(p.launch(0,micros(elapsed_time()))) ()>
+		launch1 {[&](){return p.launch(0,micros(elapsed_time()));}};
 
 	std::unique_ptr<Remember> launch2_mem;
-	decltype(launch1) launch2 {[&]() -> decltype(p.launch(0,elapsed_time())){
-                        auto str = pool_fun(launch2_mem,400,elapsed_time());
-						return std::async(std::launch::deferred,[str](){return heap_copy(str);});}};
+	decltype(launch1) launch2 {[&]() -> decltype(p.launch(0,micros(elapsed_time()))){
+			auto str = pool_fun(launch2_mem,400,micros(elapsed_time()));
+			return std::async(std::launch::deferred,[str](){return heap_copy(str);});}};
         bool launch_with_threading = true;
 	if (!launch_with_threading) std::cout << "Warning: threading disabled!" << std::endl;
 	auto launch  = ( launch_with_threading ? launch1 : launch2);
