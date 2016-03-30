@@ -5,5 +5,14 @@ export TRANS_DIR
 export clangFlags
 export linkFlags
 
-all: 
+all: sync print_strong print_causal
+	echo "done"
+
+sync:
 	clang++ $(clangFlags) sync.cpp -o sync $(linkFlags)
+
+print_strong:
+	clang++ $(clangFlags) print_strong.cpp -o print_strong $(linkFlags)
+
+print_causal:
+	clang++ $(clangFlags) print_causal.cpp -o print_causal $(linkFlags)
