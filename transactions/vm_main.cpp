@@ -72,7 +72,7 @@ int get_name(double alpha){
 }
 
 const auto launch_clock = high_resolution_clock::now();
-const int mod_constant = 15;
+const int mod_constant = 50;
 
 int get_strong_ip() {
 	static int ip_addr{[](){
