@@ -15,7 +15,6 @@ namespace myria { namespace pgsql {
 			public:
                                 tracker::Tracker &trk;
                                 SQLInstanceManager(tracker::Tracker &trk):trk(trk){
-									std::cout << "new SQLInstance manager created" << std::endl;
 								}
                                 SQLInstanceManager(const SQLInstanceManager&) = delete;
                                 virtual ~SQLInstanceManager(){}
