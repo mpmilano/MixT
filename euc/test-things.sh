@@ -14,7 +14,7 @@ then
 	exit 1
 fi
 
-first_iter = true;
+first_iter=true;
 for num_per in {1..10}
 do
 	echo "iteration " $num_per
