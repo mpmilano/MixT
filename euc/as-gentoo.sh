@@ -6,9 +6,8 @@ git pull
 source pg_env.sh
 killall -9 vm
 rm /tmp/Myria*
-make clean
+if [[ "#6" ]]; then make clean; fi
 concurrencySetting="$2" defineThis="$3" causalGroup="$1" MY_IP="$4" STRONG_REMOTE_IP="$5" make -j4 vm
-sleep 10
 ./vm
 #for ((i=1; i <= $2; i++))
 #do

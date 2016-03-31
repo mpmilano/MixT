@@ -14,6 +14,7 @@ then
 	exit 1
 fi
 
+first_iter = true;
 for num_per in {1..10}
 do
 	echo "iteration " $num_per
@@ -24,9 +25,10 @@ do
 		for foo in $instance_list
 		do
 			i=$[i%4 + 1]
-			/bin/bash test-things-loop-body.sh $i $foo $num_per $configuration $strong_target $causal_target_1 $causal_target_2&
+			/bin/bash test-things-loop-body.sh $i $foo $num_per $configuration $strong_target $causal_target_1 $causal_target_2 $first_iter&
 		done
 		wait
+		unset first_iter
 		i=0
 		echo "all done"
 		for foo in $instance_list
