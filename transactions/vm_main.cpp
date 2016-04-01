@@ -38,6 +38,7 @@ constexpr bool causal_enabled = false;
 constexpr int num_processes = 100;
 static_assert(num_processes <= 100,"Error: you are at risk of too many open files");
 constexpr auto arrival_rate = 200_Hz;
+constexpr auto actual_arrival_rate = arrival_rate * as_hertz(1 + int{concurrencySetting});
 
 const auto log_name = [](){
 	auto pid = getpid();
@@ -98,6 +99,7 @@ int main(){
 	int ip = get_strong_ip();	
 	logFile.open(log_name);
 	logFile << "Begin Log for " << log_name << std::endl;
+	logFile << "Intended request frequency: " << actual_arrival_rate << std::endl;
 	std::cout << "hello world from VM "<< my_unique_id << " in group " << CAUSAL_GROUP << std::endl;
 	std::cout << "connecting to " << string_of_ip(ip) << std::endl;
 	AtScopeEnd ase{[&](){logFile << "End" << std::endl;
@@ -249,7 +251,7 @@ int main(){
 	
 	std::cout << "beginning subtask generation loop" << std::endl;
 	while (bound()){
-		std::this_thread::sleep_for(getArrivalInterval(arrival_rate * as_hertz(1 + int{concurrencySetting})));
+		std::this_thread::sleep_for(getArrivalInterval(actual_arrival_rate));
 		futures->emplace_back(launch());
 	}
 	
@@ -271,5 +273,6 @@ int main(){
 		}
 		futures = std::move(new_futures);
 	}
+	logFile << "All tasks complete at " << duration_cast<milliseconds>(elapsed_time()).count() << std::endl;
 	std::cout << "all tasks done" << std::endl;
 }
