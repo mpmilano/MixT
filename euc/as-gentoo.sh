@@ -3,21 +3,21 @@ cd
 cd consistency-tester/transactions/
 git checkout pg_env.sh
 git pull
-if [[ -d mutils]]
+if [[ -d mutils ]]
 then cd mutils; git pull; cd ..
 else git clone https://github.com/mpmilano/mutils.git
 fi
-if [[ -d mutils-tasks]]
+if [[ -d mutils-tasks ]]
 then cd mutils-tasks; git pull; cd ..
-else git clone https://github.com/mpmilano/mutils.git
+else git clone https://github.com/mpmilano/mutils-tasks.git
 fi
-if [[ -d mutils-serialization]]
+if [[ -d mutils-serialization ]]
 then cd mutils-serialization; git pull; cd ..
-else git clone https://github.com/mpmilano/mutils.git
+else git clone https://github.com/mpmilano/mutils-serialization.git
 fi
-if [[ -d mutils-containers]]
+if [[ -d mutils-containers ]]
 then cd mutils-containers; git pull; cd ..
-else git clone https://github.com/mpmilano/mutils.git
+else git clone https://github.com/mpmilano/mutils-containers.git
 fi
 source pg_env.sh
 killall -9 vm
