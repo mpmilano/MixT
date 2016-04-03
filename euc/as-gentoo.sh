@@ -3,6 +3,22 @@ cd
 cd consistency-tester/transactions/
 git checkout pg_env.sh
 git pull
+if [[ -d mutils]]
+then cd mutils; git pull; cd ..
+else git clone https://github.com/mpmilano/mutils.git
+fi
+if [[ -d mutils-tasks]]
+then cd mutils-tasks; git pull; cd ..
+else git clone https://github.com/mpmilano/mutils.git
+fi
+if [[ -d mutils-serialization]]
+then cd mutils-serialization; git pull; cd ..
+else git clone https://github.com/mpmilano/mutils.git
+fi
+if [[ -d mutils-containers]]
+then cd mutils-containers; git pull; cd ..
+else git clone https://github.com/mpmilano/mutils.git
+fi
 source pg_env.sh
 killall -9 vm
 rm /tmp/Myria*
