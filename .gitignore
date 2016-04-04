@@ -23,3 +23,8 @@ votes
 test
 MyriaStore.*
 MyriaStore
+mutils*
+postgres_stuff/print_causal
+postgres_stuff/print_strong
+postgres_stuff/sync
+vm
