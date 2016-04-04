@@ -135,10 +135,10 @@ int main(){
 	
 	std::function<std::string (std::unique_ptr<Remember>&, int, unsigned long long)> pool_fun =
 		[ip](std::unique_ptr<Remember>& mem, int, unsigned long long _start_time){
-		std::stringstream log_messages;
 		assert(mem);
 		microseconds start_time(_start_time);
 		auto run_time = elapsed_time();
+		auto &log_messages = mem->log_messages;
 		log_messages << "(submitted at " << duration_cast<milliseconds>(start_time).count() << "ms) ";
 		log_messages << "(running at " << duration_cast<milliseconds>(run_time).count() << "ms) ";
 		//std::cout << "launching task on pid " << pid << std::endl;
