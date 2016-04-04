@@ -120,12 +120,17 @@ int main(){
 	exit(0); */
 
 	struct Remember {
+		stringstream log_messages;
 		tracker::Tracker trk;
 		SQLStore<Level::strong>::SQLInstanceManager ss;
 		SQLStore<Level::causal>::SQLInstanceManager sc;
 		DeserializationManager dsm;
 		
-		Remember(int id):trk(id + 1024, tracker::CacheBehaviors::full),ss(trk),sc(trk),dsm({&ss,&sc}){}
+		Remember(int id)
+			:trk(id + 1024, [this](std::string s){this->log_messages << s;}, tracker::CacheBehaviors::full),
+			 ss(trk,[this](std::string s){this->log_messages << s;}),
+			 sc(trk,[this](std::string s){this->log_messages << s;}),
+			 dsm({&ss,&sc}){}
 	};
 	
 	std::function<std::string (std::unique_ptr<Remember>&, int, unsigned long long)> pool_fun =

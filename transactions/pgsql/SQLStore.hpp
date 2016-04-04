@@ -13,11 +13,12 @@ namespace myria { namespace pgsql {
 			
 			struct SQLInstanceManager : public SQLInstanceManager_abs{
 			public:
-                                tracker::Tracker &trk;
-                                SQLInstanceManager(tracker::Tracker &trk):trk(trk){
-								}
-                                SQLInstanceManager(const SQLInstanceManager&) = delete;
-                                virtual ~SQLInstanceManager(){}
+				tracker::Tracker &trk;
+				SQLInstanceManager(tracker::Tracker &trk, std::function<void (std::string)> logger)
+					:SQLInstanceManager_abs(logger),trk(trk){
+				}
+				SQLInstanceManager(const SQLInstanceManager&) = delete;
+				virtual ~SQLInstanceManager(){}
 			private:
 				std::map<int,std::unique_ptr<SQLStore> > ss;
 				
@@ -25,7 +26,7 @@ namespace myria { namespace pgsql {
 					assert(l == l2);
 					if (ss.count(instance_id) == 0){
 						assert(this->this_mgr);
-						ss[instance_id].reset(new SQLStore(trk,instance_id,*this->this_mgr));
+						ss[instance_id].reset(new SQLStore(trk,instance_id,this->logger,*this->this_mgr));
 					}
 				}
 
@@ -66,9 +67,11 @@ namespace myria { namespace pgsql {
 			};
 
 			mutils::DeserializationManager &this_mgr;
+			const std::function<void (std::string)> &logger;
 
 		private:
-			SQLStore(tracker::Tracker& trk, int inst_id, mutils::DeserializationManager &this_mgr):SQLStore_impl(*this,inst_id,l),this_mgr(this_mgr) {
+			SQLStore(tracker::Tracker& trk, int inst_id, std::function<void (std::string)> logger, mutils::DeserializationManager &this_mgr)
+				:SQLStore_impl(*this,inst_id,l,logger),DataStore<l>(logger),this_mgr(this_mgr),logger([this]() -> auto&{GDataStore* ptr = this; return ptr->logger;}()) {
 				trk.registerStore(*this);
 			}
 		public:

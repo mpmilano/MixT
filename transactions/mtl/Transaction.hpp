@@ -61,12 +61,17 @@ namespace myria { namespace mtl {
 							//and sets their participating RemoteObjects' current transaction pointers.							
 
 							//nobody should be in a transaction yet
+							const std::function<void (std::string)> &logger = trk.get_StrongStore().logger;
+							ctx.logger = &logger;
 							assert(!trk.get_StrongStore().in_transaction());
 							call_all_strong(&ctx,caches,stores,s.curr);
 
 						}
 
 						do {
+
+							const std::function<void (std::string)> &logger = trk.get_CausalStore().logger;
+							ctx.logger = &logger;
 							//causal execution.  it can't fail.
 							
 							CausalCache cachec{caches};

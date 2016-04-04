@@ -1,4 +1,5 @@
 #pragma once
+#include <functional>
 #include "TrackingContext.hpp"
 #include "Basics.hpp"
 #include "restrict.hpp"
@@ -34,6 +35,7 @@ namespace myria {
 			std::unique_ptr<tracker::TrackingContext> trackingContext;
 			std::unique_ptr<StoreContext<Level::strong> > strongContext{nullptr};
 			std::unique_ptr<StoreContext<Level::causal> > causalContext{nullptr};
+			std::function<void (std::string)> const *logger{nullptr};
 			bool commit_on_delete = false;
 			
 		private:
