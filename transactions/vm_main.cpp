@@ -127,9 +127,9 @@ int main(){
 		DeserializationManager dsm;
 		
 		Remember(int id)
-			:trk(id + 1024, [this](std::string s){this->log_messages << s;}, tracker::CacheBehaviors::full),
-			 ss(trk,[this](std::string s){this->log_messages << s;}),
-			 sc(trk,[this](std::string s){this->log_messages << s;}),
+			:trk(id + 1024, [this]() -> std::ostream& {return this->log_messages;}, tracker::CacheBehaviors::full),
+			 ss(trk,[this]() -> std::ostream& {return this->log_messages;}),
+			 sc(trk,[this]() -> std::ostream& {return this->log_messages;}),
 			 dsm({&ss,&sc}){}
 	};
 	

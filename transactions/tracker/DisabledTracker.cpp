@@ -80,7 +80,7 @@ namespace myria { namespace tracker {
 		void Tracker::assert_nonempty_tracking() const {}
 		const CooperativeCache& Tracker::getcache() const {assert(false);}
 
-		Tracker::Tracker(int cache_port, std::function<void (std::string)> logger, CacheBehaviors behavior /*= CacheBehaviors::full*/)
+		Tracker::Tracker(int cache_port, std::function<std::ostream& ()> logger, CacheBehaviors behavior /*= CacheBehaviors::full*/)
 			:i(new Internals()),cache_port(cache_port),logger(logger){}
 		
 		Tracker::~Tracker(){delete i;}

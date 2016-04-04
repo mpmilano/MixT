@@ -242,6 +242,6 @@ namespace myria{
 		std::ostream& operator<<(std::ostream& os, const Tracker::Tombstone &tmb);
 
     }
-
+	
 }
 

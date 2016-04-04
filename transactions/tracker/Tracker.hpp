@@ -193,13 +193,13 @@ namespace myria {
 
 			friend struct TrackingContext;
 
-			Tracker(int cache_port, std::function<void (std::string)> logger, CacheBehaviors behavior /*= CacheBehaviors::full*/);
+			Tracker(int cache_port, std::function<std::ostream& ()> logger, CacheBehaviors behavior /*= CacheBehaviors::full*/);
 			virtual ~Tracker();
 
 			Tracker(const Tracker&) = delete;
 
 			const int cache_port;
-			const std::function<void (std::string)> logger;
+			const std::function<std::ostream& ()> logger;
 
 		};		
 

@@ -1,4 +1,5 @@
 #pragma once
+#include <iostream>
 #include "SQLStore_impl.hpp"
 #include "Tracker_common.hpp"
 #include "Tracker_support_structs.hpp"
@@ -14,7 +15,7 @@ namespace myria { namespace pgsql {
 			struct SQLInstanceManager : public SQLInstanceManager_abs{
 			public:
 				tracker::Tracker &trk;
-				SQLInstanceManager(tracker::Tracker &trk, std::function<void (std::string)> logger)
+				SQLInstanceManager(tracker::Tracker &trk, std::function<std::ostream& ()> logger)
 					:SQLInstanceManager_abs(logger),trk(trk){
 				}
 				SQLInstanceManager(const SQLInstanceManager&) = delete;
@@ -67,11 +68,11 @@ namespace myria { namespace pgsql {
 			};
 
 			mutils::DeserializationManager &this_mgr;
-			const std::function<void (std::string)> &logger;
+			const std::function<std::ostream& ()> &logger;
 
 		private:
-			SQLStore(tracker::Tracker& trk, int inst_id, std::function<void (std::string)> logger, mutils::DeserializationManager &this_mgr)
-				:SQLStore_impl(*this,inst_id,l,logger),DataStore<l>(logger),this_mgr(this_mgr),logger([this]() -> auto&{GDataStore* ptr = this; return ptr->logger;}()) {
+			SQLStore(tracker::Tracker& trk, int inst_id, std::function<std::ostream& ()> logger, mutils::DeserializationManager &this_mgr)
+				:SQLStore_impl(*this,inst_id,l,logger),DataStore<l>(logger),this_mgr(this_mgr),logger([this]() -> auto& {GDataStore* ptr = this; return ptr->logger;}()) {
 				trk.registerStore(*this);
 			}
 		public:

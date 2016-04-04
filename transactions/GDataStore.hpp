@@ -8,12 +8,12 @@ namespace myria{
 
 	struct GDataStore {
 		const Level level;
-		const std::function<void (std::string)> logger;
+		const std::function<std::ostream& ()> logger;
 		virtual int ds_id() const = 0;
 		virtual int instance_id() const = 0;
 		virtual bool in_transaction() const = 0; //mostly for debugging
 
-		GDataStore(Level l, std::function<void (std::string)> logger):level(l),logger(logger){}
+		GDataStore(Level l, std::function<std::ostream& ()> logger):level(l),logger(logger){}
 		virtual ~GDataStore(){}
 	};
 
