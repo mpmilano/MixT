@@ -63,7 +63,6 @@ namespace myria { namespace mtl {
 							//nobody should be in a transaction yet
 							const auto &logger_f = trk.get_StrongStore().logger;
 							ctx.logger = &logger_f;
-							auto& logger = logger_f();
 							assert(!trk.get_StrongStore().in_transaction());
 							call_all_strong(&ctx,caches,stores,s.curr);
 
@@ -76,7 +75,6 @@ namespace myria { namespace mtl {
 
 							const auto &logger_f = trk.get_CausalStore().logger;
 							ctx.logger = &logger_f;
-							auto& logger = logger_f();
 							//causal execution.  it can't fail.
 							
 							CausalCache cachec{caches};
