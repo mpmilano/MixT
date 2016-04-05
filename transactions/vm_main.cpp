@@ -99,8 +99,8 @@ auto elapsed_time() {
 int main(){
 	int ip = get_strong_ip();	
 	logFile.open(log_name);
-	logFile << "Begin Log for " << log_name << std::endl;
-	logFile << "Intended request frequency: " << actual_arrival_rate << std::endl;
+	logFile << "//Begin Log for " << log_name << std::endl;
+	logFile << "//Intended request frequency: " << actual_arrival_rate << std::endl;
 	std::cout << "hello world from VM "<< my_unique_id << " in group " << CAUSAL_GROUP << std::endl;
 	std::cout << "connecting to " << string_of_ip(ip) << std::endl;
 	AtScopeEnd ase{[&](){logFile << "End" << std::endl;
@@ -266,6 +266,15 @@ int main(){
 		std::this_thread::sleep_for(getArrivalInterval(actual_arrival_rate));
 		futures->emplace_back(launch());
 	}
+
+	auto logger = build_VMObjectLogger();
+
+	logFile << "#include <string>" << endl;
+	logFile << logger->declarations() << endl;
+	logFile << "auto runs() { return std::array<log," << futures->size() << ">{{"endl;
+
+	int counter = 0;
+	const int original_size = futures->size();
 	
 	//print everything
 	while (!futures->empty()){
@@ -275,7 +284,9 @@ int main(){
 				if (f.wait_for(1ms) != future_status::timeout){
 					auto strp = f.get();
 					if (strp){
+						++counter;
 						logFile << *strp;
+						if (counter != original_size) logFile << "," << endl;
 					}
 				}
 				else {
@@ -285,6 +296,6 @@ int main(){
 		}
 		futures = std::move(new_futures);
 	}
-	logFile << "All tasks complete at " << duration_cast<milliseconds>(elapsed_time()).count() << std::endl;
-	std::cout << "all tasks done" << std::endl;
+	logFile << "}};}" << endl << "//All tasks complete at " << duration_cast<milliseconds>(elapsed_time()).count() << std::endl;
+	std::cout << "//all tasks done" << std::endl;
 }
