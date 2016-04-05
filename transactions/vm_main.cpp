@@ -103,7 +103,7 @@ int main(){
 	logFile << "//Intended request frequency: " << actual_arrival_rate << std::endl;
 	std::cout << "hello world from VM "<< my_unique_id << " in group " << CAUSAL_GROUP << std::endl;
 	std::cout << "connecting to " << string_of_ip(ip) << std::endl;
-	AtScopeEnd ase{[&](){logFile << "End" << std::endl;
+	AtScopeEnd ase{[&](){logFile << "//End" << std::endl;
 			logFile.close();}};
 	discard(ase);
 	
