@@ -271,7 +271,7 @@ int main(){
 
 	logFile << "#include <string>" << endl;
 	logFile << logger->declarations() << endl;
-	logFile << "auto runs() { return std::array<log," << futures->size() << ">{{"endl;
+	logFile << "auto runs() { return std::array<log," << futures->size() << ">{{" << endl;
 
 	int counter = 0;
 	const int original_size = futures->size();
