@@ -6,19 +6,11 @@ else echo "Error: results dir (first argument) must be directory. Got $1"
 	 exit 1
 fi
 
-if [[ -f "$2" ]]
-then analyzer="$2"
-else echo "Error: analyzer source (second argument) must be file. Got $2"
-	 exit 1
-fi
-
 shift
-shift
-
 scratchdir=/tmp/myriastore_results_analysis_dir/
 
-rm $scratchdir/*
-rmdir $scratchdir
+#rm $scratchdir/*
+#rmdir $scratchdir
 mkdir -p $scratchdir
 
 
@@ -40,7 +32,7 @@ do for i in 1 2 3 4 5 6 7 8 9 10;
    done
 done
 
-cat "$scratchdir"/output_*hpp "$analyzer" > "$scratchdir"/main.cpp
+cat "$scratchdir"/output_*hpp > "$scratchdir"/results_header.hpp
 wd=`pwd`
 cd "$scratchdir"
 
@@ -58,9 +50,9 @@ for foo in $names;
 do objects="$objects $foo".o
 done
 
-echo "all: $objects main.o" > Makefile
+echo "all: $objects" > Makefile
 echo -n -e '\t' >> Makefile
-echo "clang++ $objects main.o -o $wd""/analyzer_bin" >> Makefile
+echo "echo objects built" >> Makefile
 
 for name in $names
 do
@@ -69,12 +61,11 @@ do
 	echo "g++ --std=c++14 -c $name".cpp >> Makefile
 done
 
-echo 'main.o: ' >> Makefile
-echo -n -e '\t' >> Makefile
-echo "g++ --std=c++14 -c main.cpp" >> Makefile
-
 make -j10
 
 cd -
 
-#	g++ --std=c++14 -o "$wd"/analyzer_bin *cpp
+cp "$scratchdir"/output*.o $results_dir/
+cp "$scratchdir"/*.hpp $results_dir/
+
+#	

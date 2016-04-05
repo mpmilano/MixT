@@ -1,4 +1,5 @@
 #include <iostream>
+#include <results_header.hpp>
 
 auto USE_STRONG(){
 	return std::vector<std::vector<log> >{{
