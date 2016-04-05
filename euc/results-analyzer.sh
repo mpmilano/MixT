@@ -28,7 +28,7 @@ echo '#include <vector>' >> "$scratchdir"/header.hpp
 cat "$results_dir"/*/*/*/* | grep 'struct log' | head -1 >> "$scratchdir"/header.hpp
 
 for mode in USE_STRONG NO_USE_STRONG;
-do for i in 1 #2 3 4 5 6 7 8 9 10;
+do for i in 1 2 3 4 5 6 7 8 9 10;
    do
 	   fname=$scratchdir/"output_$mode"_"$i"
 	   echo "#include \"header.hpp\"" > "$fname".hpp
@@ -43,5 +43,38 @@ done
 cat "$scratchdir"/output_*hpp "$analyzer" > "$scratchdir"/main.cpp
 wd=`pwd`
 cd "$scratchdir"
-g++ --std=c++14 -o "$wd"/analyzer_bin *cpp
+
+#build the makefile
+names=""
+for mode in USE_STRONG NO_USE_STRONG;
+do for i in 1 2 3 4 5 6 7 8 9 10;
+   do
+	   names="$names output_$mode"_"$i"
+   done
+done
+
+objects=""
+for foo in $names;
+do objects="$objects $foo".o
+done
+
+echo "all: $objects main.o" > Makefile
+echo -n -e '\t' >> Makefile
+echo "clang++ $objects main.o -o $wd""/analyzer_bin" >> Makefile
+
+for name in $names
+do
+	echo "$name"".o:" >> Makefile
+	echo -n -e '\t' >> Makefile
+	echo "g++ --std=c++14 -c $name".cpp >> Makefile
+done
+
+echo 'main.o: ' >> Makefile
+echo -n -e '\t' >> Makefile
+echo "g++ --std=c++14 -c main.cpp" >> Makefile
+
+make -j10
+
 cd -
+
+#	g++ --std=c++14 -o "$wd"/analyzer_bin *cpp
