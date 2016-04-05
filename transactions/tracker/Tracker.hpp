@@ -92,6 +92,8 @@ namespace myria {
 
 			const DataStore<Level::strong>& get_StrongStore() const;
 			const DataStore<Level::causal>& get_CausalStore() const;
+			DataStore<Level::strong>& get_StrongStore();
+			DataStore<Level::causal>& get_CausalStore();
 
 			void registerStore(DataStore<Level::strong> &,
 							   std::unique_ptr<TrackerDSStrong>);
@@ -193,13 +195,13 @@ namespace myria {
 
 			friend struct TrackingContext;
 
-			Tracker(int cache_port, std::function<std::ostream& ()> logger, CacheBehaviors behavior /*= CacheBehaviors::full*/);
+			Tracker(int cache_port, ::mutils::ReassignableReference<::mutils::abs_StructBuilder> logger, CacheBehaviors behavior /*= CacheBehaviors::full*/);
 			virtual ~Tracker();
 
 			Tracker(const Tracker&) = delete;
 
 			const int cache_port;
-			const std::function<std::ostream& ()> logger;
+			::mutils::ReassignableReference<::mutils::abs_StructBuilder> logger;
 
 		};		
 

@@ -106,7 +106,7 @@ namespace myria{ namespace pgsql {
 			assert(false && "you always knew adding new tables would be a pain");
 		}
 
-		SQLStore_impl::SQLStore_impl(GDataStore &store, int instanceID, Level l,std::function<std::ostream& ()> logger)
+		SQLStore_impl::SQLStore_impl(GDataStore &store, int instanceID, Level l,::mutils::ReassignableReference<::mutils::abs_StructBuilder> logger)
 			:_store(store),logger(logger),clock{{0,0,0,0}},level(l),default_connection{new SQLConnection(instanceID)} {
 				auto t = begin_transaction();
 				((SQLTransaction*)t.get())

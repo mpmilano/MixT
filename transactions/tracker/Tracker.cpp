@@ -193,7 +193,7 @@ namespace myria { namespace tracker {
 			return i->cache;
 		}
 		
-		Tracker::Tracker(int cache_port, std::function<std::ostream& ()> logger, CacheBehaviors beh):
+		Tracker::Tracker(int cache_port, ::mutils::ReassignableReference<::mutils::abs_StructBuilder> logger, CacheBehaviors beh):
 			i{new Internals{beh}},cache_port(cache_port),logger(logger){
 				assert(cache_port > 0 && "error: must specify non-zero cache port for first tracker call");
 				i->cache.listen_on(cache_port);

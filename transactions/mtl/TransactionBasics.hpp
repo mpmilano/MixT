@@ -3,6 +3,7 @@
 #include "TrackingContext.hpp"
 #include "Basics.hpp"
 #include "restrict.hpp"
+#include "ObjectBuilder.hpp"
 
 namespace myria {
 	
@@ -35,7 +36,7 @@ namespace myria {
 			std::unique_ptr<tracker::TrackingContext> trackingContext;
 			std::unique_ptr<StoreContext<Level::strong> > strongContext{nullptr};
 			std::unique_ptr<StoreContext<Level::causal> > causalContext{nullptr};
-			std::function<std::ostream& ()> const *logger{nullptr};
+			::mutils::ReassignableReference<::mutils::abs_StructBuilder> const *logger{nullptr};
 			bool commit_on_delete = false;
 			
 		private:

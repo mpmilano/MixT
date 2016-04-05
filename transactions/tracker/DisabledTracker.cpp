@@ -7,8 +7,8 @@ namespace myria { namespace tracker {
 		Name Tracker::Tombstone::name() const { return nonce;}
 		
 		struct Tracker::Internals{
-			const DataStore<Level::strong>* strongStore{nullptr};
-			const DataStore<Level::causal>* causalStore{nullptr};
+			DataStore<Level::strong>* strongStore{nullptr};
+			DataStore<Level::causal>* causalStore{nullptr};
 		};
 
 		void Tracker::onRead(
@@ -31,6 +31,9 @@ namespace myria { namespace tracker {
 		
 		const DataStore<Level::strong>& Tracker::get_StrongStore() const {return *i->strongStore;}
 		const DataStore<Level::causal>& Tracker::get_CausalStore() const {return *i->causalStore;}
+		
+		DataStore<Level::strong>& Tracker::get_StrongStore() {return *i->strongStore;}
+		DataStore<Level::causal>& Tracker::get_CausalStore() {return *i->causalStore;}
 
 		void Tracker::registerStore(DataStore<Level::strong> &ss,
 									std::unique_ptr<TrackerDSStrong>){i->strongStore = &ss;}
@@ -80,7 +83,7 @@ namespace myria { namespace tracker {
 		void Tracker::assert_nonempty_tracking() const {}
 		const CooperativeCache& Tracker::getcache() const {assert(false);}
 
-		Tracker::Tracker(int cache_port, std::function<std::ostream& ()> logger, CacheBehaviors behavior /*= CacheBehaviors::full*/)
+		Tracker::Tracker(int cache_port, ::mutils::ReassignableReference<::mutils::abs_StructBuilder> logger, CacheBehaviors behavior /*= CacheBehaviors::full*/)
 			:i(new Internals()),cache_port(cache_port),logger(logger){}
 		
 		Tracker::~Tracker(){delete i;}

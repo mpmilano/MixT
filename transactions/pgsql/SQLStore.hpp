@@ -15,7 +15,7 @@ namespace myria { namespace pgsql {
 			struct SQLInstanceManager : public SQLInstanceManager_abs{
 			public:
 				tracker::Tracker &trk;
-				SQLInstanceManager(tracker::Tracker &trk, std::function<std::ostream& ()> logger)
+				SQLInstanceManager(tracker::Tracker &trk, ::mutils::ReassignableReference<::mutils::abs_StructBuilder> logger)
 					:SQLInstanceManager_abs(logger),trk(trk){
 				}
 				SQLInstanceManager(const SQLInstanceManager&) = delete;
@@ -68,10 +68,10 @@ namespace myria { namespace pgsql {
 			};
 
 			mutils::DeserializationManager &this_mgr;
-			const std::function<std::ostream& ()> &logger;
+			::mutils::ReassignableReference<::mutils::abs_StructBuilder> &logger;
 
 		private:
-			SQLStore(tracker::Tracker& trk, int inst_id, std::function<std::ostream& ()> logger, mutils::DeserializationManager &this_mgr)
+			SQLStore(tracker::Tracker& trk, int inst_id, ::mutils::ReassignableReference<::mutils::abs_StructBuilder> logger, mutils::DeserializationManager &this_mgr)
 				:SQLStore_impl(*this,inst_id,l,logger),DataStore<l>(logger),this_mgr(this_mgr),logger([this]() -> auto& {GDataStore* ptr = this; return ptr->logger;}()) {
 				trk.registerStore(*this);
 			}

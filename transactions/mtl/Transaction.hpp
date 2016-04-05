@@ -103,7 +103,8 @@ namespace myria { namespace mtl {
 							}
 						} while (true);
 
-						trk.get_CausalStore().logger() << " (causal commit took "<< causal_count << " tries) "; 
+						mutils::abs_StructBuilder& logger = trk.get_CausalStore().logger;
+						logger.addField(LogFields::num_causal_tries,causal_count);
 						
 						return true;
 					}),
