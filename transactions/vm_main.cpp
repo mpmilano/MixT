@@ -268,14 +268,9 @@ int main(){
 	}
 
 	auto logger = build_VMObjectLogger();
-
-	logFile << "#include <string>" << endl;
 	logFile << logger->declarations() << endl;
-	logFile << "auto runs() { return std::array<log," << futures->size() << ">{{" << endl;
 
-	int counter = 0;
-	const int original_size = futures->size();
-	
+
 	//print everything
 	while (!futures->empty()){
 		std::unique_ptr<future_list> new_futures{new future_list()};
@@ -284,9 +279,7 @@ int main(){
 				if (f.wait_for(1ms) != future_status::timeout){
 					auto strp = f.get();
 					if (strp){
-						++counter;
-						logFile << *strp;
-						if (counter != original_size) logFile << "," << endl;
+						logFile << *strp << endl;
 					}
 				}
 				else {
@@ -296,6 +289,6 @@ int main(){
 		}
 		futures = std::move(new_futures);
 	}
-	logFile << "}};}" << endl << "//All tasks complete at " << duration_cast<milliseconds>(elapsed_time()).count() << std::endl;
+	logFile << "//All tasks complete at " << duration_cast<milliseconds>(elapsed_time()).count() << std::endl;
 	std::cout << "//all tasks done" << std::endl;
 }
