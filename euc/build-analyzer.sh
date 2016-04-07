@@ -17,17 +17,23 @@ mkdir -p $scratchdir
 echo '#pragma once' > "$scratchdir"/header.hpp
 echo '#include <string>' >> "$scratchdir"/header.hpp
 echo '#include <vector>' >> "$scratchdir"/header.hpp
-cat "$results_dir"/*/*/*/* | grep 'struct log' | head -1 >> "$scratchdir"/header.hpp
+cat "$results_dir"/*/*/*/* | grep 'struct myria_log' | head -1 >> "$scratchdir"/header.hpp
+cat "$results_dir"/*/*/*/* | grep 'struct myria_globals' | head -1 >> "$scratchdir"/header.hpp
 
 for mode in USE_STRONG NO_USE_STRONG;
 do for i in 1 2 3 4 5 6 7 8 9 10;
    do
 	   fname=$scratchdir/"output_$mode"_"$i"
 	   echo "#include \"header.hpp\"" > "$fname".hpp
-	   echo "std::vector<log> runs_""$mode"_"$i""();" >> "$fname".hpp
+	   echo "std::vector<struct myria_log> runs_""$mode"_"$i""();" >> "$fname".hpp
+	   echo "std::vector<struct myria_globals> runs_""$mode"_"$i""();" >> "$fname".hpp
 	   echo "#include \"$fname"".hpp\"" > "$fname".cpp
-	   echo "std::vector<log> runs_""$mode"_"$i""() { return std::vector<log> {{" >> "$fname".cpp
-	   cat "$results_dir"/"$i"per/"$mode"/*/* | grep '\[\]' | sed -e "$ ! s/\$/,/g" >>"$fname".cpp
+	   echo "std::vector<struct myria_log> runs_""$mode"_"$i""() { return std::vector<struct myria_log> {{" >> "$fname".cpp
+	   cat "$results_dir"/"$i"per/"$mode"/*/* | grep '\[\]' | grep 'myria_log' | sed -e "$ ! s/\$/,/g" >>"$fname".cpp
+	   echo '}};}' >> "$fname".cpp
+
+	   echo "std::vector<struct myria_globals> runs_""$mode"_"$i""() { return std::vector<struct myria_globals> {{" >> "$fname".cpp
+	   cat "$results_dir"/"$i"per/"$mode"/*/* | grep '\[\]' | grep 'myria_globals' | sed -e "$ ! s/\$/,/g" >>"$fname".cpp
 	   echo '}};}' >> "$fname".cpp
    done
 done

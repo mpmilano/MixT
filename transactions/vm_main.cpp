@@ -99,13 +99,11 @@ auto elapsed_time() {
 int main(){
 	int ip = get_strong_ip();	
 	logFile.open(log_name);
-	logFile << "//Begin Log for " << log_name << std::endl;
-	logFile << "//Intended request frequency: " << actual_arrival_rate << std::endl;
+	auto logger = build_VMObjectLogger();
+	auto &global_log = logger->template beginStruct<LoggedStructs::globals>();
+	global_log.addField(GlobalsFields::request_frequency,actual_arrival_rate);
 	std::cout << "hello world from VM "<< my_unique_id << " in group " << CAUSAL_GROUP << std::endl;
 	std::cout << "connecting to " << string_of_ip(ip) << std::endl;
-	AtScopeEnd ase{[&](){logFile << "//End" << std::endl;
-			logFile.close();}};
-	discard(ase);
 	
 	/*
 //init
@@ -267,9 +265,12 @@ int main(){
 		futures->emplace_back(launch());
 	}
 
-	auto logger = build_VMObjectLogger();
+	global_log.addField(GlobalsFields::final_completion_time,
+						duration_cast<milliseconds>(elapsed_time()).count());
+
 	logFile << logger->declarations() << endl;
 
+	logFile << global_log.single() << endl;
 
 	//print everything
 	while (!futures->empty()){
@@ -289,6 +290,4 @@ int main(){
 		}
 		futures = std::move(new_futures);
 	}
-	logFile << "//All tasks complete at " << duration_cast<milliseconds>(elapsed_time()).count() << std::endl;
-	std::cout << "//all tasks done" << std::endl;
 }

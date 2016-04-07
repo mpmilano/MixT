@@ -5,14 +5,22 @@
 namespace myria{
 
 	enum class LoggedStructs {
-		log, MAX
+		log, globals, MAX
 			};
 	
 	enum class LogFields{
 		submit_time, run_time, cc_num_tries, done_time, is_write, is_serialization_error, pqxx_failure_string, pqxx_failure, num_causal_tries, MAX
 		};
 
-	using VMObjectLogger = mutils::ObjectBuilder<LoggedStructs, mutils::StructType<LoggedStructs,LoggedStructs::log,LogFields> >;
+	enum class GlobalsFields {
+		request_frequency, final_completion_time, MAX
+	};
+
+	using VMObjectLogger =
+		mutils::ObjectBuilder<
+		LoggedStructs,
+		mutils::StructType<LoggedStructs,LoggedStructs::log,LogFields>,
+		mutils::StructType<LoggedStructs,LoggedStructs::globals,GlobalsFields> >;
 	std::unique_ptr<VMObjectLogger> build_VMObjectLogger();
 
 	enum class Level { causal, strong, undef};

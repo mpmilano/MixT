@@ -6,14 +6,26 @@ else echo "Error: results dir (first argument) must be directory. Got $1"
 	 exit 1
 fi
 
-if [[ -f "$2" ]]
+if [[ -d "$2" ]]
 then analyzer="$2"
-else echo "Error: analyzer source (second argument) must be file. Got $2"
+else echo "Error: analyzer directory (second argument) must be directory. Got $2"
+	 exit 1
+fi
+
+if [[ -d "$3" ]]
+then mutils="$3"
+else echo "Error: mutils library (third argument) must be directory. Got $3"
 	 exit 1
 fi
 
 shift
 shift
+shift
 
-g++ --std=c++14 -o analyzer_bin -I"$results_dir"  $results_dir/output*.o $analyzer
+if [[ -f "$results_dir"/output_NO_USE_STRONG_1.o ]]
+then echo "object files found"
+else bash "$anlyzer"/build-analyzer.sh
+fi
+	 
+clang++ -I"$mutils" --std=c++14 -o /tmp/myriastore_results_analysis_dir/analyzer_bin -I"$results_dir"  $results_dir/output*.o "$analyzer"/results-analyzer.cpp && /tmp/myriastore_results_analysis_dir/analyzer_bin
 
