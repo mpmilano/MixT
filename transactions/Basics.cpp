@@ -15,7 +15,7 @@ namespace myria{
 			LogFields::num_causal_tries,"int num_causal_tries", "0",
 			
 			LoggedStructs::globals,"struct myria_globals","ERROR",
-			GlobalsFields::request_frequency,"int request_frequency","0",
+			GlobalsFields::request_frequency,"::mutils::Frequency request_frequency","0",
 			GlobalsFields::final_completion_time,"int final_completion_time","0"
 			);
 	}

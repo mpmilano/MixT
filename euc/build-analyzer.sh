@@ -6,17 +6,25 @@ else echo "Error: results dir (first argument) must be directory. Got $1"
 	 exit 1
 fi
 
+if [[ -d "$2" ]]
+then mutils="$2"
+else echo "Error: mutils dir (second argument) must be directory. Got $2"
+	 exit 1
+fi
+
+shift
 shift
 scratchdir=/tmp/myriastore_results_analysis_dir/
 
-#rm $scratchdir/*
-#rmdir $scratchdir
+rm $scratchdir/*
+rmdir $scratchdir
 mkdir -p $scratchdir
 
 
 echo '#pragma once' > "$scratchdir"/header.hpp
 echo '#include <string>' >> "$scratchdir"/header.hpp
 echo '#include <vector>' >> "$scratchdir"/header.hpp
+echo "#include <Hertz.hpp>" >> "$scratchdir"/header.hpp
 cat "$results_dir"/*/*/*/* | grep 'struct myria_log' | head -1 >> "$scratchdir"/header.hpp
 cat "$results_dir"/*/*/*/* | grep 'struct myria_globals' | head -1 >> "$scratchdir"/header.hpp
 
@@ -25,14 +33,15 @@ do for i in 1 2 3 4 5 6 7 8 9 10;
    do
 	   fname=$scratchdir/"output_$mode"_"$i"
 	   echo "#include \"header.hpp\"" > "$fname".hpp
-	   echo "std::vector<struct myria_log> runs_""$mode"_"$i""();" >> "$fname".hpp
-	   echo "std::vector<struct myria_globals> runs_""$mode"_"$i""();" >> "$fname".hpp
 	   echo "#include \"$fname"".hpp\"" > "$fname".cpp
+	   
+	   echo "std::vector<struct myria_log> runs_""$mode"_"$i""();" >> "$fname".hpp
 	   echo "std::vector<struct myria_log> runs_""$mode"_"$i""() { return std::vector<struct myria_log> {{" >> "$fname".cpp
 	   cat "$results_dir"/"$i"per/"$mode"/*/* | grep '\[\]' | grep 'myria_log' | sed -e "$ ! s/\$/,/g" >>"$fname".cpp
 	   echo '}};}' >> "$fname".cpp
 
-	   echo "std::vector<struct myria_globals> runs_""$mode"_"$i""() { return std::vector<struct myria_globals> {{" >> "$fname".cpp
+	   echo "std::vector<struct myria_globals> globals_""$mode"_"$i""();" >> "$fname".hpp
+	   echo "std::vector<struct myria_globals> globals_""$mode"_"$i""() { return std::vector<struct myria_globals> {{" >> "$fname".cpp
 	   cat "$results_dir"/"$i"per/"$mode"/*/* | grep '\[\]' | grep 'myria_globals' | sed -e "$ ! s/\$/,/g" >>"$fname".cpp
 	   echo '}};}' >> "$fname".cpp
    done
@@ -64,7 +73,7 @@ for name in $names
 do
 	echo "$name"".o:" >> Makefile
 	echo -n -e '\t' >> Makefile
-	echo "g++ --std=c++14 -c $name".cpp >> Makefile
+	echo "clang++ -I""$mutils"" --std=c++14 -ferror-limit=1 -c $name".cpp >> Makefile
 done
 
 make -j10
