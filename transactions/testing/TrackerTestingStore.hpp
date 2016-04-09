@@ -3,6 +3,10 @@
 #include <map>
 
 namespace myria { namespace testing {
+
+		using mutils::ReassignableReference;
+		using mutils::abs_StructBuilder;
+		
 		enum class TrackerTestingMode {
 			perfect, manual_sync
 		};
@@ -10,9 +14,13 @@ namespace myria { namespace testing {
 		template<TrackerTestingMode mode, Level l>
 		class TrackerTestingStore : public DataStore<l>{
 		public:
-			TrackerTestingStore(tracker::Tracker& t){
-				t.registerStore(*this);
-			}
+			
+			TrackerTestingStore(tracker::Tracker& t,
+								ReassignableReference<abs_StructBuilder> logger)
+				:DataStore<l>(logger)
+				{
+					t.registerStore(*this);
+				}
 
 			TrackerTestingStore(const TrackerTestingStore&) = delete;
 
@@ -30,6 +38,8 @@ namespace myria { namespace testing {
 				bool store_commit(){
 					return true;
 				}
+
+				void store_abort(){}
 			};
 			
 			std::unique_ptr<mtl::StoreContext<l> > begin_transaction(){
@@ -122,6 +132,8 @@ namespace myria { namespace testing {
 					}
 				}
 
+				void ensure_registered(mutils::DeserializationManager&){}
+
 				TrackerTestingObject* clone() const {
 					auto &tts2 = const_cast<TrackerTestingStore&>(tts);
 					return new TrackerTestingObject(tts2,nam,*t,causal_vers);
@@ -138,13 +150,13 @@ namespace myria { namespace testing {
 					return true;
 				}
 				
-				const T& get(mtl::StoreContext<l>*, tracker::Tracker* trk/* = nullptr*/,
+				std::shared_ptr<const T> get(mtl::StoreContext<l>*, tracker::Tracker* trk/* = nullptr*/,
 							 tracker::TrackingContext* trkc/* = nullptr*/) {
 					if (remote_store().rs.contains(nam))
 						this->t = std::make_unique<T>(*remote_store().rs.template at<T>(nam));
 					assert(trkc);
 					this->t = trk->onRead(*trkc,store(),name(),timestamp(),std::move(t),(T*)nullptr);
-					return *t;
+					return std::make_shared<T>(*t);
 				}
 				
 				void put(mtl::StoreContext<l>*,const T& to) {
