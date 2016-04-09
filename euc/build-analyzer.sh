@@ -41,7 +41,7 @@ do for i in 1 2 3 4 5 6 7 8 9 10;
 	   echo '}};}' >> "$fname".cpp
 
 	   echo "std::vector<struct myria_globals> globals_""$mode"_"$i""();" >> "$fname".hpp
-	   echo "std::vector<struct myria_globals> globals_""$mode"_"$i""() { return std::vector<struct myria_globals> {{" >> "$fname".cpp
+	   echo "std::vector<struct myria_globals> globals_""$mode"_"$i""() { using namespace mutils; return std::vector<struct myria_globals> {{" >> "$fname".cpp
 	   cat "$results_dir"/"$i"per/"$mode"/*/* | grep '\[\]' | grep 'myria_globals' | sed -e "$ ! s/\$/,/g" >>"$fname".cpp
 	   echo '}};}' >> "$fname".cpp
    done
@@ -73,7 +73,7 @@ for name in $names
 do
 	echo "$name"".o:" >> Makefile
 	echo -n -e '\t' >> Makefile
-	echo "clang++ -I""$mutils"" --std=c++14 -ferror-limit=1 -c $name".cpp >> Makefile
+	echo "clang++ -I""$mutils"" --std=c++14 -c $name".cpp >> Makefile
 done
 
 make -j10
