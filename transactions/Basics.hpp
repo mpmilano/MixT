@@ -16,6 +16,10 @@ namespace myria{
 		request_frequency, final_completion_time, MAX
 	};
 
+	std::ostream& operator<<(std::ostream&, LoggedStructs);
+	std::ostream& operator<<(std::ostream&, LogFields);
+	std::ostream& operator<<(std::ostream&, GlobalsFields);
+
 	using VMObjectLogger =
 		mutils::ObjectBuilder<
 		LoggedStructs,
