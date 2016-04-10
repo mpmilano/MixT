@@ -126,6 +126,7 @@ int main(){
 		unique_ptr<VMObjectLogger> log_builder{build_VMObjectLogger()};
 		ReassignableReference<abs_StructBuilder> current_log_builder
 			{log_builder->template beginStruct<LoggedStructs::log>()};
+		current_log_builder.get().addField(LogFields::num_io_required,0);
 		tracker::Tracker trk{1025,current_log_builder,tracker::CacheBehaviors::none};
 		TrackerTestingStore<Level::strong> strong{trk,current_log_builder};
 		TrackerTestingStore<Level::causal> causal{trk,current_log_builder};

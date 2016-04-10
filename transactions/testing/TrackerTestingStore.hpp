@@ -155,15 +155,13 @@ namespace myria { namespace testing {
 				*/
 
 				bool ro_isValid(mtl::StoreContext<l>* tc) const {
-					if (!tc) tts.logger.get().addField(LogFields::num_io_required,0);
-					else tts.logger.get().incrementIntField(LogFields::num_io_required);
+					tts.logger.get().incrementIntField(LogFields::num_io_required);
 					return true;
 				}
 				
 				std::shared_ptr<const T> get(mtl::StoreContext<l>* tc, tracker::Tracker* trk/* = nullptr*/,
 							 tracker::TrackingContext* trkc/* = nullptr*/) {
-					if (!tc) tts.logger.get().addField(LogFields::num_io_required,0);
-					else tts.logger.get().incrementIntField(LogFields::num_io_required);
+					tts.logger.get().incrementIntField(LogFields::num_io_required);
 					
 					if (remote_store().rs.contains(nam))
 						this->t = std::make_unique<T>(*remote_store().rs.template at<T>(nam));
@@ -173,8 +171,7 @@ namespace myria { namespace testing {
 				}
 				
 				void put(mtl::StoreContext<l>* tc,const T& to) {
-					if (!tc) tts.logger.get().addField(LogFields::num_io_required,0);
-					else tts.logger.get().incrementIntField(LogFields::num_io_required);
+					tts.logger.get().incrementIntField(LogFields::num_io_required);
 					
 					this->t = std::make_unique<T>(to);
 					if (l == Level::strong)
@@ -239,8 +236,7 @@ namespace myria { namespace testing {
 			
 			template<HandleAccess ha, typename T>
 			auto newObject(tracker::Tracker &trk, mtl::TransactionContext *tc, Name name, const T& init){
-				if (!tc) this->logger.get().addField(LogFields::num_io_required,0);
-				else this->logger.get().incrementIntField(LogFields::num_io_required);
+				this->logger.get().incrementIntField(LogFields::num_io_required);
 				auto ret = make_handle<l,ha,T,TrackerTestingObject<T> >
 					(trk,tc,*this,name,init);
 				trk.onCreate(*this,name, (T*)nullptr);
@@ -249,8 +245,7 @@ namespace myria { namespace testing {
 
 			template<HandleAccess ha, typename T>
 			auto existingObject(tracker::Tracker &trk, mtl::TransactionContext *tc, Name name, T* for_inf = nullptr){
-				if (!tc) this->logger.get().addField(LogFields::num_io_required,0);
-				else this->logger.get().incrementIntField(LogFields::num_io_required);
+				this->logger.get().incrementIntField(LogFields::num_io_required);
 				return make_handle
 					<l,ha,T,TrackerTestingObject<T> >
 					(trk,tc,*this,name);
@@ -258,14 +253,12 @@ namespace myria { namespace testing {
 
 			template<typename T>
 			std::unique_ptr<TrackerTestingObject<T> > existingRaw(Name name, T* for_inf = nullptr){
-				assert(this->logger.get().getField(LogFields::num_io_required).length() > 0);
 				this->logger.get().incrementIntField(LogFields::num_io_required);
 				return std::unique_ptr<TrackerTestingObject<T> >
 				{new TrackerTestingObject<T>{*this,name}};
 			}
 
 			bool exists(Name name){
-				assert(this->logger.get().getField(LogFields::num_io_required).length() > 0);
 				this->logger.get().incrementIntField(LogFields::num_io_required);
 				return remote_store().rs.contains(name);
 			}
