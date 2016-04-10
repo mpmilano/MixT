@@ -61,8 +61,12 @@ namespace myria { namespace mtl {
 							//and sets their participating RemoteObjects' current transaction pointers.							
 
 							//nobody should be in a transaction yet
-							const auto &logger_f = trk.get_StrongStore().logger;
+							using namespace mutils;
+							ReassignableReference<abs_StructBuilder> logger_f = trk.get_StrongStore().logger;
+							mutils::abs_StructBuilder& logger = logger_f;
 							ctx.logger = &logger_f;
+							logger.addField(LogFields::num_io_required,0);
+							
 							assert(!trk.get_StrongStore().in_transaction());
 							call_all_strong(&ctx,caches,stores,s.curr);
 
@@ -72,8 +76,9 @@ namespace myria { namespace mtl {
 						do {
 
 							++causal_count;
+							using namespace mutils;
 
-							const auto &logger_f = trk.get_CausalStore().logger;
+							ReassignableReference<abs_StructBuilder> logger_f = trk.get_CausalStore().logger;
 							ctx.logger = &logger_f;
 							//causal execution.  it can't fail.
 							

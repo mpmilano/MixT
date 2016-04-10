@@ -36,7 +36,7 @@ namespace myria {
 			std::unique_ptr<tracker::TrackingContext> trackingContext;
 			std::unique_ptr<StoreContext<Level::strong> > strongContext{nullptr};
 			std::unique_ptr<StoreContext<Level::causal> > causalContext{nullptr};
-			::mutils::ReassignableReference<::mutils::abs_StructBuilder> const *logger{nullptr};
+			::mutils::ReassignableReference<::mutils::abs_StructBuilder>  *logger{nullptr};
 			bool commit_on_delete = false;
 			
 		private:

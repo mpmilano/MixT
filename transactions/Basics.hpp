@@ -9,7 +9,7 @@ namespace myria{
 			};
 	
 	enum class LogFields{
-		submit_time, run_time, cc_num_tries, done_time, is_write, is_serialization_error, pqxx_failure_string, pqxx_failure, num_causal_tries, MAX
+		submit_time, run_time, cc_num_tries, done_time, is_write, is_serialization_error, pqxx_failure_string, pqxx_failure, num_causal_tries, num_io_required, MAX
 		};
 
 	enum class GlobalsFields {

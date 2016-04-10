@@ -13,6 +13,7 @@ namespace myria{
 			LogFields::pqxx_failure_string,"std::string pqxx_failure_string","\"\"",
 			LogFields::pqxx_failure,"bool pqxx_failure","false",
 			LogFields::num_causal_tries,"int num_causal_tries", "0",
+			LogFields::num_io_required,"int num_io_required","0",
 			
 			LoggedStructs::globals,"struct myria_globals","ERROR",
 			GlobalsFields::request_frequency,"::mutils::Frequency request_frequency","0",
