@@ -11,9 +11,11 @@ namespace myria { namespace testing {
 			perfect, manual_sync
 		};
 		
-		template<TrackerTestingMode mode, Level l>
+		template<Level l, TrackerTestingMode mode = TrackerTestingMode::perfect>
 		class TrackerTestingStore : public DataStore<l>{
 		public:
+
+			using Store = TrackerTestingStore;
 			
 			TrackerTestingStore(tracker::Tracker& t,
 								ReassignableReference<abs_StructBuilder> logger)
@@ -120,6 +122,9 @@ namespace myria { namespace testing {
 				
 			public:
 
+				friend class TrackerTestingStore;
+				using Store = TrackerTestingStore;
+
 				TrackerTestingObject(TrackerTestingStore& tts, Name nam)
 					:tts(tts),nam(nam),t(new T{*remote_store().rs.template at<T>(nam)}){}
 				
@@ -196,6 +201,21 @@ namespace myria { namespace testing {
 				}
 
 			};
+			
+			template<typename T, Level l2>
+			static TrackerTestingObject<T>* tryCast(RemoteObject<l2,T>* r) {
+				if(auto *ret = dynamic_cast<TrackerTestingObject<T>* >(r)){
+					assert(l2 == l);
+					return ret;
+				}
+				else throw mtl::ClassCastException();
+			}
+	
+			template<typename T, restrict(!(is_RemoteObj_ptr<T>::value))>
+			static auto tryCast(T && r){
+				return std::forward<T>(r);
+			}
+
 
 			template<typename T>
 			static std::unique_ptr<TrackerTestingObject<T> > from_bytes(char const * v){
@@ -230,6 +250,19 @@ namespace myria { namespace testing {
 			bool exists(Name name){
 				return remote_store().rs.contains(name);
 			}
+
+			OPERATION(Increment, TrackerTestingObject<int>* o) {
+				//TODO: ideally this would be automatically reduced to the correct type,
+				//but for now we'll just manually do it here.
+				assert(transaction_context && "Error: calling operations outside of transactions is disallowed");
+				AlwaysSuccessfulTransaction *ctx = (l == Level::strong ?
+								   dynamic_cast<AlwaysSuccessfulTransaction*>(transaction_context->strongContext.get()) :
+								   dynamic_cast<AlwaysSuccessfulTransaction*>(transaction_context->causalContext.get()));
+				assert(ctx && "error: should have entered transaction before this point!");
+				o->put(ctx,*o->t + 1);
+				return true;
+			}
+			END_OPERATION
 
 		};
 	}}

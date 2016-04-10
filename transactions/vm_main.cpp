@@ -5,6 +5,7 @@
 #include <thread>
 #include <pqxx/pqxx>
 #include "SQLStore.hpp"
+#include "TrackerTestingStore.hpp"
 #include "FinalHeader.hpp"
 #include "FinalizedOps.hpp"
 #include "Ostreams.hpp"
@@ -58,9 +59,9 @@ auto getArrivalInterval(Frequency arrival_rate) {
 	return milliseconds(l);
 }
 
-
+constexpr int name_max = 478446;
 int get_name(double alpha){
-	const int max = 478446;
+	constexpr int max = name_max;
 	double y = better_rand();
 	assert (y < 1.1);
 	assert (y > -0.1);
@@ -119,6 +120,25 @@ int main(){
 	}
 	exit(0); */
 
+	//tracker testing init
+	{
+		using namespace ::myria::testing;
+		unique_ptr<VMObjectLogger> log_builder{build_VMObjectLogger()};
+		ReassignableReference<abs_StructBuilder> current_log_builder
+			{log_builder->template beginStruct<LoggedStructs::log>()};
+		tracker::Tracker trk{1025,current_log_builder,tracker::CacheBehaviors::none};
+		TrackerTestingStore<Level::strong> strong{trk,current_log_builder};
+		TrackerTestingStore<Level::causal> causal{trk,current_log_builder};
+		for (int i = 0; i <= name_max; ++i){
+			if (!strong.exists(i))
+				strong.template newObject<HandleAccess::all,int>(trk,nullptr,i,0);
+			if (!causal.exists(i))
+				causal.template newObject<HandleAccess::all,int>(trk,nullptr,i,0);
+		}
+
+		std::cout << "trackertesting init complete" << std::endl;
+	}
+
 	using namespace testing;
 	
 	struct Remember {
@@ -131,8 +151,8 @@ int main(){
 		tracker::Tracker trk;
 		//SQLStore<Level::strong>::SQLInstanceManager ss;
 		//SQLStore<Level::causal>::SQLInstanceManager sc;
-		TrackerTestingStore<TrackerTestingMode::perfect,Level::strong> ss;
-		TrackerTestingStore<TrackerTestingMode::perfect,Level::causal> sc;
+		TrackerTestingStore<Level::strong> ss;
+		TrackerTestingStore<Level::causal> sc;
 		DeserializationManager dsm;
 		
 		Remember(int id)
