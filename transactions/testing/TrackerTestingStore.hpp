@@ -35,7 +35,7 @@ namespace myria { namespace testing {
 				AlwaysSuccessfulTransaction(TrackerTestingStore &tts)
 					:tts(tts){
 					tts.logger.get().incrementIntField(
-						LogFiels::trackertesting_transaction_built);
+						LogFields::trackertesting_transaction_built);
 				}
 				
 				DataStore<l> &store(){
@@ -135,7 +135,7 @@ namespace myria { namespace testing {
 									 const T& t,
 									 const decltype(causal_vers)& cv
 					):tts(tts),nam(nam),t(new T(t)),causal_vers(cv){
-					tts.logger.incrementIntField(
+					tts.logger.get().incrementIntField(
 						LogFields::trackertestingobject_constructed);
 				}
 				
@@ -146,7 +146,7 @@ namespace myria { namespace testing {
 
 				TrackerTestingObject(TrackerTestingStore& tts, Name nam)
 					:tts(tts),nam(nam),t(new T{*remote_store().rs.template at<T>(nam)}){
-					tts.logger.incrementIntField(
+					tts.logger.get().incrementIntField(
 						LogFields::trackertestingobject_constructed);
 				}
 				
@@ -157,12 +157,12 @@ namespace myria { namespace testing {
 					else {
 						tts.causal_remote_propogation(nam,t);
 					}
-					tts.logger.incrementIntField(
+					tts.logger.get().incrementIntField(
 						LogFields::trackertestingobject_constructed);
 				}
 
 				void ensure_registered(mutils::DeserializationManager&){
-					tts.logger.incrementIntField(
+					tts.logger.get().incrementIntField(
 						LogFields::trackertestingobject_registered);
 				}
 
@@ -180,7 +180,7 @@ namespace myria { namespace testing {
 
 				bool ro_isValid(mtl::StoreContext<l>* tc) const {
 					const_cast<TrackerTestingObject*>(this)->
-						logger.incrementIntField(LogFields::trackertestingobject_isvalid);
+						tts.logger.get().incrementIntField(LogFields::trackertestingobject_isvalid);
 					return true;
 				}
 				
@@ -224,7 +224,8 @@ namespace myria { namespace testing {
 
 				int to_bytes(char *c) const {
 					const_cast<TrackerTestingObject*>(this)->
-						logger.incrementIntField(LogFields::trackertestingobject_tobytes);
+						tts.logger.get().incrementIntField(
+							LogFields::trackertestingobject_tobytes);
 					int* iarr = ((int*)c);
 					iarr[0] = tts.ds_id();
 					((TrackerTestingObject**)(iarr + 1))[0] = clone();
@@ -239,8 +240,9 @@ namespace myria { namespace testing {
 			
 			template<typename T, Level l2>
 			static TrackerTestingObject<T>* tryCast(RemoteObject<l2,T>* r) {
-				this->logger.incrementIntField(LogFields::trackertesting_trycast);
 				if(auto *ret = dynamic_cast<TrackerTestingObject<T>* >(r)){
+					ret->tts.logger.get().
+						incrementIntField(LogFields::trackertesting_trycast);
 					assert(l2 == l);
 					return ret;
 				}
@@ -249,7 +251,6 @@ namespace myria { namespace testing {
 	
 			template<typename T, restrict(!(is_RemoteObj_ptr<T>::value))>
 			static auto tryCast(T && r){
-				this->logger.incrementIntField(LogFields::trackertesting_trycast);
 				return std::forward<T>(r);
 			}
 
