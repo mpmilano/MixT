@@ -131,7 +131,8 @@ int main(){
 			}
 		}
 		std::cout << "Transaction action: " << transaction_action << endl;
-		cout << "No transaction action: " << no_transaction_action << endl;
+		cout << "total: " << total_rows << endl;
+		cout << "read or write: " << read_or_write << endl;
 	}
 	
 	cout << "use only strong: " << endl;

@@ -102,8 +102,8 @@ int main(){
 	int ip = get_strong_ip();	
 	logFile.open(log_name);
 	auto logger = build_VMObjectLogger();
-	auto &global_log = logger->template beginStruct<LoggedStructs::globals>();
-	global_log.addField(GlobalsFields::request_frequency,actual_arrival_rate);
+	auto global_log = logger->template beginStruct<LoggedStructs::globals>();
+	global_log->addField(GlobalsFields::request_frequency,actual_arrival_rate);
 	std::cout << "hello world from VM "<< my_unique_id << " in group " << CAUSAL_GROUP << std::endl;
 	std::cout << "connecting to " << string_of_ip(ip) << std::endl;
 	
@@ -146,9 +146,6 @@ int main(){
 		
 		unique_ptr<VMObjectLogger> log_builder{build_VMObjectLogger()};
 		
-		ReassignableReference<abs_StructBuilder> current_log_builder
-			{log_builder->template beginStruct<LoggedStructs::log>()};
-		
 		tracker::Tracker trk;
 		SQLStore<Level::strong>::SQLInstanceManager ss;
 		SQLStore<Level::causal>::SQLInstanceManager sc;
@@ -157,24 +154,21 @@ int main(){
 		DeserializationManager dsm;
 		
 		Remember(int id)
-			:trk(id + 1024, current_log_builder, tracker::CacheBehaviors::full),
-			 ss(trk,current_log_builder),
-			 sc(trk,current_log_builder),
+			:trk(id + 1024, tracker::CacheBehaviors::full),
+			 ss(trk),
+			 sc(trk),
 			 dsm({&ss,&sc}){}
 	};
 	
 	std::function<std::string (std::unique_ptr<Remember>&, int, unsigned long long)> pool_fun =
 		[ip](std::unique_ptr<Remember>& mem, int, unsigned long long _start_time){
 		assert(mem);
-		AtScopeEnd ase{[&](){
-				mem->current_log_builder.reset(mem->log_builder->template beginStruct<LoggedStructs::log>());
-			}};
+		auto log_messages = mem->log_builder->template beginStruct<LoggedStructs::log>();
 		microseconds start_time(_start_time);
 		auto run_time = elapsed_time();
 		
-		abs_StructBuilder &log_messages = mem->current_log_builder;
-		log_messages.addField(LogFields::submit_time,duration_cast<milliseconds>(start_time).count());
-		log_messages.addField(LogFields::run_time,duration_cast<milliseconds>(run_time).count());
+		log_messages->addField(LogFields::submit_time,duration_cast<milliseconds>(start_time).count());
+		log_messages->addField(LogFields::run_time,duration_cast<milliseconds>(run_time).count());
 		//std::cout << "launching task on pid " << pid << std::endl;
 		//AtScopeEnd em{[pid](){std::cout << "finishing task on pid " << pid << std::endl;}};
 		try{
@@ -195,35 +189,35 @@ int main(){
 					for(int tmp2 = 0; tmp2 < 10; ++tmp2){
 						try{
 							if ((name % mod_constant) == 0){
-								TRANSACTION(trk,hndl,
+								TRANSACTION(log_messages,trk,hndl,
 									do_op(Increment,hndl)
 									)//*/
-								log_messages.addField(
+								log_messages->addField(
 									LogFields::is_write,true);
 							}
 							else {
-								TRANSACTION(
+								TRANSACTION(log_messages,
 									trk,hndl,
 									let_remote(tmp) = hndl IN(mtl_ignore($(tmp)))
 									);
-								log_messages.addField(
+								log_messages->addField(
 									LogFields::is_read,true);
 							}
 							auto end = elapsed_time();
-							log_messages.addField(LogFields::done_time,
+							log_messages->addField(LogFields::done_time,
 												  duration_cast<milliseconds>(end).count());
-							log_messages.addField(LogFields::is_serialization_error,false);
+							log_messages->addField(LogFields::is_serialization_error,false);
 							break;
 						}
 						catch(const SerializationFailure &r){
 							auto end = elapsed_time();
-							log_messages.addField(LogFields::done_time,
+							log_messages->addField(LogFields::done_time,
 												  duration_cast<milliseconds>(end).count());
-							log_messages.addField(LogFields::is_serialization_error,true);
+							log_messages->addField(LogFields::is_serialization_error,true);
 							continue;
 						}
 					}
-					return log_messages.single();
+					return log_messages->single();
 				};
 				if (better_rand() > .7 || !causal_enabled){
 					return test_fun(strong.template
@@ -236,10 +230,10 @@ int main(){
 			return str;
 		}
 		catch(pqxx::pqxx_exception &e){
-			log_messages.addField(LogFields::pqxx_failure,true);
-			log_messages.addField(LogFields::pqxx_failure_string, std::string(e.base().what()));
+			log_messages->addField(LogFields::pqxx_failure,true);
+			log_messages->addField(LogFields::pqxx_failure_string, std::string(e.base().what()));
 		}
-		return log_messages.single();
+		return log_messages->single();
 	};
 	
 	std::function<std::string (std::exception_ptr) > exn_handler = [](std::exception_ptr eptr){
@@ -302,12 +296,12 @@ int main(){
 		futures->emplace_back(launch());
 	}
 
-	global_log.addField(GlobalsFields::final_completion_time,
-						duration_cast<milliseconds>(elapsed_time()).count());
+	global_log->addField(GlobalsFields::final_completion_time,
+						 duration_cast<milliseconds>(elapsed_time()).count());
 
 	logFile << logger->declarations() << endl;
 
-	logFile << global_log.single() << endl;
+	logFile << global_log->single() << endl;
 
 	//print everything
 	while (!futures->empty()){

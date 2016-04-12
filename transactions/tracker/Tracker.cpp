@@ -167,15 +167,15 @@ namespace myria { namespace tracker {
 				i->_finalize();
 		}
 
-		TrackingContext::TrackingContext(Tracker &trk, bool cod)
-			:i(new TrackingContext::Internals{*trk.i,cod}),trk(trk){}
+		TrackingContext::TrackingContext(abs_StructBuilder& logger, Tracker &trk, bool cod)
+			:i(new TrackingContext::Internals{*trk.i,cod}),trk(trk),logger(logger){}
 
 		TrackingContext::~TrackingContext(){
 			if (i) delete i;
 		}
 
-		std::unique_ptr<TrackingContext> Tracker::generateContext(bool commitOnDelete){
-			return std::unique_ptr<TrackingContext>{(new TrackingContext{*this,commitOnDelete})};
+		std::unique_ptr<TrackingContext> Tracker::generateContext(mutils::abs_StructBuilder& logger, bool commitOnDelete){
+			return std::unique_ptr<TrackingContext>{(new TrackingContext{logger, *this,commitOnDelete})};
 		}
 
 	}
@@ -204,8 +204,8 @@ namespace myria { namespace tracker {
 			return i->cache;
 		}
 		
-		Tracker::Tracker(int cache_port, ::mutils::ReassignableReference<::mutils::abs_StructBuilder> logger, CacheBehaviors beh):
-			i{new Internals{beh}},cache_port(cache_port),logger(logger){
+		Tracker::Tracker(int cache_port, CacheBehaviors beh):
+			i{new Internals{beh}},cache_port(cache_port){
 				assert(cache_port > 0 && "error: must specify non-zero cache port for first tracker call");
 				i->cache.listen_on(cache_port);
 				//std::cout << "tracker built" << std::endl;
@@ -305,7 +305,7 @@ namespace myria { namespace tracker {
 				auto &sctx = *ctx.template get_store_context<Level::strong>(ds_real);
 				auto meta_name = make_lin_metaname(name);
 				if (get<TDS::exists>(*t.strongDS)(*t.registeredStrong,meta_name)){
-					get<TDS::existingTomb>(*t.strongDS)(*t.registeredStrong,meta_name)->put(&sctx,Tracker::Tombstone{nonce,get_ip(),cache_port});
+					get<TDS::existingTomb>(*t.strongDS)(*ctx.logger,*t.registeredStrong,meta_name)->put(&sctx,Tracker::Tombstone{nonce,get_ip(),cache_port});
 				}
 				else {
 					get<TDS::newTomb>(*t.strongDS)(*this,ctx,*t.registeredStrong,
@@ -450,7 +450,7 @@ namespace myria { namespace tracker {
 			assert(name != 1);
 			
 			auto update_clock = [this](StoreContext<Level::strong> &sctx, TrackingContext &tctx, Tracker::Internals &t){
-				auto clock_ro = get<TDS::existingClock>(*t.strongDS)(*t.registeredStrong, bigprime_lin);
+				auto clock_ro = get<TDS::existingClock>(*t.strongDS)(tctx.logger,*t.registeredStrong, bigprime_lin);
 				assert(clock_ro);
 				auto newc_p = clock_ro->get(&sctx,this,&tctx);
 				auto &newc = *newc_p;
@@ -471,12 +471,12 @@ namespace myria { namespace tracker {
 				update_clock(sctx,tctx,*i);
 				auto ts = make_lin_metaname(name);
 				if (get<TDS::exists>(*i->strongDS)(ds,ts)){
-					logger.get().incrementIntField(
+					tctx.logger.incrementIntField(
 						LogFields::tracker_strong_afterread_tombstone_exists);
-					auto tomb_p = get<TDS::existingTomb>(*i->strongDS)(ds,ts)->get(&sctx,this,&tctx);
+					auto tomb_p = get<TDS::existingTomb>(*i->strongDS)(tctx.logger,ds,ts)->get(&sctx,this,&tctx);
 					auto &tomb = *tomb_p;
 					if (!sleep_on(*tctx.i,*i,tomb.name(),2)){
-						logger.get().incrementIntField(
+						tctx.logger.incrementIntField(
 							LogFields::tracker_strong_afterread_nonce_unavailable);
 						//std::cout << "Nonce isn't immediately available, adding to pending_nonces" << std::endl;
 						tctx.i->pending_nonces_add.emplace_back
@@ -557,7 +557,7 @@ namespace myria { namespace tracker {
 		void Tracker::afterRead(TrackingContext &tctx, DataStore<Level::causal>&, Name name, const Clock& version, const std::vector<char> &data, Clock*){}
 		void Tracker::afterRead(TrackingContext &tctx, DataStore<Level::causal>&, Name name, const Clock& version, const std::vector<char> &data, void*){
 			if (tracking_candidate(*i,name,version)){
-				logger.get().incrementIntField(LogFields::tracker_causal_afterread_candidate);
+				tctx.logger.incrementIntField(LogFields::tracker_causal_afterread_candidate);
 				//need to overwrite, not occlude, the previous element.
 				//C++'s map semantics are really stupid.
 				tctx.i->tracking_erase.push_back(name);

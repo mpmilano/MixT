@@ -27,7 +27,9 @@ namespace myria { namespace mtl {
 		
 		template<typename T>
 		struct Transaction{
-			const std::function<bool (tracker::Tracker&, T const * const)> action;
+			const std::function<
+				std::unique_ptr<VMObjectLog>
+				(std::unique_ptr<VMObjectLog>, tracker::Tracker&, T const *const)> action;
 			const std::function<std::ostream & (std::ostream &os)> print;
 			
 		public:
@@ -35,14 +37,15 @@ namespace myria { namespace mtl {
 			template<typename Cmds>
 			Transaction(const TransactionBuilder<Cmds> &s):
 				action([s, env_exprs = mtl::environment_expressions(s.curr)]
-					   (tracker::Tracker& trk, T const * const param) -> bool{
+					   (std::unique_ptr<VMObjectLog> log,
+						tracker::Tracker& trk, T const * const param) {
 						
 
 						//We're assuming that operations behave normally,
 						//By which we mean if they need to handle in-a-transaction
 						//in a special way, they do that for themselves.
 
-						TransactionContext ctx{param,trk.generateContext()};
+						TransactionContext ctx{param,trk.generateContext(*log)};
 
 						static_assert(std::is_same<std::decay_t<decltype(std::get<0>(env_exprs))>,EnvironmentExpression<T> >::value,
 									  "Type error on Transaction parameter!");
@@ -62,11 +65,9 @@ namespace myria { namespace mtl {
 
 							//nobody should be in a transaction yet
 							using namespace mutils;
-							ReassignableReference<abs_StructBuilder> logger_f = trk.get_StrongStore().logger;
-							mutils::abs_StructBuilder& logger = logger_f;
-							ctx.logger = &logger_f;
 
-							logger.addField(LogFields::transaction_action,true);
+							log->addField(LogFields::transaction_action,true);
+							ctx.logger = std::move(log);
 							
 							assert(!trk.get_StrongStore().in_transaction());
 							call_all_strong(&ctx,caches,stores,s.curr);
@@ -79,8 +80,6 @@ namespace myria { namespace mtl {
 							++causal_count;
 							using namespace mutils;
 
-							ReassignableReference<abs_StructBuilder> logger_f = trk.get_CausalStore().logger;
-							ctx.logger = &logger_f;
 							//causal execution.  it can't fail.
 							
 							CausalCache cachec{caches};
@@ -109,10 +108,10 @@ namespace myria { namespace mtl {
 							}
 						} while (true);
 
-						mutils::abs_StructBuilder& logger = trk.get_CausalStore().logger;
-						logger.addField(LogFields::num_causal_tries,causal_count);
+						auto logger = std::move(ctx.logger);
+						logger->addField(LogFields::num_causal_tries,causal_count);
 						
-						return true;
+						return std::move(logger);
 					}),
 				print([s](std::ostream &os) -> std::ostream& {
 						os << "printing AST!" << std::endl;
@@ -127,8 +126,8 @@ namespace myria { namespace mtl {
 			Transaction(const Transaction&) = delete;
 			Transaction(const Transaction&& t):action(std::move(t.action)),print(std::move(t.print)){}
 			
-			bool operator()(tracker::Tracker& trk, T const * const t) const {
-				return action(trk,t);
+			auto operator()(std::unique_ptr<VMObjectLog> &&l, tracker::Tracker& trk, T const * const t) const {
+				return action(std::move(l),trk,t);
 			}
 			
 		};

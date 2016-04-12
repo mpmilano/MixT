@@ -17,6 +17,7 @@
 #include "Ends.hpp"
 #include "TransactionBasics.hpp"
 #include "TrackingContext.hpp"
+#include "ObjectBuilder.hpp"
 
 namespace myria { 
 
@@ -62,10 +63,8 @@ namespace myria {
 				Handle<l, HandleAccess::all, Tombstone> (*)
 				(tracker::Tracker &trk, mtl::TransactionContext& ctx, DataStore<l>&, Name, const Tombstone&), //newTomb
 				bool (*) (DataStore<l>&, Name), //exists
-				std::unique_ptr<RemoteObject<l, Clock> > (*)
-				(DataStore<l>&, Name), //existingClock
-				std::unique_ptr<RemoteObject<l, Tombstone> > (*)
-				(DataStore<l>&, Name) //existingTomb
+				std::unique_ptr<RemoteObject<l, Clock> > (*) (mutils::abs_StructBuilder&, DataStore<l>&, Name), //existingClock
+				std::unique_ptr<RemoteObject<l, Tombstone> > (*) (mutils::abs_StructBuilder&, DataStore<l>&, Name) //existingTomb
 				>;
 			using TrackerDSStrong = TrackerDS<Level::strong>;
 			using TrackerDSCausal = TrackerDS<Level::causal>;
@@ -110,7 +109,7 @@ namespace myria {
 				exemptItem(h.name());
 			}
 
-			std::unique_ptr<TrackingContext> generateContext(bool commitOnDelete = false);
+			std::unique_ptr<TrackingContext> generateContext(mutils::abs_StructBuilder &logger, bool commitOnDelete = false);
 
 			/**
 			   The primary interface methods here are tripled.  
@@ -195,13 +194,12 @@ namespace myria {
 
 			friend struct TrackingContext;
 
-			Tracker(int cache_port, ::mutils::ReassignableReference<::mutils::abs_StructBuilder> logger, CacheBehaviors behavior /*= CacheBehaviors::full*/);
+			Tracker(int cache_port, CacheBehaviors behavior /*= CacheBehaviors::full*/);
 			virtual ~Tracker();
 
 			Tracker(const Tracker&) = delete;
 
 			const int cache_port;
-			::mutils::ReassignableReference<::mutils::abs_StructBuilder> logger;
 
 		};		
 

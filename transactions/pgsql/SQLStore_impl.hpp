@@ -37,21 +37,19 @@ namespace myria { namespace pgsql {
 		struct SQLInstanceManager_abs : public mutils::RemoteDeserializationContext {
 			virtual SQLStore<Level::strong>& inst_strong(int store_id) = 0;
 			virtual SQLStore<Level::causal>& inst_causal(int store_id) = 0;
-			::mutils::ReassignableReference<::mutils::abs_StructBuilder> logger;
 			SQLStore_impl& inst(Level l, int store_id);
 			
 			virtual ~SQLInstanceManager_abs(){}
 			SQLInstanceManager_abs(const SQLInstanceManager_abs&) = delete;
-			SQLInstanceManager_abs(::mutils::ReassignableReference<::mutils::abs_StructBuilder> logger):logger(logger){}
+			SQLInstanceManager_abs(){}
 		};
 		
 		struct SQLStore_impl {
 		private:
 	
-			SQLStore_impl(GDataStore &store, int instanceID, Level,::mutils::ReassignableReference<::mutils::abs_StructBuilder> logger);
+			SQLStore_impl(GDataStore &store, int instanceID, Level);
 			GDataStore &_store;
 		public:
-			::mutils::ReassignableReference<::mutils::abs_StructBuilder> logger;
 			
 			virtual ~SQLStore_impl();
 

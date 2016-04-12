@@ -108,10 +108,13 @@ namespace myria{
 			assert(_ro);
 			choose_strong<l> choice {nullptr};
 			assert(_ro->store().level == l);
+			/*
 			assert(tc || !_ro->store().in_transaction());
 			auto owner = (tc ? nullptr : std::make_unique<mtl::TransactionContext>((void*)nullptr,_ro->store().begin_transaction(),tracker.generateContext()));
-			if (owner) owner->commit_on_delete = true;
-			auto &ctx = (owner ? *owner : *tc);
+			if (owner) owner->commit_on_delete = true;*/
+			assert(tc);
+			//auto &ctx = (owner ? *owner : *tc);
+			auto &ctx = *tc;
 			assert(ctx.trackingContext);
 
 			//If the Transacion Context does not yet exist for this store, we create it now.
@@ -139,10 +142,13 @@ namespace myria{
 
 		void put(tracker::Tracker& tracker, mtl::TransactionContext *tc, const T& t){
 			choose_strong<l> choice{nullptr};
+			assert(tc);
+			/*
 			assert(tc || !_ro->store().in_transaction());
 			auto owner = (tc ? nullptr : std::make_unique<mtl::TransactionContext>((T*)nullptr,_ro->store().begin_transaction(),tracker.generateContext()));
 			if (owner) owner->commit_on_delete = true;
-			auto &ctx = (owner ? *owner : *tc);
+			auto &ctx = (owner ? *owner : *tc);*/
+			auto &ctx = *tc;
 			assert(ctx.trackingContext);
 			return put(tracker, ctx,t,choice);
 		}
@@ -228,12 +234,16 @@ namespace myria{
 			RemoteObject<l,T> *rop = new RO(std::forward<Args>(ca)...);
 			std::shared_ptr<RemoteObject<l,T> > sp(rop);
 			Handle<l,HA,T> ret(sp);
+			/*
 			assert(tc || !rop->store().in_transaction());
 			//make a transaction with no environment expressions for only the requested store
 			auto owner = (tc ? nullptr : std::make_unique<mtl::TransactionContext>((void*)nullptr,rop->store().begin_transaction(),trk.generateContext()));
 			auto &ctx = (tc ? *tc : *owner);
+			*/
+			assert(tc);
+			auto &ctx = *tc;
 			do_onwrite(ctx,trk,*rop);
-            if (owner) owner->full_commit();
+            //if (owner) owner->full_commit();
 			return ret;
 		}
 	

@@ -15,8 +15,8 @@ namespace myria { namespace pgsql {
 			struct SQLInstanceManager : public SQLInstanceManager_abs{
 			public:
 				tracker::Tracker &trk;
-				SQLInstanceManager(tracker::Tracker &trk, ::mutils::ReassignableReference<::mutils::abs_StructBuilder> logger)
-					:SQLInstanceManager_abs(logger),trk(trk){
+				SQLInstanceManager(tracker::Tracker &trk)
+					:SQLInstanceManager_abs(),trk(trk){
 				}
 				SQLInstanceManager(const SQLInstanceManager&) = delete;
 				virtual ~SQLInstanceManager(){}
@@ -27,7 +27,7 @@ namespace myria { namespace pgsql {
 					assert(l == l2);
 					if (ss.count(instance_id) == 0){
 						assert(this->this_mgr);
-						ss[instance_id].reset(new SQLStore(trk,instance_id,this->logger,*this->this_mgr));
+						ss[instance_id].reset(new SQLStore(trk,instance_id,*this->this_mgr));
 					}
 				}
 
@@ -68,11 +68,10 @@ namespace myria { namespace pgsql {
 			};
 
 			mutils::DeserializationManager &this_mgr;
-			::mutils::ReassignableReference<::mutils::abs_StructBuilder> &logger;
 
 		private:
-			SQLStore(tracker::Tracker& trk, int inst_id, ::mutils::ReassignableReference<::mutils::abs_StructBuilder> logger, mutils::DeserializationManager &this_mgr)
-				:SQLStore_impl(*this,inst_id,l,logger),DataStore<l>(logger),this_mgr(this_mgr),logger([this]() -> auto& {GDataStore* ptr = this; return ptr->logger;}()) {
+			SQLStore(tracker::Tracker& trk, int inst_id, mutils::DeserializationManager &this_mgr)
+				:SQLStore_impl(*this,inst_id,l),DataStore<l>(),this_mgr(this_mgr) {
 				trk.registerStore(*this);
 			}
 		public:
@@ -223,7 +222,7 @@ namespace myria { namespace pgsql {
 			}
 
 			template<typename T>
-			std::unique_ptr<SQLObject<T> > existingRaw(Name name, T* for_inf = nullptr){
+			std::unique_ptr<SQLObject<T> > existingRaw(mutils::abs_StructBuilder&, Name name, T* for_inf = nullptr){
 				static constexpr Table t =
 					(std::is_same<T,int>::value ? Table::IntStore : Table::BlobStore);
 				return std::unique_ptr<SQLObject<T> >

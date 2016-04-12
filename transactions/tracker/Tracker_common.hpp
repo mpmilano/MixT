@@ -13,9 +13,9 @@ namespace myria { namespace tracker {
 			using newTomb_t = Handle<l, HandleAccess::all, Tracker::Tombstone>
 				(*) (tracker::Tracker &trk, mtl::TransactionContext& ctx, DataStore<l>&, Name, const Tracker::Tombstone&);
 			using existingClock_t = std::unique_ptr<RemoteObject<l, Tracker::Clock> >
-				(*) (DataStore<l>&, Name);
+				(*) (mutils::abs_StructBuilder&, DataStore<l>&, Name);
 			using existingTomb_t = std::unique_ptr<RemoteObject<l, Tracker::Tombstone> >
-				(*) (DataStore<l>&, Name);
+				(*) (mutils::abs_StructBuilder&, DataStore<l>&, Name);
 	
 			using exists_t = bool (*) (DataStore<l>&, Name);
 	
@@ -33,14 +33,14 @@ namespace myria { namespace tracker {
 				return ds.exists(name);
 			};
 			static const existingClock_t existClock =
-				[](DataStore<l> &_ds, Name name) -> std::unique_ptr<RemoteObject<l, Tracker::Clock> >{
+				[](mutils::abs_StructBuilder& asb, DataStore<l> &_ds, Name name) -> std::unique_ptr<RemoteObject<l, Tracker::Clock> >{
 				auto &ds = dynamic_cast<DS&>(_ds);
-				return ds.template existingRaw<Tracker::Clock>(name);
+				return ds.template existingRaw<Tracker::Clock>(asb,name);
 			};
 			static const existingTomb_t existTomb =
-				[](DataStore<l> &_ds, Name name) -> std::unique_ptr<RemoteObject<l, Tracker::Tombstone> >{
+				[](mutils::abs_StructBuilder& asb, DataStore<l> &_ds, Name name) -> std::unique_ptr<RemoteObject<l, Tracker::Tombstone> >{
 				auto &ds = dynamic_cast<DS&>(_ds);
-				return ds.template existingRaw<Tracker::Tombstone>(name);
+				return ds.template existingRaw<Tracker::Tombstone>(asb,name);
 			};
 			return std::unique_ptr<TrackerDS>(
 				new TrackerDS{newTomb, exists,existClock,existTomb});

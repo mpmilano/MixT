@@ -37,6 +37,8 @@ namespace myria{
 		LoggedStructs,
 		mutils::StructType<LoggedStructs,LoggedStructs::log,LogFields>,
 		mutils::StructType<LoggedStructs,LoggedStructs::globals,GlobalsFields> >;
+	using VMObjectLog = typename VMObjectLogger::StructBuilder<LoggedStructs::log>;
+	
 	std::unique_ptr<VMObjectLogger> build_VMObjectLogger();
 
 	enum class Level { causal, strong, undef};
