@@ -16,6 +16,10 @@ namespace myria{
 			trackertestingobject_constructed, trackertestingobject_registered, trackertesting_newobject, trackertesting_existingobject, trackertesting_existingraw,
 			trackertesting_increment,
 
+			tracker_strong_afterread_tombstone_exists,
+			tracker_strong_afterread_nonce_unavailable,
+			tracker_causal_afterread_candidate,
+			
 			transaction_action, MAX
 		};
 

@@ -471,11 +471,13 @@ namespace myria { namespace tracker {
 				update_clock(sctx,tctx,*i);
 				auto ts = make_lin_metaname(name);
 				if (get<TDS::exists>(*i->strongDS)(ds,ts)){
-					assert(false &&"know when this is entered better");
+					logger.get().incrementIntField(
+						LogFields::tracker_strong_afterread_tombstone_exists);
 					auto tomb_p = get<TDS::existingTomb>(*i->strongDS)(ds,ts)->get(&sctx,this,&tctx);
 					auto &tomb = *tomb_p;
 					if (!sleep_on(*tctx.i,*i,tomb.name(),2)){
-						assert(false &&"disable this pathway, or log it");
+						logger.get().incrementIntField(
+							LogFields::tracker_strong_afterread_nonce_unavailable);
 						//std::cout << "Nonce isn't immediately available, adding to pending_nonces" << std::endl;
 						tctx.i->pending_nonces_add.emplace_back
 							(tomb.name(), Bundle{i->cache.get(tomb)});
@@ -555,7 +557,7 @@ namespace myria { namespace tracker {
 		void Tracker::afterRead(TrackingContext &tctx, DataStore<Level::causal>&, Name name, const Clock& version, const std::vector<char> &data, Clock*){}
 		void Tracker::afterRead(TrackingContext &tctx, DataStore<Level::causal>&, Name name, const Clock& version, const std::vector<char> &data, void*){
 			if (tracking_candidate(*i,name,version)){
-				assert(false &&"nothing is a tracking candidate");
+				logger.get().incrementIntField(LogFields::tracker_causal_afterread_candidate);
 				//need to overwrite, not occlude, the previous element.
 				//C++'s map semantics are really stupid.
 				tctx.i->tracking_erase.push_back(name);

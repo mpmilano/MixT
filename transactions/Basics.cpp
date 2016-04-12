@@ -34,6 +34,10 @@ namespace myria{
 			LogFields::trackertesting_increment, "int trackertesting_increment","0",
 
 			LogFields::transaction_action, "bool transaction_action", "false",
+
+			LogFields::tracker_strong_afterread_tombstone_exists, "int tracker_strong_afterread_tombstone_exists", "0",
+			LogFields::tracker_strong_afterread_nonce_unavailable, "int tracker_strong_afterread_nonce_unavailable", "0",
+			LogFields::tracker_causal_afterread_candidate, "int tracker_causal_afterread_candidate", "0",
 			
 			LoggedStructs::globals,"struct myria_globals","ERROR",
 			GlobalsFields::request_frequency,"::mutils::Frequency request_frequency","0",
