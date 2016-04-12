@@ -121,15 +121,13 @@ int main(){
 	exit(0); */
 
 	//tracker testing init
-	/*
+	
 	{
 		using namespace ::myria::testing;
 		unique_ptr<VMObjectLogger> log_builder{build_VMObjectLogger()};
-		ReassignableReference<abs_StructBuilder> current_log_builder
-			{log_builder->template beginStruct<LoggedStructs::log>()};
-		tracker::Tracker trk{1025,current_log_builder,tracker::CacheBehaviors::none};
-		TrackerTestingStore<Level::strong> strong{trk,current_log_builder};
-		TrackerTestingStore<Level::causal> causal{trk,current_log_builder};
+		tracker::Tracker trk{1025,tracker::CacheBehaviors::none};
+		TrackerTestingStore<Level::strong> strong{trk};
+		TrackerTestingStore<Level::causal> causal{trk};
 		for (int i = 0; i <= name_max; ++i){
 			if (!strong.exists(i))
 				strong.template newObject<HandleAccess::all,int>(trk,nullptr,i,0);
@@ -147,17 +145,17 @@ int main(){
 		unique_ptr<VMObjectLogger> log_builder{build_VMObjectLogger()};
 		
 		tracker::Tracker trk;
-		SQLStore<Level::strong>::SQLInstanceManager ss;
-		SQLStore<Level::causal>::SQLInstanceManager sc;
-		//TrackerTestingStore<Level::strong> ss;
-		//TrackerTestingStore<Level::causal> sc;
+		//SQLStore<Level::strong>::SQLInstanceManager ss;
+		//SQLStore<Level::causal>::SQLInstanceManager sc;
+		TrackerTestingStore<Level::strong> ss;
+		TrackerTestingStore<Level::causal> sc;
 		DeserializationManager dsm;
 		
 		Remember(int id)
 			:trk(id + 1024, tracker::CacheBehaviors::full),
 			 ss(trk),
 			 sc(trk),
-			 dsm({&ss,&sc}){}
+			 dsm({/*&ss,&sc*/}){}
 	};
 	
 	std::function<std::string (std::unique_ptr<Remember>&, int, unsigned long long)> pool_fun =
@@ -173,10 +171,10 @@ int main(){
 		//AtScopeEnd em{[pid](){std::cout << "finishing task on pid " << pid << std::endl;}};
 		try{
 			std::string str = [&](){
-				SQLStore<Level::strong> &strong = mem->ss.inst_strong(ip);
-				SQLStore<Level::causal> &causal = mem->sc.inst_causal(0);
-				//auto &strong = mem->ss;
-				//auto &causal = mem->sc;
+				//SQLStore<Level::strong> &strong = mem->ss.inst_strong(ip);
+				//SQLStore<Level::causal> &causal = mem->sc.inst_causal(0);
+				auto &strong = mem->ss;
+				auto &causal = mem->sc;
 				auto &trk = mem->trk;
 				assert(!strong.in_transaction());
 				assert(!causal.in_transaction());

@@ -52,9 +52,9 @@ namespace myria { namespace testing {
 				}
 			};
 			
-			std::unique_ptr<mtl::StoreContext<l> > begin_transaction(){
+			std::unique_ptr<mtl::StoreContext<l> > begin_transaction(mutils::abs_StructBuilder& abs){
 				return std::unique_ptr<mtl::StoreContext<l> >(
-					new AlwaysSuccessfulTransaction{*this});
+					new AlwaysSuccessfulTransaction{*this,abs});
 			}
 
 			const std::array<int, NUM_CAUSAL_GROUPS>& local_time() const {
@@ -274,7 +274,6 @@ namespace myria { namespace testing {
 			}
 
 			bool exists(Name name){
-				this->logger.get().incrementIntField(LogFields::trackertesting_exists);
 				return remote_store().rs.contains(name);
 			}
 

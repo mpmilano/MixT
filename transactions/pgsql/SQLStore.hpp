@@ -246,7 +246,7 @@ namespace myria { namespace pgsql {
 				void store_abort() {i->store_abort();}
 			};
 
-			std::unique_ptr<mtl::StoreContext<l> > begin_transaction()
+			std::unique_ptr<mtl::StoreContext<l> > begin_transaction(mutils::abs_StructBuilder&)
 				{
 					auto ret = SQLStore_impl::begin_transaction();
 					return std::unique_ptr<mtl::StoreContext<l> >(new SQLContext{std::move(ret),this_mgr});

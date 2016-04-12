@@ -45,10 +45,14 @@ namespace myria { namespace mtl {
 						//By which we mean if they need to handle in-a-transaction
 						//in a special way, they do that for themselves.
 
-						TransactionContext ctx{param,trk.generateContext(*log)};
+						   log->addField(LogFields::transaction_action,true);
+						   TransactionContext ctx{log,param,trk.generateContext(*log)};
 
-						static_assert(std::is_same<std::decay_t<decltype(std::get<0>(env_exprs))>,EnvironmentExpression<T> >::value,
-									  "Type error on Transaction parameter!");
+						   static_assert(
+							   std::is_same<
+							   std::decay_t<decltype(std::get<0>(env_exprs))>,
+							   EnvironmentExpression<T> >::value,
+							   "Type error on Transaction parameter!");
 
 						StrongCache caches;
 						StrongStore stores;
@@ -65,9 +69,6 @@ namespace myria { namespace mtl {
 
 							//nobody should be in a transaction yet
 							using namespace mutils;
-
-							log->addField(LogFields::transaction_action,true);
-							ctx.logger = std::move(log);
 							
 							assert(!trk.get_StrongStore().in_transaction());
 							call_all_strong(&ctx,caches,stores,s.curr);

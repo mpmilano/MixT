@@ -47,18 +47,20 @@ namespace myria {
 			bool committed = false;
 
 		public:
-			TransactionContext(void const * const param, decltype(trackingContext) trackingContext)
-				:parameter(param),trackingContext(std::move(trackingContext))
+			TransactionContext(std::unique_ptr<VMObjectLog> &logger, void const * const param, decltype(trackingContext) trackingContext)
+				:parameter(param),trackingContext(std::move(trackingContext)),logger(std::move(logger))
 				{}
 
 			TransactionContext(const TransactionContext&) = delete;
 
-			TransactionContext(void const * const param, decltype(strongContext) sc, decltype(trackingContext) trackingContext)
-				:parameter(param),trackingContext(std::move(trackingContext)),strongContext(std::move(sc))
+			TransactionContext(std::unique_ptr<VMObjectLog> &logger, void const * const param, decltype(strongContext) sc, decltype(trackingContext) trackingContext)
+				:parameter(param),trackingContext(std::move(trackingContext)),strongContext(std::move(sc)),
+				 logger(std::move(logger))
 				{}
 
-			TransactionContext(void const * const param, decltype(causalContext) cc, decltype(trackingContext) trackingContext)
-				:parameter(param),trackingContext(std::move(trackingContext)),causalContext(std::move(cc))
+			TransactionContext(std::unique_ptr<VMObjectLog> &logger, void const * const param, decltype(causalContext) cc, decltype(trackingContext) trackingContext)
+				:parameter(param),trackingContext(std::move(trackingContext)),causalContext(std::move(cc)),
+				 logger(std::move(logger))
 				{}
 			
 			bool full_commit();
@@ -70,7 +72,8 @@ namespace myria {
 				auto& store_ctx = get_store_context(choice);
 				if (!store_ctx){
 					assert(!str.in_transaction());
-					store_ctx.reset(str.begin_transaction().release());
+					assert(logger);
+					store_ctx.reset(str.begin_transaction(*logger).release());
 				}
 				return store_ctx;
 			}
