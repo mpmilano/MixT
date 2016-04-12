@@ -38,7 +38,7 @@ constexpr bool causal_enabled = true;
 constexpr bool causal_enabled = false;
 #endif
 
-constexpr int num_processes = 100;
+constexpr int num_processes = 99;
 static_assert(num_processes <= 100,"Error: you are at risk of too many open files");
 constexpr auto arrival_rate = 200_Hz;
 constexpr auto actual_arrival_rate = arrival_rate * as_hertz(1 + int{concurrencySetting});

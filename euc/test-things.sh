@@ -16,13 +16,17 @@ elif [[ -z "$range_max" ]]
 then
 	echo "failure: specify range_max as environment variable"
 	exit 1
+elif [[ -z "$configurations" ]]
+then
+	echo "failure: specify configurations as environment variable. one or both of USE_STRONG and NO_USE_STRONG must be defined here."
+	exit 1
 fi
 
 first_iter=true;
 for (( num_per = 1; num_per <= range_max; num_per = num_per + 1))
 do
 	echo "iteration " $num_per
-	for configuration in USE_STRONG NO_USE_STRONG
+	for configuration in $configurations
 	do
 		i=0
 		echo $configuration
