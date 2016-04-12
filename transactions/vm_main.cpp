@@ -207,7 +207,7 @@ int main(){
 									let_remote(tmp) = hndl IN(mtl_ignore($(tmp)))
 									);
 								log_messages.addField(
-									LogFields::is_write,false);
+									LogFields::is_read,true);
 							}
 							auto end = elapsed_time();
 							log_messages.addField(LogFields::done_time,

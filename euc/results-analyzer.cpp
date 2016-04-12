@@ -118,13 +118,16 @@ auto print_window_averages(std::string filename, const vector<vector<myria_log> 
 int main(){
 	{
 		long transaction_action = 0;
-		long no_transaction_action = 0;
+		long total_rows = 0;
+		long read_or_write = 0;
 		for (auto &results : NO_USE_STRONG()){
 			
 			for (auto &row : results){
+				total_rows++;
 				if (row.transaction_action)
 					transaction_action++;
-			else no_transaction_action++;
+				if (row.is_read || row.is_write)
+					read_or_write++;
 			}
 		}
 		std::cout << "Transaction action: " << transaction_action << endl;
