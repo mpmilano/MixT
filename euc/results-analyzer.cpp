@@ -5,34 +5,35 @@
 #include <results_header.hpp>
 #include <set>
 #include <fstream>
+#include <cassert>
 
 auto USE_STRONG(){
 	return std::vector<std::vector<struct myria_log> >{{
-			runs_USE_STRONG_1(),
+			runs_USE_STRONG_1()/*,
 				runs_USE_STRONG_2(),
-				runs_USE_STRONG_3(), runs_USE_STRONG_4(), runs_USE_STRONG_5(), runs_USE_STRONG_6(), runs_USE_STRONG_7(), runs_USE_STRONG_8(), runs_USE_STRONG_9(), runs_USE_STRONG_10()}};
+				runs_USE_STRONG_3(), runs_USE_STRONG_4(), runs_USE_STRONG_5(), runs_USE_STRONG_6(), runs_USE_STRONG_7(), runs_USE_STRONG_8(), runs_USE_STRONG_9(), runs_USE_STRONG_10()*/}};
 }
 
 auto NO_USE_STRONG(){
 	return std::vector<std::vector<struct myria_log> >{{
-			runs_NO_USE_STRONG_1(),
+			runs_NO_USE_STRONG_1()/*,
 				runs_NO_USE_STRONG_2(),
-				runs_NO_USE_STRONG_3(), runs_NO_USE_STRONG_4(), runs_NO_USE_STRONG_5(), runs_NO_USE_STRONG_6(), runs_NO_USE_STRONG_7(), runs_NO_USE_STRONG_8(), runs_NO_USE_STRONG_9(), runs_NO_USE_STRONG_10()}};
+				runs_NO_USE_STRONG_3(), runs_NO_USE_STRONG_4(), runs_NO_USE_STRONG_5(), runs_NO_USE_STRONG_6(), runs_NO_USE_STRONG_7(), runs_NO_USE_STRONG_8(), runs_NO_USE_STRONG_9(), runs_NO_USE_STRONG_10()*/}};
 }
 
 
 auto globals_USE_STRONG(){
 	return std::vector<std::vector<struct myria_globals> >{{
-			globals_USE_STRONG_1(),
+			globals_USE_STRONG_1()/*,
 				globals_USE_STRONG_2(),
-				globals_USE_STRONG_3(), globals_USE_STRONG_4(), globals_USE_STRONG_5(), globals_USE_STRONG_6(), globals_USE_STRONG_7(), globals_USE_STRONG_8(), globals_USE_STRONG_9(), globals_USE_STRONG_10()}};
+				globals_USE_STRONG_3(), globals_USE_STRONG_4(), globals_USE_STRONG_5(), globals_USE_STRONG_6(), globals_USE_STRONG_7(), globals_USE_STRONG_8(), globals_USE_STRONG_9(), globals_USE_STRONG_10()*/}};
 }
 
 auto globals_NO_USE_STRONG(){
 	return std::vector<std::vector<struct myria_globals> >{{
-			globals_NO_USE_STRONG_1(),
+			globals_NO_USE_STRONG_1()/*,
 				globals_NO_USE_STRONG_2(),
-				globals_NO_USE_STRONG_3(), globals_NO_USE_STRONG_4(), globals_NO_USE_STRONG_5(), globals_NO_USE_STRONG_6(), globals_NO_USE_STRONG_7(), globals_NO_USE_STRONG_8(), globals_NO_USE_STRONG_9(), globals_NO_USE_STRONG_10()}};
+				globals_NO_USE_STRONG_3(), globals_NO_USE_STRONG_4(), globals_NO_USE_STRONG_5(), globals_NO_USE_STRONG_6(), globals_NO_USE_STRONG_7(), globals_NO_USE_STRONG_8(), globals_NO_USE_STRONG_9(), globals_NO_USE_STRONG_10()*/}};
 }
 
 
@@ -115,6 +116,21 @@ auto print_window_averages(std::string filename, const vector<vector<myria_log> 
 }
 
 int main(){
+	{
+		long transaction_action = 0;
+		long no_transaction_action = 0;
+		for (auto &results : NO_USE_STRONG()){
+			
+			for (auto &row : results){
+				if (row.transaction_action)
+					transaction_action++;
+			else no_transaction_action++;
+			}
+		}
+		std::cout << "Transaction action: " << transaction_action << endl;
+		cout << "No transaction action: " << no_transaction_action << endl;
+	}
+	
 	cout << "use only strong: " << endl;
 	for (auto &results : USE_STRONG()){
 		cout << calculate_latency(results) << " for " << results.size() << " total events" << endl;
