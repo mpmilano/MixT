@@ -62,7 +62,7 @@ utils.o:
 Ends.o:
 	clang++ -c */Ends.cpp $(CPPFLAGS)
 Tracker.o:
-	clang++ -c */DisabledTracker.cpp $(CPPFLAGS) && ln -s DisabledTracker.o Tracker.o
+	clang++ -c */Tracker.cpp $(CPPFLAGS) #&& ln -s DisabledTracker.o Tracker.o
 TransactionBasics.o:
 	clang++ -c */TransactionBasics.cpp $(CPPFLAGS)
 Ostreams.o:

@@ -114,6 +114,17 @@ namespace myria { namespace tracker {
 			return *i->registeredCausal;
 		}
 
+		DataStore<Level::strong>& Tracker::get_StrongStore() {
+			assert(i->registeredStrong);
+			return *i->registeredStrong;
+		}
+		
+		DataStore<Level::causal>& Tracker::get_CausalStore() {
+			assert(i->registeredCausal);
+			return *i->registeredCausal;
+		}
+
+
 		struct TrackingContext::Internals {
 			Tracker::Internals &trk;
 			bool commitOnDelete;

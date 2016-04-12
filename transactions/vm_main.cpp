@@ -121,6 +121,7 @@ int main(){
 	exit(0); */
 
 	//tracker testing init
+	/*
 	{
 		using namespace ::myria::testing;
 		unique_ptr<VMObjectLogger> log_builder{build_VMObjectLogger()};
@@ -137,7 +138,7 @@ int main(){
 		}
 
 		std::cout << "trackertesting init complete" << std::endl;
-	}
+	}//*/
 
 	using namespace testing;
 	
@@ -149,17 +150,17 @@ int main(){
 			{log_builder->template beginStruct<LoggedStructs::log>()};
 		
 		tracker::Tracker trk;
-		//SQLStore<Level::strong>::SQLInstanceManager ss;
-		//SQLStore<Level::causal>::SQLInstanceManager sc;
-		TrackerTestingStore<Level::strong> ss;
-		TrackerTestingStore<Level::causal> sc;
+		SQLStore<Level::strong>::SQLInstanceManager ss;
+		SQLStore<Level::causal>::SQLInstanceManager sc;
+		//TrackerTestingStore<Level::strong> ss;
+		//TrackerTestingStore<Level::causal> sc;
 		DeserializationManager dsm;
 		
 		Remember(int id)
 			:trk(id + 1024, current_log_builder, tracker::CacheBehaviors::full),
 			 ss(trk,current_log_builder),
 			 sc(trk,current_log_builder),
-			 dsm({/*&ss,&sc*/}){}
+			 dsm({&ss,&sc}){}
 	};
 	
 	std::function<std::string (std::unique_ptr<Remember>&, int, unsigned long long)> pool_fun =
@@ -178,10 +179,10 @@ int main(){
 		//AtScopeEnd em{[pid](){std::cout << "finishing task on pid " << pid << std::endl;}};
 		try{
 			std::string str = [&](){
-				//SQLStore<Level::strong> &strong = mem->ss.inst_strong(ip);
-				//SQLStore<Level::causal> &causal = mem->sc.inst_causal(0);
-				auto &strong = mem->ss;
-				auto &causal = mem->sc;
+				SQLStore<Level::strong> &strong = mem->ss.inst_strong(ip);
+				SQLStore<Level::causal> &causal = mem->sc.inst_causal(0);
+				//auto &strong = mem->ss;
+				//auto &causal = mem->sc;
 				auto &trk = mem->trk;
 				assert(!strong.in_transaction());
 				assert(!causal.in_transaction());
