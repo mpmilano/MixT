@@ -31,6 +31,13 @@ using namespace myria;
 using namespace mtl;
 using namespace pgsql;
 
+namespace {
+	constexpr unsigned long long bigprime_lin =
+#include "big_prime"
+		;
+}
+
+
 #ifdef NO_USE_STRONG
 constexpr bool causal_enabled = true;
 #endif
@@ -98,6 +105,14 @@ auto elapsed_time() {
 	return high_resolution_clock::now() - launch_clock;
 };
 
+template<typename Strong, typename Causal>
+auto start_transaction(std::unique_ptr<VMObjectLog> log, tracker::Tracker &trk, Strong &strong, Causal &causal){
+	auto ctx = make_unique<TransactionContext>(log,nullptr,trk.generateContext(*log));
+	ctx->strongContext = strong.begin_transaction(*ctx->logger);
+	ctx->causalContext = causal.begin_transaction(*ctx->logger);
+	return ctx;
+}
+
 int main(){
 	int ip = get_strong_ip();	
 	logFile.open(log_name);
@@ -128,13 +143,20 @@ int main(){
 		tracker::Tracker trk{1025,tracker::CacheBehaviors::none};
 		TrackerTestingStore<Level::strong> strong{trk};
 		TrackerTestingStore<Level::causal> causal{trk};
+		auto log = log_builder->template beginStruct<LoggedStructs::log>();
+		auto ctx = start_transaction(std::move(log),trk,strong,causal);
 		for (int i = 0; i <= name_max; ++i){
 			if (!strong.exists(i))
-				strong.template newObject<HandleAccess::all,int>(trk,nullptr,i,0);
+				strong.template newObject<HandleAccess::all,int>(trk,ctx.get(),i,0);
 			if (!causal.exists(i))
-				causal.template newObject<HandleAccess::all,int>(trk,nullptr,i,0);
+				causal.template newObject<HandleAccess::all,int>(trk,ctx.get(),i,0);
 		}
 
+		strong.template newObject<HandleAccess::all,std::array<int,4> >(
+			trk,ctx.get(),bigprime_lin,{{0,0,0,0}});
+		
+		ctx->full_commit();
+		
 		std::cout << "trackertesting init complete" << std::endl;
 	}//*/
 
@@ -217,12 +239,25 @@ int main(){
 					}
 					return log_messages->single();
 				};
+				auto ctx = start_transaction(std::move(log_messages),trk,strong,causal);
 				if (better_rand() > .7 || !causal_enabled){
-					return test_fun(strong.template
-									existingObject<HandleAccess::all,int>(trk, nullptr,name));
+					auto hndl = strong.template
+						existingObject<HandleAccess::all,int>(
+							trk, ctx.get(),name);
+					ctx->full_commit();
+					log_messages = std::move(ctx->logger);
+					ctx.reset();
+					return test_fun(hndl);
 				}
-				else return test_fun(causal.template
-									 existingObject<HandleAccess::all,int>(trk, nullptr,name));
+				else {
+					auto hndl = causal.template
+					existingObject<HandleAccess::all,int>(
+						trk, ctx.get(),name);
+					ctx->full_commit();
+					log_messages = std::move(ctx->logger);
+					ctx.reset();
+					return test_fun(hndl);
+				}
 			}();
 			//std::cout << str << std::endl;
 			return str;

@@ -249,7 +249,7 @@ namespace myria { namespace testing {
 			template<HandleAccess ha, typename T>
 			auto newObject(tracker::Tracker &trk, mtl::TransactionContext *tc, Name name, const T& init){
 				assert(tc);
-				((AlwaysSuccessfulTransaction*)tc)->logger.incrementIntField(LogFields::trackertesting_newobject);
+				tc->logger->incrementIntField(LogFields::trackertesting_newobject);
 				auto ret = make_handle<l,ha,T,TrackerTestingObject<T> >
 					(trk,tc,*this,name,init);
 				trk.onCreate(*this,name, (T*)nullptr);
@@ -259,7 +259,7 @@ namespace myria { namespace testing {
 			template<HandleAccess ha, typename T>
 			auto existingObject(tracker::Tracker &trk, mtl::TransactionContext *tc, Name name, T* for_inf = nullptr){
 				assert(tc);
-				((AlwaysSuccessfulTransaction*)tc)->logger.incrementIntField(
+				tc->logger->incrementIntField(
 					LogFields::trackertesting_existingobject);
 				return make_handle
 					<l,ha,T,TrackerTestingObject<T> >
