@@ -12,8 +12,6 @@ elif [[ -z "$instance_list" ]]
 then
 	echo "failure: specify instance_list as environment variable"
 	exit 1
-fi
-
 elif [[ -z "$range_max" ]]
 then
 	echo "failure: specify range_max as environment variable"
