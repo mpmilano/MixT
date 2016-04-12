@@ -197,15 +197,20 @@ int main(){
 								TRANSACTION(trk,hndl,
 									do_op(Increment,hndl)
 									)//*/
+								log_messages.addField(
+									LogFields::is_write,true);
 							}
-							else TRANSACTION(
-								trk,hndl,
-								let_remote(tmp) = hndl IN(mtl_ignore($(tmp)))
-								);
+							else {
+								TRANSACTION(
+									trk,hndl,
+									let_remote(tmp) = hndl IN(mtl_ignore($(tmp)))
+									);
+								log_messages.addField(
+									LogFields::is_write,false);
+							}
 							auto end = elapsed_time();
 							log_messages.addField(LogFields::done_time,
 												  duration_cast<milliseconds>(end).count());
-							log_messages.addField(LogFields::is_write,(name % mod_constant) == 0);
 							log_messages.addField(LogFields::is_serialization_error,false);
 							break;
 						}

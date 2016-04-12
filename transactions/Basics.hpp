@@ -14,7 +14,9 @@ namespace myria{
 			trackertesting_exists, trackertesting_constructed, trackertesting_transaction_built, trackertesting_trycast,
 			trackertesting_transaction_commit, trackertesting_transaction_abort, trackertesting_localtime, trackertesting_intransaction_check,
 			trackertestingobject_constructed, trackertestingobject_registered, trackertesting_newobject, trackertesting_existingobject, trackertesting_existingraw,
-			trackertesting_increment, MAX
+			trackertesting_increment,
+
+			transaction_action, MAX
 		};
 
 	enum class GlobalsFields {

@@ -63,8 +63,10 @@ namespace myria { namespace mtl {
 							//nobody should be in a transaction yet
 							using namespace mutils;
 							ReassignableReference<abs_StructBuilder> logger_f = trk.get_StrongStore().logger;
-							//mutils::abs_StructBuilder& logger = logger_f;
+							mutils::abs_StructBuilder& logger = logger_f;
 							ctx.logger = &logger_f;
+
+							logger.addField(LogFields::transaction_action,true);
 							
 							assert(!trk.get_StrongStore().in_transaction());
 							call_all_strong(&ctx,caches,stores,s.curr);

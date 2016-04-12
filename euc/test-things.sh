@@ -14,8 +14,14 @@ then
 	exit 1
 fi
 
+elif [[ -z "$range_max" ]]
+then
+	echo "failure: specify range_max as environment variable"
+	exit 1
+fi
+
 first_iter=true;
-for num_per in {1..10}
+for (( num_per = 1; num_per <= range_max; num_per = num_per + 1))
 do
 	echo "iteration " $num_per
 	for configuration in USE_STRONG NO_USE_STRONG

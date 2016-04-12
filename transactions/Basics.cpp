@@ -32,6 +32,8 @@ namespace myria{
 			LogFields::trackertesting_existingobject, "int trackertesting_existingobject","0",
 			LogFields::trackertesting_existingraw, "int trackertesting_existingraw","0",
 			LogFields::trackertesting_increment, "int trackertesting_increment","0",
+
+			LogFields::transaction_action, "bool transaction_action", "false",
 			
 			LoggedStructs::globals,"struct myria_globals","ERROR",
 			GlobalsFields::request_frequency,"::mutils::Frequency request_frequency","0",
