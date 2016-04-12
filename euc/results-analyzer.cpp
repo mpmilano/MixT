@@ -125,6 +125,20 @@ int main(){
 		cout << calculate_latency(results) << " for " << results.size() << " total events" << endl;
 	}
 
+	std::cout << "number of IO events incurred: normal increments" << std::endl;
+	for (auto &results : NO_USE_STRONG()){
+		double num_events{0};
+		long total_io{0};
+		for (auto& row : results){
+			if (!row.is_write) continue;
+			num_events += 1;
+			total_io += row.num_io_required;
+		}
+		std::cout << "total IO: " << total_io << std::endl;
+		std::cout << "num events: " << num_events << std::endl;
+		std::cout << "IO average: " << total_io / num_events << endl;
+	}
+
 	std::cout << "intended request frequencies:" << std::endl;
 
 	for (auto &results : globals_NO_USE_STRONG()){

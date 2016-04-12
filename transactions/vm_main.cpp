@@ -204,14 +204,16 @@ int main(){
 								let_remote(tmp) = hndl IN(mtl_ignore($(tmp)))
 								);
 							auto end = elapsed_time();
-							log_messages.addField(LogFields::done_time,duration_cast<milliseconds>(end).count());
+							log_messages.addField(LogFields::done_time,
+												  duration_cast<milliseconds>(end).count());
 							log_messages.addField(LogFields::is_write,(name % mod_constant) == 0);
 							log_messages.addField(LogFields::is_serialization_error,false);
 							break;
 						}
 						catch(const SerializationFailure &r){
 							auto end = elapsed_time();
-							log_messages.addField(LogFields::done_time,duration_cast<milliseconds>(end).count());
+							log_messages.addField(LogFields::done_time,
+												  duration_cast<milliseconds>(end).count());
 							log_messages.addField(LogFields::is_serialization_error,true);
 							continue;
 						}
@@ -219,9 +221,11 @@ int main(){
 					return log_messages.single();
 				};
 				if (better_rand() > .7 || !causal_enabled){
-					return test_fun(strong.template existingObject<HandleAccess::all,int>(trk, nullptr,name));
+					return test_fun(strong.template
+									existingObject<HandleAccess::all,int>(trk, nullptr,name));
 				}
-				else return test_fun(causal.template existingObject<HandleAccess::all,int>(trk, nullptr,name));
+				else return test_fun(causal.template
+									 existingObject<HandleAccess::all,int>(trk, nullptr,name));
 			}();
 			//std::cout << str << std::endl;
 			return str;

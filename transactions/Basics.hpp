@@ -9,7 +9,12 @@ namespace myria{
 			};
 	
 	enum class LogFields{
-		submit_time, run_time, cc_num_tries, done_time, is_write, is_serialization_error, pqxx_failure_string, pqxx_failure, num_causal_tries, num_io_required, MAX
+		submit_time, run_time, cc_num_tries, done_time, is_write, is_serialization_error, pqxx_failure_string, pqxx_failure, num_causal_tries,
+			trackertestingobject_get, trackertestingobject_put, trackertestingobject_isvalid, trackertestingobject_tobytes, trackertestingobject_frombytes,
+			trackertesting_exists, trackertesting_constructed, trackertesting_transaction_built, trackertesting_trycast,
+			trackertesting_transaction_commit, trackertesting_transaction_abort, trackertesting_localtime, trackertesting_intransaction_check,
+			trackertestingobject_constructed, trackertestingobject_registered, trackertesting_newobject, trackertesting_existingobject, trackertesting_existingraw,
+			trackertesting_increment, MAX
 		};
 
 	enum class GlobalsFields {

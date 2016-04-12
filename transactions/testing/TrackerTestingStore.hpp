@@ -21,6 +21,8 @@ namespace myria { namespace testing {
 								ReassignableReference<abs_StructBuilder> logger)
 				:DataStore<l>(logger)
 				{
+					logger.get().incrementIntField(
+						LogFields::trackertesting_constructed);
 					t.registerStore(*this);
 				}
 
@@ -31,19 +33,24 @@ namespace myria { namespace testing {
 				TrackerTestingStore &tts;
 
 				AlwaysSuccessfulTransaction(TrackerTestingStore &tts)
-					:tts(tts){}
+					:tts(tts){
+					tts.logger.get().incrementIntField(
+						LogFiels::trackertesting_transaction_built);
+				}
 				
 				DataStore<l> &store(){
 					return tts;
 				}
 
 				bool store_commit(){
-					tts.logger.get().incrementIntField(LogFields::num_io_required);
+					tts.logger.get().incrementIntField(
+						LogFields::trackertesting_transaction_commit);
 					return true;
 				}
 
 				void store_abort(){
-					tts.logger.get().incrementIntField(LogFields::num_io_required);
+					tts.logger.get().incrementIntField(
+						LogFields::trackertesting_transaction_abort);
 				}
 			};
 			
@@ -53,6 +60,9 @@ namespace myria { namespace testing {
 			}
 
 			const std::array<int, NUM_CAUSAL_GROUPS>& local_time() const {
+				const_cast<TrackerTestingStore*>(this)->
+					logger.get().incrementIntField(
+						LogFields::trackertesting_localtime);
 				static const std::array<int, NUM_CAUSAL_GROUPS> zeros{{0,0,0,0}};
 				return zeros;
 			}
@@ -66,6 +76,9 @@ namespace myria { namespace testing {
 			}
 			
 			bool in_transaction() const {
+				const_cast<TrackerTestingStore*>(this)->
+					logger.get().incrementIntField(
+						LogFields::trackertesting_intransaction_check);
 				return false;
 			}
 
@@ -121,7 +134,10 @@ namespace myria { namespace testing {
 									 Name nam,
 									 const T& t,
 									 const decltype(causal_vers)& cv
-					):tts(tts),nam(nam),t(new T(t)),causal_vers(cv){}
+					):tts(tts),nam(nam),t(new T(t)),causal_vers(cv){
+					tts.logger.incrementIntField(
+						LogFields::trackertestingobject_constructed);
+				}
 				
 			public:
 
@@ -129,7 +145,10 @@ namespace myria { namespace testing {
 				using Store = TrackerTestingStore;
 
 				TrackerTestingObject(TrackerTestingStore& tts, Name nam)
-					:tts(tts),nam(nam),t(new T{*remote_store().rs.template at<T>(nam)}){}
+					:tts(tts),nam(nam),t(new T{*remote_store().rs.template at<T>(nam)}){
+					tts.logger.incrementIntField(
+						LogFields::trackertestingobject_constructed);
+				}
 				
 				TrackerTestingObject(TrackerTestingStore& tts, Name nam, T t)
 					:tts(tts),nam(nam),t(new T{t}){
@@ -138,9 +157,14 @@ namespace myria { namespace testing {
 					else {
 						tts.causal_remote_propogation(nam,t);
 					}
+					tts.logger.incrementIntField(
+						LogFields::trackertestingobject_constructed);
 				}
 
-				void ensure_registered(mutils::DeserializationManager&){}
+				void ensure_registered(mutils::DeserializationManager&){
+					tts.logger.incrementIntField(
+						LogFields::trackertestingobject_registered);
+				}
 
 				TrackerTestingObject* clone() const {
 					auto &tts2 = const_cast<TrackerTestingStore&>(tts);
@@ -155,13 +179,14 @@ namespace myria { namespace testing {
 				*/
 
 				bool ro_isValid(mtl::StoreContext<l>* tc) const {
-					tts.logger.get().incrementIntField(LogFields::num_io_required);
+					const_cast<TrackerTestingObject*>(this)->
+						logger.incrementIntField(LogFields::trackertestingobject_isvalid);
 					return true;
 				}
 				
 				std::shared_ptr<const T> get(mtl::StoreContext<l>* tc, tracker::Tracker* trk/* = nullptr*/,
 							 tracker::TrackingContext* trkc/* = nullptr*/) {
-					tts.logger.get().incrementIntField(LogFields::num_io_required);
+					tts.logger.get().incrementIntField(LogFields::trackertestingobject_get);
 					
 					if (remote_store().rs.contains(nam))
 						this->t = std::make_unique<T>(*remote_store().rs.template at<T>(nam));
@@ -171,7 +196,7 @@ namespace myria { namespace testing {
 				}
 				
 				void put(mtl::StoreContext<l>* tc,const T& to) {
-					tts.logger.get().incrementIntField(LogFields::num_io_required);
+					tts.logger.get().incrementIntField(LogFields::trackertestingobject_put);
 					
 					this->t = std::make_unique<T>(to);
 					if (l == Level::strong)
@@ -198,6 +223,8 @@ namespace myria { namespace testing {
 				}
 
 				int to_bytes(char *c) const {
+					const_cast<TrackerTestingObject*>(this)->
+						logger.incrementIntField(LogFields::trackertestingobject_tobytes);
 					int* iarr = ((int*)c);
 					iarr[0] = tts.ds_id();
 					((TrackerTestingObject**)(iarr + 1))[0] = clone();
@@ -212,6 +239,7 @@ namespace myria { namespace testing {
 			
 			template<typename T, Level l2>
 			static TrackerTestingObject<T>* tryCast(RemoteObject<l2,T>* r) {
+				this->logger.incrementIntField(LogFields::trackertesting_trycast);
 				if(auto *ret = dynamic_cast<TrackerTestingObject<T>* >(r)){
 					assert(l2 == l);
 					return ret;
@@ -221,6 +249,7 @@ namespace myria { namespace testing {
 	
 			template<typename T, restrict(!(is_RemoteObj_ptr<T>::value))>
 			static auto tryCast(T && r){
+				this->logger.incrementIntField(LogFields::trackertesting_trycast);
 				return std::forward<T>(r);
 			}
 
@@ -228,6 +257,7 @@ namespace myria { namespace testing {
 			template<typename T>
 			static std::unique_ptr<TrackerTestingObject<T> > from_bytes(char const * v){
 				TrackerTestingObject<T> *ptr = ((TrackerTestingObject<T>**) v)[0];
+				ptr->tts.incrementIntField(LogFields::trackertestingobject_frombytes);
 				auto ret = std::make_unique<TrackerTestingObject<T> >(*ptr);
 				delete ptr;
 				return ret;
@@ -236,7 +266,7 @@ namespace myria { namespace testing {
 			
 			template<HandleAccess ha, typename T>
 			auto newObject(tracker::Tracker &trk, mtl::TransactionContext *tc, Name name, const T& init){
-				this->logger.get().incrementIntField(LogFields::num_io_required);
+				this->logger.get().incrementIntField(LogFields::trackertesting_newobject);
 				auto ret = make_handle<l,ha,T,TrackerTestingObject<T> >
 					(trk,tc,*this,name,init);
 				trk.onCreate(*this,name, (T*)nullptr);
@@ -245,7 +275,8 @@ namespace myria { namespace testing {
 
 			template<HandleAccess ha, typename T>
 			auto existingObject(tracker::Tracker &trk, mtl::TransactionContext *tc, Name name, T* for_inf = nullptr){
-				this->logger.get().incrementIntField(LogFields::num_io_required);
+				this->logger.get().incrementIntField(
+					LogFields::trackertesting_existingobject);
 				return make_handle
 					<l,ha,T,TrackerTestingObject<T> >
 					(trk,tc,*this,name);
@@ -253,13 +284,13 @@ namespace myria { namespace testing {
 
 			template<typename T>
 			std::unique_ptr<TrackerTestingObject<T> > existingRaw(Name name, T* for_inf = nullptr){
-				this->logger.get().incrementIntField(LogFields::num_io_required);
+				this->logger.get().incrementIntField(LogFields::trackertesting_existingraw);
 				return std::unique_ptr<TrackerTestingObject<T> >
 				{new TrackerTestingObject<T>{*this,name}};
 			}
 
 			bool exists(Name name){
-				this->logger.get().incrementIntField(LogFields::num_io_required);
+				this->logger.get().incrementIntField(LogFields::trackertesting_exists);
 				return remote_store().rs.contains(name);
 			}
 
@@ -271,7 +302,7 @@ namespace myria { namespace testing {
 								   dynamic_cast<AlwaysSuccessfulTransaction*>(transaction_context->strongContext.get()) :
 								   dynamic_cast<AlwaysSuccessfulTransaction*>(transaction_context->causalContext.get()));
 				assert(ctx && "error: should have entered transaction before this point!");
-				o->tts.logger.get().incrementIntField(LogFields::num_io_required);
+				o->tts.logger.get().incrementIntField(LogFields::trackertesting_increment);
 				o->put(ctx,*o->t + 1);
 				return true;
 			}
