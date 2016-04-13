@@ -42,8 +42,8 @@ namespace myria { namespace tracker {
 
 		void Tracker::exemptItem(Name name){}
 
-		std::unique_ptr<TrackingContext> Tracker::generateContext(bool commitOnDelete){
-			return std::make_unique<TrackingContext>(*this);
+		std::unique_ptr<TrackingContext> Tracker::generateContext(mutils::abs_StructBuilder& l, bool commitOnDelete){
+			return std::make_unique<TrackingContext>(l,*this);
 		}
 		
 		void Tracker::onWrite(mtl::TransactionContext&, DataStore<Level::strong>&, Name name, Tombstone*){}
@@ -83,14 +83,14 @@ namespace myria { namespace tracker {
 		void Tracker::assert_nonempty_tracking() const {}
 		const CooperativeCache& Tracker::getcache() const {assert(false);}
 
-		Tracker::Tracker(int cache_port, ::mutils::ReassignableReference<::mutils::abs_StructBuilder> logger, CacheBehaviors behavior /*= CacheBehaviors::full*/)
-			:i(new Internals()),cache_port(cache_port),logger(logger){}
+		Tracker::Tracker(int cache_port, CacheBehaviors behavior /*= CacheBehaviors::full*/)
+			:i(new Internals()),cache_port(cache_port){}
 		
 		Tracker::~Tracker(){delete i;}
 
 		struct TrackingContext::Internals{};		
 
-		TrackingContext::TrackingContext(Tracker& t, bool commitOnDelete):trk(t){}
+		TrackingContext::TrackingContext(mutils::abs_StructBuilder&l, Tracker& t, bool commitOnDelete):trk(t),logger(l){}
 		
 		void TrackingContext::commitContext(){}
 		void TrackingContext::abortContext(){}

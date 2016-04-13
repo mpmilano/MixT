@@ -9,31 +9,31 @@
 
 auto USE_STRONG(){
 	return std::vector<std::vector<struct myria_log> >{{
-			runs_USE_STRONG_1()/*,
+			runs_USE_STRONG_1(),
 				runs_USE_STRONG_2(),
-				runs_USE_STRONG_3(), runs_USE_STRONG_4(), runs_USE_STRONG_5(), runs_USE_STRONG_6(), runs_USE_STRONG_7(), runs_USE_STRONG_8(), runs_USE_STRONG_9(), runs_USE_STRONG_10()*/}};
+				runs_USE_STRONG_3(), runs_USE_STRONG_4(), runs_USE_STRONG_5(), runs_USE_STRONG_6(), runs_USE_STRONG_7(), runs_USE_STRONG_8(), runs_USE_STRONG_9(), runs_USE_STRONG_10()}};
 }
 
 auto NO_USE_STRONG(){
 	return std::vector<std::vector<struct myria_log> >{{
-			runs_NO_USE_STRONG_1()/*,
+			runs_NO_USE_STRONG_1(),
 				runs_NO_USE_STRONG_2(),
-				runs_NO_USE_STRONG_3(), runs_NO_USE_STRONG_4(), runs_NO_USE_STRONG_5(), runs_NO_USE_STRONG_6(), runs_NO_USE_STRONG_7(), runs_NO_USE_STRONG_8(), runs_NO_USE_STRONG_9(), runs_NO_USE_STRONG_10()*/}};
+				runs_NO_USE_STRONG_3(), runs_NO_USE_STRONG_4(), runs_NO_USE_STRONG_5(), runs_NO_USE_STRONG_6(), runs_NO_USE_STRONG_7(), runs_NO_USE_STRONG_8(), runs_NO_USE_STRONG_9(), runs_NO_USE_STRONG_10()}};
 }
 
 
 auto globals_USE_STRONG(){
 	return std::vector<std::vector<struct myria_globals> >{{
-			globals_USE_STRONG_1()/*,
+			globals_USE_STRONG_1(),
 				globals_USE_STRONG_2(),
-				globals_USE_STRONG_3(), globals_USE_STRONG_4(), globals_USE_STRONG_5(), globals_USE_STRONG_6(), globals_USE_STRONG_7(), globals_USE_STRONG_8(), globals_USE_STRONG_9(), globals_USE_STRONG_10()*/}};
+				globals_USE_STRONG_3(), globals_USE_STRONG_4(), globals_USE_STRONG_5(), globals_USE_STRONG_6(), globals_USE_STRONG_7(), globals_USE_STRONG_8(), globals_USE_STRONG_9(), globals_USE_STRONG_10()}};
 }
 
 auto globals_NO_USE_STRONG(){
 	return std::vector<std::vector<struct myria_globals> >{{
-			globals_NO_USE_STRONG_1()/*,
+			globals_NO_USE_STRONG_1(),
 				globals_NO_USE_STRONG_2(),
-				globals_NO_USE_STRONG_3(), globals_NO_USE_STRONG_4(), globals_NO_USE_STRONG_5(), globals_NO_USE_STRONG_6(), globals_NO_USE_STRONG_7(), globals_NO_USE_STRONG_8(), globals_NO_USE_STRONG_9(), globals_NO_USE_STRONG_10()*/}};
+				globals_NO_USE_STRONG_3(), globals_NO_USE_STRONG_4(), globals_NO_USE_STRONG_5(), globals_NO_USE_STRONG_6(), globals_NO_USE_STRONG_7(), globals_NO_USE_STRONG_8(), globals_NO_USE_STRONG_9(), globals_NO_USE_STRONG_10()}};
 }
 
 
@@ -115,6 +115,10 @@ auto print_window_averages(std::string filename, const vector<vector<myria_log> 
 	}
 }
 
+auto trackertesting_total_io(const myria_log &row){
+	return row.trackertestingobject_get + row.trackertestingobject_put+ row.trackertestingobject_isvalid+ row.trackertestingobject_tobytes+ row.trackertestingobject_frombytes+ row.trackertesting_exists+ row.trackertesting_constructed+ row.trackertesting_transaction_built+ row.trackertesting_trycast+ row.trackertesting_transaction_commit+ row.trackertesting_transaction_abort+ row.trackertesting_localtime+ row.trackertesting_intransaction_check+ row.trackertestingobject_constructed+ row.trackertestingobject_registered+ row.trackertesting_newobject+ row.trackertesting_existingobject+ row.trackertesting_existingraw+ row.trackertesting_increment;
+}
+
 int main(){
 	{
 		long transaction_action = 0;
@@ -148,14 +152,18 @@ int main(){
 	std::cout << "number of IO events incurred: normal increments" << std::endl;
 	for (auto &results : NO_USE_STRONG()){
 		long num_events{0};
+		long total_increment{0};
 		long total_io{0};
 		for (auto& row : results){
 			if (!row.is_write) continue;
-			num_events += 1;
-			total_io += row.trackertesting_increment;
+			total_increment+= row.trackertesting_increment;
+			num_events++;
+			total_io += trackertesting_total_io(row);
 		}
-		std::cout << "total Increments: " << total_io << std::endl;
+		std::cout << "total Increments: " << total_increment << std::endl;
+		cout << "TrackerTesting API hits: " << total_io << endl;
 		std::cout << "num events: " << num_events << std::endl;
+		cout << "events per increment: " << (total_io + 0.0) / total_increment << endl;
 	}
 
 	std::cout << "intended request frequencies:" << std::endl;
