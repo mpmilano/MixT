@@ -119,6 +119,19 @@ auto trackertesting_total_io(const myria_log &row){
 	return row.trackertestingobject_get + row.trackertestingobject_put+ row.trackertestingobject_isvalid+ row.trackertestingobject_tobytes+ row.trackertestingobject_frombytes+ row.trackertesting_exists+ row.trackertesting_constructed+ row.trackertesting_transaction_built+ row.trackertesting_trycast+ row.trackertesting_transaction_commit+ row.trackertesting_transaction_abort+ row.trackertesting_localtime+ row.trackertesting_intransaction_check+ row.trackertestingobject_constructed+ row.trackertestingobject_registered+ row.trackertesting_newobject+ row.trackertesting_existingobject+ row.trackertesting_existingraw+ row.trackertesting_increment;
 }
 
+auto trackertestingobject_calls(const myria_log &row){
+	return row.trackertestingobject_get + row.trackertestingobject_put+ row.trackertestingobject_isvalid+ row.trackertestingobject_tobytes+ row.trackertestingobject_frombytes + row.trackertestingobject_constructed+ row.trackertestingobject_registered; 
+		;
+}
+
+auto trackertesting_nonobject_io_calls(const myria_log &row){
+	return row.trackertesting_exists+ row.trackertesting_transaction_commit+ row.trackertesting_transaction_abort+ row.trackertesting_newobject+ row.trackertesting_existingobject+ row.trackertesting_existingraw+ row.trackertesting_increment;
+}
+
+auto trackertesting_other_calls(const myria_log &row){
+	return row.trackertesting_constructed+ row.trackertesting_transaction_built+ row.trackertesting_trycast+  row.trackertesting_localtime+ row.trackertesting_intransaction_check;
+}
+
 int main(){
 	{
 		long transaction_action = 0;
@@ -152,19 +165,28 @@ int main(){
 	std::cout << "number of IO events incurred: normal increments" << std::endl;
 	for (auto &results : NO_USE_STRONG()){
 		long num_events{0};
-		long total_increment{0};
 		long total_io{0};
+		long object_calls{0};
+		long nonobject_io{0};
+		long other{0};
+		long existingObject_calls{0};
 		for (auto& row : results){
-			if (!row.is_write) continue;
-			total_increment+= row.trackertesting_increment;
+			if (row.is_write) continue;
+			object_calls += trackertestingobject_calls(row);
+			nonobject_io += trackertesting_nonobject_io_calls(row);
+			other += trackertesting_other_calls(row);
 			num_events++;
 			total_io += trackertesting_total_io(row);
+			existingObject_calls += row.trackertesting_existingobject;
 		}
-		std::cout << "total Increments: " << total_increment << std::endl;
 		cout << "TrackerTesting API hits: " << total_io << endl;
 		std::cout << "num events: " << num_events << std::endl;
-		cout << "events per increment: " << (total_io + 0.0) / total_increment << endl;
-	}
+		cout << "events per increment: " << (total_io + 0.0) / num_events << endl;
+		cout << "object io per increment: " << object_calls / (num_events + 0.0) << endl;
+		cout << "nonobject io per increment: " << nonobject_io / (num_events + 0.0) << endl;
+		cout << "other API hits: " << other / (num_events + 0.0) << endl;
+		cout << "existingobject " << existingObject_calls/ (num_events + 0.0) << endl;
+ 	}
 
 	std::cout << "intended request frequencies:" << std::endl;
 

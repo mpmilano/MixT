@@ -114,8 +114,13 @@ auto start_transaction(std::unique_ptr<VMObjectLog> log, tracker::Tracker &trk, 
 }
 
 int main(){
+	//std::array<Handle<Level::strong,HandleAccess::all, int>, name_max> strong_handles;
+	//std::array<Handle<Level::causal,HandleAccess::all, int>, name_max> causal_handles;
+
 	int ip = get_strong_ip();	
 	logFile.open(log_name);
+	auto prof = VMProfiler::startProfiling();
+	auto longpause = prof->pause();
 	auto logger = build_VMObjectLogger();
 	auto global_log = logger->template beginStruct<LoggedStructs::globals>();
 	global_log->addField(GlobalsFields::request_frequency,actual_arrival_rate);
@@ -300,9 +305,11 @@ int main(){
 	};
 	
 	vector<decltype(pool_fun)> pool_v {{pool_fun}};
-        std::unique_ptr<ThreadPool<Remember,std::string, unsigned long long> >
-			powner(new ThreadPool<Remember,std::string, unsigned long long>
-				   (pool_mem_init,pool_v,num_processes,exn_handler));
+	
+	std::unique_ptr<ThreadPool<Remember,std::string, unsigned long long> >
+		powner(new ThreadPool<Remember,std::string, unsigned long long>
+			   (pool_mem_init,pool_v,num_processes,exn_handler));
+	
 	auto &p = *powner;
 	auto start = high_resolution_clock::now();
 
@@ -324,6 +331,9 @@ int main(){
 	auto launch  = ( launch_with_threading ? launch1 : launch2);
 	
 	std::cout << "beginning subtask generation loop" << std::endl;
+
+	//resume profiling
+	
 	while (bound()){
 		std::this_thread::sleep_for(getArrivalInterval(actual_arrival_rate));
 		futures->emplace_back(launch());
