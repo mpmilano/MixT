@@ -2,6 +2,9 @@
 #include "Tracker.hpp"
 #include <map>
 
+#define num_iters 400
+#define take_some_time if (!mutils::Profiler::pausedOrInactive()) { for (auto i = 0; i < num_iters; ++i) [](){for (auto j = 0; j < num_iters; ++j); }();}
+
 namespace myria { namespace testing {
 
 		using mutils::ReassignableReference;
@@ -34,6 +37,7 @@ namespace myria { namespace testing {
 					:tts(tts),logger(logger){
 					logger.incrementIntField(
 						LogFields::trackertesting_transaction_built);
+					take_some_time;
 				}
 				
 				DataStore<l> &store(){
@@ -43,12 +47,14 @@ namespace myria { namespace testing {
 				bool store_commit(){
 					logger.incrementIntField(
 						LogFields::trackertesting_transaction_commit);
+					take_some_time;
 					return true;
 				}
 
 				void store_abort(){
 					logger.incrementIntField(
 						LogFields::trackertesting_transaction_abort);
+					take_some_time;
 				}
 			};
 			
@@ -164,6 +170,7 @@ namespace myria { namespace testing {
 				bool ro_isValid(mtl::StoreContext<l>* tc) const {
 					assert(tc);
 					((AlwaysSuccessfulTransaction*)tc)->logger.incrementIntField(LogFields::trackertestingobject_isvalid);
+					take_some_time;
 
 					return true;
 				}
@@ -178,12 +185,14 @@ namespace myria { namespace testing {
 						this->t = std::make_unique<T>(*remote_store().rs.template at<T>(nam));
 					assert(trkc);
 					this->t = trk->onRead(*trkc,store(),name(),timestamp(),std::move(t),(T*)nullptr);
+					take_some_time;
 					return std::make_shared<T>(*t);
 				}
 				
 				void put(mtl::StoreContext<l>* tc,const T& to) {
 					assert(tc);
 					((AlwaysSuccessfulTransaction*)tc)->logger.incrementIntField(LogFields::trackertestingobject_put);
+					take_some_time;
 					
 					this->t = std::make_unique<T>(to);
 					if (l == Level::strong)
@@ -249,6 +258,7 @@ namespace myria { namespace testing {
 			template<HandleAccess ha, typename T>
 			auto newObject(tracker::Tracker &trk, mtl::TransactionContext *tc, Name name, const T& init){
 				assert(tc);
+				take_some_time;
 				tc->logger->incrementIntField(LogFields::trackertesting_newobject);
 				auto ret = make_handle<l,ha,T,TrackerTestingObject<T> >
 					(trk,tc,*this,name,init);
@@ -259,6 +269,7 @@ namespace myria { namespace testing {
 			template<HandleAccess ha, typename T>
 			auto existingObject(tracker::Tracker &trk, mtl::TransactionContext *tc, Name name, T* for_inf = nullptr){
 				assert(tc);
+				take_some_time;
 				tc->logger->incrementIntField(
 					LogFields::trackertesting_existingobject);
 				return make_handle
@@ -268,6 +279,7 @@ namespace myria { namespace testing {
 
 			template<typename T>
 			std::unique_ptr<TrackerTestingObject<T> > existingRaw(abs_StructBuilder& logger, Name name, T* for_inf = nullptr){
+				take_some_time;
 				logger.incrementIntField(LogFields::trackertesting_existingraw);
 				return std::unique_ptr<TrackerTestingObject<T> >
 				{new TrackerTestingObject<T>{*this,name}};
@@ -286,6 +298,7 @@ namespace myria { namespace testing {
 								   dynamic_cast<AlwaysSuccessfulTransaction*>(transaction_context->causalContext.get()));
 				assert(ctx && "error: should have entered transaction before this point!");
 				transaction_context->logger->incrementIntField(LogFields::trackertesting_increment);
+				take_some_time;
 				o->put(ctx,*o->t + 1);
 				return true;
 			}

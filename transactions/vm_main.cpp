@@ -1,3 +1,4 @@
+
 #include "ProcessPool.hpp"
 #include "ThreadPool.hpp"
 #include <iostream>
@@ -15,12 +16,13 @@
 #include <chrono>
 #include <cmath>
 #include <unistd.h>
-#include "ProcessPool.hpp"//*/
-#include "Operate_macros.hpp"
-#include "Transaction_macros.hpp"
+#include "ProcessPool.hpp"
 #include "Hertz.hpp"
 #include "ObjectBuilder.hpp"
-#include "TrackerTestingStore.hpp"
+#include "TrackerTestingStore.hpp"//*/
+#include "Operate_macros.hpp"
+#include "Transaction_macros.hpp"
+
 
 constexpr int my_unique_id = int{IP_QUAD};
 
@@ -67,7 +69,9 @@ auto getArrivalInterval(Frequency arrival_rate) {
 }
 
 constexpr int name_max = 478446;
+/*
 int get_name(double alpha){
+	assert(false && "take writes from a uniform distribution");
 	constexpr int max = name_max;
 	double y = better_rand();
 	assert (y < 1.1);
@@ -80,6 +84,10 @@ int get_name(double alpha){
 		return get_name(alpha);
 	}
 	else return ret + 14;
+}*/
+
+int get_name(double){
+        return int_rand() % 478446;
 }
 
 const auto launch_clock = high_resolution_clock::now();
@@ -117,10 +125,10 @@ int main(){
 	//std::array<Handle<Level::strong,HandleAccess::all, int>, name_max> strong_handles;
 	//std::array<Handle<Level::causal,HandleAccess::all, int>, name_max> causal_handles;
 
-	int ip = get_strong_ip();	
+	static const int ip = get_strong_ip();
 	logFile.open(log_name);
-	auto prof = VMProfiler::startProfiling();
-	auto longpause = prof->pause();
+	//auto prof = VMProfiler::startProfiling();
+	//auto longpause = prof->pause();
 	auto logger = build_VMObjectLogger();
 	auto global_log = logger->template beginStruct<LoggedStructs::globals>();
 	global_log->addField(GlobalsFields::request_frequency,actual_arrival_rate);
@@ -162,8 +170,68 @@ int main(){
 		
 		ctx->full_commit();
 		
+                { //TEMPORARY path debugging
+					auto log = log_builder->template beginStruct<LoggedStructs::log>();
+                    auto ctx = start_transaction(log_builder->template beginStruct<LoggedStructs::log>(),trk,strong,causal);
+                    auto hndl = strong.template existingObject<HandleAccess::all, int>(trk,ctx.get(),40);
+                    ctx->full_commit();
+                    ctx.reset();
+                    for (int i = 0; i < 2; ++i){
+                        { using capture_t = std::decay_t<decltype(hndl) >;
+                          static const auto this_transaction =
+                                  [hndl = EnvironmentExpression<capture_t>{}](){
+                                    using namespace mtl;
+                                    using namespace mutils;
+                                    mtl::TransactionBuilder<std::tuple<> > prev;
+                                    {auto curr = ([&](){ auto a = hndl;;
+                                            using FindUsage = FindUsages<decltype (a)>;
+                                            struct OperateImpl : public FindUsage, public ConStatement<min_level_dref<decltype (a)>::value >{
+                                                const int id = gensym();
+                                                const std::shared_ptr<decltype(a)> arg1;
+                                                const std::string name = "Increment";
+                                                OperateImpl(const decltype(a) &a ):
+                                                    FindUsage(a), arg1(shared_copy(a)) {}
+                                                auto environment_expressions() const {
+                                                    return env_expr_helper(arg1); }
+                                                auto strongCall(mtl::TransactionContext* ctx , StrongCache& c , const StrongStore &s , std::true_type*) const {
+                                                    auto ret = make_PreOp(id,Increment(ctx,trans_op_arg(ctx,c,s, *arg1)))
+                                                            (c,ctx->trackingContext->trk, *ctx, arg1);
+                                                    c.emplace<decltype(ret)>(id,ret);
+                                                    return ret;
+                                                }
+                                                void strongCall(mtl::TransactionContext* ctx , StrongCache& c , const StrongStore &s , std::false_type*) const {
+                                                    run_strong_helper(ctx,c,s,arg1);
+                                                }
+                                                auto strongCall(mtl::TransactionContext* ctx , StrongCache& c , const StrongStore &s) const {
+                                                    choose_strong<get_level<OperateImpl>::value> choice{nullptr};
+                                                    return strongCall(ctx,c,s,choice);
+                                                }
+                                                auto causalCall(mtl::TransactionContext* ctx , CausalCache& c , const CausalStore &s) const {
+                                                    run_causal_helper(ctx,c,s,arg1);
+                                                    using R = decltype(make_PreOp(id,Increment(ctx,trans_op_arg(ctx,c,s, *arg1)))
+                                                      (c,ctx->trackingContext->trk, *ctx,arg1));
+                                                    if(runs_with_strong(get_level<OperateImpl>::value))
+                                                        return c.template get<R>(id);
+                                                    else return make_PreOp(id,Increment(ctx,trans_op_arg(ctx,c,s, *arg1)))
+                                                            (c,ctx->trackingContext->trk, *ctx, arg1);
+                                                }
+                                            };
+                                            OperateImpl r{a};
+                                            return r;
+                                        } ()); ;
+                                        { auto prev2 = append(prev,curr);
+                                            { auto prev = prev2;
+                                                return mtl::Transaction<capture_t>{prev};}}}}();
+                          log = this_transaction(std::move(log),trk,&hndl);}
+                          std::cout << "at least we can break here" << endl;
+                          assert(*hndl.get(trk,start_transaction(log_builder->template beginStruct<LoggedStructs::log>(),trk,strong,causal).get()) == i+1);
+                    }
+                }
+
+
 		std::cout << "trackertesting init complete" << std::endl;
 	}//*/
+
 
 	using namespace testing;
 	
@@ -184,131 +252,140 @@ int main(){
 			 sc(trk),
 			 dsm({/*&ss,&sc*/}){}
 	};
-	
-	std::function<std::string (std::unique_ptr<Remember>&, int, unsigned long long)> pool_fun =
-		[ip](std::unique_ptr<Remember>& mem, int, unsigned long long _start_time){
-		assert(mem);
-		auto log_messages = mem->log_builder->template beginStruct<LoggedStructs::log>();
-		microseconds start_time(_start_time);
-		auto run_time = elapsed_time();
-		
-		log_messages->addField(LogFields::submit_time,duration_cast<milliseconds>(start_time).count());
-		log_messages->addField(LogFields::run_time,duration_cast<milliseconds>(run_time).count());
-		//std::cout << "launching task on pid " << pid << std::endl;
-		//AtScopeEnd em{[pid](){std::cout << "finishing task on pid " << pid << std::endl;}};
-		try{
-			std::string str = [&](){
-				//SQLStore<Level::strong> &strong = mem->ss.inst_strong(ip);
-				//SQLStore<Level::causal> &causal = mem->sc.inst_causal(0);
-				auto &strong = mem->ss;
-				auto &causal = mem->sc;
-				auto &trk = mem->trk;
-				assert(!strong.in_transaction());
-				assert(!causal.in_transaction());
-				assert(!trk.get_StrongStore().in_transaction());
-				
-				auto name = get_name(0.5);
+
+	struct PoolFunStruct {
+		static std::string pool_fun(std::unique_ptr<Remember>& mem, int i, unsigned long long _start_time){
+			assert(mem);
+			auto log_messages = mem->log_builder->template beginStruct<LoggedStructs::log>();
+			microseconds start_time(_start_time);
+			auto run_time = elapsed_time();
 			
-				auto test_fun = [&](auto hndl){
+			log_messages->addField(LogFields::submit_time,duration_cast<milliseconds>(start_time).count());
+			log_messages->addField(LogFields::run_time,duration_cast<milliseconds>(run_time).count());
+			//std::cout << "launching task on pid " << pid << std::endl;
+			//AtScopeEnd em{[pid](){std::cout << "finishing task on pid " << pid << std::endl;}};
+			try{
+				assert(true);
+				std::string str = [&](){
+					//SQLStore<Level::strong> &strong = mem->ss.inst_strong(ip);
+					//SQLStore<Level::causal> &causal = mem->sc.inst_causal(0);
+					auto &strong = mem->ss;
+					auto &causal = mem->sc;
+					auto &trk = mem->trk;
+					assert(!strong.in_transaction());
+					assert(!causal.in_transaction());
+					assert(!trk.get_StrongStore().in_transaction());
 
-					for(int tmp2 = 0; tmp2 < 10; ++tmp2){
-						try{
-							if ((name % mod_constant) == 0){
-								TRANSACTION(log_messages,trk,hndl,
-									do_op(Increment,hndl)
-									)//*/
-								log_messages->addField(
-									LogFields::is_write,true);
+					auto name = get_name(0.5);
+					
+					auto test_fun = [&](auto hndl){
+						
+						for(int tmp2 = 0; tmp2 < 10; ++tmp2){
+							try{
+								assert(true);
+								if ((name % mod_constant) == 0){
+									TRANSACTION(log_messages,trk,hndl,
+												do_op(Increment,hndl)
+										)//*/
+										log_messages->addField(
+											LogFields::is_write,true);
+								}
+								else {
+									assert(true);
+									TRANSACTION(log_messages,
+												trk,hndl,
+												let_remote(tmp) = hndl IN(mtl_ignore($(tmp)))
+										);
+									log_messages->addField(
+										LogFields::is_read,true);
+								}
+								auto end = elapsed_time();
+								log_messages->addField(LogFields::done_time,
+													   duration_cast<milliseconds>(end).count());
+								log_messages->addField(LogFields::is_serialization_error,false);
+								break;
 							}
-							else {
-								TRANSACTION(log_messages,
-									trk,hndl,
-									let_remote(tmp) = hndl IN(mtl_ignore($(tmp)))
-									);
-								log_messages->addField(
-									LogFields::is_read,true);
+							catch(const SerializationFailure &r){
+								auto end = elapsed_time();
+								log_messages->addField(LogFields::done_time,
+													   duration_cast<milliseconds>(end).count());
+								log_messages->addField(LogFields::is_serialization_error,true);
+								continue;
 							}
-							auto end = elapsed_time();
-							log_messages->addField(LogFields::done_time,
-												  duration_cast<milliseconds>(end).count());
-							log_messages->addField(LogFields::is_serialization_error,false);
-							break;
-						}
-						catch(const SerializationFailure &r){
-							auto end = elapsed_time();
-							log_messages->addField(LogFields::done_time,
-												  duration_cast<milliseconds>(end).count());
-							log_messages->addField(LogFields::is_serialization_error,true);
-							continue;
-						}
 					}
-					return log_messages->single();
-				};
-				auto ctx = start_transaction(std::move(log_messages),trk,strong,causal);
-				if (better_rand() > .7 || !causal_enabled){
-					auto hndl = strong.template
+						return log_messages->single();
+					};
+					auto ctx = start_transaction(std::move(log_messages),trk,strong,causal);
+					if (better_rand() > .7 || !causal_enabled){
+						auto hndl = strong.template
+							existingObject<HandleAccess::all,int>(
+								trk, ctx.get(),name);
+						ctx->full_commit();
+						log_messages = std::move(ctx->logger);
+						ctx.reset();
+						return test_fun(hndl);
+					}
+					else {
+						auto hndl = causal.template
 						existingObject<HandleAccess::all,int>(
-							trk, ctx.get(),name);
-					ctx->full_commit();
-					log_messages = std::move(ctx->logger);
-					ctx.reset();
-					return test_fun(hndl);
-				}
-				else {
-					auto hndl = causal.template
-					existingObject<HandleAccess::all,int>(
 						trk, ctx.get(),name);
-					ctx->full_commit();
-					log_messages = std::move(ctx->logger);
-					ctx.reset();
-					return test_fun(hndl);
-				}
-			}();
-			//std::cout << str << std::endl;
-			return str;
+						ctx->full_commit();
+						log_messages = std::move(ctx->logger);
+						ctx.reset();
+						return test_fun(hndl);
+					}
+				}();
+				//std::cout << str << std::endl;
+				return str;
+			}
+			catch(pqxx::pqxx_exception &e){
+				log_messages->addField(LogFields::pqxx_failure,true);
+				log_messages->addField(LogFields::pqxx_failure_string, std::string(e.base().what()));
+			}
+			return log_messages->single();
 		}
-		catch(pqxx::pqxx_exception &e){
-			log_messages->addField(LogFields::pqxx_failure,true);
-			log_messages->addField(LogFields::pqxx_failure_string, std::string(e.base().what()));
-		}
-		return log_messages->single();
-	};
-	
-	std::function<std::string (std::exception_ptr) > exn_handler = [](std::exception_ptr eptr){
-		std::stringstream log_messages;
-		try {
-			assert(eptr);
-			std::rethrow_exception(eptr);
-		}
-		catch (const pqxx::pqxx_exception &e){
-			log_messages << "pqxx failure: " << e.base().what() << std::endl;
-		}
-		catch (const std::exception &e){
-			log_messages << "non-pqxx failure: " << e.what() << std::endl;
-		}
-		catch (...){
-			log_messages
-			<< "Exception occurred which derived from neither pqxx_exception nor std::exception!"
-			<< std::endl;
-		}
-		return log_messages.str();
-	};
 
-	std::function<void (std::unique_ptr<Remember>&, int)> pool_mem_init =
-		[](std::unique_ptr<Remember>& mem, int _pid){
-		auto pid = _pid % (65535 - 1025); //make sure this can be used as a port number
-		if (!mem) {
-			mem.reset(new Remember(pid));
+		static std::string exn_handler(std::exception_ptr eptr){
+			std::stringstream log_messages;
+			try {
+				assert(eptr);
+				std::rethrow_exception(eptr);
+			}
+			catch (const pqxx::pqxx_exception &e){
+				log_messages << "pqxx failure: " << e.base().what() << std::endl;
+			}
+			catch (const std::exception &e){
+				log_messages << "non-pqxx failure: " << e.what() << std::endl;
+			}
+			catch (...){
+				log_messages
+					<< "Exception occurred which derived from neither pqxx_exception nor std::exception!"
+					<< std::endl;
+			}
+			return log_messages.str();
+			
 		}
-		//I'm assuming that pid won't get larger than the number of allowable ports...
-		assert(pid + 1024 < 49151);
+
+		static void pool_mem_init (std::unique_ptr<Remember>& mem, int _pid){
+			auto pid = _pid % (65535 - 1025); //make sure this can be used as a port number
+			if (!mem) {
+				mem.reset(new Remember(pid));
+			}
+			//I'm assuming that pid won't get larger than the number of allowable ports...
+			assert(pid + 1024 < 49151);
+		}
 	};
 	
-	vector<decltype(pool_fun)> pool_v {{pool_fun}};
+	assert(Profiler::pausedOrInactive());
+	std::string (*pool_fun) (std::unique_ptr<Remember>&, int, unsigned long long) = PoolFunStruct::pool_fun;
+
+	std::string (*exn_handler) (std::exception_ptr) = PoolFunStruct::exn_handler;
+
+	void (*pool_mem_init) (std::unique_ptr<Remember>&, int) = PoolFunStruct::pool_mem_init;
 	
 	std::unique_ptr<ThreadPool<Remember,std::string, unsigned long long> >
 		powner(new ThreadPool<Remember,std::string, unsigned long long>
-			   (pool_mem_init,pool_v,num_processes,exn_handler));
+			   (pool_mem_init,{pool_fun},num_processes,exn_handler));
 	
 	auto &p = *powner;
 	auto start = high_resolution_clock::now();

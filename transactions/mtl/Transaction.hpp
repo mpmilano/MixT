@@ -94,7 +94,7 @@ namespace myria { namespace mtl {
 							using namespace std::chrono;
 							auto backoff = 2us;
 							
-							try{ 
+                                                        try {
 								ctx.full_commit();
 								break;
 							}
@@ -102,7 +102,7 @@ namespace myria { namespace mtl {
 								//the strong component has failed, and that's not getting re-executed, so let's bail.
 								throw e;
 							}
-							catch (...){
+                                                        catch (...) {
 								std::this_thread::sleep_for(backoff);
 								backoff *= 2;
 								//we really don't want this to fail guys.
