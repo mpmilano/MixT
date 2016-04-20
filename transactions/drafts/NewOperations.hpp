@@ -116,13 +116,20 @@ public:
 	
 };
 
-struct Operation {
-	std::function<void ()> act;
-};
-
-
 template<RegisteredOperations Name, typename T, HandleAccess Ha, Level l, typename... Args>
-static Operation do_op(Handle<l,Ha,T,SupportedOperation<Name,SelfType,Args...> > &hndl,
+auto do_op_real(Handle<l,Ha,T,SupportedOperation<Name,SelfType,Args...> > &hndl,
 					typename convert_SelfType<Handle<l,Ha,T,SupportedOperation<Name,SelfType,Args...> >&>::template act<Args>... args){
-	return Operation{[=]() mutable {hndl.op->act(hndl,args...);}};
+	
+	return hndl.op->act(hndl,args...);
+}
+
+template<RegisteredOperations Name, typename... Args>
+auto do_op(Args && ... args){
+	struct Operate{
+		auto call(){
+			call_all_strong(args)...;
+			call_all_causal(args)...;
+			return do_op<Name>(cached(args)...);
+		}
+	};
 }
