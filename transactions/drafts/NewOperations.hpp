@@ -43,53 +43,72 @@ template<RegisteredOperations Name, typename... Args>
 struct SupportedOperation {
 
 	template<typename Handle>
-	struct operation_super {
-		virtual void act(typename convert_SelfType<Handle&>::template act<Args>...) = 0;
-		virtual ~operation_super(){}
+	struct SupportsOn{
+	
+		struct operation_super {
+			virtual void act(typename convert_SelfType<Handle&>::template act<Args>...) = 0;
+			virtual ~operation_super(){}
+		};
+
+		template<typename DataStore, template<typename> class RO>
+		struct operation_impl : public operation_super{
+			DataStore &ds;
+			
+			static constexpr RO<typename Handle::storedType>& reduce_selfTypes(SelfType*, Handle& h){
+				return static_cast<RO<typename Handle::storedType>& >(*h._ro);
+			}
+			
+			template<typename Arg>
+			static constexpr auto& reduce_selfTypes(Arg*, Arg& a){
+				static_assert(!std::is_same<Arg,SelfType>::value,"Error: overload resolution failed!");
+				return a;
+			}
+			
+			operation_impl(DataStore &ds):ds(ds){}
+			
+			void act(typename convert_SelfType<Handle&>::template act<Args>... a){
+				ds.operation(OperationIdentifier<Name>{nullptr},
+							 this->template reduce_selfTypes(((Args*)nullptr), a)...);
+			}
+		};
+
+		using operation = std::shared_ptr<operation_super>;
+		
+		operation op;
+
+		SupportsOn(operation op):op(op){}
+		
+		template<template<typename> class RemoteObject, typename DataStore>
+		static operation wrap_operation(DataStore& ds){
+			return operation{
+				new operation_impl<DataStore,RemoteObject>(ds)};
+		}
+
+		virtual Handle& downCast() = 0;
+		SupportsOn& upCast(OperationIdentifier<Name>){
+			return *this;
+		}
 	};
-
-	template<typename Handle, typename DataStore, template<typename> class RO>
-	struct operation_impl : public operation_super<Handle>{
-		DataStore &ds;
-
-		static constexpr RO<typename Handle::storedType>& reduce_selfTypes(SelfType*, Handle& h){
-			return static_cast<RO<typename Handle::storedType>& >(*h._ro);
-		}
-		
-		template<typename Arg>
-		static constexpr auto& reduce_selfTypes(Arg*, Arg& a){
-			static_assert(!std::is_same<Arg,SelfType>::value,"Error: overload resolution failed!");
-			return a;
-		}
-		
-		operation_impl(DataStore &ds):ds(ds){}
-		
-		void act(typename convert_SelfType<Handle&>::template act<Args>... a){
-			ds.operation(OperationIdentifier<Name>{nullptr},
-						 this->template reduce_selfTypes(((Args*)nullptr), a)...);
-		}
-	};
-
-	template<typename Handle>
-	using operation = std::shared_ptr<operation_super<Handle> >;
-
-
-	template<typename Handle, template<typename> class RemoteObject, typename DataStore>
-	static operation<Handle> wrap_operation(DataStore& ds){
-		return operation<Handle>{new operation_impl<Handle,DataStore,RemoteObject>(ds)};
-	}
 };
 
-template<Level l, HandleAccess HA, typename T, typename SupportedOperation>
-struct Handle {
+
+template<Level l, HandleAccess HA, typename T, typename... SupportedOperations>
+struct Handle :
+	public SupportedOperations::template SupportsOn<Handle<l,HA,T,SupportedOperations...> >...
+{
 	using ThisRemoteObject = RemoteObject<l,T>;
 	using storedType = T;
 	std::shared_ptr<RemoteObject<l,T> > _ro;
-	typename SupportedOperation::template operation<Handle> op;
+	
 
 	template<typename DataStore, template<typename> class RO>
-	Handle(std::shared_ptr<RO<T> > ro, DataStore& ds)
-		:_ro(ro),op(SupportedOperation::template wrap_operation<Handle,RO>(ds)){}
+		Handle(std::shared_ptr<RO<T> > ro, DataStore& ds)
+		:SupportedOperations::template SupportsOn<Handle>(
+			SupportedOperations::template SupportsOn<Handle>::template wrap_operation<RO>(ds))...
+		,_ro(ro)
+	{}
+
+	Handle& downCast() { return *this;}
 };
 
 class FakeStore {
@@ -116,19 +135,25 @@ public:
 	
 };
 
-template<RegisteredOperations Name, typename T, HandleAccess Ha, Level l, typename... Args>
-auto do_op_real(Handle<l,Ha,T,SupportedOperation<Name,SelfType,Args...> > &hndl,
-					typename convert_SelfType<Handle<l,Ha,T,SupportedOperation<Name,SelfType,Args...> >&>::template act<Args>... args){
+template<RegisteredOperations Name, typename Handle, typename... Args>
+auto do_op_3(typename SupportedOperation<Name,SelfType,Args...>::template SupportsOn<Handle> &hndl,
+				typename convert_SelfType<Handle&>::template act<Args>... args){
 	
-	return hndl.op->act(hndl,args...);
+	return hndl.op->act(hndl.downCast(),args...);
+}
+
+template<RegisteredOperations Name, typename Handle, typename... Args>
+auto do_op_2(Handle &h, Args && ... args){
+	constexpr OperationIdentifier<Name> op{nullptr};
+	return do_op_3<Name,Handle>(h.upCast(op),std::forward<Args>(args)...);
 }
 
 template<RegisteredOperations Name, typename... Args>
 auto do_op(Args && ... args){
 	struct Operate{
 		auto call(){
-			call_all_strong(args)...;
-			call_all_causal(args)...;
+			ignore(call_all_strong(args)...);
+			ignore(call_all_causal(args)...);
 			return do_op<Name>(cached(args)...);
 		}
 	};
