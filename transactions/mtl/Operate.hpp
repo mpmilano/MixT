@@ -35,6 +35,11 @@ namespace myria{
 
 		template<typename... T>
 		void eat(const T&...){}
+
+		template<typename hd, typename... tl>
+		auto first(const hd &h, const tl & ...){
+			return h;
+		}
 		
 		//all these arguments are shared_ptrs
 		template<RegisteredOperations Name, typename... Args>
@@ -53,12 +58,15 @@ namespace myria{
 				(runs_with_strong(level) ?
 				 //strong only
 				 strong_call_t{[=](TransactionContext* ctx, StrongCache &c, StrongStore &s){
+						assert(ctx);
 						eat(run_ast_strong(ctx,c,s,*args)...);
+						ctx->template get_store_context<level>(first(cached(c,*args)...).store());
 						do_op_2<Name>(ctx,cached(c,*args)...);
 						return true;
 					}} :
 				 //mixed
 				 strong_call_t{[=](TransactionContext* ctx, StrongCache &c, StrongStore &s){
+						 assert(ctx);
 						 eat(run_ast_strong(ctx,c,s,*args)...);
 						 return true;
 					 }});
@@ -67,13 +75,16 @@ namespace myria{
 				(runs_with_strong(level) ?
 				 //pretty much don't do anything
 				 causal_call_t{[=](TransactionContext* ctx, CausalCache &c, CausalStore &s){
+						assert(ctx);
 						eat(run_ast_causal(ctx,c,s,*args)...);
 						//nothing interesting in the cache to return, this is an operation
 						return true;
 					}} :
 				 //mixed
 				 causal_call_t{[=](TransactionContext* ctx, CausalCache &c, CausalStore &s){
+						 assert(ctx);
 						 eat(run_ast_causal(ctx,c,s,*args)...);
+						 ctx->template get_store_context<level>(first(cached(c,*args)...).store());
 						 do_op_2<Name>(ctx,cached(c,*args)...);
 						 return true;
 					 }});
