@@ -203,7 +203,7 @@ namespace myria{
 		
 		template<typename T, restrict(std::is_base_of<mtl::BaseFindUsages CMA T>::value)>
 		std::ostream & operator<<(std::ostream &os, const T& op){
-			return os << op.name << "<" << mtl::get_level<T>::value << ">";
+			return os << "operation " << (int)T::name::value << "<" << mtl::get_level<T>::value << ">";
 		}
 
 		template<mtl::StoreType st>

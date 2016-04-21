@@ -10,17 +10,17 @@ namespace myria{
 		template<typename...> struct FindUsages;
 
 		template<RegisteredOperations Name, typename Handle, typename... Args>
-		auto do_op_3(typename SupportedOperation<Name,SelfType,Args...>::
+		auto do_op_3(TransactionContext* ctx, typename SupportedOperation<Name,SelfType,Args...>::
 					 template SupportsOn<Handle> &hndl,
 					 typename convert_SelfType<Handle&>::template act<Args>... args){
 			
-			return hndl.op->act(hndl.downCast(),args...);
+			return hndl.op->act(ctx,hndl.downCast(),args...);
 		}
 		
 		template<RegisteredOperations Name, typename Handle, typename... Args>
-		auto do_op_2(Handle &h, Args && ... args){
+		auto do_op_2(TransactionContext* ctx, Handle h, Args && ... args){
 			constexpr OperationIdentifier<Name> op{nullptr};
-			return do_op_3<Name,Handle>(h.upCast(op),std::forward<Args>(args)...);
+			return do_op_3<Name,Handle>(ctx,h.upCast(op),std::forward<Args>(args)...);
 		}
 
 		template<typename> struct de_sp_str;
@@ -38,37 +38,45 @@ namespace myria{
 		
 		//all these arguments are shared_ptrs
 		template<RegisteredOperations Name, typename... Args>
-		auto do_op_sp(Args && ... args){
+		auto do_op_sp(Args ... args){
 
-			using call_t = std::function<void (TransactionContext* , StrongCache &, StrongStore &)>;
+			using strong_call_t
+				= std::function<bool (TransactionContext* , StrongCache &, StrongStore &)>;
+			
+			using causal_call_t
+				= std::function<bool (TransactionContext* , CausalCache &, CausalStore &)>;
 
 			using FindUsage = FindUsages<de_sp<Args>...>;
 			constexpr Level level = min_level_dref<de_sp<Args>...>::value;
 			
-			call_t strongCall =
+			strong_call_t strongCall =
 				(runs_with_strong(level) ?
 				 //strong only
-				 [=](TransactionContext* ctx, StrongCache &c, StrongStore &s){
-					eat(run_ast_strong(ctx,c,s,*args)...);
-					return do_op_2<Name>(cached(*args)...);
-				} :
+				 strong_call_t{[=](TransactionContext* ctx, StrongCache &c, StrongStore &s){
+						eat(run_ast_strong(ctx,c,s,*args)...);
+						do_op_2<Name>(ctx,cached(c,*args)...);
+						return true;
+					}} :
 				 //mixed
-				 [=](TransactionContext* ctx, StrongCache &c, StrongStore &s){
-					 eat(run_ast_strong(ctx,c,s,*args)...);
-				 });
+				 strong_call_t{[=](TransactionContext* ctx, StrongCache &c, StrongStore &s){
+						 eat(run_ast_strong(ctx,c,s,*args)...);
+						 return true;
+					 }});
 
-			call_t causalCall =
+			causal_call_t causalCall =
 				(runs_with_strong(level) ?
 				 //pretty much don't do anything
-				 [=](TransactionContext* ctx, CausalCache &c, CausalStore &s){
-					eat(run_ast_causal(ctx,c,s,*args)...);
-					//nothing interesting in the cache to return, this is an operation not an expression
-				} :
+				 causal_call_t{[=](TransactionContext* ctx, CausalCache &c, CausalStore &s){
+						eat(run_ast_causal(ctx,c,s,*args)...);
+						//nothing interesting in the cache to return, this is an operation
+						return true;
+					}} :
 				 //mixed
-				 [=](TransactionContext* ctx, CausalCache &c, CausalStore &s){
-					 eat(run_ast_causal(ctx,c,s,*args)...);
-					 return do_op_2<Name>(cached(*args)...);
-				 });
+				 causal_call_t{[=](TransactionContext* ctx, CausalCache &c, CausalStore &s){
+						 eat(run_ast_causal(ctx,c,s,*args)...);
+						 do_op_2<Name>(ctx,cached(c,*args)...);
+						 return true;
+					 }});
 
 			auto env_exprs = std::tuple_cat(environment_expressions(*args)...);
 			using env_exprs_t = decltype(env_exprs);
@@ -77,19 +85,20 @@ namespace myria{
 				public FindUsage,
 				public ConStatement<level>
 				{
-					
+
+					using name = std::integral_constant<RegisteredOperations,Name>;
 					const int id = mutils::gensym();
 
-					const call_t strongCall;
-					const call_t causalCall;
+					const strong_call_t strongCall;
+					const causal_call_t causalCall;
 					const env_exprs_t env_exprs;
 
 					env_exprs_t environment_expressions() const {
 						return env_exprs;
 					}
 					
-					Operate(call_t strongCall,
-							call_t causalCall,
+					Operate(strong_call_t strongCall,
+							causal_call_t causalCall,
 							env_exprs_t env_exprs,
 							Args... args):
 						FindUsage(*args...),
@@ -98,7 +107,12 @@ namespace myria{
 						env_exprs(env_exprs){}
 				
 				};
-			return Operate{strongCall, causalCall, args...};
+			return Operate{strongCall, causalCall, env_exprs, args...};
+		}
+
+		template<RegisteredOperations Name, typename... Args>
+		auto do_op(Args && ... args){
+			return do_op_sp<Name>(std::make_shared<std::decay_t<Args> >(args)...);
 		}
 	}
 }

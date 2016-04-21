@@ -172,9 +172,9 @@ int main(){
 			auto hndl = strong.template existingObject<HandleAccess::all, int>(trk,ctx.get(),40);
 			ctx->full_commit();
 			ctx.reset();
-			for (int i = 0; i < 2; ++i){/*
+			for (int i = 0; i < 2; ++i){
 				TRANSACTION(log,trk,hndl,
-							do_op(Increment,hndl)
+							do_op<RegisteredOperations::Increment>(hndl)
 					);//*/
 				assert(*hndl.get(trk,start_transaction(log_builder->template beginStruct<LoggedStructs::log>(),trk,strong,causal).get()) == i+1);
 			}
@@ -232,10 +232,9 @@ int main(){
 						
 						for(int tmp2 = 0; tmp2 < 10; ++tmp2){
 							try{
-								assert(true);
-								if ((name % mod_constant) == 0){/*
+								if ((name % mod_constant) == 0){
 									TRANSACTION(log_messages,trk,hndl,
-												do_op(Increment,hndl)
+												do_op<RegisteredOperations::Increment>(hndl)
 										)//*/
 										log_messages->addField(
 											LogFields::is_write,true);
