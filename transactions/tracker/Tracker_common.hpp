@@ -26,7 +26,8 @@ namespace myria { namespace tracker {
 										 >;
 			static const newTomb_t newTomb = [](tracker::Tracker &trk, mtl::TransactionContext& ctx, DataStore<l> &_ds, Name name, auto &e){
 				auto &ds = dynamic_cast<DS&>(_ds);
-				return ds.template newObject<HandleAccess::all>(trk,&ctx, name,e);
+				Handle<l,HandleAccess::all,Tracker::Tombstone> ret = ds.template newObject<HandleAccess::all>(trk,&ctx, name,e);
+				return ret;
 			};
 			static const exists_t exists = [](DataStore<l> &_ds, Name name){
 				auto &ds = dynamic_cast<DS&>(_ds);

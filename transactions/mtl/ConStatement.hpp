@@ -9,6 +9,7 @@
 #include "../BitSet.hpp"
 #include "Handle.hpp"
 #include "Store.hpp"
+#include "Operations.hpp"
 
 namespace myria { namespace mtl {
 
@@ -26,8 +27,8 @@ namespace myria { namespace mtl {
 			!is_handle<T>::value >::type;
 
 
-		template<Level l, HandleAccess ha, typename T>
-		auto environment_expressions(const Handle<l,ha,T>& h) {
+		template<Level l, HandleAccess ha, typename T,typename... Ops>
+		auto environment_expressions(const Handle<l,ha,T,Ops...>& h) {
 			return std::tuple<>{};
 		}
 
@@ -84,8 +85,8 @@ namespace myria { namespace mtl {
 			return l;
 		}
 
-		template< Level l, HandleAccess ha, typename T>
-		constexpr Level get_level_f(const Handle<l,ha,T>*){
+		template< Level l, HandleAccess ha, typename T,typename... Ops>
+		constexpr Level get_level_f(const Handle<l,ha,T,Ops...>*){
 			return l;
 		}
 

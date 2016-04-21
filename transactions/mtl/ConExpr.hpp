@@ -68,8 +68,8 @@ namespace myria { namespace mtl {
 			return Level::undef;
 		}
 
-		template<HandleAccess ha, Level l, typename T>
-		constexpr Level get_level_dref(Handle<l,ha,T> const * const){
+		template<HandleAccess ha, Level l, typename T,typename... Ops>
+		constexpr Level get_level_dref(Handle<l,ha,T,Ops...> const * const){
 			return l;
 		}
 
@@ -163,8 +163,8 @@ namespace myria { namespace mtl {
 			return e;
 		}
 
-		template<HandleAccess ha, typename T>
-		void run_ast_strong(TransactionContext *ctx, const StrongCache& c, const StrongStore&, const Handle<Level::causal,ha,T>& h) {
+		template<HandleAccess ha, typename T,typename... Ops>
+		void run_ast_strong(TransactionContext *ctx, const StrongCache& c, const StrongStore&, const Handle<Level::causal,ha,T,Ops...>& h) {
 		}
 		//*/
 
@@ -174,8 +174,8 @@ namespace myria { namespace mtl {
 		std::string run_ast_causal(TransactionContext *ctx, const CausalCache &, const CausalStore&, const std::string& e);
 
 
-		template<HandleAccess ha, typename T>
-		Handle<Level::causal,ha,T> run_ast_causal(TransactionContext *ctx, const CausalCache& c, const CausalStore &, const Handle<Level::causal,ha,T>& t) {
+		template<HandleAccess ha, typename T,typename... Ops>
+		Handle<Level::causal,ha,T,Ops...> run_ast_causal(TransactionContext *ctx, const CausalCache& c, const CausalStore &, const Handle<Level::causal,ha,T,Ops...>& t) {
 			return t;
 		}
 		//*/
@@ -220,8 +220,8 @@ namespace myria { namespace mtl {
 		}
 
 
-		template<typename T, HandleAccess ha, Level l, StoreType st>
-		Handle<l,ha,T> cached(const StoreMap<st>& cache, const Handle<l,ha,T>& ast){
+		template<typename T, HandleAccess ha, Level l, StoreType st,typename... Ops>
+		Handle<l,ha,T,Ops...> cached(const StoreMap<st>& cache, const Handle<l,ha,T,Ops...>& ast){
 			return ast;
 		}
 
@@ -241,8 +241,8 @@ namespace myria { namespace mtl {
 		}
 
 
-		template<typename T, HandleAccess ha, Level l, StoreType st>
-		bool is_cached(const StoreMap<st>& cache, const Handle<l,ha,T>& ast){
+		template<typename T, HandleAccess ha, Level l, StoreType st,typename... Ops>
+		bool is_cached(const StoreMap<st>& cache, const Handle<l,ha,T,Ops...>& ast){
 			return true;
 		}
 

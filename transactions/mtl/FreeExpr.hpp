@@ -4,13 +4,13 @@
 #include "type_utils.hpp"
 #include "ConExpr.hpp"
 #include "RefTemporary.hpp"
-#include "Operation.hpp"
+#include "Preserve.hpp"
 #include "FreeExpr_macros.hpp"
 
 namespace myria { namespace mtl {
 
-		template<typename T, Level l, HandleAccess ha>
-		auto get_if_handle(tracker::Tracker &trk, TransactionContext *ctx, Handle<l,ha,T> h){
+		template<typename T, Level l, HandleAccess ha,typename... Ops>
+		auto get_if_handle(tracker::Tracker &trk, TransactionContext *ctx, Handle<l,ha,T,Ops...> h){
 			assert(ctx);
 			//TODO: eliminate copy?
 			return *h.get(trk,ctx);

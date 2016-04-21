@@ -222,8 +222,8 @@ namespace myria{
 		return *sp;
 	}
 
-	template<Level l, HandleAccess ha, typename T>
-	std::ostream & operator<<(std::ostream &os, const Handle<l,ha,T>& h){
+	template<Level l, HandleAccess ha, typename T,typename... Ops>
+	std::ostream & operator<<(std::ostream &os, const Handle<l,ha,T,Ops...>& h){
 		os << "Handle<" << levelStr<l>() << ">";
 		return os;
 	}

@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Operation.hpp"
 #include "GDataStore.hpp"
 #include "Basics.hpp"
 
@@ -19,7 +18,6 @@ namespace myria{
 		virtual std::unique_ptr<mtl::StoreContext<Level::strong> > begin_transaction(mutils::abs_StructBuilder&) = 0;
 		DataStore():GDataStore{Level::strong}{}
 	
-		DECLARED_OPERATIONS
 	};
 
 	template<>
@@ -34,7 +32,5 @@ namespace myria{
 
 		virtual const std::array<int, NUM_CAUSAL_GROUPS>& local_time() const = 0;
 	
-		DECLARED_OPERATIONS
-
 	};
 }

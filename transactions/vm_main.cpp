@@ -8,7 +8,6 @@
 #include "SQLStore.hpp"
 #include "TrackerTestingStore.hpp"
 #include "FinalHeader.hpp"
-#include "FinalizedOps.hpp"
 #include "Ostreams.hpp"
 #include "tuple_extras.hpp"
 #include "Basics.hpp"
@@ -20,7 +19,6 @@
 #include "Hertz.hpp"
 #include "ObjectBuilder.hpp"
 #include "TrackerTestingStore.hpp"//*/
-#include "Operate_macros.hpp"
 #include "Transaction_macros.hpp"
 
 
@@ -122,8 +120,6 @@ auto start_transaction(std::unique_ptr<VMObjectLog> log, tracker::Tracker &trk, 
 }
 
 int main(){
-	//std::array<Handle<Level::strong,HandleAccess::all, int>, name_max> strong_handles;
-	//std::array<Handle<Level::causal,HandleAccess::all, int>, name_max> causal_handles;
 
 	static const int ip = get_strong_ip();
 	logFile.open(log_name);
@@ -170,65 +166,19 @@ int main(){
 		
 		ctx->full_commit();
 		
-                { //TEMPORARY path debugging
-					auto log = log_builder->template beginStruct<LoggedStructs::log>();
-                    auto ctx = start_transaction(log_builder->template beginStruct<LoggedStructs::log>(),trk,strong,causal);
-                    auto hndl = strong.template existingObject<HandleAccess::all, int>(trk,ctx.get(),40);
-                    ctx->full_commit();
-                    ctx.reset();
-                    for (int i = 0; i < 2; ++i){
-                        { using capture_t = std::decay_t<decltype(hndl) >;
-                          static const auto this_transaction =
-                                  [hndl = EnvironmentExpression<capture_t>{}](){
-                                    using namespace mtl;
-                                    using namespace mutils;
-                                    mtl::TransactionBuilder<std::tuple<> > prev;
-                                    {auto curr = ([&](){ auto a = hndl;;
-                                            using FindUsage = FindUsages<decltype (a)>;
-                                            struct OperateImpl : public FindUsage, public ConStatement<min_level_dref<decltype (a)>::value >{
-                                                const int id = gensym();
-                                                const std::shared_ptr<decltype(a)> arg1;
-                                                const std::string name = "Increment";
-                                                OperateImpl(const decltype(a) &a ):
-                                                    FindUsage(a), arg1(shared_copy(a)) {}
-                                                auto environment_expressions() const {
-                                                    return env_expr_helper(arg1); }
-                                                auto strongCall(mtl::TransactionContext* ctx , StrongCache& c , const StrongStore &s , std::true_type*) const {
-                                                    auto ret = make_PreOp(id,Increment(ctx,trans_op_arg(ctx,c,s, *arg1)))
-                                                            (c,ctx->trackingContext->trk, *ctx, arg1);
-                                                    c.emplace<decltype(ret)>(id,ret);
-                                                    return ret;
-                                                }
-                                                void strongCall(mtl::TransactionContext* ctx , StrongCache& c , const StrongStore &s , std::false_type*) const {
-                                                    run_strong_helper(ctx,c,s,arg1);
-                                                }
-                                                auto strongCall(mtl::TransactionContext* ctx , StrongCache& c , const StrongStore &s) const {
-                                                    choose_strong<get_level<OperateImpl>::value> choice{nullptr};
-                                                    return strongCall(ctx,c,s,choice);
-                                                }
-                                                auto causalCall(mtl::TransactionContext* ctx , CausalCache& c , const CausalStore &s) const {
-                                                    run_causal_helper(ctx,c,s,arg1);
-                                                    using R = decltype(make_PreOp(id,Increment(ctx,trans_op_arg(ctx,c,s, *arg1)))
-                                                      (c,ctx->trackingContext->trk, *ctx,arg1));
-                                                    if(runs_with_strong(get_level<OperateImpl>::value))
-                                                        return c.template get<R>(id);
-                                                    else return make_PreOp(id,Increment(ctx,trans_op_arg(ctx,c,s, *arg1)))
-                                                            (c,ctx->trackingContext->trk, *ctx, arg1);
-                                                }
-                                            };
-                                            OperateImpl r{a};
-                                            return r;
-                                        } ()); ;
-                                        { auto prev2 = append(prev,curr);
-                                            { auto prev = prev2;
-                                                return mtl::Transaction<capture_t>{prev};}}}}();
-                          log = this_transaction(std::move(log),trk,&hndl);}
-                          std::cout << "at least we can break here" << endl;
-                          assert(*hndl.get(trk,start_transaction(log_builder->template beginStruct<LoggedStructs::log>(),trk,strong,causal).get()) == i+1);
-                    }
-                }
-
-
+		{ //TEMPORARY path debugging
+			auto log = log_builder->template beginStruct<LoggedStructs::log>();
+			auto ctx = start_transaction(log_builder->template beginStruct<LoggedStructs::log>(),trk,strong,causal);
+			auto hndl = strong.template existingObject<HandleAccess::all, int>(trk,ctx.get(),40);
+			ctx->full_commit();
+			ctx.reset();
+			for (int i = 0; i < 2; ++i){/*
+				TRANSACTION(log,trk,hndl,
+							do_op(Increment,hndl)
+					);//*/
+				assert(*hndl.get(trk,start_transaction(log_builder->template beginStruct<LoggedStructs::log>(),trk,strong,causal).get()) == i+1);
+			}
+		}
 		std::cout << "trackertesting init complete" << std::endl;
 	}//*/
 
@@ -283,7 +233,7 @@ int main(){
 						for(int tmp2 = 0; tmp2 < 10; ++tmp2){
 							try{
 								assert(true);
-								if ((name % mod_constant) == 0){
+								if ((name % mod_constant) == 0){/*
 									TRANSACTION(log_messages,trk,hndl,
 												do_op(Increment,hndl)
 										)//*/

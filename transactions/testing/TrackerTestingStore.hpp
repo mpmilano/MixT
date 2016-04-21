@@ -1,9 +1,7 @@
 #pragma once
 #include "Tracker.hpp"
+#include <type_traits>
 #include <map>
-
-#define num_iters 400
-#define take_some_time if (!mutils::Profiler::pausedOrInactive()) { for (auto i = 0; i < num_iters; ++i) [](){for (auto j = 0; j < num_iters; ++j); }();}
 
 namespace myria { namespace testing {
 
@@ -13,10 +11,20 @@ namespace myria { namespace testing {
 		enum class TrackerTestingMode {
 			perfect, manual_sync
 		};
+
+
+		template<Level l, HandleAccess ha, typename T>
+		using TestingHandle = std::conditional_t<
+			std::is_integral<T>::value,
+			Handle<l,ha,T,SupportedOperation<RegisteredOperations::Increment,SelfType> >,
+			Handle<l,ha,T> >;
 		
 		template<Level l, TrackerTestingMode mode = TrackerTestingMode::perfect>
 		class TrackerTestingStore : public DataStore<l>{
 		public:
+
+			template<HandleAccess ha, typename T>
+			using TestingHandle = TestingHandle<l,ha,T>;
 
 			using Store = TrackerTestingStore;
 			
@@ -37,7 +45,7 @@ namespace myria { namespace testing {
 					:tts(tts),logger(logger){
 					logger.incrementIntField(
 						LogFields::trackertesting_transaction_built);
-					take_some_time;
+					
 				}
 				
 				DataStore<l> &store(){
@@ -47,14 +55,14 @@ namespace myria { namespace testing {
 				bool store_commit(){
 					logger.incrementIntField(
 						LogFields::trackertesting_transaction_commit);
-					take_some_time;
+					
 					return true;
 				}
 
 				void store_abort(){
 					logger.incrementIntField(
 						LogFields::trackertesting_transaction_abort);
-					take_some_time;
+					
 				}
 			};
 			
@@ -170,7 +178,7 @@ namespace myria { namespace testing {
 				bool ro_isValid(mtl::StoreContext<l>* tc) const {
 					assert(tc);
 					((AlwaysSuccessfulTransaction*)tc)->logger.incrementIntField(LogFields::trackertestingobject_isvalid);
-					take_some_time;
+					
 
 					return true;
 				}
@@ -185,14 +193,14 @@ namespace myria { namespace testing {
 						this->t = std::make_unique<T>(*remote_store().rs.template at<T>(nam));
 					assert(trkc);
 					this->t = trk->onRead(*trkc,store(),name(),timestamp(),std::move(t),(T*)nullptr);
-					take_some_time;
+					
 					return std::make_shared<T>(*t);
 				}
 				
 				void put(mtl::StoreContext<l>* tc,const T& to) {
 					assert(tc);
 					((AlwaysSuccessfulTransaction*)tc)->logger.incrementIntField(LogFields::trackertestingobject_put);
-					take_some_time;
+					
 					
 					this->t = std::make_unique<T>(to);
 					if (l == Level::strong)
@@ -254,32 +262,28 @@ namespace myria { namespace testing {
 				return ret;
 			}
 
-			
 			template<HandleAccess ha, typename T>
-			auto newObject(tracker::Tracker &trk, mtl::TransactionContext *tc, Name name, const T& init){
+			TestingHandle<ha,T> newObject(tracker::Tracker &trk, mtl::TransactionContext *tc, Name name, const T& init){
 				assert(tc);
-				take_some_time;
+				
 				tc->logger->incrementIntField(LogFields::trackertesting_newobject);
-				auto ret = make_handle<l,ha,T,TrackerTestingObject<T> >
-					(trk,tc,*this,name,init);
+				TestingHandle<ha,T> ret{trk,tc,std::make_shared<TrackerTestingObject<T> >(*this,name,init),*this};
 				trk.onCreate(*this,name, (T*)nullptr);
 				return ret;
 			}
 
 			template<HandleAccess ha, typename T>
-			auto existingObject(tracker::Tracker &trk, mtl::TransactionContext *tc, Name name, T* for_inf = nullptr){
+			TestingHandle<ha,T> existingObject(tracker::Tracker &trk, mtl::TransactionContext *tc, Name name, T* for_inf = nullptr){
 				assert(tc);
-				take_some_time;
 				tc->logger->incrementIntField(
 					LogFields::trackertesting_existingobject);
-				return make_handle
-					<l,ha,T,TrackerTestingObject<T> >
-					(trk,tc,*this,name);
+				return TestingHandle<ha,T>(trk,tc,std::make_shared<TrackerTestingObject<T> >(*this,name),*this);
 			}
-
+			
 			template<typename T>
-			std::unique_ptr<TrackerTestingObject<T> > existingRaw(abs_StructBuilder& logger, Name name, T* for_inf = nullptr){
-				take_some_time;
+			std::unique_ptr<TrackerTestingObject<T> > existingRaw(
+				abs_StructBuilder& logger, Name name, T* for_inf = nullptr){
+				
 				logger.incrementIntField(LogFields::trackertesting_existingraw);
 				return std::unique_ptr<TrackerTestingObject<T> >
 				{new TrackerTestingObject<T>{*this,name}};
@@ -289,20 +293,15 @@ namespace myria { namespace testing {
 				return remote_store().rs.contains(name);
 			}
 
-			OPERATION(Increment, TrackerTestingObject<int>* o) {
-				//TODO: ideally this would be automatically reduced to the correct type,
-				//but for now we'll just manually do it here.
-				assert(transaction_context && "Error: calling operations outside of transactions is disallowed");
-				AlwaysSuccessfulTransaction *ctx = (l == Level::strong ?
-								   dynamic_cast<AlwaysSuccessfulTransaction*>(transaction_context->strongContext.get()) :
-								   dynamic_cast<AlwaysSuccessfulTransaction*>(transaction_context->causalContext.get()));
+			void operation(mtl::TransactionContext* _ctx,
+						   OperationIdentifier<RegisteredOperations::Increment>, TrackerTestingObject<int> &o){
+				AlwaysSuccessfulTransaction *ctx =
+					(l == Level::strong ?
+					 dynamic_cast<AlwaysSuccessfulTransaction*>(_ctx->strongContext.get()) :
+					 dynamic_cast<AlwaysSuccessfulTransaction*>(_ctx->causalContext.get()));
 				assert(ctx && "error: should have entered transaction before this point!");
-				transaction_context->logger->incrementIntField(LogFields::trackertesting_increment);
-				take_some_time;
-				o->put(ctx,*o->t + 1);
-				return true;
+				ctx->logger.incrementIntField(LogFields::trackertesting_increment);
+				o.put(ctx,*o.t + 1);
 			}
-			END_OPERATION
-
 		};
 	}}

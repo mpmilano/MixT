@@ -47,8 +47,8 @@ namespace myria { namespace mtl {
 		
 		};
 
-		template<HandleAccess ha, typename T>
-		Handle<Level::strong,ha,T> run_ast_strong(TransactionContext* tctx, const StrongCache& c, const StrongStore&, const Handle<Level::strong,ha,T>& _h) {
+		template<HandleAccess ha, typename T,typename... Ops>
+		Handle<Level::strong,ha,T,Ops...> run_ast_strong(TransactionContext* tctx, const StrongCache& c, const StrongStore&, const Handle<Level::strong,ha,T,Ops...>& _h) {
 
 			assert(tctx);
 			auto ctx = tctx->execution_context;
@@ -66,9 +66,8 @@ namespace myria { namespace mtl {
 				else if (ctx == context::t::validity){
 					valid_only = h.isValid(tctx);
 				}
-				return 
-					make_handle<Level::strong,ha,T,CachedObject<T> >
-					(tctx,ptr,h.store(),h.name(),valid_only);
+				return
+					Handle<Level::strong,ha,T,Ops...>(tctx,make_shared<CachedObject<T> >(ptr,h.store(),h.name(),valid_only));
 			}
 			else return h;
 		}
@@ -125,11 +124,10 @@ namespace myria { namespace mtl {
 		
 		};	
 
-		template<HandleAccess ha, typename T>
-		Handle<Level::strong,ha,T> run_ast_causal(mtl::TransactionContext *tctx, mtl::CausalCache& cache, const mtl::CausalStore &s, const Handle<Level::strong,ha,T>& h) {
-			return 
-				make_handle<Level::strong,ha,T,LocalObject<T> >
-				(tctx,h.remote_object());
+		template<HandleAccess ha, typename T,typename... Ops>
+		Handle<Level::strong,ha,T,Ops...> run_ast_causal(
+			mtl::TransactionContext *tctx, mtl::CausalCache& cache, const mtl::CausalStore &s, const Handle<Level::strong,ha,T,Ops...>& h) {
+			return Handle<Level::strong,ha,T,Ops...>(tctx,make_shared<LocalObject<T> >(h.remote_object()));
 		}
 
 	} }

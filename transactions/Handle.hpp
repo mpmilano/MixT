@@ -27,13 +27,14 @@ namespace myria{
 
 		template<typename> struct Transaction;
 
-		template<HandleAccess ha2, typename T2>
-		Handle<Level::strong,ha2,T2> run_ast_causal(TransactionContext *ctx, const mtl::CausalCache& cache, const mtl::CausalStore &, const Handle<Level::strong,ha2,T2>& h);
+		template<HandleAccess ha2, typename T2, typename... Ops>
+		Handle<Level::strong,ha2,T2,Ops...> run_ast_causal(
+			TransactionContext *ctx, const mtl::CausalCache& cache, const mtl::CausalStore &, const Handle<Level::strong,ha2,T2,Ops...>& h);
 		
-		template<HandleAccess ha, typename T2>
-		Handle<Level::strong,ha,T2>
+		template<HandleAccess ha, typename T2, typename... Ops>
+		Handle<Level::strong,ha,T2,Ops...>
 		run_ast_causal(TransactionContext *ctx, mtl::CausalCache& cache, const mtl::CausalStore &s,
-					   const Handle<Level::strong,ha,T2>& h);
+					   const Handle<Level::strong,ha,T2,Ops...>& h);
 
 
 	}
@@ -46,16 +47,31 @@ namespace myria{
 		return nullptr;
 	}
 	
-	template<Level l, HandleAccess HA, typename T>
-	struct Handle : public GenericHandle<l,HA> {
+	template<Level l, HandleAccess HA, typename T, typename... SupportedOperations>
+	struct Handle : public GenericHandle<l,HA>,
+					public SupportedOperations::template SupportsOn<Handle<l,HA,T,SupportedOperations...> >... {
 
-	private:
+
 		const std::shared_ptr<RemoteObject<l,T> > _ro;
 	private:
-		Handle(std::shared_ptr<RemoteObject<l,T> > _ro):_ro(_ro){
-			assert(_ro->store().level == l);
-		}
+		//for dropping operation support
+		Handle(decltype(_ro) _ro):_ro(_ro){}
 	public:
+
+		using level_t = std::integral_constant<Level,l>;
+
+		template<typename DataStore, template<typename> class RO>
+			Handle(tracker::Tracker &trk, mtl::TransactionContext *tc, std::shared_ptr<RO<T> > _ro, DataStore& ds):
+			SupportedOperations::template SupportsOn<Handle>(
+				SupportedOperations::template SupportsOn<Handle>::template wrap_operation<RO>(ds))...,
+			_ro(_ro){
+			assert(_ro->store().level == l);
+			assert(tc);
+			auto &ctx = *tc;
+			do_onwrite(ctx,trk,*_ro);
+		}
+
+		Handle& downCast() { return *this;}
 	
 		const int uid = mutils::gensym();
 	
@@ -68,7 +84,7 @@ namespace myria{
 		}
 
 		Handle() {}
-		Handle(const Handle& h):_ro(h._ro){}
+		Handle(const Handle& h) = default;
 		
 		static constexpr Level level = l;
 		static constexpr HandleAccess ha = HA;
@@ -140,6 +156,10 @@ namespace myria{
 			return *this;
 		}
 
+		operator Handle<l,ha,T>(){
+			return Handle<l,ha,T>(_ro);
+		}
+
 		void put(tracker::Tracker& tracker, mtl::TransactionContext *tc, const T& t){
 			choose_strong<l> choice{nullptr};
 			assert(tc);
@@ -186,13 +206,13 @@ namespace myria{
 
 		static constexpr Level lnew = l;
 	
-		Handle<lnew,HandleAccess::read,T> readOnly() const {
+		Handle<lnew,HandleAccess::read,T,SupportedOperations...> readOnly() const {
 			static_assert(lnew == l || l == Level::strong,
 						  "Error: request for strong read handle from causal base!");
 			return Handle<lnew,HandleAccess::read,T>{_ro};
 		}
 
-		Handle<lnew,HandleAccess::write,T> writeOnly() const {
+		Handle<lnew,HandleAccess::write,T,SupportedOperations...> writeOnly() const {
 			static_assert(lnew == l || l == Level::causal,
 						  "Error: request for causal write handle from strong base!");
 			Handle<lnew,HandleAccess::write,T> r{_ro};
@@ -213,7 +233,7 @@ namespace myria{
 			return writeOnly();
 		}
 
-		template<Level l2, HandleAccess ha2, typename T2>
+		template<Level l2, HandleAccess ha2, typename T2, typename... SupportedOperations2>
 		friend struct Handle;
 
 		template<typename> friend struct mtl::Transaction;
@@ -225,53 +245,21 @@ namespace myria{
 		static void do_onwrite(mtl::TransactionContext &tc, tracker::Tracker &tr, RemoteObject<Level::causal,T> &ro){
 			tr.onWrite(ro.store(),ro.name(),ro.timestamp(),(T*)nullptr);
 		}
-	public:
-
-		template<typename RO, typename... Args>
-		static Handle<l,HA,T> make_handle(tracker::Tracker &trk, mtl::TransactionContext *tc, Args && ... ca){
-			static_assert(std::is_base_of<RemoteObject<l,T>,RO >::value,
-						  "Error: must template on valid RemoteObject extender");
-			RemoteObject<l,T> *rop = new RO(std::forward<Args>(ca)...);
-			std::shared_ptr<RemoteObject<l,T> > sp(rop);
-			Handle<l,HA,T> ret(sp);
-			/*
-			assert(tc || !rop->store().in_transaction());
-			//make a transaction with no environment expressions for only the requested store
-			auto owner = (tc ? nullptr : std::make_unique<mtl::TransactionContext>((void*)nullptr,rop->store().begin_transaction(),trk.generateContext()));
-			auto &ctx = (tc ? *tc : *owner);
-			*/
-			assert(tc);
-			auto &ctx = *tc;
-			do_onwrite(ctx,trk,*rop);
-            //if (owner) owner->full_commit();
-			return ret;
-		}
+	public:		
 	
 		template<HandleAccess ha2, typename T2>
-		friend Handle<Level::strong,ha2,T2> mtl::run_ast_causal(mtl::TransactionContext *, const mtl::CausalCache& cache, const mtl::CausalStore &, const Handle<Level::strong,ha2,T2>& h);
+		friend Handle<Level::strong,ha2,T2,SupportedOperations...> mtl::run_ast_causal(mtl::TransactionContext *, const mtl::CausalCache& cache, const mtl::CausalStore &, const Handle<Level::strong,ha2,T2,SupportedOperations...>& h);
 
 		template<HandleAccess ha, typename T2>
-		friend Handle<Level::strong,ha,T2>
+		friend Handle<Level::strong,ha,T2,SupportedOperations...>
 		mtl::run_ast_causal(mtl::TransactionContext *, mtl::CausalCache& cache, const mtl::CausalStore &s,
-							const Handle<Level::strong,ha,T2>& h);
-
-		template<typename, typename>
-		friend struct Operation;
-
-	
-		/*
-		//TODO: same treatment as in Operate
-		template<typename... Args>
-		auto op(Operation<bool(*) (RemoteObject<l,T>*, cr_add<Args>...)> (*fp) (RemoteObject<l,T>*, cr_add<Args>...), Args && ... a){
-		return fp(&remote_object(),std::forward<Args>(a)...)(*this, std::forward<Args>(a)...);
-		}
-		*/
+							const Handle<Level::strong,ha,T2,SupportedOperations...>& h);
 	};
 
 
 
-	template<Level l, HandleAccess ha, typename T>
-	constexpr Level chld_min_level_f(Handle<l,ha,T> const * const){
+	template<Level l, HandleAccess ha, typename T, typename... Ops>
+	constexpr Level chld_min_level_f(Handle<l,ha,T,Ops...> const * const){
 		return l;
 	}
 
@@ -280,22 +268,23 @@ namespace myria{
 		struct contains_temporary;
 	}
 
-	template<unsigned long long id, Level l, HandleAccess ha, typename T>
-	struct mtl::contains_temporary<id,  Handle<l,ha,T> > : std::false_type {};
+	template<unsigned long long id, Level l, HandleAccess ha, typename T, typename... Ops>
+	struct mtl::contains_temporary<id,  Handle<l,ha,T,Ops...> > : std::false_type {};
 
+	/*
 	template<Level l, HandleAccess HA, typename T,
 			 typename RO, typename... Args>
 	Handle<l,HA,T> make_handle(tracker::Tracker &trk, mtl::TransactionContext *tc, Args && ... ca)
 	{
 		return Handle<l,HA,T>::template make_handle<RO, Args...>(trk,tc,std::forward<Args>(ca)...);
 	}
-
+//*/
 
 	template<typename T>
 	struct is_handle;
 
-	template<Level l, HandleAccess ha, typename T>
-	struct is_handle<Handle<l,ha,T> > : std::true_type {};
+	template<Level l, HandleAccess ha, typename T, typename... Ops>
+	struct is_handle<Handle<l,ha,T,Ops...> > : std::true_type {};
 
 	template<typename T>
 	struct is_handle : std::false_type {};
@@ -305,20 +294,20 @@ namespace myria{
 		struct is_ConExpr;
 	}
 
-	template<typename T, Level l, HandleAccess ha>
-	struct mtl::is_ConExpr<Handle<l,ha,T> > : std::true_type {};
+	template<typename T, Level l, HandleAccess ha, typename... Ops>
+	struct mtl::is_ConExpr<Handle<l,ha,T,Ops...> > : std::true_type {};
 
 	template<typename T>
 	struct is_not_handle : std::integral_constant<bool, !is_handle<T>::value >::type {};
 
-	template<Level l, HandleAccess ha, typename T>
-	struct mtl::extract_type<Handle<l,ha,T> > {typedef T type;};
-	template<Level l, HandleAccess ha, typename T>
-	struct mtl::extract_type<const Handle<l,ha,T> > {typedef T type;};
-	template<Level l, HandleAccess ha, typename T>
-	struct mtl::extract_type<const Handle<l,ha,T>& > {typedef T type;};
-	template<Level l, HandleAccess ha, typename T>
-	struct mtl::extract_type<Handle<l,ha,T>& > {typedef T type;};
+	template<Level l, HandleAccess ha, typename T, typename... Ops>
+	struct mtl::extract_type<Handle<l,ha,T,Ops...> > {typedef T type;};
+	template<Level l, HandleAccess ha, typename T, typename... Ops>
+	struct mtl::extract_type<const Handle<l,ha,T,Ops...> > {typedef T type;};
+	template<Level l, HandleAccess ha, typename T,typename... Ops>
+	struct mtl::extract_type<const Handle<l,ha,T,Ops...>& > {typedef T type;};
+	template<Level l, HandleAccess ha, typename T,typename... Ops>
+	struct mtl::extract_type<Handle<l,ha,T,Ops...>& > {typedef T type;};
 
 	template<typename T>
 	using extract_type_t = typename mtl::extract_type<T>::type ;
@@ -326,8 +315,8 @@ namespace myria{
 	template<typename H>
 	struct extract_access;
 
-	template<Level l, HandleAccess ha, typename T>
-	struct extract_access<Handle<l,ha,T> > :
+	template<Level l, HandleAccess ha, typename T,typename... Ops>
+	struct extract_access<Handle<l,ha,T,Ops...> > :
 		std::integral_constant<HandleAccess, ha>::type {};
 
 	template<typename T>
@@ -361,13 +350,13 @@ namespace myria{
 }
 namespace mutils{
 	
-	template<myria::Level l, myria::HandleAccess ha, typename T>
-	int to_bytes(const myria::Handle<l,ha,T>& h, char* v){
+	template<myria::Level l, myria::HandleAccess ha, typename T,typename... Ops>
+	int to_bytes(const myria::Handle<l,ha,T,Ops...>& h, char* v){
 		return h.to_bytes_hndl(v);
 	}
 	
-	template<myria::Level l, myria::HandleAccess ha, typename T>
-	int bytes_size(const myria::Handle<l,ha,T> &h){
+	template<myria::Level l, myria::HandleAccess ha, typename T,typename... Ops>
+	int bytes_size(const myria::Handle<l,ha,T,Ops...> &h){
 		return h.bytes_size_hndl();
 	}
 

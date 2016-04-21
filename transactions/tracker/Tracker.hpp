@@ -21,7 +21,7 @@
 
 namespace myria { 
 
-	template<Level l, HandleAccess HA, typename T>
+	template<Level l, HandleAccess HA, typename T,typename... Ops>
 	struct Handle;
 	namespace tracker {
 
@@ -104,8 +104,8 @@ namespace myria {
 
 			void exemptItem(Name name);
 
-			template<typename T, Level l, HandleAccess ha>
-			void exemptItem(const Handle<l,ha,T>& h){
+			template<typename T, Level l, HandleAccess ha,typename... Ops>
+			void exemptItem(const Handle<l,ha,T,Ops...>& h){
 				exemptItem(h.name());
 			}
 

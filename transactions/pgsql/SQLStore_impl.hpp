@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Operation.hpp"
 #include "DataStore.hpp"
 #include "Transaction.hpp"
 #include <memory>

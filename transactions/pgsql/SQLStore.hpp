@@ -190,18 +190,20 @@ namespace myria { namespace pgsql {
 			static auto tryCast(T && r){
 				return std::forward<T>(r);
 			}
-	
+
+
 			template<HandleAccess ha, typename T>
-			auto newObject(tracker::Tracker &trk, mtl::TransactionContext *tc, Name name, const T& init){
+			using SQLHandle = Handle<l,ha,T,SupportedOperation<RegisteredOperations::Increment,SelfType> >;
+			
+			template<HandleAccess ha, typename T>
+			SQLHandle<ha,T> newObject(tracker::Tracker &trk, mtl::TransactionContext *tc, Name name, const T& init){
 				static constexpr Table t =
 					(std::is_same<T,int>::value ? Table::IntStore : Table::BlobStore);
 				int size = mutils::bytes_size(init);
 				std::vector<char> v(size);
 				assert(size == mutils::to_bytes(init,&v[0]));
 				GSQLObject gso(*this,t,name,v);
-				auto ret = make_handle
-					<l,ha,T,SQLObject<T> >
-					(trk,tc,std::move(gso),mutils::heap_copy(init),this_mgr);
+				SQLHandle<ha,T> ret{trk,tc,std::make_shared<SQLObject<T> >(std::move(gso),mutils::heap_copy(init),this_mgr),*this };
 				trk.onCreate(*this,name,(T*)nullptr);
 				return ret;
 			}
@@ -216,9 +218,7 @@ namespace myria { namespace pgsql {
 				static constexpr Table t =
 					(std::is_same<T,int>::value ? Table::IntStore : Table::BlobStore);
 				GSQLObject gso(*this,t,name);
-				return make_handle
-					<l,ha,T,SQLObject<T> >
-					(trk,tc,std::move(gso),nullptr,this_mgr);
+				return SQLHandle<ha,T>{trk,tc,std::make_shared<SQLObject<T> >(std::move(gso),nullptr,this_mgr),*this};
 			}
 
 			template<typename T>
@@ -256,18 +256,14 @@ namespace myria { namespace pgsql {
 				return SQLStore_impl::instance_id();
 			}
 
-			OPERATION(Increment, SQLObject<int>* o) {
-				//TODO: ideally this would be automatically reduced to the correct type,
-				//but for now we'll just manually do it here.
+			void operation(mtl::TransactionContext* transaction_context,
+						   OperationIdentifier<RegisteredOperations::Increment>, SQLObject<int> &o){
 				assert(transaction_context && "Error: calling operations outside of transactions is disallowed");
 				SQLContext *ctx = (l == Level::strong ?
 								   dynamic_cast<SQLContext*>(transaction_context->strongContext.get()) :
 								   dynamic_cast<SQLContext*>(transaction_context->causalContext.get()));
 				assert(ctx && "error: should have entered transaction before this point!");
-				o->gso.increment(ctx->i.get());
-				return true;
+				o.gso.increment(ctx->i.get());
 			}
-			END_OPERATION
 		};
-
 	}}

@@ -9,8 +9,8 @@ namespace myria { namespace mtl {
 		struct Assignment : public ConStatement<get_level<Expr>::value>{
 		private:
 
-			template<Level l2, HandleAccess ha2>
-			static auto hndle_get(TransactionContext* ctx, Handle<l2,ha2,T> h){
+			template<Level l2, HandleAccess ha2,typename... Ops>
+			static auto hndle_get(TransactionContext* ctx, Handle<l2,ha2,T,Ops...> h){
 				return h.get(ctx->trackingContext->trk,ctx);
 			}
 
@@ -21,8 +21,8 @@ namespace myria { namespace mtl {
 
 			template<typename T2>
 			struct HDref_i {using t = T2;};
-			template<typename T2, Level l2, HandleAccess ha2>
-			struct HDref_i<Handle<l2,ha2,T2> > {using t = T2;};
+			template<typename T2, Level l2, HandleAccess ha2,typename... Ops>
+			struct HDref_i<Handle<l2,ha2,T2,Ops...> > {using t = T2;};
 			template<typename T2>
 			using HDref = typename HDref_i<run_result<T2> >::t;
 

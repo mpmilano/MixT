@@ -40,7 +40,7 @@ namespace myria{
 	};
 
 
-	template<Level l2, HandleAccess ha2, typename T2> struct Handle;
+	template<Level l2, HandleAccess ha2, typename T2,typename...> struct Handle;
 
 	template<Level l, typename T>
 	class RemoteObject : public GeneralRemoteObject<l>
@@ -57,7 +57,7 @@ namespace myria{
 	public:
 		RemoteObject(){}
 		virtual ~RemoteObject(){}
-		template<Level l2, HandleAccess HA, typename T2>
+		template<Level l2, HandleAccess HA, typename T2,typename...>
 		friend struct Handle;
 
 		using type = T;
