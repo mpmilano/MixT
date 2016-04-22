@@ -60,6 +60,9 @@ namespace myria{
 
 		using level_t = std::integral_constant<Level,l>;
 
+        /**
+         * use this constructor for *new* objects
+         */
 		template<typename DataStore, template<typename> class RO>
 			Handle(tracker::Tracker &trk, mtl::TransactionContext *tc, std::shared_ptr<RO<T> > _ro, DataStore& ds):
 			SupportedOperations::template SupportsOn<Handle>(
@@ -70,6 +73,18 @@ namespace myria{
 			auto &ctx = *tc;
 			do_onwrite(ctx,trk,*_ro);
 		}
+
+            /**
+             * use this constructor for *existing* objects
+             */
+            template<typename DataStore, template<typename> class RO>
+                Handle(std::shared_ptr<RO<T> > _ro, DataStore& ds):
+                SupportedOperations::template SupportsOn<Handle>(
+                    SupportedOperations::template SupportsOn<Handle>::template wrap_operation<RO>(ds))...,
+                _ro(_ro){
+                assert(_ro->store().level == l);
+            }
+
 
 		Handle& downCast() { return *this;}
 	

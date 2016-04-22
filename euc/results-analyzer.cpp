@@ -116,7 +116,7 @@ auto print_window_averages(std::string filename, const vector<vector<myria_log> 
 }
 
 auto trackertesting_total_io(const myria_log &row){
-        return row.trackertestingobject_get + row.trackertestingobject_put+ row.trackertestingobject_isvalid+ row.trackertestingobject_tobytes+ row.trackertestingobject_frombytes+ row.trackertesting_exists+ row.trackertesting_constructed+ row.trackertesting_transaction_built+ row.trackertesting_trycast+ row.trackertesting_transaction_commit+ row.trackertesting_transaction_abort+ row.trackertesting_localtime+ row.trackertesting_intransaction_check+ row.trackertestingobject_constructed+ row.trackertestingobject_registered+ row.trackertesting_newobject+ row.trackertesting_increment;
+        return row.trackertestingobject_get + row.trackertestingobject_put+ row.trackertestingobject_isvalid+ row.trackertestingobject_tobytes+ row.trackertestingobject_frombytes+ row.trackertesting_exists+ row.trackertesting_constructed+ row.trackertesting_transaction_built+ row.trackertesting_transaction_commit+ row.trackertesting_transaction_abort+ row.trackertesting_localtime+ row.trackertesting_intransaction_check+ row.trackertestingobject_constructed+ row.trackertestingobject_registered+ row.trackertesting_newobject+ row.trackertesting_increment;
 }
 
 auto trackertestingobject_calls(const myria_log &row){
@@ -129,7 +129,7 @@ auto trackertesting_nonobject_io_calls(const myria_log &row){
 }
 
 auto trackertesting_other_calls(const myria_log &row){
-	return row.trackertesting_constructed+ row.trackertesting_transaction_built+ row.trackertesting_trycast+  row.trackertesting_localtime+ row.trackertesting_intransaction_check;
+        return row.trackertesting_constructed+ row.trackertesting_transaction_built+ row.trackertesting_localtime+ row.trackertesting_intransaction_check;
 }
 
 int main(){
@@ -154,16 +154,19 @@ int main(){
 	
 	cout << "use only strong: " << endl;
 	for (auto &results : USE_STRONG()){
+                if (results.size() <= 1) continue;
 		cout << calculate_latency(results) << " for " << results.size() << " total events" << endl;
 	}
 
 	cout << "use both: " << endl;
 	for (auto &results : NO_USE_STRONG()){
+                if (results.size() <= 1) continue;
 		cout << calculate_latency(results) << " for " << results.size() << " total events" << endl;
 	}
 
 	std::cout << "number of IO events incurred: normal increments" << std::endl;
 	for (auto &results : NO_USE_STRONG()){
+            if (results.size() <= 1) continue;
 		long num_events{0};
 		long total_io{0};
 		long object_calls{0};
@@ -191,13 +194,10 @@ int main(){
 	std::cout << "intended request frequencies:" << std::endl;
 
 	for (auto &results : globals_NO_USE_STRONG()){
-		struct FreqCompare {
-			bool operator()(const Frequency& lhs, const Frequency& rhs){
-				return lhs.hertz < rhs.hertz;
-			}
-		};
-		set<Frequency,FreqCompare> freqs;
+                assert(0_Hz == 0_Hz);
+                set<Frequency> freqs;
 		for (auto &row : results){
+                    if (row.request_frequency != 0_Hz)
 			freqs.insert(row.request_frequency);
 		}
 		for (auto &freq : freqs)

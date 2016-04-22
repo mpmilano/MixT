@@ -169,10 +169,7 @@ int main(){
 		{ //TEMPORARY path debugging
                         unique_ptr<VMObjectLog> log{log_builder->template beginStruct<LoggedStructs::log>().release()};
                         log->pause(log);
-			auto ctx = start_transaction(log_builder->template beginStruct<LoggedStructs::log>(),trk,strong,causal);
-			auto hndl = strong.template existingObject<HandleAccess::all, int>(trk,ctx.get(),40);
-			ctx->full_commit();
-			ctx.reset();
+                        auto hndl = strong.template existingObject<HandleAccess::all, int>(log,40);
                         log->resume(log);
 			for (int i = 0; i < 2; ++i){
 				TRANSACTION(log,trk,hndl,
@@ -266,23 +263,14 @@ int main(){
 					}
 						return log_messages->single();
 					};
-					auto ctx = start_transaction(std::move(log_messages),trk,strong,causal);
 					if (better_rand() > .7 || !causal_enabled){
 						auto hndl = strong.template
-							existingObject<HandleAccess::all,int>(
-								trk, ctx.get(),name);
-						ctx->full_commit();
-						log_messages = std::move(ctx->logger);
-						ctx.reset();
+                                                        existingObject<HandleAccess::all,int>(log_messages,name);
 						return test_fun(hndl);
 					}
 					else {
 						auto hndl = causal.template
-						existingObject<HandleAccess::all,int>(
-						trk, ctx.get(),name);
-						ctx->full_commit();
-						log_messages = std::move(ctx->logger);
-						ctx.reset();
+                                                existingObject<HandleAccess::all,int>(log_messages,name);
 						return test_fun(hndl);
 					}
 				}();

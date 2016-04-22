@@ -167,7 +167,7 @@ namespace myria { namespace tracker {
 				i->_finalize();
 		}
 
-		TrackingContext::TrackingContext(abs_StructBuilder& logger, Tracker &trk, bool cod)
+                TrackingContext::TrackingContext(std::unique_ptr<mutils::abs_StructBuilder>& logger, Tracker &trk, bool cod)
 			:i(new TrackingContext::Internals{*trk.i,cod}),trk(trk),logger(logger){}
 
 		TrackingContext::~TrackingContext(){
@@ -305,7 +305,7 @@ namespace myria { namespace tracker {
 				auto &sctx = *ctx.template get_store_context<Level::strong>(ds_real);
 				auto meta_name = make_lin_metaname(name);
 				if (get<TDS::exists>(*t.strongDS)(*t.registeredStrong,meta_name)){
-					get<TDS::existingTomb>(*t.strongDS)(*ctx.logger,*t.registeredStrong,meta_name)->put(&sctx,Tracker::Tombstone{nonce,get_ip(),cache_port});
+                                        get<TDS::existingTomb>(*t.strongDS)(ctx.logger,*t.registeredStrong,meta_name)->put(&sctx,Tracker::Tombstone{nonce,get_ip(),cache_port});
 				}
 				else {
 					get<TDS::newTomb>(*t.strongDS)(*this,ctx,*t.registeredStrong,
@@ -471,12 +471,12 @@ namespace myria { namespace tracker {
 				update_clock(sctx,tctx,*i);
 				auto ts = make_lin_metaname(name);
 				if (get<TDS::exists>(*i->strongDS)(ds,ts)){
-					tctx.logger.incrementIntField(
+                                        tctx.logger->incrementIntField(
 						LogFields::tracker_strong_afterread_tombstone_exists);
 					auto tomb_p = get<TDS::existingTomb>(*i->strongDS)(tctx.logger,ds,ts)->get(&sctx,this,&tctx);
 					auto &tomb = *tomb_p;
 					if (!sleep_on(*tctx.i,*i,tomb.name(),2)){
-						tctx.logger.incrementIntField(
+                                                tctx.logger->incrementIntField(
 							LogFields::tracker_strong_afterread_nonce_unavailable);
 						//std::cout << "Nonce isn't immediately available, adding to pending_nonces" << std::endl;
 						tctx.i->pending_nonces_add.emplace_back
@@ -557,7 +557,7 @@ namespace myria { namespace tracker {
 		void Tracker::afterRead(TrackingContext &tctx, DataStore<Level::causal>&, Name name, const Clock& version, const std::vector<char> &data, Clock*){}
 		void Tracker::afterRead(TrackingContext &tctx, DataStore<Level::causal>&, Name name, const Clock& version, const std::vector<char> &data, void*){
 			if (tracking_candidate(*i,name,version)){
-				tctx.logger.incrementIntField(LogFields::tracker_causal_afterread_candidate);
+                                tctx.logger->incrementIntField(LogFields::tracker_causal_afterread_candidate);
 				//need to overwrite, not occlude, the previous element.
 				//C++'s map semantics are really stupid.
 				tctx.i->tracking_erase.push_back(name);

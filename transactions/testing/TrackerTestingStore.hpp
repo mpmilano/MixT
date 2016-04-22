@@ -258,11 +258,10 @@ namespace myria { namespace testing {
 			}
 
 			template<HandleAccess ha, typename T>
-			TestingHandle<ha,T> existingObject(tracker::Tracker &trk, mtl::TransactionContext *tc, Name name, T* for_inf = nullptr){
-				assert(tc);
-				tc->logger->incrementIntField(
+                        TestingHandle<ha,T> existingObject(std::unique_ptr<mutils::abs_StructBuilder>& logger, Name name, T* for_inf = nullptr){
+                                logger->incrementIntField(
 					LogFields::trackertesting_existingobject);
-				return TestingHandle<ha,T>(trk,tc,std::make_shared<TrackerTestingObject<T> >(*this,name),*this);
+                                return TestingHandle<ha,T>(std::make_shared<TrackerTestingObject<T> >(*this,name),*this);
 			}
 			
 			template<typename T>
