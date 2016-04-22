@@ -113,10 +113,14 @@ auto elapsed_time() {
 
 template<typename Strong, typename Causal>
 auto start_transaction(std::unique_ptr<VMObjectLog> log, tracker::Tracker &trk, Strong &strong, Causal &causal){
-        auto ctx = make_unique<TransactionContext>(log,nullptr,trk.generateContext(log));
-        ctx->strongContext = strong.begin_transaction(ctx->logger);
-        ctx->causalContext = causal.begin_transaction(ctx->logger);
+    assert(log);
+    auto ctx = make_unique<TransactionContext>(nullptr,trk.generateContext(std::move(log)));
+        ctx->strongContext = strong.begin_transaction(ctx->trackingContext->logger);
+        ctx->causalContext = causal.begin_transaction(ctx->trackingContext->logger);
+        assert(ctx->trackingContext);
+        assert(ctx->trackingContext->logger);
 	return ctx;
+        assert(!log);
 }
 
 int main(){
@@ -152,8 +156,11 @@ int main(){
 		tracker::Tracker trk{1025,tracker::CacheBehaviors::none};
 		TrackerTestingStore<Level::strong> strong{trk};
 		TrackerTestingStore<Level::causal> causal{trk};
-		auto log = log_builder->template beginStruct<LoggedStructs::log>();
+                auto log = log_builder->template beginStruct<LoggedStructs::log>();
+                assert(log);
 		auto ctx = start_transaction(std::move(log),trk,strong,causal);
+                assert(ctx->trackingContext);
+                assert(ctx->trackingContext->logger);
 		for (int i = 0; i <= name_max; ++i){
 			if (!strong.exists(i))
 				strong.template newObject<HandleAccess::all,int>(trk,ctx.get(),i,0);

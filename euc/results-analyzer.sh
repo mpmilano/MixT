@@ -29,6 +29,6 @@ fi
 
 rm /tmp/myriastore_results_analysis_dir/analyzer_bin
 mkdir -p /tmp/myriastore_results_analysis_dir/
-clang++ -ferror-limit=1 -I"$mutils" -L"$mutils" --std=c++14 -lmutils -lgc -lprofiler -o /tmp/myriastore_results_analysis_dir/analyzer_bin -I"$results_dir"  $results_dir/output*.o "$analyzer"/results-analyzer.cpp;
-LD_LIBRARY_PATH="$mutils" /tmp/myriastore_results_analysis_dir/analyzer_bin
+clang++ -ferror-limit=1 -I"$mutils" -L"$mutils" --std=c++14 --stdlib=libc++ -lmutils -lgc -lprofiler -o /tmp/myriastore_results_analysis_dir/analyzer_bin -I"$results_dir"  $results_dir/output*.o "$analyzer"/results-analyzer.cpp;
+LD_LIBRARY_PATH="$mutils" /tmp/myriastore_results_analysis_dir/analyzer_bin -ferror-limit=1
 

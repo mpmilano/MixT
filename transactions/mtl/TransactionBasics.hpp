@@ -36,7 +36,6 @@ namespace myria {
 			std::unique_ptr<tracker::TrackingContext> trackingContext;
 			std::unique_ptr<StoreContext<Level::strong> > strongContext{nullptr};
 			std::unique_ptr<StoreContext<Level::causal> > causalContext{nullptr};
-			std::unique_ptr<VMObjectLog> logger;
 			bool commit_on_delete = false;
 			
 		private:
@@ -47,20 +46,18 @@ namespace myria {
 			bool committed = false;
 
 		public:
-			TransactionContext(std::unique_ptr<VMObjectLog> &logger, void const * const param, decltype(trackingContext) trackingContext)
-				:parameter(param),trackingContext(std::move(trackingContext)),logger(std::move(logger))
+                        TransactionContext(void const * const param, decltype(trackingContext) trackingContext)
+                                :parameter(param),trackingContext(std::move(trackingContext))
 				{}
 
 			TransactionContext(const TransactionContext&) = delete;
 
-			TransactionContext(std::unique_ptr<VMObjectLog> &logger, void const * const param, decltype(strongContext) sc, decltype(trackingContext) trackingContext)
-				:parameter(param),trackingContext(std::move(trackingContext)),strongContext(std::move(sc)),
-				 logger(std::move(logger))
+                        TransactionContext(void const * const param, decltype(strongContext) sc, decltype(trackingContext) trackingContext)
+                                :parameter(param),trackingContext(std::move(trackingContext)),strongContext(std::move(sc))
 				{}
 
-			TransactionContext(std::unique_ptr<VMObjectLog> &logger, void const * const param, decltype(causalContext) cc, decltype(trackingContext) trackingContext)
-				:parameter(param),trackingContext(std::move(trackingContext)),causalContext(std::move(cc)),
-				 logger(std::move(logger))
+                        TransactionContext(void const * const param, decltype(causalContext) cc, decltype(trackingContext) trackingContext)
+                                :parameter(param),trackingContext(std::move(trackingContext)),causalContext(std::move(cc))
 				{}
 			
 			bool full_commit();
@@ -72,8 +69,10 @@ namespace myria {
 				auto& store_ctx = get_store_context(choice);
 				if (!store_ctx){
 					assert(!str.in_transaction());
-					assert(logger);
-                                        store_ctx.reset(str.begin_transaction(logger).release());
+                                        assert(trackingContext);
+                                        assert(trackingContext->logger);
+                                        store_ctx.reset(str.begin_transaction(trackingContext->logger).release());
+                                        assert(trackingContext->logger);
 				}
 				return store_ctx;
 			}

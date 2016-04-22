@@ -46,7 +46,7 @@ namespace myria { namespace mtl {
 						//in a special way, they do that for themselves.
 
 						   log->addField(LogFields::transaction_action,true);
-                                                   TransactionContext ctx{log,param,trk.generateContext(log)};
+                                                   TransactionContext ctx{param,trk.generateContext(std::move(log))};
 
 						   static_assert(
 							   std::is_same<
@@ -109,7 +109,7 @@ namespace myria { namespace mtl {
 							}
 						} while (true);
 
-						auto logger = std::move(ctx.logger);
+                                                auto logger = std::move(ctx.trackingContext->logger);
 						logger->addField(LogFields::num_causal_tries,causal_count);
 						
 						return std::move(logger);

@@ -250,8 +250,9 @@ namespace myria { namespace testing {
 			template<HandleAccess ha, typename T>
 			TestingHandle<ha,T> newObject(tracker::Tracker &trk, mtl::TransactionContext *tc, Name name, const T& init){
 				assert(tc);
-				
-				tc->logger->incrementIntField(LogFields::trackertesting_newobject);
+                                assert(tc->trackingContext);
+                                assert(tc->trackingContext->logger);
+                                tc->trackingContext->logger->incrementIntField(LogFields::trackertesting_newobject);
 				TestingHandle<ha,T> ret{trk,tc,std::make_shared<TrackerTestingObject<T> >(*this,name,init),*this};
 				trk.onCreate(*this,name, (T*)nullptr);
 				return ret;
@@ -285,11 +286,11 @@ namespace myria { namespace testing {
 					 dynamic_cast<AlwaysSuccessfulTransaction*>(_ctx->causalContext.get()));
 				assert(ctx && "error: should have entered transaction before this point!");
                                 ctx->logger->incrementIntField(LogFields::trackertesting_increment);
-                                ctx->logger->pause(_ctx->logger);
-                                assert(_ctx->logger->isPaused());
+                                ctx->logger->pause(ctx->logger);
+                                assert(ctx->logger->isPaused());
 				o.put(ctx,*o.t + 1);
-                                ctx->logger->resume(_ctx->logger);
-                                assert(!_ctx->logger->isPaused());
+                                ctx->logger->resume(ctx->logger);
+                                assert(!ctx->logger->isPaused());
 			}
 		};
 	}}

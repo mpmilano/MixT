@@ -167,15 +167,15 @@ namespace myria { namespace tracker {
 				i->_finalize();
 		}
 
-                TrackingContext::TrackingContext(std::unique_ptr<mutils::abs_StructBuilder>& logger, Tracker &trk, bool cod)
-			:i(new TrackingContext::Internals{*trk.i,cod}),trk(trk),logger(logger){}
+                TrackingContext::TrackingContext(std::unique_ptr<mutils::abs_StructBuilder> logger, Tracker &trk, bool cod)
+                        :i(new TrackingContext::Internals{*trk.i,cod}),trk(trk),logger(std::move(logger)){}
 
 		TrackingContext::~TrackingContext(){
 			if (i) delete i;
 		}
 
-                std::unique_ptr<TrackingContext> Tracker::generateContext(std::unique_ptr<mutils::abs_StructBuilder>& logger, bool commitOnDelete){
-			return std::unique_ptr<TrackingContext>{(new TrackingContext{logger, *this,commitOnDelete})};
+                std::unique_ptr<TrackingContext> Tracker::generateContext(std::unique_ptr<mutils::abs_StructBuilder> logger, bool commitOnDelete){
+                        return std::unique_ptr<TrackingContext>{(new TrackingContext{std::move(logger), *this,commitOnDelete})};
 		}
 
 	}
@@ -305,7 +305,7 @@ namespace myria { namespace tracker {
 				auto &sctx = *ctx.template get_store_context<Level::strong>(ds_real);
 				auto meta_name = make_lin_metaname(name);
 				if (get<TDS::exists>(*t.strongDS)(*t.registeredStrong,meta_name)){
-                                        get<TDS::existingTomb>(*t.strongDS)(ctx.logger,*t.registeredStrong,meta_name)->put(&sctx,Tracker::Tombstone{nonce,get_ip(),cache_port});
+                                        get<TDS::existingTomb>(*t.strongDS)(ctx.trackingContext->logger,*t.registeredStrong,meta_name)->put(&sctx,Tracker::Tombstone{nonce,get_ip(),cache_port});
 				}
 				else {
 					get<TDS::newTomb>(*t.strongDS)(*this,ctx,*t.registeredStrong,
