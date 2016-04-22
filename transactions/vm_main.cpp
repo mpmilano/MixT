@@ -137,7 +137,7 @@ int main(){
 	
 	/*
 //init
-	SQLStore<Level::strong> &strong = SQLStore<Level::strong>::inst(ip);
+        SQLStore<Level::strong> &strong = SQLStore<Level::strong>::inst(ip);
 	SQLStore<Level::causal> &causal = SQLStore<Level::causal>::inst(0);
 	for (int i = 40743; i < std::numeric_limits<int>::max();++i){
 		std::cout << i << std::endl;
@@ -196,17 +196,17 @@ int main(){
 		unique_ptr<VMObjectLogger> log_builder{build_VMObjectLogger()};
 		
 		tracker::Tracker trk;
-		//SQLStore<Level::strong>::SQLInstanceManager ss;
-		//SQLStore<Level::causal>::SQLInstanceManager sc;
-		TrackerTestingStore<Level::strong> ss;
-		TrackerTestingStore<Level::causal> sc;
+                SQLStore<Level::strong>::SQLInstanceManager ss;
+                SQLStore<Level::causal>::SQLInstanceManager sc;
+                //TrackerTestingStore<Level::strong> ss;
+                //TrackerTestingStore<Level::causal> sc;
 		DeserializationManager dsm;
 		
 		Remember(int id)
 			:trk(id + 1024, tracker::CacheBehaviors::full),
 			 ss(trk),
 			 sc(trk),
-			 dsm({/*&ss,&sc*/}){}
+                         dsm({&ss,&sc}){}
 	};
 
 	struct PoolFunStruct {
@@ -223,10 +223,10 @@ int main(){
 			try{
 				assert(true);
 				std::string str = [&](){
-					//SQLStore<Level::strong> &strong = mem->ss.inst_strong(ip);
-					//SQLStore<Level::causal> &causal = mem->sc.inst_causal(0);
-					auto &strong = mem->ss;
-					auto &causal = mem->sc;
+                                        SQLStore<Level::strong> &strong = mem->ss.inst_strong(ip);
+                                        SQLStore<Level::causal> &causal = mem->sc.inst_causal(0);
+                                        //auto &strong = mem->ss;
+                                        //auto &causal = mem->sc;
 					auto &trk = mem->trk;
 					assert(!strong.in_transaction());
 					assert(!causal.in_transaction());

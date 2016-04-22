@@ -11,7 +11,8 @@ namespace myria { namespace pgsql {
 		class SQLStore : public SQLStore_impl, public DataStore<l> {
 		public:
 
-			
+                        static constexpr Level level = l;
+
 			struct SQLInstanceManager : public SQLInstanceManager_abs{
 			public:
 				tracker::Tracker &trk;
@@ -178,8 +179,11 @@ namespace myria { namespace pgsql {
 			};
 
 			template<HandleAccess ha, typename T>
-			using SQLHandle = Handle<l,ha,T,SupportedOperation<RegisteredOperations::Increment,SelfType> >;
-			
+                        using SQLHandle = std::conditional_t<std::is_same<T,int>::value,
+                                                             Handle<l,ha,int,SupportedOperation<RegisteredOperations::Increment,SelfType> >,
+                                                             Handle<l,ha,T>
+                        >;
+
 			template<HandleAccess ha, typename T>
 			SQLHandle<ha,T> newObject(tracker::Tracker &trk, mtl::TransactionContext *tc, Name name, const T& init){
 				static constexpr Table t =
@@ -199,12 +203,12 @@ namespace myria { namespace pgsql {
 			}
 
 			template<HandleAccess ha, typename T>
-			auto existingObject(tracker::Tracker &trk, mtl::TransactionContext *tc, Name name, T* for_inf = nullptr){
+                        auto existingObject(std::unique_ptr<VMObjectLog>&, Name name, T* for_inf = nullptr){
 				static constexpr Table t =
 					(std::is_same<T,int>::value ? Table::IntStore : Table::BlobStore);
 				GSQLObject gso(*this,t,name);
-				return SQLHandle<ha,T>{trk,tc,std::make_shared<SQLObject<T> >(std::move(gso),nullptr,this_mgr),*this};
-			}
+                                return SQLHandle<ha,T>{std::make_shared<SQLObject<T> >(std::move(gso),nullptr,this_mgr),*this};
+                        }
 
 			template<typename T>
                         std::unique_ptr<SQLObject<T> > existingRaw(std::unique_ptr<mutils::abs_StructBuilder>&, Name name, T* for_inf = nullptr){
