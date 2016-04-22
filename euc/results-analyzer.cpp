@@ -164,8 +164,8 @@ int main(){
 		cout << calculate_latency(results) << " for " << results.size() << " total events" << endl;
 	}
 
-	std::cout << "number of IO events incurred: normal increments" << std::endl;
-	for (auto &results : NO_USE_STRONG()){
+        std::cout << "number of IO events incurred: first normal, then strong" << std::endl;
+        for (auto &types : {NO_USE_STRONG(), USE_STRONG()}) for (auto &results : types){
             if (results.size() <= 1) continue;
 		long num_events{0};
 		long total_io{0};
@@ -184,9 +184,9 @@ int main(){
 		}
 		cout << "TrackerTesting API hits: " << total_io << endl;
 		std::cout << "num events: " << num_events << std::endl;
-		cout << "events per increment: " << (total_io + 0.0) / num_events << endl;
-		cout << "object io per increment: " << object_calls / (num_events + 0.0) << endl;
-		cout << "nonobject io per increment: " << nonobject_io / (num_events + 0.0) << endl;
+                cout << "events per read: " << (total_io + 0.0) / num_events << endl;
+                cout << "object io per read: " << object_calls / (num_events + 0.0) << endl;
+                cout << "nonobject io per read: " << nonobject_io / (num_events + 0.0) << endl;
 		cout << "other API hits: " << other / (num_events + 0.0) << endl;
 		cout << "existingobject " << existingObject_calls/ (num_events + 0.0) << endl;
  	}
