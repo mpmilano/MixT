@@ -197,11 +197,7 @@ namespace myria { namespace testing {
 					return std::make_shared<T>(*t);
 				}
 				
-				void put(mtl::StoreContext<l>* tc,const T& to) {
-					assert(tc);
-                                        ((AlwaysSuccessfulTransaction*)tc)->logger->incrementIntField(LogFields::trackertestingobject_put);
-					
-					
+                                void raw_put(mtl::StoreContext<l>*,const T& to) {
 					this->t = std::make_unique<T>(to);
 					if (l == Level::strong)
 						remote_store_set(nam,to);
@@ -209,6 +205,12 @@ namespace myria { namespace testing {
 						tts.causal_remote_propogation(nam,to);
 					}
 				}
+
+                                void put(mtl::StoreContext<l>* tc,const T& to) {
+                                        assert(tc);
+                                        ((AlwaysSuccessfulTransaction*)tc)->logger->incrementIntField(LogFields::trackertestingobject_put);
+                                        raw_put(tc,to);
+                                }
 				
 				const DataStore<l>& store() const {
 					return tts;
@@ -288,7 +290,7 @@ namespace myria { namespace testing {
                                 ctx->logger->incrementIntField(LogFields::trackertesting_increment);
                                 ctx->logger->pause(ctx->logger);
                                 assert(ctx->logger->isPaused());
-				o.put(ctx,*o.t + 1);
+                                o.raw_put(ctx,*o.t + 1);
                                 ctx->logger->resume(ctx->logger);
                                 assert(!ctx->logger->isPaused());
 			}
