@@ -33,7 +33,7 @@ namespace myria{
 	std::ostream& operator<<(std::ostream&, GlobalsFields);
 
 	using VMObjectLogger =
-        mutils::ObjectBuilder<false,
+        mutils::ObjectBuilder<true,
 		LoggedStructs,
 		mutils::StructType<LoggedStructs,LoggedStructs::log,LogFields>,
 		mutils::StructType<LoggedStructs,LoggedStructs::globals,GlobalsFields> >;
