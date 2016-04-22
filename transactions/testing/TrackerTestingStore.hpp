@@ -288,11 +288,7 @@ namespace myria { namespace testing {
 					 dynamic_cast<AlwaysSuccessfulTransaction*>(_ctx->causalContext.get()));
 				assert(ctx && "error: should have entered transaction before this point!");
                                 ctx->logger->incrementIntField(LogFields::trackertesting_increment);
-                                ctx->logger->pause(ctx->logger);
-                                assert(ctx->logger->isPaused());
                                 o.raw_put(ctx,*o.t + 1);
-                                ctx->logger->resume(ctx->logger);
-                                assert(!ctx->logger->isPaused());
 			}
 		};
 	}}
