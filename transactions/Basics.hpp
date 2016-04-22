@@ -41,7 +41,7 @@ namespace myria{
     //using VMObjectLog = typename VMObjectLogger::StructBuilder<LoggedStructs::log>;
     using VMObjectLog = mutils::abs_StructBuilder;
 
-	using VMProfiler = mutils::Profiler;
+    //using VMProfiler = mutils::Profiler;
 	
 	std::unique_ptr<VMObjectLogger> build_VMObjectLogger();
 

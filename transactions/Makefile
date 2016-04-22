@@ -2,8 +2,8 @@ TRANS_DIR= `pwd`/
 IP_quad=`ifconfig | sed s/broadcast.*//g | tr " " "\n" | grep 128.84 | rev | sed s/'\..*'//g | rev`
 storeList='pgsql::SQLStore<Level::strong>, pgsql::SQLStore<Level::causal>, testing::TrackerTestingStore<Level::strong>, testing::TrackerTestingStore<Level::causal>'
 CPPFLAGS= -I$(PWD) -I$(PWD)/mtl -I$(PWD)/myria-utils -I$(PWD)/mutils -I$(PWD)/mutils-containers -I$(PWD)/mutils-serialization -I$(PWD)/mutils-tasks -I$(PWD)/testing -I$(PWD)/pgsql -I$(PWD)/tracker -g -p -stdlib=libc++ --std=c++14 -Wall -ferror-limit=1 -DNUM_CAUSAL_GROUPS="4" -DSTORE_LIST=$(storeList) -DMY_IP=\"$(MY_IP)\" -DMAX_THREADS=$(MAX_THREADS) -DDECLARED_OPERATIONS="template<Level l2> DECLARE_OPERATION(Increment, RemoteObject<l2,int>*) template<Level l2, typename T> DECLARE_OPERATION(Insert, RemoteObject<l2,std::set<T> >*, const T& ) "
-LDFLAGS= -stdlib=libc++ --std=c++14 -lprofiler -lpqxx -lm -pthread -lgc
-object_files=FutureFreePool.o CooperativeCache.o Ends.o utils.o Profiler.o GC_pointer.o Basics.o Tracker.o Ostreams.o SerializationSupport.o WhileBuilder.o ConExpr.o SQLStore.o TempBuilder.o TransactionBasics.o
+LDFLAGS= -stdlib=libc++ --std=c++14 -lpqxx -lm -pthread
+object_files=FutureFreePool.o CooperativeCache.o Ends.o utils.o Basics.o Tracker.o Ostreams.o SerializationSupport.o WhileBuilder.o ConExpr.o SQLStore.o TempBuilder.o TransactionBasics.o
 export IP_quad
 export TRANS_DIR
 export CPPFLAGS

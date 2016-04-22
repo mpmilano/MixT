@@ -327,7 +327,7 @@ int main(){
 		}
 	};
 	
-	assert(Profiler::pausedOrInactive());
+        //assert(Profiler::pausedOrInactive());
 	std::string (*pool_fun) (std::unique_ptr<Remember>&, int, unsigned long long) = PoolFunStruct::pool_fun;
 
 	std::string (*exn_handler) (std::exception_ptr) = PoolFunStruct::exn_handler;
