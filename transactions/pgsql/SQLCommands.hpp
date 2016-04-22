@@ -217,7 +217,7 @@ namespace{
 				return ret;
 			}();
 			auto &commands = v.at(((int)t) * n + (k-1));
-			for (int i = 0; i < commands.size(); ++i){
+                        for (std::size_t i = 0; i < commands.size(); ++i){
 				auto &p = commands[i];
 				if (i == 1 || i == 2)
 					trans.prepared(p.first,p.second,id);

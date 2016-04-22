@@ -50,7 +50,7 @@ namespace myria { namespace pgsql {
 			GDataStore &_store;
 		public:
 			
-			virtual ~SQLStore_impl();
+                        virtual ~SQLStore_impl();
 
 			template<Level l>
 			friend class SQLStore;
@@ -87,7 +87,7 @@ namespace myria { namespace pgsql {
 				void save(SQLTransaction*);
 				char* load(SQLTransaction*);
 				char* obj_buffer();
-				char const * const obj_buffer() const ;
+                                char const * obj_buffer() const ;
 				int obj_buffer_size() const;
 				const std::array<int,NUM_CAUSAL_GROUPS>& timestamp() const ;
 				SQLStore_impl& store();

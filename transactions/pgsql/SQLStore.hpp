@@ -13,6 +13,8 @@ namespace myria { namespace pgsql {
 
                         static constexpr Level level = l;
 
+                        virtual ~SQLStore() {}
+
 			struct SQLInstanceManager : public SQLInstanceManager_abs{
 			public:
 				tracker::Tracker &trk;
@@ -20,31 +22,38 @@ namespace myria { namespace pgsql {
 					:SQLInstanceManager_abs(),trk(trk){
 				}
 				SQLInstanceManager(const SQLInstanceManager&) = delete;
-				virtual ~SQLInstanceManager(){}
+                                virtual ~SQLInstanceManager(){
+                                    for (auto &p : ss){
+                                        SQLStore* ptr = p.second.release();
+                                        delete ptr;
+                                    }
+                                }
 			private:
 				std::map<int,std::unique_ptr<SQLStore> > ss;
 				
 				void inst(Level l2, int instance_id){
 					assert(l == l2);
-					if (ss.count(instance_id) == 0){
+                                        if (ss.count(instance_id) == 0 || (!ss.at(instance_id))){
 						assert(this->this_mgr);
 						ss[instance_id].reset(new SQLStore(trk,instance_id,*this->this_mgr));
 					}
 				}
 
 				SQLStore<Level::strong>& choose_s(int instance_id, std::true_type*){
+                                    assert(ss.at(instance_id));
 					return *ss.at(instance_id);
 				}
 				
-				SQLStore<Level::strong>& choose_s(int instance_id, std::false_type*){
+                                SQLStore<Level::strong>& choose_s(int, std::false_type*){
 					assert(false && "Error: This is not a strong instance manager");
 				}
 				
 				SQLStore<Level::causal>& choose_c(int instance_id, std::true_type*){
+                                    assert(ss.at(instance_id));
 					return *ss.at(instance_id);
 				}
 				
-				SQLStore<Level::causal>& choose_c(int instance_id, std::false_type*){
+                                SQLStore<Level::causal>& choose_c(int, std::false_type*){
 					assert(false && "Error: This is not a causal instance manager");
 				}
 				
@@ -64,6 +73,7 @@ namespace myria { namespace pgsql {
 
 				auto& inst(int instance_id){
 					inst(l,instance_id);
+                                        assert(ss.at(instance_id));
 					return *ss.at(instance_id);
 				}
 			};
@@ -203,7 +213,7 @@ namespace myria { namespace pgsql {
 			}
 
 			template<HandleAccess ha, typename T>
-                        auto existingObject(std::unique_ptr<VMObjectLog>&, Name name, T* for_inf = nullptr){
+                        auto existingObject(std::unique_ptr<VMObjectLog>&, Name name){
 				static constexpr Table t =
 					(std::is_same<T,int>::value ? Table::IntStore : Table::BlobStore);
 				GSQLObject gso(*this,t,name);
@@ -211,7 +221,7 @@ namespace myria { namespace pgsql {
                         }
 
 			template<typename T>
-                        std::unique_ptr<SQLObject<T> > existingRaw(std::unique_ptr<mutils::abs_StructBuilder>&, Name name, T* for_inf = nullptr){
+                        std::unique_ptr<SQLObject<T> > existingRaw(std::unique_ptr<mutils::abs_StructBuilder>&, Name name){
 				static constexpr Table t =
 					(std::is_same<T,int>::value ? Table::IntStore : Table::BlobStore);
 				return std::unique_ptr<SQLObject<T> >

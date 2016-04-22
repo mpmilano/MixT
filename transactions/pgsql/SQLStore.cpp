@@ -142,7 +142,7 @@ namespace myria{ namespace pgsql {
 		struct SQLStore_impl::GSQLObject::Internals{
 			const Table table;
 			const Name key;
-			const int size;
+                        const std::size_t size;
 			const int store_id;
 			const Level level;
 			SQLStore_impl &_store;
@@ -375,7 +375,7 @@ namespace myria{ namespace pgsql {
 			return i->buf1;
 		}
 
-		char const * const SQLStore_impl::GSQLObject::obj_buffer() const {
+                char const * SQLStore_impl::GSQLObject::obj_buffer() const {
 			return i->buf1;
 		}
 
@@ -421,9 +421,10 @@ namespace myria{ namespace pgsql {
 							  arrt[0],arr[0],arr[1]);
 		}
 
+
 		SQLStore_impl::~SQLStore_impl(){
 			delete default_connection;
-		}
+                }//*/
 
 	}
 }

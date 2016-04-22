@@ -13,7 +13,7 @@ namespace myria{
 		virtual bool in_transaction() const = 0; //mostly for debugging
 
 		GDataStore(Level l):level(l){}
-		virtual ~GDataStore(){}
+        virtual ~GDataStore() {}
 	};
 
 	template<Level l>

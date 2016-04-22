@@ -17,6 +17,7 @@ namespace myria{
 		//the parameters to this function should just be passed directly to TransactionContext's constructor.
         virtual std::unique_ptr<mtl::StoreContext<Level::strong> > begin_transaction(std::unique_ptr<mutils::abs_StructBuilder>&) = 0;
 		DataStore():GDataStore{Level::strong}{}
+        virtual ~DataStore() {}
 	
 	};
 
@@ -31,6 +32,7 @@ namespace myria{
 		DataStore():GDataStore{Level::causal}{}
 
 		virtual const std::array<int, NUM_CAUSAL_GROUPS>& local_time() const = 0;
+        virtual ~DataStore() {}
 	
 	};
 }

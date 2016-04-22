@@ -58,14 +58,11 @@ namespace myria { namespace mtl {
 
 		template<unsigned long long id, Level l, typename T, typename CS>
 		auto isValid_desugar(Temporary<id,l,T> const * const gt, const CS &cs){
-			//TODO: debugging, remove
-			return cs;
-			/*
-			  return std::make_tuple(
-			  make_if(
-			  make_isValid(
-			  RefTemporary<id,l,T,Temporary<id,l,T> >{*gt})
-			  , cs, std::make_tuple())); //*/
+			return std::make_tuple(
+				make_if(
+					make_isValid(
+						RefTemporary<id,l,T,Temporary<id,l,T> >{*gt})
+					, cs, std::make_tuple())); //*/
 		}
 
 		template<typename T, typename CS>

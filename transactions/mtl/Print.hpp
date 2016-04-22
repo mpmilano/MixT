@@ -101,13 +101,13 @@ namespace myria { namespace mtl {
 				return std::tuple<>();
 			}
 
-			bool strongCall(TransactionContext* ctx, StrongCache& a, const StrongStore& b) const {
+                        bool strongCall(TransactionContext* , StrongCache& , const StrongStore& ) const {
 				if (print_at_strong)
 					std::cout << t << std::endl;
 				return true;
 			}
 	
-			constexpr bool causalCall(TransactionContext* ctx, CausalCache& a, const CausalStore& b) const {
+                        constexpr bool causalCall(TransactionContext* , CausalCache& , const CausalStore& ) const {
 				if (!print_at_strong)
 					std::cout << t << std::endl;
 				return true;

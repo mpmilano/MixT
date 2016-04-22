@@ -150,7 +150,7 @@ int main(){
 
 	//tracker testing init
 	
-	{
+        if (false){
 		using namespace ::myria::testing;
 		unique_ptr<VMObjectLogger> log_builder{build_VMObjectLogger()};
 		tracker::Tracker trk{1025,tracker::CacheBehaviors::none};

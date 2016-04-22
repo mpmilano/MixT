@@ -49,9 +49,8 @@ namespace myria{
 		}
 	} // aux::
 
-	template<class Ch, class Tr, class... Args>
-	auto operator<<(std::basic_ostream<Ch, Tr>& os, std::tuple<Args...> const& t)
-		-> std::basic_ostream<Ch, Tr>&
+    template<class... Args>
+    std::ostream& operator<<(std::ostream& os, const std::tuple<Args...> & t)
 	{
 		aux::print_tuple(os, t, aux::gen_seq<sizeof...(Args)>());
 		return os;
@@ -102,15 +101,21 @@ namespace myria{
 		}
 
 
-		template<typename Cond, typename Then, typename Els>
-		std::ostream & operator<<(std::ostream &os, const mtl::If<Cond,Then,Els>& i){
+        template<typename Cond, typename Then, typename Els1, typename... Els>
+        std::ostream & operator<<(std::ostream &os, const mtl::If<Cond,Then,std::tuple<Els1, Els...> >& i){
 			os << "if (" << i.cond <<") then: " << std::endl <<
 				"     " << i.then;
-			if (std::tuple_size<Els>::value > 0){
-				os << "else: " << "     " << i.els;
-			}
+                aux::print_tuple(os << "else: " << "     ", i.els, aux::gen_seq<sizeof...(Els) + 1>());
 			return os;
 		}
+
+		template<typename Cond, typename Then>
+        std::ostream & operator<<(std::ostream &os, const mtl::If<Cond,Then,std::tuple<> >& i){
+			os << "if (" << i.cond <<") then: " << std::endl <<
+				"     " << i.then;
+			return os;
+		}
+
 
 		template<typename Cond, typename Then>
 		std::ostream & operator<<(std::ostream &os, const mtl::While<Cond,Then>& i){
@@ -202,28 +207,28 @@ namespace myria{
 
 		
 		template<typename T, restrict(std::is_base_of<mtl::BaseFindUsages CMA T>::value)>
-		std::ostream & operator<<(std::ostream &os, const T& op){
+        std::ostream & operator<<(std::ostream &os, const T&){
 			return os << "operation " << (int)T::name::value << "<" << mtl::get_level<T>::value << ">";
 		}
 
 		template<mtl::StoreType st>
-		std::ostream & operator<<(std::ostream &os, const mtl::StoreMap<st> &store){
+        std::ostream & operator<<(std::ostream &os, const mtl::StoreMap<st> &){
 			return os << "(a Store)";
 		}
 
 		template<typename T, typename Expr, typename Temp>
-		std::ostream & operator<<(std::ostream &os, const mtl::Assignment<T,Expr,Temp> &store){
+        std::ostream & operator<<(std::ostream &os, const mtl::Assignment<T,Expr,Temp> &){
 			return os << "not printing assignments yet";
 		}
 	}
 
 	template<typename T, restrict(!std::is_same<T CMA std::nullptr_t>::value)>
-	const auto print_util(const std::shared_ptr<const T> &sp){
+    const auto& print_util(const std::shared_ptr<const T> &sp){
 		return *sp;
 	}
 
 	template<Level l, HandleAccess ha, typename T,typename... Ops>
-	std::ostream & operator<<(std::ostream &os, const Handle<l,ha,T,Ops...>& h){
+    std::ostream & operator<<(std::ostream &os, const Handle<l,ha,T,Ops...>& ){
 		os << "Handle<" << levelStr<l>() << ">";
 		return os;
 	}

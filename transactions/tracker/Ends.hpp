@@ -9,7 +9,7 @@ namespace myria { namespace tracker {
 	
 			template<size_t s>
 			bool is_same(const std::array<int,s> &a,const std::array<int,s> &b){
-				for (int i = 0; i < s; ++i){
+                                for (decltype(s) i = 0; i < s; ++i){
 					if (a[i] != b[i]) return false;
 				}
 				return true;
@@ -17,7 +17,7 @@ namespace myria { namespace tracker {
 	
 			template<size_t s>
 			bool prec(const std::array<int,s> &a,const std::array<int,s> &b){
-				for (int i = 0; i < s; ++i){
+                                for (decltype(s) i = 0; i < s; ++i){
 					assert(a[i] != -1);
 					assert(b[i] != -1);
 					if (a[i] > b[i]) return false;
