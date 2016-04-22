@@ -12,7 +12,7 @@ namespace myria{
 		submit_time, run_time, cc_num_tries, done_time, is_write, is_read,
 			is_serialization_error, pqxx_failure_string, pqxx_failure, num_causal_tries,
 			trackertestingobject_get, trackertestingobject_put, trackertestingobject_isvalid, trackertestingobject_tobytes, trackertestingobject_frombytes,
-			trackertesting_exists, trackertesting_constructed, trackertesting_transaction_built, trackertesting_trycast,
+            trackertesting_exists, trackertesting_constructed, trackertesting_transaction_built,
 			trackertesting_transaction_commit, trackertesting_transaction_abort, trackertesting_localtime, trackertesting_intransaction_check,
 			trackertestingobject_constructed, trackertestingobject_registered, trackertesting_newobject, trackertesting_existingobject, trackertesting_existingraw,
 			trackertesting_increment,
@@ -37,7 +37,9 @@ namespace myria{
 		LoggedStructs,
 		mutils::StructType<LoggedStructs,LoggedStructs::log,LogFields>,
 		mutils::StructType<LoggedStructs,LoggedStructs::globals,GlobalsFields> >;
-	using VMObjectLog = typename VMObjectLogger::StructBuilder<LoggedStructs::log>;
+
+    //using VMObjectLog = typename VMObjectLogger::StructBuilder<LoggedStructs::log>;
+    using VMObjectLog = mutils::abs_StructBuilder;
 
 	using VMProfiler = mutils::Profiler;
 	

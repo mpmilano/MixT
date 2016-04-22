@@ -73,7 +73,7 @@ namespace myria {
 				if (!store_ctx){
 					assert(!str.in_transaction());
 					assert(logger);
-					store_ctx.reset(str.begin_transaction(*logger).release());
+                                        store_ctx.reset(str.begin_transaction(logger).release());
 				}
 				return store_ctx;
 			}

@@ -46,7 +46,7 @@ namespace myria { namespace mtl {
 						//in a special way, they do that for themselves.
 
 						   log->addField(LogFields::transaction_action,true);
-						   TransactionContext ctx{log,param,trk.generateContext(*log)};
+                                                   TransactionContext ctx{log,param,trk.generateContext(log)};
 
 						   static_assert(
 							   std::is_same<
@@ -134,6 +134,6 @@ namespace myria { namespace mtl {
 		};
 		
 		struct SerializationFailure : mutils::StaticMyriaException<MACRO_GET_STR("Error: Serialization Failure")> {};
-		struct ClassCastException : mutils::StaticMyriaException<MACRO_GET_STR("Error: Class Cast Exception")> {};
+                //struct ClassCastException : mutils::StaticMyriaException<MACRO_GET_STR("Error: Class Cast Exception")> {};
 
 	} }

@@ -174,7 +174,7 @@ namespace myria { namespace tracker {
 			if (i) delete i;
 		}
 
-		std::unique_ptr<TrackingContext> Tracker::generateContext(mutils::abs_StructBuilder& logger, bool commitOnDelete){
+                std::unique_ptr<TrackingContext> Tracker::generateContext(std::unique_ptr<mutils::abs_StructBuilder>& logger, bool commitOnDelete){
 			return std::unique_ptr<TrackingContext>{(new TrackingContext{logger, *this,commitOnDelete})};
 		}
 

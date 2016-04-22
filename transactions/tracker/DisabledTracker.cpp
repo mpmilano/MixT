@@ -42,7 +42,7 @@ namespace myria { namespace tracker {
 
 		void Tracker::exemptItem(Name name){}
 
-		std::unique_ptr<TrackingContext> Tracker::generateContext(mutils::abs_StructBuilder& l, bool commitOnDelete){
+                std::unique_ptr<TrackingContext> Tracker::generateContext(std::unique_ptr<mutils::abs_StructBuilder>& l, bool){
 			return std::make_unique<TrackingContext>(l,*this);
 		}
 		
@@ -90,7 +90,7 @@ namespace myria { namespace tracker {
 
 		struct TrackingContext::Internals{};		
 
-		TrackingContext::TrackingContext(mutils::abs_StructBuilder&l, Tracker& t, bool commitOnDelete):trk(t),logger(l){}
+                TrackingContext::TrackingContext(std::unique_ptr<mutils::abs_StructBuilder>&l, Tracker& t, bool):trk(t),logger(l){}
 		
 		void TrackingContext::commitContext(){}
 		void TrackingContext::abortContext(){}

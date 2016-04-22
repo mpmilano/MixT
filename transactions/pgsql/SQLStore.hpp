@@ -177,21 +177,6 @@ namespace myria { namespace pgsql {
 				}
 			};
 
-			template<typename T, Level l2>
-			static SQLObject<T>* tryCast(RemoteObject<l2,T>* r) {
-				if(auto *ret = dynamic_cast<SQLObject<T>* >(r)){
-					assert(l2 == l);
-					return ret;
-				}
-				else throw mtl::ClassCastException();
-			}
-	
-			template<typename T, restrict(!(is_RemoteObj_ptr<T>::value))>
-			static auto tryCast(T && r){
-				return std::forward<T>(r);
-			}
-
-
 			template<HandleAccess ha, typename T>
 			using SQLHandle = Handle<l,ha,T,SupportedOperation<RegisteredOperations::Increment,SelfType> >;
 			
@@ -222,7 +207,7 @@ namespace myria { namespace pgsql {
 			}
 
 			template<typename T>
-			std::unique_ptr<SQLObject<T> > existingRaw(mutils::abs_StructBuilder&, Name name, T* for_inf = nullptr){
+                        std::unique_ptr<SQLObject<T> > existingRaw(std::unique_ptr<mutils::abs_StructBuilder>&, Name name, T* for_inf = nullptr){
 				static constexpr Table t =
 					(std::is_same<T,int>::value ? Table::IntStore : Table::BlobStore);
 				return std::unique_ptr<SQLObject<T> >
@@ -246,7 +231,7 @@ namespace myria { namespace pgsql {
 				void store_abort() {i->store_abort();}
 			};
 
-			std::unique_ptr<mtl::StoreContext<l> > begin_transaction(mutils::abs_StructBuilder&)
+                        std::unique_ptr<mtl::StoreContext<l> > begin_transaction(std::unique_ptr<mutils::abs_StructBuilder>&)
 				{
 					auto ret = SQLStore_impl::begin_transaction();
 					return std::unique_ptr<mtl::StoreContext<l> >(new SQLContext{std::move(ret),this_mgr});

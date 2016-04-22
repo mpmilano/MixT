@@ -116,7 +116,7 @@ auto print_window_averages(std::string filename, const vector<vector<myria_log> 
 }
 
 auto trackertesting_total_io(const myria_log &row){
-	return row.trackertestingobject_get + row.trackertestingobject_put+ row.trackertestingobject_isvalid+ row.trackertestingobject_tobytes+ row.trackertestingobject_frombytes+ row.trackertesting_exists+ row.trackertesting_constructed+ row.trackertesting_transaction_built+ row.trackertesting_trycast+ row.trackertesting_transaction_commit+ row.trackertesting_transaction_abort+ row.trackertesting_localtime+ row.trackertesting_intransaction_check+ row.trackertestingobject_constructed+ row.trackertestingobject_registered+ row.trackertesting_newobject+ row.trackertesting_existingobject+ row.trackertesting_existingraw+ row.trackertesting_increment;
+        return row.trackertestingobject_get + row.trackertestingobject_put+ row.trackertestingobject_isvalid+ row.trackertestingobject_tobytes+ row.trackertestingobject_frombytes+ row.trackertesting_exists+ row.trackertesting_constructed+ row.trackertesting_transaction_built+ row.trackertesting_trycast+ row.trackertesting_transaction_commit+ row.trackertesting_transaction_abort+ row.trackertesting_localtime+ row.trackertesting_intransaction_check+ row.trackertestingobject_constructed+ row.trackertestingobject_registered+ row.trackertesting_newobject+ row.trackertesting_increment;
 }
 
 auto trackertestingobject_calls(const myria_log &row){
@@ -125,7 +125,7 @@ auto trackertestingobject_calls(const myria_log &row){
 }
 
 auto trackertesting_nonobject_io_calls(const myria_log &row){
-	return row.trackertesting_exists+ row.trackertesting_transaction_commit+ row.trackertesting_transaction_abort+ row.trackertesting_newobject+ row.trackertesting_existingobject+ row.trackertesting_existingraw+ row.trackertesting_increment;
+        return row.trackertesting_exists+ row.trackertesting_transaction_commit+ row.trackertesting_transaction_abort+ row.trackertesting_newobject+ row.trackertesting_increment;
 }
 
 auto trackertesting_other_calls(const myria_log &row){

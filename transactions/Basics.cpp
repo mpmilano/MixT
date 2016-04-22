@@ -22,7 +22,6 @@ namespace myria{
 			LogFields::trackertesting_exists, "int trackertesting_exists","0",
 			LogFields::trackertesting_constructed, "int trackertesting_constructed","0",
 			LogFields::trackertesting_transaction_built, "int trackertesting_transaction_built","0",
-			LogFields::trackertesting_trycast, "int trackertesting_trycast","0",
 			LogFields::trackertesting_transaction_commit, "int trackertesting_transaction_commit","0",
 			LogFields::trackertesting_transaction_abort, "int trackertesting_transaction_abort","0",
 			LogFields::trackertesting_localtime, "int trackertesting_localtime","0",
@@ -95,9 +94,7 @@ namespace myria{
 		case LogFields::trackertesting_constructed:
 			return os << "int trackertesting_constructed";
 		case LogFields::trackertesting_transaction_built:
-			return os << "int trackertesting_transaction_built";
-		case LogFields::trackertesting_trycast:
-			return os << "int trackertesting_trycast";
+                        return os << "int trackertesting_transaction_built";
 		case LogFields::trackertesting_transaction_commit:
 			return os << "int trackertesting_transaction_commit";
 		case LogFields::trackertesting_transaction_abort:

@@ -39,11 +39,11 @@ namespace myria { namespace testing {
 			class AlwaysSuccessfulTransaction : public mtl::StoreContext<l> {
 			public:
 				TrackerTestingStore &tts;
-				abs_StructBuilder &logger;
+                                std::unique_ptr<abs_StructBuilder> &logger;
 
-				AlwaysSuccessfulTransaction(TrackerTestingStore &tts,abs_StructBuilder& logger)
+                                AlwaysSuccessfulTransaction(TrackerTestingStore &tts,std::unique_ptr<abs_StructBuilder>& logger)
 					:tts(tts),logger(logger){
-					logger.incrementIntField(
+                                        logger->incrementIntField(
 						LogFields::trackertesting_transaction_built);
 					
 				}
@@ -53,20 +53,20 @@ namespace myria { namespace testing {
 				}
 
 				bool store_commit(){
-					logger.incrementIntField(
+                                        logger->incrementIntField(
 						LogFields::trackertesting_transaction_commit);
 					
 					return true;
 				}
 
 				void store_abort(){
-					logger.incrementIntField(
+                                        logger->incrementIntField(
 						LogFields::trackertesting_transaction_abort);
 					
 				}
 			};
 			
-			std::unique_ptr<mtl::StoreContext<l> > begin_transaction(mutils::abs_StructBuilder& abs){
+                        std::unique_ptr<mtl::StoreContext<l> > begin_transaction(std::unique_ptr<mutils::abs_StructBuilder>& abs){
 				return std::unique_ptr<mtl::StoreContext<l> >(
 					new AlwaysSuccessfulTransaction{*this,abs});
 			}
@@ -177,7 +177,7 @@ namespace myria { namespace testing {
 
 				bool ro_isValid(mtl::StoreContext<l>* tc) const {
 					assert(tc);
-					((AlwaysSuccessfulTransaction*)tc)->logger.incrementIntField(LogFields::trackertestingobject_isvalid);
+                                        ((AlwaysSuccessfulTransaction*)tc)->logger->incrementIntField(LogFields::trackertestingobject_isvalid);
 					
 
 					return true;
@@ -187,7 +187,7 @@ namespace myria { namespace testing {
 							 tracker::TrackingContext* trkc/* = nullptr*/) {
 
 					assert(tc);
-					((AlwaysSuccessfulTransaction*)tc)->logger.incrementIntField(LogFields::trackertestingobject_get);
+                                        ((AlwaysSuccessfulTransaction*)tc)->logger->incrementIntField(LogFields::trackertestingobject_get);
 					
 					if (remote_store().rs.contains(nam))
 						this->t = std::make_unique<T>(*remote_store().rs.template at<T>(nam));
@@ -199,7 +199,7 @@ namespace myria { namespace testing {
 				
 				void put(mtl::StoreContext<l>* tc,const T& to) {
 					assert(tc);
-					((AlwaysSuccessfulTransaction*)tc)->logger.incrementIntField(LogFields::trackertestingobject_put);
+                                        ((AlwaysSuccessfulTransaction*)tc)->logger->incrementIntField(LogFields::trackertestingobject_put);
 					
 					
 					this->t = std::make_unique<T>(to);
@@ -238,21 +238,6 @@ namespace myria { namespace testing {
 				}
 
 			};
-			
-			template<typename T, Level l2>
-			static TrackerTestingObject<T>* tryCast(RemoteObject<l2,T>* r) {
-				if(auto *ret = dynamic_cast<TrackerTestingObject<T>* >(r)){
-					assert(l2 == l);
-					return ret;
-				}
-				else throw mtl::ClassCastException();
-			}
-	
-			template<typename T, restrict(!(is_RemoteObj_ptr<T>::value))>
-			static auto tryCast(T && r){
-				return std::forward<T>(r);
-			}
-
 
 			template<typename T>
 			static std::unique_ptr<TrackerTestingObject<T> > from_bytes(char const * v){
@@ -282,9 +267,9 @@ namespace myria { namespace testing {
 			
 			template<typename T>
 			std::unique_ptr<TrackerTestingObject<T> > existingRaw(
-				abs_StructBuilder& logger, Name name, T* for_inf = nullptr){
+                                std::unique_ptr<mutils::abs_StructBuilder>& logger, Name name, T* for_inf = nullptr){
 				
-				logger.incrementIntField(LogFields::trackertesting_existingraw);
+                                logger->incrementIntField(LogFields::trackertesting_existingraw);
 				return std::unique_ptr<TrackerTestingObject<T> >
 				{new TrackerTestingObject<T>{*this,name}};
 			}
@@ -300,8 +285,12 @@ namespace myria { namespace testing {
 					 dynamic_cast<AlwaysSuccessfulTransaction*>(_ctx->strongContext.get()) :
 					 dynamic_cast<AlwaysSuccessfulTransaction*>(_ctx->causalContext.get()));
 				assert(ctx && "error: should have entered transaction before this point!");
-				ctx->logger.incrementIntField(LogFields::trackertesting_increment);
+                                ctx->logger->incrementIntField(LogFields::trackertesting_increment);
+                                ctx->logger->pause(_ctx->logger);
+                                assert(_ctx->logger->isPaused());
 				o.put(ctx,*o.t + 1);
+                                ctx->logger->resume(_ctx->logger);
+                                assert(!_ctx->logger->isPaused());
 			}
 		};
 	}}

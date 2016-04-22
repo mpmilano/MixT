@@ -113,9 +113,9 @@ auto elapsed_time() {
 
 template<typename Strong, typename Causal>
 auto start_transaction(std::unique_ptr<VMObjectLog> log, tracker::Tracker &trk, Strong &strong, Causal &causal){
-	auto ctx = make_unique<TransactionContext>(log,nullptr,trk.generateContext(*log));
-	ctx->strongContext = strong.begin_transaction(*ctx->logger);
-	ctx->causalContext = causal.begin_transaction(*ctx->logger);
+        auto ctx = make_unique<TransactionContext>(log,nullptr,trk.generateContext(log));
+        ctx->strongContext = strong.begin_transaction(ctx->logger);
+        ctx->causalContext = causal.begin_transaction(ctx->logger);
 	return ctx;
 }
 
@@ -167,11 +167,13 @@ int main(){
 		ctx->full_commit();
 		
 		{ //TEMPORARY path debugging
-			auto log = log_builder->template beginStruct<LoggedStructs::log>();
+                        unique_ptr<VMObjectLog> log{log_builder->template beginStruct<LoggedStructs::log>().release()};
+                        log->pause(log);
 			auto ctx = start_transaction(log_builder->template beginStruct<LoggedStructs::log>(),trk,strong,causal);
 			auto hndl = strong.template existingObject<HandleAccess::all, int>(trk,ctx.get(),40);
 			ctx->full_commit();
 			ctx.reset();
+                        log->resume(log);
 			for (int i = 0; i < 2; ++i){
 				TRANSACTION(log,trk,hndl,
 							do_op<RegisteredOperations::Increment>(hndl)
@@ -206,7 +208,7 @@ int main(){
 	struct PoolFunStruct {
 		static std::string pool_fun(std::unique_ptr<Remember>& mem, int i, unsigned long long _start_time){
 			assert(mem);
-			auto log_messages = mem->log_builder->template beginStruct<LoggedStructs::log>();
+                        unique_ptr<VMObjectLog> log_messages{mem->log_builder->template beginStruct<LoggedStructs::log>().release()};
 			microseconds start_time(_start_time);
 			auto run_time = elapsed_time();
 			
