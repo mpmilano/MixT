@@ -33,5 +33,15 @@ namespace myria { namespace mtl {
 			mutils::AtScopeEnd ase2{[&](){if (strongContext) strongContext->store_abort();}};
 			mutils::AtScopeEnd ase3{[&](){if (causalContext) causalContext->store_abort();}};
 		}
+		
+		TransactionContext::~TransactionContext(){
+			if ((!committed) && commit_on_delete) full_commit();
+			else if (!committed) {
+				full_abort();
+			}
+			if (strongContext) delete strongContext.release();
+			if (causalContext) delete causalContext.release();
+			assert(!trackingContext->trk.get_CausalStore().in_transaction());
+		}
 	}
 }

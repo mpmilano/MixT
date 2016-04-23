@@ -1,5 +1,6 @@
 #pragma once
 #include <functional>
+#include <thread>
 #include "TrackingContext.hpp"
 #include "Basics.hpp"
 #include "restrict.hpp"
@@ -46,33 +47,35 @@ namespace myria {
 			bool committed = false;
 
 		public:
-                        TransactionContext(void const * const param, decltype(trackingContext) trackingContext)
-                                :parameter(param),trackingContext(std::move(trackingContext))
+			TransactionContext(void const * const param, decltype(trackingContext) trackingContext)
+				:parameter(param),trackingContext(std::move(trackingContext))
 				{}
-
+			
 			TransactionContext(const TransactionContext&) = delete;
-
-                        TransactionContext(void const * const param, decltype(strongContext) sc, decltype(trackingContext) trackingContext)
-                                :parameter(param),trackingContext(std::move(trackingContext)),strongContext(std::move(sc))
+			
+			TransactionContext(void const * const param, decltype(strongContext) sc, decltype(trackingContext) trackingContext)
+				:parameter(param),trackingContext(std::move(trackingContext)),strongContext(std::move(sc))
 				{}
-
-                        TransactionContext(void const * const param, decltype(causalContext) cc, decltype(trackingContext) trackingContext)
-                                :parameter(param),trackingContext(std::move(trackingContext)),causalContext(std::move(cc))
+			
+			TransactionContext(void const * const param, decltype(causalContext) cc, decltype(trackingContext) trackingContext)
+				:parameter(param),trackingContext(std::move(trackingContext)),causalContext(std::move(cc))
 				{}
 			
 			bool full_commit();
 			void full_abort();
-
+			
 			template<Level lev, typename Store>
-			auto& get_store_context(Store& str){
+			auto& get_store_context(Store& str, const std::string& why){
 				choose_strong<lev> choice{nullptr}; //true_type when lev == strong
 				auto& store_ctx = get_store_context(choice);
 				if (!store_ctx){
 					assert(!str.in_transaction());
-                                        assert(trackingContext);
-                                        assert(trackingContext->logger);
-                                        store_ctx.reset(str.begin_transaction(trackingContext->logger).release());
-                                        assert(trackingContext->logger);
+					assert(trackingContext);
+					assert(trackingContext->logger);
+					std::stringstream strem;
+					strem << "thread " << std::this_thread::get_id() << " called get_store_context: " << why;
+					store_ctx.reset(str.begin_transaction(trackingContext->logger,strem.str()).release());
+					assert(trackingContext->logger);
 				}
 				return store_ctx;
 			}
@@ -85,12 +88,7 @@ namespace myria {
 				return causalContext;
 			}
 
-			virtual ~TransactionContext(){
-				if ((!committed) && commit_on_delete) full_commit();
-				else if (!committed) {
-					full_abort();
-				}
-			}
+			virtual ~TransactionContext();
 
 			template<typename> friend struct Transaction;
 		};

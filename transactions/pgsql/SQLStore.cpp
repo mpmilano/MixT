@@ -23,14 +23,16 @@ namespace myria{ namespace pgsql {
 		using Internals = SQLStore_impl::GSQLObject::Internals;
 
 
-		SQLTransaction::SQLTransaction(GDataStore& store, SQLStore_impl::SQLConnection& c)
+		SQLTransaction::SQLTransaction(GDataStore& store, SQLStore_impl::SQLConnection& c, std::string why)
                         :gstore(store),sql_conn(c),conn_lock(
                             [](auto& l) -> auto& {
                                 assert(l.try_lock());
                                 l.unlock();
                                 return l;
                         }(c.con_guard)),
-                        trans(sql_conn.conn){
+						 trans(sql_conn.conn),
+						 why(why)
+		{
 			assert(!sql_conn.in_trans());
 			sql_conn.current_trans = this;
 		}
@@ -112,7 +114,7 @@ namespace myria{ namespace pgsql {
 
 		SQLStore_impl::SQLStore_impl(GDataStore &store, int instanceID, Level l)
 			:_store(store),clock{{0,0,0,0}},level(l),default_connection{new SQLConnection(instanceID)} {
-				auto t = begin_transaction();
+				auto t = begin_transaction("Setting up this new SQLStore; gotta configure search paths and stuff.");
 				((SQLTransaction*)t.get())
 					->exec(l == Level::strong ?
 						   "set search_path to \"BlobStore\",public"
@@ -125,19 +127,19 @@ namespace myria{ namespace pgsql {
 				assert(cres);
 			}
 
-		unique_ptr<SQLTransaction> SQLStore_impl::begin_transaction()
+		unique_ptr<SQLTransaction> SQLStore_impl::begin_transaction(const std::string &why)
 		{
 			assert(!default_connection->in_trans() &&
 				   "Concurrency support doesn't exist yet."
 				);
 			return unique_ptr<SQLTransaction>(
-				new SQLTransaction(_store,*default_connection));
+				new SQLTransaction(_store,*default_connection,why));
 		}
 
 		namespace {
-			unique_ptr<SQLTransaction> small_transaction(SQLStore_impl &store) {
+			unique_ptr<SQLTransaction> small_transaction(SQLStore_impl &store, const std::string &why) {
 				unique_ptr<SQLTransaction> owner
-					((SQLTransaction*)store.begin_transaction().release());
+					((SQLTransaction*)store.begin_transaction(why).release());
 				owner->commit_on_delete = true;
 				return owner;
 			}
@@ -169,7 +171,7 @@ namespace myria{ namespace pgsql {
 				unique_ptr<SQLTransaction> t_owner;
 				SQLTransaction *trns = nullptr;
 				if (!(store).default_connection->in_trans()){
-					t_owner = small_transaction(store);
+					t_owner = small_transaction(store,"enter_store_transaction found no active transaction running");
 					trns = t_owner.get();
 				}
 				else trns = (store).default_connection->current_trans;
@@ -262,7 +264,7 @@ namespace myria{ namespace pgsql {
 		}
 
 		void SQLStore_impl::remove(Name id) {
-			cmds::remove(level,*small_transaction(*this),Table::BlobStore,id);
+			cmds::remove(level,*small_transaction(*this,std::string("Trying to remove something of name ") + std::to_string(id)),Table::BlobStore,id);
 		}
 
 		SQLStore_impl::GSQLObject::~GSQLObject(){

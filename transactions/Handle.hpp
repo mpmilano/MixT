@@ -149,7 +149,7 @@ namespace myria{
 			assert(ctx.trackingContext);
 
 			//If the Transacion Context does not yet exist for this store, we create it now.
-			auto &store_ctx = *ctx.template get_store_context<l>(_ro->store());
+			auto &store_ctx = *ctx.template get_store_context<l>(_ro->store(),"calling get() via handle");
 
 			return get(choice,tracker,store_ctx, *ctx.trackingContext, _ro->get(&store_ctx,&tracker,ctx.trackingContext.get()));
 		}
@@ -191,18 +191,19 @@ namespace myria{
 		void put(tracker::Tracker& tracker, mtl::TransactionContext &ctx, const T& t, std::true_type*) {
 			assert(_ro);
 			tracker.onWrite(ctx,_ro->store(),_ro->name(),(T*)nullptr);
-			_ro->put(ctx.template get_store_context<l>(_ro->store()).get(),t);
+			_ro->put(ctx.template get_store_context<l>(_ro->store(),"calling put() via handle").get(),t);
 		}
 
 		void put(tracker::Tracker& tracker, mtl::TransactionContext &ctx, const T& t, std::false_type*) {
 			assert(_ro);
 			tracker.onWrite(_ro->store(),_ro->name(),_ro->timestamp(),(T*)nullptr);
-			_ro->put(ctx.template get_store_context<l>(_ro->store()).get(),t);
+			_ro->put(ctx.template get_store_context<l>(_ro->store(),"calling put() via handle").get(),t);
 		}
 
 		bool isValid(mtl::TransactionContext *ctx) const {
 			if (!_ro) return false;
-			auto *ptr = (ctx ? ctx->template get_store_context<l>(_ro->store()).get() : nullptr);
+			assert(ctx);
+			auto *ptr = ctx->template get_store_context<l>(_ro->store(),"calling isValid via handle").get();
 			return _ro->ro_isValid(ptr);
 		}
 

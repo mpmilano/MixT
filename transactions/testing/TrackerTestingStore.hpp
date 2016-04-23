@@ -66,7 +66,7 @@ namespace myria { namespace testing {
 				}
 			};
 			
-                        std::unique_ptr<mtl::StoreContext<l> > begin_transaction(std::unique_ptr<mutils::abs_StructBuilder>& abs){
+			std::unique_ptr<mtl::StoreContext<l> > begin_transaction(std::unique_ptr<mutils::abs_StructBuilder>& abs, const std::string&){
 				return std::unique_ptr<mtl::StoreContext<l> >(
 					new AlwaysSuccessfulTransaction{*this,abs});
 			}
@@ -86,6 +86,10 @@ namespace myria { namespace testing {
 			
 			bool in_transaction() const {
 				return false;
+			}
+
+			std::string why_in_transaction() const {
+				return "I'm not, actually";
 			}
 
 			static auto remote_store(){

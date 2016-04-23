@@ -115,12 +115,12 @@ template<typename Strong, typename Causal>
 auto start_transaction(std::unique_ptr<VMObjectLog> log, tracker::Tracker &trk, Strong &strong, Causal &causal){
     assert(log);
     auto ctx = make_unique<TransactionContext>(nullptr,trk.generateContext(std::move(log)));
-        ctx->strongContext = strong.begin_transaction(ctx->trackingContext->logger);
-        ctx->causalContext = causal.begin_transaction(ctx->trackingContext->logger);
-        assert(ctx->trackingContext);
-        assert(ctx->trackingContext->logger);
+	ctx->strongContext = strong.begin_transaction(ctx->trackingContext->logger,"one-off vm_main transaction");
+	ctx->causalContext = causal.begin_transaction(ctx->trackingContext->logger,"one-off vm_main transaction");
+	assert(ctx->trackingContext);
+	assert(ctx->trackingContext->logger);
 	return ctx;
-        assert(!log);
+	assert(!log);
 }
 
 int main(){

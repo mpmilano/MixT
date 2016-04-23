@@ -58,6 +58,12 @@ namespace myria { namespace mtl {
 
 		template<unsigned long long id, Level l, typename T, typename CS>
 		auto isValid_desugar(Temporary<id,l,T> const * const gt, const CS &cs){
+                    return cs;
+                    //NOTE: The code below would wrap cs in a conditoinal
+                    //that checks if gt is valid before proceeding.
+                    //without it, we'd fail the transaction on an invalid handle.
+                    //we're choosing to fail the transaction rather than add the extra check.
+/*
 			return std::make_tuple(
 				make_if(
 					make_isValid(

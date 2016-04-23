@@ -112,6 +112,14 @@ namespace myria { namespace pgsql {
 				return it;
 			}
 
+			std::string why_in_transaction() const {
+				if (in_transaction()){
+					assert(this->default_connection->current_trans);
+					return this->default_connection->current_trans->why;
+				}
+				else return "error: not in transaction";
+			}
+
 			const std::array<int, NUM_CAUSAL_GROUPS>& local_time() const {
 				return this->clock;
 			}
@@ -239,9 +247,9 @@ namespace myria { namespace pgsql {
 				void store_abort() {i->store_abort();}
 			};
 
-                        std::unique_ptr<mtl::StoreContext<l> > begin_transaction(std::unique_ptr<mutils::abs_StructBuilder>&)
+			std::unique_ptr<mtl::StoreContext<l> > begin_transaction(std::unique_ptr<mutils::abs_StructBuilder>&, const std::string &why)
 				{
-					auto ret = SQLStore_impl::begin_transaction();
+					auto ret = SQLStore_impl::begin_transaction(why);
 					return std::unique_ptr<mtl::StoreContext<l> >(new SQLContext{std::move(ret),this_mgr});
 				}
 

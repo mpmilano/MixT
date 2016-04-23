@@ -64,7 +64,7 @@ namespace myria { namespace pgsql {
 	
 			SQLStore_impl(const SQLStore_impl&) = delete;
 	
-			std::unique_ptr<SQLTransaction> begin_transaction();
+			std::unique_ptr<SQLTransaction> begin_transaction(const std::string& why);
 	
 			int instance_id() const;
 			bool exists(Name id);

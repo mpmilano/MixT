@@ -11,6 +11,7 @@ namespace myria{
 		virtual int ds_id() const = 0;
 		virtual int instance_id() const = 0;
 		virtual bool in_transaction() const = 0; //mostly for debugging
+		virtual std::string why_in_transaction() const = 0; //entirely for debugging
 
 		GDataStore(Level l):level(l){}
         virtual ~GDataStore() {}

@@ -302,7 +302,7 @@ namespace myria { namespace tracker {
 		void Tracker::onWrite(mtl::TransactionContext& ctx, DataStore<Level::strong>& ds_real, Name name, void*){
 			const auto write_lin_metadata= [this](mtl::TransactionContext& ctx, DataStore<Level::strong> &ds_real,
 													  Name name, Tracker::Nonce nonce, Tracker::Internals& t){
-				auto &sctx = *ctx.template get_store_context<Level::strong>(ds_real);
+				auto &sctx = *ctx.template get_store_context<Level::strong>(ds_real," trying to write lin metadata");
 				auto meta_name = make_lin_metaname(name);
 				if (get<TDS::exists>(*t.strongDS)(*t.registeredStrong,meta_name)){
                                         get<TDS::existingTomb>(*t.strongDS)(ctx.trackingContext->logger,*t.registeredStrong,meta_name)->put(&sctx,Tracker::Tombstone{nonce,get_ip(),cache_port});

@@ -60,7 +60,7 @@ namespace myria{
 				 strong_call_t{[=](TransactionContext* ctx, StrongCache &c, StrongStore &s){
 						assert(ctx);
 						eat(run_ast_strong(ctx,c,s,*args)...);
-						ctx->template get_store_context<level>(first(cached(c,*args)...).store());
+						ctx->template get_store_context<level>(first(cached(c,*args)...).store(),"Doing a strong operation");
 						do_op_2<Name>(ctx,cached(c,*args)...);
 						return true;
 					}} :
@@ -84,7 +84,7 @@ namespace myria{
 				 causal_call_t{[=](TransactionContext* ctx, CausalCache &c, CausalStore &s){
 						 assert(ctx);
 						 eat(run_ast_causal(ctx,c,s,*args)...);
-						 ctx->template get_store_context<level>(first(cached(c,*args)...).store());
+						 ctx->template get_store_context<level>(first(cached(c,*args)...).store(),"Doing a causal operation");
 						 do_op_2<Name>(ctx,cached(c,*args)...);
 						 return true;
 					 }});
