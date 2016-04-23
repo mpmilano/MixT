@@ -69,7 +69,6 @@ auto getArrivalInterval(Frequency arrival_rate) {
 constexpr int name_max = 478446;
 
 int get_name_read(double alpha){
-	assert(false && "take writes from a uniform distribution");
 	constexpr int max = name_max;
 	double y = better_rand();
 	assert (y < 1.1);
