@@ -125,6 +125,7 @@ auto start_transaction(std::unique_ptr<VMObjectLog> log, tracker::Tracker &trk, 
 
 int main(){
 
+	std::cout << "In configuration; " << (causal_enabled ? "with causal" : " with only strong" ) << std::endl;
 	static const int ip = get_strong_ip();
 	logFile.open(log_name);
 	//auto prof = VMProfiler::startProfiling();
