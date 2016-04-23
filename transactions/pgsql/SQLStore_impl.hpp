@@ -87,7 +87,8 @@ namespace myria { namespace pgsql {
 				void save(SQLTransaction*);
 				char* load(SQLTransaction*);
 				char* obj_buffer();
-                                char const * obj_buffer() const ;
+				char const * obj_buffer() const ;
+				void resize_buffer(int);
 				int obj_buffer_size() const;
 				const std::array<int,NUM_CAUSAL_GROUPS>& timestamp() const ;
 				SQLStore_impl& store();

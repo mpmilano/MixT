@@ -11,6 +11,10 @@
 
 namespace myria{ namespace pgsql {
 
+		namespace{
+			constexpr int max_ver_check_size = 100;
+		}
+		
 		using namespace pqxx;
 		using namespace std;
 		using namespace mtl;
@@ -142,7 +146,7 @@ namespace myria{ namespace pgsql {
 		struct SQLStore_impl::GSQLObject::Internals{
 			const Table table;
 			const Name key;
-                        const std::size_t size;
+			std::size_t size;
 			const int store_id;
 			const Level level;
 			SQLStore_impl &_store;
@@ -188,6 +192,7 @@ namespace myria{ namespace pgsql {
 			assert(b);
 		}
 
+		/*
 		namespace {
 
 			Internals* internals_from_size_ss_id(const Table t, SQLStore_impl& ss, Name id){
@@ -207,11 +212,15 @@ namespace myria{ namespace pgsql {
 				return new Internals{t,id,size,ss,
 						(char*) malloc(size)};
 			}
-		}
+		}//*/
 
 //existing object
 		SQLStore_impl::GSQLObject::GSQLObject(SQLStore_impl& ss, Table t, Name id)
-			:i{internals_from_size_ss_id(t,ss,id)} {}
+			:i{new Internals{t,id,
+					(t == Table::IntStore ? (int) sizeof(int) : -1),
+					ss,
+					(t == Table::IntStore ? (char*) malloc(sizeof(int)) : nullptr)
+					}} {}
 
 //"named" object
 		SQLStore_impl::GSQLObject::GSQLObject(SQLStore_impl& ss, Table t, Name id, const vector<char> &c)
@@ -258,7 +267,7 @@ namespace myria{ namespace pgsql {
 
 		SQLStore_impl::GSQLObject::~GSQLObject(){
 			if (i){
-				free(i->buf1);
+				if (i->buf1) free(i->buf1);
 				delete i;
 			}
 		}
@@ -290,9 +299,10 @@ namespace myria{ namespace pgsql {
 		}
 
 		void SQLStore_impl::GSQLObject::save(SQLTransaction *gso){
-			char *c = obj_buffer();
 			auto owner = enter_transaction(store(),gso);
 			auto trans = owner.second;
+			char *c = i->buf1;
+			assert(c);
 
 #define upd_23425(x...) cmds::update_data(i->_store.level,*trans,i->table,i->_store.default_connection->repl_group,i->key,i->_store.clock,x)
 	
@@ -316,32 +326,35 @@ namespace myria{ namespace pgsql {
 		}
 
 		char* SQLStore_impl::GSQLObject::load(SQLTransaction *gso){
-			char* c = obj_buffer();
 			auto owner = enter_transaction(store(),gso);
 			auto trans = owner.second;
-			bool store_same = false;
-			if (i->_store.level == Level::causal){
-				auto old = i->causal_vers;
-				cmds::select_version(i->_store.level, *trans,i->table,i->key,i->causal_vers);
-				store_same = ends::is_same(old,i->causal_vers);
-				if (!store_same) i->_store.clock = max(i->_store.clock,i->causal_vers);
-				assert(i->_store.clock[2] < 30);
+			if (i->size >= max_ver_check_size){
+				bool store_same = false;
+				if (i->_store.level == Level::causal){
+					auto old = i->causal_vers;
+					cmds::select_version(i->_store.level, *trans,i->table,i->key,i->causal_vers);
+					store_same = ends::is_same(old,i->causal_vers);
+					if (!store_same) i->_store.clock = max(i->_store.clock,i->causal_vers);
+					assert(i->_store.clock[2] < 30);
+				}
+				else if (i->_store.level == Level::strong){
+					auto old = i->vers;
+					int newi = -12;
+					cmds::select_version(i->_store.level, *trans,i->table,i->key,newi);
+					store_same = (old == newi);
+					i->vers = newi;
+				}
+				if (store_same) return i->buf1;
 			}
-			else if (i->_store.level == Level::strong){
-				auto old = i->vers;
-				int newi = -12;
-				cmds::select_version(i->_store.level, *trans,i->table,i->key,newi);
-				store_same = (old == newi);
-				i->vers = newi;
-			}
-
-			if (store_same) return c;
-			else{
-				result r = cmds::select_data(i->_store.level,*trans,i->table,i->key);
+			{
+				result r = cmds::select_data_and_size(i->_store.level,*trans,i->table,i->key);
 				if (i->table == Table::BlobStore){
 					binarystring bs(r[0][0]);
 					assert(bs.size() == i->size);
-					memcpy(c,bs.data(),i->size);
+					assert(r[0][1].to(i->size));
+					assert(i->size >= 1);
+					if (!i->buf1) i->buf1 = (char*) malloc(i->size);
+					memcpy(i->buf1,bs.data(),i->size);
 				}
 				else if (i->table == Table::IntStore) {
 					int res = -1;
@@ -349,9 +362,10 @@ namespace myria{ namespace pgsql {
 						std::cerr << "Attempting to access key "<< i->key << " from IntStore in " <<  i->_store.level << " land" << std::endl;
 						assert(false && "no result!");
 					}
-					((int*)c)[0] = res;
+					((int*)i->buf1)[0] = res;
 				}
-				return c;
+				assert(i->buf1);
+				return i->buf1;
 			}
 		}
 
@@ -371,15 +385,26 @@ namespace myria{ namespace pgsql {
 			return obj_exists(i->key,owner.second);
 		}
 
+		void SQLStore_impl::GSQLObject::resize_buffer(int newsize){
+			if(!i->buf1) {
+				i->buf1 = (char*) malloc(newsize);
+				i->size = newsize;
+			}
+			else assert(newsize == i->size);
+		}
+
 		char* SQLStore_impl::GSQLObject::obj_buffer() {
+			assert(i->buf1);
 			return i->buf1;
 		}
 
-                char const * SQLStore_impl::GSQLObject::obj_buffer() const {
+		char const * SQLStore_impl::GSQLObject::obj_buffer() const {
+			assert(i->buf1);
 			return i->buf1;
 		}
 
 		int SQLStore_impl::GSQLObject::obj_buffer_size() const {
+			assert(i->size >= 0);
 			return i->size;
 		}
 

@@ -12,12 +12,12 @@ namespace{
 		//hybrid section (same command works on both strong and causal)
 
 		template<typename T>
-		auto select_data(Level, T &trans, Table t, Name id){
+		auto select_data_and_size(Level, T &trans, Table t, Name id){
 			//std::cerr << "in select_data" << std::endl;
 			//AtScopeEnd ase{[](){//std::cerr << "out" << std::endl;}};
 			//discard(ase);
 			static const std::string bs =
-				"select data from \"BlobStore\" where index = 0 and ID = $1";
+				"select data, max(octet_length(data)) as size from \"BlobStore\" where index = 0 and ID = $1";
 			static const std::string is = "select data from \"IntStore\" where index = 0 and ID = $1";
 			switch(t) {
 			case Table::BlobStore : return trans.prepared("select1",bs,id); 
