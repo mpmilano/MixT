@@ -47,7 +47,7 @@ constexpr bool causal_enabled = false;
 
 constexpr int num_processes = 99;
 static_assert(num_processes <= 100,"Error: you are at risk of too many open files");
-constexpr auto arrival_rate = 200_Hz;
+constexpr auto arrival_rate = 800_Hz;
 constexpr auto actual_arrival_rate = arrival_rate * as_hertz(1 + int{concurrencySetting});
 
 const auto log_name = [](){
@@ -67,8 +67,8 @@ auto getArrivalInterval(Frequency arrival_rate) {
 }
 
 constexpr int name_max = 478446;
-/*
-int get_name(double alpha){
+
+int get_name_read(double alpha){
 	assert(false && "take writes from a uniform distribution");
 	constexpr int max = name_max;
 	double y = better_rand();
@@ -79,12 +79,12 @@ int get_name(double alpha){
 	auto ret = round(x);
 	if (ret > (max + 14)) {
 		std::cerr << "Name out of range! Trying again" << std::endl;
-		return get_name(alpha);
+		return get_name_read(alpha);
 	}
 	else return ret + 14;
-}*/
+}
 
-int get_name(double){
+int get_name_write(){
         return int_rand() % 478446;
 }
 
@@ -224,22 +224,23 @@ int main(){
 			try{
 				assert(true);
 				std::string str = [&](){
-                                        SQLStore<Level::strong> &strong = mem->ss.inst_strong(ip);
-                                        SQLStore<Level::causal> &causal = mem->sc.inst_causal(0);
-                                        //auto &strong = mem->ss;
-                                        //auto &causal = mem->sc;
+					SQLStore<Level::strong> &strong = mem->ss.inst_strong(ip);
+					SQLStore<Level::causal> &causal = mem->sc.inst_causal(0);
+					//auto &strong = mem->ss;
+					//auto &causal = mem->sc;
 					auto &trk = mem->trk;
 					assert(!strong.in_transaction());
 					assert(!causal.in_transaction());
 					assert(!trk.get_StrongStore().in_transaction());
-
-					auto name = get_name(0.5);
+					
+					bool do_write = (int_rand() % mod_constant)==0;
+					auto name = (do_write ? get_name_write() : get_name_read(0.5));
 					
 					auto test_fun = [&](auto hndl){
 						
 						for(int tmp2 = 0; tmp2 < 10; ++tmp2){
 							try{
-								if ((name % mod_constant) == 0){
+								if (do_write){
 									TRANSACTION(log_messages,trk,hndl,
 												do_op<RegisteredOperations::Increment>(hndl)
 										)//*/
@@ -273,12 +274,12 @@ int main(){
 					};
 					if (better_rand() > .7 || !causal_enabled){
 						auto hndl = strong.template
-                                                        existingObject<HandleAccess::all,int>(log_messages,name);
+							existingObject<HandleAccess::all,int>(log_messages,name);
 						return test_fun(hndl);
 					}
 					else {
 						auto hndl = causal.template
-                                                existingObject<HandleAccess::all,int>(log_messages,name);
+						existingObject<HandleAccess::all,int>(log_messages,name);
 						return test_fun(hndl);
 					}
 				}();
