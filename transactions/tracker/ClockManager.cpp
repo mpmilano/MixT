@@ -41,7 +41,12 @@ namespace myria { namespace tracker {
 		void Tracker::updateClock(TrackingContext &tctx){
 			Tracker::Clock newc;
 			for (int i = 0; i < newc.size(); ++i){
-				volatile int &tmpi = ClockManager::inst().clock[i];
+				auto &inst = ClockManager::inst();
+				if (inst.clock[i] == -1) {
+					--i;
+					continue;
+				}
+				volatile int &tmpi = inst.clock[i];
 				newc[i] = tmpi;
 			}
 			assert(ends::prec(i->global_min,newc));

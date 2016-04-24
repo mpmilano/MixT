@@ -11,20 +11,7 @@ namespace{
 		
 		//hybrid section (same command works on both strong and causal)
 
-		template<typename T>
-		auto select_data_and_size(Level, T &trans, Table t, Name id){
-			//std::cerr << "in select_data" << std::endl;
-			//AtScopeEnd ase{[](){//std::cerr << "out" << std::endl;}};
-			//discard(ase);
-			static const std::string bs =
-				"select data, max(octet_length(data)) as size from \"BlobStore\" where index = 0 and ID = $1";
-			static const std::string is = "select data from \"IntStore\" where index = 0 and ID = $1";
-			switch(t) {
-			case Table::BlobStore : return trans.prepared("select1",bs,id); 
-			case Table::IntStore : return trans.prepared("select2",is,id); 
-			}
-			assert(false && "forgot a case");
-		}
+
 
 		template<typename T>
 		auto obj_exists(Level, T &trans, Name id){
@@ -49,55 +36,54 @@ namespace{
 			//std::cerr << "out" << std::endl;
 		}
 
-		template<typename T>
-		auto check_size(Level, T &trans, Table t, Name id){
-			//std::cerr << "in check_size" << std::endl;
-			assert(t == Table::BlobStore &&
-				   "Error: size check non-sensical for non-blob data");
-			const static std::string bs =
-				"select max(octet_length(data)) from \"BlobStore\" where id = $1";
-			auto r =  trans.prepared("Size",bs,id);
-			//std::cerr << "out" << std::endl;
-			return r;
-		}
-
 		//strong section
 
 		template<typename T>
-		void select_version_(T &trans, Table t, Name id, int& vers){
+		auto select_version_s(T &trans, Table t, Name id){
 			static const std::string bs =
 				"select Version from \"BlobStore\" where ID=$1";
 			static const std::string is =
 				"select Version from \"IntStore\" where ID=$1";
 			auto &s = (t == Table::BlobStore ? bs : is );
-			vers = -1;
-			auto r = trans.prepared(s,s,id);
-			assert(!r.empty());
-			auto res = r[0][0].to(vers);
-			assert(res);
-			assert(vers != -1);
+			return trans.prepared(s,s,id);
+		}
+		
+		template<typename T>
+		auto select_version_data_size_s(Level l, T &trans, Table t, Name id){
+			assert(l == Level::strong);
+			//std::cerr << "in select_data" << std::endl;
+			//AtScopeEnd ase{[](){//std::cerr << "out" << std::endl;}};
+			//discard(ase);
+			static const std::string bs =
+				"select version, data, max(octet_length(data)) as size from \"BlobStore\" where index = 0 and ID = $1";
+			static const std::string is = "select version, data from \"IntStore\" where index = 0 and ID = $1";
+			switch(t) {
+			case Table::BlobStore : return trans.prepared("select1",bs,id); 
+			case Table::IntStore : return trans.prepared("select2",is,id); 
+			}
+			assert(false && "forgot a case");
 		}
 
 		template<typename T, typename Blob>
-		void update_data_s(T& trans, Table t, Name id, const Blob& b){
+		auto update_data_s(T& trans, Table t, Name id, const Blob& b){
 			static const std::string bs =
-				"update \"BlobStore\" set data=$2,Version=Version + 1 where ID=$1";
+				"update \"BlobStore\" set data=$2,Version=Version + 1 where ID=$1 returning version";
 			static const std::string is =
-				"update \"IntStore\" set data=$2,Version=Version + 1 where ID=$1";
+				"update \"IntStore\" set data=$2,Version=Version + 1 where ID=$1 returning version";
 			switch(t) {
-			case Table::BlobStore : trans.prepared("Updates1",bs,id,b); return;
-			case Table::IntStore : trans.prepared("Updates2",is,id,b); return;
+			case Table::BlobStore : return trans.prepared("Updates1",bs,id,b);
+			case Table::IntStore : return trans.prepared("Updates2",is,id,b);
 			}
 			assert(false && "forgot a case");
 		}
 
 		template<typename T>
-		void increment_s(T &trans, Table t, Name id){
+		auto increment_s(T &trans, Table t, Name id){
 			assert(t == Table::IntStore
 				   && "Error: increment currently only defined on integers");
 			const static std::string s =
-				"update \"IntStore\" set data = data + 1 where id = $1";
-			trans.prepared("Increment",s,id);
+				"update \"IntStore\" set data = data + 1 where id = $1 returning version";
+			return trans.prepared("Increment",s,id);
 		}
 
 		template<typename T, typename Blob>
@@ -136,9 +122,14 @@ namespace{
 					auto k = to_string(_k);								\
 					stringstream main;									\
 					main << "update " << t << "set data = " << set;		\
-					for (int i = 1; i < NUM_CAUSAL_GROUPS; ++i) main << ", vc" << md(_k+i) << "=$"<<i+1; \
+					for (int i = 1; i < NUM_CAUSAL_GROUPS+1; ++i) main << ", vc" << md(_k+i) << "=$"<<i+1; \
 					main << ", lw = " << k								\
-						 << " where id = $1 and index = " << group_mapper(_k); \
+						 << " where id = $1 and index = " << group_mapper(_k) \
+						 << " returning ";								\
+					for (int i = 1; i < NUM_CAUSAL_GROUPS; ++i){		\
+						main << "vc" << i << ",";						\
+					}													\
+					main << "vc" << NUM_CAUSAL_GROUPS;					\
 					ret.push_back(pair<string,string>{(t + "Update") + k + xx,main.str()}); \
 				}														\
 			}															\
@@ -146,7 +137,7 @@ namespace{
 		}(); assert(ends[2] < 30); 
 
 		template<typename T>
-		void select_version_(T &trans, Table t, Name id, std::array<int,NUM_CAUSAL_GROUPS>& vers){
+		auto select_version_c(T &trans, Table t, Name id){
 			using namespace std;
 			static const vector<pair<string,string> > v = [&](){
 				vector<pair<string,string> > v;
@@ -158,32 +149,38 @@ namespace{
 				return v;
 			}();
 			auto &s = v.at((int)t);
-			auto r = trans.prepared(s.first,s.second,id);
-			assert(!r.empty());
-			auto res1 = r[0][0].to(vers[0]);
-			assert(res1);
-			auto res2 = r[0][1].to(vers[1]);
-			assert(res2);
-			auto res3 = r[0][2].to(vers[2]);
-			assert(res3);
-			auto res4 = r[0][3].to(vers[3]);
-			assert(res4);
-			assert(vers[2] < 30);
+			return trans.prepared(s.first,s.second,id);
+		}
+
+		template<typename T>
+		auto select_version_data_size_c(Level l, T &trans, Table t, Name id){
+			assert(l == Level::causal);
+			//std::cerr << "in select_data" << std::endl;
+			//AtScopeEnd ase{[](){//std::cerr << "out" << std::endl;}};
+			//discard(ase);
+			static const std::string bs =
+				"select vc1,vc2,vc3,vc4, data, max(octet_length(data)) as size from \"BlobStore\" where index = 0 and ID = $1";
+			static const std::string is = "select vc1,vc2,vc3,vc4, data from \"IntStore\" where index = 0 and ID = $1";
+			switch(t) {
+			case Table::BlobStore : return trans.prepared("select1",bs,id); 
+			case Table::IntStore : return trans.prepared("select2",is,id); 
+			}
+			assert(false && "forgot a case");
 		}
 		
 		template<typename T, typename Blob>
-		void update_data_c(T &trans, Table t, int k, Name id, const std::array<int,NUM_CAUSAL_GROUPS> &ends, const Blob &b){
+		auto update_data_c(T &trans, Table t, int k, Name id, const std::array<int,NUM_CAUSAL_GROUPS> &ends, const Blob &b){
 			update_data_c_cmd("x","$5");
 			auto &p = update_cmds.at(((int)t) * (NUM_CAUSAL_GROUPS) + (k-1));
-			trans.prepared(p.first,p.second,id,ends[md(k+1)-1],ends[md(k+2)-1],ends[md(k+3)-1],b);
+			return trans.prepared(p.first,p.second,id,ends[md(k+1)-1],ends[md(k+2)-1],ends[md(k+3)-1],b);
 		}
 		
 		
 		template<typename T>
-		void increment_c(T &trans, Table t, int k, Name id, const std::array<int,NUM_CAUSAL_GROUPS> &ends){
+		auto increment_c(T &trans, Table t, int k, Name id, const std::array<int,NUM_CAUSAL_GROUPS> &ends){
 			update_data_c_cmd("y","data + 1");
 			auto &p = update_cmds.at(((int)t) * (NUM_CAUSAL_GROUPS) + (k-1));
-			trans.prepared(p.first,p.second,id,ends[md(k+1)-1],ends[md(k+2)-1],ends[md(k+3)-1]);
+			return trans.prepared(p.first,p.second,id,ends[md(k+1)-1],ends[md(k+2)-1],ends[md(k+3)-1]);
 		}
 
 		template<typename T, typename Blob>
@@ -230,23 +227,31 @@ namespace{
 
 		//entry points
 
-		template<typename T, typename Ret>
-		void select_version(Level l, T &tran, Table t, Name id,Ret& r){
+		template<typename T>
+		auto select_version(Level l, T &tran, Table t, Name id){
 			//std::cerr << "in select_version" << std::endl;
 			//AtScopeEnd ase{[](){//std::cerr << "out" << std::endl;}};
 			//discard(ase);
 			if (l == Level::strong) {
-				assert(std::is_scalar<Ret>::value);
+				return select_version_s(tran,t,id);
 			}
-			return select_version_(tran,t,id,r);
+			else return select_version_c(tran,t,id);
 		}
+
 		
+		template<typename T>
+		auto select_version_data_size(Level l, T &trans, Table t, Name id){
+			return (l == Level::strong ?
+					select_version_data_size_s(l,trans,t,id) :
+					select_version_data_size_c(l,trans,t,id));
+		}
 
 		template<typename T, typename Blob>
-		void update_data(Level l, T &tran, Table t, int k, Name id, const std::array<int,NUM_CAUSAL_GROUPS> &ends, const Blob& b){
+		auto update_data(Level l, T &tran, Table t, int k, Name id, const std::array<int,NUM_CAUSAL_GROUPS> &ends, const Blob& b){
 			//std::cerr << "in update_data" << std::endl;
-			if (l == Level::strong) update_data_s(tran,t,id,b);
-			else if (l == Level::causal) update_data_c(tran,t,k,id,ends,b);
+			if (l == Level::strong) return update_data_s(tran,t,id,b);
+			else if (l == Level::causal) return update_data_c(tran,t,k,id,ends,b);
+			else assert(false && "there is a third case now?");
 			//std::cerr << "out" << std::endl;
 		}
 
@@ -262,17 +267,17 @@ namespace{
 		void initialize_with_id(Level l, T &tran, Table t, Name id, const Blob& b){
 			//std::cerr << "in initialize_with_id" << std::endl;
 			if (l == Level::strong) initialize_with_id_s(tran,t,id,b);
-			else assert(false && "not enough parameters for causal initialization");
+			assert(false && "not enough parameters for causal initialization");
 			//std::cerr << "out" << std::endl;
 		}
 
 		template<typename T>
-		void increment(Level l, T& tran, Table t, int k, Name id, const std::array<int,NUM_CAUSAL_GROUPS> &ends){
+		auto increment(Level l, T& tran, Table t, int k, Name id, const std::array<int,NUM_CAUSAL_GROUPS> &ends){
 			//std::cerr << "in increment" << std::endl;
 			assert(t == Table::IntStore
 				   && "Error: increment currently only defined on integers");
-			if (l == Level::strong) increment_s(tran,t,id);
-			else increment_c(tran,t,k,id,ends);
+			if (l == Level::strong) return increment_s(tran,t,id);
+			else return increment_c(tran,t,k,id,ends);
 			//std::cerr << "out" << std::endl;
 		}
 

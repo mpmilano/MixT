@@ -475,6 +475,7 @@ namespace myria { namespace tracker {
 				assert(data.data());
 				assert(data.size() > 0);
 				//std::cout << data << std::endl;
+				for (auto &i : version) assert(i != -1);
 				tctx.i->tracking_add.emplace_back(name,std::make_pair(version,data));
 				//std::cout << tctx.i->tracking_add.back().second.second << std::endl;
 				assert(tctx.i->tracking_add.back().second.second.data());
