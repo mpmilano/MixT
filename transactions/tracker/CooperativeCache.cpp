@@ -199,7 +199,8 @@ namespace myria { namespace tracker {
 								Socket newsockfd = server.receive();
 								if (!newsockfd.valid()) continue;
 								//fork off a new thread to handle the request.
-								pool.launch([=](int){respond_to_request(m,cache,newsockfd);});
+								pool.launch([m,cache,newsockfd](int) {
+										respond_to_request(m,cache,newsockfd);});
 							}
 						}
 						catch(const std::exception & e){

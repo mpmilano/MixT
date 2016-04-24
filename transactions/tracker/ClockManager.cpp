@@ -1,5 +1,6 @@
 #include "Tracker.hpp"
 #include "Tracker_private_declarations.hpp"
+#include "ServerSocket.hpp"
 
 using namespace std;
 
@@ -15,7 +16,14 @@ namespace myria { namespace tracker {
 
 		private:
 			ClockManager(){
-				
+				using namespace mutils;
+				ServerSocket ss{Tracker::clockport,
+						[&](Socket sock){
+						while (sock.valid()){
+							sock.receive(clock);
+						}
+					}
+						};
 			}
 			ClockManager(const ClockManager&) = delete;
 			
