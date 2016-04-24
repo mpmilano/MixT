@@ -20,12 +20,16 @@ namespace myria { namespace tracker {
 				using namespace mutils;
 				ServerSocket ss{Tracker::clockport,
 						[&](Socket sock){
-						while (sock.valid()){
-							Tracker::Clock tmpclock;
-							sock.receive(tmpclock);
-							for (int i = 0; i < tmpclock.size(); ++i){
-								clock[i] = tmpclock[i];
+						try{
+							while (sock.valid()){
+								Tracker::Clock tmpclock;
+								sock.receive(tmpclock);
+								for (int i = 0; i < tmpclock.size(); ++i){
+									clock[i] = tmpclock[i];
+								}
 							}
+						}
+						catch (const ProtocolException&){
 						}
 					}
 						};
