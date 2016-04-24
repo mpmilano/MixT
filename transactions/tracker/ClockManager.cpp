@@ -11,8 +11,9 @@ namespace myria { namespace tracker {
 				static ClockManager inst;
 				return inst;
 			}
-			
-			Tracker::Clock clock;
+
+			volatile typename Tracker::Clock::value_type clock
+			[Tracker::Clock{}.max_size()];
 
 		private:
 			ClockManager(){
@@ -20,7 +21,11 @@ namespace myria { namespace tracker {
 				ServerSocket ss{Tracker::clockport,
 						[&](Socket sock){
 						while (sock.valid()){
-							sock.receive(clock);
+							Tracker::Clock tmpclock;
+							sock.receive(tmpclock);
+							for (int i = 0; i < tmpclock.size(); ++i){
+								clock[i] = tmpclock[i];
+							}
 						}
 					}
 						};
@@ -30,7 +35,11 @@ namespace myria { namespace tracker {
 		};
 
 		void Tracker::updateClock(TrackingContext &tctx){
-			auto &newc = ClockManager::inst().clock;
+			Tracker::Clock newc;
+			for (int i = 0; i < newc.size(); ++i){
+				volatile int &tmpi = ClockManager::inst().clock[i];
+				newc[i] = tmpi;
+			}
 			assert(ends::prec(i->global_min,newc));
 			i->global_min = newc;
 			list<Name> to_remove;
