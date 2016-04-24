@@ -83,6 +83,8 @@ namespace myria {
 				TrackingContext&,
 				DataStore<Level::strong>&, Name name, const Clock &version,
 				const std::function<void (char const *)> &construct_nd_merge);
+
+			void updateClock(TrackingContext &ctx);
 	
 		public:
 			//static Tracker& global_tracker(int cache_port = -1);

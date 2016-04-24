@@ -449,26 +449,10 @@ namespace myria { namespace tracker {
 
 			assert(name != 1);
 			
-			auto update_clock = [this](StoreContext<Level::strong> &sctx, TrackingContext &tctx, Tracker::Internals &t){
-				auto clock_ro = get<TDS::existingClock>(*t.strongDS)(tctx.logger,*t.registeredStrong, bigprime_lin);
-				assert(clock_ro);
-				auto newc_p = clock_ro->get(&sctx,this,&tctx);
-				auto &newc = *newc_p;
-				assert(ends::prec(t.global_min,newc));
-				t.global_min = newc;
-				list<Name> to_remove;
-				for (auto& p : t.tracking){
-					if (ends::prec(p.second.first,newc)) to_remove.push_back(p.first);
-				}
-				for (auto &e : to_remove){
-					tctx.i->tracking_erase.push_back(e);
-				}
-			};
-			
 			assert(&ds == i->registeredStrong);
 			if (!is_lin_metadata(name)){
 				//TODO: reduce frequency of this call.
-				update_clock(sctx,tctx,*i);
+				updateClock(tctx);
 				auto ts = make_lin_metaname(name);
 				if (get<TDS::exists>(*i->strongDS)(ds,ts)){
                                         tctx.logger->incrementIntField(
