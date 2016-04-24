@@ -1,9 +1,15 @@
 #include "Tracker.hpp"
+#include "Tracker_private_declarations.hpp"
+
+using namespace std;
 
 namespace myria { namespace tracker {
 
 		struct ClockManager{
-			static ClockManager inst;
+			static ClockManager& inst(){
+				static ClockManager inst;
+				return inst;
+			}
 			
 			Tracker::Clock clock;
 
@@ -11,11 +17,12 @@ namespace myria { namespace tracker {
 			ClockManager(){
 				
 			}
+			ClockManager(const ClockManager&) = delete;
 			
 		};
 
 		void Tracker::updateClock(TrackingContext &tctx){
-			auto &newc = ClockManager::inst.clock;
+			auto &newc = ClockManager::inst().clock;
 			assert(ends::prec(i->global_min,newc));
 			i->global_min = newc;
 			list<Name> to_remove;

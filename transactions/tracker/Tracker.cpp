@@ -22,6 +22,7 @@
 #include "TransactionBasics.hpp"
 #include "SafeSet.hpp"
 #include "Ostreams.hpp"
+#include "Tracker_private_declarations.hpp"
 namespace {
 	constexpr unsigned long long bigprime_lin =
 #include "big_prime"
@@ -38,71 +39,31 @@ namespace myria { namespace tracker {
 		using namespace mtl;
 		using namespace tracker;
 
-		namespace{
-			struct Bundle{
-			private:
-				std::shared_ptr<std::future<CooperativeCache::obj_bundle> > f;
-				std::shared_ptr<CooperativeCache::obj_bundle> p;
-				/*
-				static std::shared_ptr<MonotoneSafeSet<std::future<bool> > >& destroyed_bundles(bool reset = false){
-					static auto log = make_shared<MonotoneSafeSet<std::future<bool> > >();
-					static bool run_once = [](){std::thread(Bundle::cleanup_loop).detach();return true;}();
-					assert(run_once);
-					if (reset) log = make_shared<MonotoneSafeSet<std::future<bool> > >();
-					return log;
-				}
-				static void cleanup_loop(){
-					auto waiting_collection = destroyed_bundles();
-					destroyed_bundles(true);
-					std::this_thread::sleep_for(5ms); //well this is bad practice
-					for (auto &f : waiting_collection->iterable_reference()){
-						if (f.wait_for(1ms) != future_status::timeout) assert(f.get());
-						else destroyed_bundles()->emplace(std::move(f));
-					}
-					}*/
+		Bundle::Bundle(std::future<CooperativeCache::obj_bundle> f)
+			:f(new decltype(f)(std::move(f))){}
 
-			public:
-				Bundle(std::future<CooperativeCache::obj_bundle> f):f(new decltype(f)(std::move(f))){}
-				Bundle(){}
-				auto& get(){
-					if (f->valid()){
-						p = heap_copy(f->get());
-					}
-					assert(!f->valid());
-					return *p;
-				}
-				virtual ~Bundle(){
-					//TODO: there's a memory error here somewhere.  Just leak for now.
-					/*
-					if (f->valid()){
-						assert(f.use_count() > 0);
-						destroyed_bundles()->emplace(std::async(std::launch::async,[f = this->f]() -> bool {
-									while (f->wait_for(1ms) == future_status::timeout) {}
-									return true;
-								}));
-								}//*/
-				}
-			};
+		Bundle::Bundle(){}
+
+		CooperativeCache::obj_bundle& Bundle::get() {
+			if (f->valid()){
+				p = heap_copy(f->get());
+			}
+			assert(!f->valid());
+			return *p;
 		}
-
-		struct Tracker::Internals{
-			Internals(const Internals&) = delete;
-			DataStore<Level::strong> *registeredStrong {nullptr};
-			std::unique_ptr<TrackerDSStrong > strongDS;
-
-			DataStore<Level::causal> *registeredCausal {nullptr};
-			std::unique_ptr<TrackerDSCausal > causalDS;
-
-			Clock global_min{{0,0,0,0}};
-
-			std::map<Name, std::pair<Clock, std::vector<char> > > tracking;
-			std::map<Name, Bundle> pending_nonces;
-			std::set<Name> exceptions;
-			CooperativeCache cache;
-			std::unique_ptr<Name> last_onRead_name{nullptr};
-
-			Internals(CacheBehaviors beh):cache(beh){}
-		};
+		
+		Bundle::~Bundle(){
+			//TODO: there's a memory error here somewhere.  Just leak for now.
+			/*
+			  if (f->valid()){
+			  assert(f.use_count() > 0);
+			  destroyed_bundles()->emplace(std::async(std::launch::async,[f = this->f]() -> bool {
+			  while (f->wait_for(1ms) == future_status::timeout) {}
+			  return true;
+			  }));
+			  }//*/
+		}
+		
 
 		const DataStore<Level::strong>& Tracker::get_StrongStore() const {
 			assert(i->registeredStrong);
@@ -124,40 +85,6 @@ namespace myria { namespace tracker {
 			return *i->registeredCausal;
 		}
 
-
-		struct TrackingContext::Internals {
-			Tracker::Internals &trk;
-			bool commitOnDelete;
-
-			Internals(Tracker::Internals& trk, bool cod)
-				:trk(trk),commitOnDelete(cod){}
-			
-			list<Name> tracking_erase;
-			list<pair<Name, pair<Tracker::Clock, vector<char> > > > tracking_add;
-			list<pair<Name,Bundle> >pending_nonces_add;
-
-			auto _commitContext(){
-				auto &tracker = trk;
-				for (auto &e : tracking_erase){
-					tracker.tracking.erase(e);
-				}
-				for (auto &e : tracking_add){
-					tracker.tracking.emplace(e);
-				}
-				for (auto &e : pending_nonces_add){
-					tracker.pending_nonces.emplace(e);
-				}
-			}
-
-			auto _finalize(){
-				commitOnDelete = false;
-			}
-			virtual ~Internals(){
-				if (commitOnDelete){
-					_commitContext();
-				}
-			}
-		};
 
 		void TrackingContext::commitContext(){
 				i->_commitContext();
