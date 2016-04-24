@@ -10,7 +10,7 @@ int main(){
 	std::vector<pair<int,shared_ptr<Socket> > > ip_addrs {
 		{make_pair(decode_ip("128.84.105.150"), std::shared_ptr<Socket>()),
 				make_pair(decode_ip("128.84.105.142"), std::shared_ptr<Socket>()),
-				make_pair(decode_ip("128.84.105.88 "), std::shared_ptr<Socket>()),
+				make_pair(decode_ip("128.84.105.88"), std::shared_ptr<Socket>()),
 				make_pair(decode_ip("128.84.105.81"), std::shared_ptr<Socket>()),
 				make_pair(decode_ip("128.84.105.69"), std::shared_ptr<Socket>())}};
 
@@ -34,8 +34,6 @@ int main(){
 					continue;
 				}
 			}
-			update_strong_clock(*conn_strong,tmp);
-			verify_strong_clock(*conn_strong,tmp);
 		}
 	}
 	catch(const pqxx::pqxx_exception &r){
