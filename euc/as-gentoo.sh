@@ -19,6 +19,10 @@ if [[ -d mutils-containers ]]
 then cd mutils-containers; git pull; cd ..
 else git clone https://github.com/mpmilano/mutils-containers.git
 fi
+if [[ -d mutils-networking ]]
+then cd mutils-networking; git pull; cd ..
+else git clone https://github.com/mpmilano/mutils-networking.git
+fi
 source pg_env.sh
 killall -9 vm
 rm /tmp/Myria*
