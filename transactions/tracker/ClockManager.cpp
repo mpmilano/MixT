@@ -1,8 +1,10 @@
 #include "Tracker.hpp"
 #include "Tracker_private_declarations.hpp"
 #include "ServerSocket.hpp"
+#include <thread>
 
 using namespace std;
+using namespace mutils;
 
 namespace myria { namespace tracker {
 
@@ -15,26 +17,31 @@ namespace myria { namespace tracker {
 			volatile typename Tracker::Clock::value_type clock
 			[Tracker::Clock{}.max_size()];
 
+			ClockManager(const ClockManager&) = delete;
 		private:
-			ClockManager(){
-				using namespace mutils;
-				ServerSocket ss{Tracker::clockport,
-						[&](Socket sock){
-						try{
-							while (sock.valid()){
-								Tracker::Clock tmpclock;
-								sock.receive(tmpclock);
-								for (int i = 0; i < tmpclock.size(); ++i){
-									clock[i] = tmpclock[i];
-								}
+			AcceptConnectionLoop loop{
+				[&](bool&, Socket sock){
+					try{
+						while (sock.valid()){
+							Tracker::Clock tmpclock;
+							sock.receive(tmpclock);
+							for (int i = 0; i < tmpclock.size(); ++i){
+								clock[i] = tmpclock[i];
 							}
 						}
-						catch (const ProtocolException&){
-						}
 					}
-						};
+					catch (const ProtocolException&){
+					}
+				}};
+			
+			ClockManager(){
+				std::thread{[loop = this->loop]() mutable {
+						loop.loop_until_dead(Tracker::clockport);
+					}}.detach();
 			}
-			ClockManager(const ClockManager&) = delete;
+			~ClockManager(){
+				*loop.alive = false;
+			}
 			
 		};
 

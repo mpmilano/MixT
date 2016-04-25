@@ -206,7 +206,6 @@ namespace myria{ namespace pgsql {
 				assert(res3);
 				auto res4 = r[0][3].to(vers[3]);
 				assert(res4);
-				assert(vers[2] < 30);
 				return 4;
 			}
 		}
