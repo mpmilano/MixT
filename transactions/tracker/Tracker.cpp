@@ -468,7 +468,7 @@ namespace myria { namespace tracker {
 		void Tracker::afterRead(TrackingContext &tctx, DataStore<Level::causal>&, Name name, const Clock& version, const std::vector<char> &data, Clock*){}
 		void Tracker::afterRead(TrackingContext &tctx, DataStore<Level::causal>&, Name name, const Clock& version, const std::vector<char> &data, void*){
 			if (tracking_candidate(*i,name,version)){
-                                tctx.logger->incrementIntField(LogFields::tracker_causal_afterread_candidate);
+				tctx.logger->incrementIntField(LogFields::tracker_causal_afterread_candidate);
 				//need to overwrite, not occlude, the previous element.
 				//C++'s map semantics are really stupid.
 				tctx.i->tracking_erase.push_back(name);
@@ -476,9 +476,11 @@ namespace myria { namespace tracker {
 				assert(data.size() > 0);
 				//std::cout << data << std::endl;
 				for (auto &i : version) assert(i != -1);
-				tctx.i->tracking_add.emplace_back(name,std::make_pair(version,data));
-				//std::cout << tctx.i->tracking_add.back().second.second << std::endl;
-				assert(tctx.i->tracking_add.back().second.second.data());
+				if (!ends::prec(version,i->global_min)){
+					tctx.i->tracking_add.emplace_back(name,std::make_pair(version,data));
+					//std::cout << tctx.i->tracking_add.back().second.second << std::endl;
+					assert(tctx.i->tracking_add.back().second.second.data());
+				}
 			}
 		}
 
