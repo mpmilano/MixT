@@ -6,19 +6,37 @@
 #include <set>
 #include <fstream>
 #include <cassert>
+#include <sys/resource.h>
 
 auto USE_STRONG(){
-	return std::vector<std::vector<struct myria_log> >{{
-			runs_USE_STRONG_1(),
-				runs_USE_STRONG_2(),
-				runs_USE_STRONG_3(), runs_USE_STRONG_4(), runs_USE_STRONG_5(), runs_USE_STRONG_6(), runs_USE_STRONG_7(), runs_USE_STRONG_8(), runs_USE_STRONG_9(), runs_USE_STRONG_10()}};
+	static const auto rus1 = runs_USE_STRONG_1();
+	static const auto rus2 = runs_USE_STRONG_2();
+	static const auto rus3 = runs_USE_STRONG_3();
+	static const auto rus4 = runs_USE_STRONG_4();
+	static const auto rus5 = runs_USE_STRONG_5();
+	static const auto rus6 = runs_USE_STRONG_6();
+	static const auto rus7 = runs_USE_STRONG_7();
+	static const auto rus8 = runs_USE_STRONG_8();
+	static const auto rus9 = runs_USE_STRONG_9();
+	static const auto rus10 = runs_USE_STRONG_10();
+	
+	return std::vector<std::vector<struct myria_log> const * >{{&rus1,&rus2,&rus3,&rus4,&rus5,&rus6,&rus7,&rus8,&rus9,&rus10}};
 }
 
 auto NO_USE_STRONG(){
-	return std::vector<std::vector<struct myria_log> >{{
-			runs_NO_USE_STRONG_1(),
-				runs_NO_USE_STRONG_2(),
-				runs_NO_USE_STRONG_3(), runs_NO_USE_STRONG_4(), runs_NO_USE_STRONG_5(), runs_NO_USE_STRONG_6(), runs_NO_USE_STRONG_7(), runs_NO_USE_STRONG_8(), runs_NO_USE_STRONG_9(), runs_NO_USE_STRONG_10()}};
+
+	static const auto rus1 = runs_NO_USE_STRONG_1();
+	static const auto rus2 = runs_NO_USE_STRONG_2();
+	static const auto rus3 = runs_NO_USE_STRONG_3();
+	static const auto rus4 = runs_NO_USE_STRONG_4();
+	static const auto rus5 = runs_NO_USE_STRONG_5();
+	static const auto rus6 = runs_NO_USE_STRONG_6();
+	static const auto rus7 = runs_NO_USE_STRONG_7();
+	static const auto rus8 = runs_NO_USE_STRONG_8();
+	static const auto rus9 = runs_NO_USE_STRONG_9();
+	static const auto rus10 = runs_NO_USE_STRONG_10();
+	
+	return std::vector<std::vector<struct myria_log> const * >{{&rus1,&rus2,&rus3,&rus4,&rus5,&rus6,&rus7,&rus8,&rus9,&rus10}};
 }
 
 
@@ -46,10 +64,11 @@ using std::set;
 using namespace std;
 
 double calculate_latency(const std::vector<struct myria_log> &results){
-	int total_latency = 0;
+	long total_latency = 0;
 	double total_events = 0;
 	for (auto &run : results){
 		total_events+=1;
+		assert(run.done_time > run.submit_time);
 		total_latency += run.done_time - run.submit_time;
 	}
 	
@@ -95,7 +114,7 @@ auto window_averages(const std::vector<myria_log> &_results, const F& print_fun)
 				 ));
 }
 
-auto print_window_averages(std::string filename, const vector<vector<myria_log> > &all_results){
+auto print_window_averages(std::string filename, const vector<vector<myria_log> const * > &all_results){
 	ofstream mwlatency;
 	mwlatency.open(filename);
 	mwlatency << "throughput,latency" << std::endl;
@@ -104,7 +123,7 @@ auto print_window_averages(std::string filename, const vector<vector<myria_log> 
 	
 	std::vector<std::pair<long,long> > throughput_v_latency;
 	for (auto& results : all_results) {
-		window_averages(results,
+		window_averages(*results,
 						[&](const auto &pair){throughput_v_latency.push_back(pair);}
 			);
 	}
@@ -133,13 +152,24 @@ auto trackertesting_other_calls(const myria_log &row){
 }
 
 int main(){
+	const rlim_t kStackSize = 2048L * 1024L * 1024L; //2048mb
+	struct rlimit rl;
+	int result;
+
+	result = getrlimit(RLIMIT_STACK,&rl);
+	assert(result == 0);
+	if (rl.rlim_cur < kStackSize){
+		rl.rlim_cur = kStackSize;
+		result = setrlimit(RLIMIT_STACK,&rl);
+		assert(result == 0);
+	}
 	{
 		long transaction_action = 0;
 		long total_rows = 0;
 		long read_or_write = 0;
 		for (auto &results : NO_USE_STRONG()){
 			
-			for (auto &row : results){
+			for (auto &row : *results){
 				total_rows++;
 				if (row.transaction_action)
 					transaction_action++;
@@ -154,26 +184,26 @@ int main(){
 	
 	cout << "use only strong: " << endl;
 	for (auto &results : USE_STRONG()){
-                if (results.size() <= 1) continue;
-		cout << calculate_latency(results) << " for " << results.size() << " total events" << endl;
+                if (results->size() <= 1) continue;
+		cout << calculate_latency(*results) << " for " << results->size() << " total events" << endl;
 	}
 
 	cout << "use both: " << endl;
 	for (auto &results : NO_USE_STRONG()){
-                if (results.size() <= 1) continue;
-		cout << calculate_latency(results) << " for " << results.size() << " total events" << endl;
+                if (results->size() <= 1) continue;
+		cout << calculate_latency(*results) << " for " << results->size() << " total events" << endl;
 	}
 
         std::cout << "number of IO events incurred: first normal, then strong" << std::endl;
         for (auto &types : {NO_USE_STRONG(), USE_STRONG()}) for (auto &results : types){
-            if (results.size() <= 1) continue;
+            if (results->size() <= 1) continue;
 		long num_events{0};
 		long total_io{0};
 		long object_calls{0};
 		long nonobject_io{0};
 		long other{0};
 		long existingObject_calls{0};
-		for (auto& row : results){
+		for (auto& row : *results){
 			if (row.is_write) continue;
 			object_calls += trackertestingobject_calls(row);
 			nonobject_io += trackertesting_nonobject_io_calls(row);
