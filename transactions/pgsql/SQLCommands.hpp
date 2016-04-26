@@ -7,6 +7,8 @@ namespace{
 	using namespace myria;
 	using namespace myria::pgsql;
 
+	using namespace mutils;
+
 	namespace cmds {
 		
 		//hybrid section (same command works on both strong and causal)
@@ -55,7 +57,7 @@ namespace{
 			//AtScopeEnd ase{[](){//std::cerr << "out" << std::endl;}};
 			//discard(ase);
 			static const std::string bs =
-				"select version, data, max(octet_length(data)) as size from \"BlobStore\" where index = 0 and ID = $1";
+				"select version, data, max(octet_length(data)) as size from \"BlobStore\" where index = 0 and ID = $1 group by version,data";
 			static const std::string is = "select version, data from \"IntStore\" where index = 0 and ID = $1";
 			switch(t) {
 			case Table::BlobStore : return trans.prepared("select1",bs,id); 
@@ -111,30 +113,50 @@ namespace{
 					: (k - overflow - 1) / (NUM_CAUSAL_MASTERS)) + 1;
 		}
 		
-		int md(int k){return (k % NUM_CAUSAL_GROUPS == 0 ? NUM_CAUSAL_GROUPS : k % NUM_CAUSAL_GROUPS);}
+		constexpr int md(int k){
+			return (k % NUM_CAUSAL_GROUPS == 0 ? NUM_CAUSAL_GROUPS : k % NUM_CAUSAL_GROUPS);
+		}
 
-#define update_data_c_cmd(xx,set)	using namespace std;				\
-		const static auto update_cmds = [&](){							\
-			vector<pair<string,string> > ret;							\
-			for (int _t = 0; _t < Table_max; ++_t){						\
-				string t = table_name((Table)_t);						\
-				for (int _k = 1; _k < (NUM_CAUSAL_GROUPS+1); ++_k){		\
-					auto k = to_string(_k);								\
-					stringstream main;									\
-					main << "update " << t << "set data = " << set;		\
-					for (int i = 1; i < NUM_CAUSAL_GROUPS+1; ++i) main << ", vc" << md(_k+i) << "=$"<<i+1; \
-					main << ", lw = " << k								\
-						 << " where id = $1 and index = " << group_mapper(_k) \
-						 << " returning ";								\
-					for (int i = 1; i < NUM_CAUSAL_GROUPS; ++i){		\
-						main << "vc" << i << ",";						\
-					}													\
-					main << "vc" << NUM_CAUSAL_GROUPS;					\
-					ret.push_back(pair<string,string>{(t + "Update") + k + xx,main.str()}); \
-				}														\
-			}															\
-			return ret;													\
-		}(); assert(ends[2] < 30); 
+		constexpr auto update_data_c_cmd(char const * const xx, char const * const set) {
+			using namespace std;
+			struct ReturnThis{
+				static constexpr CTString vcs1(unsigned int i, unsigned int stop, unsigned int _k){
+					return CTString{} + ", vc" + md(_k+i)+ "=$"+ (i+1) +
+										  ( i==(stop-1) ? CTString{} : vcs1(i+1,stop,_k));
+				}
+
+				static constexpr CTString vcs2(unsigned int i, unsigned int stop){
+					return CTString{} + "vc" + i + "," + (i == (stop-1)? CTString{} : vcs2(i+1,stop));
+				}
+				
+				pair<CTString,CTString> ret[Table_max * (NUM_CAUSAL_GROUPS+1)]
+					{pair<CTString,CTString>{CTString{},CTString{} }};
+
+				pair<string,string> at(std::size_t s) const {
+					return make_pair(string{ret[s].first.str},string{ret[s].second.str});
+				}
+			};
+
+			ReturnThis ret;
+			int index{0};
+			for (int _t = 0; _t < Table_max; ++_t){
+				CTString t {table_name((Table)_t)};
+				for (int _k = 1; _k < (NUM_CAUSAL_GROUPS+1); ++_k){
+					auto k = to_ctstring(_k);
+					CTString main = CTString{}
+					+ "update " + t + " set data = " + set
+						+ ReturnThis::vcs1(1,NUM_CAUSAL_GROUPS,_k)
+						+ ", lw = " + k
+						+ " where id = $1 and index = " + group_mapper(_k)
+						+ " returning " + ReturnThis::vcs2(1,NUM_CAUSAL_GROUPS)
+						+ "vc" + NUM_CAUSAL_GROUPS;
+					ret.ret[index].first = t + "Update" + k + xx;
+					ret.ret[index].second = main;
+					++index;
+				}
+			}
+			return ret;
+		}
 
 		template<typename T>
 		auto select_version_c(T &trans, Table t, Name id){
@@ -143,7 +165,7 @@ namespace{
 				vector<pair<string,string> > v;
 				for (int i = 0; i < Table_max; ++i){
 					v.push_back(pair<string,string>{string("Sel1") + std::to_string(i),
-								string("select vc1,vc2,vc3,vc4 from ") + table_name((Table)i)
+								string("select vc1,vc2,vc3,vc4 from ") + table_name((Table)i).str
 								+ " where ID=$1 and index=0"});
 				}
 				return v;
@@ -170,59 +192,22 @@ namespace{
 		
 		template<typename T, typename Blob>
 		auto update_data_c(T &trans, Table t, int k, Name id, const std::array<int,NUM_CAUSAL_GROUPS> &ends, const Blob &b){
-			update_data_c_cmd("x","$5");
-			auto &p = update_cmds.at(((int)t) * (NUM_CAUSAL_GROUPS) + (k-1));
+			static constexpr auto update_cmds = update_data_c_cmd("x","$5");
+			auto p = update_cmds.at(((int)t) * (NUM_CAUSAL_GROUPS) + (k-1));
 			return trans.prepared(p.first,p.second,id,ends[md(k+1)-1],ends[md(k+2)-1],ends[md(k+3)-1],b);
 		}
 		
 		
 		template<typename T>
 		auto increment_c(T &trans, Table t, int k, Name id, const std::array<int,NUM_CAUSAL_GROUPS> &ends){
-			update_data_c_cmd("y","data + 1");
-			auto &p = update_cmds.at(((int)t) * (NUM_CAUSAL_GROUPS) + (k-1));
+			static constexpr auto update_cmds = update_data_c_cmd("y","data + 1");
+			auto p = update_cmds.at(((int)t) * (NUM_CAUSAL_GROUPS) + (k-1));
 			return trans.prepared(p.first,p.second,id,ends[md(k+1)-1],ends[md(k+2)-1],ends[md(k+3)-1]);
 		}
 
 		template<typename T, typename Blob>
 		void initialize_with_id_c(T &trans, Table t, int k, Name id, const std::array<int,NUM_CAUSAL_GROUPS> &ends, const Blob& b){
-			assert(k > 0);
-			using namespace std;
-			static constexpr int n = NUM_CAUSAL_GROUPS;
-			static constexpr int r = NUM_CAUSAL_MASTERS;
-			const static auto v = [&](){
-				vector<array<pair<string,string>,3 > > ret;
-				for (int _t = 0; _t < Table_max; ++_t){
-					stringstream main1;
-					stringstream main2;
-					stringstream main3;
-					string t = table_name((Table)_t);
-					main1 << "insert into " << t << " (vc1) "
-						  << "select zeros from thirty_zeros where not"
-						  <<"((select count(*) from " << t << "where id=0)"
-						  <<" > 30);";
-					main2 << "update "<< t << "set id=$1 where index in (select index from " << t << " where id=0 limit " << r+1 <<  ");";
-					main3 << "update " << t << " set index=index-(select min(index) from " << t << " where id=$1) where id=$1;";
-					for (int _k = 1; _k < (n+1); ++_k){
-						auto k = to_string(_k);
-						array<pair<string,string>,3> arr;
-						arr[0]= pair<string,string>{(t + "Create1") + k,main1.str()};
-						arr[1]= pair<string,string>{(t + "Create2") + k,main2.str()};
-						arr[2]= pair<string,string>{(t + "Create3") + k,main3.str()};
-						ret.push_back(arr);
-					}
-				}
-				return ret;
-			}();
-			auto &commands = v.at(((int)t) * n + (k-1));
-                        for (std::size_t i = 0; i < commands.size(); ++i){
-				auto &p = commands[i];
-				if (i == 1 || i == 2)
-					trans.prepared(p.first,p.second,id);
-				else trans.exec(p.second);
-			}
-			update_data_c_cmd("z","$5");
-			auto &p = update_cmds.at(((int)t) * (NUM_CAUSAL_GROUPS) + (k-1));
-			trans.prepared(p.first,p.second,id,ends[md(k+1) - 1],ends[md(k+2) - 1],ends[md(k+3) - 1],b);
+			assert(false && "This is just a mess. I'm deleting it");
 		}
 
 		//entry points

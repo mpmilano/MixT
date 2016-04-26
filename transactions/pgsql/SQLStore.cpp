@@ -102,16 +102,6 @@ namespace myria{ namespace pgsql {
 			}
 		}		
 
-		const std::string& table_name(Table t){
-			static const std::string bs = "\"BlobStore\"";
-			static const std::string is = "\"IntStore\"";
-			switch (t){
-			case Table::BlobStore : return bs;
-			case Table::IntStore : return is;
-			};
-			assert(false && "you always knew adding new tables would be a pain");
-		}
-
 		SQLStore_impl::SQLStore_impl(GDataStore &store, int instanceID, Level l)
 			:_store(store),clock{{0,0,0,0}},level(l),default_connection{new SQLConnection(instanceID)} {
 				auto t = begin_transaction("Setting up this new SQLStore; gotta configure search paths and stuff.");

@@ -2,6 +2,7 @@
 
 #include "DataStore.hpp"
 #include "Transaction.hpp"
+#include "cexprutils.hpp"
 #include <memory>
 #include <vector>
 #include <array>
@@ -29,7 +30,15 @@ namespace myria { namespace pgsql {
 
 		static constexpr int Table_max = 2;
 		
-		const std::string& table_name(Table t);
+		constexpr mutils::CTString table_name(Table t){
+			using namespace mutils;
+			constexpr auto bs = "\"BlobStore\"";
+			constexpr auto is = "\"IntStore\"";
+			switch (t){
+			case Table::BlobStore : return CTString{} + bs;
+			case Table::IntStore : return CTString{} + is;
+			};
+		}
 
 		struct SQLStore_impl;
 		
