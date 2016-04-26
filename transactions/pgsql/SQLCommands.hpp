@@ -105,7 +105,7 @@ namespace{
 
 		//causal section 
 
-		static constexpr int group_mapper(int k){
+		constexpr int group_mapper(int k){
 			if (k < 1) assert(false && "Error: k is 1-indexed");
 			constexpr int sizes = NUM_CAUSAL_GROUPS / NUM_CAUSAL_MASTERS;
 			constexpr int overflow = NUM_CAUSAL_GROUPS - sizes * NUM_CAUSAL_MASTERS;
@@ -181,7 +181,7 @@ namespace{
 			//AtScopeEnd ase{[](){//std::cerr << "out" << std::endl;}};
 			//discard(ase);
 			static const std::string bs =
-				"select vc1,vc2,vc3,vc4, data, max(octet_length(data)) as size from \"BlobStore\" where index = 0 and ID = $1";
+				"select vc1,vc2,vc3,vc4, data, max(octet_length(data)) as size from \"BlobStore\" where index = 0 and ID = $1 group by vc1,vc2,vc3,vc4,data ";
 			static const std::string is = "select vc1,vc2,vc3,vc4, data from \"IntStore\" where index = 0 and ID = $1";
 			switch(t) {
 			case Table::BlobStore : return trans.prepared("select1",bs,id); 
@@ -192,7 +192,7 @@ namespace{
 		
 		template<typename T, typename Blob>
 		auto update_data_c(T &trans, Table t, int k, Name id, const std::array<int,NUM_CAUSAL_GROUPS> &ends, const Blob &b){
-			static constexpr auto update_cmds = update_data_c_cmd("x","$5");
+			static const constexpr auto update_cmds = update_data_c_cmd("x","$5");
 			auto p = update_cmds.at(((int)t) * (NUM_CAUSAL_GROUPS) + (k-1));
 			return trans.prepared(p.first,p.second,id,ends[md(k+1)-1],ends[md(k+2)-1],ends[md(k+3)-1],b);
 		}
@@ -200,7 +200,7 @@ namespace{
 		
 		template<typename T>
 		auto increment_c(T &trans, Table t, int k, Name id, const std::array<int,NUM_CAUSAL_GROUPS> &ends){
-			static constexpr auto update_cmds = update_data_c_cmd("y","data + 1");
+			static const constexpr auto update_cmds = update_data_c_cmd("y","data + 1");
 			auto p = update_cmds.at(((int)t) * (NUM_CAUSAL_GROUPS) + (k-1));
 			return trans.prepared(p.first,p.second,id,ends[md(k+1)-1],ends[md(k+2)-1],ends[md(k+3)-1]);
 		}
