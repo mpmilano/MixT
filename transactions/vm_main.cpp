@@ -18,11 +18,9 @@
 #include "ProcessPool.hpp"
 #include "Hertz.hpp"
 #include "ObjectBuilder.hpp"
+#include "launch_test.hpp"
 #include "TrackerTestingStore.hpp"//*/
 #include "Transaction_macros.hpp"
-
-
-constexpr int my_unique_id = int{IP_QUAD};
 
 using namespace std;
 using namespace chrono;
@@ -30,12 +28,6 @@ using namespace mutils;
 using namespace myria;
 using namespace mtl;
 using namespace pgsql;
-
-namespace {
-	constexpr unsigned long long bigprime_lin =
-#include "big_prime"
-		;
-}
 
 
 #ifdef NO_USE_STRONG
@@ -56,26 +48,11 @@ const auto log_name = [](){
 }();
 ofstream logFile;
 
-//I'm guessing miliseconds.  Here's hoping!
-auto getArrivalInterval(Frequency arrival_rate) {
-	// exponential
-	constexpr double thousand = -1000.0;
-	double U = better_rand();
-	double T = thousand * log(U) / (arrival_rate.hertz / 10);
-	unsigned long l = round(T);
-	return milliseconds(l);
-}
-
 constexpr int name_max = 478446;
 
 int get_name_read(double alpha){
 	constexpr int max = name_max;
-	double y = better_rand();
-	assert (y < 1.1);
-	assert (y > -0.1);
-	double max_pow = pow(max,1 - alpha);
-	double x = pow(max_pow*y,1/(1-alpha));
-	auto ret = round(x);
+	auto ret = get_zipfian_value(max,alpha);
 	if (ret > (max + 14)) {
 		std::cerr << "Name out of range! Trying again" << std::endl;
 		return get_name_read(alpha);
@@ -87,40 +64,7 @@ int get_name_write(){
         return int_rand() % 478446;
 }
 
-const auto launch_clock = high_resolution_clock::now();
 const int mod_constant = 50;
-
-int get_strong_ip() {
-	static int ip_addr{[](){
-			std::string static_addr {STRONG_REMOTE_IP};
-			if (static_addr.length() == 0) static_addr = "127.0.0.1";
-			std::cout << static_addr << std::endl;
-			return mutils::decode_ip(static_addr);
-		}()};
-	return ip_addr;
-}
-
-template<typename A, typename B>
-auto micros(duration<A,B> time){
-	return duration_cast<microseconds>(time).count();
-}
-
-//was as microseconds
-auto elapsed_time() {
-	return high_resolution_clock::now() - launch_clock;
-};
-
-template<typename Strong, typename Causal>
-auto start_transaction(std::unique_ptr<VMObjectLog> log, tracker::Tracker &trk, Strong &strong, Causal &causal){
-    assert(log);
-    auto ctx = make_unique<TransactionContext>(nullptr,trk.generateContext(std::move(log)));
-	ctx->strongContext = strong.begin_transaction(ctx->trackingContext->logger,"one-off vm_main transaction");
-	ctx->causalContext = causal.begin_transaction(ctx->trackingContext->logger,"one-off vm_main transaction");
-	assert(ctx->trackingContext);
-	assert(ctx->trackingContext->logger);
-	return ctx;
-	assert(!log);
-}
 
 int main(){
 
@@ -173,55 +117,27 @@ int main(){
 		
 		ctx->full_commit();
 		
-		{ //TEMPORARY path debugging
-                        unique_ptr<VMObjectLog> log{log_builder->template beginStruct<LoggedStructs::log>().release()};
-                        log->pause(log);
-                        auto hndl = strong.template existingObject<HandleAccess::all, int>(log,40);
-                        log->resume(log);
-			for (int i = 0; i < 2; ++i){
-				TRANSACTION(log,trk,hndl,
-							do_op<RegisteredOperations::Increment>(hndl)
-					);//*/
-				assert(*hndl.get(trk,start_transaction(log_builder->template beginStruct<LoggedStructs::log>(),trk,strong,causal).get()) == i+1);
-			}
-		}
 		std::cout << "trackertesting init complete" << std::endl;
 	}//*/
 
 
 	using namespace testing;
-	
-	struct Remember {
-		
-		unique_ptr<VMObjectLogger> log_builder{build_VMObjectLogger()};
-		
-		tracker::Tracker trk;
-                SQLStore<Level::strong>::SQLInstanceManager ss;
-                SQLStore<Level::causal>::SQLInstanceManager sc;
-                //TrackerTestingStore<Level::strong> ss;
-                //TrackerTestingStore<Level::causal> sc;
-		DeserializationManager dsm;
-		
-		Remember(int id)
-			:trk(id + 1024, tracker::CacheBehaviors::full),
-			 ss(trk),
-			 sc(trk),
-                         dsm({&ss,&sc}){}
-	};
 
 	struct PoolFunStruct {
 		static std::string pool_fun(std::unique_ptr<Remember>& mem, int i, unsigned long long _start_time){
 			assert(mem);
-                        unique_ptr<VMObjectLog> log_messages{mem->log_builder->template beginStruct<LoggedStructs::log>().release()};
+			unique_ptr<VMObjectLog> log_messages{
+				mem->log_builder->template beginStruct<LoggedStructs::log>().release()};
 			microseconds start_time(_start_time);
 			auto run_time = elapsed_time();
 			
-			log_messages->addField(LogFields::submit_time,duration_cast<milliseconds>(start_time).count());
-			log_messages->addField(LogFields::run_time,duration_cast<milliseconds>(run_time).count());
+			log_messages->addField(LogFields::submit_time,
+								   duration_cast<milliseconds>(start_time).count());
+			log_messages->addField(LogFields::run_time,
+								   duration_cast<milliseconds>(run_time).count());
 			//std::cout << "launching task on pid " << pid << std::endl;
 			//AtScopeEnd em{[pid](){std::cout << "finishing task on pid " << pid << std::endl;}};
 			try{
-				assert(true);
 				std::string str = [&](){
 					SQLStore<Level::strong> &strong = mem->ss.inst_strong(ip);
 					SQLStore<Level::causal> &causal = mem->sc.inst_causal(0);
@@ -291,101 +207,46 @@ int main(){
 			}
 			return log_messages->single();
 		}
-
-		static std::string exn_handler(std::exception_ptr eptr){
-			std::stringstream log_messages;
-			try {
-				assert(eptr);
-				std::rethrow_exception(eptr);
-			}
-			catch (const pqxx::pqxx_exception &e){
-				log_messages << "pqxx failure: " << e.base().what() << std::endl;
-			}
-			catch (const std::exception &e){
-				log_messages << "non-pqxx failure: " << e.what() << std::endl;
-			}
-			catch (...){
-				log_messages
-					<< "Exception occurred which derived from neither pqxx_exception nor std::exception!"
-					<< std::endl;
-			}
-			return log_messages.str();
-			
-		}
-
-		static void pool_mem_init (std::unique_ptr<Remember>& mem, int _pid){
-			auto pid = _pid % (65535 - 1025); //make sure this can be used as a port number
-			if (!mem) {
-				mem.reset(new Remember(pid));
-			}
-			//I'm assuming that pid won't get larger than the number of allowable ports...
-			assert(pid + 1024 < 49151);
-		}
 	};
+
+	using pool_fun_t = std::string (*) (std::unique_ptr<Remember>&, int, unsigned long long);
 	
         //assert(Profiler::pausedOrInactive());
-	std::string (*pool_fun) (std::unique_ptr<Remember>&, int, unsigned long long) = PoolFunStruct::pool_fun;
+	pool_fun_t pool_fun = PoolFunStruct::pool_fun;
 
-	std::string (*exn_handler) (std::exception_ptr) = PoolFunStruct::exn_handler;
-
-	void (*pool_mem_init) (std::unique_ptr<Remember>&, int) = PoolFunStruct::pool_mem_init;
+	vector<pool_fun_t> vec{{pool_fun,pool_fun}};
 	
-	std::unique_ptr<ThreadPool<Remember,std::string, unsigned long long> >
-		powner(new ThreadPool<Remember,std::string, unsigned long long>
-			   (pool_mem_init,{pool_fun},num_processes,exn_handler));
+	PreparedTest<unsigned long long> launcher{
+		num_processes,vec};
 	
-	auto &p = *powner;
-	auto start = high_resolution_clock::now();
+	const auto start = high_resolution_clock::now();
 
-	auto bound = [&](){return (high_resolution_clock::now() - start) < 15s;};
+	bool (*stop) (decltype(start)&) =
+		[](decltype(start)& start){
+		return (high_resolution_clock::now() - start) >= 15s;
+	};
 
-	//log printer
-	using future_list = std::list<std::future<std::unique_ptr<std::string> > >;
-	std::unique_ptr<future_list> futures{new future_list()};
-
-	std::function<decltype(p.launch(0,micros(elapsed_time()))) ()>
-		launch1 {[&](){return p.launch(0,micros(elapsed_time()));}};
-
-	std::unique_ptr<Remember> launch2_mem;
-	decltype(launch1) launch2 {[&]() -> decltype(p.launch(0,micros(elapsed_time()))){
-			auto str = pool_fun(launch2_mem,400,micros(elapsed_time()));
-			return std::async(std::launch::deferred,[str](){return heap_copy(str);});}};
-        bool launch_with_threading = true;
-	if (!launch_with_threading) std::cout << "Warning: threading disabled!" << std::endl;
-	auto launch  = ( launch_with_threading ? launch1 : launch2);
-	
 	std::cout << "beginning subtask generation loop" << std::endl;
 
+	pair<int,unsigned long long> (*choose_action) (decltype(start)&)= [](auto&){
+		return pair<int, unsigned long long>{0,micros(elapsed_time())};
+	};
+
+	milliseconds (*delay) (decltype(start)&) = [](auto&){
+		return getArrivalInterval(actual_arrival_rate);
+	};
+
+	const std::string results = launcher.run_tests(start,stop,choose_action,delay);
+		
 	//resume profiling
 	
-	while (bound()){
-		std::this_thread::sleep_for(getArrivalInterval(actual_arrival_rate));
-		futures->emplace_back(launch());
-	}
-
 	global_log->addField(GlobalsFields::final_completion_time,
 						 duration_cast<milliseconds>(elapsed_time()).count());
 
 	logFile << logger->declarations() << endl;
 
 	logFile << global_log->single() << endl;
+	logFile << results;
+	
 
-	//print everything
-	while (!futures->empty()){
-		std::unique_ptr<future_list> new_futures{new future_list()};
-		for (auto &f : *futures){
-			if (f.valid()){
-				if (f.wait_for(1ms) != future_status::timeout){
-					auto strp = f.get();
-					if (strp){
-						logFile << *strp << endl;
-					}
-				}
-				else {
-					new_futures->push_back(std::move(f));
-				}
-			}
-		}
-		futures = std::move(new_futures);
-	}
 }

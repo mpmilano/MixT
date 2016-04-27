@@ -15,6 +15,21 @@
 
 namespace myria { namespace mtl {
 
+		/**
+		 * For transactions which do not use MTL's information flow.
+		 */
+		template<typename Strong, typename Causal>
+		auto start_transaction(std::unique_ptr<VMObjectLog> log, tracker::Tracker &trk, Strong &strong, Causal &causal){
+			using namespace std;
+			assert(log);
+			auto ctx = make_unique<TransactionContext>(nullptr,trk.generateContext(std::move(log)));
+			ctx->strongContext = strong.begin_transaction(ctx->trackingContext->logger,"one-off vm_main transaction");
+			ctx->causalContext = causal.begin_transaction(ctx->trackingContext->logger,"one-off vm_main transaction");
+			assert(ctx->trackingContext);
+			assert(ctx->trackingContext->logger);
+			return ctx;
+		}
+
 		struct StrongFailureError: mutils::StaticMyriaException<MACRO_GET_STR("Error: Commit failure on strong portion") >{};
 		
 		struct CannotProceedError : mutils::MyriaException{
@@ -24,7 +39,10 @@ namespace myria { namespace mtl {
 				return why.c_str();
 			}
 		};
-		
+
+		/**
+		 * A full MTL transaction, built using the various builder classes in mtl
+		 */
 		template<typename T>
 		struct Transaction{
 			const std::function<

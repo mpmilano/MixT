@@ -1,0 +1,179 @@
+#pragma once
+#include "ProcessPool.hpp"
+#include "ThreadPool.hpp"
+#include <iostream>
+#include <fstream>
+#include <thread>
+#include <pqxx/pqxx>
+#include "SQLStore.hpp"
+#include "TrackerTestingStore.hpp"
+#include "FinalHeader.hpp"
+#include "Ostreams.hpp"
+#include "tuple_extras.hpp"
+#include "Basics.hpp"
+#include <sys/types.h>
+#include <chrono>
+#include <cmath>
+#include <unistd.h>
+#include "ProcessPool.hpp"
+#include "Hertz.hpp"
+#include "ObjectBuilder.hpp"
+#include "test_utils.hpp"
+#include "TrackerTestingStore.hpp"//*/
+#include "Transaction_macros.hpp"
+
+//The "new" vm_main
+
+
+constexpr int my_unique_id = int{IP_QUAD};
+
+using namespace std;
+using namespace chrono;
+using namespace mutils;
+using namespace myria;
+using namespace mtl;
+using namespace pgsql;
+
+namespace mutils{
+
+namespace {
+	constexpr unsigned long long bigprime_lin =
+#include "big_prime"
+		;
+}
+
+struct Remember {
+	
+	unique_ptr<VMObjectLogger> log_builder{build_VMObjectLogger()};
+	
+	tracker::Tracker trk;
+	SQLStore<Level::strong>::SQLInstanceManager ss;
+	SQLStore<Level::causal>::SQLInstanceManager sc;
+                //TrackerTestingStore<Level::strong> ss;
+                //TrackerTestingStore<Level::causal> sc;
+	DeserializationManager dsm;
+	
+	Remember(int id)
+			:trk(id + 1024, tracker::CacheBehaviors::full),
+			 ss(trk),
+			 sc(trk),
+			 dsm({&ss,&sc}){}
+};
+
+template<typename Arg>
+struct PreparedTest{
+
+	//static functions for TaskPool
+	static std::string exn_handler(std::exception_ptr eptr);
+	
+	static void pool_mem_init (std::unique_ptr<Remember>& mem, int _pid);
+
+	using action_t = std::string (*)(std::unique_ptr<Remember>&, int, Arg);
+	using functor_action_t = std::function<std::string (std::unique_ptr<Remember>&, int, Arg)>;
+	
+	//members, also for task pool
+	const int num_processes;
+
+	//for task pool init
+	static std::vector<functor_action_t> convert_vector(const std::vector<action_t>&);
+	
+	//task pool
+	ThreadPool<Remember,std::string,Arg> pool;
+
+	//constructor
+	PreparedTest(int num_processes, std::vector<action_t> actions)
+		:num_processes(num_processes),
+		 pool{pool_mem_init,convert_vector(actions),num_processes,exn_handler}{}
+
+	//runs the main test loop, given a function which return true when
+	//the test should stop, and a function that returns (which-task, what-arg-for-task)
+	template<typename Meta>
+	std::string run_tests(Meta& meta, bool (*stop) (Meta&),
+						  std::pair<int,Arg> (*choose_action) (Meta&),
+						  milliseconds (*delay) (Meta&));
+};
+
+
+
+//implementations 
+
+
+
+//static functions for TaskPool
+template<typename Arg>
+std::string PreparedTest<Arg>::exn_handler(std::exception_ptr eptr){
+	std::stringstream log_messages;
+	try {
+		assert(eptr);
+		std::rethrow_exception(eptr);
+	}
+	catch (const pqxx::pqxx_exception &e){
+		log_messages << "pqxx failure: " << e.base().what() << std::endl;
+	}
+	catch (const std::exception &e){
+		log_messages << "non-pqxx failure: " << e.what() << std::endl;
+	}
+	catch (...){
+		log_messages
+			<< "Exception occurred which derived from neither pqxx_exception nor std::exception!"
+			<< std::endl;
+	}
+	return log_messages.str();
+}
+
+template<typename Arg>
+void PreparedTest<Arg>::pool_mem_init (std::unique_ptr<Remember>& mem, int _pid){
+	auto pid = _pid % (65535 - 1025); //make sure this can be used as a port number
+	if (!mem) {
+		mem.reset(new Remember(pid));
+	}
+	//I'm assuming that pid won't get larger than the number of allowable ports...
+	assert(pid + 1024 < 49151);
+}
+
+template<typename Arg>
+std::vector<typename PreparedTest<Arg>::functor_action_t>
+PreparedTest<Arg>::convert_vector(const std::vector<action_t>& src){
+	std::vector<functor_action_t> ret;
+	for (auto &f : src) ret.push_back(f);
+	return ret;
+}
+
+//runs the main test loop, given a function which return true when
+//the test should stop, and a function that returns (which-task, what-arg-for-task)
+template<typename Arg> template<typename Meta>
+std::string PreparedTest<Arg>::run_tests(Meta& meta, bool (*stop) (Meta&),
+										 std::pair<int,Arg> (*choose_action) (Meta&),
+										 milliseconds (*delay) (Meta&)){
+	
+	using future_list = std::list<std::future<std::unique_ptr<std::string> > >;
+	std::unique_ptr<future_list> futures{new future_list()};
+	
+	while(!stop(meta)){
+		std::this_thread::sleep_for(delay(meta));
+		auto decision = choose_action(meta);
+		futures->emplace_back(pool.launch(decision.first,decision.second) );
+	}
+	
+	std::stringstream ss;
+	while (!futures->empty()){
+		std::unique_ptr<future_list> new_futures{new future_list()};
+		for (auto &f : *futures){
+			if (f.valid()){
+				if (f.wait_for(1ms) != future_status::timeout){
+					auto strp = f.get();
+					if (strp){
+						ss << *strp << endl;
+					}
+				}
+				else {
+					new_futures->push_back(std::move(f));
+				}
+			}
+		}
+		futures = std::move(new_futures);
+	}
+	return ss.str();
+}
+
+}
