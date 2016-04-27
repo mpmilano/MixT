@@ -124,7 +124,7 @@ int main(){
 	using namespace testing;
 
 	struct PoolFunStruct {
-		static std::string pool_fun(std::unique_ptr<Remember>& mem, int i, unsigned long long _start_time){
+		static std::string pool_fun(std::shared_ptr<Remember> mem, int i, unsigned long long _start_time){
 			assert(mem);
 			unique_ptr<VMObjectLog> log_messages{
 				mem->log_builder->template beginStruct<LoggedStructs::log>().release()};
@@ -209,7 +209,7 @@ int main(){
 		}
 	};
 
-	using pool_fun_t = std::string (*) (std::unique_ptr<Remember>&, int, unsigned long long);
+	using pool_fun_t = std::string (*) (std::shared_ptr<Remember>, int, unsigned long long);
 	
         //assert(Profiler::pausedOrInactive());
 	pool_fun_t pool_fun = PoolFunStruct::pool_fun;

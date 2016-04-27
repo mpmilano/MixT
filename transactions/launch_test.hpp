@@ -66,10 +66,10 @@ struct PreparedTest{
 	//static functions for TaskPool
 	static std::string exn_handler(std::exception_ptr eptr);
 	
-	static void pool_mem_init (std::unique_ptr<Remember>& mem, int _pid);
+	static void pool_mem_init (std::shared_ptr<Remember> &mem, int _pid);
 
-	using action_t = std::string (*)(std::unique_ptr<Remember>&, int, Arg);
-	using functor_action_t = std::function<std::string (std::unique_ptr<Remember>&, int, Arg)>;
+	using action_t = std::string (*)(std::shared_ptr<Remember>, int, Arg);
+	using functor_action_t = std::function<std::string (std::shared_ptr<Remember>, int, Arg)>;
 	
 	//members, also for task pool
 	const int num_processes;
@@ -122,11 +122,12 @@ std::string PreparedTest<Arg>::exn_handler(std::exception_ptr eptr){
 }
 
 template<typename Arg>
-void PreparedTest<Arg>::pool_mem_init (std::unique_ptr<Remember>& mem, int _pid){
-	auto pid = _pid % (65535 - 1025); //make sure this can be used as a port number
+void PreparedTest<Arg>::pool_mem_init (std::shared_ptr<Remember> &mem, int _pid){
+	auto pid = _pid % (65535 - 1025); //make sure this can be used as a port numbxer
 	if (!mem) {
-		mem.reset(new Remember(pid));
+		mem = std::make_shared<Remember>(pid);
 	}
+	assert(mem);
 	//I'm assuming that pid won't get larger than the number of allowable ports...
 	assert(pid + 1024 < 49151);
 }
