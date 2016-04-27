@@ -10,28 +10,12 @@ namespace myria{
 			LogFields::done_time, "int done_time","0",
 			LogFields::is_write, "bool is_write","false",
 			LogFields::is_read, "bool is_read","false",
+			LogFields::is_strong, "bool is_strong","false",
+			LogFields::is_causal, "bool is_causal","false",
 			LogFields::is_serialization_error,"bool is_serialization_error","false",
 			LogFields::pqxx_failure_string,"std::string pqxx_failure_string","\"\"",
 			LogFields::pqxx_failure,"bool pqxx_failure","false",
 			LogFields::num_causal_tries,"int num_causal_tries", "0",
-			LogFields::trackertestingobject_get, "int trackertestingobject_get","0",
-			LogFields::trackertestingobject_put, "int trackertestingobject_put","0",
-			LogFields::trackertestingobject_isvalid, "int trackertestingobject_isvalid","0",
-			LogFields::trackertestingobject_tobytes, "int trackertestingobject_tobytes","0",
-			LogFields::trackertestingobject_frombytes, "int trackertestingobject_frombytes","0",
-			LogFields::trackertesting_exists, "int trackertesting_exists","0",
-			LogFields::trackertesting_constructed, "int trackertesting_constructed","0",
-			LogFields::trackertesting_transaction_built, "int trackertesting_transaction_built","0",
-			LogFields::trackertesting_transaction_commit, "int trackertesting_transaction_commit","0",
-			LogFields::trackertesting_transaction_abort, "int trackertesting_transaction_abort","0",
-			LogFields::trackertesting_localtime, "int trackertesting_localtime","0",
-			LogFields::trackertesting_intransaction_check, "int trackertesting_intransaction_check","0",
-			LogFields::trackertestingobject_constructed, "int trackertestingobject_constructed","0",
-			LogFields::trackertestingobject_registered, "int trackertestingobject_registered","0",
-			LogFields::trackertesting_newobject, "int trackertesting_newobject","0",
-			LogFields::trackertesting_existingobject, "int trackertesting_existingobject","0",
-			LogFields::trackertesting_existingraw, "int trackertesting_existingraw","0",
-			LogFields::trackertesting_increment, "int trackertesting_increment","0",
 
 			LogFields::transaction_action, "bool transaction_action", "false",
 
@@ -79,42 +63,6 @@ namespace myria{
 			return os << "bool pqxx_failure";
 		case LogFields::num_causal_tries:
 			return os << "int num_causal_tries";
-		case LogFields::trackertestingobject_get:
-			return os << "int trackertestingobject_get";
-		case LogFields::trackertestingobject_put:
-			return os << "int trackertestingobject_put";
-		case LogFields::trackertestingobject_isvalid:
-			return os << "int trackertestingobject_isvalid";
-		case LogFields::trackertestingobject_tobytes:
-			return os << "int trackertestingobject_tobytes";
-		case LogFields::trackertestingobject_frombytes:
-			return os << "int trackertestingobject_frombytes";
-		case LogFields::trackertesting_exists:
-			return os << "int trackertesting_exists";
-		case LogFields::trackertesting_constructed:
-			return os << "int trackertesting_constructed";
-		case LogFields::trackertesting_transaction_built:
-                        return os << "int trackertesting_transaction_built";
-		case LogFields::trackertesting_transaction_commit:
-			return os << "int trackertesting_transaction_commit";
-		case LogFields::trackertesting_transaction_abort:
-			return os << "int trackertesting_transaction_abort";
-		case LogFields::trackertesting_localtime:
-			return os << "int trackertesting_localtime";
-		case LogFields::trackertesting_intransaction_check:
-			return os << "int trackertesting_intransaction_check";
-		case LogFields::trackertestingobject_constructed:
-			return os << "int trackertestingobject_constructed";
-		case LogFields::trackertestingobject_registered:
-			return os << "int trackertestingobject_registered";
-		case LogFields::trackertesting_newobject:
-			return os << "int trackertesting_newobject";
-		case LogFields::trackertesting_existingobject:
-			return os << "int trackertesting_existingobject";
-		case LogFields::trackertesting_existingraw:
-			return os << "int trackertesting_existingraw";
-		case LogFields::trackertesting_increment:
-			return os << "int trackertesting_increment";
 		default:
 			std::cerr << "out of range for LogFields: " << static_cast<int>(lf) << std::endl;
 			assert(false);

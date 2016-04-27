@@ -6,7 +6,6 @@
 #include <thread>
 #include <pqxx/pqxx>
 #include "SQLStore.hpp"
-#include "TrackerTestingStore.hpp"
 #include "FinalHeader.hpp"
 #include "Ostreams.hpp"
 #include "tuple_extras.hpp"
@@ -19,7 +18,7 @@
 #include "Hertz.hpp"
 #include "ObjectBuilder.hpp"
 #include "test_utils.hpp"
-#include "TrackerTestingStore.hpp"//*/
+//*/
 #include "Transaction_macros.hpp"
 
 //The "new" vm_main
@@ -60,16 +59,16 @@ struct Remember {
 			 dsm({&ss,&sc}){}
 };
 
-template<typename Arg>
+template<typename Mem, typename Arg>
 struct PreparedTest{
 
 	//static functions for TaskPool
 	static std::string exn_handler(std::exception_ptr eptr);
 	
-	static void pool_mem_init (std::shared_ptr<Remember> &mem, int _pid);
+	static void pool_mem_init (std::shared_ptr<Mem> &mem, int _pid);
 
-	using action_t = std::string (*)(std::shared_ptr<Remember>, int, Arg);
-	using functor_action_t = std::function<std::string (std::shared_ptr<Remember>, int, Arg)>;
+	using action_t = std::string (*)(std::shared_ptr<Mem>, int, Arg);
+	using functor_action_t = std::function<std::string (std::shared_ptr<Mem>, int, Arg)>;
 	
 	//members, also for task pool
 	const int num_processes;
@@ -78,7 +77,7 @@ struct PreparedTest{
 	static std::vector<functor_action_t> convert_vector(const std::vector<action_t>&);
 	
 	//task pool
-	ThreadPool<Remember,std::string,Arg> pool;
+	ThreadPool<Mem,std::string,Arg> pool;
 
 	//constructor
 	PreparedTest(int num_processes, std::vector<action_t> actions)
@@ -100,8 +99,8 @@ struct PreparedTest{
 
 
 //static functions for TaskPool
-template<typename Arg>
-std::string PreparedTest<Arg>::exn_handler(std::exception_ptr eptr){
+template<typename Mem, typename Arg>
+std::string PreparedTest<Mem,Arg>::exn_handler(std::exception_ptr eptr){
 	std::stringstream log_messages;
 	try {
 		assert(eptr);
@@ -121,20 +120,20 @@ std::string PreparedTest<Arg>::exn_handler(std::exception_ptr eptr){
 	return log_messages.str();
 }
 
-template<typename Arg>
-void PreparedTest<Arg>::pool_mem_init (std::shared_ptr<Remember> &mem, int _pid){
+template<typename Mem,typename Arg>
+void PreparedTest<Mem,Arg>::pool_mem_init (std::shared_ptr<Mem> &mem, int _pid){
 	auto pid = _pid % (65535 - 1025); //make sure this can be used as a port numbxer
 	if (!mem) {
-		mem = std::make_shared<Remember>(pid);
+		mem = std::make_shared<Mem>(pid);
 	}
 	assert(mem);
 	//I'm assuming that pid won't get larger than the number of allowable ports...
 	assert(pid + 1024 < 49151);
 }
 
-template<typename Arg>
-std::vector<typename PreparedTest<Arg>::functor_action_t>
-PreparedTest<Arg>::convert_vector(const std::vector<action_t>& src){
+template<typename Mem,typename Arg>
+std::vector<typename PreparedTest<Mem,Arg>::functor_action_t>
+PreparedTest<Mem,Arg>::convert_vector(const std::vector<action_t>& src){
 	std::vector<functor_action_t> ret;
 	for (auto &f : src) ret.push_back(f);
 	return ret;
@@ -142,8 +141,8 @@ PreparedTest<Arg>::convert_vector(const std::vector<action_t>& src){
 
 //runs the main test loop, given a function which return true when
 //the test should stop, and a function that returns (which-task, what-arg-for-task)
-template<typename Arg> template<typename Meta>
-std::string PreparedTest<Arg>::run_tests(Meta& meta, bool (*stop) (Meta&),
+template<typename Mem,typename Arg> template<typename Meta>
+std::string PreparedTest<Mem,Arg>::run_tests(Meta& meta, bool (*stop) (Meta&),
 										 std::pair<int,Arg> (*choose_action) (Meta&),
 										 milliseconds (*delay) (Meta&)){
 	
