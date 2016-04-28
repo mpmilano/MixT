@@ -29,18 +29,22 @@ using namespace mtl;
 using namespace pgsql;
 using namespace tracker;
 
-
-#ifdef NO_USE_STRONG
-constexpr bool causal_enabled = true;
-#endif
-#ifdef USE_STRONG
-constexpr bool causal_enabled = false;
-#endif
-
 constexpr int num_processes = 50;
 static_assert(num_processes <= 100,"Error: you are at risk of too many open files");
-constexpr auto arrival_rate = 800_Hz;
-constexpr auto actual_arrival_rate = arrival_rate * as_hertz(1 + int{concurrencySetting});
+
+#ifdef NO_USE_STRONG
+constexpr bool strong_enabled = false;
+#else
+constexpr bool strong_enabled = true;
+#endif
+
+#ifdef NO_USE_CAUSAL
+constexpr bool causal_enabled = false;
+#else
+constexpr bool causal_enabled = true;
+#endif
+
+static_assert(causal_enabled || strong_enabled, "Error: do not disable both stores.");
 
 const auto log_name = [](){
 	auto pid = getpid();
@@ -49,26 +53,23 @@ const auto log_name = [](){
 
 constexpr int name_max = 478446;
 
-int get_name_read(double alpha){
-	constexpr int max = name_max;
-	auto ret = get_zipfian_value(max,alpha);
-	if (ret > (max + 14)) {
-		std::cerr << "Name out of range! Trying again" << std::endl;
-		return get_name_read(alpha);
-	}
-	else return ret + 14;
-}
-
-int get_name_write(){
-        return int_rand() % 478446;
-}
-
-const int mod_constant = 50;
-const int ip = get_strong_ip();
-
 using fake_time = unsigned long long;
 
 namespace synth_test {
+
+	int get_name_read(double alpha){
+		constexpr int max = name_max;
+		auto ret = get_zipfian_value(max,alpha);
+		if (ret > (max + 14)) {
+			std::cerr << "Name out of range! Trying again" << std::endl;
+			return get_name_read(alpha);
+		}
+		else return ret + 14;
+	}
+	
+	int get_name_write(){
+        return int_rand() % 478446;
+	}
 
 	template<typename Hndl>
 	using oper_f = void (*) (unique_ptr<VMObjectLog>& ,
@@ -84,7 +85,8 @@ namespace synth_test {
 							   duration_cast<milliseconds>(start_time).count());
 		log_messages->addField(LogFields::run_time,
 							   duration_cast<milliseconds>(run_time).count());
-		return start_time;
+                assert(log_messages);
+                return start_time;
 	}
 
 	template<typename Strong, typename Causal>
@@ -148,7 +150,7 @@ namespace synth_test {
 		auto name = get_name_write();
 		std::unique_ptr<VMObjectLog> log_messages;
 		log_start(mem,log_messages,_start_time);
-		SQLStore<Level::strong> &strong = mem->ss.inst_strong(ip);
+		SQLStore<Level::strong> &strong = mem->ss.inst_strong(get_strong_ip());
 		SQLStore<Level::causal> &causal = mem->sc.inst_causal(0);
 		auto &trk = mem->trk;
 		store_asserts(strong,causal,trk);
@@ -165,7 +167,8 @@ namespace synth_test {
 		auto name = get_name_write();
 		std::unique_ptr<VMObjectLog> log_messages;
 		log_start(mem,log_messages,_start_time);
-		SQLStore<Level::strong> &strong = mem->ss.inst_strong(ip);
+                assert(log_messages);
+		SQLStore<Level::strong> &strong = mem->ss.inst_strong(get_strong_ip());
 		SQLStore<Level::causal> &causal = mem->sc.inst_causal(0);
 		auto &trk = mem->trk;
 		store_asserts(strong,causal,trk);
@@ -183,7 +186,7 @@ namespace synth_test {
 		auto name = get_name_read(0.5);
 		std::unique_ptr<VMObjectLog> log_messages;
 		log_start(mem,log_messages,_start_time);
-		SQLStore<Level::strong> &strong = mem->ss.inst_strong(ip);
+		SQLStore<Level::strong> &strong = mem->ss.inst_strong(get_strong_ip());
 		SQLStore<Level::causal> &causal = mem->sc.inst_causal(0);
 		auto &trk = mem->trk;
 		store_asserts(strong,causal,trk);
@@ -200,7 +203,7 @@ namespace synth_test {
 		auto name = get_name_read(0.5);
 		std::unique_ptr<VMObjectLog> log_messages;
 		log_start(mem,log_messages,_start_time);
-		SQLStore<Level::strong> &strong = mem->ss.inst_strong(ip);
+		SQLStore<Level::strong> &strong = mem->ss.inst_strong(get_strong_ip());
 		SQLStore<Level::causal> &causal = mem->sc.inst_causal(0);
 		auto &trk = mem->trk;
 		store_asserts(strong,causal,trk);
@@ -213,17 +216,63 @@ namespace synth_test {
 
 	}
 
-	template<typename T>
-	pair<int,fake_time> choose_action(T&){
-		bool do_write = (int_rand() % mod_constant) == 0;
-		bool is_strong = better_rand() > .7 || !causal_enabled;
-		if (do_write && is_strong) return pair<int,fake_time>(0,micros(elapsed_time()));
-		if (do_write && !is_strong) return pair<int,fake_time>(1,micros(elapsed_time()));
-		if (!do_write && is_strong) return pair<int,fake_time>(2,micros(elapsed_time()));
-		if (!do_write && !is_strong) return pair<int,fake_time>(3,micros(elapsed_time()));
-		assert(false);
-	}
-	
+	struct TestParameters{
+		using time_t = std::chrono::time_point<std::chrono::high_resolution_clock>;
+		const time_t start_time{high_resolution_clock::now()};
+		time_t last_rate_raise{start_time};
+		Frequency current_rate{800_Hz};
+		constexpr static Frequency increase_factor = 100_Hz;
+		constexpr static seconds increase_delay = 30s;
+		constexpr static minutes test_stop_time = 15min;
+		constexpr static double percent_writes = .05;
+		constexpr static double percent_strong = .3;
+		
+		pair<int,fake_time> choose_action() const {
+			bool do_write = better_rand() < percent_writes;
+			bool is_strong = (better_rand() < percent_strong || !causal_enabled) && strong_enabled;
+			if (do_write && is_strong) return pair<int,fake_time>(0,micros(elapsed_time()));
+			if (do_write && !is_strong) return pair<int,fake_time>(1,micros(elapsed_time()));
+			if (!do_write && is_strong) return pair<int,fake_time>(2,micros(elapsed_time()));
+			if (!do_write && !is_strong) return pair<int,fake_time>(3,micros(elapsed_time()));
+			assert(false);
+		}
+
+		bool stop () const {
+			return (high_resolution_clock::now() - start_time) >= test_stop_time;
+		};
+
+		milliseconds delay(){
+			if (high_resolution_clock::now() - last_rate_raise > increase_delay){
+				current_rate += increase_factor;
+				last_rate_raise = high_resolution_clock::now();
+			}
+			return getArrivalInterval(current_rate);
+		}
+
+#define method_to_fun(foo,y...) [](auto& x){return x.foo(y);}
+		std::string run_tests(PreparedTest<Remember,fake_time>& launcher){
+			bool (*stop) (TestParameters&) = method_to_fun(stop);
+			pair<int,fake_time> (*choose) (TestParameters&) = method_to_fun(choose_action);
+			milliseconds (*delay) (TestParameters&) = method_to_fun(delay);
+			auto ret = launcher.run_tests(*this,stop,choose,delay);
+
+			global_log.addField(GlobalsFields::request_frequency_final,current_rate);
+			return ret;
+		}
+		
+		abs_StructBuilder &global_log;
+		
+		TestParameters(decltype(global_log) &gl):global_log(gl){
+			global_log.addField(GlobalsFields::request_frequency,current_rate);
+			global_log.addField(GlobalsFields::request_frequency_step,increase_factor);
+		}
+	};
+	constexpr Frequency TestParameters::increase_factor;
+	constexpr seconds TestParameters::increase_delay;
+	constexpr minutes TestParameters::test_stop_time;
+	constexpr double TestParameters::percent_writes;
+	constexpr double TestParameters::percent_strong;
+
 
 }
 
@@ -236,9 +285,8 @@ int main(){
 	//auto longpause = prof->pause();
 	auto logger = build_VMObjectLogger();
 	auto global_log = logger->template beginStruct<LoggedStructs::globals>();
-	global_log->addField(GlobalsFields::request_frequency,actual_arrival_rate);
 	std::cout << "hello world from VM "<< my_unique_id << " in group " << CAUSAL_GROUP << std::endl;
-	std::cout << "connecting to " << string_of_ip(ip) << std::endl;
+	std::cout << "connecting to " << string_of_ip(get_strong_ip()) << std::endl;
 
 	using pool_fun_t = std::string (*) (std::shared_ptr<Remember>, int, fake_time);
 	
@@ -252,20 +300,10 @@ int main(){
 	PreparedTest<Remember,fake_time> launcher{
 		num_processes,vec};
 	
-	const auto start = high_resolution_clock::now();
-
-	bool (*stop) (decltype(start)&) =
-		[](decltype(start)& start){
-		return (high_resolution_clock::now() - start) >= 15s;
-	};
-
 	std::cout << "beginning subtask generation loop" << std::endl;
 
-	milliseconds (*delay) (decltype(start)&) = [](auto&){
-		return getArrivalInterval(actual_arrival_rate);
-	};
-
-	const std::string results = launcher.run_tests(start,stop,synth_test::choose_action,delay);
+	synth_test::TestParameters params{*global_log};
+	const std::string results = params.run_tests(launcher);
 		
 	//resume profiling
 	

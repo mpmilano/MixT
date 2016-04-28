@@ -46,7 +46,7 @@ stress_test2.o:
 stress_test3.o:
 	clang++ -c stress_test.cpp -DTEST_MODE=3 $(CPPFLAGS)
 vm_main.o:
-	clang++ -c vm_main.cpp -DconcurrencySetting=$(concurrencySetting) -D$(defineThis) -DIP_QUAD=$(IP_quad) -DSTRONG_REMOTE_IP=\"$(STRONG_REMOTE_IP)\" -DCAUSAL_GROUP=$(causalGroup) $(CPPFLAGS)
+	clang++ -c vm_main.cpp -DconcurrencySetting=$(concurrencySetting) $(extra_macro_defs) -DIP_QUAD=$(IP_quad) -DSTRONG_REMOTE_IP=\"$(STRONG_REMOTE_IP)\" -DCAUSAL_GROUP=$(causalGroup) $(CPPFLAGS)
 sqlstore_clean:
 	touch SQLStore.o; rm SQLStore.o
 tracker_clean:

@@ -40,14 +40,13 @@ auto elapsed_time() {
 	return std::chrono::high_resolution_clock::now() - launch_clock;
 };
 
-
-int get_strong_ip() {
-	static int ip_addr{[](){
-			std::string static_addr {STRONG_REMOTE_IP};
-			if (static_addr.length() == 0) static_addr = "127.0.0.1";
-			std::cout << static_addr << std::endl;
-			return mutils::decode_ip(static_addr);
-		}()};
-	return ip_addr;
-}
+	
+	inline int get_strong_ip() {
+		static int ip_addr{[](){
+				std::string static_addr {STRONG_REMOTE_IP};
+				if (static_addr.length() == 0) static_addr = "127.0.0.1";
+				return mutils::decode_ip(static_addr);
+			}()};
+		return ip_addr;
+	}
 }
