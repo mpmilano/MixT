@@ -112,7 +112,7 @@ namespace myria {
 				exemptItem(h.name());
 			}
 
-                        std::unique_ptr<TrackingContext> generateContext(std::unique_ptr<mutils::abs_StructBuilder> logger, bool commitOnDelete = false);
+                        std::unique_ptr<TrackingContext> generateContext(std::unique_ptr<mutils::abs_StructBuilder> &logger, bool commitOnDelete = false);
 
 			/**
 			   The primary interface methods here are tripled.  

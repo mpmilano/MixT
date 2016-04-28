@@ -94,15 +94,15 @@ namespace myria { namespace tracker {
 				i->_finalize();
 		}
 
-                TrackingContext::TrackingContext(std::unique_ptr<mutils::abs_StructBuilder> logger, Tracker &trk, bool cod)
-                        :i(new TrackingContext::Internals{*trk.i,cod}),trk(trk),logger(std::move(logger)){}
+                TrackingContext::TrackingContext(std::unique_ptr<mutils::abs_StructBuilder> &logger, Tracker &trk, bool cod)
+                        :i(new TrackingContext::Internals{*trk.i,cod}),trk(trk),logger(logger){}
 
 		TrackingContext::~TrackingContext(){
 			if (i) delete i;
 		}
 
-                std::unique_ptr<TrackingContext> Tracker::generateContext(std::unique_ptr<mutils::abs_StructBuilder> logger, bool commitOnDelete){
-                        return std::unique_ptr<TrackingContext>{(new TrackingContext{std::move(logger), *this,commitOnDelete})};
+                std::unique_ptr<TrackingContext> Tracker::generateContext(std::unique_ptr<mutils::abs_StructBuilder> &logger, bool commitOnDelete){
+                        return std::unique_ptr<TrackingContext>{(new TrackingContext{logger, *this,commitOnDelete})};
 		}
 
 	}

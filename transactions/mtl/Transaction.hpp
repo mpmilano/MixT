@@ -19,10 +19,10 @@ namespace myria { namespace mtl {
 		 * For transactions which do not use MTL's information flow.
 		 */
 		template<typename Strong, typename Causal>
-		auto start_transaction(std::unique_ptr<VMObjectLog> log, tracker::Tracker &trk, Strong &strong, Causal &causal){
+                auto start_transaction(std::unique_ptr<VMObjectLog> &log, tracker::Tracker &trk, Strong &strong, Causal &causal){
 			using namespace std;
 			assert(log);
-			auto ctx = make_unique<TransactionContext>(nullptr,trk.generateContext(std::move(log)));
+                        auto ctx = make_unique<TransactionContext>(nullptr,trk.generateContext(log));
 			ctx->strongContext = strong.begin_transaction(ctx->trackingContext->logger,"one-off vm_main transaction");
 			ctx->causalContext = causal.begin_transaction(ctx->trackingContext->logger,"one-off vm_main transaction");
 			assert(ctx->trackingContext);
@@ -46,8 +46,8 @@ namespace myria { namespace mtl {
 		template<typename T>
 		struct Transaction{
 			const std::function<
-				std::unique_ptr<VMObjectLog>
-				(std::unique_ptr<VMObjectLog>, tracker::Tracker&, T const *const)> action;
+                                void
+                                (std::unique_ptr<VMObjectLog>&, tracker::Tracker&, T const *const)> action;
 			const std::function<std::ostream & (std::ostream &os)> print;
 			
 		public:
@@ -55,7 +55,7 @@ namespace myria { namespace mtl {
 			template<typename Cmds>
 			Transaction(const TransactionBuilder<Cmds> &s):
 				action([s, env_exprs = mtl::environment_expressions(s.curr)]
-					   (std::unique_ptr<VMObjectLog> log,
+                                           (std::unique_ptr<VMObjectLog> &log,
 						tracker::Tracker& trk, T const * const param) {
 						
 
@@ -64,7 +64,7 @@ namespace myria { namespace mtl {
 						//in a special way, they do that for themselves.
 
 						   log->addField(LogFields::transaction_action,true);
-						   TransactionContext ctx{param,trk.generateContext(std::move(log))};
+                                                   TransactionContext ctx{param,trk.generateContext(log)};
 
 						   static_assert(
 							   std::is_same<
@@ -131,10 +131,9 @@ namespace myria { namespace mtl {
 							}
 						} while (true);
 
-                                                auto logger = std::move(ctx.trackingContext->logger);
-						logger->addField(LogFields::num_causal_tries,causal_count);
+                                                assert(log);
+                                                log->addField(LogFields::num_causal_tries,causal_count);
 						
-						return std::move(logger);
 					}),
 				print([s](std::ostream &os) -> std::ostream& {
 						os << "printing AST!" << std::endl;
@@ -149,8 +148,8 @@ namespace myria { namespace mtl {
 			Transaction(const Transaction&) = delete;
 			Transaction(const Transaction&& t):action(std::move(t.action)),print(std::move(t.print)){}
 			
-			auto operator()(std::unique_ptr<VMObjectLog> &&l, tracker::Tracker& trk, T const * const t) const {
-				return action(std::move(l),trk,t);
+                        auto operator()(std::unique_ptr<VMObjectLog> &l, tracker::Tracker& trk, T const * const t) const {
+                                return action(l,trk,t);
 			}
 			
 		};
