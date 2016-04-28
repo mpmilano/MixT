@@ -24,7 +24,9 @@ namespace myria{
 			LogFields::tracker_causal_afterread_candidate, "int tracker_causal_afterread_candidate", "0",
 			
 			LoggedStructs::globals,"struct myria_globals","ERROR",
-			GlobalsFields::request_frequency,"::mutils::Frequency request_frequency","0",
+			GlobalsFields::request_frequency,"::mutils::Frequency request_frequency","0_Hz",
+			GlobalsFields::request_frequency_step,"::mutils::Frequency request_frequency_step","0_Hz",
+			GlobalsFields::request_frequency_final,"::mutils::Frequency request_frequency_final","0_Hz",
 			GlobalsFields::final_completion_time,"int final_completion_time","0"
 			);
 	}

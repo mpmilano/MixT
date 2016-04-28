@@ -19,7 +19,7 @@ namespace myria{
 		};
 
 	enum class GlobalsFields {
-		request_frequency, final_completion_time, MAX
+		request_frequency, request_frequency_step, request_frequency_final, final_completion_time, MAX
 	};
 
 	std::ostream& operator<<(std::ostream&, LoggedStructs);
