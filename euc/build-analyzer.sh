@@ -90,19 +90,20 @@ done
 echo "#pragma once" > unified_results_header.hpp
 for foo in *hpp
 do
-	echo "include \"$foo\"" >> unified_results_header.hpp
+	echo "#include \"$foo\"" >> unified_results_header.hpp
+	echo >> unified_results_header.hpp
 done
-echo "std::vector<myria_log> all_logs() { static std::vector<myria_log> ret; if (ret.size() > 5) return ret; " >> unified_results_header.hpp
 
 for mode____ in "$results_dir"/*/;
 do
 	mode=`echo $mode____ | rev | cut -d'/' -f2 | rev`
+	echo "const std::vector<myria_log>& all_logs_""$mode""() { static std::vector<myria_log> ret; if (ret.size() > 5) return ret; " >> unified_results_header.hpp
 	for ____ipaddr in "$results_dir"/"$mode"/*/
 	do
 		ipaddr=`echo $____ipaddr | rev | cut -d'/' -f2 | rev`
 		host=`echo "$ipaddr" | cut -d'.' -f4`
 		
-		echo "{ auto tmp = runs_""$mode""_$host""(); ret.insert(ret.end(),tmp.begin(),temp.end()); }" >> unified_results_header.hpp
+		echo "{ auto tmp = runs_""$mode""_$host""(); ret.insert(ret.end(),tmp.begin(),tmp.end()); }" >> unified_results_header.hpp
 	done
 done
 
