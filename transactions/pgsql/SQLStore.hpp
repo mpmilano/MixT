@@ -202,7 +202,8 @@ namespace myria { namespace pgsql {
 					(std::is_same<T,int>::value ? Table::IntStore : Table::BlobStore);
 				int size = mutils::bytes_size(init);
 				std::vector<char> v(size);
-				assert(size == mutils::to_bytes(init,&v[0]));
+                                int tb_size = mutils::to_bytes(init,&v[0]);
+                                assert(size == tb_size);
 				GSQLObject gso(*this,t,name,v);
 				SQLHandle<ha,T> ret{trk,tc,std::make_shared<SQLObject<T> >(std::move(gso),mutils::heap_copy(init),this_mgr),*this };
 				trk.onCreate(*this,name,(T*)nullptr);

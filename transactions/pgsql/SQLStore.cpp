@@ -356,9 +356,10 @@ namespace myria{ namespace pgsql {
                                 }
                                 else start_offset = process_version_update(r,i->vers);
 				if (i->table == Table::BlobStore){
+                                    bool wrkd = r[0][start_offset+1].to(i->size);
+                                    assert(wrkd);
                                         binarystring bs(r[0][start_offset]);
 					assert(bs.size() == i->size);
-                                        assert(r[0][start_offset+1].to(i->size));
 					assert(i->size >= 1);
 					if (!i->buf1) i->buf1 = (char*) malloc(i->size);
 					memcpy(i->buf1,bs.data(),i->size);
