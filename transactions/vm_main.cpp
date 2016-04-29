@@ -68,7 +68,7 @@ namespace synth_test {
 	}
 	
 	int get_name_write(){
-        return int_rand() % 478446;
+        return 14 + int_rand() % 478446;
 	}
 
 	template<typename Hndl>
