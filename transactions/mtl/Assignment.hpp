@@ -5,37 +5,26 @@
 
 namespace myria { namespace mtl {
 
-		template<typename T, typename Expr, typename Temp>
+                template<typename Expr, unsigned long long ID, Level l, typename T>
 		struct Assignment : public ConStatement<get_level<Expr>::value>{
-		private:
-
-			template<Level l2, HandleAccess ha2,typename... Ops>
-			static auto hndle_get(TransactionContext* ctx, Handle<l2,ha2,T,Ops...> h){
-				return h.get(ctx->trackingContext->trk,ctx);
-			}
-
-			template<typename T2, restrict(!is_handle<T2>::value)>
-			static auto hndle_get(TransactionContext*, const T2 &t2){
-				return t2;
-			}
-
-			template<typename T2>
-			struct HDref_i {using t = T2;};
-			template<typename T2, Level l2, HandleAccess ha2,typename... Ops>
-			struct HDref_i<Handle<l2,ha2,T2,Ops...> > {using t = T2;};
-			template<typename T2>
-			using HDref = typename HDref_i<run_result<T2> >::t;
-
 			template<typename T2>
 			struct is_string : public std::is_same<T2, std::string> {};
 	
 		public:
-			const T t;
-			const Expr e;
-			const Temp temp;
+
+                        using Temp = Temporary<ID,l,T>;
+                        using RefTemp = RefTemporary<Temp>;
+
+                        const Expr e;
+                        const RefTemp temp;
+
+                        static_assert(runs_with_causal(get_level<Expr>::value) ||
+                                      (runs_with_strong(get_level<Expr>::value) && runs_with_strong(get_level<RefTemp>::value)),
+                                      "Error: evaluation order won't work out.");
+
 			const int id = mutils::gensym();
-			Assignment(const T &t, const Expr & e, const Temp &temp)
-				:t(t),e(e),temp(temp)
+                        Assignment(const RefTemp &temp, const Expr & e)
+                                :temp(temp),e(e)
 				{
 					static_assert(is_handle<run_result<T> >::value,"Error: Assignment construct only for modifying handles!");
 					static_assert(
@@ -43,115 +32,61 @@ namespace myria { namespace mtl {
 						"Error: assignment to strong member from causal expression!"
 						);
 					static_assert(
-						can_flow(get_level<Expr>::value, get_level<T>::value),
-						"Error: deduction of assignment LHS requires strong context; causal expression forces causal context!"
+                                                can_flow(get_level<Expr>::value, get_level<T>::value),
+                                                "Error: expression bound to temporary is strong; Expression attempted for handle update is causal"
 						);
-					static_assert(mutils::error_helper<is_string, HDref<Expr> >::value,"");
-					static_assert(mutils::error_helper<is_string, HDref<T> >::value,"");
-					static_assert(std::is_same<HDref<Expr>, HDref<T> >::value, "Error: Assignment of incompatible types (no subtyping applies here)" );
+                                        static_assert(can_flow(get_level<Expr>::value, l),"Error: temporary was bound in strong context, we are now operating in causal context");
+                                        static_assert(std::is_same<run_result<Expr>, typename run_result<T>::stored_type >::value, "Error: Assignment of incompatible types (no subtyping applies here)" );
 				}
 
 			auto environment_expressions() const{
-				return std::tuple_cat(mtl::environment_expressions(e),mtl::environment_expressions(t));
+                                return std::tuple_cat(mtl::environment_expressions(e),mtl::environment_expressions(temp));
 			}
 
-			bool strongCall(TransactionContext* ctx, StrongCache& c, const StrongStore &s) const {
-				choose_strong<get_level<T>::value > choice1{nullptr};
-				choose_strong<get_level<Expr>::value> choice2{nullptr};
-				choose_strong<get_level<run_result<T> >::value> choice3{nullptr};
-				strongCall(ctx, c,s,choice1,choice2,choice3);
-				return true;
-			}
+                        bool strongCall(std::true_type*, TransactionContext *ctx, StrongCache &c, StrongStore &s) const{
+                            auto hndl = run_ast_strong(ctx,c,s,temp);
+                            auto rhs = run_ast_strong(ctx,c,s,e);
+                            hndl.put(ctx->trackingContext->trk,ctx,rhs);
+                            return true;
+                        }
 
-			void strongCall(TransactionContext* ctx, StrongCache &c, const StrongStore &s,
-							std::false_type*, std::false_type*, std::false_type*) const {
-				run_ast_strong(ctx,c,s,t);
-				run_ast_strong(ctx, c,s,e);
-			}
-			
-			void strongCall(TransactionContext* ctx, StrongCache &c, const StrongStore &s,
-							std::false_type*, std::true_type*, std::false_type*) const {
-				run_ast_strong(ctx,c,s,t);
-				c.insert(id,Assignment::hndle_get(run_ast_strong(ctx, c,s,e)));
-			}
+                        bool strongCall(std::false_type*, TransactionContext *ctx, StrongCache &c, StrongStore &s) const{
+                            run_ast_strong(ctx,c,s,temp);
+                            run_ast_strong(ctx,c,s,e);
+                            return true;
+                        }
 
-			template<typename T2>
-			auto strongCall(TransactionContext* ctx, StrongCache &c, const StrongStore &s,
-							std::true_type*, T2*, std::true_type*) const {
-				static_assert(runs_with_strong(get_level<Expr>::value),"error: flow violation in assignment");
-				auto hndl = run_ast_strong(ctx,c,s,t);
-				hndl.put(ctx->trackingContext->trk,ctx,Assignment::hndle_get(ctx,run_ast_strong(ctx, c,s,e)));
-			}
-			
-			auto strongCall(TransactionContext* ctx, StrongCache &c, const StrongStore &s,
-							std::true_type*, std::false_type*, std::false_type*) const {
-				run_ast_strong(ctx,c,s,t);
-				run_ast_strong(ctx, c,s,e);
-				//hndl.put(ctx->trackingContext->trk,ctx,Assignment::hndle_get(ctx,run_ast_strong(ctx, c,s,e)));
-			}
-			
-			auto strongCall(TransactionContext* ctx, StrongCache &c, const StrongStore &s,
-							std::true_type*, std::true_type*, std::false_type*) const {
-				run_ast_strong(ctx,c,s,t);
-				c.insert(id,Assignment::hndle_get(ctx,run_ast_strong(ctx, c,s,e)));
-				//hndl.put(ctx->trackingContext->trk,ctx,Assignment::hndle_get(ctx,run_ast_strong(ctx, c,s,e)));
-			}
+                        bool strongCall(TransactionContext *ctx, StrongCache &c, StrongStore &s) const {
+                            choose_strong<get_level<Expr>::value > choice{nullptr};
+                            return strongCall(choice,ctx,c,s);
+                        }
 
-			void strongCall(TransactionContext* ctx, StrongCache &c, const StrongStore &s,
-							std::false_type*, std::false_type*, std::true_type*) const {
-				static_assert(get_level<T>::value < 0,
-							  "Causal expression evaluates to strong handle; info-flow violation");
-			}
-
-			bool causalCall(TransactionContext* ctx, CausalCache &c, const CausalStore &s) const {
-				choose_strong<get_level<T>::value > choice1{nullptr};
-				choose_strong<get_level<run_result<T> >::value> choice2{nullptr};
-				causalCall(ctx, c,s,choice1,choice2);
-				return true;
-			}
-
-			auto causalCall(TransactionContext* ctx, CausalCache &c, const CausalStore &s,
-							std::false_type*,std::false_type*) const {
-				if (runs_with_strong(get_level<Expr>::value) ){
-					run_ast_causal(ctx,c,s,t).put(ctx->trackingContext->trk,ctx,c.get<HDref<Expr> >(id));
-				}
-				else {
-					run_ast_causal(ctx,c,s,t).put(ctx->trackingContext->trk,ctx,
-												  Assignment::hndle_get(run_ast_causal(ctx, c,s,e)));
-				}
-			}
-
-			auto causalCall(TransactionContext* ctx, CausalCache &c, const CausalStore &s,
-							std::true_type*,std::true_type*) const {
-				constexpr auto l = get_level<T>::value;
-				static_assert(l == get_level<Expr>::value && runs_with_strong(l),
-							  "Error: assignment of strong to causal");
-			}
-
-			auto causalCall(TransactionContext* ctx, CausalCache &c, const CausalStore &s,
-							std::true_type*,std::false_type*) const {
-				if (runs_with_strong(get_level<Expr>::value) ){
-					//t.causalCall(ctx,c,s).put(ctx->trackingContext->trk,ctx,c.get<HDref<Expr> >(id));
-					run_ast_causal(ctx,c,s,t).put(ctx->trackingContext->trk,ctx,c.get<HDref<Expr> >(id));
-				}
-				else {
-					//t.causalCall(ctx,c,s).put(ctx->trackingContext->trk,ctx,Assignment::hndle_get(run_ast_causal(ctx, c,s,e)));
-					run_ast_causal(ctx,c,s,t).put(ctx->trackingContext->trk,ctx,Assignment::hndle_get(ctx,run_ast_causal(ctx, c,s,e)));
-				}
-			}
+                        bool causalCall(TransactionContext *ctx, CausalCache &c, CausalStore &s){
+                            if (runs_with_strong(get_level<Expr>::value)) {
+                                run_ast_causal(ctx,c,s,temp);
+                                run_ast_strong(ctx,c,s,e);
+                                return true; //we already did this during strong pass
+                            }
+                            else {
+                                auto hndl = run_ast_causal(ctx,c,s,temp);
+                                auto rhs = run_ast_causal(ctx,c,s,e);
+                                hndl.put(ctx->trackingContext->trk,ctx,rhs);
+                                return true;
+                            }
+                        }
 		};
 
-		template<typename Temp, typename T, typename E>
-		auto make_assignment(const T& t, const E &e, const Temp &temp){
-			return Assignment<T,E,Temp>{t,e,temp};
+                template<typename Expr, unsigned long long ID, Level l, typename T>
+                auto make_assignment(const RefTemporary<Temporary<ID,l,T> > &temp, const Expr &e){
+                        return Assignment<Expr,ID,l,T>{temp,e};
 		}
 		
 
 
 		template<unsigned long long ID, Level l1, typename T, typename E>
-		auto operator<<(const RefTemporary<ID,l1,T,Temporary<ID,l1,T > >& rt,
+                auto operator<<(const RefTemporary<Temporary<ID,l1,T > >& rt,
 						const E &e){
-			return make_assignment(rt.t.t,e,rt.t);
+                        return make_assignment(rt,e);
 		}
 
 		namespace{
@@ -161,9 +96,9 @@ namespace myria { namespace mtl {
 			}
 		}
 		
-		template<unsigned long long ID, typename T, typename Expr, typename Temp>
-		auto find_usage(const Assignment<T,Expr,Temp> &rt){
-			return mutils::choose_non_np(find_usage<ID>(rt.t),find_usage<ID>(rt.e),find_usage<ID>(rt.temp));
+                template<unsigned long long ID, typename Expr, unsigned long long ID2, Level l, typename T>
+                auto find_usage(const Assignment<Expr,ID2,l,T> &rt){
+                        return mutils::choose_non_np(find_usage<ID>(rt.temp),find_usage<ID>(rt.e));
 		}
 
 	} }

@@ -4,8 +4,8 @@
 
 namespace myria { namespace mtl {
 
-		template<unsigned long long ID, Level l, typename T, typename Temp>
-		struct RefTemporaryCommon : public ConExpr<run_result<T>,l> {
+		template<typename Temp>
+                struct RefTemporaryCommon {
 		private:
 			RefTemporaryCommon(const Temp& t, const std::string& name, int id):t(t),name(name),id(id){}
 		public:
@@ -32,11 +32,30 @@ namespace myria { namespace mtl {
 			auto environment_expressions() const {
 				return t.environment_expressions();
 			}
+		};
+
+		template<typename Temp>
+		struct RefTemporary;
+
+                //This will dereference a handle! needs to be annotated with the *handle's* level!
+                template<unsigned long long ID, Level l, typename T>
+                struct RefTemporary<Temporary<ID,l,T > > :
+                        public RefTemporaryCommon<Temporary<ID,l,T > >,
+                        public ConExpr<run_result<T>::stored_type,run_result<T>::level_t::value>  {
+
+                    static_assert(can_flow(l,run_result<T>::level_t::value),
+                                  "Error: cannot dereference this handle; it is stored at a causal level, but it points to a strong object");
+
+                    using super_t = RefTemporaryCommon<Temporary<ID,l,T > >;
+                    using Temp = Temporary<ID,l,T >;
+		private:
+			RefTemporary(const Temp& t, const std::string& name, int id):super_t(t,name,id){}
+		public:
+			RefTemporary(const Temp &t):super_t(t){}
+
+			RefTemporary(const RefTemporary& rt):super_t(rt){}
 
 			auto strongCall(TransactionContext* ctx, StrongCache& cache, const StrongStore &s) const {
-				//TODO - endorsements should happen somewhere around here, right?
-				//todo: dID I want the level of the expression which assigned the temporary?
-		
 				choose_strong<get_level<Temp>::value > choice{nullptr};
 				try {
 					return strongCall(ctx,cache, s,choice);
@@ -48,11 +67,9 @@ namespace myria { namespace mtl {
 			}
 
 			auto strongCall(TransactionContext* ctx, StrongCache& cache, const StrongStore &s, std::true_type*) const {
-				//std::cout << "inserting RefTemp " << name << " (" << id<< ") into cache "
-				//		  << &cache << std::endl;
-				auto ret = call<StoreType::StrongStore>(s, t);
+                            //This is a handle; we will call get on it, which returns a shared pointer, which we then dereference to store in the cache
+                                auto ret = *s.template get<run_result<T> >(t.store_id).get(ctx->trackingContext->trk,ctx);
 				cache.insert(id,ret);
-				//std::cout << "RefTemp ID " << this->id << " inserting into Cache " << &cache << " value: " << ret << std::endl;
 				return ret;
 			}
 
@@ -67,40 +84,11 @@ namespace myria { namespace mtl {
 					return cache.get<R>(this->id);
 				}
 				else {
-					try {
-						return call<StoreType::CausalStore>(s,t);
-					}
-					catch (const StoreMiss&){
-						std::cerr << "Couldn't find this in the store: " << name << std::endl;
-						assert(false && "Not in the store");
-					}
+                                    auto ret = *s.template get<run_result<T> >(t.store_id).get(ctx->trackingContext->trk,ctx);
+                                    cache.insert(id,ret);
+                                    return ret;
 				}
 			}
-
-		private:
-			template<StoreType st, restrict(is_store(st))>
-			static auto call(const StoreMap<st> &s, const Temporary<ID,l,T> &t) ->
-				run_result<decltype(t.t)>
-				{
-					typedef run_result<decltype(t.t)> R;
-					static_assert(mutils::neg_error_helper<is_ConStatement,R>::value,"Static assert failed");
-					return s. template get<R>(t.store_id);
-				}
-		};
-
-		template<unsigned long long ID, Level l, typename T, typename Temp>
-		struct RefTemporary;
-		
-		template<unsigned long long ID, Level l, typename T>
-		struct RefTemporary<ID,l,T,Temporary<ID,l,T > > : public RefTemporaryCommon<ID,l,T,Temporary<ID,l,T > > {
-			using super_t = RefTemporaryCommon<ID,l,T,Temporary<ID,l,T > >;
-			using Temp = Temporary<ID,l,T >;
-		private:
-			RefTemporary(const Temp& t, const std::string& name, int id):super_t(t,name,id){}
-		public:
-			RefTemporary(const Temp &t):super_t(t){}
-
-			RefTemporary(const RefTemporary& rt):super_t(rt){}
 	
 			template<typename E2>
 			auto operator=(const E2 &e) const {
@@ -111,8 +99,8 @@ namespace myria { namespace mtl {
 		};
 
 		template<unsigned long long ID, Level l, typename T>
-		struct RefTemporary<ID,l,T,MutableTemporary<ID,l,T > > : public RefTemporaryCommon<ID,l,T,MutableTemporary<ID,l,T > > {
-			using super_t = RefTemporaryCommon<ID,l,T,MutableTemporary<ID,l,T > >;
+                struct RefTemporary<MutableTemporary<ID,l,T > > : public RefTemporaryCommon<MutableTemporary<ID,l,T > > {
+                        using super_t = RefTemporaryCommon<MutableTemporary<ID,l,T > >;
 			using Temp = MutableTemporary<ID,l,T >;
 		private:
 			RefTemporary(const Temp& t, const std::string& name, int id):super_t(t,name,id){}
@@ -129,31 +117,73 @@ namespace myria { namespace mtl {
 				return r;
 			}
 
+                        auto strongCall(TransactionContext* ctx, StrongCache& cache, const StrongStore &s) const {
+				choose_strong<get_level<Temp>::value > choice{nullptr};
+                                return strongCall(ctx,cache, s,choice);
+			}
+
+			auto strongCall(TransactionContext* ctx, StrongCache& cache, const StrongStore &s, std::true_type*) const {
+				//std::cout << "inserting RefTemp " << name << " (" << id<< ") into cache "
+				//		  << &cache << std::endl;
+                                auto ret = s.template get<run_result<T> >(t.store_id);
+				cache.insert(id,ret);
+				//std::cout << "RefTemp ID " << this->id << " inserting into Cache " << &cache << " value: " << ret << std::endl;
+				return ret;
+			}
+
+			void strongCall(TransactionContext* ctx, StrongCache& cache, const StrongStore &s, std::false_type*) const {
+				//we haven't even done the assignment yet. nothing to see here.
+			}
+
+			auto causalCall(TransactionContext* ctx, const CausalCache& cache, const CausalStore &s) const {
+		
+				typedef decltype(call<StoreType::CausalStore>(s,t)) R;
+				if (cache.contains(this->id)) {
+					return cache.get<R>(this->id);
+				}
+                                else {
+                                    auto ret = s.template get<run_result<T> >(t.store_id);
+                                    cache.insert(id,ret);
+                                    return ret;
+                                }
+			}
 		};
 
-		template<unsigned long long ID, Level l, typename T, typename Temp>
-		auto find_usage(const RefTemporaryCommon<ID,l,T,Temp> &rt){
+                template<unsigned long long ID, Level l, typename T>
+                auto find_usage(const RefTemporaryCommon<Temporary<ID,l,T,> > &rt){
 			return mutils::shared_copy(rt.t);
 		}
+                template<unsigned long long ID, Level l, typename T>
+                auto find_usage(const RefTemporaryCommon<MutableTemporary<ID,l,T,> > &rt){
+                        return mutils::shared_copy(rt.t);
+                }
 
-		template<unsigned long long ID, unsigned long long ID2, Level l, typename T, typename Temp>
-		std::enable_if_t<ID != ID2, std::nullptr_t> find_usage(const RefTemporaryCommon<ID2,l,T,Temp> &rt){
+                template<unsigned long long ID, unsigned long long ID2, Level l, typename T>
+                std::enable_if_t<ID != ID2, std::nullptr_t> find_usage(const RefTemporaryCommon<Temporary<ID2,l,T> > &){
 			return nullptr;
 		}
 
-		template<unsigned long long ID, unsigned long long ID2, Level l, typename T, typename Temp>
-		struct contains_temporary<ID, RefTemporary<ID2,l,T,Temp> > : std::integral_constant<bool, ID == ID2> {};
+                template<unsigned long long ID, unsigned long long ID2, Level l, typename T>
+                std::enable_if_t<ID != ID2, std::nullptr_t> find_usage(const RefTemporaryCommon<MutableTemporary<ID2,l,T> > &){
+                        return nullptr;
+                }
+
+                template<unsigned long long ID, unsigned long long ID2, Level l, typename T>
+                struct contains_temporary<ID, RefTemporary<Temporary<ID2,l,T> > > : std::integral_constant<bool, ID == ID2> {};
+
+                template<unsigned long long ID, unsigned long long ID2, Level l, typename T>
+                struct contains_temporary<ID, RefTemporary<MutableTemporary<ID2,l,T> > > : std::integral_constant<bool, ID == ID2> {};
 
 		//TODO: figure out why this needs to be here
-		template<Level l, typename T, typename E, unsigned long long id>
-		struct is_ConExpr<RefTemporary<id,l,T, E> > : std::true_type {};
+                template<typename temp>
+                struct is_ConExpr<RefTemporary<temp> > : std::true_type {};
 
 		struct nope{
 			typedef std::false_type found;
 		};
 
-		template<Level l, typename T, typename E, unsigned long long id>
-		constexpr bool is_reftemp(const RefTemporaryCommon<id,l,T, E> *){
+                template<typename E>
+                constexpr bool is_reftemp(const RefTemporaryCommon<E> *){
 			return true;
 		}
 

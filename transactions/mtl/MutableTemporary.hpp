@@ -4,16 +4,14 @@
 namespace myria { namespace mtl {
 
 		template<unsigned long long ID, Level l, typename T>
-		struct MutableTemporary : public Temporary<ID, l,T> {
+		struct MutableTemporary : public TemporaryCommon<ID, l,T> {
 			MutableTemporary(const std::string& name, const T& t):
-				Temporary<ID,l,T>(name,t){}
+				TemporaryCommon<ID,l,T>(name,t){}
 
 			typedef typename std::integral_constant<Level,l>::type level;
 			typedef T type;
 			typedef std::true_type found;
 			typedef typename std::integral_constant<unsigned long long, ID>::type key;
-
-
 		};
 
 		template<unsigned long long ID, Level l, typename T>

@@ -30,7 +30,7 @@ namespace myria { namespace mtl {
 		}
 
 		template<unsigned long long ID, Level l, typename T>
-		auto gt_environment_expressions(Temporary<ID,l,T> const * const tmp){
+                auto gt_environment_expressions(TemporaryCommon<ID,l,T> const * const tmp){
 			assert(tmp);
 			return tmp->environment_expressions();
 		}
