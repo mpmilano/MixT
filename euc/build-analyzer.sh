@@ -36,7 +36,7 @@ do
 	do
 		ipaddr=`echo $____ipaddr | rev | cut -d'/' -f2 | rev`
 		host=`echo "$ipaddr" | cut -d'.' -f4`
-		fname=$scratchdir/"output_""$mode""_""$ipaddr"
+		fname=$scratchdir/"output_""$mode""_""$host"
 		echo $fname
 		echo "#include \"header.hpp\"" > "$fname".hpp
 		echo "#include \"$fname"".hpp\"" > "$fname".cpp

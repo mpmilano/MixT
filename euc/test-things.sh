@@ -1,4 +1,8 @@
 #!/bin/bash
+
+oldwd=`pwd`
+cd ~/euc/
+
 i=0
 if [[ -z $strong_target ]]
 then
@@ -41,3 +45,4 @@ do
 	echo copy done
 done
 
+cd $oldwd
