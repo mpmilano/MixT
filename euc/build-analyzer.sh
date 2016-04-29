@@ -25,7 +25,7 @@ echo '#pragma once' > "$scratchdir"/header.hpp
 echo '#include <string>' >> "$scratchdir"/header.hpp
 echo '#include <vector>' >> "$scratchdir"/header.hpp
 echo "#include <Hertz.hpp>" >> "$scratchdir"/header.hpp
-cat "$results_dir"/*/*/* | grep 'struct myria_log' | head -1 >> "$scratchdir"/header.hpp
+cat "$results_dir"/*/*/* | grep 'struct myria_log' | sed s/'const'//g | head -1 >> "$scratchdir"/header.hpp
 cat "$results_dir"/*/*/* | grep 'struct myria_globals' | head -1 >> "$scratchdir"/header.hpp
 
 for mode____ in "$results_dir"/*/;
@@ -43,7 +43,7 @@ do
 		
 		echo "std::vector<struct myria_log> runs_""$mode""_$host""();" >> "$fname".hpp
 		echo "std::vector<struct myria_log> runs_""$mode""_$host""() { return std::vector<struct myria_log> {{" >> "$fname".cpp
-		cat "$results_dir"/"$mode"/"$ipaddr"/* | grep '\[\]' | grep 'myria_log' | sed s/'\[\]() -> struct myria_log {struct myria_log ret '/'myria_log'/ | sed s/'; return ret; }()'// | sed -e "$ ! s/\$/,/g" >>"$fname".cpp
+		cat "$results_dir"/"$mode"/"$ipaddr"/* | grep '\[\]' | grep 'myria_log' | sed s/'const'// | sed s/'\[\]() -> struct myria_log {struct myria_log ret '/'myria_log'/ | sed s/'; return ret; }()'// | sed -e "$ ! s/\$/,/g" >>"$fname".cpp
 		echo '}};}' >> "$fname".cpp
 		
 		echo "std::vector<struct myria_globals> globals_""$mode""_$host""();" >> "$fname".hpp
