@@ -170,12 +170,10 @@ namespace myria{
 			return os << "isValid(" << t.t << ")";
 		}
 
-		template<typename i, typename... E>
-		std::ostream & operator<<(std::ostream &os, const mtl::FreeExpr<i,E...>& op){
-			//let's try this for now
-			i ex{};
-			using T = decltype(op);
-			return os << ex << " @" << mtl::get_level<std::decay_t<T> >::value;
+		template<typename i, typename E>
+		std::ostream & operator<<(std::ostream &os, const mtl::FieldRef<i,E>& op){
+			using namespace mutils;
+			return os << type_name<run_result<i> >() << "=>" << type_name<E>();
 		}
 
 
