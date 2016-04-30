@@ -21,7 +21,7 @@ namespace myria { namespace mtl {
 		};
 
 		template<unsigned long long ID, unsigned long long ID2, Level l, typename T>
-		std::enable_if_t<ID != ID2,std::nullptr_t> find_usage(const MutableTemporary<ID2,l,T> &rt){
+		std::enable_if_t<ID != ID2,std::nullptr_t> find_usage(const Temporary<ID2,l,T> &rt){
 			return nullptr;
 		}
 

@@ -21,15 +21,14 @@ namespace myria { namespace mtl {
 			return t;
 		}
 
-		template<unsigned long long id, Level l, typename T, typename Temp>
-		struct extract_type<RefTemporary<id,l,T,Temp> >{
+		template<typename Temp>
+		struct extract_type<RefTemporary<Temp> >{
 			using type = typename
-				extract_type<run_result<RefTemporary<id,l,T,Temp> > >::type;
+				extract_type<run_result<RefTemporary<Temp> > >::type;
 		};
 
-		template<unsigned long long ID, Level l, typename T, typename Temp, StoreType st>
-		void print_more_info_if_reftemp(const StoreMap<st>& c, const RefTemporary<ID,l,T,Temp> &rt){
-			std::cerr << "ID of temporary referenced: " << ID << std::endl;
+		template<typename Temp, StoreType st>
+		void print_more_info_if_reftemp(const StoreMap<st>& c, const RefTemporary<Temp> &rt){
 			std::cerr << "RefTemp ID referenced: " << rt.id << std::endl;
 			std::cerr << "RefTemp name referenced: " << rt.name << std::endl;
 			std::cerr << "address of cache: " << &c << std::endl;

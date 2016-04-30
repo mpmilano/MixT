@@ -111,7 +111,7 @@ namespace synth_test {
 							 Tracker &trk, Hndl hndl){
 		TRANSACTION(log_messages,
 					trk,hndl,
-					let_remote(tmp) = hndl IN(mtl_ignore($(tmp)))
+					let_remote(tmp) = hndl IN(mtl_ignore(tmp))
 			);
 		log_messages->addField(
 			LogFields::is_read,true);

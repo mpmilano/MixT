@@ -41,7 +41,7 @@ namespace myria { namespace mtl {
                 template<unsigned long long ID, Level l, typename T>
                 struct RefTemporary<Temporary<ID,l,T > > :
                         public RefTemporaryCommon<Temporary<ID,l,T > >,
-                        public ConExpr<run_result<T>::stored_type,run_result<T>::level_t::value>  {
+                        public ConExpr<typename run_result<T>::stored_type,run_result<T>::level_t::value>  {
 
                     static_assert(can_flow(l,run_result<T>::level_t::value),
                                   "Error: cannot dereference this handle; it is stored at a causal level, but it points to a strong object");
@@ -51,25 +51,27 @@ namespace myria { namespace mtl {
 		private:
 			RefTemporary(const Temp& t, const std::string& name, int id):super_t(t,name,id){}
 		public:
+					using level = typename run_result<T>::level_t;
+					
 			RefTemporary(const Temp &t):super_t(t){}
 
 			RefTemporary(const RefTemporary& rt):super_t(rt){}
 
 			auto strongCall(TransactionContext* ctx, StrongCache& cache, const StrongStore &s) const {
-				choose_strong<get_level<Temp>::value > choice{nullptr};
+				choose_strong<level::value > choice{nullptr};
 				try {
 					return strongCall(ctx,cache, s,choice);
 				}
 				catch (const StoreMiss&){
-					std::cerr << "tried to reference variable " << name << std::endl;
+					std::cerr << "tried to reference variable " << this->name << std::endl;
 					assert(false && "we don't have that in the store");
 				}
 			}
 
 			auto strongCall(TransactionContext* ctx, StrongCache& cache, const StrongStore &s, std::true_type*) const {
                             //This is a handle; we will call get on it, which returns a shared pointer, which we then dereference to store in the cache
-                                auto ret = *s.template get<run_result<T> >(t.store_id).get(ctx->trackingContext->trk,ctx);
-				cache.insert(id,ret);
+				auto ret = *s.template get<run_result<T> >(this->t.store_id).get(ctx->trackingContext->trk,ctx);
+				cache.insert(this->id,ret);
 				return ret;
 			}
 
@@ -77,15 +79,16 @@ namespace myria { namespace mtl {
 				//we haven't even done the assignment yet. nothing to see here.
 			}
 
-			auto causalCall(TransactionContext* ctx, const CausalCache& cache, const CausalStore &s) const {
+			auto causalCall(TransactionContext* ctx, CausalCache& cache, const CausalStore &s) const {
 		
-				typedef decltype(call<StoreType::CausalStore>(s,t)) R;
+				//typedef decltype(call<StoreType::CausalStore>(this->s,this->t)) R;
+				using R = typename run_result<T>::stored_type;
 				if (cache.contains(this->id)) {
 					return cache.get<R>(this->id);
 				}
 				else {
-                                    auto ret = *s.template get<run_result<T> >(t.store_id).get(ctx->trackingContext->trk,ctx);
-                                    cache.insert(id,ret);
+                                    R ret = *s.template get<run_result<T> >(this->t.store_id).get(ctx->trackingContext->trk,ctx);
+                                    cache.insert(this->id,ret);
                                     return ret;
 				}
 			}
@@ -108,6 +111,8 @@ namespace myria { namespace mtl {
 			RefTemporary(const Temp &t):super_t(t){}
 
 			RefTemporary(const RefTemporary& rt):super_t(rt){}
+
+			using level = std::integral_constant<Level,l>;
 			
 			template<typename E>
 			auto operator=(const E &e) const {
@@ -125,8 +130,8 @@ namespace myria { namespace mtl {
 			auto strongCall(TransactionContext* ctx, StrongCache& cache, const StrongStore &s, std::true_type*) const {
 				//std::cout << "inserting RefTemp " << name << " (" << id<< ") into cache "
 				//		  << &cache << std::endl;
-                                auto ret = s.template get<run_result<T> >(t.store_id);
-				cache.insert(id,ret);
+                                auto ret = s.template get<run_result<T> >(this->t.store_id);
+				cache.insert(this->id,ret);
 				//std::cout << "RefTemp ID " << this->id << " inserting into Cache " << &cache << " value: " << ret << std::endl;
 				return ret;
 			}
@@ -137,24 +142,24 @@ namespace myria { namespace mtl {
 
 			auto causalCall(TransactionContext* ctx, const CausalCache& cache, const CausalStore &s) const {
 		
-				typedef decltype(call<StoreType::CausalStore>(s,t)) R;
+				using R = run_result<T>;
 				if (cache.contains(this->id)) {
 					return cache.get<R>(this->id);
 				}
                                 else {
-                                    auto ret = s.template get<run_result<T> >(t.store_id);
-                                    cache.insert(id,ret);
+                                    auto ret = s.template get<run_result<T> >(this->t.store_id);
+                                    cache.insert(this->id,ret);
                                     return ret;
                                 }
 			}
 		};
 
                 template<unsigned long long ID, Level l, typename T>
-                auto find_usage(const RefTemporaryCommon<Temporary<ID,l,T,> > &rt){
+                auto find_usage(const RefTemporaryCommon<Temporary<ID,l,T> > &rt){
 			return mutils::shared_copy(rt.t);
 		}
                 template<unsigned long long ID, Level l, typename T>
-                auto find_usage(const RefTemporaryCommon<MutableTemporary<ID,l,T,> > &rt){
+                auto find_usage(const RefTemporaryCommon<MutableTemporary<ID,l,T> > &rt){
                         return mutils::shared_copy(rt.t);
                 }
 

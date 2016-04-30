@@ -17,7 +17,7 @@ namespace myria { namespace mtl {
 				static_assert(is_ConExpr<T>::value, "Error: cannot assign non-expression");
 				auto t = wrap_constants(t_);
 				static constexpr Level l = get_level<T>::value;
-				RefTemporary<ID,l,decltype(t),MutableTemporary<ID,l,decltype(t) > >
+				RefTemporary<MutableTemporary<ID,l,decltype(t) > >
 					rt(MutableTemporary<ID,l,decltype(t) >(name,t));
 				return rt;
 			}
@@ -37,7 +37,7 @@ namespace myria { namespace mtl {
 				static_assert(is_ConExpr<T>::value, "Error: cannot assign non-expression");
 				auto t = wrap_constants(t_);
 				static constexpr Level l = get_level<T>::value;
-				RefTemporary<ID,l,decltype(t),Temporary<ID,l,decltype(t) > >
+				RefTemporary<Temporary<ID,l,decltype(t) > >
 					rt(Temporary<ID,l,decltype(t) >(name,t));
 				return rt;
 			}

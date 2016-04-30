@@ -68,9 +68,9 @@ namespace myria{
 	
 	namespace mtl{
 
-		template<Level l2, typename T2, typename E, unsigned long long id>
-		std::ostream & operator<<(std::ostream &os, const mtl::RefTemporary<id,l2,T2, E>& t){
-			return os << t.name <<  "<" << t.t.store_id << "," << t.id << ": " << levelStr<l2>() << ">";
+		template<typename E>
+		std::ostream & operator<<(std::ostream &os, const mtl::RefTemporary<E>& t){
+			return os << t.name <<  "<" << t.t.store_id << "," << t.id << ": " << mtl::RefTemporary<E>::level::value << ">";
 		}
 
 
@@ -216,8 +216,8 @@ namespace myria{
 			return os << "(a Store)";
 		}
 
-		template<typename T, typename Expr, typename Temp>
-        std::ostream & operator<<(std::ostream &os, const mtl::Assignment<T,Expr,Temp> &){
+		template<typename T, typename Expr, Level l, unsigned long long ID>
+        std::ostream & operator<<(std::ostream &os, const mtl::Assignment<Expr,ID,l,T> &){
 			return os << "not printing assignments yet";
 		}
 	}
