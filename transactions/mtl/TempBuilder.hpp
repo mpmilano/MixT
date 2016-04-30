@@ -93,7 +93,17 @@ namespace myria { namespace mtl {
 			return cs;
 		}
 
+		constexpr Level extract_handle_level(std::nullptr_t const * const){
+			return Level::undef;
+		}
 
+		template<unsigned long long ID, Level l, typename T>
+		constexpr Level extract_handle_level(Temporary<ID,l,T> const * const){
+			static_assert(is_handle<run_result<T> >::value,
+						  "Error: internal type attribution failure (this should have been a handle)");
+			return run_result<T>::level;
+		}
+		
 		template<unsigned long long ID, typename CS, Level l, typename Temp>
 		struct ImmutDeclarationScope : public DeclarationScope<ID,CS,l,Temp>{
 		private:
@@ -103,6 +113,10 @@ namespace myria { namespace mtl {
 				{
 					static_assert(can_flow(l, max_level<CS>::value),
 								  "Error: declaration scope requires validity check of causal expression, while body contains strong expressions.");
+					
+					static_assert(can_flow(extract_handle_level((Temp*)nullptr),max_level<CS>::value),
+								  "Error: declaration scope binds handle; its level is causal, but the declaration scope involes strong"
+						);
 				}
 		public:
 			bool isVirtual() const {return false;}
