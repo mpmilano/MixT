@@ -22,22 +22,22 @@ namespace myria { namespace mtl {
 				return mtl::environment_expressions(t);
 			}
 
-			auto strongCall(TransactionContext *ctx, StrongCache& c, StrongStore &s,std::true_type*) const {
+			auto strongCall(TransactionContext *ctx, StrongCache& c, const StrongStore &s,std::true_type*) const {
 				auto ret = fun(run_ast_strong(ctx,c,s,t));
 				c.insert(id,ret);
 				return ret;
 			}
 
-			auto strongCall(TransactionContext *ctx, StrongCache &c, StrongStore &s, std::false_type*) const {
+			auto strongCall(TransactionContext *ctx, StrongCache &c, const StrongStore &s, std::false_type*) const {
 				run_ast_strong(ctx,c,s,t);
 			}
 
-			auto strongCall(TransactionContext* ctx, StrongCache& c, StrongStore& s) const {
+			auto strongCall(TransactionContext* ctx, StrongCache& c, const StrongStore& s) const {
 				choose_strong<get_level<T>::value > choice{nullptr};
 				return strongCall(ctx,c,s,choice);
 			}
 
-			R causalCall(TransactionContext *ctx, CausalCache& c, CausalStore& s) const {
+			R causalCall(TransactionContext *ctx, CausalCache& c, const CausalStore& s) const {
 				if (c.contains(id)) return c.template get<R>(id);
 				else {
 					R ret = fun(run_ast_causal(ctx,c,s,t));
