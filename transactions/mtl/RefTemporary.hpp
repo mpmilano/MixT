@@ -164,20 +164,20 @@ namespace myria { namespace mtl {
                 }
 
                 template<unsigned long long ID, unsigned long long ID2, Level l, typename T>
-                std::enable_if_t<ID != ID2, std::nullptr_t> find_usage(const RefTemporaryCommon<Temporary<ID2,l,T> > &){
-			return nullptr;
-		}
+                std::enable_if_t<ID != ID2, std::nullptr_t> find_usage(const RefTemporaryCommon<Temporary<ID2,l,T> > & rtc){
+					return find_usage<ID>(rtc.t);
+				}
 
                 template<unsigned long long ID, unsigned long long ID2, Level l, typename T>
-                std::enable_if_t<ID != ID2, std::nullptr_t> find_usage(const RefTemporaryCommon<MutableTemporary<ID2,l,T> > &){
-                        return nullptr;
+                std::enable_if_t<ID != ID2, std::nullptr_t> find_usage(const RefTemporaryCommon<MutableTemporary<ID2,l,T> > & rtc){
+					return find_usage<ID>(rtc.t);
                 }
 
                 template<unsigned long long ID, unsigned long long ID2, Level l, typename T>
-                struct contains_temporary<ID, RefTemporary<Temporary<ID2,l,T> > > : std::integral_constant<bool, ID == ID2> {};
+                struct contains_temporary<ID, RefTemporary<Temporary<ID2,l,T> > > : std::integral_constant<bool, ID == ID2 || contains_temporary<ID,T>::value > {};
 
                 template<unsigned long long ID, unsigned long long ID2, Level l, typename T>
-                struct contains_temporary<ID, RefTemporary<MutableTemporary<ID2,l,T> > > : std::integral_constant<bool, ID == ID2> {};
+                struct contains_temporary<ID, RefTemporary<MutableTemporary<ID2,l,T> > > : std::integral_constant<bool, ID == ID2 || contains_temporary<ID,T>::value> {};
 
 		//TODO: figure out why this needs to be here
                 template<typename temp>
