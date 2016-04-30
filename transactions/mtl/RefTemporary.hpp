@@ -102,7 +102,10 @@ namespace myria { namespace mtl {
 		};
 
 		template<unsigned long long ID, Level l, typename T>
-                struct RefTemporary<MutableTemporary<ID,l,T > > : public RefTemporaryCommon<MutableTemporary<ID,l,T > > {
+                struct RefTemporary<MutableTemporary<ID,l,T > > :
+		public RefTemporaryCommon<MutableTemporary<ID,l,T > >,
+		public ConExpr<run_result<T>, get_level<T>::value >
+		{
                         using super_t = RefTemporaryCommon<MutableTemporary<ID,l,T > >;
 			using Temp = MutableTemporary<ID,l,T >;
 		private:
@@ -140,14 +143,14 @@ namespace myria { namespace mtl {
 				//we haven't even done the assignment yet. nothing to see here.
 			}
 
-			auto causalCall(TransactionContext* ctx, const CausalCache& cache, const CausalStore &s) const {
+			auto causalCall(TransactionContext* ctx, CausalCache& cache, const CausalStore &s) const {
 		
 				using R = run_result<T>;
 				if (cache.contains(this->id)) {
 					return cache.get<R>(this->id);
 				}
                                 else {
-                                    auto ret = s.template get<run_result<T> >(this->t.store_id);
+                                    R ret = s.template get<run_result<T> >(this->t.store_id);
                                     cache.insert(this->id,ret);
                                     return ret;
                                 }

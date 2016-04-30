@@ -1,7 +1,7 @@
 #include <sstream>
 #include "MTL.hpp"
 #include "SQLStore.hpp"
-#include "TrackerTestingStore.hpp"
+//#include "TrackerTestingStore.hpp"
 #include "FinalHeader.hpp"
 #include "RemoteCons.hpp"
 #include "SQLStore.hpp"
@@ -17,7 +17,6 @@ using namespace mtl;
 using namespace tracker;
 using namespace pgsql;
 
-template<Level l, typename T> FINALIZE_OPERATION(Increment, 1, RemoteObject<l, T>* a);
 
 using WeakCons = RemoteCons<int,Level::strong,Level::causal>;
 
@@ -42,9 +41,11 @@ int main() {
 
     //std::cout << h.get(global_tracker,nullptr).val.get(global_tracker,nullptr) << std::endl;
 	assert(*h.get(global_tracker,nullptr)->val.get(global_tracker,nullptr) == 14);
+
+	std::unique_ptr<VMObjectLog> log;
 	
-	auto do_test = [&global_tracker](auto h){
-		TRANSACTION(global_tracker,h,
+	auto do_test = [&global_tracker,&log](auto h){
+		TRANSACTION(log,global_tracker,h,
 		let(hd) = h IN (
 			WHILE (isValid(hd)) DO(
 				print_str("loop"),

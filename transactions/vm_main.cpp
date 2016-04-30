@@ -113,6 +113,10 @@ namespace synth_test {
 					trk,hndl,
 					let_remote(tmp) = hndl IN(mtl_ignore(tmp))
 			);
+
+		struct tmptest{ int a;};
+		Handle<Level::strong,HandleAccess::all, tmptest> j;
+		
 		log_messages->addField(
 			LogFields::is_read,true);
 		

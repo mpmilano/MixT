@@ -67,7 +67,7 @@ namespace myria { namespace mtl {
 					valid_only = h.isValid(tctx);
 				}
 				return
-					Handle<Level::strong,ha,T,Ops...>(tctx,make_shared<CachedObject<T> >(ptr,h.store(),h.name(),valid_only));
+					Handle<Level::strong,ha,T,Ops...>(tctx,std::make_shared<CachedObject<T> >(ptr,h.store(),h.name(),valid_only));
 			}
 			else return h;
 		}
@@ -127,7 +127,7 @@ namespace myria { namespace mtl {
 		template<HandleAccess ha, typename T,typename... Ops>
 		Handle<Level::strong,ha,T,Ops...> run_ast_causal(
 			mtl::TransactionContext *tctx, mtl::CausalCache& cache, const mtl::CausalStore &s, const Handle<Level::strong,ha,T,Ops...>& h) {
-			return Handle<Level::strong,ha,T,Ops...>(tctx,make_shared<LocalObject<T> >(h.remote_object()));
+			return Handle<Level::strong,ha,T,Ops...>(tctx,std::make_shared<LocalObject<T> >(h.remote_object()));
 		}
 
 	} }
