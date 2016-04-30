@@ -105,9 +105,9 @@ do
 		
 		echo "{ auto tmp = runs_""$mode""_$host""(); ret.insert(ret.end(),tmp.begin(),tmp.end()); }" >> unified_results_header.hpp
 	done
+	
+	echo "return ret; }" >> unified_results_header.hpp
 done
-
-echo "return ret; }" >> unified_results_header.hpp
 
 make -j10
 

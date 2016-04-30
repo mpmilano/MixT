@@ -23,8 +23,14 @@ auto& NORMAL(){
 	return all_logs_NORMAL();
 }
 
-auto& NO_USE_CAUSAL(){
-	//return all_logs_NO_USE_CAUSAL();
+const auto& NO_USE_CAUSAL(){
+	return all_logs_NO_USE_CAUSAL();
+	static std::vector<myria_log> ret;
+	return ret;
+}
+
+const auto& NO_USE_STRONG(){
+	return all_logs_NO_USE_STRONG();
 	static std::vector<myria_log> ret;
 	return ret;
 }
@@ -121,6 +127,7 @@ int main(){
     cout << "moving window averages: in mwlatency-(?).csv" << endl;
     print_window_averages("mwlatency-normal.csv",NORMAL());
     print_window_averages("mwlatency-strong.csv",NO_USE_CAUSAL());
+	print_window_averages("mwlatency-causal.csv",NO_USE_STRONG());
 	cout << "done" << endl;
 
 }
