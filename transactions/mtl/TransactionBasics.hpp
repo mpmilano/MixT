@@ -68,7 +68,7 @@ namespace myria {
 			auto& get_store_context(Store& str, const std::string& why){
 				choose_strong<lev> choice{nullptr}; //true_type when lev == strong
 				auto& store_ctx = get_store_context(choice);
-				if (!store_ctx){
+				if (store_ctx.get() == nullptr){
 					assert(!str.in_transaction());
 					assert(trackingContext);
 					assert(trackingContext->logger);
