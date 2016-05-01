@@ -140,9 +140,12 @@ namespace myria { namespace mtl {
 			return t;
 		}
 
-		template<typename T, typename V>
-		std::enable_if_t<is_ConExpr<T>::value, Sum<T,V> >  operator+(const T &t, const V &v){
-			return sum(t,v);
+		namespace mtl_operators{
+		
+			template<typename T, typename V>
+			std::enable_if_t<is_ConExpr<T>::value, Sum<T,V> >  operator+(const T &t, const V &v){
+				return sum(t,v);
+			}
 		}
 
 		template<typename T, typename V>
@@ -220,9 +223,12 @@ namespace myria { namespace mtl {
 			return t;
 		}
 
-		template<typename T, typename V>
-		std::enable_if_t<is_ConExpr<T>::value, Equals<T,V> >  operator==(const T &t, const V &v){
-			return equals(t,v);
+		namespace mtl_operators {
+		
+			template<typename T, typename V>
+			std::enable_if_t<is_ConExpr<T>::value, Equals<T,V> >  operator==(const T &t, const V &v){
+				return equals(t,v);
+			}
 		}
 
 
@@ -297,9 +303,12 @@ namespace myria { namespace mtl {
 			return t;
 		}
 
-		template<typename T, typename V>
-		std::enable_if_t<is_ConExpr<T>::value, BinaryOr<T,V> >  operator||(const T &t, const V &v){
-			return binor(t,v);
+		namespace mtl_operators {
+		
+			template<typename T, typename V>
+			std::enable_if_t<is_ConExpr<T>::value, BinaryOr<T,V> >  operator||(const T &t, const V &v){
+				return binor(t,v);
+			}
 		}
 
 		template<typename T, typename V>
@@ -373,9 +382,12 @@ namespace myria { namespace mtl {
 			return t;
 		}
 
-		template<typename T, typename V>
-		std::enable_if_t<is_ConExpr<T>::value, BinaryAnd<T,V> >  operator&&(const T &t, const V &v){
-			return binand(t,v);
+		namespace mtl_operators {
+		
+			template<typename T, typename V>
+			std::enable_if_t<is_ConExpr<T>::value, BinaryAnd<T,V> >  operator&&(const T &t, const V &v){
+				return binand(t,v);
+			}
 		}
 
 
@@ -447,9 +459,12 @@ namespace myria { namespace mtl {
 			return e;
 		}
 
-		template<typename T>
-		std::enable_if_t<is_ConExpr<T>::value, Not<T> >  operator!(const T &t){
-			return neg(t);
+		namespace mtl_operators{
+		
+			template<typename T>
+			std::enable_if_t<is_ConExpr<T>::value, Not<T> >  operator!(const T &t){
+				return neg(t);
+			}
 		}
 
 		template<typename T>
