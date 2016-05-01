@@ -59,7 +59,7 @@ namespace myria{
 				 //strong only
 				 strong_call_t{[=](TransactionContext* ctx, StrongCache &c, StrongStore &s){
 						assert(ctx);
-						eat(run_ast_strong(ctx,c,s,*args)...);
+						eat([&](){run_ast_strong(ctx,c,s,*args); return nullptr;}()...);
 						ctx->template get_store_context<level>(first(cached(c,*args)...).store(),"Doing a strong operation");
 						do_op_2<Name>(ctx,cached(c,*args)...);
 						return true;
@@ -67,7 +67,7 @@ namespace myria{
 				 //mixed
 				 strong_call_t{[=](TransactionContext* ctx, StrongCache &c, StrongStore &s){
 						 assert(ctx);
-						 eat(run_ast_strong(ctx,c,s,*args)...);
+						 eat([&](){run_ast_strong(ctx,c,s,*args); return nullptr;}()...);
 						 return true;
 					 }});
 
