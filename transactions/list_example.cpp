@@ -2,10 +2,9 @@
 #include "MTL.hpp"
 #include "SQLStore.hpp"
 //#include "TrackerTestingStore.hpp"
-#include "FinalHeader.hpp"
 #include "RemoteCons.hpp"
-#include "SQLStore.hpp"
-#include "Ostreams.hpp"//*/
+#include "Ostreams.hpp"
+#include "FinalHeader.hpp"//*/
 #include "SerializationMacros.hpp"
 #include "Transaction_macros.hpp"
 #include "FreeExpr_macros.hpp"

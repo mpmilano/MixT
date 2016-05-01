@@ -232,11 +232,14 @@ namespace myria { namespace pgsql {
 			}
 
 			//deserializing this RemoteObject, not its stored thing.
-			template<typename T>
-			static std::unique_ptr<SQLObject<T> > from_bytes(mutils::DeserializationManager* mngr, char const * v){
+			template<HandleAccess ha, typename T>
+			static std::unique_ptr<SQLHandle<ha,T> > from_bytes(mutils::DeserializationManager* mngr, char const * v){
+				//this really can't be called via the normal deserialization process; it needs to be called in the process of deserializing a RemoteObject.
                             assert(mngr);
-                            return std::make_unique<SQLObject<T> >(GSQLObject::from_bytes(mngr->template mgr<deserialization_context>(),v),
-                                                                                                           nullptr,*mngr);
+							auto &insance_manager = mngr->template mgr<deserialization_context>();
+							auto gsql_obj = GSQLObject::from_bytes(insance_manager,v);
+							auto &this_ds = dynamic_cast<SQLStore&>(gsql_obj.store()); //this should never fail
+                            return std::make_unique<SQLHandle<ha,T> >(std::make_shared<SQLObject<T> >(std::move(gsql_obj),nullptr,*mngr),this_ds);
 			}
 
 			struct SQLContext : mtl::StoreContext<l> {

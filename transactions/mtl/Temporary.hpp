@@ -6,6 +6,9 @@
 
 namespace myria { namespace mtl {
 
+		//NOTE: *RefTemp* has the level of the dereferenced handle.
+		//This class has the level of the expression which contains the handle itself.
+		//These aren't always the same; in fact they're usually different.
 		template<unsigned long long ID, Level l, typename T>
 		struct Temporary : public TemporaryCommon<ID, l,T> {
 
@@ -33,5 +36,9 @@ namespace myria { namespace mtl {
 
 		template<unsigned long long ID, unsigned long long ID2, Level l, typename T>
 		struct contains_temporary<ID, Temporary<ID2,l,T> > : std::integral_constant<bool, ID == ID2> {};
+
+		template<unsigned long long ID, Level l, typename Temp>
+		struct chld_min_level<Temporary<ID,l,Temp> > : level_constant<l> {};
+
 
 	} }

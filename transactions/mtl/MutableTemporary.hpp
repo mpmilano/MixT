@@ -28,4 +28,8 @@ namespace myria { namespace mtl {
 			return nullptr;
 		}
 
+		template<unsigned long long ID, Level l, typename Temp>
+		struct chld_min_level<MutableTemporary<ID,l,Temp> > : level_constant<l> {};
+
+
 	} }

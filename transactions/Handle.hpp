@@ -46,6 +46,9 @@ namespace myria{
 	std::nullptr_t find_usage(const GenericHandle<l,ha>&){
 		return nullptr;
 	}
+
+	template<Level l2, HandleAccess ha2, typename T2, typename... ops2>
+	std::unique_ptr<Handle<l2,ha2,T2,ops2...> > hndl_from_bytes(mutils::DeserializationManager* dm, char const * __v);
 	
 	template<Level l, HandleAccess HA, typename T, typename... SupportedOperations>
 	struct Handle : public GenericHandle<l,HA>,
@@ -55,7 +58,11 @@ namespace myria{
 		const std::shared_ptr<RemoteObject<l,T> > _ro;
 	private:
 		//for dropping operation support
-		Handle(decltype(_ro) _ro):_ro(_ro){}
+		//the first parameter is to ensure we are calling this constructor intentionally,
+		//in the case where we really are ditching operations.  I'd like to disable it statically,
+		//but enable_if doesn't play nicely with constructors and specializing this class wastes a ton
+		//of space
+		Handle(std::integral_constant<std::size_t, sizeof...(SupportedOperations)>*,decltype(_ro) _ro):_ro(_ro){}
 	public:
 
 		using level_t = std::integral_constant<Level,l>;
@@ -121,18 +128,8 @@ namespace myria{
 			return sizeof(bool) + (_ro ? _ro->bytes_size() : 0);
 		}
 
-		static std::unique_ptr<Handle> from_bytes(mutils::DeserializationManager* rdc, char const *v)  {
-			//for de-serializing.
-			assert(v);
-			RemoteObject<l,T> *stupid = nullptr;
-			if (((bool*)v)[0]) {
-				auto ro = from_bytes_stupid(rdc,stupid,v + sizeof(bool) );
-				assert(ro);
-				return std::unique_ptr<Handle>(
-					new Handle(
-						std::shared_ptr<RemoteObject<l,T> >(ro.release())));
-			}
-			else return std::make_unique<Handle>();
+		static std::unique_ptr<Handle> from_bytes(mutils::DeserializationManager* rdc, char const *v){
+			return hndl_from_bytes<l,HA,T,SupportedOperations...>(rdc,v);
 		}
 
 		std::shared_ptr<const T> get(tracker::Tracker& tracker, mtl::TransactionContext *tc) const {
@@ -287,14 +284,6 @@ namespace myria{
 	template<unsigned long long id, Level l, HandleAccess ha, typename T, typename... Ops>
 	struct mtl::contains_temporary<id,  Handle<l,ha,T,Ops...> > : std::false_type {};
 
-	/*
-	template<Level l, HandleAccess HA, typename T,
-			 typename RO, typename... Args>
-	Handle<l,HA,T> make_handle(tracker::Tracker &trk, mtl::TransactionContext *tc, Args && ... ca)
-	{
-		return Handle<l,HA,T>::template make_handle<RO, Args...>(trk,tc,std::forward<Args>(ca)...);
-	}
-//*/
 
 	template<typename T>
 	struct is_handle;

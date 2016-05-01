@@ -453,7 +453,6 @@ namespace myria{ namespace pgsql {
 			Table* arrt = (Table*) (arrl + 1);
 			//of from_bytes
 			Level lvl = arrl[0];
-			//Tracker trk{-1}; //don't register any stores we create here with a real tracker
 			return GSQLObject(mgr.inst(lvl,arr[2]),
 							  arrt[0],arr[0],arr[1]);
 		}

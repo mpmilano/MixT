@@ -73,6 +73,9 @@ struct SupportedOperation {
 		operation op;
 
 		SupportsOn(operation op):op(op){}
+
+		//constructor for use with null handles
+		SupportsOn(){}
 		
 		template<template<typename> class RemoteObject, typename DataStore>
 		static operation wrap_operation(DataStore& ds){
@@ -84,6 +87,8 @@ struct SupportedOperation {
 		SupportsOn& upCast(OperationIdentifier<Name>){
 			return *this;
 		}
+
+		virtual ~SupportsOn(){}
 	};
 };
 

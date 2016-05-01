@@ -96,8 +96,8 @@ namespace myria{
 		}
 
 		template<unsigned long long ID,Level l, typename temp>
-		std::ostream & operator<<(std::ostream &os, const mtl::Temporary<ID,l,temp> &t){
-			return os << t.name << "<" << l << "> = " << t.t << " @" << mtl::get_level<mtl::Temporary<ID,l,temp> >::value;
+		std::ostream & operator<<(std::ostream &os, const mtl::TemporaryCommon<ID,l,temp> &t){
+			return os << t.name << "<" << l << "> = " << t.t << " @" << mtl::get_level<mtl::TemporaryCommon<ID,l,temp> >::value;
 		}
 
 

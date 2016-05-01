@@ -74,9 +74,5 @@ namespace myria { namespace mtl {
 		template<unsigned long long ID, Level l, typename Temp>
 		struct chld_min_level<TemporaryCommon<ID,l,Temp> > : level_constant<l> {};
 
-		template<unsigned long long ID, Level l, typename Temp>
-		struct chld_max_level<TemporaryCommon<ID,l,Temp> > : level_constant<l> {};
-
-		
 
 	}}

@@ -66,8 +66,8 @@ namespace myria{
 	};
 
 
-	template<typename T, Level backbone, Level data>
-	std::ostream& operator<<(std::ostream &os, const RemoteCons<T,backbone,data>& rc){
+	template<typename T, Level backbone, Level data,typename... ops>
+	std::ostream& operator<<(std::ostream &os, const RemoteCons<T,backbone,data,ops...>& rc){
 		return os << rc.val << " ++ " << rc.next;
 	}
 }

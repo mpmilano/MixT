@@ -13,7 +13,8 @@ namespace myria{
 		auto do_op_3(TransactionContext* ctx, typename SupportedOperation<Name,SelfType,Args...>::
 					 template SupportsOn<Handle> &hndl,
 					 typename convert_SelfType<Handle&>::template act<Args>... args){
-			
+
+			assert(hndl.op && "error! This is probably a null handle");
 			return hndl.op->act(ctx,hndl.downCast(),args...);
 		}
 		

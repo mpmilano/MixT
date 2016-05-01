@@ -155,6 +155,12 @@ namespace myria { namespace mtl {
 			bool isVirtual() const {return false;}
 		};
 
+		template<unsigned long long ID, Level l, typename Temp, typename... CS>
+		struct chld_min_level<MutDeclarationScope<ID,std::tuple<CS...>,l,Temp > > :
+		level_constant<min_of_levels(min_level<Temp>::value, chld_min_level<CS>::value... )>{
+			static_assert(l == get_level<Temp>::value ,"assumption bad!");
+		};
+
 		template<unsigned long long ID, typename CS, Level l, typename Temp >
 		std::nullptr_t find_usage(const DeclarationScope<ID,CS,l,Temp>&){
 			//we have been shadowed!

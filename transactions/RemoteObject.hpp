@@ -62,8 +62,6 @@ namespace myria{
 
 		using type = T;
 	
-		static std::unique_ptr<RemoteObject> from_bytes(mutils::DeserializationManager* dm, char const * _v);
-
 		/*
 		std::vector<char> bytes() const {
 			assert(false && "ERROR! you're using this when you wanted the *stored* type,"
@@ -99,50 +97,13 @@ namespace myria{
 
 	};
 
-	template<typename T>
-	struct get_ro_ptr_lvl;
+	template<typename> struct is_RemoteObject;
+	template<Level l, typename T> struct is_RemoteObject<RemoteObject<l,T> > : std::true_type {};
 
-	template<Level l, typename T>
-	constexpr Level get_ro_ptr_lvl_f(RemoteObject<l,T>*){
-		return l;
+	template<typename T>
+	static std::unique_ptr<mutils::type_check<is_RemoteObject,T> > from_bytes(mutils::DeserializationManager*, char const * ){
+		static_assert(!is_RemoteObject<T>::value,"Error: Do not directly attempt to deserialize a Remote object.  It is not safe.  Deserialize the handle.");
 	}
-
-	template<typename T>
-	struct get_ro_ptr_lvl<T*> : std::integral_constant<Level, get_ro_ptr_lvl_f(mutils::mke_p<T>())>::type {};
-
-	DecayTraits(get_ro_ptr_lvl);
-
-	template<typename T>
-	struct is_RemoteObj_ptr;
-
-	template<template<typename> class C, typename T>
-	struct is_RemoteObj_ptr<C<T>*> : std::integral_constant<
-		bool,
-		std::is_base_of<RemoteObject<Level::causal,T>,C<T> >::value
-		|| std::is_base_of<RemoteObject<Level::strong,T>,C<T> >::value>::type {};
-
-	template<template<Level,typename> class C, Level l, typename T>
-	struct is_RemoteObj_ptr<C<l,T>*> : std::is_base_of<RemoteObject<l,T>,C<l,T> >::type {};
-
-	template<Level l, typename T>
-	struct is_RemoteObj_ptr_lvl : std::integral_constant<bool, is_RemoteObj_ptr<T>::value && get_ro_ptr_lvl<T>::value == l > {};
-
-	template<template<Level, typename> class C, Level l, Level l2, typename T>
-	struct is_RemoteObj_ptr_lvl<l, C<l2,T> > :
-		std::integral_constant<
-		bool, is_RemoteObj_ptr<C<l2,T> >::value && l == l2>::type {};
-
-	DecayTraitsLevel(is_RemoteObj_ptr_lvl)
-	DecayTraits(is_RemoteObj_ptr)
-
-	template<typename T>
-	struct is_RemoteObj_ptr : std::false_type{};
-
-	template<typename T>
-	struct is_not_RemoteObj_ptr : std::integral_constant<bool,!is_RemoteObj_ptr<T>::value >::type {};
-
-	template<typename T>
-	using cr_add = typename std::conditional<is_RemoteObj_ptr<T>::value, T, const std::decay_t<T>&>::type;
 
 }
 
