@@ -17,11 +17,11 @@
 namespace myria{
 
 
-	template<typename T, Level backbone, Level data>
+	template<typename T, Level backbone, Level data, typename... DataSupportedOps>
 	struct RemoteCons :
 		public mutils::ByteRepresentable {
 		using p = Handle<backbone, HandleAccess::all, RemoteCons>;
-		using v = Handle<data, HandleAccess::all, T>;
+		using v = Handle<data, HandleAccess::all, T,DataSupportedOps...>;
 		using newObj = const std::function<p (const typename p::stored_type&)>&;
 	
 		v val;
