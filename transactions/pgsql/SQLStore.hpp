@@ -191,7 +191,7 @@ namespace myria { namespace pgsql {
 			};
 
 			template<HandleAccess ha, typename T>
-			using SQLHandle = std::conditional_t<is_set<T>::value,
+			using SQLHandle = std::conditional_t<mutils::is_set<T>::value,
 												 Handle<l,ha,int,SupportedOperation<RegisteredOperations::Insert,SelfType> >,
 												 std::conditional_t<
 													 std::is_same<T,int>::value,
