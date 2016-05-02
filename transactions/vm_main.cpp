@@ -229,7 +229,7 @@ namespace synth_test {
 		constexpr static seconds increase_delay = 15s;
 		constexpr static minutes test_stop_time = 7min;
 		constexpr static double percent_writes = .05;
-		constexpr static double percent_strong = .3;
+		constexpr static double percent_strong = .5;
 		
 		pair<int,fake_time> choose_action() const {
 			bool do_write = better_rand() < percent_writes;
