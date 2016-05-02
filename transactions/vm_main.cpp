@@ -226,8 +226,8 @@ namespace synth_test {
 		time_t last_rate_raise{start_time};
 		Frequency current_rate{800_Hz};
 		constexpr static Frequency increase_factor = 100_Hz;
-		constexpr static seconds increase_delay = 30s;
-		constexpr static minutes test_stop_time = 15min;
+		constexpr static seconds increase_delay = 15s;
+		constexpr static minutes test_stop_time = 7min;
 		constexpr static double percent_writes = .05;
 		constexpr static double percent_strong = .3;
 		
