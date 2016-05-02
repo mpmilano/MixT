@@ -12,7 +12,7 @@ namespace myria{
 	}
 	
 enum class RegisteredOperations {
-	Increment
+	Increment, Insert
 };
 
 struct SelfType{};
