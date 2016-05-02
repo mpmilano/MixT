@@ -191,10 +191,12 @@ namespace myria { namespace pgsql {
 			};
 
 			template<HandleAccess ha, typename T>
-                        using SQLHandle = std::conditional_t<std::is_same<T,int>::value,
-                                                             Handle<l,ha,int,SupportedOperation<RegisteredOperations::Increment,SelfType> >,
-                                                             Handle<l,ha,T>
-                        >;
+			using SQLHandle = std::conditional_t<is_set<T>::value,
+												 Handle<l,ha,int,SupportedOperation<RegisteredOperations::Insert,SelfType> >,
+												 std::conditional_t<
+													 std::is_same<T,int>::value,
+													 Handle<l,ha,int,SupportedOperation<RegisteredOperations::Increment,SelfType> >,
+													 Handle<l,ha,T> > >;
 
 			template<HandleAccess ha, typename T>
 			SQLHandle<ha,T> newObject(tracker::Tracker &trk, mtl::TransactionContext *tc, Name name, const T& init){
@@ -269,6 +271,18 @@ namespace myria { namespace pgsql {
 								   dynamic_cast<SQLContext*>(transaction_context->causalContext.get()));
 				assert(ctx && "error: should have entered transaction before this point!");
 				o.gso.increment(ctx->i.get());
+			}
+
+			template<typename T>
+			void operation(mtl::TransactionContext* transaction_context,
+						   OperationIdentifier<RegisteredOperations::Insert>, SQLObject<std::set<T> > &o, T& t){
+				assert(transaction_context && "Error: calling operations outside of transactions is disallowed");
+				SQLContext *ctx = (l == Level::strong ?
+								   dynamic_cast<SQLContext*>(transaction_context->strongContext.get()) :
+								   dynamic_cast<SQLContext*>(transaction_context->causalContext.get()));
+				assert(ctx && "error: should have entered transaction before this point!");
+				assert(false && "this is unimplemented.");
+				//o.gso.increment(ctx->i.get());
 			}
 		};
 	}}
