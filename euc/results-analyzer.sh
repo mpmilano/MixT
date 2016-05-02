@@ -23,7 +23,7 @@ shift
 shift
 
 test_dir=`echo "$results_dir"/output_*o | rev | cut -d'/' -f1 | rev`
-if [[ -f `find . -name $test_dir -type f` ]]
+if [[ -f `find "$results_dir" -name $test_dir -type f` ]]
 then echo "object files found"
 else bash "$analyzer"/build-analyzer.sh $results_dir "$mutils"
 fi
