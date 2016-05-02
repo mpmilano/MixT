@@ -207,7 +207,44 @@ namespace{
 
 		template<typename T, typename Blob>
 		void initialize_with_id_c(T &trans, Table t, int k, Name id, const std::array<int,NUM_CAUSAL_GROUPS> &ends, const Blob& b){
-			assert(false && "This is just a mess. I'm deleting it");
+			assert(k > 0);
+			using namespace std;
+			static constexpr int n = NUM_CAUSAL_GROUPS;
+			static constexpr int r = NUM_CAUSAL_MASTERS;
+			const static auto v = [&](){
+				vector<array<pair<string,string>,3 > > ret;
+				for (int _t = 0; _t < Table_max; ++_t){
+					stringstream main1;
+					stringstream main2;
+					stringstream main3;
+					string t = table_name((Table)_t);
+					main1 << "insert into " << t << " (vc1) "
+						  << "select zeros from thirty_zeros where not"
+						  <<"((select count(*) from " << t << "where id=0)"
+						  <<" > 30);";
+					main2 << "update "<< t << "set id=$1 where index in (select index from " << t << " where id=0 limit " << r+1 <<  ");";
+					main3 << "update " << t << " set index=index-(select min(index) from " << t << " where id=$1) where id=$1;";
+					for (int _k = 1; _k < (n+1); ++_k){
+						auto k = to_string(_k);
+						array<pair<string,string>,3> arr;
+						arr[0]= pair<string,string>{(t + "Create1") + k,main1.str()};
+						arr[1]= pair<string,string>{(t + "Create2") + k,main2.str()};
+						arr[2]= pair<string,string>{(t + "Create3") + k,main3.str()};
+						ret.push_back(arr);
+					}
+				}
+				return ret;
+			}();
+			auto &commands = v.at(((int)t) * n + (k-1));
+			for (std::size_t i = 0; i < commands.size(); ++i){
+				auto &p = commands[i];
+				if (i == 1 || i == 2)
+					trans.prepared(p.first,p.second,id);
+				else trans.exec(p.second);
+			}
+			constexpr const auto update_cmds = update_data_c_cmd("z","$5");
+			const auto &p = update_cmds.at(((int)t) * (NUM_CAUSAL_GROUPS) + (k-1));
+			trans.prepared(p.first,p.second,id,ends[md(k+1) - 1],ends[md(k+2) - 1],ends[md(k+3) - 1],b);
 		}
 
 		//entry points

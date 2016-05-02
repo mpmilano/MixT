@@ -34,14 +34,19 @@ int main() {
     SQLStore<Level::causal>::SQLInstanceManager cm{global_tracker};
     DeserializationManager dsm{{&sm,&cm}};
 
+	auto log_mgr = build_VMObjectLogger();
+	std::unique_ptr<VMObjectLog> log = log_mgr->beginStruct<LoggedStructs::log>();
+
     SQLStore<Level::strong> &fss = sm.inst_strong(0);
     SQLStore<Level::causal> &fsc = cm.inst_causal(0);
-	auto h = WeakCons::build_list(global_tracker,nullptr,fss,fsc,12,13,14);
+	auto trans = start_transaction(log,global_tracker,fss,fsc);
+	auto h = WeakCons::build_list(global_tracker,trans.get(),fss,fsc,12,13,14);
 
     //std::cout << h.get(global_tracker,nullptr).val.get(global_tracker,nullptr) << std::endl;
-	assert(*h.get(global_tracker,nullptr)->val.get(global_tracker,nullptr) == 14);
-
-	std::unique_ptr<VMObjectLog> log;
+	assert(*h.get(global_tracker,trans.get())->val.get(global_tracker,trans.get()) == 14);
+	
+	trans->full_commit();
+	trans.reset();
 	
 	auto do_test = [&global_tracker,&log](auto h){
 		TRANSACTION(log,global_tracker,h,
@@ -62,15 +67,27 @@ int main() {
 			);}; 
 	do_test(h);//*/
 	
-
-	std::cout << *h.get(global_tracker,nullptr)->val.get(global_tracker,nullptr) << std::endl;
-	assert(*h.get(global_tracker,nullptr)->val.get(global_tracker,nullptr) == 15);
-
-	auto h2 = WeakCons::build_list(global_tracker,nullptr,fss,fsc,18,19,20);
 	
+	auto trans2 = start_transaction(log,global_tracker,fss,fsc);
+	std::cout << *h.get(global_tracker,trans2.get())->val.get(global_tracker,trans2.get()) << std::endl;
+	assert(*h.get(global_tracker,trans2.get())->val.get(global_tracker,trans2.get()) == 15);
+	trans2->full_commit();
+	trans2.reset();
+	
+	
+	auto trans3 = start_transaction(log,global_tracker,fss,fsc);
+	auto h2 = WeakCons::build_list(global_tracker,trans3.get(),fss,fsc,18,19,20);
+	trans3->full_commit();
+	trans3.reset();
+
 	do_test(h2);
-	std::cout << *h2.get(global_tracker,nullptr)->val.get(global_tracker,nullptr) << std::endl;
-	assert(*h2.get(global_tracker,nullptr)->val.get(global_tracker,nullptr) == 21);
+	
+	auto trans4 = start_transaction(log,global_tracker,fss,fsc);
+	std::cout << *h2.get(global_tracker,trans4.get())->val.get(global_tracker,trans4.get()) << std::endl;
+	assert(*h2.get(global_tracker,trans4.get())->val.get(global_tracker,trans4.get()) == 21);
+	trans4->full_commit();
+	trans4.reset();
+	
 	
 	return 0;
 
