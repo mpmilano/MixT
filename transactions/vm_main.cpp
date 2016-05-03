@@ -44,6 +44,9 @@ constexpr bool causal_enabled = false;
 constexpr bool causal_enabled = true;
 #endif
 
+constexpr const double write_percent = WRITE_PERCENT;
+constexpr const double strong_percent = STRONG_PERCENT;
+
 static_assert(causal_enabled || strong_enabled, "Error: do not disable both stores.");
 
 const auto log_name = [](){
@@ -228,8 +231,8 @@ namespace synth_test {
 		constexpr static Frequency increase_factor = 100_Hz;
 		constexpr static seconds increase_delay = 15s;
 		constexpr static minutes test_stop_time = 7min;
-		constexpr static double percent_writes = .05;
-		constexpr static double percent_strong = .7;
+		constexpr static double percent_writes = write_percent;
+		constexpr static double percent_strong = strong_percent;
 		
 		pair<int,fake_time> choose_action() const {
 			bool do_write = better_rand() < percent_writes;
