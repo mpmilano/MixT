@@ -30,7 +30,7 @@ if [[ $7 ]];
 then make clean
 else rm vm_main.o; rm vm
 fi
-extra_macro_defs="-D$2 -D$3 -D$4" causalGroup="$1" MY_IP="$5" STRONG_REMOTE_IP="$6" make -j4 vm
+extra_macro_defs="-D$2 -DWRITE_PERCENT=$3 -DSTRONG_PERCENT=$4" causalGroup="$1" MY_IP="$5" STRONG_REMOTE_IP="$6" make -j4 vm
 ./vm
 #for ((i=1; i <= $2; i++))
 #do

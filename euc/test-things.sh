@@ -38,7 +38,6 @@ for strong_percent in $strong_percentages; do
 		do
 			i=0
 			echo $configuration
-			exit 0
 			for foo in $instance_list
 			do
 				i=$[i%4 + 1]
