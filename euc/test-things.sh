@@ -31,8 +31,8 @@ then
 fi
 
 
-for strong_percent in $strong_percentages; do
-	for write_percent in $write_percentages; do 
+for write_percent in $write_percentages; do 
+	for strong_percent in $strong_percentages; do
 		first_iter=true;
 		for configuration in $configurations
 		do
