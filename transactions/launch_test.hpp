@@ -47,7 +47,8 @@ namespace {
 		tracker::Tracker &tracker(){return trk;}
 		
 		TrackerMem(int id)
-			:trk(id + 1024, tracker::CacheBehaviors::full){}
+			:trk(id + 1024, tracker::CacheBehaviors::full){
+		}
 	};
 	
 	struct SQLMem {
@@ -137,10 +138,14 @@ void PreparedTest<Mem,Arg>::pool_mem_init (int tid, std::shared_ptr<SQLMem>& sql
 	if (!sqlmem){
 		sqlmem.reset(new SQLMem(*mem));
 	}
+	assert(sqlmem);
+	auto &ss = sqlmem->ss.inst(get_strong_ip());
+	auto &cs = sqlmem->sc.inst(0);
+	
 	if (!mem->tracker().strongRegistered())
-		mem->tracker().registerStore(sqlmem->ss.inst(get_strong_ip()));
+		mem->tracker().registerStore(ss);
 	if (!mem->tracker().causalRegistered())
-		mem->tracker().registerStore(sqlmem->sc.inst(0));
+		mem->tracker().registerStore(cs);
 	//I'm assuming that pid won't get larger than the number of allowable ports...
 	assert(pid + 1024 < 49151);
 }
