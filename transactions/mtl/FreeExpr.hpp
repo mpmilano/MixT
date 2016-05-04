@@ -70,12 +70,12 @@ namespace myria { namespace mtl {
                     std::tuple<MTLArgs...> args;
                     const int id = mutils::gensym();
 
-                    MTLCtr(const MTLArgs & ... args):args(std::make_tuple(args)){}
+                    MTLCtr(const MTLArgs & ... args):args(std::make_tuple(args...)){}
 
                     auto environment_expressions() const {
                         mutils::fold(args,
                                      [](const auto& arg, const auto& accum){
-                            return std::tuple_cat(environment_expressions(arg),accum);
+										 return std::tuple_cat(mtl::environment_expressions(arg),accum);
                         },std::tuple<>());
                     }
 
@@ -88,7 +88,8 @@ namespace myria { namespace mtl {
                     }
                     void strongCall(TransactionContext *ctx, StrongCache &c, const StrongStore &s, std::false_type*){
                         T (*callAll) (const MTLArgs & ...) =
-                                [&](const MTLArgs & ... args){run_ast_strong(ctx,c,s,args);};
+							[&](const MTLArgs & ... args){
+							std::vector<std::nullptr_t> {{[&](){run_ast_strong(ctx,c,s,args); return nullptr;}()...}}; };
                         callFunc(callAll,args);
                     }
                     auto strongCall(TransactionContext *ctx, StrongCache &c, const StrongStore &s){

@@ -138,9 +138,9 @@ void PreparedTest<Mem,Arg>::pool_mem_init (int tid, std::shared_ptr<SQLMem>& sql
 		sqlmem.reset(new SQLMem(*mem));
 	}
 	if (!mem->tracker().strongRegistered())
-		mem->tracker()->registerStore(sqlmem->ss.inst(get_strong_ip()));
+		mem->tracker().registerStore(sqlmem->ss.inst(get_strong_ip()));
 	if (!mem->tracker().causalRegistered())
-		mem->tracker()->registerStore(sqlmem->sc.inst(0));
+		mem->tracker().registerStore(sqlmem->sc.inst(0));
 	//I'm assuming that pid won't get larger than the number of allowable ports...
 	assert(pid + 1024 < 49151);
 }
@@ -163,9 +163,9 @@ std::string PreparedTest<Mem,Arg>::run_tests(Meta& meta, bool (*stop) (Meta&, Po
 	using future_list = std::list<std::future<std::unique_ptr<std::string> > >;
 	std::unique_ptr<future_list> futures{new future_list()};
 	
-	while(!stop(meta)){
-		std::this_thread::sleep_for(delay(meta));
-		auto decision = choose_action(meta);
+	while(!stop(meta,pool)){
+		std::this_thread::sleep_for(delay(meta,pool));
+		auto decision = choose_action(meta,pool);
 		futures->emplace_back(pool.launch(decision.first,decision.second) );
 	}
 	

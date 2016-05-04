@@ -158,7 +158,7 @@ namespace synth_test {
 		std::unique_ptr<VMObjectLog> log_messages;
 		log_start(tm,log_messages,_start_time);
 		SQLStore<Level::strong> &strong = sm->ss.inst_strong(get_strong_ip());
-		SQLStore<Level::causal> &causal = smx->sc.inst_causal(0);
+		SQLStore<Level::causal> &causal = sm->sc.inst_causal(0);
 		auto &trk = tm->trk;
 		store_asserts(strong,causal,trk);
 		perform_operation(log_messages, trk,
@@ -256,15 +256,15 @@ namespace synth_test {
 				last_rate_raise = high_resolution_clock::now();
 			}
 			//there should always be 10 request/second/client
-			p.set_mem_to(current_rate.Hertz / 10);
+			p.set_mem_to(current_rate.hertz / 10);
 			return getArrivalInterval(current_rate);
 		}
 
-#define method_to_fun(foo,y...) [](auto& x){return x.foo(y);}
+#define method_to_fun(foo,Arg) [](auto& x, Arg y){return x.foo(y);}
 		std::string run_tests(PreparedTest& launcher){
-			bool (*stop) (TestParameters&,Pool&) = method_to_fun(stop);
-			pair<int,fake_time> (*choose) (TestParameters&,Pool&) = method_to_fun(choose_action);
-			milliseconds (*delay) (TestParameters&,Pool&) = method_to_fun(delay);
+			bool (*stop) (TestParameters&,Pool&) = method_to_fun(stop,Pool&);
+			pair<int,fake_time> (*choose) (TestParameters&,Pool&) = method_to_fun(choose_action,Pool&);
+			milliseconds (*delay) (TestParameters&,Pool&) = method_to_fun(delay,Pool&);
 			auto ret = launcher.run_tests(*this,stop,choose,delay);
 
 			global_log.addField(GlobalsFields::request_frequency_final,current_rate);
@@ -300,7 +300,7 @@ int main(){
 	std::cout << "connecting to " << string_of_ip(get_strong_ip()) << std::endl;
 
 	using pool_fun_t = typename synth_test::TestParameters::PreparedTest::action_t;
-	
+
 	vector<pool_fun_t> vec{{
 			synth_test::perform_strong_increment,
 				synth_test::perform_causal_increment,
