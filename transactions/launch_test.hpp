@@ -41,43 +41,48 @@ namespace {
 		;
 }
 
-struct Remember {
+	struct TrackerMem {
+		unique_ptr<VMObjectLogger> log_builder{build_VMObjectLogger()};
+		tracker::Tracker trk;
+		TrackerMem(int id)
+			:trk(id + 1024, tracker::CacheBehaviors::full){}
+	};
 	
-	unique_ptr<VMObjectLogger> log_builder{build_VMObjectLogger()};
-	
-	tracker::Tracker trk;
-	SQLStore<Level::strong>::SQLInstanceManager ss;
-	SQLStore<Level::causal>::SQLInstanceManager sc;
-                //TrackerTestingStore<Level::strong> ss;
-                //TrackerTestingStore<Level::causal> sc;
-	DeserializationManager dsm;
-	
-	Remember(int id)
-			:trk(id + 1024, tracker::CacheBehaviors::full),
-			 ss(trk),
-			 sc(trk),
+	struct SQLMem {
+		
+		SQLStore<Level::strong>::SQLInstanceManager ss;
+		SQLStore<Level::causal>::SQLInstanceManager sc;
+		//TrackerTestingStore<Level::strong> ss;
+		//TrackerTestingStore<Level::causal> sc;
+		DeserializationManager dsm;
+		
+		Remember(TrackerMem& tm)
+			:ss(tm.trk),
+			 sc(tm.trk),
 			 dsm({&ss,&sc}){}
-};
+	};
 
 template<typename Mem, typename Arg>
 struct PreparedTest{
 
+	using Pool = ThreadPool<SQLMem,Mem,std::string,Arg>;
+
 	//static functions for TaskPool
 	static std::string exn_handler(std::exception_ptr eptr);
 	
-	static void pool_mem_init (std::shared_ptr<Mem> &mem, int _pid);
+	static void pool_mem_init (int tid, std::shared_ptr<SQLMem> &sqlmem, int memid, std::shared_ptr<Mem> &mem);
 
-	using action_t = std::string (*)(std::shared_ptr<Mem>, int, Arg);
-	using functor_action_t = std::function<std::string (std::shared_ptr<Mem>, int, Arg)>;
+	using action_t = typename Pool::action_fp;
+	using functor_action_t = typename Pool::action_f;
 	
 	//members, also for task pool
 	const int num_processes;
 
 	//for task pool init
 	static std::vector<functor_action_t> convert_vector(const std::vector<action_t>&);
-	
+
 	//task pool
-	ThreadPool<Mem,std::string,Arg> pool;
+	Pool pool;
 
 	//constructor
 	PreparedTest(int num_processes, std::vector<action_t> actions)
@@ -87,9 +92,9 @@ struct PreparedTest{
 	//runs the main test loop, given a function which return true when
 	//the test should stop, and a function that returns (which-task, what-arg-for-task)
 	template<typename Meta>
-	std::string run_tests(Meta& meta, bool (*stop) (Meta&),
-						  std::pair<int,Arg> (*choose_action) (Meta&),
-						  milliseconds (*delay) (Meta&));
+	std::string run_tests(Meta& meta, bool (*stop) (Meta&, Pool&),
+						  std::pair<int,Arg> (*choose_action) (Meta&, Pool&),
+						  milliseconds (*delay) (Meta&, Pool&));
 };
 
 
@@ -121,12 +126,15 @@ std::string PreparedTest<Mem,Arg>::exn_handler(std::exception_ptr eptr){
 }
 
 template<typename Mem,typename Arg>
-void PreparedTest<Mem,Arg>::pool_mem_init (std::shared_ptr<Mem> &mem, int _pid){
-	auto pid = _pid % (65535 - 1025); //make sure this can be used as a port numbxer
+void PreparedTest<Mem,Arg>::pool_mem_init (int tid, std::shared_ptr<SQLMem>& sqlmem, int memid, std::shared_ptr<Mem> &mem){
+	auto pid = memid % (65535 - 1025); //make sure this can be used as a port numbxer
 	if (!mem) {
 		mem = std::make_shared<Mem>(pid);
 	}
 	assert(mem);
+	if (!sqlmem){
+		sqlmem.reset(new SQLMem(*mem));
+	}
 	//I'm assuming that pid won't get larger than the number of allowable ports...
 	assert(pid + 1024 < 49151);
 }
@@ -142,9 +150,9 @@ PreparedTest<Mem,Arg>::convert_vector(const std::vector<action_t>& src){
 //runs the main test loop, given a function which return true when
 //the test should stop, and a function that returns (which-task, what-arg-for-task)
 template<typename Mem,typename Arg> template<typename Meta>
-std::string PreparedTest<Mem,Arg>::run_tests(Meta& meta, bool (*stop) (Meta&),
-										 std::pair<int,Arg> (*choose_action) (Meta&),
-										 milliseconds (*delay) (Meta&)){
+std::string PreparedTest<Mem,Arg>::run_tests(Meta& meta, bool (*stop) (Meta&, Pool&),
+											 std::pair<int,Arg> (*choose_action) (Meta&, Pool&),
+											 milliseconds (*delay) (Meta&, Pool&)){
 	
 	using future_list = std::list<std::future<std::unique_ptr<std::string> > >;
 	std::unique_ptr<future_list> futures{new future_list()};
