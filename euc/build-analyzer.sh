@@ -109,7 +109,7 @@ do
 	echo "return ret; }" >> unified_results_header.hpp
 done
 
-make -j3
+make
 
 cd -
 
