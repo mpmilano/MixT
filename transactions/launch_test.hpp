@@ -44,6 +44,8 @@ namespace {
 	struct TrackerMem {
 		unique_ptr<VMObjectLogger> log_builder{build_VMObjectLogger()};
 		tracker::Tracker trk;
+		tracker::Tracker &tracker(){return trk;}
+		
 		TrackerMem(int id)
 			:trk(id + 1024, tracker::CacheBehaviors::full){}
 	};
@@ -56,7 +58,7 @@ namespace {
 		//TrackerTestingStore<Level::causal> sc;
 		DeserializationManager dsm;
 		
-		Remember(TrackerMem& tm)
+		SQLMem(TrackerMem& tm)
 			:ss(tm.trk),
 			 sc(tm.trk),
 			 dsm({&ss,&sc}){}
@@ -135,6 +137,10 @@ void PreparedTest<Mem,Arg>::pool_mem_init (int tid, std::shared_ptr<SQLMem>& sql
 	if (!sqlmem){
 		sqlmem.reset(new SQLMem(*mem));
 	}
+	if (!mem->tracker().strongRegistered())
+		mem->tracker()->registerStore(sqlmem->ss.inst(get_strong_ip()));
+	if (!mem->tracker().causalRegistered())
+		mem->tracker()->registerStore(sqlmem->sc.inst(0));
 	//I'm assuming that pid won't get larger than the number of allowable ports...
 	assert(pid + 1024 < 49151);
 }

@@ -97,6 +97,9 @@ namespace myria {
 			DataStore<Level::strong>& get_StrongStore();
 			DataStore<Level::causal>& get_CausalStore();
 
+			bool strongRegistered() const;
+			bool causalRegistered() const;
+
 			void registerStore(DataStore<Level::strong> &,
 							   std::unique_ptr<TrackerDSStrong>);
 			void registerStore(DataStore<Level::causal> &,

@@ -85,6 +85,14 @@ namespace myria { namespace tracker {
 			return *i->registeredCausal;
 		}
 
+		bool Tracker::strongRegistered() const {
+			return i->registeredStrong;
+		}
+
+		bool Tracker::causalRegistered() const {
+			return i->registeredCausal;
+		}
+
 
 		void TrackingContext::commitContext(){
 				i->_commitContext();
