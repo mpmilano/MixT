@@ -62,4 +62,70 @@ namespace myria { namespace mtl {
 			return FieldRef<T,R>{t,f};
 		}
 
+                template<typename T, typename... MTLArgs>
+                struct MTLCtr : public ConExpr<T,min_level<MTLArgs...>::value> {
+
+                    using level = min_level<MTLArgs...>;
+
+                    std::tuple<MTLArgs...> args;
+                    const int id = mutils::gensym();
+
+                    MTLCtr(const MTLArgs & ... args):args(std::make_tuple(args)){}
+
+                    auto environment_expressions() const {
+                        mutils::fold(args,
+                                     [](const auto& arg, const auto& accum){
+                            return std::tuple_cat(environment_expressions(arg),accum);
+                        },std::tuple<>());
+                    }
+
+                    T strongCall(TransactionContext *ctx, StrongCache &c, const StrongStore &s, std::true_type*){
+                        T (*builder) (const MTLArgs & ...) =
+                                [&](const MTLArgs & ... args){return T{run_ast_strong(ctx,c,s,args)...};};
+                        auto ret = callFunc(builder,args);
+                        c.insert(this->id,ret);
+                        return ret;
+                    }
+                    void strongCall(TransactionContext *ctx, StrongCache &c, const StrongStore &s, std::false_type*){
+                        T (*callAll) (const MTLArgs & ...) =
+                                [&](const MTLArgs & ... args){run_ast_strong(ctx,c,s,args);};
+                        callFunc(callAll,args);
+                    }
+                    auto strongCall(TransactionContext *ctx, StrongCache &c, const StrongStore &s){
+                        choose_strong<level::value> choice{nullptr};
+                        return strongCall(ctx,c,s,choice);
+                    }
+
+                    T causalCall(TransactionContext *ctx, StrongCache &c, const StrongStore &s){
+                        if (level::value == Level::strong){
+                            return c.template get<T>(this->id);
+                        }
+                        else {
+                            T (*builder) (const MTLArgs & ...) =
+                                    [&](const MTLArgs & ... args){return T{run_ast_causal(ctx,c,s,args)...};};
+                            T ret = callFunc(builder,args);
+                            c.insert(this->id,ret);
+                            return ret;
+                        }
+                    }
+                };
+
+                template<typename T, typename... Args> struct is_ConExpr<MTLCtr<T,Args...> > : std::true_type {};
+
+                template<unsigned long long ID, typename T, typename... Args>
+                struct contains_temporary<ID,MTLCtr<T,Args...> > :
+                        std::integral_constant<bool,exists(contains_temporary<ID,Args>::value...)> {};
+
+                template<unsigned long long ID, typename T, typename... Args>
+                auto find_usage(const MTLCtr<T,Args...>& ctr){
+                    return fold(ctr.args,[](const auto &arg, const auto &accum){
+                        return choose_non_np(find_usage<ID>(arg),accum);
+                    },nullptr);
+                }
+
+                template<typename T, typename... Args>
+                auto make_mtl_ctr(const Args & ... args){
+                    return MTLCtr<T,Args...>{args...};
+                }
+
 	} }
