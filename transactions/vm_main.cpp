@@ -78,7 +78,7 @@ namespace synth_test {
 	using oper_f = void (*) (unique_ptr<VMObjectLog>& ,
 							 Tracker &, Hndl );
 
-	auto log_start(std::shared_ptr<Remember> mem, unique_ptr<VMObjectLog>& log_messages, fake_time _start_time){
+	auto log_start(std::shared_ptr<TrackerMem> mem, unique_ptr<VMObjectLog>& log_messages, fake_time _start_time){
 		assert(mem);
 		log_messages = mem->log_builder->template beginStruct<LoggedStructs::log>();
 		microseconds start_time(_start_time);
@@ -152,14 +152,14 @@ namespace synth_test {
 		}
 	}
 
-	std::string perform_strong_increment(std::shared_ptr<Remember> mem, int i,
+	std::string perform_strong_increment(int, std::shared_ptr<SQLMem> sm, int, std::shared_ptr<TrackerMem> tm, 
 										 fake_time _start_time){
 		auto name = get_name_write();
 		std::unique_ptr<VMObjectLog> log_messages;
-		log_start(mem,log_messages,_start_time);
-		SQLStore<Level::strong> &strong = mem->ss.inst_strong(get_strong_ip());
-		SQLStore<Level::causal> &causal = mem->sc.inst_causal(0);
-		auto &trk = mem->trk;
+		log_start(tm,log_messages,_start_time);
+		SQLStore<Level::strong> &strong = sm->ss.inst_strong(get_strong_ip());
+		SQLStore<Level::causal> &causal = smx->sc.inst_causal(0);
+		auto &trk = tm->trk;
 		store_asserts(strong,causal,trk);
 		perform_operation(log_messages, trk,
 						  strong.template existingObject<HandleAccess::all,int>(log_messages,name),
@@ -169,15 +169,15 @@ namespace synth_test {
 		return log_messages->single();
 	}
 
-	std::string perform_causal_increment(std::shared_ptr<Remember> mem, int i,
+	std::string perform_causal_increment(int,  std::shared_ptr<SQLMem> sm, int, std::shared_ptr<TrackerMem> tm,
 										 fake_time _start_time){
 		auto name = get_name_write();
 		std::unique_ptr<VMObjectLog> log_messages;
-		log_start(mem,log_messages,_start_time);
-                assert(log_messages);
-		SQLStore<Level::strong> &strong = mem->ss.inst_strong(get_strong_ip());
-		SQLStore<Level::causal> &causal = mem->sc.inst_causal(0);
-		auto &trk = mem->trk;
+		log_start(tm,log_messages,_start_time);
+		assert(log_messages);
+		SQLStore<Level::strong> &strong = sm->ss.inst_strong(get_strong_ip());
+		SQLStore<Level::causal> &causal = sm->sc.inst_causal(0);
+		auto &trk = tm->trk;
 		store_asserts(strong,causal,trk);
 		perform_operation(log_messages,trk,
 						  causal.template existingObject<HandleAccess::all,int>(log_messages,name),
@@ -188,14 +188,14 @@ namespace synth_test {
 		
 	}
 
-	std::string perform_strong_read(std::shared_ptr<Remember> mem, int i,
+	std::string perform_strong_read(int,  std::shared_ptr<SQLMem> sm, int, std::shared_ptr<TrackerMem> tm,
 										 fake_time _start_time){
 		auto name = get_name_read(0.5);
 		std::unique_ptr<VMObjectLog> log_messages;
-		log_start(mem,log_messages,_start_time);
-		SQLStore<Level::strong> &strong = mem->ss.inst_strong(get_strong_ip());
-		SQLStore<Level::causal> &causal = mem->sc.inst_causal(0);
-		auto &trk = mem->trk;
+		log_start(tm,log_messages,_start_time);
+		SQLStore<Level::strong> &strong = sm->ss.inst_strong(get_strong_ip());
+		SQLStore<Level::causal> &causal = sm->sc.inst_causal(0);
+		auto &trk = tm->trk;
 		store_asserts(strong,causal,trk);
 		perform_operation(log_messages, trk,
 						  strong.template existingObject<HandleAccess::all,int>(log_messages,name),
@@ -205,14 +205,14 @@ namespace synth_test {
 		return log_messages->single();
 	}
 
-	std::string perform_causal_read(std::shared_ptr<Remember> mem, int i,
+	std::string perform_causal_read(int,  std::shared_ptr<SQLMem> sm, int, std::shared_ptr<TrackerMem> tm,
 										 fake_time _start_time){
 		auto name = get_name_read(0.5);
 		std::unique_ptr<VMObjectLog> log_messages;
-		log_start(mem,log_messages,_start_time);
-		SQLStore<Level::strong> &strong = mem->ss.inst_strong(get_strong_ip());
-		SQLStore<Level::causal> &causal = mem->sc.inst_causal(0);
-		auto &trk = mem->trk;
+		log_start(tm,log_messages,_start_time);
+		SQLStore<Level::strong> &strong = sm->ss.inst_strong(get_strong_ip());
+		SQLStore<Level::causal> &causal = sm->sc.inst_causal(0);
+		auto &trk = tm->trk;
 		store_asserts(strong,causal,trk);
 		perform_operation(log_messages,trk,
 						  causal.template existingObject<HandleAccess::all,int>(log_messages,name),
@@ -233,8 +233,10 @@ namespace synth_test {
 		constexpr static minutes test_stop_time = 7min;
 		constexpr static double percent_writes = write_percent;
 		constexpr static double percent_strong = strong_percent;
+		using PreparedTest = PreparedTest<TrackerMem,fake_time>;
+		using Pool = typename PreparedTest::Pool;
 		
-		pair<int,fake_time> choose_action() const {
+		pair<int,fake_time> choose_action(Pool&) const {
 			bool do_write = better_rand() < percent_writes;
 			bool is_strong = (better_rand() < percent_strong || !causal_enabled) && strong_enabled;
 			if (do_write && is_strong) return pair<int,fake_time>(0,micros(elapsed_time()));
@@ -244,23 +246,25 @@ namespace synth_test {
 			assert(false);
 		}
 
-		bool stop () const {
+		bool stop (Pool&) const {
 			return (high_resolution_clock::now() - start_time) >= test_stop_time;
 		};
 
-		milliseconds delay(){
+		milliseconds delay(Pool& p){
 			if (high_resolution_clock::now() - last_rate_raise > increase_delay){
 				current_rate += increase_factor;
 				last_rate_raise = high_resolution_clock::now();
 			}
+			//there should always be 10 request/second/client
+			p.set_mem_to(current_rate.Hertz / 10);
 			return getArrivalInterval(current_rate);
 		}
 
 #define method_to_fun(foo,y...) [](auto& x){return x.foo(y);}
-		std::string run_tests(PreparedTest<Remember,fake_time>& launcher){
-			bool (*stop) (TestParameters&) = method_to_fun(stop);
-			pair<int,fake_time> (*choose) (TestParameters&) = method_to_fun(choose_action);
-			milliseconds (*delay) (TestParameters&) = method_to_fun(delay);
+		std::string run_tests(PreparedTest& launcher){
+			bool (*stop) (TestParameters&,Pool&) = method_to_fun(stop);
+			pair<int,fake_time> (*choose) (TestParameters&,Pool&) = method_to_fun(choose_action);
+			milliseconds (*delay) (TestParameters&,Pool&) = method_to_fun(delay);
 			auto ret = launcher.run_tests(*this,stop,choose,delay);
 
 			global_log.addField(GlobalsFields::request_frequency_final,current_rate);
@@ -295,7 +299,7 @@ int main(){
 	std::cout << "hello world from VM "<< my_unique_id << " in group " << CAUSAL_GROUP << std::endl;
 	std::cout << "connecting to " << string_of_ip(get_strong_ip()) << std::endl;
 
-	using pool_fun_t = std::string (*) (std::shared_ptr<Remember>, int, fake_time);
+	using pool_fun_t = typename synth_test::TestParameters::PreparedTest::action_t;
 	
 	vector<pool_fun_t> vec{{
 			synth_test::perform_strong_increment,
@@ -304,7 +308,7 @@ int main(){
 				synth_test::perform_causal_read
 				}};
 	
-	PreparedTest<Remember,fake_time> launcher{
+	typename synth_test::TestParameters::PreparedTest launcher{
 		num_processes,vec};
 	
 	std::cout << "beginning subtask generation loop" << std::endl;
