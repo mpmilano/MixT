@@ -12,6 +12,13 @@ mount --make-rslave dev 2>/dev/null
 mount --rbind /sys/ sys 2>/dev/null
 mount -t proc none proc 2>/dev/null
 mount --make-rslave sys 2>/dev/null
+echo "
+*         hard    nofile      500000
+*         soft    nofile      500000
+root      hard    nofile      500000
+root      soft    nofile      500000
+" > /etc/security/limits.conf
+cp /etc/security/limits.conf etc/security/limits.conf
 cp -L /etc/resolv.conf etc/ 2>/dev/null
 cd /mnt/
 #echo "done so far" `pwd`
