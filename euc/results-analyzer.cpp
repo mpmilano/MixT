@@ -24,19 +24,19 @@ auto& NORMAL(){
 }
 
 const auto& NO_USE_CAUSAL(){
-	return all_logs_NO_USE_CAUSAL();
+	//return all_logs_NO_USE_CAUSAL();
 	static std::vector<myria_log> ret;
 	return ret;
 }
 
 const auto& NO_USE_STRONG(){
-	return all_logs_NO_USE_STRONG();
+	//return all_logs_NO_USE_STRONG();
 	static std::vector<myria_log> ret;
 	return ret;
 }
 
 auto window_averages(const std::vector<myria_log> &_results){
-    constexpr int window_size = duration_cast<milliseconds>(1s).count();
+    constexpr int window_size = duration_cast<milliseconds>(2s).count();
     constexpr int window_step = duration_cast<milliseconds>(1s).count();
 
 	auto results_sorted_by_complete_time = std::make_unique<std::vector<myria_log const *> >();
@@ -124,10 +124,10 @@ int main(){
         cout << "read or write: " << read_or_write << endl;
     }
 
-    cout << "moving window averages: in mwlatency-(?).csv" << endl;
-    print_window_averages("mwlatency-normal.csv",NORMAL());
-    print_window_averages("mwlatency-strong.csv",NO_USE_CAUSAL());
-	print_window_averages("mwlatency-causal.csv",NO_USE_STRONG());
+    cout << "moving window averages: in mwlatency.csv" << endl;
+    print_window_averages("mwlatency.csv",NORMAL());
+    //print_window_averages("mwlatency.csv",NO_USE_CAUSAL());
+	//print_window_averages("mwlatency-causal.csv",NO_USE_STRONG());
 	cout << "done" << endl;
 
 }
