@@ -20,7 +20,7 @@ namespace{
 			//std::cerr << "in obj_exists" << std::endl;
 			const static std::string query =
 				"select ID from \"BlobStore\" where id = $1 union select id from \"IntStore\" where id = $1 limit 1";
-			auto r = trans.prepared("exists",query,id);
+			auto r = trans.prepared(TransactionNames::exists,query,id);
 			//std::cerr << "out" << std::endl;
 			return r;
 		}
@@ -33,8 +33,8 @@ namespace{
 				"delete from \"BlobStore\" where ID = $1";
 			const static std::string is =
 				"delete from \"IntStore\" where ID = $1";
-			trans.prepared("Del1",bs,id);
-			trans.prepared("Del2",is,id);
+			trans.prepared(TransactionNames::Del1,bs,id);
+			trans.prepared(TransactionNames::Del2,is,id);
 			//std::cerr << "out" << std::endl;
 		}
 
@@ -47,7 +47,10 @@ namespace{
 			static const std::string is =
 				"select Version from \"IntStore\" where ID=$1";
 			auto &s = (t == Table::BlobStore ? bs : is );
-			return trans.prepared(s,s,id);
+			return trans.prepared((t == Table::BlobStore ?
+								   TransactionNames::select_version_s_b :
+								   TransactionNames::select_version_s_i
+									  ),s,id);
 		}
 		
 		template<typename T>
@@ -60,8 +63,8 @@ namespace{
 				"select version, data, max(octet_length(data)) as size from \"BlobStore\" where index = 0 and ID = $1 group by version,data";
 			static const std::string is = "select version, data from \"IntStore\" where index = 0 and ID = $1";
 			switch(t) {
-			case Table::BlobStore : return trans.prepared("select1",bs,id); 
-			case Table::IntStore : return trans.prepared("select2",is,id); 
+			case Table::BlobStore : return trans.prepared(TransactionNames::select1,bs,id); 
+			case Table::IntStore : return trans.prepared(TransactionNames::select2,is,id); 
 			}
 			assert(false && "forgot a case");
 		}
@@ -73,8 +76,8 @@ namespace{
 			static const std::string is =
 				"update \"IntStore\" set data=$2,Version=Version + 1 where ID=$1 returning version";
 			switch(t) {
-			case Table::BlobStore : return trans.prepared("Updates1",bs,id,b);
-			case Table::IntStore : return trans.prepared("Updates2",is,id,b);
+			case Table::BlobStore : return trans.prepared(TransactionNames::Updates1,bs,id,b);
+			case Table::IntStore : return trans.prepared(TransactionNames::Updates2,is,id,b);
 			}
 			assert(false && "forgot a case");
 		}
@@ -85,7 +88,7 @@ namespace{
 				   && "Error: increment currently only defined on integers");
 			const static std::string s =
 				"update \"IntStore\" set data = data + 1 where id = $1 returning version";
-			return trans.prepared("Increment",s,id);
+			return trans.prepared(TransactionNames::Increment,s,id);
 		}
 
 		template<typename T, typename Blob>
@@ -95,8 +98,8 @@ namespace{
 			const static std::string is =
 				"INSERT INTO \"IntStore\" (id,data) VALUES ($1,$2)";
 			switch(t) {
-			case Table::BlobStore : trans.prepared("Insert1",bs,id,b); return;
-			case Table::IntStore : trans.prepared("Insert2",is,id,b); return;
+			case Table::BlobStore : trans.prepared(TransactionNames::Insert1,bs,id,b); return;
+			case Table::IntStore : trans.prepared(TransactionNames::Insert2,is,id,b); return;
 			}
 			assert(false && "forgot a case");
 			
@@ -117,7 +120,8 @@ namespace{
 			return (k % NUM_CAUSAL_GROUPS == 0 ? NUM_CAUSAL_GROUPS : k % NUM_CAUSAL_GROUPS);
 		}
 
-		constexpr auto update_data_c_cmd(char const * const xx, char const * const set) {
+		constexpr auto update_data_c_cmd(TransactionNames const (&xx)[Table_max * NUM_CAUSAL_GROUPS],
+										 char const * const set) {
 			using namespace std;
 			struct ReturnThis{
 				static constexpr CTString vcs1(unsigned int i, unsigned int stop, unsigned int _k){
@@ -129,13 +133,16 @@ namespace{
 					return CTString{} + "vc" + i + "," + (i == (stop-1)? CTString{} : vcs2(i+1,stop));
 				}
 				
-				pair<CTString,CTString> ret[Table_max * (NUM_CAUSAL_GROUPS+1)]
-					{pair<CTString,CTString>{CTString{},CTString{} }};
+				pair<TransactionNames,CTString> ret[Table_max * (NUM_CAUSAL_GROUPS+1)]
+					{pair<TransactionNames,CTString>{TransactionNames::MAX,CTString{} }};
 
-				pair<string,string> at(std::size_t s) const {
-					return make_pair(string{ret[s].first.str},string{ret[s].second.str});
+				pair<TransactionNames,string> at(std::size_t s) const {
+					return make_pair(ret[s].first,string{ret[s].second.str});
 				}
 			};
+
+			static_assert(NUM_CAUSAL_GROUPS == 4,"This is assumed");
+			static_assert(Table_max == 2,"This is assumed");
 
 			ReturnThis ret;
 			int index{0};
@@ -150,7 +157,7 @@ namespace{
 						+ " where id = $1 and index = " + group_mapper(_k)
 						+ " returning " + ReturnThis::vcs2(1,NUM_CAUSAL_GROUPS)
 						+ "vc" + NUM_CAUSAL_GROUPS;
-					ret.ret[index].first = t + "Update" + k + xx;
+					ret.ret[index].first = xx[_k + NUM_CAUSAL_GROUPS*_t -1 ];
 					ret.ret[index].second = main;
 					++index;
 				}
@@ -161,10 +168,12 @@ namespace{
 		template<typename T>
 		auto select_version_c(T &trans, Table t, Name id){
 			using namespace std;
-			static const vector<pair<string,string> > v = [&](){
-				vector<pair<string,string> > v;
+			static const vector<pair<TransactionNames,string> > v = [&](){
+				vector<pair<TransactionNames,string> > v;
 				for (int i = 0; i < Table_max; ++i){
-					v.push_back(pair<string,string>{string("Sel1") + std::to_string(i),
+					v.push_back(pair<TransactionNames,string>{
+							((Table)i == Table::IntStore ?
+							 TransactionNames::Sel1i : TransactionNames::Sel1b),
 								string("select vc1,vc2,vc3,vc4 from ") + table_name((Table)i).str
 								+ " where ID=$1 and index=0"});
 				}
@@ -184,15 +193,20 @@ namespace{
 				"select vc1,vc2,vc3,vc4, data, max(octet_length(data)) as size from \"BlobStore\" where index = 0 and ID = $1 group by vc1,vc2,vc3,vc4,data ";
 			static const std::string is = "select vc1,vc2,vc3,vc4, data from \"IntStore\" where index = 0 and ID = $1";
 			switch(t) {
-			case Table::BlobStore : return trans.prepared("select1",bs,id); 
-			case Table::IntStore : return trans.prepared("select2",is,id); 
+			case Table::BlobStore : return trans.prepared(TransactionNames::select1,bs,id); 
+			case Table::IntStore : return trans.prepared(TransactionNames::select2,is,id); 
 			}
 			assert(false && "forgot a case");
 		}
 		
 		template<typename T, typename Blob>
 		auto update_data_c(T &trans, Table t, int k, Name id, const std::array<int,NUM_CAUSAL_GROUPS> &ends, const Blob &b){
-			static const constexpr auto update_cmds = update_data_c_cmd("x","$5");
+			static const constexpr TransactionNames tnames[NUM_CAUSAL_GROUPS * Table_max] = {
+				TransactionNames::udc1,TransactionNames::udc4,TransactionNames::udc7,
+				TransactionNames::udc2,TransactionNames::udc5,TransactionNames::udc8,
+				TransactionNames::udc3,TransactionNames::udc6,
+			};
+			static const constexpr auto update_cmds = update_data_c_cmd(tnames,"$5");
 			auto p = update_cmds.at(((int)t) * (NUM_CAUSAL_GROUPS) + (k-1));
 			return trans.prepared(p.first,p.second,id,ends[md(k+1)-1],ends[md(k+2)-1],ends[md(k+3)-1],b);
 		}
@@ -200,7 +214,12 @@ namespace{
 		
 		template<typename T>
 		auto increment_c(T &trans, Table t, int k, Name id, const std::array<int,NUM_CAUSAL_GROUPS> &ends){
-			static const constexpr auto update_cmds = update_data_c_cmd("y","data + 1");
+			static const constexpr TransactionNames tnames[NUM_CAUSAL_GROUPS * Table_max] = {
+				TransactionNames::ic1,TransactionNames::ic4,TransactionNames::ic7,
+				TransactionNames::ic2,TransactionNames::ic5,TransactionNames::ic8,
+				TransactionNames::ic3,TransactionNames::ic6,
+			};
+			static const constexpr auto update_cmds = update_data_c_cmd(tnames,"data + 1");
 			auto p = update_cmds.at(((int)t) * (NUM_CAUSAL_GROUPS) + (k-1));
 			return trans.prepared(p.first,p.second,id,ends[md(k+1)-1],ends[md(k+2)-1],ends[md(k+3)-1]);
 		}
@@ -208,41 +227,20 @@ namespace{
 		template<typename T, typename Blob>
 		void initialize_with_id_c(T &trans, Table t, int k, Name id, const std::array<int,NUM_CAUSAL_GROUPS> &ends, const Blob& b){
 			assert(k > 0);
-			using namespace std;
-			static constexpr int n = NUM_CAUSAL_GROUPS;
-			static constexpr int r = NUM_CAUSAL_MASTERS;
-			const static auto v = [&](){
-				vector<array<pair<string,string>,3 > > ret;
-				for (int _t = 0; _t < Table_max; ++_t){
-					stringstream main1;
-					stringstream main2;
-					stringstream main3;
-					string t = table_name((Table)_t);
-					main1 << "insert into " << t << " (vc1) "
-						  << "select zeros from thirty_zeros where not"
-						  <<"((select count(*) from " << t << "where id=0)"
-						  <<" > 30);";
-					main2 << "update "<< t << "set id=$1 where index in (select index from " << t << " where id=0 limit " << r+1 <<  ");";
-					main3 << "update " << t << " set index=index-(select min(index) from " << t << " where id=$1) where id=$1;";
-					for (int _k = 1; _k < (n+1); ++_k){
-						auto k = to_string(_k);
-						array<pair<string,string>,3> arr;
-						arr[0]= pair<string,string>{(t + "Create1") + k,main1.str()};
-						arr[1]= pair<string,string>{(t + "Create2") + k,main2.str()};
-						arr[2]= pair<string,string>{(t + "Create3") + k,main3.str()};
-						ret.push_back(arr);
-					}
-				}
-				return ret;
-			}();
-			auto &commands = v.at(((int)t) * n + (k-1));
-			for (std::size_t i = 0; i < commands.size(); ++i){
-				auto &p = commands[i];
-				if (i == 1 || i == 2)
-					trans.prepared(p.first,p.second,id);
-				else trans.exec(p.second);
-			}
-			constexpr const auto update_cmds = update_data_c_cmd("z","$5");
+
+
+			const static std::string bs = "INSERT INTO \"BlobStore\" (index,id) VALUES (0,$1), (1,$1), (2,$1)";
+			const static std::string is = "INSERT INTO \"IntStore\" (index,id) VALUES (0,$1), (1,$1), (2,$1)";
+			if (t == Table::IntStore){
+				trans.prepared(TransactionNames::initci,is,id);
+			} else trans.prepared(TransactionNames::initcb,bs,id);
+			
+			static const constexpr TransactionNames tnames[NUM_CAUSAL_GROUPS * Table_max] = {
+				TransactionNames::udc1,TransactionNames::udc4,TransactionNames::udc7,
+				TransactionNames::udc2,TransactionNames::udc5,TransactionNames::udc8,
+				TransactionNames::udc3,TransactionNames::udc6,
+			};
+			constexpr const auto update_cmds = update_data_c_cmd(tnames,"$5");
 			const auto &p = update_cmds.at(((int)t) * (NUM_CAUSAL_GROUPS) + (k-1));
 			trans.prepared(p.first,p.second,id,ends[md(k+1) - 1],ends[md(k+2) - 1],ends[md(k+3) - 1],b);
 		}

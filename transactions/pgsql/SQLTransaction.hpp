@@ -19,8 +19,9 @@ namespace myria{ namespace pgsql {
 
 
 		struct SQLTransaction {
+			
 			GDataStore& gstore;
-		private:
+		private:			
 			SQLStore_impl::SQLConnection& sql_conn;
 			std::unique_lock<std::mutex> conn_lock;
 			pqxx::work trans;
@@ -34,7 +35,7 @@ namespace myria{ namespace pgsql {
 			SQLTransaction(const SQLTransaction&) = delete;
 	
 			template<typename Arg1, typename... Args>
-			auto prepared(const std::string &name, const std::string &stmt,
+			auto prepared(TransactionNames name, const std::string &stmt,
 						  Arg1 && a1, Args && ... args);
 
 			pqxx::result exec(const std::string &str);
@@ -48,5 +49,29 @@ namespace myria{ namespace pgsql {
 
 			~SQLTransaction();
 		};
+
+		#define default_sqltransaction_catch									\
+		catch(const pqxx::pqxx_exception &r){							\
+			commit_on_delete = false;									\
+			if (is_serialize_error(r)) throw mtl::SerializationFailure{}; \
+			else throw mtl::CannotProceedError{r.base().what() /*+ mutils::show_backtrace()*/}; \
+		}
+
+		template<typename Arg1, typename... Args>
+		auto SQLTransaction::prepared(TransactionNames name, const std::string &stmt,
+									  Arg1 && a1, Args && ... args){
+			auto nameint = (int) name;
+			auto namestr = std::to_string(nameint);
+			try{
+				if (!sql_conn.prepared.at(nameint)){
+					sql_conn.conn.prepare(namestr,stmt);
+					sql_conn.prepared[nameint] = true;
+				}
+				auto fwd = trans.prepared(namestr)(std::forward<Arg1>(a1));
+				
+				return exec_prepared_hlpr(fwd,std::forward<Args>(args)...);
+			}
+			default_sqltransaction_catch;
+		}
 
 	}}

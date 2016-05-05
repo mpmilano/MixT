@@ -41,27 +41,9 @@ namespace myria{ namespace pgsql {
 			auto s = std::string(r.base().what());
 			return s.find("could not serialize access") != std::string::npos;
 		}
-#define default_sqltransaction_catch									\
-		catch(const pqxx::pqxx_exception &r){							\
-			commit_on_delete = false;									\
-			if (is_serialize_error(r)) throw mtl::SerializationFailure{}; \
-			else throw mtl::CannotProceedError{r.base().what() /*+ mutils::show_backtrace()*/}; \
-		}
+
 
 	
-		template<typename Arg1, typename... Args>
-		auto SQLTransaction::prepared(const std::string &name, const std::string &stmt,
-					  Arg1 && a1, Args && ... args){
-			try{
-				sql_conn.conn.prepare(name,stmt);
-				auto fwd = trans.prepared(name)(std::forward<Arg1>(a1));
-				return exec_prepared_hlpr(fwd,std::forward<Args>(args)...);
-			}
-				default_sqltransaction_catch
-					}
-
-		
-
 		pqxx::result SQLTransaction::exec(const std::string &str){
 				try{
 					return trans.exec(str);
@@ -280,7 +262,8 @@ namespace myria{ namespace pgsql {
 			return default_connection->ip_addr;
 		}
 
-		SQLStore_impl::SQLConnection::SQLConnection(int ip):ip_addr(ip),repl_group(CAUSAL_GROUP),conn{std::string("host=") + string_of_ip(ip)}{
+		SQLStore_impl::SQLConnection::SQLConnection(int ip)
+			:prepared(((std::size_t) TransactionNames::MAX),false),ip_addr(ip),repl_group(CAUSAL_GROUP),conn{std::string("host=") + string_of_ip(ip)}{
 			static_assert(int{CAUSAL_GROUP} > 0, "errorr: did not set CAUSAL_GROUP or failed to 1-index");
 			assert(conn.is_open());
 			//std::cout << string_of_ip(ip) << std::endl;
