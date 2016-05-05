@@ -129,6 +129,15 @@ namespace myria { namespace tracker {
 				ctx.pending_nonces_add.remove_if([&](auto &e){return e.first == name;});
 				i.pending_nonces.erase(name);
 			}
+
+                        bool tracking_candidate(Tracker &t, Name name, const Tracker::Clock &version){
+                                t.updateClock();
+                                if (!ends::is_same(version,{{-1,-1,-1,-1}}) && ends::prec(version,t.i->global_min)) {
+                                        t.i->tracking.erase(name);
+                                        return false;
+                                }
+                                else return t.i->exceptions.count(name) == 0;
+                        }
 		}
 
 		void Tracker::assert_nonempty_tracking() const {
@@ -255,6 +264,13 @@ namespace myria { namespace tracker {
 			};
 
 			assert(&ds_real == i->registeredStrong);
+                        auto tracking_copy = i->tracking;
+                        for (auto &pair : tracking_copy){
+                            //this will have the side effect of updating the clock,
+                            //and removing these items from the tracking set if the clock
+                            //is sufficiently recent.
+                            tracking_candidate(*this,pair.first,pair.second.first);
+                        }
 			if (!is_lin_metadata(name) && !i->tracking.empty()){
 
 				auto subroutine = [&](){
@@ -282,7 +298,7 @@ namespace myria { namespace tracker {
 					subroutine();
 				}
 				assert(!always_failed);
-				assert(get<TDS::exists>(*i->strongDS)(ds_real,make_lin_metaname(name)));
+                                //assert(get<TDS::exists>(*i->strongDS)(ds_real,make_lin_metaname(name)));
 			}
 		}
 
@@ -339,13 +355,6 @@ namespace myria { namespace tracker {
 				return false;
 			}
 			
-			bool tracking_candidate(Tracker::Internals &i, Name name, const Tracker::Clock &version){
-				if (!ends::is_same(version,{{-1,-1,-1,-1}}) && ends::prec(version,i.global_min)) {
-					i.tracking.erase(name);
-					return false;
-				}
-				else return i.exceptions.count(name) == 0;
-			}
 
 			template<typename P>
 				std::vector<char> const * const wait_for_available(TrackingContext::Internals &ctx, Tracker::Internals &i, Name name, P& p, const Tracker::Clock &v){
@@ -386,8 +395,7 @@ namespace myria { namespace tracker {
 			
 			assert(&ds == i->registeredStrong);
 			if (!is_lin_metadata(name)){
-				//TODO: reduce frequency of this call.
-				updateClock(tctx);
+                                updateClock();
 				auto ts = make_lin_metaname(name);
 				if (get<TDS::exists>(*i->strongDS)(ds,ts)){
                                         tctx.logger->incrementIntField(
@@ -435,7 +443,7 @@ namespace myria { namespace tracker {
 				return true;
 			}
 
-			if (tracking_candidate(*i,name,version)) {
+                        if (tracking_candidate(*this,name,version)) {
 				//std::cout << "break 1: this is a tracking candidate" << std::endl;
 				//need to pause here and wait for nonce availability
 				//for each nonce in the list
@@ -475,11 +483,11 @@ namespace myria { namespace tracker {
 		void Tracker::afterRead(TrackingContext &tctx, DataStore<Level::causal>&, Name name, const Clock& version, const std::vector<char> &data, Tombstone*){}
 		void Tracker::afterRead(TrackingContext &tctx, DataStore<Level::causal>&, Name name, const Clock& version, const std::vector<char> &data, Clock*){}
 		void Tracker::afterRead(TrackingContext &tctx, DataStore<Level::causal>&, Name name, const Clock& version, const std::vector<char> &data, void*){
-			if (tracking_candidate(*i,name,version)){
+                        if (tracking_candidate(*this,name,version)){
 				tctx.logger->incrementIntField(LogFields::tracker_causal_afterread_candidate);
 				//need to overwrite, not occlude, the previous element.
 				//C++'s map semantics are really stupid.
-				tctx.i->tracking_erase.push_back(name);
+                                tctx.i->tracking_erase.push_back(name);
 				assert(data.data());
 				assert(data.size() > 0);
 				//std::cout << data << std::endl;
@@ -496,7 +504,7 @@ namespace myria { namespace tracker {
 		void Tracker::onRead(TrackingContext &ctx, DataStore<Level::causal>&, Name name, const Clock &version,
 							 const std::function<void (char const *)> &construct_and_merge){
 			i->last_onRead_name = heap_copy(name);
-			if (tracking_candidate(*i,name,version)){
+                        if (tracking_candidate(*this,name,version)){
 				//need to pause here and wait for nonce availability
 				//for each nonce in the list
 				for_each_pending_nonce(

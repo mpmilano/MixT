@@ -72,9 +72,9 @@ namespace myria {
 
 			//hiding private members of this class. No implementation available.
 			struct Internals;
+                        Internals *i;
 			
 		private:
-			Internals *i;
 			void onRead(
 				TrackingContext&,
 				DataStore<Level::causal>&, Name name, const Clock &version,
@@ -86,7 +86,7 @@ namespace myria {
 			
 		public:
 			static constexpr int clockport = 9999;
-			void updateClock(TrackingContext &ctx);
+                        void updateClock();
 	
 			//static Tracker& global_tracker(int cache_port = -1);
 

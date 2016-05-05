@@ -45,7 +45,7 @@ namespace myria { namespace tracker {
 			
 		};
 
-		void Tracker::updateClock(TrackingContext &tctx){
+                void Tracker::updateClock(){
 			Tracker::Clock newc;
 			for (int i = 0; i < newc.size(); ++i){
 				auto &inst = ClockManager::inst();
@@ -63,7 +63,7 @@ namespace myria { namespace tracker {
 				if (ends::prec(p.second.first,newc)) to_remove.push_back(p.first);
 				}
 			for (auto &e : to_remove){
-					tctx.i->tracking_erase.push_back(e);
+                                        i->tracking.erase(e);
 			}
 		}
 
