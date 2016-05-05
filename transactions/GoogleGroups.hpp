@@ -23,6 +23,8 @@
 #include "SerializationMacros.hpp"
 #include "Transaction_macros.hpp"
 
+namespace myria{
+
 template<typename p>
 using newObject_f = const std::function<p (const typename p::stored_type&)>&;
 
@@ -43,9 +45,10 @@ struct post : public ByteRepresentable{
 	using p = Handle<Level::causal, HandleAccess::all, post>;
 	std::string str;
 	post(const std::string &s):str(s){}
+
 	default_build
-	DEFAULT_SERIALIZATION_SUPPORT(post,str)
-		};
+        DEFAULT_SERIALIZATION_SUPPORT(post,str);
+};
 
 struct user : public ByteRepresentable {
 	using p = Handle<Level::causal, HandleAccess::all, user>;
@@ -56,8 +59,10 @@ struct user : public ByteRepresentable {
 	DEFAULT_SERIALIZATION_SUPPORT(user,inbox);
 
 
-	std::set<post::p> posts() {
-		auto start_transaction(std::unique_ptr<VMObjectLog> &log, tracker::Tracker &trk, Strong &strong, Causal &causal);
+        std::set<post::p> posts(std::unique_ptr<VMObjectLog> &log, tracker::Tracker &trk, Strong &strong, Causal &causal) {
+                auto trans = start_transaction(log,trk,strong,causal);
+                trans->commit_on_delete = true;
+                return inbox.get(trans->trackignContext->trk,trans.get());
 	}
 		
 };
@@ -105,12 +110,12 @@ struct room : public ByteRepresentable{
 			); //*/
 	}
 	
-	static void add_member(std::unique_ptr<VMObjectLog> &log, tracker::Tracker& trk, room::p room, user::p usr){
+        void add_member(std::unique_ptr<VMObjectLog> &log, tracker::Tracker& trk, room::p room, user::p usr){
 		struct params_t {room::p room; user::p usr;};
 		params_t params{room,usr};
 		TRANSACTION(log,trk,params,
 			let_remote(rm) = params.room IN (
-				$(rm,members) = $bld(MemberList, $$(params.usr), $$(membrs))
+                                $(rm,members) = $bld(MemberList, params.usr, membrs)
 				)
 			);
 	}
@@ -121,82 +126,5 @@ struct groups {
 	default_build
 };
 
-struct TestArguments{
-	unsigned long long start_time;
-	std::size_t users_index;
-	std::size_t rooms_index;
-};
+}
 
-static_assert(std::is_pod<TestArguments>::value, "Error: need POD for serialization");
-
-struct GroupRemember{
-	std::vector<user> users;
-	std::vector<room> rooms;
-	Remember transaction_metadata;
-	
-};
-
-using action_t = std::function<std::string (std::shared_ptr<GroupRemember>, int, TestArguments)>;
-
-const std::vector<action_t>{{
-		//post messagee
-		[](std::shared_ptr<GroupRemember> mem, int tid, TestArguments args){
-			auto log = mem->
-				transaction_metadata.log_builder->
-				template beginStruct<LoggedStructs::log>();
-			mem->rooms.at(tid).add_post(log,mem->transaction_metadata.trk,"????");
-		}
-	}};
-
-struct GroupTestParameters {
-	using time_t = std::chrono::time_point<std::chrono::high_resolution_clock>;
-	const time_t start_time{high_resolution_clock::now()};
-	time_t last_rate_raise{start_time};
-	Frequency current_rate{800_Hz};
-	constexpr static Frequency increase_factor = 100_Hz;
-	constexpr static seconds increase_delay = 15s;
-	constexpr static minutes test_stop_time = 7min;
-	constexpr static double percent_writes = .05;
-	constexpr static double percent_strong = .7;
-	
-	pair<int,fake_time> choose_action() const {
-		bool do_write = better_rand() < percent_writes;
-		bool is_strong = (better_rand() < percent_strong || !causal_enabled) && strong_enabled;
-		if (do_write && is_strong) return pair<int,fake_time>(0,micros(elapsed_time()));
-		if (do_write && !is_strong) return pair<int,fake_time>(1,micros(elapsed_time()));
-		if (!do_write && is_strong) return pair<int,fake_time>(2,micros(elapsed_time()));
-		if (!do_write && !is_strong) return pair<int,fake_time>(3,micros(elapsed_time()));
-		assert(false);
-	}
-	
-	bool stop () const {
-		return (high_resolution_clock::now() - start_time) >= test_stop_time;
-	};
-
-	milliseconds delay(){
-		if (high_resolution_clock::now() - last_rate_raise > increase_delay){
-			current_rate += increase_factor;
-			last_rate_raise = high_resolution_clock::now();
-		}
-		return getArrivalInterval(current_rate);
-	}
-	
-#define method_to_fun(foo,y...) [](auto& x){return x.foo(y);}
-	std::string run_tests(PreparedTest<Remember,fake_time>& launcher){
-		bool (*stop) (TestParameters&) = method_to_fun(stop);
-		pair<int,fake_time> (*choose) (TestParameters&) = method_to_fun(choose_action);
-		milliseconds (*delay) (TestParameters&) = method_to_fun(delay);
-		auto ret = launcher.run_tests(*this,stop,choose,delay);
-		
-		global_log.addField(GlobalsFields::request_frequency_final,current_rate);
-		return ret;
-	}
-	
-	abs_StructBuilder &global_log;
-	
-	TestParameters(decltype(global_log) &gl):global_log(gl){
-		global_log.addField(GlobalsFields::request_frequency,current_rate);
-		global_log.addField(GlobalsFields::request_frequency_step,increase_factor);
-	}
-	
-};
