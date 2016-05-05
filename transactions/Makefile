@@ -23,6 +23,8 @@ stress3:  $(object_files) stress_test3.o
 
 vm: $(object_files) vm_main.o
 	clang++ $(object_files) vm_main.o -o vm $(LDFLAGS)
+groups: $(object_files) groups_test.o
+	clang++ $(object_files) groups_test.o -o groups $(LDFLAGS)
 
 cache_test: $(object_files) cache_interacter.o
 	clang++ $(object_files) cache_interacter.o -o cache_test $(LDFLAGS)
@@ -47,6 +49,8 @@ stress_test3.o:
 	clang++ -c stress_test.cpp -DTEST_MODE=3 $(CPPFLAGS)
 vm_main.o:
 	clang++ -c vm_main.cpp -DconcurrencySetting=$(concurrencySetting) $(extra_macro_defs) -DIP_QUAD=$(IP_quad) -DSTRONG_REMOTE_IP=\"$(STRONG_REMOTE_IP)\" -DCAUSAL_GROUP=$(causalGroup) $(CPPFLAGS)
+groups_test.o:
+	clang++ -c groups_test.cpp -DconcurrencySetting=$(concurrencySetting) $(extra_macro_defs) -DIP_QUAD=$(IP_quad) -DSTRONG_REMOTE_IP=\"$(STRONG_REMOTE_IP)\" -DCAUSAL_GROUP=$(causalGroup) $(CPPFLAGS)
 sqlstore_clean:
 	touch SQLStore.o; rm SQLStore.o
 tracker_clean:
