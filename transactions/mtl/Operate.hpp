@@ -21,7 +21,7 @@ namespace myria{
 		template<RegisteredOperations Name, typename Handle, typename... Args>
 		auto do_op_2(TransactionContext* ctx, Handle h, Args && ... args){
 			constexpr OperationIdentifier<Name> op{nullptr};
-			return do_op_3<Name,Handle>(ctx,h.upCast(op),std::forward<Args>(args)...);
+			return do_op_3<Name,Handle,Args...>(ctx,h.upCast(op),std::forward<Args>(args)...);
 		}
 
 		template<typename> struct de_sp_str;

@@ -214,8 +214,8 @@ namespace myria{
 			return os << "(a Store)";
 		}
 
-		template<typename T, typename Expr, Level l, unsigned long long ID>
-        std::ostream & operator<<(std::ostream &os, const mtl::Assignment<Expr,ID,l,T> &){
+		template<typename T, typename Expr>
+        std::ostream & operator<<(std::ostream &os, const mtl::Assignment<Expr,T> &){
 			return os << "not printing assignments yet";
 		}
 	}

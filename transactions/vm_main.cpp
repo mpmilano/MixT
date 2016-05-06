@@ -29,9 +29,6 @@ using namespace mtl;
 using namespace pgsql;
 using namespace tracker;
 
-constexpr int num_processes = 50;
-static_assert(num_processes <= 100,"Error: you are at risk of too many open files");
-
 #ifdef NO_USE_STRONG
 constexpr bool strong_enabled = false;
 #else

@@ -45,6 +45,13 @@ namespace myria { namespace mtl {
 					return ret;
 				}
 			}
+
+			template<typename E2>
+			auto operator=(const E2 &e) const {
+				static_assert(is_ConExpr<std::decay_t<decltype(wrap_constants(e))> >::value,"Error: attempt to assign non-Expr");
+				return *this << wrap_constants(e);
+			}//*/
+			
 		};
 
 		template<typename T, typename R> struct is_ConExpr<FieldRef<T,R> > : std::true_type {};
@@ -61,8 +68,8 @@ namespace myria { namespace mtl {
 		auto make_fieldref(const T& t, const std::function<R (const run_result<T>&)> &f){
 			return FieldRef<T,R>{t,f};
 		}
-
-                template<typename T, typename... MTLArgs>
+		
+		template<typename T, typename... MTLArgs>
                 struct MTLCtr : public ConExpr<T,min_level<MTLArgs...>::value> {
 
                     using level = min_level<MTLArgs...>;

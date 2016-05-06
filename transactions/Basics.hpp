@@ -25,6 +25,9 @@ namespace myria{
 	std::ostream& operator<<(std::ostream&, LoggedStructs);
 	std::ostream& operator<<(std::ostream&, LogFields);
 	std::ostream& operator<<(std::ostream&, GlobalsFields);
+	
+	constexpr int num_processes = 50;
+	static_assert(num_processes <= 100,"Error: you are at risk of too many open files");
 
 	using VMObjectLogger =
         mutils::ObjectBuilder<true,

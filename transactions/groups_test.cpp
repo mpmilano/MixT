@@ -10,12 +10,15 @@ using namespace chrono;
 using namespace mutils;
 using namespace tracker;
 
+constexpr const double write_percent = WRITE_PERCENT;
+constexpr const double strong_percent = STRONG_PERCENT;
+
 template<typename T>
 struct causal_newobject{
     TrackerMem &grm;
     newObject_f<Handle<Level::causal,HandleAccess::all,T> > newobj_f(std::unique_ptr<VMObjectLog> &log, int) {
         auto &grm = this->grm;
-        return [&grm](const T& t){
+        return [&grm,&log](const T& t){
             auto trans = start_transaction(log,
                                            grm.trk,
                                            grm.ss.inst(get_strong_ip()),
@@ -30,9 +33,9 @@ struct causal_newobject{
 template<typename T>
 struct causal_newset{
     TrackerMem &grm;
-    newObject_f<typename remote_set::p<Level::causal,T> > newobj_f(std::unique_ptr<VMObjectLog> &log, int) {
+    newObject_f<typename remote_set<Level::causal,T>::p > newobj_f(std::unique_ptr<VMObjectLog> &log, int) {
         auto &grm = this->grm;
-        return [&grm](const std::set<T>& t){
+        return [&grm,&log](const std::set<T>& t){
             auto trans = start_transaction(log,
                                            grm.trk,
                                            grm.ss.inst(get_strong_ip()),
@@ -49,7 +52,7 @@ struct strong_newobject{
     TrackerMem &grm;
     newObject_f<Handle<Level::strong,HandleAccess::all,T> > newobj_f(std::unique_ptr<VMObjectLog> &log, int) {
         auto &grm = this->grm;
-        return [&grm](const T& t){
+        return [&grm,&log](const T& t){
             auto trans = start_transaction(log,
                                            grm.trk,
                                            grm.ss.inst(get_strong_ip()),
@@ -86,7 +89,7 @@ struct TestParameters{
 	};
 
 	struct TestArguments{
-        microseconds start_time;
+        decltype(elapsed_time()) start_time;
         std::size_t rooms_index;
 	};
 
@@ -98,14 +101,14 @@ static_assert(std::is_pod<TestArguments>::value, "Error: need POD for serializat
         //ids between 15 and 400000 should work (as long as they're not ints)
 
 	
-        static std::vector<user> users; //these are immutable once initialized
-        static std::vector<room> rooms; //these are immutable once initialized
+	static std::vector<typename user::p> users(){static std::vector<typename user::p> ret; return ret;}; //these are immutable once initialized
+	static std::vector<room> rooms(){static std::vector<room> ret; return ret;}; //these are immutable once initialized
 	
 	static std::size_t get_room_name() {
 		auto ret = get_zipfian_value(max_name - min_name,room_name_param);
 		if (ret > (max_name - min_name)) {
 			std::cerr << "Name out of range! Trying again" << std::endl;
-			return get_room_name(room_name_param);
+			return get_room_name();
 		}
 		else return ret + min_name;
 	}
@@ -116,7 +119,7 @@ static_assert(std::is_pod<TestArguments>::value, "Error: need POD for serializat
 
         pair<int,TestArguments> choose_action(Pool&) const {
                 bool do_write = better_rand() < percent_writes;
-                bool is_strong = (better_rand() < percent_strong || !causal_enabled) && strong_enabled;
+                bool is_strong = better_rand() < percent_strong;
 
 				
 				TestArguments ta;
@@ -148,7 +151,7 @@ static_assert(std::is_pod<TestArguments>::value, "Error: need POD for serializat
 #define method_to_fun(foo,Arg) [](auto& x, Arg y){return x.foo(y);}
         std::string run_tests(PreparedTest& launcher){
                 bool (*stop) (TestParameters&,Pool&) = method_to_fun(stop,Pool&);
-                pair<int,fake_time> (*choose) (TestParameters&,Pool&) = method_to_fun(choose_action,Pool&);
+                pair<int,TestArguments> (*choose) (TestParameters&,Pool&) = method_to_fun(choose_action,Pool&);
                 milliseconds (*delay) (TestParameters&,Pool&) = method_to_fun(delay,Pool&);
                 auto ret = launcher.run_tests(*this,stop,choose,delay);
 
@@ -173,6 +176,10 @@ constexpr Name TestParameters::max_name;
 
 int main(){
 	ofstream logFile;
+	const auto log_name = [](){
+		auto pid = getpid();
+		return std::string("/tmp/MyriaStore-output-") + std::to_string(pid);
+	}();
 	logFile.open(log_name);
 	//auto prof = VMProfiler::startProfiling();
 	//auto longpause = prof->pause();
@@ -182,40 +189,42 @@ int main(){
 	std::cout << "connecting to " << string_of_ip(get_strong_ip()) << std::endl;
 
 	using pool_fun_t = typename TestParameters::PreparedTest::action_t;
+
+	using TestArguments = TestParameters::TestArguments;
 	
 	const std::vector<typename TestParameters::Pool::action_fp> actions{{
                 //post message
-		[](int tid, shared_ptr<SQLMem> smem, int uid, std::shared_ptr<typename TestParameters::GroupRemember> gmem, int tid, TestArguments args){
-                        auto log = gmem->
+		[](int tid, shared_ptr<SQLMem> smem, int uid, std::shared_ptr<typename TestParameters::GroupRemember> gmem, TestArguments args){
+                        std::unique_ptr<VMObjectLog> log = gmem->
                                 transaction_metadata.log_builder->
                                 template beginStruct<LoggedStructs::log>();
                         log->addField(LogFields::submit_time,duration_cast<milliseconds>(args.start_time).count());
-                        log->addField(LogFields::run_time,duraction_cast<milliseconds>(elapsed_time()).count());
+                        log->addField(LogFields::run_time,duration_cast<milliseconds>(elapsed_time()).count());
 
-						TestParameters::rooms.at(args.rooms_index).
+						TestParameters::rooms().at(args.rooms_index).
                                 add_post(log,gmem->transaction_metadata.trk,
                                          post::mke(causal_newobject<post>{gmem->transaction_metadata}.newobj_f(log,tid),"test message"));
                         log->addField(LogFields::done_time,duration_cast<milliseconds>(elapsed_time()).count());
                         return log->single();
                 },
         //join group
-        [](int tid, shared_ptr<SQLMem> smem, int uid, std::shared_ptr<typename TestParameters::GroupRemember> gmem, int tid, TestArguments args){
-                auto log = gmem->
+        [](int tid, shared_ptr<SQLMem> smem, int uid, std::shared_ptr<typename TestParameters::GroupRemember> gmem, TestArguments args){
+			std::unique_ptr<VMObjectLog> log = gmem->
                         transaction_metadata.log_builder->
                         template beginStruct<LoggedStructs::log>();
                 log->addField(LogFields::submit_time,duration_cast<milliseconds>(args.start_time).count());
-                log->addField(LogFields::run_time,duraction_cast<milliseconds>(elapsed_time()).count());
+                log->addField(LogFields::run_time,duration_cast<milliseconds>(elapsed_time()).count());
 				TestParameters::rooms().at(args.rooms_index).add_member(log,gmem->transaction_metadata.trk,TestParameters::users().at(gmem->username));
                 log->addField(LogFields::done_time,duration_cast<milliseconds>(elapsed_time()).count());
                 return log->single();
         },
 			//read inbox
-			[](int tid, shared_ptr<SQLMem> smem, int uid, std::shared_ptr<typename TestParameters::GroupRemember> gmem, int tid, TestArguments args){
-                auto log = gmem->
+			[](int tid, shared_ptr<SQLMem> smem, int uid, std::shared_ptr<typename TestParameters::GroupRemember> gmem, TestArguments args){
+                std::unique_ptr<VMObjectLog> log = gmem->
 					transaction_metadata.log_builder->
 					template beginStruct<LoggedStructs::log>();
                 log->addField(LogFields::submit_time,duration_cast<milliseconds>(args.start_time).count());
-                log->addField(LogFields::run_time,duraction_cast<milliseconds>(elapsed_time()).count());
+                log->addField(LogFields::run_time,duration_cast<milliseconds>(elapsed_time()).count());
 				user::posts_p(log,gmem->transaction_metadata.trk,TestParameters::users().at(gmem->username));
 				TestParameters::rooms().at(args.rooms_index).add_member(log,gmem->transaction_metadata.trk,TestParameters::users().at(gmem->username));
                 log->addField(LogFields::done_time,duration_cast<milliseconds>(elapsed_time()).count());
@@ -225,11 +234,11 @@ int main(){
         }};
 	
 	typename TestParameters::PreparedTest launcher{
-		num_processes,vec};
+		num_processes,actions};
 	
 	std::cout << "beginning subtask generation loop" << std::endl;
 
-	synth_test::TestParameters params{*global_log};
+	TestParameters params{*global_log};
 	const std::string results = params.run_tests(launcher);
 		
 	//resume profiling
