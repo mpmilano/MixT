@@ -26,7 +26,7 @@
 namespace myria{
 
 template<typename p>
-using newObject_f = const std::function<p (const typename p::stored_type&)>&;
+using newObject_f = std::function<p (const typename p::stored_type&)>;
 
 #define default_build 	template<typename... T>					\
 	static p mke( newObject_f<p> store_alloc, const T&... a){	\

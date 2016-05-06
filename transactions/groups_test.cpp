@@ -16,15 +16,17 @@ constexpr const double strong_percent = STRONG_PERCENT;
 template<typename T>
 struct causal_newobject{
     TrackerMem &grm;
+	SQLMem &sm;
     newObject_f<Handle<Level::causal,HandleAccess::all,T> > newobj_f(std::unique_ptr<VMObjectLog> &log, int) {
         auto &grm = this->grm;
-        return [&grm,&log](const T& t){
+		auto &sm = this->sm;
+        return [&grm,&log,&sm](const T& t){
             auto trans = start_transaction(log,
                                            grm.trk,
-                                           grm.ss.inst(get_strong_ip()),
-                                           grm.sc.inst(0));
+                                           sm.ss.inst(get_strong_ip()),
+                                           sm.sc.inst(0));
             trans->commit_on_delete = true;
-            return grm.sc.inst(0).
+            return sm.sc.inst(0).
                     template newObject<HandleAccess::all>(grm.trk, trans.get(),t);
         };
     }
@@ -33,15 +35,17 @@ struct causal_newobject{
 template<typename T>
 struct causal_newset{
     TrackerMem &grm;
+	SQLMem &sm;
     newObject_f<typename remote_set<Level::causal,T>::p > newobj_f(std::unique_ptr<VMObjectLog> &log, int) {
         auto &grm = this->grm;
-        return [&grm,&log](const std::set<T>& t){
+		auto &sm = this->sm;
+        return [&grm,&log,&sm](const std::set<T>& t){
             auto trans = start_transaction(log,
                                            grm.trk,
-                                           grm.ss.inst(get_strong_ip()),
-                                           grm.sc.inst(0));
+                                           sm.ss.inst(get_strong_ip()),
+                                           sm.sc.inst(0));
             trans->commit_on_delete = true;
-            return grm.sc.inst(0).
+            return sm.sc.inst(0).
                     template newObject<HandleAccess::all>(grm.trk, trans.get(),t);
         };
     }
@@ -50,15 +54,17 @@ struct causal_newset{
 template<typename T>
 struct strong_newobject{
     TrackerMem &grm;
+	SQLMem &sm;
     newObject_f<Handle<Level::strong,HandleAccess::all,T> > newobj_f(std::unique_ptr<VMObjectLog> &log, int) {
         auto &grm = this->grm;
-        return [&grm,&log](const T& t){
+		auto &sm = this->sm;
+        return [&grm,&log,&sm](const T& t){
             auto trans = start_transaction(log,
                                            grm.trk,
-                                           grm.ss.inst(get_strong_ip()),
-                                           grm.sc.inst(0));
+                                           sm.ss.inst(get_strong_ip()),
+                                           sm.sc.inst(0));
             trans->commit_on_delete = true;
-            return grm.ss.inst(get_strong_ip()).
+            return sm.ss.inst(get_strong_ip()).
                     template newObject<HandleAccess::all>(grm.trk, trans.get(),t);
         };
     }
@@ -83,6 +89,8 @@ struct TestParameters{
 		
         TrackerMem transaction_metadata;
 		const std::size_t username;
+
+		TrackerMem& tracker_mem(){ return transaction_metadata;}
 		
         GroupRemember(int id)
             :transaction_metadata(id),username(id % (max_name - min_name) + min_name){}
@@ -188,8 +196,6 @@ int main(){
 	std::cout << "hello world from VM "<< my_unique_id << " in group " << CAUSAL_GROUP << std::endl;
 	std::cout << "connecting to " << string_of_ip(get_strong_ip()) << std::endl;
 
-	using pool_fun_t = typename TestParameters::PreparedTest::action_t;
-
 	using TestArguments = TestParameters::TestArguments;
 	
 	const std::vector<typename TestParameters::Pool::action_fp> actions{{
@@ -203,7 +209,7 @@ int main(){
 
 						TestParameters::rooms().at(args.rooms_index).
                                 add_post(log,gmem->transaction_metadata.trk,
-                                         post::mke(causal_newobject<post>{gmem->transaction_metadata}.newobj_f(log,tid),"test message"));
+                                         post::mke(causal_newobject<post>{gmem->transaction_metadata,*smem}.newobj_f(log,tid),"test message"));
                         log->addField(LogFields::done_time,duration_cast<milliseconds>(elapsed_time()).count());
                         return log->single();
                 },

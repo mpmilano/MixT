@@ -11,9 +11,9 @@ namespace myria { namespace mtl {
 			struct is_string : public std::is_same<T2, std::string> {};
 	
 		public:
-
-			const Expr e;
+			
 			const T lhs;
+			const Expr e;
 
 			static_assert(runs_with_causal(get_level<Expr>::value) ||
 						  (runs_with_strong(get_level<Expr>::value) && runs_with_strong(get_level<T>::value)),
@@ -57,10 +57,10 @@ namespace myria { namespace mtl {
 				return strongCall(choice,ctx,c,s);
 			}
 
-			bool causalCall(TransactionContext *ctx, CausalCache &c, CausalStore &s){
+			bool causalCall(TransactionContext *ctx, CausalCache &c, CausalStore &s) const {
 				if (runs_with_strong(get_level<Expr>::value)) {
 					run_ast_causal(ctx,c,s,lhs);
-					run_ast_strong(ctx,c,s,e);
+					run_ast_causal(ctx,c,s,e);
 					return true; //we already did this during strong pass
 				}
 				else {

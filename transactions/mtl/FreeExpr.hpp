@@ -80,37 +80,37 @@ namespace myria { namespace mtl {
                     MTLCtr(const MTLArgs & ... args):args(std::make_tuple(args...)){}
 
                     auto environment_expressions() const {
-                        mutils::fold(args,
-                                     [](const auto& arg, const auto& accum){
-										 return std::tuple_cat(mtl::environment_expressions(arg),accum);
-                        },std::tuple<>());
+                        return mutils::fold(args,
+											[](const auto& arg, const auto& accum){
+												return std::tuple_cat(mtl::environment_expressions(arg),accum);
+											},std::tuple<>());
                     }
 
-                    T strongCall(TransactionContext *ctx, StrongCache &c, const StrongStore &s, std::true_type*){
-                        T (*builder) (const MTLArgs & ...) =
-                                [&](const MTLArgs & ... args){return T{run_ast_strong(ctx,c,s,args)...};};
+                    T strongCall(TransactionContext *ctx, StrongCache &c, const StrongStore &s, std::true_type*) const {
+						std::function<T(const MTLArgs & ...)> builder =
+							[&](const MTLArgs & ... args){return T{run_ast_strong(ctx,c,s,args)...};};
                         auto ret = callFunc(builder,args);
                         c.insert(this->id,ret);
                         return ret;
                     }
-                    void strongCall(TransactionContext *ctx, StrongCache &c, const StrongStore &s, std::false_type*){
+                    void strongCall(TransactionContext *ctx, StrongCache &c, const StrongStore &s, std::false_type*) const {
                         T (*callAll) (const MTLArgs & ...) =
 							[&](const MTLArgs & ... args){
 							std::vector<std::nullptr_t> {{[&](){run_ast_strong(ctx,c,s,args); return nullptr;}()...}}; };
                         callFunc(callAll,args);
                     }
-                    auto strongCall(TransactionContext *ctx, StrongCache &c, const StrongStore &s){
+                    auto strongCall(TransactionContext *ctx, StrongCache &c, const StrongStore &s) const {
                         choose_strong<level::value> choice{nullptr};
                         return strongCall(ctx,c,s,choice);
                     }
 
-                    T causalCall(TransactionContext *ctx, StrongCache &c, const StrongStore &s){
+                    T causalCall(TransactionContext *ctx, CausalCache &c, const CausalStore &s) const {
                         if (level::value == Level::strong){
                             return c.template get<T>(this->id);
                         }
                         else {
-                            T (*builder) (const MTLArgs & ...) =
-                                    [&](const MTLArgs & ... args){return T{run_ast_causal(ctx,c,s,args)...};};
+							std::function<T (const MTLArgs & ...)> builder =
+								[&](const MTLArgs & ... args){return T{run_ast_causal(ctx,c,s,args)...};};
                             T ret = callFunc(builder,args);
                             c.insert(this->id,ret);
                             return ret;

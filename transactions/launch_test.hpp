@@ -109,6 +109,7 @@ struct PreparedTest{
 //static functions for TaskPool
 template<typename Mem, typename Arg>
 std::string PreparedTest<Mem,Arg>::exn_handler(std::exception_ptr eptr){
+	assert(false);
 	std::stringstream log_messages;
 	try {
 		assert(eptr);
@@ -124,7 +125,7 @@ std::string PreparedTest<Mem,Arg>::exn_handler(std::exception_ptr eptr){
 		log_messages
 			<< "Exception occurred which derived from neither pqxx_exception nor std::exception!"
 			<< std::endl;
-	}
+			}//*/
 	return log_messages.str();
 }
 
@@ -136,16 +137,16 @@ void PreparedTest<Mem,Arg>::pool_mem_init (int tid, std::shared_ptr<SQLMem>& sql
 	}
 	assert(mem);
 	if (!sqlmem){
-		sqlmem.reset(new SQLMem(*mem));
+		sqlmem.reset(new SQLMem(mem->tracker_mem()));
 	}
 	assert(sqlmem);
 	auto &ss = sqlmem->ss.inst(get_strong_ip());
 	auto &cs = sqlmem->sc.inst(0);
 	
-	if (!mem->tracker().strongRegistered())
-		mem->tracker().registerStore(ss);
-	if (!mem->tracker().causalRegistered())
-		mem->tracker().registerStore(cs);
+	if (!mem->tracker_mem().trk.strongRegistered())
+		mem->tracker_mem().trk.registerStore(ss);
+	if (!mem->tracker_mem().trk.causalRegistered())
+		mem->tracker_mem().trk.registerStore(cs);
 	//I'm assuming that pid won't get larger than the number of allowable ports...
 	assert(pid + 1024 < 49151);
 }

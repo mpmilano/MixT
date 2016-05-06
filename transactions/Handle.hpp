@@ -365,6 +365,11 @@ namespace mutils{
 		return h.bytes_size_hndl();
 	}
 
+	template<myria::Level l, myria::HandleAccess ha, typename T, typename... Ops>
+	void ensure_registered(const myria::Handle<l,ha,T,Ops...>& v, DeserializationManager& dm){
+		ensure_registered(*v._ro,dm);
+	}
+
     template<typename T, typename P>
 	std::enable_if_t<myria::is_handle<T>::value,std::unique_ptr<T> > from_bytes(P* p, char const *v){
 		return T::from_bytes(p,v);
