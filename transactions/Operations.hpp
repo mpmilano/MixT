@@ -48,6 +48,7 @@ struct SupportedOperation {
 	template<typename Handle>
 	struct SupportsOn{
 
+		using Return = Ret;
 		using return_raw = typename convert_SelfType<Handle>::template act<Ret>;
 		using return_t = typename void_to_nullptr<return_raw>::type;
 

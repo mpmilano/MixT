@@ -4,6 +4,7 @@
 #include "Tracker_common.hpp"
 #include "Tracker_support_structs.hpp"
 #include "SQLTransaction.hpp"
+#include "RemoteCons.hpp"
 
 namespace myria { namespace pgsql {
 	
@@ -191,12 +192,14 @@ namespace myria { namespace pgsql {
 			};
 
 			template<HandleAccess ha, typename T>
-			using SQLHandle = std::conditional_t<mutils::is_set<T>::value,
-												 Handle<l,ha,T,SupportedOperation<RegisteredOperations::Insert,void,SelfType,mutils::extract_type_if_set<T> > >,
-												 std::conditional_t<
-													 std::is_same<T,int>::value,
-													 Handle<l,ha,T,SupportedOperation<RegisteredOperations::Increment,void,SelfType> >,
-													 Handle<l,ha,T> > >;
+			using SQLHandle = std::conditional_t<is_remote_cons<T>::value,
+												 Handle<l,ha,T,SupportedOperation<RegisteredOperations::Clone,SelfType,SelfType> >,
+												 std::conditional_t<mutils::is_set<T>::value,
+																	Handle<l,ha,T,SupportedOperation<RegisteredOperations::Insert,void,SelfType,mutils::extract_type_if_set<T> > >,
+																	std::conditional_t<
+																		std::is_same<T,int>::value,
+																		Handle<l,ha,T,SupportedOperation<RegisteredOperations::Increment,void,SelfType> >,
+																		Handle<l,ha,T> > > >;
 
 			template<HandleAccess ha, typename T>
 			SQLHandle<ha,T> newObject(tracker::Tracker &trk, mtl::TransactionContext *tc, Name name, const T& init){

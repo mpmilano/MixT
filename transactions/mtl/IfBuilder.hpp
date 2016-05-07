@@ -110,9 +110,6 @@ namespace myria { namespace mtl {
 			return r;
 		}
 
-		const IfEnd& make_if_end(){
-			static constexpr IfEnd e;
-			return e;
-		}
+		const IfEnd& make_if_end();
 
 	} }

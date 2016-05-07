@@ -184,20 +184,6 @@ namespace myria { namespace mtl {
 			FindUsages(const T & ... t):find_from_here(std::make_tuple(t...)){}
 		};
 
-		template<typename... T>
-		constexpr Level chld_min_level_f(FindUsages<T...> const * const){
-			return min_level_dref<T...>::value;
-		}
-
-		//note: find_usages is for single-statements,
-		//which in turn have a single level.  This level is
-		//the min of its components. In other words, don't recur.
-		template<typename... T>
-		constexpr Level chld_max_level_f(FindUsages<T...> const * const){
-			return max_level_dref<T...>::value;
-		}
-
-
 		template<unsigned long long ID, typename T,
 				 restrict(std::is_base_of<BaseFindUsages CMA T>::value)>
 		auto find_usage(const T& fu) {

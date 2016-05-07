@@ -21,7 +21,7 @@ namespace myria{
 		template<RegisteredOperations Name, typename Handle, typename... Args>
 		auto do_op_2(TransactionContext* ctx, Handle h, Args && ... args){
 			constexpr OperationIdentifier<Name> op{nullptr};
-			using ret_t = typename std::decay_t<decltype(h.upCast(op))>::return_raw;
+			using ret_t = typename std::decay_t<decltype(h.upCast(op))>::Return;
 			return do_op_3<Name,Handle,ret_t,Args...>(ctx,h.upCast(op),std::forward<Args>(args)...);
 		}
 

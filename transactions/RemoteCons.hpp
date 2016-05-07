@@ -65,6 +65,10 @@ namespace myria{
 		DEFAULT_SERIALIZATION_SUPPORT(RemoteCons,val,next)	
 	};
 
+	template<typename> struct is_remote_cons : std::false_type{};
+	template<typename T, Level backbone, Level data, typename... DataSupportedOps>
+	struct is_remote_cons<RemoteCons<T,backbone,data,DataSupportedOps...> > : std::true_type {};
+
 
 	template<typename T, Level backbone, Level data,typename... ops>
 	std::ostream& operator<<(std::ostream &os, const RemoteCons<T,backbone,data,ops...>& rc){

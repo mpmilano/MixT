@@ -37,7 +37,7 @@ using newObject_f = std::function<p (const typename p::stored_type&)>;
 template<Level l, typename T2>
 struct remote_set {
 	using p = Handle<l,HandleAccess::all, std::set<T2>,
-					 SupportedOperation<RegisteredOperations::Insert,SelfType,T2> >;
+					 SupportedOperation<RegisteredOperations::Insert,void,SelfType,T2> >;
 	default_build
 };
 
@@ -107,12 +107,12 @@ struct room : public mutils::ByteRepresentable{
 		};
 		params env_param{posts,pst,members};
 		TRANSACTION(log,trk,env_param,
-					do_op(Insert,$(env_param,posts),$(env_param,pst)),
+					mtl_ignore(do_op(Insert,$(env_param,posts),$(env_param,pst))),
 					let(hd) = $(env_param,members) IN ( 
 						WHILE (isValid(hd)) DO (
 							let_remote(tmp) = hd IN (
 								let_remote(tmp2) = $(tmp,val) IN (
-									do_op(Insert,$(tmp2,inbox),$(env_param,pst))),
+									mtl_ignore(do_op(Insert,$(tmp2,inbox),$(env_param,pst)))),
 								hd = $(tmp,next)
 								)
 							)
@@ -120,11 +120,11 @@ struct room : public mutils::ByteRepresentable{
 			); //*/
 	}
 	
-        void add_member(std::unique_ptr<VMObjectLog> &log, tracker::Tracker& trk, user::p usr){
+	void add_member(std::unique_ptr<VMObjectLog> &log, tracker::Tracker& trk, user::p usr){
 		struct params_t {MemberList::p members; user::p usr;};
 		params_t params{members,usr};
 		TRANSACTION(log,trk,params,
-					$(params,members) = $bld(MemberList, $(params,usr), $(params,members))
+					$(params,members) = $bld(MemberList, $(params,usr), do_op(Clone,$(params,members)))
 			);
 	}
 };
