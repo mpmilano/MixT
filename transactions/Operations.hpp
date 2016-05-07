@@ -12,7 +12,7 @@ namespace myria{
 	}
 	
 enum class RegisteredOperations {
-	Increment, Insert
+	Increment, Insert, Clone
 };
 
 struct SelfType{};
@@ -63,7 +63,8 @@ struct SupportedOperation {
 			operation_impl(DataStore &ds):ds(ds){}
 			
 			void act(mtl::TransactionContext* _ctx,typename convert_SelfType<Handle&>::template act<Args>... a){
-				ds.operation(_ctx,OperationIdentifier<Name>{nullptr},
+				auto *ctx = dynamic_cast<typename DataStore::StoreContext*>(_ctx->template get_store_context<DataStore::level>(ds,"operation!").get());
+				ds.operation(_ctx,*ctx,OperationIdentifier<Name>{nullptr},
 							 this->template reduce_selfTypes(((Args*)nullptr), a)...);
 			}
 		};

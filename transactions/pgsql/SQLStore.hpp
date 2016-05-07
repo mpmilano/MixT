@@ -253,6 +253,8 @@ namespace myria { namespace pgsql {
 				void store_abort() {i->store_abort();}
 			};
 
+			using StoreContext = SQLContext;
+
 			std::unique_ptr<mtl::StoreContext<l> > begin_transaction(std::unique_ptr<mutils::abs_StructBuilder>&, const std::string &why)
 				{
 					auto ret = SQLStore_impl::begin_transaction(why);
@@ -263,24 +265,19 @@ namespace myria { namespace pgsql {
 				return SQLStore_impl::instance_id();
 			}
 
-			void operation(mtl::TransactionContext* transaction_context,
+			void operation(mtl::TransactionContext* transaction_context, SQLContext& ctx,
 						   OperationIdentifier<RegisteredOperations::Increment>, SQLObject<int> &o){
-				assert(transaction_context && "Error: calling operations outside of transactions is disallowed");
-				SQLContext *ctx = (l == Level::strong ?
-								   dynamic_cast<SQLContext*>(transaction_context->strongContext.get()) :
-								   dynamic_cast<SQLContext*>(transaction_context->causalContext.get()));
-				assert(ctx && "error: should have entered transaction before this point!");
-				o.gso.increment(ctx->i.get());
+				o.gso.increment(ctx.i.get());
+			}
+
+			void operation(mtl::TransactionContext* transaction_context, SQLContext& ctx,
+						   OperationIdentifier<RegisteredOperations::Clone>, SQLObject<int> &o){
+				assert(false && "todo");
 			}
 
 			template<typename T>
-			void operation(mtl::TransactionContext* transaction_context,
+			void operation(mtl::TransactionContext* transaction_context, SQLContext& ctx,
 						   OperationIdentifier<RegisteredOperations::Insert>, SQLObject<std::set<T> > &o, T& t){
-				assert(transaction_context && "Error: calling operations outside of transactions is disallowed");
-				SQLContext *ctx = (l == Level::strong ?
-								   dynamic_cast<SQLContext*>(transaction_context->strongContext.get()) :
-								   dynamic_cast<SQLContext*>(transaction_context->causalContext.get()));
-				assert(ctx && "error: should have entered transaction before this point!");
 				assert(false && "this is unimplemented.");
 				//o.gso.increment(ctx->i.get());
 			}
