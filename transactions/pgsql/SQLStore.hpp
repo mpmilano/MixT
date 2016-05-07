@@ -270,8 +270,9 @@ namespace myria { namespace pgsql {
 				o.gso.increment(ctx.i.get());
 			}
 
-			void operation(mtl::TransactionContext* transaction_context, SQLContext& ctx,
-						   OperationIdentifier<RegisteredOperations::Clone>, SQLObject<int> &o){
+			template<typename T>
+			SQLHandle<HandleAccess::all,T> operation(mtl::TransactionContext* transaction_context, SQLContext& ctx,
+													 OperationIdentifier<RegisteredOperations::Clone>, SQLObject<T> &o){
 				assert(false && "todo");
 			}
 

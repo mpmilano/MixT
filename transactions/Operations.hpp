@@ -48,8 +48,9 @@ struct SupportedOperation {
 	template<typename Handle>
 	struct SupportsOn{
 
-		using return_t = typename void_to_nullptr<Ret>::type;
-		using return_raw = Ret;
+		using return_raw = typename convert_SelfType<Handle>::template act<Ret>;
+		using return_t = typename void_to_nullptr<return_raw>::type;
+
 	
 		struct operation_super {
 			virtual return_t act(mtl::TransactionContext* _ctx,typename convert_SelfType<Handle&>::template act<Args>...) = 0;
@@ -73,7 +74,7 @@ struct SupportedOperation {
 			
 			operation_impl(DataStore &ds):ds(ds){}
 			
-			Ret act(std::true_type*, mtl::TransactionContext* _ctx,typename convert_SelfType<Handle&>::template act<Args>... a){
+			return_raw act(std::true_type*, mtl::TransactionContext* _ctx,typename convert_SelfType<Handle&>::template act<Args>... a){
 				auto *ctx = dynamic_cast<typename DataStore::StoreContext*>(_ctx->template get_store_context<DataStore::level>(ds,"operation!").get());
 				return ds.operation(_ctx,*ctx,OperationIdentifier<Name>{nullptr},
 									this->template reduce_selfTypes(((Args*)nullptr), a)...);
@@ -87,7 +88,7 @@ struct SupportedOperation {
 			}
 
 			return_t act(mtl::TransactionContext* _ctx,typename convert_SelfType<Handle&>::template act<Args>... a){
-				std::integral_constant<bool,std::is_same<return_t,Ret>::value> *choice{nullptr};
+				std::integral_constant<bool,std::is_same<return_t,return_raw>::value> *choice{nullptr};
 				return act(choice,_ctx,a...);
 			}
 
