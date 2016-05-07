@@ -52,7 +52,9 @@ struct remote_set {
 
 struct user : public mutils::ByteRepresentable {
 	using p = Handle<Level::causal, HandleAccess::all, user>;
-	typename remote_set<Level::causal, post::p>::p inbox;
+    using inbox_p = typename remote_set<Level::causal, post::p>::p;
+    using inbox_t = remote_set<Level::causal, post::p>;
+        inbox_p inbox;
 	user(const decltype(inbox) &i):inbox(i){}
 	
 	default_build
