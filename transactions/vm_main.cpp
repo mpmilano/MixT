@@ -100,7 +100,7 @@ namespace synth_test {
 	void perform_increment(unique_ptr<VMObjectLog>& log_messages,
 										 Tracker &trk, Hndl hndl){
 		TRANSACTION(log_messages,trk,hndl,
-					do_op<RegisteredOperations::Increment>(hndl)
+					mtl_ignore(do_op<RegisteredOperations::Increment>(hndl))
 			)//*/
 			log_messages->addField(
 				LogFields::is_write,true);

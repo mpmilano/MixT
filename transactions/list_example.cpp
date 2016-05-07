@@ -17,7 +17,7 @@ using namespace tracker;
 using namespace pgsql;
 
 
-using WeakCons = RemoteCons<int,Level::strong,Level::causal,supports_operation(Increment,SelfType)>;
+using WeakCons = RemoteCons<int,Level::strong,Level::causal,supports_operation(Increment,void,SelfType)>;
 
 
 std::ostream & operator<<(std::ostream &os, const WeakCons& wc){

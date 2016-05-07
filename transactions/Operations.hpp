@@ -33,15 +33,26 @@ struct convert_SelfType{
 		candidate>;
 };
 
+	template<typename T> struct void_to_nullptr{
+		using type = T;
+	};
 
-template<RegisteredOperations Name, typename... Args>
+	template<> struct void_to_nullptr<void>{
+		using type = std::nullptr_t;
+	};
+
+
+	template<RegisteredOperations Name, typename Ret, typename... Args>
 struct SupportedOperation {
 
 	template<typename Handle>
 	struct SupportsOn{
+
+		using return_t = typename void_to_nullptr<Ret>::type;
+		using return_raw = Ret;
 	
 		struct operation_super {
-			virtual void act(mtl::TransactionContext* _ctx,typename convert_SelfType<Handle&>::template act<Args>...) = 0;
+			virtual return_t act(mtl::TransactionContext* _ctx,typename convert_SelfType<Handle&>::template act<Args>...) = 0;
 			virtual ~operation_super(){}
 		};
 
@@ -62,11 +73,25 @@ struct SupportedOperation {
 			
 			operation_impl(DataStore &ds):ds(ds){}
 			
-			void act(mtl::TransactionContext* _ctx,typename convert_SelfType<Handle&>::template act<Args>... a){
+			Ret act(std::true_type*, mtl::TransactionContext* _ctx,typename convert_SelfType<Handle&>::template act<Args>... a){
+				auto *ctx = dynamic_cast<typename DataStore::StoreContext*>(_ctx->template get_store_context<DataStore::level>(ds,"operation!").get());
+				return ds.operation(_ctx,*ctx,OperationIdentifier<Name>{nullptr},
+									this->template reduce_selfTypes(((Args*)nullptr), a)...);
+			}
+
+			std::nullptr_t act(std::false_type*, mtl::TransactionContext* _ctx,typename convert_SelfType<Handle&>::template act<Args>... a){
 				auto *ctx = dynamic_cast<typename DataStore::StoreContext*>(_ctx->template get_store_context<DataStore::level>(ds,"operation!").get());
 				ds.operation(_ctx,*ctx,OperationIdentifier<Name>{nullptr},
-							 this->template reduce_selfTypes(((Args*)nullptr), a)...);
+									this->template reduce_selfTypes(((Args*)nullptr), a)...);
+				return nullptr;
 			}
+
+			return_t act(mtl::TransactionContext* _ctx,typename convert_SelfType<Handle&>::template act<Args>... a){
+				std::integral_constant<bool,std::is_same<return_t,Ret>::value> *choice{nullptr};
+				return act(choice,_ctx,a...);
+			}
+
+			
 		};
 
 		using operation = std::shared_ptr<operation_super>;
