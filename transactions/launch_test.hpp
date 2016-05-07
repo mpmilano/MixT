@@ -44,7 +44,7 @@ namespace {
 	struct TrackerMem {
 		unique_ptr<VMObjectLogger> log_builder{build_VMObjectLogger()};
 		tracker::Tracker trk;
-		tracker::Tracker &tracker(){return trk;}
+		TrackerMem& tracker_mem(){return *this;}
 		
 		TrackerMem(int id)
 			:trk(id + 1024, tracker::CacheBehaviors::full){
@@ -109,7 +109,6 @@ struct PreparedTest{
 //static functions for TaskPool
 template<typename Mem, typename Arg>
 std::string PreparedTest<Mem,Arg>::exn_handler(std::exception_ptr eptr){
-	assert(false);
 	std::stringstream log_messages;
 	try {
 		assert(eptr);
