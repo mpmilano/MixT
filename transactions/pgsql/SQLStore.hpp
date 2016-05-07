@@ -276,7 +276,9 @@ namespace myria { namespace pgsql {
 			template<typename T>
 			SQLHandle<HandleAccess::all,T> operation(mtl::TransactionContext* transaction_context, SQLContext& ctx,
 													 OperationIdentifier<RegisteredOperations::Clone>, SQLObject<T> &o){
-				assert(false && "todo");
+				auto &trk_c = transaction_context->trackingContext;
+				auto &trk = trk_c->trk;
+				return newObject<HandleAccess::all,T>(trk,transaction_context,*o.get(&ctx,&trk,trk_c.get()));
 			}
 
 			template<typename T>
