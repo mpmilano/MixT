@@ -40,6 +40,14 @@ namespace myria { namespace tracker {
 		void Tracker::registerStore(DataStore<Level::causal> &cs,
 									std::unique_ptr<TrackerDSCausal>){i->causalStore = &cs;}
 
+		bool Tracker::strongRegistered() const{
+			return i->strongStore;
+		}
+		
+		bool Tracker::causalRegistered() const{
+			return i->causalStore;
+		}
+
 		void Tracker::exemptItem(Name name){}
 
                 std::unique_ptr<TrackingContext> Tracker::generateContext(std::unique_ptr<mutils::abs_StructBuilder>& l, bool){
