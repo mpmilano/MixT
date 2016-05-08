@@ -54,14 +54,14 @@ namespace{
 		}
 		
 		template<typename T>
-		auto select_version_data_size_s(Level l, T &trans, Table t, Name id){
+		auto select_version_data_s(Level l, T &trans, Table t, Name id){
 			assert(l == Level::strong);
 			//std::cerr << "in select_data" << std::endl;
 			//AtScopeEnd ase{[](){//std::cerr << "out" << std::endl;}};
 			//discard(ase);
 			static const std::string bs =
-				"select version, data, max(octet_length(data)) as size from \"BlobStore\" where index = 0 and ID = $1 group by version,data";
-			static const std::string is = "select version, data from \"IntStore\" where index = 0 and ID = $1";
+				"select version, data  from \"BlobStore\" where index = 0 and ID = $1";
+			static const std::string is = "select version, data from \"IntStore\" where ID = $1 and index = 0";
 			switch(t) {
 			case Table::BlobStore : return trans.prepared(TransactionNames::select1,bs,id); 
 			case Table::IntStore : return trans.prepared(TransactionNames::select2,is,id); 
@@ -184,13 +184,13 @@ namespace{
 		}
 
 		template<typename T>
-		auto select_version_data_size_c(Level l, T &trans, Table t, Name id){
+		auto select_version_data_c(Level l, T &trans, Table t, Name id){
 			assert(l == Level::causal);
 			//std::cerr << "in select_data" << std::endl;
 			//AtScopeEnd ase{[](){//std::cerr << "out" << std::endl;}};
 			//discard(ase);
 			static const std::string bs =
-				"select vc1,vc2,vc3,vc4, data, max(octet_length(data)) as size from \"BlobStore\" where index = 0 and ID = $1 group by vc1,vc2,vc3,vc4,data ";
+				"select vc1,vc2,vc3,vc4, data from \"BlobStore\" where index = 0 and ID = $1";
 			static const std::string is = "select vc1,vc2,vc3,vc4, data from \"IntStore\" where index = 0 and ID = $1";
 			switch(t) {
 			case Table::BlobStore : return trans.prepared(TransactionNames::select1,bs,id); 
@@ -260,10 +260,10 @@ namespace{
 
 		
 		template<typename T>
-		auto select_version_data_size(Level l, T &trans, Table t, Name id){
+		auto select_version_data(Level l, T &trans, Table t, Name id){
 			return (l == Level::strong ?
-					select_version_data_size_s(l,trans,t,id) :
-					select_version_data_size_c(l,trans,t,id));
+					select_version_data_s(l,trans,t,id) :
+					select_version_data_c(l,trans,t,id));
 		}
 
 		template<typename T, typename Blob>

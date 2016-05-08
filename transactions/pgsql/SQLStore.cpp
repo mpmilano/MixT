@@ -205,7 +205,7 @@ namespace myria{ namespace pgsql {
 			{
 				auto trans_owner = enter_transaction(ss,nullptr);
 				auto *trans = trans_owner.second;
-                                assert(!ro_isValid(trans));
+				//assert(!ro_isValid(trans));
 
 				if (t == Table::BlobStore){
 					binarystring blob(&c.at(0),c.size());
@@ -332,17 +332,15 @@ namespace myria{ namespace pgsql {
 				if (store_same) return i->buf1;
 			}
 			{
-                                result r = cmds::select_version_data_size(i->_store.level,*trans,i->table,i->key);
-                                int start_offset = 0;
-                                if (i->_store.level == Level::causal){
-                                    start_offset = process_version_update(r,i->causal_vers);
-                                }
-                                else start_offset = process_version_update(r,i->vers);
+				result r = cmds::select_version_data(i->_store.level,*trans,i->table,i->key);
+				int start_offset = 0;
+				if (i->_store.level == Level::causal){
+					start_offset = process_version_update(r,i->causal_vers);
+				}
+				else start_offset = process_version_update(r,i->vers);
 				if (i->table == Table::BlobStore){
-                                    bool wrkd = r[0][start_offset+1].to(i->size);
-                                    assert(wrkd);
-                                        binarystring bs(r[0][start_offset]);
-					assert(bs.size() == i->size);
+					binarystring bs(r[0][start_offset]);
+					i->size = bs.size();
 					assert(i->size >= 1);
 					if (!i->buf1) i->buf1 = (char*) malloc(i->size);
 					memcpy(i->buf1,bs.data(),i->size);
