@@ -282,9 +282,9 @@ namespace myria { namespace pgsql {
 			}
 
 			template<typename T>
-			void operation(mtl::TransactionContext* transaction_context, SQLContext& ctx,
-						   OperationIdentifier<RegisteredOperations::Insert>, SQLObject<std::set<T> > &o, T& t){
-				assert(false && "this is unimplemented.");
+			void operation(mtl::TransactionContext* transaction_context, SQLContext& ,
+						   OperationIdentifier<RegisteredOperations::Insert>, SQLObject<std::set<T> > &, T& ){
+				//assert(false && "this is unimplemented.");
 				//o.gso.increment(ctx->i.get());
 			}
 		};
