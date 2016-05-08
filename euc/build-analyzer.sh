@@ -14,7 +14,7 @@ fi
 
 shift
 shift
-scratchdir=/tmp/myriastore_results_analysis_dir/
+scratchdir=/tmp/myriastore_results_analysis_dir2/
 
 rm $scratchdir/*
 rmdir $scratchdir
@@ -43,7 +43,7 @@ do
 		
 		echo "std::vector<struct myria_log> runs_""$mode""_$host""();" >> "$fname".hpp
 		echo "std::vector<struct myria_log> runs_""$mode""_$host""() { return std::vector<struct myria_log> {{" >> "$fname".cpp
-		cat "$results_dir"/"$mode"/"$ipaddr"/* | grep '\[\]' | grep 'myria_log' | sed s/'const'// | sed s/'\[\]() -> struct myria_log {struct myria_log ret '/'myria_log'/ | sed s/'; return ret; }()'// | sed -e "$ ! s/\$/,/g" >>"$fname".cpp
+		cat "$results_dir"/"$mode"/"$ipaddr"/* | grep '\[\]' | grep 'myria_log' | sed s/'const'// | sed s/'\[\]() -> struct myria_log {struct myria_log ret '/'myria_log'/ | sed s/'; return ret; }()'// | sed -e "$ ! s/\$/,/g" | sed -n '1~4p' >>"$fname".cpp
 		echo '}};}' >> "$fname".cpp
 		
 		echo "std::vector<struct myria_globals> globals_""$mode""_$host""();" >> "$fname".hpp
@@ -109,7 +109,7 @@ do
 	echo "return ret; }" >> unified_results_header.hpp
 done
 
-make
+make -j2
 
 cd -
 
