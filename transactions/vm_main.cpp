@@ -224,9 +224,9 @@ namespace synth_test {
 		using time_t = std::chrono::time_point<std::chrono::high_resolution_clock>;
 		const time_t start_time{high_resolution_clock::now()};
 		time_t last_rate_raise{start_time};
-		Frequency current_rate{3000_Hz};
+		Frequency current_rate{5000_Hz};
 		constexpr static Frequency increase_factor = 20_Hz;
-		constexpr static seconds increase_delay = 840s;
+		constexpr static seconds increase_delay = 2s;
 		constexpr static minutes test_stop_time = 7min;
 		constexpr static double percent_writes = write_percent;
 		constexpr static double percent_strong = strong_percent;
