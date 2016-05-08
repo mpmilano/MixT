@@ -70,7 +70,7 @@ namespace myria{
 
 		template<typename E>
 		std::ostream & operator<<(std::ostream &os, const mtl::RefTemporary<E>& t){
-			return os << t.name <<  "<" << t.t.store_id << "," << t.id << ": " << mtl::RefTemporary<E>::level::value << ">";
+			return os << t.name <<  "<" << t.t.store_id << "," << t.id << "," << E::static_id << ": " << mtl::RefTemporary<E>::level::value << ">";
 		}
 
 
@@ -173,7 +173,7 @@ namespace myria{
 		template<typename i, typename E>
 		std::ostream & operator<<(std::ostream &os, const mtl::FieldRef<i,E>& op){
 			using namespace mutils;
-			return os << type_name<run_result<i> >() << "=>" << type_name<E>();
+			return os << op.t << "=>" << type_name<E>();
 		}
 
 
