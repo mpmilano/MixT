@@ -42,7 +42,7 @@ struct convert_SelfType{
 	};
 
 
-	template<RegisteredOperations Name, typename Ret, typename... Args>
+	template<RegisteredOperations Name, typename Ret, typename... Args> 
 struct SupportedOperation {
 
 	template<typename Handle>
@@ -119,5 +119,8 @@ struct SupportedOperation {
 		virtual ~SupportsOn(){}
 	};
 };
+
+	template<typename Handle,RegisteredOperations Name, typename Ret, typename... Args>
+	struct handle_supports : std::is_base_of<typename SupportedOperation<Name,Ret,Args...>::template SupportsOn<Handle >, Handle > {};
 
 }
