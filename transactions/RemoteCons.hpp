@@ -36,9 +36,11 @@ namespace myria{
 			:val(val),next(next){}
 
 	
-		static p mke(newObj){
-			return p{};
+        static p mke(newObj f, const std::function<v (const typename v::stored_type&)>& fv, const T &t ){
+            return f(fv(t));
 		}
+
+        static p mke(newObj){ return p{};}
 
 		template<typename Backbone, typename Data, typename... Args>
 		static p build_list(tracker::Tracker& trk, mtl::TransactionContext *tc, Backbone& b, Data& d, const Args & ... args){
