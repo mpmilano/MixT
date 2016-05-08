@@ -59,7 +59,7 @@ int main() {
 					print_str("tmp"),
 					print(tmp),
 					let(weak_val) = $(tmp,val) IN (
-						do_op(Increment,weak_val)
+						mtl_ignore(do_op(Increment,weak_val))
 						),
 					hd = $(tmp,next)
 					))
