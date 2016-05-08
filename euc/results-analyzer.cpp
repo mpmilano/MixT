@@ -40,7 +40,11 @@ auto window_averages(const std::vector<myria_log> &_results){
     constexpr int window_step = duration_cast<milliseconds>(1s).count();
 
 	auto results_sorted_by_complete_time = std::make_unique<std::vector<myria_log const *> >();
-    for (auto &result : _results) results_sorted_by_complete_time->push_back(&result);
+    for (auto &result : _results) {
+		//skip integer overflows.
+		if (result.done_time > 0)
+			results_sorted_by_complete_time->push_back(&result);
+	}
 
     std::sort(results_sorted_by_complete_time->begin(),
               results_sorted_by_complete_time->end(),
