@@ -202,7 +202,7 @@ int main(){
 	std::unique_ptr<VMObjectLog> log{gm.tracker_mem().log_builder->template beginStruct<LoggedStructs::log>().release()};
 	SQLMem sm {gm.tracker_mem()};
 	user::mke(causal_newobject<user>{gm.tracker_mem(),sm}.newobj_f(log,15),user::inbox_t::mke(causal_newset<typename post::p>{gm.tracker_mem(),sm}.newobj_f(log,16)) );
-	room::mke(strong_newobject<room>{gm.tracker_mem(),sm}.newobj_f(log,17),strong_newobject<MemberList>{gm.tracker_mem(),sm}.newobj_f(log,18));
+	MemberList::mke(strong_newobject<MemberList>{gm.tracker_mem(),sm}.newobj_f(log,17));
 	
 
 	exit(0);
@@ -240,12 +240,19 @@ int main(){
                 std::unique_ptr<VMObjectLog> log = gmem->
 					transaction_metadata.log_builder->
 					template beginStruct<LoggedStructs::log>();
+				std::unique_ptr<VMObjectLog> log2 = gmem->
+					transaction_metadata.log_builder->
+					template beginStruct<LoggedStructs::log>();
                 log->addField(LogFields::submit_time,duration_cast<milliseconds>(args.start_time).count());
                 log->addField(LogFields::run_time,duration_cast<milliseconds>(elapsed_time()).count());
+				log2->addField(LogFields::submit_time,duration_cast<milliseconds>(args.start_time).count());
+				log2->addField(LogFields::run_time,duration_cast<milliseconds>(elapsed_time()).count());
 				user::posts_p(log,gmem->transaction_metadata.trk,TestParameters::users().at(gmem->username));
 				TestParameters::rooms().at(args.rooms_index).add_member(log,gmem->transaction_metadata.trk,TestParameters::users().at(gmem->username));
                 log->addField(LogFields::done_time,duration_cast<milliseconds>(elapsed_time()).count());
-                return log->single();
+				log2->addField(LogFields::done_time,duration_cast<milliseconds>(elapsed_time()).count());
+				//double log, because two reads.
+                return log->single() + "\n" + log2->single();
         }
 
         }};
