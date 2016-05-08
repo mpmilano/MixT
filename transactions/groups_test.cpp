@@ -139,7 +139,6 @@ struct TestParameters{
 
         pair<int,TestArguments> choose_action(Pool&) const {
                 bool do_write = better_rand() < percent_writes;
-                bool is_strong = better_rand() < percent_strong;
 
 				
 				TestArguments ta;
@@ -147,12 +146,10 @@ struct TestParameters{
 				ta.start_time = elapsed_time();
 				ta.post_index = -1;
 				
-                //join group
-                if (do_write && is_strong) return pair<int,TestArguments>(1,ta);
                 //post message
-                else if (do_write && !is_strong) return pair<int,TestArguments>(0,ta);
+                if (do_write) return pair<int,TestArguments>(0,ta);
                 //check messages
-                else return pair<int,TestArguments>(2,ta);
+                else return pair<int,TestArguments>(1,ta);
         }
 
         bool stop (Pool&) const {
@@ -242,17 +239,6 @@ int main(){
                         log->addField(LogFields::done_time,duration_cast<milliseconds>(elapsed_time()).count());
                         return log->single();
                 },
-        //join group
-        [](int tid, shared_ptr<SQLMem> smem, int uid, std::shared_ptr<typename TestParameters::GroupRemember> gmem, TestArguments args){
-			std::unique_ptr<VMObjectLog> log = gmem->
-                        transaction_metadata.log_builder->
-                        template beginStruct<LoggedStructs::log>();
-                log->addField(LogFields::submit_time,duration_cast<milliseconds>(args.start_time).count());
-                log->addField(LogFields::run_time,duration_cast<milliseconds>(elapsed_time()).count());
-				TestParameters::rooms().at(args.rooms_index).add_member(log,gmem->transaction_metadata.trk,TestParameters::users().at(gmem->username));
-                log->addField(LogFields::done_time,duration_cast<milliseconds>(elapsed_time()).count());
-                return log->single();
-        },
 			//read inbox
 			[](int tid, shared_ptr<SQLMem> smem, int uid, std::shared_ptr<typename TestParameters::GroupRemember> gmem, TestArguments args){
                 std::unique_ptr<VMObjectLog> log = gmem->
