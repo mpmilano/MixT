@@ -84,6 +84,17 @@ auto window_averages(const std::vector<myria_log> &_results){
     return averages;
 }
 
+auto print_latencies(std::string filename, const vector<myria_log> &all_results){
+	if (all_results.size() == 0) return;
+	assert(all_results.size() > 0);
+    ofstream latencies;
+    latencies.open(filename);
+
+	for (auto result : all_results){
+		latencies << result.done_time - result.submit_time << endl;
+	}
+}
+
 auto print_window_averages(std::string filename, const vector<myria_log> &all_results){
 	if (all_results.size() == 0) return;
 	assert(all_results.size() > 0);
@@ -130,6 +141,8 @@ int main(){
 
     cout << "moving window averages: in mwlatency.csv" << endl;
     print_window_averages("mwlatency.csv",NORMAL());
+	cout << "full latencies in latencies.csv" << endl;
+	print_latencies("latencies.csv",NORMAL());
     //print_window_averages("mwlatency.csv",NO_USE_CAUSAL());
 	//print_window_averages("mwlatency-causal.csv",NO_USE_STRONG());
 	cout << "done" << endl;
