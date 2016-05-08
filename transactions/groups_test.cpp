@@ -17,18 +17,22 @@ template<typename T>
 struct causal_newobject{
     TrackerMem &grm;
 	SQLMem &sm;
-    newObject_f<Handle<Level::causal,HandleAccess::all,T> > newobj_f(std::unique_ptr<VMObjectLog> &log, int name) {
+    auto newobj_f(std::unique_ptr<VMObjectLog> &log, int name) {
         auto &grm = this->grm;
 		auto &sm = this->sm;
-        return [&grm,&log,&sm](const T& t){
+		using ret_t = std::decay_t<
+			decltype(sm.sc.inst(0).
+					 template newObject<HandleAccess::all>(grm.trk,mke_p<TransactionContext>(),name,std::declval<T>()))>;
+        newObject_f<ret_t> ret = [&grm,&log,&sm,name](const T& t) -> ret_t {
             auto trans = start_transaction(log,
                                            grm.trk,
                                            sm.ss.inst(get_strong_ip()),
                                            sm.sc.inst(0));
             trans->commit_on_delete = true;
             return sm.sc.inst(0).
-                    template newObject<HandleAccess::all>(grm.trk, trans.get(),t);
+				template newObject<HandleAccess::all>(grm.trk, trans.get(),name,t);
         };
+		return ret;
     }
 };
 
@@ -39,14 +43,14 @@ struct causal_newset{
     newObject_f<typename remote_set<Level::causal,T>::p > newobj_f(std::unique_ptr<VMObjectLog> &log, int name) {
         auto &grm = this->grm;
 		auto &sm = this->sm;
-        return [&grm,&log,&sm](const std::set<T>& t){
+        return [&grm,&log,&sm,name](const std::set<T>& t){
             auto trans = start_transaction(log,
                                            grm.trk,
                                            sm.ss.inst(get_strong_ip()),
                                            sm.sc.inst(0));
             trans->commit_on_delete = true;
             return sm.sc.inst(0).
-                    template newObject<HandleAccess::all>(grm.trk, trans.get(),t);
+                    template newObject<HandleAccess::all>(grm.trk, trans.get(),name,t);
         };
     }
 };
@@ -55,65 +59,69 @@ template<typename T>
 struct strong_newobject{
     TrackerMem &grm;
 	SQLMem &sm;
-    newObject_f<Handle<Level::strong,HandleAccess::all,T> > newobj_f(std::unique_ptr<VMObjectLog> &log, int name) {
+    auto newobj_f(std::unique_ptr<VMObjectLog> &log, int name) {
         auto &grm = this->grm;
 		auto &sm = this->sm;
-        return [&grm,&log,&sm](const T& t){
+		using ret_t = decltype(sm.ss.inst(get_strong_ip()).
+							   template newObject<HandleAccess::all>(grm.trk,mke_p<TransactionContext>(),name,std::declval<T>()));
+        newObject_f<ret_t> ret = [&grm,&log,&sm,name](const T& t) -> ret_t{
             auto trans = start_transaction(log,
                                            grm.trk,
                                            sm.ss.inst(get_strong_ip()),
                                            sm.sc.inst(0));
             trans->commit_on_delete = true;
             return sm.ss.inst(get_strong_ip()).
-                    template newObject<HandleAccess::all>(grm.trk, trans.get(),t);
+                    template newObject<HandleAccess::all>(grm.trk, trans.get(),name,t);
         };
+		return ret;
     }
 };
 
-struct TestParameters{
-        using time_t = std::chrono::time_point<std::chrono::high_resolution_clock>;
-        const time_t start_time{high_resolution_clock::now()};
-        time_t last_rate_raise{start_time};
-        Frequency current_rate{1000_Hz};
-        constexpr static Frequency increase_factor = 20_Hz;
-        constexpr static seconds increase_delay = 2s;
-        constexpr static minutes test_stop_time = 7min;
-        constexpr static double percent_writes = write_percent;
-        constexpr static double percent_strong = strong_percent;
+int usernames {0};
 
+struct TestParameters{
+	using time_t = std::chrono::time_point<std::chrono::high_resolution_clock>;
+	const time_t start_time{high_resolution_clock::now()};
+	time_t last_rate_raise{start_time};
+	Frequency current_rate{1000_Hz};
+	constexpr static Frequency increase_factor = 20_Hz;
+	constexpr static seconds increase_delay = 2s;
+	constexpr static minutes test_stop_time = 7min;
+	constexpr static double percent_writes = write_percent;
+	constexpr static double percent_strong = strong_percent;
+	
 	constexpr static Name min_name = 15;
 	constexpr static Name max_name = 400000;
 	constexpr static double room_name_param = 0.5;
-
+	
 	struct GroupRemember{
 		
         TrackerMem transaction_metadata;
 		const std::size_t username;
-
+		
 		TrackerMem& tracker_mem(){ return transaction_metadata;}
 		
         GroupRemember(int id)
-            :transaction_metadata(id),username(id % (max_name - min_name) + min_name){}
+            :transaction_metadata(id),username(++usernames){}
 	};
-
+	
 	struct TestArguments{
         decltype(elapsed_time()) start_time;
         std::size_t rooms_index;
 		std::size_t post_index;
-		//                                         post::mke(causal_newobject<post>{gmem->transaction_metadata,*smem}.newobj_f(log,tid),"test message")
 	};
-
-static_assert(std::is_pod<TestArguments>::value, "Error: need POD for serialization");
 	
-        using PreparedTest = PreparedTest<GroupRemember,TestArguments>;
-        using Pool = typename PreparedTest::Pool;
-
-        //ids between 15 and 400000 should work (as long as they're not ints)
-
+	static_assert(std::is_pod<TestArguments>::value, "Error: need POD for serialization");
+	
+	using PreparedTest = PreparedTest<GroupRemember,TestArguments>;
+	using Pool = typename PreparedTest::Pool;
+	
+	//ids between 15 and 400000 should work (as long as they're not ints)
+	
 	static std::vector<typename user::p> users(){static std::vector<typename user::p> ret; return ret;}; //these are immutable once initialized
-
+	
 	static std::vector<room> rooms(){static std::vector<room> ret; return ret;}; //these are immutable once initialized
-
+	
 	static std::vector<post::p> posts(){static std::vector<post::p> ret; return ret;}; //these are immutable once initialized
 	
 	static std::size_t get_room_name() {
@@ -199,7 +207,8 @@ int main(){
 	TestParameters::GroupRemember gm{15};
 	std::unique_ptr<VMObjectLog> log{gm.tracker_mem().log_builder->template beginStruct<LoggedStructs::log>().release()};
 	SQLMem sm {gm.tracker_mem()};
-	user::mke(causal_newobject<user>{gm.tracker_mem(),sm}.newobj_f(log,0),user::inbox_t::mke(causal_newset<typename post::p>{gm.tracker_mem(),sm}.newobj_f(log,0)) );
+	user::mke(causal_newobject<user>{gm.tracker_mem(),sm}.newobj_f(log,15),user::inbox_t::mke(causal_newset<typename post::p>{gm.tracker_mem(),sm}.newobj_f(log,16)) );
+	room::mke(strong_newobject<room>{gm.tracker_mem(),sm}.newobj_f(log,17),strong_newobject<MemberList>{gm.tracker_mem(),sm}.newobj_f(log,18));
 	
 
 	exit(0);
@@ -207,6 +216,7 @@ int main(){
 	for (auto i = TestParameters::min_name; i < TestParameters::max_name; ++i){
 		TestParameters::users();
 		TestParameters::rooms();
+		TestParameters::posts();
 	}
 	
 	//auto prof = VMProfiler::startProfiling();

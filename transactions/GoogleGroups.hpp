@@ -88,26 +88,22 @@ struct room : public mutils::ByteRepresentable{
 
 	using p = Handle<Level::strong, HandleAccess::all, room>;
 	MemberList::p members;
-	using posts_t = remote_set<Level::causal, post::p>::p;
-	posts_t posts;
 
-	room(newObject_f<MemberList::p> mf, newObject_f<decltype(posts)> pf)
-		:members(MemberList::mke(mf)),
-		 posts(remote_set<Level::causal, post::p>::mke(pf)) {}
+	room(newObject_f<MemberList::p> mf)
+		:members(MemberList::mke(mf)) {}
 	
-	room(const decltype(members) &m, const decltype(posts) &p)
-		:members(m),posts(p){}
+	room(const decltype(members) &m)
+		:members(m){}
 	
 	default_build
-	DEFAULT_SERIALIZATION_SUPPORT(room,members,posts)
+	DEFAULT_SERIALIZATION_SUPPORT(room,members)
 	
 		void add_post(std::unique_ptr<VMObjectLog> &log, tracker::Tracker& trk, post::p pst){
 		struct params {
-			posts_t posts; post::p pst; MemberList::p members;
+			post::p pst; MemberList::p members;
 		};
-		params env_param{posts,pst,members};
+		params env_param{pst,members};
 		TRANSACTION(log,trk,env_param,
-					mtl_ignore(do_op(Insert,$(env_param,posts),$(env_param,pst))),
 					let(hd) = $(env_param,members) IN ( 
 						WHILE (isValid(hd)) DO (
 							let_remote(tmp) = hd IN (

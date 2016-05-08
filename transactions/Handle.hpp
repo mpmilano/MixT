@@ -169,7 +169,7 @@ namespace myria{
 		}
 
 		operator Handle<l,ha,T>(){
-			return Handle<l,ha,T>(_ro);
+			return Handle<l,ha,T>((std::integral_constant<std::size_t,0>*)nullptr, _ro);
 		}
 
 		void put(tracker::Tracker& tracker, mtl::TransactionContext *tc, const T& t){
