@@ -28,8 +28,8 @@ then echo "object files found"
 else bash "$analyzer"/build-analyzer.sh $results_dir "$mutils"
 fi
 
-rm /tmp/myriastore_results_analysis_dir/analyzer_bin
-mkdir -p /tmp/myriastore_results_analysis_dir/
-clang++ -g -O3 -ferror-limit=1 -I"$mutils" -L"$mutils" --std=c++14 -lmutils -lgc -lprofiler -o /tmp/myriastore_results_analysis_dir/analyzer_bin -I"$results_dir"  $results_dir/output*.o "$analyzer"/results-analyzer.cpp;
-LD_LIBRARY_PATH="$mutils" /tmp/myriastore_results_analysis_dir/analyzer_bin -ferror-limit=1
+rm /tmp/myriastore_results_analysis_dir2/analyzer_bin
+mkdir -p /tmp/myriastore_results_analysis_dir2/
+clang++ -g -O3 -ferror-limit=1 -I"$mutils" -L"$mutils" --std=c++14 -lmutils -lgc -lprofiler -o /tmp/myriastore_results_analysis_dir2/analyzer_bin -I"$results_dir"  $results_dir/output*.o "$analyzer"/results-analyzer.cpp;
+LD_LIBRARY_PATH="$mutils" /tmp/myriastore_results_analysis_dir2/analyzer_bin -ferror-limit=1
 
