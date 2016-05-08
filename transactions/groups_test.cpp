@@ -108,7 +108,6 @@ struct TestParameters{
 	struct TestArguments{
         decltype(elapsed_time()) start_time;
         std::size_t rooms_index;
-		std::size_t post_index;
 	};
 	
 	static_assert(std::is_pod<TestArguments>::value, "Error: need POD for serialization");
@@ -121,9 +120,8 @@ struct TestParameters{
 	static std::vector<typename user::p> users(){static std::vector<typename user::p> ret; return ret;}; //these are immutable once initialized
 	
 	static std::vector<room> rooms(){static std::vector<room> ret; return ret;}; //these are immutable once initialized
-	
-	static std::vector<post::p> posts(){static std::vector<post::p> ret; return ret;}; //these are immutable once initialized
-	
+
+
 	static std::size_t get_room_name() {
 		auto ret = get_zipfian_value(max_name - min_name,room_name_param);
 		if (ret > (max_name - min_name)) {
@@ -144,7 +142,6 @@ struct TestParameters{
 				TestArguments ta;
 				ta.rooms_index = get_room_name();
 				ta.start_time = elapsed_time();
-				ta.post_index = -1;
 				
                 //post message
                 if (do_write) return pair<int,TestArguments>(0,ta);
@@ -213,7 +210,6 @@ int main(){
 	for (auto i = TestParameters::min_name; i < TestParameters::max_name; ++i){
 		TestParameters::users();
 		TestParameters::rooms();
-		TestParameters::posts();
 	}
 	
 	//auto prof = VMProfiler::startProfiling();
@@ -235,7 +231,7 @@ int main(){
                         log->addField(LogFields::run_time,duration_cast<milliseconds>(elapsed_time()).count());
 
 						TestParameters::rooms().at(args.rooms_index).
-							add_post(log,gmem->transaction_metadata.trk,TestParameters::posts().at(args.post_index));
+							add_post(log,gmem->transaction_metadata.trk,post::p{});
                         log->addField(LogFields::done_time,duration_cast<milliseconds>(elapsed_time()).count());
                         return log->single();
                 },
