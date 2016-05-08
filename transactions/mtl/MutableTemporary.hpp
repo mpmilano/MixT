@@ -8,6 +8,8 @@ namespace myria { namespace mtl {
 			MutableTemporary(const std::string& name, const T& t):
 				TemporaryCommon<ID,l,T>(name,t){}
 
+			static constexpr auto static_id = ID;
+			
 			typedef typename std::integral_constant<Level,l>::type level;
 			typedef T type;
 			typedef std::true_type found;

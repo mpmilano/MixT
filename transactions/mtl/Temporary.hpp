@@ -12,6 +12,8 @@ namespace myria { namespace mtl {
 		template<unsigned long long ID, Level l, typename T>
 		struct Temporary : public TemporaryCommon<ID, l,T> {
 
+			static constexpr auto static_id = ID;
+
 			static_assert(is_handle<run_result<T> >::value, "Error: this is a dereferencing construct. only valid on handles");
 			
 			Temporary(const std::string& name, const T& t):
