@@ -83,15 +83,15 @@ struct TestParameters{
 	using time_t = std::chrono::time_point<std::chrono::high_resolution_clock>;
 	const time_t start_time{high_resolution_clock::now()};
 	time_t last_rate_raise{start_time};
-	Frequency current_rate{1000_Hz};
+	Frequency current_rate{3000_Hz};
 	constexpr static Frequency increase_factor = 20_Hz;
 	constexpr static seconds increase_delay = 2s;
 	constexpr static minutes test_stop_time = 7min;
 	constexpr static double percent_writes = write_percent;
 	constexpr static double percent_strong = strong_percent;
 	
-	constexpr static Name min_name = 15;
-	constexpr static Name max_name = 400000;
+	constexpr static Name min_name = 17;
+	constexpr static Name max_name = 400000-2;
 	constexpr static double room_name_param = 0.5;
 	
 	struct GroupRemember{
@@ -108,6 +108,7 @@ struct TestParameters{
 	struct TestArguments{
         decltype(elapsed_time()) start_time;
         std::size_t rooms_index;
+		std::size_t users_index;
 	};
 	
 	static_assert(std::is_pod<TestArguments>::value, "Error: need POD for serialization");
@@ -116,17 +117,11 @@ struct TestParameters{
 	using Pool = typename PreparedTest::Pool;
 	
 	//ids between 15 and 400000 should work (as long as they're not ints)
-	
-	static std::vector<typename user::p> users(){static std::vector<typename user::p> ret; return ret;}; //these are immutable once initialized
-	
-	static std::vector<room> rooms(){static std::vector<room> ret; return ret;}; //these are immutable once initialized
-
-
-	static std::size_t get_room_name() {
+	static std::size_t get_name() {
 		auto ret = get_zipfian_value(max_name - min_name,room_name_param);
 		if (ret > (max_name - min_name)) {
 			std::cerr << "Name out of range! Trying again" << std::endl;
-			return get_room_name();
+			return get_name();
 		}
 		else return ret + min_name;
 	}
@@ -140,8 +135,9 @@ struct TestParameters{
 
 				
 				TestArguments ta;
-				ta.rooms_index = get_room_name();
+				ta.rooms_index = get_name();
 				ta.start_time = elapsed_time();
+				ta.users_index = get_name();
 				
                 //post message
                 if (do_write) return pair<int,TestArguments>(0,ta);
@@ -198,20 +194,10 @@ int main(){
 	logFile.open(log_name);
 
 	//initialize DB state
-	TestParameters::GroupRemember gm{15};
-	std::unique_ptr<VMObjectLog> log{gm.tracker_mem().log_builder->template beginStruct<LoggedStructs::log>().release()};
-	SQLMem sm {gm.tracker_mem()};
-	user::mke(causal_newobject<user>{gm.tracker_mem(),sm}.newobj_f(log,15),user::inbox_t::mke(causal_newset<typename post::p>{gm.tracker_mem(),sm}.newobj_f(log,16)) );
-	MemberList::mke(strong_newobject<MemberList>{gm.tracker_mem(),sm}.newobj_f(log,17));
+	//user::mke(causal_newobject<user>{gm.tracker_mem(),sm}.newobj_f(log,15),user::inbox_t::mke(causal_newset<typename post::p>{gm.tracker_mem(),sm}.newobj_f(log,16)) );
+	//MemberList::mke(strong_newobject<MemberList>{gm.tracker_mem(),sm}.newobj_f(log,17));
 	
 
-	exit(0);
-	//populating vectors
-	for (auto i = TestParameters::min_name; i < TestParameters::max_name; ++i){
-		TestParameters::users();
-		TestParameters::rooms();
-	}
-	
 	//auto prof = VMProfiler::startProfiling();
 	//auto longpause = prof->pause();
 	auto logger = build_VMObjectLogger();
@@ -230,7 +216,7 @@ int main(){
                         log->addField(LogFields::submit_time,duration_cast<milliseconds>(args.start_time).count());
                         log->addField(LogFields::run_time,duration_cast<milliseconds>(elapsed_time()).count());
 
-						TestParameters::rooms().at(args.rooms_index).
+						room{MemberList::p{}}.
 							add_post(log,gmem->transaction_metadata.trk,post::p{});
                         log->addField(LogFields::done_time,duration_cast<milliseconds>(elapsed_time()).count());
                         return log->single();
@@ -247,8 +233,8 @@ int main(){
                 log->addField(LogFields::run_time,duration_cast<milliseconds>(elapsed_time()).count());
 				log2->addField(LogFields::submit_time,duration_cast<milliseconds>(args.start_time).count());
 				log2->addField(LogFields::run_time,duration_cast<milliseconds>(elapsed_time()).count());
-				user::posts_p(log,gmem->transaction_metadata.trk,TestParameters::users().at(gmem->username));
-				TestParameters::rooms().at(args.rooms_index).add_member(log,gmem->transaction_metadata.trk,TestParameters::users().at(gmem->username));
+				auto &trk = gmem->transaction_metadata.trk;
+				user::posts_p(log,trk,smem->sc.inst(0).template existingObject<HandleAccess::all,user>(log,args.users_index));
                 log->addField(LogFields::done_time,duration_cast<milliseconds>(elapsed_time()).count());
 				log2->addField(LogFields::done_time,duration_cast<milliseconds>(elapsed_time()).count());
 				//double log, because two reads.
@@ -256,6 +242,18 @@ int main(){
         }
 
         }};
+
+	auto gm = std::make_shared<TestParameters::GroupRemember>(15);
+	//std::unique_ptr<VMObjectLog> log{gm.tracker_mem().log_builder->template beginStruct<LoggedStructs::log>().release()};
+	auto sm = std::make_shared<SQLMem>(gm->tracker_mem());
+	PreparedTest<typename TestParameters::GroupRemember,int>::pool_mem_init(15,sm,15,gm);
+	TestArguments ta;
+	ta.rooms_index = TestParameters::get_name();
+	ta.start_time = elapsed_time();
+	ta.users_index = TestParameters::get_name();
+	actions.at(0)(0,sm,0,gm,ta);
+	actions.at(1)(0,sm,0,gm,ta);
+	//exit(0);
 	
 	typename TestParameters::PreparedTest launcher{
 		num_processes,actions};

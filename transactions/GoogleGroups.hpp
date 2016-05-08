@@ -70,6 +70,7 @@ struct user : public mutils::ByteRepresentable {
 	static void posts_p(std::unique_ptr<VMObjectLog> &log, tracker::Tracker &trk, p hndl){
 		TRANSACTION(log,trk,hndl,
 					let_remote(usr) = hndl IN (
+						mtl_ignore(usr),
 						let_remote(theset) = $(usr,inbox) IN (mtl_ignore(theset))
 						)
 			);
