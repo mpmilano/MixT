@@ -18,7 +18,7 @@ namespace myria { namespace tracker {
 			std::shared_ptr<cache_t> cache{ std::make_shared<cache_t>()};
 			std::list<Tracker::Nonce> order;
 			static constexpr int max_size = 43;
-			static constexpr int tp_size = (int{MAX_THREADS} > 0 ? int{MAX_THREADS} : 50);
+			static constexpr int tp_size = 5;
 			const CacheBehaviors active_behavior;
 			std::unique_ptr<ctpl::thread_pool> tp;
 			void track_with_eviction(Tracker::Nonce, const obj_bundle &);

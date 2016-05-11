@@ -2,6 +2,8 @@
 cd
 cd consistency-tester/transactions/
 git checkout pg_env.sh
+git checkout vm_main.cpp
+git checkout master
 git pull
 if [[ -d mutils ]]
 then cd mutils; git pull; cd ..

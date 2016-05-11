@@ -8,12 +8,17 @@ using namespace mutils;
 int main(){
 	
 	std::vector<pair<int,shared_ptr<Socket> > > ip_addrs {
-		{make_pair(decode_ip("128.84.105.150"), std::shared_ptr<Socket>()),
-				/*make_pair(decode_ip("128.84.217.139"), std::shared_ptr<Socket>()),*/
-				make_pair(decode_ip("128.84.105.142"), std::shared_ptr<Socket>()),
-				make_pair(decode_ip("128.84.105.88"), std::shared_ptr<Socket>()),
-				make_pair(decode_ip("128.84.105.81"), std::shared_ptr<Socket>()),
-				make_pair(decode_ip("128.84.105.69"), std::shared_ptr<Socket>())}};
+		{
+			make_pair(decode_ip("128.84.105.69"), std::shared_ptr<Socket>()),
+				make_pair(decode_ip("128.84.105.78"), std::shared_ptr<Socket>()),
+				make_pair(decode_ip("128.84.105.156"), std::shared_ptr<Socket>()),
+				make_pair(decode_ip("128.84.105.140"), std::shared_ptr<Socket>()),
+				make_pair(decode_ip("128.84.105.147"), std::shared_ptr<Socket>()),
+				make_pair(decode_ip("128.84.105.158"), std::shared_ptr<Socket>()),
+				make_pair(decode_ip("128.84.105.125"), std::shared_ptr<Socket>()),
+				make_pair(decode_ip("128.84.105.90"), std::shared_ptr<Socket>()),
+				make_pair(decode_ip("128.84.105.79"), std::shared_ptr<Socket>()),
+					}};
 
 	try { 
 
