@@ -1,4 +1,4 @@
-#include "ctpl_stl.h"
+#include "GlobalPool.hpp"
 #include "CooperativeCache.hpp"
 #include "FutureFreePool.hpp"
 #include "Ostreams.hpp"
@@ -32,8 +32,7 @@ namespace myria { namespace tracker {
 		}
 
 		CooperativeCache::CooperativeCache(CacheBehaviors beh)
-			:active_behavior(beh),
-			 tp(behavior_make_requests(beh) ? new ctpl::thread_pool(tp_size) : nullptr){}
+			:active_behavior(beh){}
 		
 		void CooperativeCache::insert(Tracker::Nonce n, const std::map<Name,std::pair<Tracker::Clock, std::vector<char> > > &map){
 			obj_bundle new_tracking;
@@ -127,7 +126,7 @@ namespace myria { namespace tracker {
 				}
 			}
 			if (behavior_make_requests(active_behavior)){
-				return tp->push([tomb,portno,this](int) -> CooperativeCache::obj_bundle {
+				return GlobalPool::push([tomb,portno,this](int) -> CooperativeCache::obj_bundle {
 						while (true)
 							try {
 								auto tname = tomb.name();
@@ -192,9 +191,8 @@ namespace myria { namespace tracker {
 						try {
 							AtScopeEnd ase2{[](){std::cout << "listening done; cache closed" << std::endl;}};
 							ServerSocket server(portno);
-						
-							constexpr int tp_size2 = tp_size;
-							FutureFreePool pool{tp_size2};
+							
+							FutureFreePool pool;
 							while (true) {
 								Socket newsockfd = server.receive();
 								if (!newsockfd.valid()) continue;
