@@ -180,10 +180,22 @@ std::string PreparedTest<Mem,Arg>::run_tests(Meta& meta, bool (*stop) (Meta&, Po
 		for (auto &f : *futures){
 			if (f.valid()){
 				if (f.wait_for(1ms) != future_status::timeout){
-					auto strp = f.get();
-					if (strp){
-						ss << *strp << endl;
+					try {
+						auto strp = f.get();
+						if (strp){
+							ss << *strp << endl;
+						}
 					}
+					catch (const std::exception& e){
+						ss << e.what() << endl;
+					}
+					catch (const pqxx::pqxx_exception& e){
+						ss << e.base().what() << endl;
+					}
+					catch (...){
+						ss << "Unknown exception " << endl;
+					}
+						
 				}
 				else {
 					new_futures->push_back(std::move(f));

@@ -10,7 +10,7 @@ auto getArrivalInterval(Frequency arrival_rate) {
 	// exponential
 	constexpr double thousand = -1000.0;
 	double U = better_rand();
-	double T = thousand * log(U) / (arrival_rate.hertz / 10);
+	double T = thousand * log(U) / arrival_rate.hertz;
 	unsigned long l = round(T);
 	return milliseconds(l);
 }
