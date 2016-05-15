@@ -193,7 +193,9 @@ std::string PreparedTest<Mem,Arg>::run_tests(Meta& meta, bool (*stop) (Meta&, Po
 						ss << e.base().what() << endl;
 					}
 					catch (...){
-						ss << "Unknown exception " << endl;
+						std::exception_ptr p = std::current_exception();
+						ss <<(p ? p.__cxa_exception_type()->name() : "null") << std::endl;
+
 					}
 						
 				}
