@@ -198,7 +198,7 @@ std::string PreparedTest<Mem,Arg>::run_tests(Meta& meta, bool (*stop) (Meta&, Po
 						std::exception_ptr p = std::current_exception();
 						ss << "threw this: ";
 						if (p){
-							ss << exn_type(p)->name() << std::endl;
+							ss << exn_typename(p) << std::endl;
 						}
 						else {
 							ss << "null" << std::endl;
