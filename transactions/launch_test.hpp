@@ -20,6 +20,7 @@
 #include "test_utils.hpp"
 //*/
 #include "Transaction_macros.hpp"
+#include "abiutils.hpp"
 
 //The "new" vm_main
 
@@ -158,6 +159,7 @@ PreparedTest<Mem,Arg>::convert_vector(const std::vector<action_t>& src){
 	return ret;
 }
 
+	
 //runs the main test loop, given a function which return true when
 //the test should stop, and a function that returns (which-task, what-arg-for-task)
 template<typename Mem,typename Arg> template<typename Meta>
@@ -194,10 +196,15 @@ std::string PreparedTest<Mem,Arg>::run_tests(Meta& meta, bool (*stop) (Meta&, Po
 					}
 					catch (...){
 						std::exception_ptr p = std::current_exception();
-						ss <<(p ? p.__cxa_exception_type()->name() : "null") << std::endl;
-
+						ss << "threw this: ";
+						if (p){
+							ss << exn_type(p)->name() << std::endl;
+						}
+						else {
+							ss << "null" << std::endl;
+						}
 					}
-						
+					
 				}
 				else {
 					new_futures->push_back(std::move(f));
