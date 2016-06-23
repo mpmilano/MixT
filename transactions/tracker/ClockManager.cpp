@@ -36,12 +36,12 @@ namespace myria { namespace tracker {
 			
 			ClockManager(){
 				std::thread{[loop = this->loop]() mutable {
-                                            try{
-						loop.loop_until_dead(Tracker::clockport);
-                                           }
-                                            catch(mutils::SocketException&){
+						try{
+							loop.loop_until_dead(Tracker::clockport);
+						}
+						catch(mutils::SocketException&){
                                               //looks like we're flying without the clock today.
-                                           }
+						}
 					}}.detach();
 			}
 			~ClockManager(){

@@ -5,6 +5,7 @@ git checkout pg_env.sh
 git checkout vm_main.cpp
 git checkout master
 git pull
+#git checkout 8aa31399d5e62f5ad1f94459ecffb94bc0f18fc8
 if [[ -d mutils ]]
 then cd mutils; git pull; cd ..
 else git clone https://github.com/mpmilano/mutils.git
@@ -13,6 +14,7 @@ if [[ -d mutils-tasks ]]
 then cd mutils-tasks; git pull; cd ..
 else git clone https://github.com/mpmilano/mutils-tasks.git
 fi
+cd mutils-tasks; git checkout master; cd ..
 if [[ -d mutils-serialization ]]
 then cd mutils-serialization; git pull; cd ..
 else git clone https://github.com/mpmilano/mutils-serialization.git
@@ -32,7 +34,7 @@ if [[ $7 ]];
 then make clean
 else rm vm_main.o; rm vm
 fi
-extra_macro_defs="-D$2 -DWRITE_PERCENT=$3 -DSTRONG_PERCENT=$4" causalGroup="$1" MY_IP="$5" STRONG_REMOTE_IP="$6" make -j4 vm
+MAX_THREADS=10000 extra_macro_defs="-D$2 -DWRITE_PERCENT=$3 -DSTRONG_PERCENT=$4" causalGroup="$1" MY_IP="$5" STRONG_REMOTE_IP="$6" make -j4 vm
 ./vm
 #for ((i=1; i <= $2; i++))
 #do

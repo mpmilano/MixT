@@ -420,6 +420,14 @@ namespace myria{ namespace pgsql {
 			arrt[0] = i->table;
 			return this->bytes_size();
 		}
+
+		void SQLStore_impl::GSQLObject::post_object(const std::function<void (char const * const,std::size_t)>&f) const {
+			//TODO: this is not symmetric! That is a bad design! Bad!
+			auto size = bytes_size();
+			char buf[size];
+			to_bytes(buf);
+			f(buf,size);
+		}
 		
 		SQLStore_impl& SQLInstanceManager_abs::inst(Level l, int store_id){
 			if (l == Level::strong) return this->inst_strong(store_id);

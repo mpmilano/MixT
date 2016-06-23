@@ -8,8 +8,8 @@
 #include "TempBuilder.hpp"
 #include "FreeExpr.hpp"
 #include "Print.hpp"
-#include "Massert.hpp"
-#include "SerializationMacros.hpp"
+#include "Massert.hpp"//*/
+#include "SerializationMacros.hpp" 
 #include "Transaction_macros.hpp"
 #include "FreeExpr_macros.hpp"
 #include "Operate_macros.hpp"
@@ -64,16 +64,17 @@ namespace myria{
 			return copy == wc;
 		}
 
-		DEFAULT_SERIALIZATION_SUPPORT(RemoteCons,val,next)	
+		//DEFAULT_SERIALIZATION_SUPPORT(RemoteCons,val,next)
+		  std::size_t to_bytes(char* ret) const { int sa = mutils::to_bytes(val,ret); return sa + mutils::to_bytes(next,ret + sa); } std::size_t bytes_size() const { return mutils::bytes_size(val) + mutils::bytes_size(next); } void post_object(const std::function<void (char const * const, std::size_t)>&f ) const { mutils::post_object(f,val); mutils::post_object(f,next); } static std::unique_ptr<RemoteCons> from_bytes(mutils::DeserializationManager* p, char const * v){ auto a2 = mutils::from_bytes<std::decay_t<decltype(val)> >(p,v); RemoteCons r{*a2,*(mutils::from_bytes<std::decay_t<decltype(next)> >(p,v + mutils::bytes_size(*a2)))}; return mutils::heap_copy(r); } void ensure_registered(mutils::DeserializationManager&){}
 	};
 
 	template<typename> struct is_remote_cons : std::false_type{};
-	template<typename T, Level backbone, Level data, typename... DataSupportedOps>
-	struct is_remote_cons<RemoteCons<T,backbone,data,DataSupportedOps...> > : std::true_type {};
+	template<typename T2, Level backbone, Level data, typename... DataSupportedOps>
+	struct is_remote_cons<RemoteCons<T2,backbone,data,DataSupportedOps...> > : std::true_type {};
 
 
-	template<typename T, Level backbone, Level data,typename... ops>
-	std::ostream& operator<<(std::ostream &os, const RemoteCons<T,backbone,data,ops...>& rc){
+	template<typename T2, Level backbone, Level data,typename... ops>
+	std::ostream& operator<<(std::ostream &os, const RemoteCons<T2,backbone,data,ops...>& rc){
 		return os << rc.val << " ++ " << rc.next;
 	}
 }

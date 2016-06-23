@@ -359,12 +359,22 @@ namespace mutils{
 	int to_bytes(const myria::Handle<l,ha,T,Ops...>& h, char* v){
 		return h.to_bytes_hndl(v);
 	}
+
 	
 	template<myria::Level l, myria::HandleAccess ha, typename T,typename... Ops>
 	int bytes_size(const myria::Handle<l,ha,T,Ops...> &h){
 		return h.bytes_size_hndl();
 	}
-
+	
+	template<myria::Level l, myria::HandleAccess ha, typename T,typename... Ops>
+	void post_object(const std::function<void (char const *const, std::size_t)>&f,
+					 const myria::Handle<l,ha,T,Ops...>& h){
+		auto size = ::mutils::bytes_size(h);
+		char buf[size];
+		h.to_bytes_hndl(buf);
+		f(buf,size);
+	}
+	
 	template<myria::Level l, myria::HandleAccess ha, typename T, typename... Ops>
 	void ensure_registered(const myria::Handle<l,ha,T,Ops...>& v, DeserializationManager& dm){
 		ensure_registered(*v._ro,dm);

@@ -36,8 +36,8 @@ const auto& NO_USE_STRONG(){
 }
 
 auto window_averages(const std::vector<myria_log> &_results){
-    constexpr int window_size = duration_cast<milliseconds>(2s).count();
-    constexpr int window_step = duration_cast<milliseconds>(1s).count();
+    constexpr int window_size = duration_cast<milliseconds>(4s).count();
+    constexpr int window_step = duration_cast<milliseconds>(4s).count();
 
 	auto results_sorted_by_complete_time = std::make_unique<std::vector<myria_log const *> >();
     for (auto &result : _results) {

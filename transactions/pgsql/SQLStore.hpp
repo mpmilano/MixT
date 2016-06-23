@@ -12,9 +12,9 @@ namespace myria { namespace pgsql {
 		class SQLStore : public SQLStore_impl, public DataStore<l> {
 		public:
 
-                        static constexpr Level level = l;
-
-                        virtual ~SQLStore() {}
+			static constexpr Level level = l;
+			
+			virtual ~SQLStore() {}
 
 			struct SQLInstanceManager : public SQLInstanceManager_abs{
 			public:
@@ -23,38 +23,38 @@ namespace myria { namespace pgsql {
 					:SQLInstanceManager_abs(),trk(trk){
 				}
 				SQLInstanceManager(const SQLInstanceManager&) = delete;
-                                virtual ~SQLInstanceManager(){
-                                    for (auto &p : ss){
-                                        SQLStore* ptr = p.second.release();
-                                        delete ptr;
-                                    }
-                                }
+				virtual ~SQLInstanceManager(){
+					for (auto &p : ss){
+						SQLStore* ptr = p.second.release();
+						delete ptr;
+					}
+				}
 			private:
 				std::map<int,std::unique_ptr<SQLStore> > ss;
 				
 				void inst(Level l2, int instance_id){
 					assert(l == l2);
-                                        if (ss.count(instance_id) == 0 || (!ss.at(instance_id))){
+					if (ss.count(instance_id) == 0 || (!ss.at(instance_id))){
 						assert(this->this_mgr);
 						ss[instance_id].reset(new SQLStore(trk,instance_id,*this->this_mgr));
 					}
 				}
 
 				SQLStore<Level::strong>& choose_s(int instance_id, std::true_type*){
-                                    assert(ss.at(instance_id));
+					assert(ss.at(instance_id));
 					return *ss.at(instance_id);
 				}
 				
-                                SQLStore<Level::strong>& choose_s(int, std::false_type*){
+				SQLStore<Level::strong>& choose_s(int, std::false_type*){
 					assert(false && "Error: This is not a strong instance manager");
 				}
 				
 				SQLStore<Level::causal>& choose_c(int instance_id, std::true_type*){
-                                    assert(ss.at(instance_id));
+					assert(ss.at(instance_id));
 					return *ss.at(instance_id);
 				}
 				
-                                SQLStore<Level::causal>& choose_c(int, std::false_type*){
+				SQLStore<Level::causal>& choose_c(int, std::false_type*){
 					assert(false && "Error: This is not a causal instance manager");
 				}
 				
@@ -74,7 +74,7 @@ namespace myria { namespace pgsql {
 
 				auto& inst(int instance_id){
 					inst(l,instance_id);
-                                        assert(ss.at(instance_id));
+					assert(ss.at(instance_id));
 					return *ss.at(instance_id);
 				}
 			};
@@ -132,15 +132,15 @@ namespace myria { namespace pgsql {
 				std::shared_ptr<T> t;
 				mutils::DeserializationManager &tds;
 
-                                SQLObject(GSQLObject gs, std::unique_ptr<T> _t, mutils::DeserializationManager &tds):
-                                        gso(std::move(gs)),tds(tds){
-                                    assert(this);
-                                    if (_t){
-                                        mutils::ensure_registered(*_t,tds);
-                                        this->t = std::shared_ptr<T>{_t.release()};
-                                    }
-                                }
-                                int fail_counter = 0;
+				SQLObject(GSQLObject gs, std::unique_ptr<T> _t, mutils::DeserializationManager &tds):
+					gso(std::move(gs)),tds(tds){
+					assert(this);
+					if (_t){
+						mutils::ensure_registered(*_t,tds);
+						this->t = std::shared_ptr<T>{_t.release()};
+					}
+				}
+				int fail_counter = 0;
 
 		
 				std::shared_ptr<const T> get(mtl::StoreContext<l>* _tc, tracker::Tracker* trk, tracker::TrackingContext* trkc) {
@@ -152,7 +152,7 @@ namespace myria { namespace pgsql {
 						t = trk->onRead(*trkc,store(),name(),timestamp(),
 										mutils::from_bytes<T>(&tds,res),(T*)nullptr);
 					}
-                                        return t;
+					return t;
 				}
 
 				const std::array<int,NUM_CAUSAL_GROUPS>& timestamp() const {
@@ -180,11 +180,14 @@ namespace myria { namespace pgsql {
 				Name name() const {
 					return gso.name();
 				}
-				int bytes_size() const {
+				std::size_t bytes_size() const {
 					return gso.bytes_size();
 				}
-				int to_bytes(char* c) const {
+				std::size_t to_bytes(char* c) const {
 					return gso.to_bytes(c);
+				}
+				void post_object(const std::function<void (char const * const,std::size_t)>&f) const {
+					return gso.post_object(f);
 				}
 				void ensure_registered(mutils::DeserializationManager &m){
 					assert(m. template registered<deserialization_context>());
@@ -207,8 +210,8 @@ namespace myria { namespace pgsql {
 					(std::is_same<T,int>::value ? Table::IntStore : Table::BlobStore);
 				int size = mutils::bytes_size(init);
 				std::vector<char> v(size);
-                                int tb_size = mutils::to_bytes(init,&v[0]);
-                                assert(size == tb_size);
+				int tb_size = mutils::to_bytes(init,&v[0]);
+				assert(size == tb_size);
 				GSQLObject gso(*this,t,name,v);
 				SQLHandle<ha,T> ret{trk,tc,std::make_shared<SQLObject<T> >(std::move(gso),mutils::heap_copy(init),this_mgr),*this };
 				trk.onCreate(*this,name,(T*)nullptr);
@@ -221,15 +224,15 @@ namespace myria { namespace pgsql {
 			}
 
 			template<HandleAccess ha, typename T>
-                        auto existingObject(std::unique_ptr<VMObjectLog>&, Name name){
+			auto existingObject(std::unique_ptr<VMObjectLog>&, Name name){
 				static constexpr Table t =
 					(std::is_same<T,int>::value ? Table::IntStore : Table::BlobStore);
 				GSQLObject gso(*this,t,name);
-                                return SQLHandle<ha,T>{std::make_shared<SQLObject<T> >(std::move(gso),nullptr,this_mgr),*this};
-                        }
+				return SQLHandle<ha,T>{std::make_shared<SQLObject<T> >(std::move(gso),nullptr,this_mgr),*this};
+			}
 
 			template<typename T>
-                        std::unique_ptr<SQLObject<T> > existingRaw(std::unique_ptr<mutils::abs_StructBuilder>&, Name name){
+			std::unique_ptr<SQLObject<T> > existingRaw(std::unique_ptr<mutils::abs_StructBuilder>&, Name name){
 				static constexpr Table t =
 					(std::is_same<T,int>::value ? Table::IntStore : Table::BlobStore);
 				return std::unique_ptr<SQLObject<T> >
@@ -240,11 +243,11 @@ namespace myria { namespace pgsql {
 			template<HandleAccess ha, typename T>
 			static std::unique_ptr<SQLHandle<ha,T> > from_bytes(mutils::DeserializationManager* mngr, char const * v){
 				//this really can't be called via the normal deserialization process; it needs to be called in the process of deserializing a RemoteObject.
-                            assert(mngr);
-							auto &insance_manager = mngr->template mgr<deserialization_context>();
-							auto gsql_obj = GSQLObject::from_bytes(insance_manager,v);
-							auto &this_ds = dynamic_cast<SQLStore&>(gsql_obj.store()); //this should never fail
-                            return std::make_unique<SQLHandle<ha,T> >(std::make_shared<SQLObject<T> >(std::move(gsql_obj),nullptr,*mngr),this_ds);
+				assert(mngr);
+				auto &insance_manager = mngr->template mgr<deserialization_context>();
+				auto gsql_obj = GSQLObject::from_bytes(insance_manager,v);
+				auto &this_ds = dynamic_cast<SQLStore&>(gsql_obj.store()); //this should never fail
+				return std::make_unique<SQLHandle<ha,T> >(std::make_shared<SQLObject<T> >(std::move(gsql_obj),nullptr,*mngr),this_ds);
 			}
 
 			struct SQLContext : mtl::StoreContext<l> {
