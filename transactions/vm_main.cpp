@@ -1,6 +1,6 @@
 
 #include "ProcessPool.hpp"
-#include "ThreadPool.hpp"
+#include "GloballyBackedExecutor.hpp"
 #include <iostream>
 #include <fstream>
 #include <thread>
@@ -75,7 +75,7 @@ namespace synth_test {
 	using oper_f = void (*) (unique_ptr<VMObjectLog>& ,
 							 Tracker &, Hndl );
 
-	auto log_start(std::shared_ptr<TrackerMem> mem, unique_ptr<VMObjectLog>& log_messages, fake_time _start_time){
+	auto log_start(std::shared_ptr<Mem> mem, unique_ptr<VMObjectLog>& log_messages, fake_time _start_time){
 		assert(mem);
 		log_messages = mem->log_builder->template beginStruct<LoggedStructs::log>();
 		microseconds start_time(_start_time);
@@ -149,14 +149,13 @@ namespace synth_test {
 		}
 	}
 
-	std::string perform_strong_increment(int, std::shared_ptr<SQLMem> sm, int, std::shared_ptr<TrackerMem> tm, 
-										 fake_time _start_time){
+	std::string perform_strong_increment(int, std::shared_ptr<Mem> mem, fake_time _start_time){
 		auto name = get_name_write();
 		std::unique_ptr<VMObjectLog> log_messages;
-		log_start(tm,log_messages,_start_time);
-		SQLStore<Level::strong> &strong = sm->ss.inst_strong(get_strong_ip());
-		SQLStore<Level::causal> &causal = sm->sc.inst_causal(0);
-		auto &trk = tm->trk;
+		log_start(mem,log_messages,_start_time);
+		SQLStore<Level::strong> &strong = mem->ss.inst_strong(get_strong_ip());
+		SQLStore<Level::causal> &causal = mem->sc.inst_causal(0);
+		auto &trk = mem->trk;
 		store_asserts(strong,causal,trk);
 		perform_operation(log_messages, trk,
 						  strong.template existingObject<HandleAccess::all,int>(log_messages,name),
@@ -166,15 +165,14 @@ namespace synth_test {
 		return log_messages->single();
 	}
 
-	std::string perform_causal_increment(int,  std::shared_ptr<SQLMem> sm, int, std::shared_ptr<TrackerMem> tm,
-										 fake_time _start_time){
+	std::string perform_causal_increment(int,std::shared_ptr<Mem> mem,fake_time _start_time){
 		auto name = get_name_write();
 		std::unique_ptr<VMObjectLog> log_messages;
-		log_start(tm,log_messages,_start_time);
+		log_start(mem,log_messages,_start_time);
 		assert(log_messages);
-		SQLStore<Level::strong> &strong = sm->ss.inst_strong(get_strong_ip());
-		SQLStore<Level::causal> &causal = sm->sc.inst_causal(0);
-		auto &trk = tm->trk;
+		SQLStore<Level::strong> &strong = mem->ss.inst_strong(get_strong_ip());
+		SQLStore<Level::causal> &causal = mem->sc.inst_causal(0);
+		auto &trk = mem->trk;
 		store_asserts(strong,causal,trk);
 		perform_operation(log_messages,trk,
 						  causal.template existingObject<HandleAccess::all,int>(log_messages,name),
@@ -185,14 +183,13 @@ namespace synth_test {
 		
 	}
 
-	std::string perform_strong_read(int,  std::shared_ptr<SQLMem> sm, int, std::shared_ptr<TrackerMem> tm,
-										 fake_time _start_time){
+	std::string perform_strong_read(int, std::shared_ptr<Mem> mem, fake_time _start_time){
 		auto name = get_name_read(0.5);
 		std::unique_ptr<VMObjectLog> log_messages;
-		log_start(tm,log_messages,_start_time);
-		SQLStore<Level::strong> &strong = sm->ss.inst_strong(get_strong_ip());
-		SQLStore<Level::causal> &causal = sm->sc.inst_causal(0);
-		auto &trk = tm->trk;
+		log_start(mem,log_messages,_start_time);
+		SQLStore<Level::strong> &strong = mem->ss.inst_strong(get_strong_ip());
+		SQLStore<Level::causal> &causal = mem->sc.inst_causal(0);
+		auto &trk = mem->trk;
 		store_asserts(strong,causal,trk);
 		perform_operation(log_messages, trk,
 						  strong.template existingObject<HandleAccess::all,int>(log_messages,name),
@@ -202,14 +199,13 @@ namespace synth_test {
 		return log_messages->single();
 	}
 
-	std::string perform_causal_read(int,  std::shared_ptr<SQLMem> sm, int, std::shared_ptr<TrackerMem> tm,
-										 fake_time _start_time){
+	std::string perform_causal_read(int, std::shared_ptr<Mem> mem, fake_time _start_time){
 		auto name = get_name_read(0.5);
 		std::unique_ptr<VMObjectLog> log_messages;
-		log_start(tm,log_messages,_start_time);
-		SQLStore<Level::strong> &strong = sm->ss.inst_strong(get_strong_ip());
-		SQLStore<Level::causal> &causal = sm->sc.inst_causal(0);
-		auto &trk = tm->trk;
+		log_start(mem,log_messages,_start_time);
+		SQLStore<Level::strong> &strong = mem->ss.inst_strong(get_strong_ip());
+		SQLStore<Level::causal> &causal = mem->sc.inst_causal(0);
+		auto &trk = mem->trk;
 		store_asserts(strong,causal,trk);
 		perform_operation(log_messages,trk,
 						  causal.template existingObject<HandleAccess::all,int>(log_messages,name),
@@ -230,7 +226,7 @@ namespace synth_test {
 		constexpr static minutes test_stop_time = 7min;
 		constexpr static double percent_writes = write_percent;
 		constexpr static double percent_strong = strong_percent;
-		using PreparedTest = PreparedTest<TrackerMem,fake_time>;
+		using PreparedTest = PreparedTest<Mem,fake_time>;
 		using Pool = typename PreparedTest::Pool;
 		
 		pair<int,fake_time> choose_action(Pool&) const {
@@ -258,6 +254,7 @@ namespace synth_test {
 		}
 
 #define method_to_fun(foo,Arg) [](auto& x, Arg y){return x.foo(y);}
+		
 		std::string run_tests(PreparedTest& launcher){
 			bool (*stop) (TestParameters&,Pool&) = method_to_fun(stop,Pool&);
 			pair<int,fake_time> (*choose) (TestParameters&,Pool&) = method_to_fun(choose_action,Pool&);
@@ -305,8 +302,7 @@ int main(){
 				synth_test::perform_causal_read
 				}};
 	
-	typename synth_test::TestParameters::PreparedTest launcher{
-		num_processes,vec};
+	typename synth_test::TestParameters::PreparedTest launcher{vec};
 	
 	std::cout << "beginning subtask generation loop" << std::endl;
 

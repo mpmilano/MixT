@@ -1,6 +1,6 @@
 #pragma once
 #include "ProcessPool.hpp"
-#include "ThreadPool.hpp"
+#include "GloballyBackedExecutor.hpp"
 #include <iostream>
 #include <fstream>
 #include <thread>
@@ -42,46 +42,36 @@ namespace {
 		;
 }
 
-	struct TrackerMem {
+	struct Mem {
 		unique_ptr<VMObjectLogger> log_builder{build_VMObjectLogger()};
 		tracker::Tracker trk;
-		TrackerMem& tracker_mem(){return *this;}
-		
-		TrackerMem(int id)
-			:trk(id + 1024, tracker::CacheBehaviors::full){
-		}
-	};
-	
-	struct SQLMem {
-		
 		SQLStore<Level::strong>::SQLInstanceManager ss;
 		SQLStore<Level::causal>::SQLInstanceManager sc;
-		//TrackerTestingStore<Level::strong> ss;
-		//TrackerTestingStore<Level::causal> sc;
 		DeserializationManager dsm;
 		
-		SQLMem(TrackerMem& tm)
-			:ss(tm.trk),
-			 sc(tm.trk),
+		Mem& tracker_mem(){return *this;}
+		
+		Mem(int id)
+			:trk(id + 1024, tracker::CacheBehaviors::full),
+			 ss(trk),
+			 sc(trk),
 			 dsm({&ss,&sc}){}
 	};
+	
 
 template<typename Mem, typename Arg>
 struct PreparedTest{
 
-	using Pool = ThreadPool<SQLMem,Mem,std::string,Arg>;
+	using Pool = GloballyBackedExecutor<Mem,std::string,Arg>;
 
 	//static functions for TaskPool
 	static std::string exn_handler(std::exception_ptr eptr);
 	
-	static void pool_mem_init (int tid, std::shared_ptr<SQLMem> &sqlmem, int memid, std::shared_ptr<Mem> &mem);
+	static void pool_mem_init (int memid, std::shared_ptr<Mem> &mem);
 
 	using action_t = typename Pool::action_fp;
 	using functor_action_t = typename Pool::action_f;
 	
-	//members, also for task pool
-	const int num_processes;
-
 	//for task pool init
 	static std::vector<functor_action_t> convert_vector(const std::vector<action_t>&);
 
@@ -89,9 +79,8 @@ struct PreparedTest{
 	Pool pool;
 
 	//constructor
-	PreparedTest(int num_processes, std::vector<action_t> actions)
-		:num_processes(num_processes),
-		 pool{pool_mem_init,convert_vector(actions),num_processes,exn_handler}{}
+	PreparedTest(std::vector<action_t> actions)
+		:pool{pool_mem_init,convert_vector(actions),exn_handler}{}
 
 	//runs the main test loop, given a function which return true when
 	//the test should stop, and a function that returns (which-task, what-arg-for-task)
@@ -130,18 +119,14 @@ std::string PreparedTest<Mem,Arg>::exn_handler(std::exception_ptr eptr){
 }
 
 template<typename Mem,typename Arg>
-void PreparedTest<Mem,Arg>::pool_mem_init (int tid, std::shared_ptr<SQLMem>& sqlmem, int memid, std::shared_ptr<Mem> &mem){
+void PreparedTest<Mem,Arg>::pool_mem_init (int memid, std::shared_ptr<Mem> &mem){
 	auto pid = memid % (65535 - 1025); //make sure this can be used as a port numbxer
 	if (!mem) {
 		mem = std::make_shared<Mem>(pid);
 	}
 	assert(mem);
-	if (!sqlmem){
-		sqlmem.reset(new SQLMem(mem->tracker_mem()));
-	}
-	assert(sqlmem);
-	auto &ss = sqlmem->ss.inst(get_strong_ip());
-	auto &cs = sqlmem->sc.inst(0);
+	auto &ss = mem->ss.inst(get_strong_ip());
+	auto &cs = mem->sc.inst(0);
 	
 	if (!mem->tracker_mem().trk.strongRegistered())
 		mem->tracker_mem().trk.registerStore(ss);
