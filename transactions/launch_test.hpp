@@ -1,5 +1,4 @@
 #pragma once
-#include "ProcessPool.hpp"
 #include "GloballyBackedExecutor.hpp"
 #include <iostream>
 #include <fstream>
@@ -14,7 +13,6 @@
 #include <chrono>
 #include <cmath>
 #include <unistd.h>
-#include "ProcessPool.hpp"
 #include "Hertz.hpp"
 #include "ObjectBuilder.hpp"
 #include "test_utils.hpp"
