@@ -123,8 +123,8 @@ void PreparedTest<Mem,Arg>::pool_mem_init (int memid, std::shared_ptr<Mem> &mem)
 		mem = std::make_shared<Mem>(pid);
 	}
 	assert(mem);
-	auto &ss = mem->ss.inst(get_strong_ip());
-	auto &cs = mem->sc.inst(0);
+	auto &ss = mem->ss.inst();
+	auto &cs = mem->sc.inst();
 	
 	if (!mem->tracker_mem().trk.strongRegistered())
 		mem->tracker_mem().trk.registerStore(ss);

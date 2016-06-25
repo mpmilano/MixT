@@ -1,52 +1,40 @@
 #pragma once
+#include <cmath>
 #include "Hertz.hpp"
+#include "mutils.hpp"
 
 namespace mutils{
 
 //I'm guessing miliseconds.  Here's hoping!
-auto getArrivalInterval(Frequency arrival_rate) {
-	using namespace std;
-	using namespace chrono;
-	// exponential
-	constexpr double thousand = -1000.0;
-	double U = better_rand();
-	double T = thousand * log(U) / arrival_rate.hertz;
-	unsigned long l = round(T);
-	return milliseconds(l);
-}
+	std::chrono::milliseconds getArrivalInterval(Frequency arrival_rate);
 
-using milliseconds = decltype(getArrivalInterval(5_Hz));
+	using milliseconds = decltype(getArrivalInterval(5_Hz));
 
-	unsigned int get_zipfian_value(unsigned int max, double alpha){
-		double y = better_rand();
-		assert (y < 1.1);
-		assert (y > -0.1);
-		double max_pow = pow(max,1 - alpha);
-		double x = pow(max_pow*y,1/(1-alpha));
-		return round(x);
+	unsigned int get_zipfian_value(unsigned int max, double alpha);
+
+	template<typename A, typename B>
+	auto micros(std::chrono::duration<A,B> time){
+		using namespace std::chrono;
+		return duration_cast<microseconds>(time).count();
 	}
 
-
-
-template<typename A, typename B>
-auto micros(std::chrono::duration<A,B> time){
-	using namespace std::chrono;
-	return duration_cast<microseconds>(time).count();
-}
-
-const auto launch_clock = std::chrono::high_resolution_clock::now();
+	using time_point = std::decay_t<decltype(std::chrono::high_resolution_clock::now())>;
+	extern const time_point launch_clock;
+	using duration = decltype(launch_clock - launch_clock);
+		
 //was as microseconds
-auto elapsed_time() {
-	return std::chrono::high_resolution_clock::now() - launch_clock;
-};
+	duration elapsed_time();
 
+#ifndef STRONG_REMOTE_IP
+#define STRONG_REMOTE_IP "127.0.0.1"
+#endif
 	
-	inline int get_strong_ip() {
-		static int ip_addr{[](){
-				std::string static_addr {STRONG_REMOTE_IP};
-				if (static_addr.length() == 0) static_addr = "127.0.0.1";
-				return mutils::decode_ip(static_addr);
-			}()};
-		return ip_addr;
+	constexpr unsigned int get_strong_ip(){
+		constexpr char const * const strong_remote_ip{STRONG_REMOTE_IP};
+		//if string is non-zero in length
+		if (strong_remote_ip[0]){
+			return mutils::decode_ip(strong_remote_ip);
+		}
+		else return mutils::decode_ip("127.0.0.1");
 	}
 }

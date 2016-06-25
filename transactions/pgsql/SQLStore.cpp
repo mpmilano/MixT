@@ -84,8 +84,8 @@ namespace myria{ namespace pgsql {
 			}
 		}		
 
-		SQLStore_impl::SQLStore_impl(GDataStore &store, int instanceID, Level l)
-			:_store(store),clock{{0,0,0,0}},level(l),default_connection{new SQLConnection(instanceID)} {
+		SQLStore_impl::SQLStore_impl(GDataStore &store, /*int instanceID,*/ Level l)
+			:_store(store),clock{{0,0,0,0}},level(l),default_connection{new SQLConnection()} {
 				auto t = begin_transaction("Setting up this new SQLStore; gotta configure search paths and stuff.");
 				((SQLTransaction*)t.get())
 					->exec(l == Level::strong ?
@@ -262,12 +262,14 @@ namespace myria{ namespace pgsql {
 			return default_connection->ip_addr;
 		}
 
-		SQLStore_impl::SQLConnection::SQLConnection(int ip)
-			:prepared(((std::size_t) TransactionNames::MAX),false),ip_addr(ip),repl_group(CAUSAL_GROUP),conn{std::string("host=") + string_of_ip(ip)}{
+		SQLStore_impl::SQLConnection::SQLConnection()
+			:prepared(((std::size_t) TransactionNames::MAX),false),conn{std::string("host=") + string_of_ip(ip_addr)}{
 			static_assert(int{CAUSAL_GROUP} > 0, "errorr: did not set CAUSAL_GROUP or failed to 1-index");
 			assert(conn.is_open());
 			//std::cout << string_of_ip(ip) << std::endl;
 		}
+		const int SQLStore_impl::SQLConnection::repl_group;
+		const unsigned int SQLStore_impl::SQLConnection::ip_addr;
 
 		int SQLStore_impl::GSQLObject::store_instance_id() const {
 			return i->store_id;
@@ -429,9 +431,9 @@ namespace myria{ namespace pgsql {
 			f(buf,size);
 		}
 		
-		SQLStore_impl& SQLInstanceManager_abs::inst(Level l, int store_id){
-			if (l == Level::strong) return this->inst_strong(store_id);
-			else if (l == Level::causal) return this->inst_causal(store_id);
+		SQLStore_impl& SQLInstanceManager_abs::inst(Level l){
+			if (l == Level::strong) return this->inst_strong();
+			else if (l == Level::causal) return this->inst_causal();
 			else assert(false && "what?");
 		}
 
@@ -442,7 +444,7 @@ namespace myria{ namespace pgsql {
 			Table* arrt = (Table*) (arrl + 1);
 			//of from_bytes
 			Level lvl = arrl[0];
-			return GSQLObject(mgr.inst(lvl,arr[2]),
+			return GSQLObject(mgr.inst(lvl),
 							  arrt[0],arr[0],arr[1]);
 		}
 

@@ -3,7 +3,7 @@ IP_quad=`ifconfig | sed s/broadcast.*//g | tr " " "\n" | grep 128.84 | rev | sed
 storeList='pgsql::SQLStore<Level::strong>, pgsql::SQLStore<Level::causal>'
 CPPFLAGS= -I$(PWD) -I$(PWD)/mtl -I$(PWD)/myria-utils -I$(PWD)/mutils-networking -I$(PWD)/mutils -I$(PWD)/mutils-containers -I$(PWD)/mutils-serialization -I$(PWD)/mutils-tasks -I$(PWD)/testing -I$(PWD)/pgsql -I$(PWD)/tracker -g -p -stdlib=libc++ --std=c++14 -Wall -DNUM_CAUSAL_GROUPS="4" -DSTORE_LIST=$(storeList) -DMY_IP=\"$(MY_IP)\" -DMAX_THREADS=$(MAX_THREADS) -ferror-limit=1
 LDFLAGS= -stdlib=libc++ --std=c++14 -lpqxx -lm -pthread
-object_files=FutureFreePool.o GlobalPool.o CooperativeCache.o Ends.o utils.o Basics.o Tracker.o Ostreams.o SerializationSupport.o  IfBuilder.o  WhileBuilder.o ConExpr.o SQLStore.o TempBuilder.o TransactionBasics.o ServerSocket.o Socket.o ClockManager.o
+object_files=FutureFreePool.o GlobalPool.o CooperativeCache.o Ends.o utils.o test_utils.o Basics.o Tracker.o Ostreams.o SerializationSupport.o  IfBuilder.o  WhileBuilder.o ConExpr.o SQLStore.o TempBuilder.o TransactionBasics.o ServerSocket.o Socket.o ClockManager.o
 export IP_quad
 export TRANS_DIR
 export CPPFLAGS
@@ -63,6 +63,8 @@ Basics.o:
 	clang++ -c Basics.cpp $(CPPFLAGS)
 utils.o:
 	clang++ -c */utils.cpp $(CPPFLAGS)
+test_utils.o:
+	clang++ -c test_utils.cpp $(CPPFLAGS)
 Profiler.o:
 	clang++ -c */Profiler.cpp $(CPPFLAGS)
 GC_pointer.o:

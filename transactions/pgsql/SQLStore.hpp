@@ -32,58 +32,58 @@ namespace myria { namespace pgsql {
 			private:
 				std::map<int,std::unique_ptr<SQLStore> > ss;
 				
-				void inst(Level l2, int instance_id){
+				void inst(Level l2){
 					assert(l == l2);
-					if (ss.count(instance_id) == 0 || (!ss.at(instance_id))){
+					if (ss.count(0) == 0 || (!ss.at(0))){
 						assert(this->this_mgr);
-						ss[instance_id].reset(new SQLStore(trk,instance_id,*this->this_mgr));
+						ss[0].reset(new SQLStore(trk,*this->this_mgr));
 					}
 				}
 
-				SQLStore<Level::strong>& choose_s(int instance_id, std::true_type*){
-					assert(ss.at(instance_id));
-					return *ss.at(instance_id);
+				SQLStore<Level::strong>& choose_s(std::true_type*){
+					assert(ss.at(0));
+					return *ss.at(0);
 				}
 				
-				SQLStore<Level::strong>& choose_s(int, std::false_type*){
+				SQLStore<Level::strong>& choose_s(std::false_type*){
 					assert(false && "Error: This is not a strong instance manager");
 				}
 				
-				SQLStore<Level::causal>& choose_c(int instance_id, std::true_type*){
-					assert(ss.at(instance_id));
-					return *ss.at(instance_id);
+				SQLStore<Level::causal>& choose_c(std::true_type*){
+					assert(ss.at(0));
+					return *ss.at(0);
 				}
 				
-				SQLStore<Level::causal>& choose_c(int, std::false_type*){
+				SQLStore<Level::causal>& choose_c(std::false_type*){
 					assert(false && "Error: This is not a causal instance manager");
 				}
 				
 			public:
 				
-				SQLStore<Level::strong>& inst_strong(int instance_id){
-					inst(Level::strong,instance_id);
+				SQLStore<Level::strong>& inst_strong(){
+					inst(Level::strong);
 					choose_strong<l> choice{nullptr};
-					return choose_s(instance_id, choice);
+					return choose_s(choice);
 				}
 				
-				SQLStore<Level::causal>& inst_causal(int instance_id){
-					inst(Level::causal,instance_id);
+				SQLStore<Level::causal>& inst_causal(){
+					inst(Level::causal);
 					choose_causal<l> choice{nullptr};
-					return choose_c(instance_id, choice);
+					return choose_c(choice);
 				}
 
-				auto& inst(int instance_id){
-					inst(l,instance_id);
-					assert(ss.at(instance_id));
-					return *ss.at(instance_id);
+				auto& inst(){
+					inst(l);
+					assert(ss.at(0));
+					return *ss.at(0);
 				}
 			};
 
 			mutils::DeserializationManager &this_mgr;
 
 		private:
-			SQLStore(tracker::Tracker& trk, int inst_id, mutils::DeserializationManager &this_mgr)
-				:SQLStore_impl(*this,inst_id,l),DataStore<l>(),this_mgr(this_mgr) {
+			SQLStore(tracker::Tracker& trk, mutils::DeserializationManager &this_mgr)
+				:SQLStore_impl(*this,l),DataStore<l>(),this_mgr(this_mgr) {
 				trk.registerStore(*this);
 			}
 		public:
@@ -172,10 +172,10 @@ namespace myria { namespace pgsql {
 					return gso.ro_isValid(tc);
 				}
 				const SQLStore& store() const{
-					return tds.template mgr<SQLInstanceManager>().inst(gso.store_instance_id());
+					return tds.template mgr<SQLInstanceManager>().inst();
 				}
 				SQLStore& store(){
-					return tds.template mgr<SQLInstanceManager>().inst(gso.store_instance_id());
+					return tds.template mgr<SQLInstanceManager>().inst();
 				}
 				Name name() const {
 					return gso.name();
