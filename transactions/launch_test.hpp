@@ -49,11 +49,22 @@ namespace {
 		
 		Mem& tracker_mem(){return *this;}
 		
-		Mem(int id)
-			:trk(id + 1024, tracker::CacheBehaviors::full),
+		Mem(int memid)
+			:trk(memid + 1024, tracker::CacheBehaviors::full),
 			 ss(trk),
 			 sc(trk),
-			 dsm({&ss,&sc}){}
+			 dsm({&ss,&sc}){
+			auto pid = memid % (65535 - 1025); //make sure this can be used as a port numbxer
+			auto &ss = this->ss.inst();
+			auto &cs = sc.inst();
+			if (!trk.strongRegistered())
+				trk.registerStore(ss);
+			if (!trk.causalRegistered())
+				trk.registerStore(cs);
+			//I'm assuming that pid won't get larger than the number of allowable ports...
+			assert(pid + 1024 < 49151);
+		}
+		Mem(const Mem&) = delete;
 	};
 	
 
@@ -65,7 +76,7 @@ struct PreparedTest{
 	//static functions for TaskPool
 	static std::string exn_handler(std::exception_ptr eptr);
 	
-	static void pool_mem_init (int memid, std::shared_ptr<Mem> &mem);
+	static void pool_mem_init (int, Mem&){}
 
 	using action_t = typename Pool::action_fp;
 	using functor_action_t = typename Pool::action_f;
@@ -114,24 +125,6 @@ std::string PreparedTest<Mem,Arg>::exn_handler(std::exception_ptr eptr){
 			<< std::endl;
 			}//*/
 	return log_messages.str();
-}
-
-template<typename Mem,typename Arg>
-void PreparedTest<Mem,Arg>::pool_mem_init (int memid, std::shared_ptr<Mem> &mem){
-	auto pid = memid % (65535 - 1025); //make sure this can be used as a port numbxer
-	if (!mem) {
-		mem = std::make_shared<Mem>(pid);
-	}
-	assert(mem);
-	auto &ss = mem->ss.inst();
-	auto &cs = mem->sc.inst();
-	
-	if (!mem->tracker_mem().trk.strongRegistered())
-		mem->tracker_mem().trk.registerStore(ss);
-	if (!mem->tracker_mem().trk.causalRegistered())
-		mem->tracker_mem().trk.registerStore(cs);
-	//I'm assuming that pid won't get larger than the number of allowable ports...
-	assert(pid + 1024 < 49151);
 }
 
 template<typename Mem,typename Arg>
