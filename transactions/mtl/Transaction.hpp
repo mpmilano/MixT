@@ -35,7 +35,7 @@ namespace myria { namespace mtl {
 		struct CannotProceedError : mutils::MyriaException{
 			const std::string why;
 			CannotProceedError(decltype(why) w):why(w){}
-			const char* what() const _NOEXCEPT {
+			const char* what() const noexcept {
 				return why.c_str();
 			}
 		};

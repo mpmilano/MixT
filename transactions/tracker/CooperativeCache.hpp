@@ -25,7 +25,7 @@ namespace myria { namespace tracker {
 			struct ProtocolException : public mutils::MyriaException{
 				std::string emsg;
 				ProtocolException(decltype(emsg) emsg):emsg(emsg){}
-				const char* what() const _NOEXCEPT {
+				const char* what() const noexcept {
 					return emsg.c_str();
 				}
 			};

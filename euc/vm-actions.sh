@@ -21,6 +21,14 @@ root      soft    nofile      500000
 cp /etc/security/limits.conf etc/security/limits.conf
 cp -L /etc/resolv.conf etc/ 2>/dev/null
 cd /mnt/
+if [[ -f /mnt/gentoo/etc/portage/package.env ]]
+then
+	echo "this one is spared"
+else
+	echo "dev-libs/libpqxx clang" > /mnt/gentoo/etc/portage/package.env
+	chroot gentoo /usr/bin/emerge --oneshot dev-libs/libpqxx
+fi
+
 #echo "done so far" `pwd`
 chroot gentoo /bin/su -c "/bin/bash /as-gentoo.sh $*" research
 #chroot gentoo /bin/su -c "/usr/bin/emerge libunwind" root

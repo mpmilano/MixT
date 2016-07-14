@@ -1,6 +1,6 @@
 namespace mutils{
 	struct MyriaException : public std::exception {
-		virtual const char* what() const _NOEXCEPT = 0;
+		virtual const char* what() const noexcept = 0;
 	};
 
 #define MACRO_GET_1(str, i) \
@@ -28,7 +28,7 @@ namespace mutils{
 
 	template<char... wht>
 	struct StaticMyriaException : public MyriaException {
-		const char* what() const _NOEXCEPT {
+		const char* what() const noexcept {
 			static const char ret[] = {wht...};
 			return ret;
 		}
@@ -37,7 +37,7 @@ namespace mutils{
 	struct NoOverloadFoundError : MyriaException{
 		const std::string mesg;
 		NoOverloadFoundError(const decltype(mesg)& m):mesg(m){}
-		const char * what() const _NOEXCEPT {
+		const char * what() const noexcept {
 			return mesg.c_str();
 		}
 	};
