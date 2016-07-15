@@ -8,6 +8,7 @@
 #include "SQLStore.hpp"
 #include "Ends.hpp"
 #include "Ostreams.hpp"
+#include "SafeSet.hpp"
 
 namespace myria{ namespace pgsql {
 
@@ -85,7 +86,7 @@ namespace myria{ namespace pgsql {
 		}		
 
 		SQLStore_impl::SQLStore_impl(GDataStore &store, /*int instanceID,*/ Level l)
-			:_store(store),clock{{0,0,0,0}},level(l),default_connection{new SQLConnection()} {
+			:_store(store),clock{{0,0,0,0}},level(l) {
 				auto t = begin_transaction("Setting up this new SQLStore; gotta configure search paths and stuff.");
 				((SQLTransaction*)t.get())
 					->exec(l == Level::strong ?
@@ -105,7 +106,7 @@ namespace myria{ namespace pgsql {
 				   "Concurrency support doesn't exist yet."
 				);
 			return unique_ptr<SQLTransaction>(
-				new SQLTransaction(_store,*default_connection,why));
+				new SQLTransaction(_store,*default_connection.lock(),why));
 		}
 
 		namespace {
@@ -270,6 +271,40 @@ namespace myria{ namespace pgsql {
 		}
 		const int SQLStore_impl::SQLConnection::repl_group;
 		const unsigned int SQLStore_impl::SQLConnection::ip_addr;
+
+		struct SQLStore_impl::LockedSQLConnection::Internals{
+			std::unique_ptr<SQLConnection> mgr;
+		};
+
+		namespace{
+			SafeSet<std::unique_ptr<SQLStore_impl::SQLConnection> > global_mgr_instances;
+		}
+		
+		SQLStore_impl::LockedSQLConnection::LockedSQLConnection(std::unique_ptr<SQLConnection> p)
+			:i(new Internals{std::move(p)}){}
+
+		SQLStore_impl::SQLConnection* SQLStore_impl::LockedSQLConnection::operator->(){
+			return i->mgr.get();
+		}
+
+		SQLStore_impl::SQLConnection& SQLStore_impl::LockedSQLConnection::operator*(){
+			return *i->mgr;
+		}
+			   
+		SQLStore_impl::LockedSQLConnection::~LockedSQLConnection(){
+			global_mgr_instances.emplace(std::move(i->mgr));
+			delete i;
+		};
+
+		SQLStore_impl::LockedSQLConnection SQLStore_impl::SQLConnection_t::operator->() const {
+			return lock();
+		}
+
+		SQLStore_impl::LockedSQLConnection SQLStore_impl::SQLConnection_t::lock() const {
+			return LockedSQLConnection{
+				global_mgr_instances.template build_or_pop<SQLConnection*>(
+					[](){return new SQLConnection();})};
+		}
 
 		int SQLStore_impl::GSQLObject::store_instance_id() const {
 			return i->store_id;
@@ -449,9 +484,7 @@ namespace myria{ namespace pgsql {
 		}
 
 
-		SQLStore_impl::~SQLStore_impl(){
-			delete default_connection;
-                }//*/
+		SQLStore_impl::~SQLStore_impl(){}
 
 	}
 }
