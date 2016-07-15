@@ -41,7 +41,7 @@ namespace myria{ namespace pgsql {
 				   "Concurrency support doesn't exist yet."
 				);
 			return unique_ptr<SQLTransaction>(
-				new SQLTransaction(_store,*default_connection.lock(),why));
+				new SQLTransaction(_store,default_connection.lock(),why));
 		}
 
 		bool SQLStore_impl::exists(Name id) {

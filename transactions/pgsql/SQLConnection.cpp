@@ -45,7 +45,6 @@ namespace myria{ namespace pgsql {
 		
 		SQLStore_impl::LockedSQLConnection::LockedSQLConnection(std::unique_ptr<SQLConnection> p)
 			:i(new Internals{std::move(p)}){
-			std::cout << "locking connection " << i->mgr.get() << std::endl;
 		}
 
 		SQLStore_impl::SQLConnection* SQLStore_impl::LockedSQLConnection::operator->(){
@@ -56,10 +55,21 @@ namespace myria{ namespace pgsql {
 			return *i->mgr;
 		}
 			   
+
+		SQLStore_impl::SQLConnection const * const SQLStore_impl::LockedSQLConnection::operator->() const {
+			return i->mgr.get();
+		}
+
+		const SQLStore_impl::SQLConnection& SQLStore_impl::LockedSQLConnection::operator*() const {
+			return *i->mgr;
+		}
+			   
+
 		SQLStore_impl::LockedSQLConnection::~LockedSQLConnection(){
-			std::cout << "unlocking connection " << i->mgr.get() << std::endl;
-			global_mgr_instances.emplace(std::move(i->mgr));
-			delete i;
+			if (i){
+				global_mgr_instances.emplace(std::move(i->mgr));
+				delete i;
+			}
 		};
 
 		SQLStore_impl::LockedSQLConnection SQLStore_impl::SQLConnection_t::operator->() const {

@@ -65,14 +65,7 @@ namespace myria { namespace pgsql {
 			friend class SQLStore;
 
 			struct SQLConnection;
-			struct LockedSQLConnection{
-				struct Internals;
-				Internals *i;
-				LockedSQLConnection(std::unique_ptr<SQLConnection>);
-				SQLConnection* operator->();
-				SQLConnection& operator*();
-				~LockedSQLConnection();
-			};
+			struct LockedSQLConnection;
 			struct SQLConnection_t{
 				LockedSQLConnection operator->() const;
 				LockedSQLConnection lock() const;

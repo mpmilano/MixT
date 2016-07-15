@@ -16,6 +16,20 @@ namespace myria{ namespace pgsql {
 				MAX
 		};
 
+		struct SQLStore_impl::LockedSQLConnection{
+				struct Internals;
+				Internals *i;
+				LockedSQLConnection(std::unique_ptr<SQLConnection>);
+				LockedSQLConnection(const LockedSQLConnection&) = delete;
+				LockedSQLConnection(LockedSQLConnection&& o):i(o.i){o.i=nullptr;}
+				SQLConnection* operator->();
+				SQLConnection& operator*();
+				SQLConnection const * const operator->() const;
+				const SQLConnection& operator*() const;
+				operator bool() const {return i;}
+				~LockedSQLConnection();
+		};
+
 		struct SQLStore_impl::SQLConnection {
 			
 			std::vector<bool> prepared;
