@@ -64,7 +64,7 @@ namespace myria { namespace mtl {
 				return true;
 			}
 
-			auto causalCall(TransactionContext* ctx, CausalCache& c, CausalStore &s,std::false_type*) const {
+			auto causalCall(TransactionContext*, CausalCache&, CausalStore &, std::false_type*) const {
 				//noop.  We've already executed this instruction.
 				return true;
 			}

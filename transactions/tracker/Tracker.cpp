@@ -241,8 +241,8 @@ namespace myria { namespace tracker {
 		}
 
 		
-		void Tracker::onWrite(mtl::TransactionContext& ctx, DataStore<Level::strong>& ds_real, Name name, Tombstone*){}
-		void Tracker::onWrite(mtl::TransactionContext& ctx, DataStore<Level::strong>& ds_real, Name name, Clock*){}
+		void Tracker::onWrite(mtl::TransactionContext& , DataStore<Level::strong>& , Name, Tombstone*){}
+		void Tracker::onWrite(mtl::TransactionContext& , DataStore<Level::strong>& , Name, Clock*){}
 		void Tracker::onWrite(mtl::TransactionContext& ctx, DataStore<Level::strong>& ds_real, Name name, void*){
 			const auto write_lin_metadata= [this](mtl::TransactionContext& ctx, DataStore<Level::strong> &ds_real,
 													  Name name, Tracker::Nonce nonce, Tracker::Internals& t){
@@ -315,9 +315,9 @@ namespace myria { namespace tracker {
 */
 
 
-		void Tracker::onCreate(DataStore<Level::causal>& ds, Name name,Tombstone*){}
-		void Tracker::onCreate(DataStore<Level::causal>& ds, Name name,Clock*){}
-		void Tracker::onCreate(DataStore<Level::causal>& ds, Name name,void*){
+		void Tracker::onCreate(DataStore<Level::causal>& , Name, Tombstone*){}
+		void Tracker::onCreate(DataStore<Level::causal>& , Name, Clock*){}
+		void Tracker::onCreate(DataStore<Level::causal>& , Name, void*){
 			//there's nothing to do for a strong datastore right now. maybe there will be later.
 		}
 
@@ -327,9 +327,9 @@ namespace myria { namespace tracker {
 			//there's nothing to do for a strong datastore right now. maybe there will be later.
 		}
 
-		void Tracker::onWrite(DataStore<Level::causal>&, Name name, const Clock &version, Tombstone*){}
-		void Tracker::onWrite(DataStore<Level::causal>&, Name name, const Clock &version, Clock*){}
-		void Tracker::onWrite(DataStore<Level::causal>&, Name name, const Clock &version, void*){
+		void Tracker::onWrite(DataStore<Level::causal>&, Name, const Clock &, Tombstone*){}
+		void Tracker::onWrite(DataStore<Level::causal>&, Name, const Clock &, Clock*){}
+		void Tracker::onWrite(DataStore<Level::causal>&, Name, const Clock &, void*){
 			//there's nothing to do for a strong datastore right now. maybe there will be later.	
 		}
 
@@ -357,7 +357,7 @@ namespace myria { namespace tracker {
 			
 
 			template<typename P>
-				std::vector<char> const * const wait_for_available(TrackingContext::Internals &ctx, Tracker::Internals &i, Name name, P& p, const Tracker::Clock &v){
+				std::vector<char> const *  wait_for_available(TrackingContext::Internals &ctx, Tracker::Internals &i, Name name, P& p, const Tracker::Clock &v){
 				if (get<TDS::exists>(*i.causalDS)(*i.registeredCausal,p.first)){
 					remove_pending(ctx,i,p.first);
 					return nullptr;
@@ -387,8 +387,8 @@ namespace myria { namespace tracker {
 			}
 		}
 		
-		void Tracker::afterRead(mtl::StoreContext<Level::strong> &sctx, TrackingContext &tctx, DataStore<Level::strong>& ds, Name name, Tombstone*){}
-		void Tracker::afterRead(mtl::StoreContext<Level::strong> &sctx, TrackingContext &tctx, DataStore<Level::strong>& ds, Name name, Clock*){}
+		void Tracker::afterRead(mtl::StoreContext<Level::strong> &, TrackingContext &, DataStore<Level::strong>&, Name, Tombstone*){}
+		void Tracker::afterRead(mtl::StoreContext<Level::strong> &, TrackingContext &, DataStore<Level::strong>&, Name, Clock*){}
 		void Tracker::afterRead(mtl::StoreContext<Level::strong> &sctx, TrackingContext &tctx, DataStore<Level::strong>& ds, Name name, void*){
 
 			assert(name != 1);
@@ -422,10 +422,10 @@ namespace myria { namespace tracker {
 		}}													\
 
 
-		bool Tracker::waitForRead(TrackingContext &ctx, DataStore<Level::causal>&, Name name, const Clock& version, Tombstone*){
+		bool Tracker::waitForRead(TrackingContext &, DataStore<Level::causal>&, Name , const Clock& , Tombstone*){
 			return true;
 		}
-		bool Tracker::waitForRead(TrackingContext &ctx, DataStore<Level::causal>&, Name name, const Clock& version, Clock*){
+		bool Tracker::waitForRead(TrackingContext &, DataStore<Level::causal>&, Name , const Clock&, Clock*){
 			return true;
 		}
 //for when merging locally is too hard or expensive.  Returns "true" when candidate version is fine to return, "false" otherwise
@@ -480,8 +480,8 @@ namespace myria { namespace tracker {
 			return true;
 		}
 
-		void Tracker::afterRead(TrackingContext &tctx, DataStore<Level::causal>&, Name name, const Clock& version, const std::vector<char> &data, Tombstone*){}
-		void Tracker::afterRead(TrackingContext &tctx, DataStore<Level::causal>&, Name name, const Clock& version, const std::vector<char> &data, Clock*){}
+		void Tracker::afterRead(TrackingContext &, DataStore<Level::causal>&, Name , const Clock& , const std::vector<char> &, Tombstone*){}
+		void Tracker::afterRead(TrackingContext &, DataStore<Level::causal>&, Name, const Clock& , const std::vector<char> &, Clock*){}
 		void Tracker::afterRead(TrackingContext &tctx, DataStore<Level::causal>&, Name name, const Clock& version, const std::vector<char> &data, void*){
                         if (tracking_candidate(*this,name,version)){
 				tctx.logger->incrementIntField(LogFields::tracker_causal_afterread_candidate);
@@ -530,5 +530,5 @@ namespace myria { namespace tracker {
 		}
 		
 		void Tracker::onRead(TrackingContext&,DataStore<Level::strong>&, Name, const Clock &,
-							 const std::function<void (char const *)> &construct_nd_merge){}
+							 const std::function<void (char const *)> &){}
 	}}

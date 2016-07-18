@@ -16,12 +16,12 @@ namespace myria { namespace mtl {
 			CSConstant(const T& t):val(t){}
 			CSConstant(const CSConstant& cs):val(cs.val){}
 
-			constexpr T causalCall(TransactionContext* ctx, CausalCache& cache, const CausalStore&) const {
+			constexpr T causalCall(TransactionContext*, CausalCache& cache, const CausalStore&) const {
 				cache.insert(this->id,val);
 				return val;
 			}
 
-			constexpr T strongCall(TransactionContext* ctx, StrongCache& cache, const StrongStore&) const {
+			constexpr T strongCall(TransactionContext*, StrongCache& cache, const StrongStore&) const {
 				cache.insert(this->id,val);
 				return val;
 			}
@@ -35,7 +35,7 @@ namespace myria { namespace mtl {
 		};
 
 		template<unsigned long long, Level l, typename T>
-		auto find_usage(const CSConstant<l,T> &t){
+		auto find_usage(const CSConstant<l,T> &){
 			return nullptr;
 		}
 
@@ -131,12 +131,12 @@ namespace myria { namespace mtl {
 		}
 
 		template<Level l, typename T>
-		auto sum(const DummyConExpr<l>& e, const T& t){
+		auto sum(const DummyConExpr<l>&, const T& t){
 			return t;
 		}
 
 		template<Level l, typename T>
-		auto sum(const T& t, const DummyConExpr<l>& e){
+		auto sum(const T& t, const DummyConExpr<l>& ){
 			return t;
 		}
 
@@ -214,12 +214,12 @@ namespace myria { namespace mtl {
 		}
 
 		template<Level l, typename T>
-		auto equals(const DummyConExpr<l>& e, const T& t){
+		auto equals(const DummyConExpr<l>&, const T& t){
 			return t;
 		}
 
 		template<Level l, typename T>
-		auto equals(const T& t, const DummyConExpr<l>& e){
+		auto equals(const T& t, const DummyConExpr<l>&){
 			return t;
 		}
 
@@ -294,12 +294,12 @@ namespace myria { namespace mtl {
 		}
 
 		template<Level l, typename T>
-		auto binor(const DummyConExpr<l>& e, const T& t){
+		auto binor(const DummyConExpr<l>&, const T& t){
 			return t;
 		}
 
 		template<Level l, typename T>
-		auto binor(const T& t, const DummyConExpr<l>& e){
+		auto binor(const T& t, const DummyConExpr<l>&){
 			return t;
 		}
 
@@ -373,12 +373,12 @@ namespace myria { namespace mtl {
 		}
 
 		template<Level l, typename T>
-		auto binand(const DummyConExpr<l>& e, const T& t){
+		auto binand(const DummyConExpr<l>&, const T& t){
 			return t;
 		}
 
 		template<Level l, typename T>
-		auto binand(const T& t, const DummyConExpr<l>& e){
+		auto binand(const T& t, const DummyConExpr<l>&){
 			return t;
 		}
 

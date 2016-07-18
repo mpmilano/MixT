@@ -56,7 +56,7 @@ namespace myria{ namespace pgsql {
 		}
 			   
 
-		SQLStore_impl::SQLConnection const * const SQLStore_impl::LockedSQLConnection::operator->() const {
+		SQLStore_impl::SQLConnection const *  SQLStore_impl::LockedSQLConnection::operator->() const {
 			return i->mgr.get();
 		}
 

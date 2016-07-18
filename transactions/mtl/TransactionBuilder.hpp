@@ -47,7 +47,7 @@ namespace myria { namespace mtl {
 		}
 
 		template<typename CurrBuilder, typename T>
-		auto append(const CurrBuilder &pb, const Clobber<T> &ct){
+		auto append(const CurrBuilder &, const Clobber<T> &ct){
 			return ct.t;
 		}
 

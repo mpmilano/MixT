@@ -255,7 +255,7 @@ namespace myria{
 		static void do_onwrite(mtl::TransactionContext &tc, tracker::Tracker &tr, RemoteObject<Level::strong,T> &ro){
 			tr.onWrite(tc,ro.store(),ro.name(),(T*)nullptr);
 		}
-		static void do_onwrite(mtl::TransactionContext &tc, tracker::Tracker &tr, RemoteObject<Level::causal,T> &ro){
+		static void do_onwrite(mtl::TransactionContext &, tracker::Tracker &tr, RemoteObject<Level::causal,T> &ro){
 			tr.onWrite(ro.store(),ro.name(),ro.timestamp(),(T*)nullptr);
 		}
 	public:		

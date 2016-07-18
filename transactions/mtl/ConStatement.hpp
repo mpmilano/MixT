@@ -28,7 +28,7 @@ namespace myria { namespace mtl {
 
 
 		template<Level l, HandleAccess ha, typename T,typename... Ops>
-		auto environment_expressions(const Handle<l,ha,T,Ops...>& h) {
+		auto environment_expressions(const Handle<l,ha,T,Ops...>&) {
 			return std::tuple<>{};
 		}
 
@@ -122,7 +122,7 @@ namespace myria { namespace mtl {
 		auto call_all_strong(TransactionContext *ctx, StrongCache& cache, StrongStore &st, const std::tuple<CS...> &t){
 			static_assert(mutils::forall_types<is_ConStatement, std::tuple<CS...> >::value, "Error: non-statement found in body");
 			//TODO: better error propogation please.
-			bool check = mutils::fold(t,[&cache,&st,ctx](const auto &e, bool b)
+			bool check = mutils::fold(t,[&cache,&st,ctx](const auto &e, bool)
 									  {e.strongCall(ctx,cache,st); return true;},true);
 			assert(check);
 			return check;

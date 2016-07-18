@@ -206,7 +206,7 @@ namespace myria{ namespace pgsql {
 			return obj_exists(i->key,owner.second);
 		}
 
-		void SQLStore_impl::GSQLObject::resize_buffer(int newsize){
+		void SQLStore_impl::GSQLObject::resize_buffer(std::size_t newsize){
 			if(!i->buf1) {
 				i->buf1 = (char*) malloc(newsize);
 				i->size = newsize;

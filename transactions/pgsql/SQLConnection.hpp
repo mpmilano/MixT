@@ -24,7 +24,7 @@ namespace myria{ namespace pgsql {
 				LockedSQLConnection(LockedSQLConnection&& o):i(o.i){o.i=nullptr;}
 				SQLConnection* operator->();
 				SQLConnection& operator*();
-				SQLConnection const * const operator->() const;
+				const SQLConnection * operator->() const;
 				const SQLConnection& operator*() const;
 				operator bool() const {return i;}
 				~LockedSQLConnection();

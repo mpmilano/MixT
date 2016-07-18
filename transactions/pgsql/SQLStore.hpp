@@ -271,7 +271,7 @@ namespace myria { namespace pgsql {
 				return SQLStore_impl::instance_id();
 			}
 
-			void operation(mtl::TransactionContext* transaction_context, SQLContext& ctx,
+			void operation(mtl::TransactionContext* , SQLContext& ctx,
 						   OperationIdentifier<RegisteredOperations::Increment>, SQLObject<int> &o){
 				o.gso.increment(ctx.i.get());
 			}
@@ -285,7 +285,7 @@ namespace myria { namespace pgsql {
 			}
 
 			template<typename T>
-			void operation(mtl::TransactionContext* transaction_context, SQLContext& ,
+			void operation(mtl::TransactionContext* , SQLContext& ,
 						   OperationIdentifier<RegisteredOperations::Insert>, SQLObject<std::set<T> > &, T& ){
 				//assert(false && "this is unimplemented.");
 				//o.gso.increment(ctx->i.get());
