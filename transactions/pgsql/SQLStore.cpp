@@ -21,7 +21,7 @@ namespace myria{ namespace pgsql {
 		using Internals = SQLStore_impl::GSQLObject::Internals;
 
 		SQLStore_impl::SQLStore_impl(GDataStore &store, /*int instanceID,*/ Level l)
-			:_store(store),clock{{0,0,0,0}},level(l) {
+			:_store(store),clock{{0,0,0,0}},level(l),default_connection(l) {
 				auto t = begin_transaction("Setting up this new SQLStore; gotta configure search paths and stuff.");
 				((SQLTransaction*)t.get())
 					->exec(l == Level::strong ?

@@ -26,10 +26,12 @@ namespace myria{ namespace pgsql {
 			return current_trans;
 		}
 
-				SQLStore_impl::SQLConnection::SQLConnection()
+		SQLStore_impl::SQLConnection::SQLConnection()
 			:prepared(((std::size_t) TransactionNames::MAX),false),conn{std::string("host=") + string_of_ip(ip_addr)}{
 			static_assert(int{CAUSAL_GROUP} > 0, "errorr: did not set CAUSAL_GROUP or failed to 1-index");
 			assert(conn.is_open());
+			static std::size_t connections_open{0};
+			std::cout << connections_open++ << std::endl;
 			//std::cout << string_of_ip(ip) << std::endl;
 		}
 		const int SQLStore_impl::SQLConnection::repl_group;
@@ -40,7 +42,8 @@ namespace myria{ namespace pgsql {
 		};
 
 		namespace{
-			SafeSet<std::unique_ptr<SQLStore_impl::SQLConnection> > global_mgr_instances;
+			SafeSet<std::unique_ptr<SQLStore_impl::SQLConnection> > strong_mgr_instances;
+			SafeSet<std::unique_ptr<SQLStore_impl::SQLConnection> > causal_mgr_instances;
 		}
 		
 		SQLStore_impl::LockedSQLConnection::LockedSQLConnection(std::unique_ptr<SQLConnection> p)
@@ -67,20 +70,21 @@ namespace myria{ namespace pgsql {
 
 		SQLStore_impl::LockedSQLConnection::~LockedSQLConnection(){
 			if (i){
-				global_mgr_instances.emplace(std::move(i->mgr));
+				assert(i->mgr->current_store);
+				const auto level = i->mgr->current_store->level;
+				i->mgr->current_store = nullptr;
+				if (level == Level::causal) casual_mgr_instances.emplace(std::move(i->mgr));
+				else strong_mgr_instances.emplace(std::move(i->mgr));
 				delete i;
 			}
 		};
 
-		SQLStore_impl::LockedSQLConnection SQLStore_impl::SQLConnection_t::operator->() const {
-			return lock();
+		SQLStore_impl::LockedSQLConnection SQLStore_impl::SQLConnection_t::lock(const SQLStore_impl& store) const {
+			auto tmp = (l == Level::causal ? causal_mgr_instances : strong_mgr_instances)
+				.template build_or_pop<SQLConnection*>([](){return new SQLConnection();});
+			assert(!tmp->current_store);
+			tmp->current_store = &store;
+			return LockedSQLConnection{tmp};
 		}
-
-		SQLStore_impl::LockedSQLConnection SQLStore_impl::SQLConnection_t::lock() const {
-			return LockedSQLConnection{
-				global_mgr_instances.template build_or_pop<SQLConnection*>(
-					[](){return new SQLConnection();})};
-		}
-
 	}
 }
