@@ -73,18 +73,18 @@ namespace myria{ namespace pgsql {
 				assert(i->mgr->current_store);
 				const auto level = i->mgr->current_store->level;
 				i->mgr->current_store = nullptr;
-				if (level == Level::causal) casual_mgr_instances.emplace(std::move(i->mgr));
+				if (level == Level::causal) causal_mgr_instances.emplace(std::move(i->mgr));
 				else strong_mgr_instances.emplace(std::move(i->mgr));
 				delete i;
 			}
 		};
 
-		SQLStore_impl::LockedSQLConnection SQLStore_impl::SQLConnection_t::lock(const SQLStore_impl& store) const {
+		SQLStore_impl::LockedSQLConnection SQLStore_impl::SQLConnection_t::lock(SQLStore_impl& store) const {
 			auto tmp = (l == Level::causal ? causal_mgr_instances : strong_mgr_instances)
 				.template build_or_pop<SQLConnection*>([](){return new SQLConnection();});
 			assert(!tmp->current_store);
 			tmp->current_store = &store;
-			return LockedSQLConnection{tmp};
+			return LockedSQLConnection{std::move(tmp)};
 		}
 	}
 }

@@ -29,7 +29,10 @@ namespace myria{ namespace pgsql {
 			 why(why)
 		{
 			assert(!sql_conn->in_trans());
+			assert(sql_conn->current_store);
+			assert(!sql_conn->current_store->current_transaction);
 			sql_conn->current_trans = this;
+			sql_conn->current_store->current_transaction = this;
 		}
 
 		bool SQLTransaction::is_serialize_error(const pqxx::pqxx_exception &r){
@@ -64,6 +67,7 @@ namespace myria{ namespace pgsql {
 		SQLTransaction::~SQLTransaction(){
 			
 			AtScopeEnd ase{[this](){
+					this->sql_conn->current_store->current_transaction = nullptr;
 					this->sql_conn->current_trans = nullptr;
 				}};
 			if (commit_on_delete) {

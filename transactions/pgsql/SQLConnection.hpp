@@ -35,7 +35,7 @@ namespace myria{ namespace pgsql {
 			std::vector<bool> prepared;
 			
 			SQLTransaction* current_trans = nullptr;
-			SQLStore_impl const * const current_store = nullptr;
+			SQLStore_impl* current_store = nullptr;
 			std::mutex con_guard;
 			static const constexpr unsigned int ip_addr{mutils::get_strong_ip()};
 			static const constexpr int repl_group{CAUSAL_GROUP};

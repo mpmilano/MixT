@@ -37,11 +37,8 @@ namespace myria{ namespace pgsql {
 
 		unique_ptr<SQLTransaction> SQLStore_impl::begin_transaction(const std::string &why)
 		{
-			assert(!default_connection->in_trans() &&
-				   "Concurrency support doesn't exist yet."
-				);
 			return unique_ptr<SQLTransaction>(
-				new SQLTransaction(_store,default_connection.lock(),why));
+				new SQLTransaction(_store,default_connection.lock(*this),why));
 		}
 
 		bool SQLStore_impl::exists(Name id) {
@@ -58,7 +55,7 @@ namespace myria{ namespace pgsql {
 		}
 
 		int SQLStore_impl::instance_id() const{
-			return default_connection->ip_addr;
+			return SQLStore_impl::SQLConnection::ip_addr;
 		}
 		
 		SQLStore_impl& SQLInstanceManager_abs::inst(Level l){

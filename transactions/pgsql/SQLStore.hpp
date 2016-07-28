@@ -106,17 +106,12 @@ namespace myria { namespace pgsql {
 			}
 
 			bool in_transaction() const {
-				bool it = this->default_connection->in_trans();
-				assert ([&](){
-						bool ct = this->default_connection->current_trans;
-						return (it ? ct : true);}());
-				return it;
+				return this->current_transaction;
 			}
 
 			std::string why_in_transaction() const {
 				if (in_transaction()){
-					assert(this->default_connection->current_trans);
-					return this->default_connection->current_trans->why;
+					return this->current_transaction->why;
 				}
 				else return "error: not in transaction";
 			}
