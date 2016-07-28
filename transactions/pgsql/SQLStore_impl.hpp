@@ -75,7 +75,7 @@ namespace myria { namespace pgsql {
 
 			const Level level;
 			SQLConnection_t default_connection;
-			SQLTransaction* current_transaction;
+			SQLTransaction* current_transaction{nullptr};
 	
 			SQLStore_impl(const SQLStore_impl&) = delete;
 	
