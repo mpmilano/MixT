@@ -46,6 +46,7 @@ namespace myria{ namespace pgsql {
 			pqxx::connection conn;
 			SQLConnection();
 			SQLConnection(const SQLConnection&) = delete;
+			~SQLConnection();
 		};
 
 	} }

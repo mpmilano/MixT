@@ -40,6 +40,10 @@ namespace myria{ namespace pgsql {
 		const int SQLStore_impl::SQLConnection::repl_group;
 		const unsigned int SQLStore_impl::SQLConnection::ip_addr;
 
+		SQLStore_impl::SQLConnection::~SQLConnection(){
+			conn.disconnect();
+		}
+
 		struct SQLStore_impl::LockedSQLConnection::Internals{
 			std::unique_ptr<SQLConnection> mgr;
 		};
