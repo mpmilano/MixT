@@ -11,6 +11,8 @@
 #include "SafeSet.hpp"
 
 namespace myria{ namespace pgsql {
+
+		static constexpr std::size_t max_persistant_connections{200};
 		
 		using namespace pqxx;
 		using namespace std;
@@ -27,7 +29,8 @@ namespace myria{ namespace pgsql {
 		}
 
 		SQLStore_impl::SQLConnection::SQLConnection()
-			:prepared(((std::size_t) TransactionNames::MAX),false),conn{std::string("host=") + string_of_ip(ip_addr)}{
+			:prepared(((std::size_t) TransactionNames::MAX),false),
+			 conn{std::string("host=") + string_of_ip(ip_addr)} {
 			static_assert(int{CAUSAL_GROUP} > 0, "errorr: did not set CAUSAL_GROUP or failed to 1-index");
 			assert(conn.is_open());
 			static std::size_t connections_open{0};
@@ -73,15 +76,27 @@ namespace myria{ namespace pgsql {
 				assert(i->mgr->current_store);
 				const auto level = i->mgr->current_store->level;
 				i->mgr->current_store = nullptr;
-				if (level == Level::causal) causal_mgr_instances.emplace(std::move(i->mgr));
-				else strong_mgr_instances.emplace(std::move(i->mgr));
+				if (level == Level::causal) {
+					if (causal_mgr_instances.size() <= max_persistant_connections)
+						causal_mgr_instances.emplace(std::move(i->mgr));
+				}
+				else if (strong_mgr_instances.size() <= max_persistant_connections)
+					strong_mgr_instances.emplace(std::move(i->mgr));
 				delete i;
 			}
 		};
 
 		SQLStore_impl::LockedSQLConnection SQLStore_impl::SQLConnection_t::lock(SQLStore_impl& store) const {
-			auto tmp = (l == Level::causal ? causal_mgr_instances : strong_mgr_instances)
-				.template build_or_pop<SQLConnection*>([](){return new SQLConnection();});
+			std::unique_ptr<SQLStore_impl::SQLConnection> tmp{nullptr};
+			while (!tmp)
+				tmp = (l == Level::causal ? causal_mgr_instances : strong_mgr_instances)
+					.template build_or_pop<SQLConnection*>([]() -> SQLConnection* {try {
+								return new SQLConnection();
+							}
+							catch(const pqxx_exception& pe){
+								std::cout << "Connection failed: " << pe.base().what() << std::endl;
+								return nullptr;
+							}});
 			assert(!tmp->current_store);
 			tmp->current_store = &store;
 			return LockedSQLConnection{std::move(tmp)};
