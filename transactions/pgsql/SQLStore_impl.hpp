@@ -68,8 +68,12 @@ namespace myria { namespace pgsql {
 			struct LockedSQLConnection;
 			struct SQLConnection_t{
 				const Level l;
-				SQLConnection_t(Level l):l(l){}
+				struct Internals;
+				Internals *i;
+				SQLConnection_t(Level l);
+				SQLConnection_t(const SQLConnection_t&) = delete;
 				LockedSQLConnection lock(SQLStore_impl&) const;
+				~SQLConnection_t();
 			};
 			std::array<int, NUM_CAUSAL_GROUPS> clock;
 

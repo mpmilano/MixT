@@ -54,7 +54,7 @@ namespace myria{ namespace pgsql {
 		}
 		
 		SQLStore_impl::LockedSQLConnection::LockedSQLConnection(std::unique_ptr<SQLConnection> p)
-			:i(new Internals{std::move(p)}){
+			:i(new Internals{std::move(p)}),use_count(new std::size_t{1}){
 		}
 
 		SQLStore_impl::SQLConnection* SQLStore_impl::LockedSQLConnection::operator->(){
@@ -76,7 +76,8 @@ namespace myria{ namespace pgsql {
 			   
 
 		SQLStore_impl::LockedSQLConnection::~LockedSQLConnection(){
-			if (i){
+			assert(use_count || !i);
+			if (i && ((*use_count) == 1) ){
 				assert(i->mgr->current_store);
 				const auto level = i->mgr->current_store->level;
 				i->mgr->current_store = nullptr;
@@ -88,22 +89,82 @@ namespace myria{ namespace pgsql {
 					strong_mgr_instances.emplace(std::move(i->mgr));
 				delete i;
 			}
+			if (use_count && (*use_count) > 0) (*use_count)--;
 		};
 
+		SQLStore_impl::LockedSQLConnection::
+		LockedSQLConnection(const LockedSQLConnection& l)
+			:i(l.i),use_count(l.use_count)
+		{(*use_count)++;}
+		
+		SQLStore_impl::LockedSQLConnection::
+		LockedSQLConnection(LockedSQLConnection&& o)
+			:i(o.i),use_count(o.use_count){
+			o.i=nullptr;
+			(*use_count)--;
+			o.use_count = nullptr;
+		}
+
+		class WeakSQLReference{
+			std::shared_ptr<std::size_t> use_count;
+			SQLStore_impl::LockedSQLConnection* weak_ref;
+
+		public:
+			WeakSQLReference(SQLStore_impl::LockedSQLConnection& lc)
+				:use_count(lc.use_count),weak_ref(&lc){}
+			
+			WeakSQLReference()
+				:use_count(nullptr),weak_ref(nullptr){}
+
+			WeakSQLReference(const WeakSQLReference&) = default;
+			
+			WeakSQLReference operator =(const WeakSQLReference& o){
+				use_count = o.use_count;
+				weak_ref = o.weak_ref;
+				return *this;
+			}
+			
+			operator bool() const {
+				return use_count && (*use_count) > 0;
+			}
+			
+			SQLStore_impl::LockedSQLConnection lock(){
+				assert(*this);
+				return *weak_ref;
+			}
+		};
+
+		struct SQLStore_impl::SQLConnection_t::Internals{
+			WeakSQLReference conn;
+		};
+		
+		SQLStore_impl::SQLConnection_t::SQLConnection_t(Level l)
+			:l(l),i(new Internals()){}
+	
+		SQLStore_impl::SQLConnection_t::~SQLConnection_t(){
+			delete i;
+		}
+
 		SQLStore_impl::LockedSQLConnection SQLStore_impl::SQLConnection_t::lock(SQLStore_impl& store) const {
-			std::unique_ptr<SQLStore_impl::SQLConnection> tmp{nullptr};
-			while (!tmp)
-				tmp = (l == Level::causal ? causal_mgr_instances : strong_mgr_instances)
-					.template build_or_pop<SQLConnection*>([]() -> SQLConnection* {try {
-								return new SQLConnection();
-							}
-							catch(const pqxx_exception& pe){
-								std::cout << "Connection failed: " << pe.base().what() << std::endl;
-								return nullptr;
-							}});
-			assert(!tmp->current_store);
-			tmp->current_store = &store;
-			return LockedSQLConnection{std::move(tmp)};
+			assert(i);
+			if (i->conn) return i->conn.lock();
+			else {
+				std::unique_ptr<SQLStore_impl::SQLConnection> tmp{nullptr};
+				while (!tmp)
+					tmp = (l == Level::causal ? causal_mgr_instances : strong_mgr_instances)
+						.template build_or_pop<SQLConnection*>([]() -> SQLConnection* {try {
+									return new SQLConnection();
+								}
+								catch(const pqxx_exception& pe){
+									std::cout << "Connection failed: " << pe.base().what() << std::endl;
+									return nullptr;
+								}});
+				assert(!tmp->current_store);
+				tmp->current_store = &store;
+				LockedSQLConnection locked_conn{std::move(tmp)};
+				i->conn = locked_conn;
+				return i->conn.lock();
+			}
 		}
 	}
 }
