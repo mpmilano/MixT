@@ -39,16 +39,17 @@ namespace myria{ namespace pgsql {
 				 buf1(buf),vers(-1),causal_vers{{-1,-1,-1,-1}}
 				{}
 		};
-		
+
 		SQLStore_impl::GSQLObject::GSQLObject(SQLStore_impl::GSQLObject&& gso)
 			:i(gso.i){gso.i = nullptr;}
 
-		SQLStore_impl::GSQLObject::GSQLObject(SQLStore_impl &ss, Table t, Name id, int size)
+				SQLStore_impl::GSQLObject::GSQLObject(SQLStore_impl &ss, Table t, Name id, int size)
 			:i(new Internals{t,id,size,ss,nullptr}){
 			i->buf1 = (char*) malloc(size);
 			auto b = load(nullptr);
 			assert(b);
 		}
+
 //existing object
 		SQLStore_impl::GSQLObject::GSQLObject(SQLStore_impl& ss, Table t, Name id)
 			:i{new Internals{t,id,
@@ -56,6 +57,7 @@ namespace myria{ namespace pgsql {
 					ss,
 					(t == Table::IntStore ? (char*) malloc(sizeof(int)) : nullptr)
 					}} {}
+
 //"named" object
 		SQLStore_impl::GSQLObject::GSQLObject(SQLStore_impl& ss, Table t, Name id, const vector<char> &c)
 			:i{new Internals{t,id,(int)c.size(),ss,
@@ -68,10 +70,10 @@ namespace myria{ namespace pgsql {
 
 				if (t == Table::BlobStore){
 					binarystring blob(&c.at(0),c.size());
-					cmds::initialize_with_id(ss.level,*trans,t,ss.default_connection->repl_group,id,ss.clock,blob);
+					cmds::initialize_with_id(ss.level,*trans,t,SQLStore_impl::SQLConnection::repl_group,id,ss.clock,blob);
 				}
 				else if (t == Table::IntStore){
-					cmds::initialize_with_id(ss.level,*trans,t,ss.default_connection->repl_group,id,ss.clock,((int*)c.data())[0]);
+					cmds::initialize_with_id(ss.level,*trans,t,SQLStore_impl::SQLConnection::repl_group,id,ss.clock,((int*)c.data())[0]);
 				}
                                 if (i->_store.level == Level::causal){
                                     for (auto& val : i->causal_vers)
@@ -95,7 +97,7 @@ namespace myria{ namespace pgsql {
 			}
 		}
 
-		int SQLStore_impl::GSQLObject::store_instance_id() const {
+				int SQLStore_impl::GSQLObject::store_instance_id() const {
 			return i->store_id;
 		}
 
@@ -107,13 +109,13 @@ namespace myria{ namespace pgsql {
 			return this->i->causal_vers;
 		}
 
-				void SQLStore_impl::GSQLObject::save(SQLTransaction *gso){
+		void SQLStore_impl::GSQLObject::save(SQLTransaction *gso){
 			auto owner = enter_transaction(store(),gso);
 			auto trans = owner.second;
 			char *c = i->buf1;
 			assert(c);
 
-#define upd_23425(x...) cmds::update_data(i->_store.level,*trans,i->table,i->_store.default_connection->repl_group,i->key,i->_store.clock,x)
+#define upd_23425(x...) cmds::update_data(i->_store.level,*trans,i->table,SQLStore_impl::SQLConnection::repl_group,i->key,i->_store.clock,x)
 	
 			if (i->table == Table::BlobStore){
 				binarystring blob(c,i->size);
@@ -189,7 +191,7 @@ namespace myria{ namespace pgsql {
                         auto r = cmds::increment(i->_store.level,
 							*owner.second,
 							i->table,
-							i->_store.default_connection->repl_group,
+							SQLStore_impl::SQLConnection::repl_group,
 							i->key,
 							i->_store.clock);
                         if (i->_store.level == Level::causal){
@@ -204,7 +206,7 @@ namespace myria{ namespace pgsql {
 			return obj_exists(i->key,owner.second);
 		}
 
-		void SQLStore_impl::GSQLObject::resize_buffer(int newsize){
+		void SQLStore_impl::GSQLObject::resize_buffer(std::size_t newsize){
 			if(!i->buf1) {
 				i->buf1 = (char*) malloc(newsize);
 				i->size = newsize;
@@ -265,6 +267,5 @@ namespace myria{ namespace pgsql {
 			return GSQLObject(mgr.inst(lvl),
 							  arrt[0],arr[0],arr[1]);
 		}
-		
 	}
 }
