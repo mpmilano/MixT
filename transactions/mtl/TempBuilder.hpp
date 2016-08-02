@@ -57,7 +57,7 @@ namespace myria { namespace mtl {
 		struct contains_temporary<ID,const T&> : contains_temporary<ID,T> {};
 
 		template<unsigned long long id, Level l, typename T, typename CS>
-		auto isValid_desugar(Temporary<id,l,T> const * const gt, const CS &cs){
+		auto isValid_desugar(Temporary<id,l,T> const * const, const CS &cs){
                     return cs;
                     //NOTE: The code below would wrap cs in a conditoinal
                     //that checks if gt is valid before proceeding.

@@ -75,7 +75,7 @@ namespace myria { namespace mtl {
 				return ret;
 			}
 
-			void strongCall(TransactionContext* ctx, StrongCache& cache, const StrongStore &s, std::false_type*) const {
+			void strongCall(TransactionContext* , StrongCache& , const StrongStore &, std::false_type*) const {
 				//we haven't even done the assignment yet. nothing to see here.
 			}
 
@@ -130,7 +130,7 @@ namespace myria { namespace mtl {
                                 return strongCall(ctx,cache, s,choice);
 			}
 
-			auto strongCall(TransactionContext* ctx, StrongCache& cache, const StrongStore &s, std::true_type*) const {
+			auto strongCall(TransactionContext*, StrongCache& cache, const StrongStore &s, std::true_type*) const {
 				//std::cout << "inserting RefTemp " << name << " (" << id<< ") into cache "
 				//		  << &cache << std::endl;
                                 auto ret = s.template get<run_result<T> >(this->t.store_id);
@@ -139,11 +139,11 @@ namespace myria { namespace mtl {
 				return ret;
 			}
 
-			void strongCall(TransactionContext* ctx, StrongCache& cache, const StrongStore &s, std::false_type*) const {
+			void strongCall(TransactionContext* , StrongCache& , const StrongStore &, std::false_type*) const {
 				//we haven't even done the assignment yet. nothing to see here.
 			}
 
-			auto causalCall(TransactionContext* ctx, CausalCache& cache, const CausalStore &s) const {
+			auto causalCall(TransactionContext* , CausalCache& cache, const CausalStore &s) const {
 		
 				using R = run_result<T>;
 				if (cache.contains(this->id)) {

@@ -52,19 +52,19 @@ namespace myria { namespace mtl{
 			
 			const int id = mutils::gensym();
 			EnvironmentExpression(){}
-			EnvironmentExpression(const EnvironmentExpression& n){}
+			EnvironmentExpression(const EnvironmentExpression&){}
 
 			auto environment_expressions() const {
 				return std::tuple<EnvironmentExpression>{*this};
 			}
 
-			auto causalCall(TransactionContext* ctx, CausalCache& cache, const CausalStore& s) const {
+			auto causalCall(TransactionContext* , CausalCache& cache, const CausalStore& ) const {
 				//runs with strong, so we should already have populated by this point
 				assert(cache.contains(this->id));
 				return cache.get<T>(this->id);;
 			}
 
-			auto strongCall(TransactionContext* ctx, StrongCache& cache, const StrongStore& s) const {
+			auto strongCall(TransactionContext* ctx, StrongCache& cache, const StrongStore& ) const {
 				assert(ctx);
 				assert(ctx->parameter);
 				T &ret = *((T*)ctx->parameter);

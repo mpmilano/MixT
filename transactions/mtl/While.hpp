@@ -49,7 +49,7 @@ namespace myria { namespace mtl {
 				return ret;
 			}
 
-			bool strongCall(TransactionContext* ctx, StrongCache& c, StrongStore &s, const std::true_type*,const std::true_type*) const {
+			bool strongCall(TransactionContext* ctx, StrongCache&, StrongStore &s, const std::true_type*,const std::true_type*) const {
 				//nothing causal in this while loop. Do it all at once.
 
 				auto new_cache = std::make_unique<StrongCache>();

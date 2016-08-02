@@ -48,7 +48,7 @@ namespace myria{
 	}
 
 	template<typename C, typename T>
-	auto extract_robj_p(mtl::TransactionContext &ctx, const Preserve2<C,T> &t){
+	auto extract_robj_p(mtl::TransactionContext &, const Preserve2<C,T> &t){
 		return cached(t.c,t.t);
 	}
 }
