@@ -8,6 +8,7 @@
 #include "SQLStore.hpp"
 #include "Ends.hpp"
 #include "Ostreams.hpp"
+#include "SQL_internal_utils.hpp"
 
 namespace myria{ namespace pgsql {
 
@@ -57,7 +58,7 @@ namespace myria{ namespace pgsql {
 		}
 
 		int SQLStore_impl::instance_id() const{
-			return default_connection->ip_addr;
+			return SQLStore_impl::SQLConnection::ip_addr;
 		}
 
 
