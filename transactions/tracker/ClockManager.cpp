@@ -25,7 +25,7 @@ namespace myria { namespace tracker {
 						while (sock.valid()){
 							Tracker::Clock tmpclock;
 							sock.receive(tmpclock);
-							for (int i = 0; i < tmpclock.size(); ++i){
+							for (std::decay_t<decltype(tmpclock.size())> i = 0; i < tmpclock.size(); ++i){
 								clock[i] = tmpclock[i];
 							}
 						}
@@ -52,7 +52,7 @@ namespace myria { namespace tracker {
 
                 void Tracker::updateClock(){
 			Tracker::Clock newc;
-			for (int i = 0; i < newc.size(); ++i){
+			for (std::decay_t<decltype(newc.size())> i = 0; i < newc.size(); ++i){
 				auto &inst = ClockManager::inst();
 				if (inst.clock[i] == -1) {
 					--i;

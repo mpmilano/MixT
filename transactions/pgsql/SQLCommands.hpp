@@ -27,7 +27,7 @@ namespace{
 
 
 		template<typename T>
-		void remove(Level l, T &trans, Table, Name id){
+		void remove(Level, T &trans, Table, Name id){
 			//std::cerr << "in remove" << std::endl;
 			const static std::string bs =
 				"delete from \"BlobStore\" where ID = $1";

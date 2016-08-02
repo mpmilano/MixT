@@ -1,9 +1,9 @@
 TRANS_DIR= `pwd`/
 IP_quad=`ifconfig | sed s/broadcast.*//g | tr " " "\n" | grep 128.84 | rev | sed s/'\..*'//g | rev`
 storeList='pgsql::SQLStore<Level::strong>, pgsql::SQLStore<Level::causal>'
-CPPFLAGS= -I$(PWD) -I$(PWD)/mtl -I$(PWD)/myria-utils -I$(PWD)/mutils-networking -I$(PWD)/mutils -I$(PWD)/mutils-containers -I$(PWD)/mutils-serialization -I$(PWD)/mutils-tasks -I$(PWD)/testing -I$(PWD)/pgsql -I$(PWD)/tracker -g -stdlib=libc++ --std=c++14 -Wall -DNUM_CAUSAL_GROUPS="4" -DSTORE_LIST=$(storeList) -DMY_IP=\"$(MY_IP)\" -DMAX_THREADS=$(MAX_THREADS) -ferror-limit=1
+CPPFLAGS= -I$(PWD) -I$(PWD)/mtl -I$(PWD)/myria-utils -I$(PWD)/mutils-networking -I$(PWD)/mutils -I$(PWD)/mutils-containers -I$(PWD)/mutils-serialization -I$(PWD)/mutils-tasks -I$(PWD)/testing -I$(PWD)/pgsql -I$(PWD)/tracker -g -stdlib=libc++ --std=c++14 -Wall -DNUM_CAUSAL_GROUPS="4" -DSTORE_LIST=$(storeList) -DMY_IP=\"$(MY_IP)\" -DMAX_THREADS=$(MAX_THREADS) -ferror-limit=1 -Wall -Werror -Wextra
 LDFLAGS= -stdlib=libc++ --std=c++14 -lpqxx -lm -pthread
-object_files=FutureFreePool.o GlobalPool.o CooperativeCache.o Ends.o utils.o test_utils.o Basics.o Tracker.o Ostreams.o SerializationSupport.o  IfBuilder.o  WhileBuilder.o ConExpr.o SQLStore.o  GSQLObject.o SQLConnection.o SQLTransaction.o SQL_internal_utils.o TempBuilder.o TransactionBasics.o ServerSocket.o Socket.o ClockManager.o abiutils.o
+object_files=FutureFreePool.o GlobalPool.o CooperativeCache.o Ends.o utils.o test_utils.o Basics.o Tracker.o Ostreams.o SerializationSupport.o  IfBuilder.o  WhileBuilder.o ConExpr.o SQLStore.o GSQLObject.o SQLConnection.o SQLTransaction.o SQL_internal_utils.o TempBuilder.o TransactionBasics.o ServerSocket.o Socket.o ClockManager.o abiutils.o
 export IP_quad
 export TRANS_DIR
 export CPPFLAGS
@@ -87,13 +87,13 @@ Socket.o:
 	clang++ -c */Socket.cpp $(CPPFLAGS)
 SQLStore.o:
 	clang++ -c */SQLStore.cpp -DNUM_CAUSAL_MASTERS="2" -DCAUSAL_GROUP=$(causalGroup) $(CPPFLAGS)
-+GSQLObject.o:
+GSQLObject.o:
 	clang++ -c */GSQLObject.cpp -DNUM_CAUSAL_MASTERS="2" -DCAUSAL_GROUP=$(causalGroup) $(CPPFLAGS)
-+SQLConnection.o:
+SQLConnection.o:
 	clang++ -c */SQLConnection.cpp -DNUM_CAUSAL_MASTERS="2" -DCAUSAL_GROUP=$(causalGroup) $(CPPFLAGS)
-+SQLTransaction.o:
+SQLTransaction.o:
 	clang++ -c */SQLTransaction.cpp -DNUM_CAUSAL_MASTERS="2" -DCAUSAL_GROUP=$(causalGroup) $(CPPFLAGS)
-+SQL_internal_utils.o:
+SQL_internal_utils.o:
 	clang++ -c */SQL_internal_utils.cpp -DNUM_CAUSAL_MASTERS="2" -DCAUSAL_GROUP=$(causalGroup) $(CPPFLAGS)
 TempBuilder.o:
 	clang++ -c */TempBuilder.cpp $(CPPFLAGS)

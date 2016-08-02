@@ -146,7 +146,7 @@ namespace myria { namespace tracker {
 									Name name;
 									remote.receive(name);
 									Tracker::Clock clock;
-									for (int j = 0; j < clock.size(); ++j){
+									for (std::decay_t<decltype(clock.size())> j = 0; j < clock.size(); ++j){
 										remote.receive(clock[j]);
 									}
 									int obj_size;
@@ -155,7 +155,7 @@ namespace myria { namespace tracker {
 									std::vector<char> obj(obj_size,0);
 									//char bytes[obj_size];
 									remote.receive(obj_size,obj.data());
-									assert(obj.size() == obj_size);
+									assert(obj.size() == (unsigned int) obj_size);
 									
 									ret.emplace_back(name,clock,obj);
 								}
@@ -211,7 +211,7 @@ namespace myria { namespace tracker {
 			}
 		}	
 
-		std::vector<char> const * const CooperativeCache::find(const obj_bundle& b,const Name& n, const Tracker::Clock &version){
+		std::vector<char> const *  CooperativeCache::find(const obj_bundle& b,const Name& n, const Tracker::Clock &version){
 			for (auto &e : b){
 				assert(e.third.data());
 				const Name& ename = e.first;

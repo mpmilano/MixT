@@ -164,7 +164,7 @@ namespace myria { namespace mtl {
 		}
 
 		template<HandleAccess ha, typename T,typename... Ops>
-		void run_ast_strong(TransactionContext *, const StrongCache& c, const StrongStore&, const Handle<Level::causal,ha,T,Ops...>& h) {
+		void run_ast_strong(TransactionContext *, const StrongCache& , const StrongStore&, const Handle<Level::causal,ha,T,Ops...>&) {
 		}
 		//*/
 
@@ -175,7 +175,7 @@ namespace myria { namespace mtl {
 
 
 		template<HandleAccess ha, typename T,typename... Ops>
-		Handle<Level::causal,ha,T,Ops...> run_ast_causal(TransactionContext *, const CausalCache& c, const CausalStore &, const Handle<Level::causal,ha,T,Ops...>& t) {
+		Handle<Level::causal,ha,T,Ops...> run_ast_causal(TransactionContext *, const CausalCache& , const CausalStore &, const Handle<Level::causal,ha,T,Ops...>& t) {
 			return t;
 		}
 		//*/
@@ -236,13 +236,13 @@ namespace myria { namespace mtl {
 		}
 
 		template<typename T, StoreType st>
-		std::enable_if_t<std::is_scalar<T>::value, bool> is_cached(const StoreMap<st>&, const T& e){
+		std::enable_if_t<std::is_scalar<T>::value, bool> is_cached(const StoreMap<st>&, const T& ){
 			return true;
 		}
 
 
 		template<typename T, HandleAccess ha, Level l, StoreType st,typename... Ops>
-		bool is_cached(const StoreMap<st>& , const Handle<l,ha,T,Ops...>& ast){
+		bool is_cached(const StoreMap<st>& , const Handle<l,ha,T,Ops...>&){
 			return true;
 		}
 

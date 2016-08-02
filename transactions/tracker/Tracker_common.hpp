@@ -8,7 +8,7 @@ namespace myria { namespace tracker {
 
 		//I'm just going to guess the names of the functions here.
 		template<typename DS>
-		auto wrapStore(DS &ds){
+		auto wrapStore(DS &){
 			constexpr Level l = ds_level(mutils::mke_p<DS>());
 			using newTomb_t = Handle<l, HandleAccess::all, Tracker::Tombstone>
 				(*) (tracker::Tracker &trk, mtl::TransactionContext& ctx, DataStore<l>&, Name, const Tracker::Tombstone&);

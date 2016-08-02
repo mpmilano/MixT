@@ -52,7 +52,7 @@ namespace myria { namespace mtl{
 			
 			const int id = mutils::gensym();
 			EnvironmentExpression(){}
-			EnvironmentExpression(const EnvironmentExpression&){}
+			EnvironmentExpression(const EnvironmentExpression& ){}
 
 			auto environment_expressions() const {
 				return std::tuple<EnvironmentExpression>{*this};

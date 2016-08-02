@@ -39,7 +39,7 @@ namespace myria { namespace tracker {
 			bool contains(const Tracker::Nonce&) const;
 
 			//this is not an owning pointer
-			static std::vector<char> const * const find(const obj_bundle&,const Name&, const Tracker::Clock &version);
+			static const std::vector<char> * find(const obj_bundle&,const Name&, const Tracker::Clock &version);
 			/* be sure to do these checks:
 							//make sure we actually need to find this
 							assert(remote_vers->first == name);
