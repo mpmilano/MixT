@@ -15,23 +15,19 @@ namespace myria{ namespace pgsql {
 				ic1,ic2,ic3,ic4,ic5,ic6,ic7,ic8,initci,initcb,
 				MAX
 				};
-
-		class WeakSQLReference;
+		
 		struct SQLStore_impl::LockedSQLConnection{
 			struct Internals;
 			Internals *i;
-			std::shared_ptr<std::size_t> use_count;
 			LockedSQLConnection(std::unique_ptr<SQLConnection>);
-			LockedSQLConnection(LockedSQLConnection&& o);
+			LockedSQLConnection(const LockedSQLConnection&) = delete;
+			LockedSQLConnection(LockedSQLConnection&& o):i(o.i){o.i=nullptr;}
 			SQLConnection* operator->();
 			SQLConnection& operator*();
 			const SQLConnection * operator->() const;
 			const SQLConnection& operator*() const;
 			operator bool() const {return i;}
 			~LockedSQLConnection();
-			friend class WeakSQLReference;
-		private:
-			LockedSQLConnection(const LockedSQLConnection&);
 		};
 
 		struct SQLStore_impl::SQLConnection {
