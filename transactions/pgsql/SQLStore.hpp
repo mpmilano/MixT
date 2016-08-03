@@ -19,8 +19,9 @@ namespace myria { namespace pgsql {
 			struct SQLInstanceManager : public SQLInstanceManager_abs{
 			public:
 				tracker::Tracker &trk;
-				SQLInstanceManager(tracker::Tracker &trk)
-					:SQLInstanceManager_abs(),trk(trk){
+				SQLConnectionPool &p;
+				SQLInstanceManager(tracker::Tracker &trk, SQLConnectionPool &p)
+					:SQLInstanceManager_abs(),trk(trk),p(p){
 				}
 				SQLInstanceManager(const SQLInstanceManager&) = delete;
 				virtual ~SQLInstanceManager(){
@@ -36,7 +37,7 @@ namespace myria { namespace pgsql {
 					assert(l == l2);
 					if (ss.count(0) == 0 || (!ss.at(0))){
 						assert(this->this_mgr);
-						ss[0].reset(new SQLStore(trk,*this->this_mgr));
+						ss[0].reset(new SQLStore(trk,*this->this_mgr,p));
 					}
 				}
 
@@ -82,8 +83,8 @@ namespace myria { namespace pgsql {
 			mutils::DeserializationManager &this_mgr;
 
 		private:
-			SQLStore(tracker::Tracker& trk, mutils::DeserializationManager &this_mgr)
-				:SQLStore_impl(*this,l),DataStore<l>(),this_mgr(this_mgr) {
+			SQLStore(tracker::Tracker& trk, mutils::DeserializationManager &this_mgr,SQLConnectionPool &p)
+				:SQLStore_impl(p,*this,l),DataStore<l>(),this_mgr(this_mgr) {
 				trk.registerStore(*this);
 			}
 		public:
@@ -105,18 +106,10 @@ namespace myria { namespace pgsql {
 				return *this;
 			}
 
-			bool in_transaction() const {
-				bool it = this->default_connection->in_trans();
-				assert ([&](){
-						bool ct = this->default_connection->current_trans;
-						return (it ? ct : true);}());
-				return it;
-			}
-
 			std::string why_in_transaction() const {
 				if (in_transaction()){
-					assert(this->default_connection->current_trans);
-					return this->default_connection->current_trans->why;
+					assert(this->default_connection.acquire_if_locked()->current_trans);
+					return this->default_connection.acquire_if_locked()->current_trans->why;
 				}
 				else return "error: not in transaction";
 			}
@@ -266,6 +259,10 @@ namespace myria { namespace pgsql {
 					auto ret = SQLStore_impl::begin_transaction(why);
 					return std::unique_ptr<mtl::StoreContext<l> >(new SQLContext{std::move(ret),this_mgr});
 				}
+
+			bool in_transaction() const {
+				return SQLStore_impl::in_transaction();
+			}
 
 			int instance_id() const {
 				return SQLStore_impl::instance_id();

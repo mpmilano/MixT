@@ -18,18 +18,18 @@ namespace myria{ namespace pgsql {
 		using namespace tracker;
 		using namespace mutils;
 		
-		SQLTransaction::SQLTransaction(GDataStore& store, SQLStore_impl::SQLConnection& c, std::string why)
-                        :gstore(store),sql_conn(c),conn_lock(
-                            [](auto& l) -> auto& {
-                                assert(l.try_lock());
-                                l.unlock();
-                                return l;
-                        }(c.con_guard)),
-						 trans(sql_conn.conn),
-						 why(why)
+		SQLTransaction::SQLTransaction(GDataStore& store, LockedSQLConnection c, std::string why)
+			:gstore(store),sql_conn(std::move(c)),conn_lock(
+				[](auto& l) -> auto& {
+					assert(l.try_lock());
+					l.unlock();
+					return l;
+				}(sql_conn->con_guard)),
+			 trans(sql_conn->conn),
+			 why(why)
 		{
-			assert(!sql_conn.in_trans());
-			sql_conn.current_trans = this;
+			assert(!sql_conn->in_trans());
+			sql_conn->current_trans = this;
 		}
 		
 
@@ -48,7 +48,7 @@ namespace myria{ namespace pgsql {
 		
 	
 		bool SQLTransaction::store_commit() {
-			sql_conn.current_trans = nullptr;
+			sql_conn->current_trans = nullptr;
 			trans.commit();
 			return true;
 		}
@@ -62,7 +62,7 @@ namespace myria{ namespace pgsql {
 		}
 		
 		SQLTransaction::~SQLTransaction(){
-			auto &sql_conn = this->sql_conn;
+			auto &sql_conn = *this->sql_conn;
 			AtScopeEnd ase{[&sql_conn](){
 					sql_conn.current_trans = nullptr;
 				}};

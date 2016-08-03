@@ -150,8 +150,8 @@ namespace synth_test {
 		auto name = get_name_write();
 		std::unique_ptr<VMObjectLog> log_messages;
 		log_start(mem,log_messages,_start_time);
-		SQLStore<Level::strong> &strong = mem.ss.inst_strong();
-		SQLStore<Level::causal> &causal = mem.sc.inst_causal();
+		SQLStore<Level::strong> &strong = mem.i->ss.inst_strong();
+		SQLStore<Level::causal> &causal = mem.i->sc.inst_causal();
 		auto &trk = mem.trk;
 		store_asserts(strong,causal,trk);
 		perform_operation(log_messages, trk,
@@ -167,8 +167,8 @@ namespace synth_test {
 		std::unique_ptr<VMObjectLog> log_messages;
 		log_start(mem,log_messages,_start_time);
 		assert(log_messages);
-		SQLStore<Level::strong> &strong = mem.ss.inst_strong();
-		SQLStore<Level::causal> &causal = mem.sc.inst_causal();
+		SQLStore<Level::strong> &strong = mem.i->ss.inst_strong();
+		SQLStore<Level::causal> &causal = mem.i->sc.inst_causal();
 		auto &trk = mem.trk;
 		store_asserts(strong,causal,trk);
 		perform_operation(log_messages,trk,
@@ -184,8 +184,8 @@ namespace synth_test {
 		auto name = get_name_read(0.5);
 		std::unique_ptr<VMObjectLog> log_messages;
 		log_start(mem,log_messages,_start_time);
-		SQLStore<Level::strong> &strong = mem.ss.inst_strong();
-		SQLStore<Level::causal> &causal = mem.sc.inst_causal();
+		SQLStore<Level::strong> &strong = mem.i->ss.inst_strong();
+		SQLStore<Level::causal> &causal = mem.i->sc.inst_causal();
 		auto &trk = mem.trk;
 		store_asserts(strong,causal,trk);
 		perform_operation(log_messages, trk,
@@ -200,8 +200,8 @@ namespace synth_test {
 		auto name = get_name_read(0.5);
 		std::unique_ptr<VMObjectLog> log_messages;
 		log_start(mem,log_messages,_start_time);
-		SQLStore<Level::strong> &strong = mem.ss.inst_strong();
-		SQLStore<Level::causal> &causal = mem.sc.inst_causal();
+		SQLStore<Level::strong> &strong = mem.i->ss.inst_strong();
+		SQLStore<Level::causal> &causal = mem.i->sc.inst_causal();
 		auto &trk = mem.trk;
 		store_asserts(strong,causal,trk);
 		perform_operation(log_messages,trk,
@@ -303,7 +303,7 @@ int main(){
 				synth_test::perform_causal_read
 				}};
 	
-	typename synth_test::TestParameters::PreparedTest launcher{vec};
+	typename synth_test::TestParameters::PreparedTest launcher{200,vec};
 	
 	std::cout << "beginning subtask generation loop" << std::endl;
 

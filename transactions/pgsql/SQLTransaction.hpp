@@ -21,14 +21,14 @@ namespace myria{ namespace pgsql {
 		struct SQLTransaction {
 			
 			GDataStore& gstore;
-		private:			
-			SQLStore_impl::SQLConnection& sql_conn;
+		private:
+			LockedSQLConnection sql_conn;
 			std::unique_lock<std::mutex> conn_lock;
 			pqxx::work trans;
 		public:
 			const std::string why;
 			bool commit_on_delete = false;
-			SQLTransaction(GDataStore& store, SQLStore_impl::SQLConnection& c, std::string why);
+			SQLTransaction(GDataStore& store, LockedSQLConnection c, std::string why);
 
 			bool is_serialize_error(const pqxx::pqxx_exception &r);
 	
@@ -63,9 +63,9 @@ namespace myria{ namespace pgsql {
 			auto nameint = (int) name;
 			auto namestr = std::to_string(nameint);
 			try{
-				if (!sql_conn.prepared.at(nameint)){
-					sql_conn.conn.prepare(namestr,stmt);
-					sql_conn.prepared[nameint] = true;
+				if (!sql_conn->prepared.at(nameint)){
+					sql_conn->conn.prepare(namestr,stmt);
+					sql_conn->prepared[nameint] = true;
 				}
 				auto fwd = trans.prepared(namestr)(std::forward<Arg1>(a1));
 				

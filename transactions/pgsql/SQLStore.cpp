@@ -19,8 +19,8 @@ namespace myria{ namespace pgsql {
 		using namespace mutils;
 		using Internals = SQLStore_impl::GSQLObject::Internals;
 
-		SQLStore_impl::SQLStore_impl(GDataStore &store, /*int instanceID,*/ Level l)
-			:_store(store),clock{{0,0,0,0}},level(l),default_connection{new SQLConnection()} {
+		SQLStore_impl::SQLStore_impl(SQLConnectionPool& pool, GDataStore &store, /*int instanceID,*/ Level l)
+			:_store(store),clock{{0,0,0,0}},level(l),default_connection{pool.acquire()} {
 				auto t = begin_transaction("Setting up this new SQLStore; gotta configure search paths and stuff.");
 				((SQLTransaction*)t.get())
 					->exec(l == Level::strong ?
@@ -36,11 +36,26 @@ namespace myria{ namespace pgsql {
 
 		unique_ptr<SQLTransaction> SQLStore_impl::begin_transaction(const std::string &why)
 		{
-			assert(!default_connection->in_trans() &&
+			assert(!(default_connection.is_locked() &&
+					 default_connection.lock()->in_trans()) &&
 				   "Concurrency support doesn't exist yet."
 				);
 			return unique_ptr<SQLTransaction>(
-				new SQLTransaction(_store,*default_connection,why));
+				new SQLTransaction(_store,default_connection.lock(),why));
+		}
+		
+		bool SQLStore_impl::in_transaction() const {
+			try {
+				auto conn = this->default_connection.acquire_if_locked();
+				bool it = conn->in_trans();
+				assert ([&](){
+						bool ct = conn->current_trans;
+						return (it ? ct : true);}());
+				return it;
+			}
+			catch (const mutils::ResourceInvalidException&) {
+				return false;
+			}
 		}
 
 		bool SQLStore_impl::exists(Name id) {
@@ -58,7 +73,7 @@ namespace myria{ namespace pgsql {
 		}
 
 		int SQLStore_impl::instance_id() const{
-			return SQLStore_impl::SQLConnection::ip_addr;
+			return SQLConnection::ip_addr;
 		}
 
 
@@ -76,8 +91,7 @@ namespace myria{ namespace pgsql {
 
 
 		SQLStore_impl::~SQLStore_impl(){
-			delete default_connection;
-                }//*/
+		}//*/
 
 	}
 }

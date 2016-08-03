@@ -20,11 +20,11 @@ namespace myria{ namespace pgsql {
 		enter_store_transaction(SQLStore_impl& store){
 			unique_ptr<SQLTransaction> t_owner;
 			SQLTransaction *trns = nullptr;
-			if (!(store).default_connection->in_trans()){
+			if (!(store).in_transaction()){
 				t_owner = small_transaction(store,"enter_store_transaction found no active transaction running");
 				trns = t_owner.get();
 			}
-			else trns = (store).default_connection->current_trans;
+			else trns = (store).default_connection.lock()->current_trans;
 			return make_pair(move(t_owner),trns);
 		}
 		

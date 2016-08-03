@@ -3,6 +3,7 @@
 #include "DataStore.hpp"
 #include "Transaction.hpp"
 #include "cexprutils.hpp"
+#include "SQLConnection.hpp"
 #include <memory>
 #include <vector>
 #include <array>
@@ -55,25 +56,25 @@ namespace myria { namespace pgsql {
 		struct SQLStore_impl {
 		private:
 	
-			SQLStore_impl(GDataStore &store, /*int instanceID,*/ Level);
+			SQLStore_impl(SQLConnectionPool& pool, GDataStore &store, /*int instanceID,*/ Level);
 			GDataStore &_store;
 		public:
 			
-                        virtual ~SQLStore_impl();
+			virtual ~SQLStore_impl();
 
 			template<Level l>
 			friend class SQLStore;
 
-			struct SQLConnection;
-			using SQLConnection_t = SQLConnection*;
 			std::array<int, NUM_CAUSAL_GROUPS> clock;
 
 			const Level level;
-			SQLConnection_t default_connection;
+			WeakSQLConnection default_connection;
 	
 			SQLStore_impl(const SQLStore_impl&) = delete;
 	
 			std::unique_ptr<SQLTransaction> begin_transaction(const std::string& why);
+			
+			bool in_transaction() const;
 	
 			int instance_id() const;
 			bool exists(Name id);

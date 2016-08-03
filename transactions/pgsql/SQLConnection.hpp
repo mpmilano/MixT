@@ -1,8 +1,8 @@
 #pragma once
-#include "SQLStore_impl.hpp"
 #include "test_utils.hpp"
 #include <pqxx/pqxx>
 #include <mutex>
+#include <resource_pool.hpp>
 
 namespace myria{ namespace pgsql {
 
@@ -16,7 +16,7 @@ namespace myria{ namespace pgsql {
 				MAX
 		};
 
-		struct SQLStore_impl::SQLConnection {
+		struct SQLConnection {
 			
 			std::vector<bool> prepared;
 			
@@ -32,5 +32,9 @@ namespace myria{ namespace pgsql {
 			SQLConnection();
 			SQLConnection(const SQLConnection&) = delete;
 		};
+
+		using SQLConnectionPool = mutils::ResourcePool<SQLConnection>;
+		using WeakSQLConnection = typename SQLConnectionPool::WeakResource;
+		using LockedSQLConnection = typename SQLConnectionPool::LockedResource;
 
 	} }

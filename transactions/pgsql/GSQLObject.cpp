@@ -70,10 +70,10 @@ namespace myria{ namespace pgsql {
 
 				if (t == Table::BlobStore){
 					binarystring blob(&c.at(0),c.size());
-					cmds::initialize_with_id(ss.level,*trans,t,SQLStore_impl::SQLConnection::repl_group,id,ss.clock,blob);
+					cmds::initialize_with_id(ss.level,*trans,t,SQLConnection::repl_group,id,ss.clock,blob);
 				}
 				else if (t == Table::IntStore){
-					cmds::initialize_with_id(ss.level,*trans,t,SQLStore_impl::SQLConnection::repl_group,id,ss.clock,((int*)c.data())[0]);
+					cmds::initialize_with_id(ss.level,*trans,t,SQLConnection::repl_group,id,ss.clock,((int*)c.data())[0]);
 				}
                                 if (i->_store.level == Level::causal){
                                     for (auto& val : i->causal_vers)
@@ -115,7 +115,7 @@ namespace myria{ namespace pgsql {
 			char *c = i->buf1;
 			assert(c);
 
-#define upd_23425(x...) cmds::update_data(i->_store.level,*trans,i->table,SQLStore_impl::SQLConnection::repl_group,i->key,i->_store.clock,x)
+#define upd_23425(x...) cmds::update_data(i->_store.level,*trans,i->table,SQLConnection::repl_group,i->key,i->_store.clock,x)
 	
 			if (i->table == Table::BlobStore){
 				binarystring blob(c,i->size);
@@ -191,7 +191,7 @@ namespace myria{ namespace pgsql {
                         auto r = cmds::increment(i->_store.level,
 							*owner.second,
 							i->table,
-							SQLStore_impl::SQLConnection::repl_group,
+							SQLConnection::repl_group,
 							i->key,
 							i->_store.clock);
                         if (i->_store.level == Level::causal){

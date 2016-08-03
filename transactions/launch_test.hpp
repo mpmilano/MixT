@@ -43,27 +43,34 @@ namespace {
 	struct Mem {
 		unique_ptr<VMObjectLogger> log_builder{build_VMObjectLogger()};
 		tracker::Tracker trk;
-		SQLStore<Level::strong>::SQLInstanceManager ss;
-		SQLStore<Level::causal>::SQLInstanceManager sc;
-		DeserializationManager dsm;
+		const int memid;
+		struct Continue_build {
+			SQLStore<Level::strong>::SQLInstanceManager ss;
+			SQLStore<Level::causal>::SQLInstanceManager sc;
+			DeserializationManager dsm;
+			
+			Continue_build(Mem& super, SQLConnectionPool& strong_p, SQLConnectionPool& causal_p)
+				:ss(super.trk,strong_p),
+				 sc(super.trk,causal_p),
+				 dsm({&ss,&sc}){
+				auto pid = super.memid % (65535 - 1025); //make sure this can be used as a port numbxer
+				auto &ss = this->ss.inst();
+				auto &cs = sc.inst();
+				if (!super.trk.strongRegistered())
+					super.trk.registerStore(ss);
+				if (!super.trk.causalRegistered())
+					super.trk.registerStore(cs);
+				//I'm assuming that pid won't get larger than the number of allowable ports...
+				assert(pid + 1024 < 49151);
+			}
+		};
+		std::unique_ptr<Continue_build> i;
 		
 		Mem& tracker_mem(){return *this;}
 		
 		Mem(int memid)
 			:trk(memid + 1024, tracker::CacheBehaviors::full),
-			 ss(trk),
-			 sc(trk),
-			 dsm({&ss,&sc}){
-			auto pid = memid % (65535 - 1025); //make sure this can be used as a port numbxer
-			auto &ss = this->ss.inst();
-			auto &cs = sc.inst();
-			if (!trk.strongRegistered())
-				trk.registerStore(ss);
-			if (!trk.causalRegistered())
-				trk.registerStore(cs);
-			//I'm assuming that pid won't get larger than the number of allowable ports...
-			assert(pid + 1024 < 49151);
-		}
+			 memid(memid) {}
 		Mem(const Mem&) = delete;
 	};
 	
@@ -75,8 +82,12 @@ struct PreparedTest{
 
 	//static functions for TaskPool
 	static std::string exn_handler(std::exception_ptr eptr);
-	
-	static void pool_mem_init (int, Mem&){}
+
+	SQLConnectionPool strong;
+	SQLConnectionPool causal;
+	void pool_mem_init (Mem& m){
+		m.i.reset(new typename Mem::Continue_build(m,strong,causal));
+	}
 
 	using action_t = typename Pool::action_fp;
 	using functor_action_t = typename Pool::action_f;
@@ -88,8 +99,12 @@ struct PreparedTest{
 	Pool pool;
 
 	//constructor
-	PreparedTest(std::vector<action_t> actions)
-		:pool{pool_mem_init,convert_vector(actions),exn_handler}{}
+	PreparedTest(const std::size_t max_resources, std::vector<action_t> actions)
+		:strong(max_resources,[](){return new SQLConnection{};}),
+		 causal(max_resources,[](){return new SQLConnection{};}),
+		pool{[this](int,Mem& m){return this->pool_mem_init(m);},
+			convert_vector(actions),
+				exn_handler}{}
 
 	//runs the main test loop, given a function which return true when
 	//the test should stop, and a function that returns (which-task, what-arg-for-task)
