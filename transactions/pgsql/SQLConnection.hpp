@@ -30,6 +30,7 @@ namespace myria{ namespace pgsql {
 			//env will be used.
 			pqxx::connection conn;
 			SQLConnection();
+			~SQLConnection();
 			SQLConnection(const SQLConnection&) = delete;
 		};
 

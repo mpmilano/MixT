@@ -223,6 +223,7 @@ namespace synth_test {
 		constexpr static minutes test_stop_time = 7min;
 		constexpr static double percent_writes = write_percent;
 		constexpr static double percent_strong = strong_percent;
+		constexpr static std::size_t connection_pool_size = 250;
 		using PreparedTest = PreparedTest<Mem,fake_time>;
 		using Pool = typename PreparedTest::Pool;
 		
@@ -274,6 +275,7 @@ namespace synth_test {
 	constexpr minutes TestParameters::test_stop_time;
 	constexpr double TestParameters::percent_writes;
 	constexpr double TestParameters::percent_strong;
+	constexpr std::size_t TestParameters::connection_pool_size;
 
 
 }
@@ -303,7 +305,8 @@ int main(){
 				synth_test::perform_causal_read
 				}};
 	
-	typename synth_test::TestParameters::PreparedTest launcher{200,vec};
+	typename synth_test::TestParameters::PreparedTest
+		launcher{synth_test::TestParameters::connection_pool_size,vec};
 	
 	std::cout << "beginning subtask generation loop" << std::endl;
 
