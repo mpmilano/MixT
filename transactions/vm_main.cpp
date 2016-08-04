@@ -223,7 +223,7 @@ namespace synth_test {
 		constexpr static minutes test_stop_time = 7min;
 		constexpr static double percent_writes = write_percent;
 		constexpr static double percent_strong = strong_percent;
-		constexpr static std::size_t connection_pool_size = 275;
+		constexpr static std::size_t connection_pool_size = 475;
 		using PreparedTest = PreparedTest<Mem,fake_time>;
 		using Pool = typename PreparedTest::Pool;
 		
