@@ -99,9 +99,9 @@ struct PreparedTest{
 	Pool pool;
 
 	//constructor
-	PreparedTest(const std::size_t max_resources, std::vector<action_t> actions)
-		:strong(max_resources,[](){return new SQLConnection{};}),
-		 causal(max_resources,[](){return new SQLConnection{};}),
+	PreparedTest(const std::size_t max_resources, const std::size_t max_spares, std::vector<action_t> actions)
+		:strong(max_resources,max_spares,[](){return new SQLConnection{};}),
+		 causal(max_resources,max_spares,[](){return new SQLConnection{};}),
 		pool{[this](int,Mem& m){return this->pool_mem_init(m);},
 			convert_vector(actions),
 				exn_handler}{}
