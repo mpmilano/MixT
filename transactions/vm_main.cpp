@@ -3,7 +3,6 @@
 #include <iostream>
 #include <fstream>
 #include <thread>
-#include <pqxx/pqxx>
 #include "SQLStore.hpp"
 #include "FinalHeader.hpp"
 #include "Ostreams.hpp"
@@ -140,9 +139,9 @@ namespace synth_test {
 				}
 			}
 		}
-		catch(pqxx::pqxx_exception &e){
-			log_messages->addField(LogFields::pqxx_failure,true);
-			log_messages->addField(LogFields::pqxx_failure_string, std::string(e.base().what()));
+		catch(remote::remote_exception &e){
+			log_messages->addField(LogFields::remote_failure,true);
+			log_messages->addField(LogFields::remote_failure_string, std::string(e.base().what()));
 		}
 	}
 

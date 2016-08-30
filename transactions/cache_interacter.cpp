@@ -3,7 +3,6 @@
 #include <iostream>
 #include <fstream>
 #include <thread>
-#include <pqxx/pqxx>
 #include "SQLStore.hpp"
 #include "FinalHeader.hpp"
 #include "FinalizedOps.hpp"

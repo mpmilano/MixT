@@ -14,7 +14,6 @@
 #include "FinalHeader.hpp"
 #include "Print.hpp"//*/
 #include "Transaction_macros.hpp"
-#include <pqxx/pqxx>
 
 using namespace myria;
 using namespace mutils;
@@ -93,6 +92,5 @@ int main(){
 		std::cerr << "No overload found: " << e.msg << std::endl;
 	}
 
-	using namespace pqxx;
 	
 }

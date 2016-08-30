@@ -13,8 +13,8 @@ namespace myria{
 			LogFields::is_strong, "bool is_strong","false",
 			LogFields::is_causal, "bool is_causal","false",
 			LogFields::is_serialization_error,"bool is_serialization_error","false",
-			LogFields::pqxx_failure_string,"std::string pqxx_failure_string","\"\"",
-			LogFields::pqxx_failure,"bool pqxx_failure","false",
+			LogFields::remote_failure_string,"std::string remote_failure_string","\"\"",
+			LogFields::remote_failure,"bool remote_failure","false",
 			LogFields::num_causal_tries,"int num_causal_tries", "0",
 
 			LogFields::transaction_action, "bool transaction_action", "false",
@@ -59,10 +59,10 @@ namespace myria{
 			return os << "bool is_write";
 		case LogFields::is_serialization_error:
 			return os << "bool is_serialization_error";
-		case LogFields::pqxx_failure_string:
-			return os << "std::string pqxx_failure_string";
-		case LogFields::pqxx_failure:
-			return os << "bool pqxx_failure";
+		case LogFields::remote_failure_string:
+			return os << "std::string remote_failure_string";
+		case LogFields::remote_failure:
+			return os << "bool remote_failure";
 		case LogFields::num_causal_tries:
 			return os << "int num_causal_tries";
 		default:

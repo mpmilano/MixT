@@ -3,7 +3,6 @@
 #include <iostream>
 #include <fstream>
 #include <thread>
-#include <pqxx/pqxx>
 #include "SQLStore.hpp"
 #include "FinalHeader.hpp"
 #include "Ostreams.hpp"
@@ -128,15 +127,12 @@ std::string PreparedTest<Mem,Arg>::exn_handler(std::exception_ptr eptr){
 		assert(eptr);
 		std::rethrow_exception(eptr);
 	}
-	catch (const pqxx::pqxx_exception &e){
-		log_messages << "pqxx failure: " << e.base().what() << std::endl;
-	}
 	catch (const std::exception &e){
-		log_messages << "non-pqxx failure: " << e.what() << std::endl;
+		log_messages << "failure: " << e.what() << std::endl;
 	}
 	catch (...){
 		log_messages
-			<< "Exception occurred which derived from neither pqxx_exception nor std::exception!"
+			<< "Exception occurred which derived from not std::exception!"
 			<< std::endl;
 			}//*/
 	return log_messages.str();
@@ -181,9 +177,6 @@ std::string PreparedTest<Mem,Arg>::run_tests(Meta& meta, bool (*stop) (Meta&, Po
 					}
 					catch (const std::exception& e){
 						ss << e.what() << endl;
-					}
-					catch (const pqxx::pqxx_exception& e){
-						ss << e.base().what() << endl;
 					}
 					catch (...){
 						std::exception_ptr p = std::current_exception();
