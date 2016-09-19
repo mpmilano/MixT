@@ -24,39 +24,28 @@ namespace myria{ namespace pgsql {
 					l.unlock();
 					return l;
 				}(sql_conn->con_guard)),
-			 trans(sql_conn->conn),
 			 why(why)
 		{
 			assert(!sql_conn->in_trans());
-			sql_conn->current_trans = this;
+			sql_conn.current_trans = this;
+			char start_trans{4};
+			sql_conn.conn->send(start_trans);
 		}
 		
 
-		bool SQLTransaction::is_serialize_error(const pqxx::pqxx_exception &r){
+		bool SQLTransaction::is_serialize_error(const pqxx::pqxx_exception &r) const{
 			auto s = std::string(r.base().what());
 			return s.find("could not serialize access") != std::string::npos;
 		}
-
-	
-		pqxx::result SQLTransaction::exec(const std::string &str){
-				try{
-					return trans.exec(str);
-				}
-				default_sqltransaction_catch
-					}
 		
-	
-		bool SQLTransaction::store_commit() {
-			sql_conn->current_trans = nullptr;
-			trans.commit();
-			return true;
-		}
-
+		std::list<SQLStore_impl::GSQLObject*> objs;
 		void SQLTransaction::add_obj(SQLStore_impl::GSQLObject* gso){
 			objs.push_back(gso);
 		}
 
 		void SQLTransaction::store_abort(){
+			char trans{1};
+			sql_conn.conn->send(trans);
 			commit_on_delete = false;
 		}
 		

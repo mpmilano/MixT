@@ -27,7 +27,7 @@ namespace myria{ namespace pgsql {
 		}
 
 		SQLConnection::SQLConnection()
-			:prepared(((std::size_t) TransactionNames::MAX),false),conn{std::string("host=") + string_of_ip(ip_addr)}{
+			,conn{std::string("host=") + string_of_ip(ip_addr)}{
 			static_assert(int{CAUSAL_GROUP} > 0, "errorr: did not set CAUSAL_GROUP or failed to 1-index");
 			assert(conn.is_open());
 			//std::cout << string_of_ip(ip) << std::endl;

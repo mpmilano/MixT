@@ -139,7 +139,7 @@ namespace synth_test {
 				}
 			}
 		}
-		catch(remote::remote_exception &e){
+		catch(pqxx::pqxx_exception &e){
 			log_messages->addField(LogFields::remote_failure,true);
 			log_messages->addField(LogFields::remote_failure_string, std::string(e.base().what()));
 		}
