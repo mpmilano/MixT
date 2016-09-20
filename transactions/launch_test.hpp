@@ -48,7 +48,7 @@ namespace {
 			SQLStore<Level::causal>::SQLInstanceManager sc;
 			DeserializationManager dsm;
 			
-			Continue_build(Mem& super, SQLConnectionPool& strong_p, SQLConnectionPool& causal_p)
+			Continue_build(Mem& super, SQLConnectionPool<Level::strong>& strong_p, SQLConnectionPool<Level::causal>& causal_p)
 				:ss(super.trk,strong_p),
 				 sc(super.trk,causal_p),
 				 dsm({&ss,&sc}){
@@ -82,8 +82,8 @@ struct PreparedTest{
 	//static functions for TaskPool
 	static std::string exn_handler(std::exception_ptr eptr);
 
-	SQLConnectionPool strong;
-	SQLConnectionPool causal;
+	SQLConnectionPool<Level::strong> strong;
+	SQLConnectionPool<Level::causal> causal;
 	void pool_mem_init (Mem& m){
 		m.i.reset(new typename Mem::Continue_build(m,strong,causal));
 	}
@@ -98,10 +98,8 @@ struct PreparedTest{
 	Pool pool;
 
 	//constructor
-	PreparedTest(const std::size_t max_resources, const std::size_t max_spares, std::vector<action_t> actions)
-		:strong(max_resources,max_spares,[](){return new SQLConnection{};}),
-		 causal(max_resources,max_spares,[](){return new SQLConnection{};}),
-		pool{[this](int,Mem& m){return this->pool_mem_init(m);},
+	PreparedTest(std::vector<action_t> actions)
+		:pool{[this](int,Mem& m){return this->pool_mem_init(m);},
 			convert_vector(actions),
 				exn_handler}{}
 

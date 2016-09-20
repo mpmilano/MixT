@@ -40,8 +40,10 @@ namespace myria { namespace pgsql {
 		
 		struct SQLStore_impl {
 		private:
-	
-			SQLStore_impl(SQLConnectionPool& pool, GDataStore &store, /*int instanceID,*/ Level);
+
+			void init_common();
+			SQLStore_impl(SQLConnectionPool<Level::causal>& pool, GDataStore &store, /*int instanceID,*/ Level);
+			SQLStore_impl(SQLConnectionPool<Level::strong>& pool, GDataStore &store, /*int instanceID,*/ Level);
 			GDataStore &_store;
 		public:
 			

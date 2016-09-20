@@ -1,6 +1,7 @@
 //oh look, a source file! We remember those.
 #include <pqxx/pqxx>
 #include <arpa/inet.h>
+#include "BlobUtils.hpp"
 #include "SQLStore_impl.hpp"
 #include "SQLTransaction.hpp"
 #include "Tracker_common.hpp"
@@ -73,13 +74,13 @@ namespace myria{ namespace pgsql {
 					if (ss.level == Level::strong)
 						trans->initialize_with_id(t,id,blob);
 					else
-						trans->initialize_with_id(t,SQLConnection::repl_group,id,ss.clock,blob);
+						trans->initialize_with_id(t,repl_group,id,ss.clock,blob);
 				}
 				else if (t == Table::IntStore){
 					if (ss.level == Level::strong)
 						trans->initialize_with_id(t,id,((int*)c.data())[0]);
 					else
-						trans->initialize_with_id(t,SQLConnection::repl_group,id,ss.clock,((int*)c.data())[0]);
+						trans->initialize_with_id(t,repl_group,id,ss.clock,((int*)c.data())[0]);
 				}
 				if (i->_store.level == Level::causal){
 					for (auto& val : i->causal_vers)
@@ -123,7 +124,7 @@ namespace myria{ namespace pgsql {
 
 #define upd_23425(x...) (i->_store.level == Level::strong ? \
 						 trans->update_data(i->table,i->key,x) : \
-						 trans->update_data(i->table,SQLConnection::repl_group,i->key,i->_store.clock,x))
+						 trans->update_data(i->table,repl_group,i->key,i->_store.clock,x))
 	
 			if (i->table == Table::BlobStore){
 				binarystring blob(c,i->size);
@@ -135,7 +136,6 @@ namespace myria{ namespace pgsql {
 				}
 			}
 			else if (i->table == Table::IntStore){
-				auto res = ;
 				if (i->_store.level == Level::strong){
 					upd_23425(((int*)c)[0],i->vers);
 				}
@@ -187,9 +187,9 @@ namespace myria{ namespace pgsql {
 		void SQLStore_impl::GSQLObject::increment(SQLTransaction *gso){
 			auto owner = enter_transaction(store(),gso);
 			if (i->_store.level == Level::causal){
-				*owner.second.increment(i->table,SQLConnection::repl_group,i->key,i->_store.clock,i->causal_vers);
+				owner.second->increment(repl_group,i->key,i->_store.clock,i->causal_vers);
 			}
-			else *owner.second.increment(i->table,i->key,i->vers);
+			else owner.second->increment(i->key,i->vers);
 		}
 
 		bool SQLStore_impl::GSQLObject::ro_isValid(SQLTransaction *gso) const {

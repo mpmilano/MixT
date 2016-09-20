@@ -4,6 +4,7 @@
 #include <mutex>
 #include <resource_pool.hpp>
 #include "batched_connection.hpp"
+#include "SQLConstants.hpp"
 
 namespace myria{ namespace pgsql {
 
@@ -15,37 +16,45 @@ namespace myria{ namespace pgsql {
 				MAX
 		};
 
+		struct LockedSQLConnection;
+
+		using SQLTransaction_p = SQLTransaction*;
+
 		struct WeakSQLConnection{
 			mutils::batched_connection::weak_connection conn;
+			
+			LockedSQLConnection acquire_if_locked() const;
+			LockedSQLConnection lock();
+			WeakSQLConnection(mutils::batched_connection::weak_connection conn);
+			WeakSQLConnection(LockedSQLConnection &l);
+			WeakSQLConnection(LockedSQLConnection &&l);
 		};
 
+		using void_p = void*;
+		
 		struct LockedSQLConnection {
 
 			mutils::batched_connection::locked_connection conn;
-			LockedSQLConnection(mutils::batched_connection::locked_connection conn)
-				:conn(std::move(conn)){}
+			LockedSQLConnection(mutils::batched_connection::locked_connection conn);
+
+			SQLTransaction_p current_trans() const;
+
+			void_p& current_trans_vp();
 			
-			SQLTransaction* current_trans = nullptr;
-			std::unique_ptr<std::mutex> con_guard{new std::mutex()};
-			static const constexpr unsigned int ip_addr{mutils::get_strong_ip()};
-			static const constexpr int repl_group{CAUSAL_GROUP};
-			bool in_trans(){
-				return current_trans;
-			}
+			bool in_trans();
 
 			LockedSQLConnection(const LockedSQLConnection&) = delete;
-			LockedSQLConnection(LockedSQLConnection&& o)
-				:conn(std::move(o.conn)),
-				 current_trans(std::move(o.current_trans)),
-				 con_guard(std::move(o.con_guard)){}
-			
-			~LockedSQLConnection(){
-				assert(!current_trans);
-			}
+			LockedSQLConnection(LockedSQLConnection&& o);
 		};
-		
+
+
+
+		template<Level l>
 		struct SQLConnectionPool {
-			mutils::batched_connection::batched_connections bc;
+			mutils::batched_connection::batched_connections bc{
+				(l == Level::strong ? ip_addr : 0),
+					(l == Level::strong ? strong_sql_port : causal_sql_port),5000*8
+					};
 			LockedSQLConnection acquire(){
 				return bc.spawn();
 			}

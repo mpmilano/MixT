@@ -11,6 +11,10 @@ namespace myria {
 				};
 		static constexpr int Table_max = 2;;
 
+		static const constexpr int ip_addr{static_cast<int>(mutils::get_strong_ip())};
+
+		static const constexpr int repl_group{CAUSAL_GROUP};
+
 		constexpr mutils::CTString table_name(Table t){
 			using namespace mutils;
 			constexpr auto bs = "\"BlobStore\"";

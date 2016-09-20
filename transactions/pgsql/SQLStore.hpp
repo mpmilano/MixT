@@ -19,8 +19,8 @@ namespace myria { namespace pgsql {
 			struct SQLInstanceManager : public SQLInstanceManager_abs{
 			public:
 				tracker::Tracker &trk;
-				SQLConnectionPool &p;
-				SQLInstanceManager(tracker::Tracker &trk, SQLConnectionPool &p)
+				SQLConnectionPool<l> &p;
+				SQLInstanceManager(tracker::Tracker &trk, SQLConnectionPool<l> &p)
 					:SQLInstanceManager_abs(),trk(trk),p(p){
 				}
 				SQLInstanceManager(const SQLInstanceManager&) = delete;
@@ -83,7 +83,7 @@ namespace myria { namespace pgsql {
 			mutils::DeserializationManager &this_mgr;
 
 		private:
-			SQLStore(tracker::Tracker& trk, mutils::DeserializationManager &this_mgr,SQLConnectionPool &p)
+			SQLStore(tracker::Tracker& trk, mutils::DeserializationManager &this_mgr,SQLConnectionPool<l> &p)
 				:SQLStore_impl(p,*this,l),DataStore<l>(),this_mgr(this_mgr) {
 				trk.registerStore(*this);
 			}
@@ -108,8 +108,8 @@ namespace myria { namespace pgsql {
 
 			std::string why_in_transaction() const {
 				if (in_transaction()){
-					assert(this->default_connection.acquire_if_locked()->current_trans);
-					return this->default_connection.acquire_if_locked()->current_trans->why;
+					assert(this->default_connection.acquire_if_locked().current_trans());
+					return this->default_connection.acquire_if_locked().current_trans()->why;
 				}
 				else return "error: not in transaction";
 			}

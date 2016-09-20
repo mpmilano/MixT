@@ -18,6 +18,9 @@ strong: $(object_files)
 causal: $(object_files)
 	clang++ LocalSQLReceiver.cpp $(object_files) -o causal_receiver -DRCVR_LEVEL=Level::causal $(CPPFLAGS) $(LDFLAGS)
 
+test_causal: $(object_files)
+	clang++ test_causal.cpp $(object_files) -o test_causal_receiver -DRCVR_LEVEL=Level::causal $(CPPFLAGS) $(LDFLAGS)
+
 batched_connection_server.o:
 	clang++ -c ../*/batched_connection_server.cpp $(CPPFLAGS)
 

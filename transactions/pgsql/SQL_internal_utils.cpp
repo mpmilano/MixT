@@ -24,7 +24,7 @@ namespace myria{ namespace pgsql {
 				t_owner = small_transaction(store,"enter_store_transaction found no active transaction running");
 				trns = t_owner.get();
 			}
-			else trns = (store).default_connection.lock()->current_trans;
+			else trns = (store).default_connection.lock().current_trans();
 			return make_pair(move(t_owner),trns);
 		}
 		

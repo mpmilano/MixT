@@ -17,23 +17,41 @@ namespace myria{ namespace pgsql {
 		using namespace mtl;
 		using namespace tracker;
 		using namespace mutils;
-	
-		bool SQLConnection::in_trans(){
-                        if (current_trans){/*
-				assert(con_guard.try_lock());
-                                con_guard.unlock();*/
-			}
-			return current_trans;
+
+		WeakSQLConnection::WeakSQLConnection(mutils::batched_connection::weak_connection conn)
+			:conn(std::move(conn)){}
+
+		LockedSQLConnection WeakSQLConnection::lock(){
+			return LockedSQLConnection{conn.lock()};
 		}
 
-		SQLConnection::SQLConnection()
-			,conn{std::string("host=") + string_of_ip(ip_addr)}{
-			static_assert(int{CAUSAL_GROUP} > 0, "errorr: did not set CAUSAL_GROUP or failed to 1-index");
-			assert(conn.is_open());
-			//std::cout << string_of_ip(ip) << std::endl;
+		WeakSQLConnection::WeakSQLConnection(LockedSQLConnection &l)
+			:conn(l.conn){}
+
+		WeakSQLConnection::WeakSQLConnection(LockedSQLConnection &&l)
+			:conn(l.conn){}
+
+		LockedSQLConnection WeakSQLConnection::acquire_if_locked() const {
+			return LockedSQLConnection(conn.acquire_if_locked());
 		}
-		const int SQLConnection::repl_group;
-		const unsigned int SQLConnection::ip_addr;
+
+		LockedSQLConnection::LockedSQLConnection(mutils::batched_connection::locked_connection conn)
+			:conn(std::move(conn)){}
+
+		SQLTransaction_p LockedSQLConnection::current_trans() const {
+			return (SQLTransaction*) conn->bonus_item;
+		}
+		
+		void_p& LockedSQLConnection::current_trans_vp() {
+			return conn->bonus_item;
+		}
+			
+		bool LockedSQLConnection::in_trans(){
+			return current_trans();
+		}
+
+		LockedSQLConnection::LockedSQLConnection(LockedSQLConnection&& o)
+			:conn(std::move(o.conn)){}
 
 	}
 }

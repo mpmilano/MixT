@@ -40,7 +40,13 @@ namespace myria { namespace pgsql {
 			
 			template<typename E>
 			auto LocalSQLTransaction_super::exec_prepared_hlpr(E &e){
-				return e.exec();
+				try{
+					return e.exec();
+				}
+				catch(const std::exception& e){
+					std::cout << e.what() << std::endl;
+					throw e;
+				}
 			}
 			
 			template<typename E, typename A, typename... B>

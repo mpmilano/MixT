@@ -8,8 +8,8 @@ namespace myria {
 		namespace local {
 			template<Level l>
 			class SQLReceiver{
-				mutils::batched_connection::receiver r;
 			public:
+				mutils::batched_connection::receiver r;
 
 				using action_t = typename mutils::batched_connection::receiver::action_t;
 				using sizes_t = std::vector<std::size_t>;
@@ -39,7 +39,7 @@ namespace myria {
 							//there is no explicit abort in pqxx we need to worry about
 						}
 						else if (_data[0] == 2){
-							db_connection->current_trans->exec(_data + 1);
+							db_connection->current_trans->exec(*from_bytes<std::string>(nullptr,_data + 1));
 						}
 						else {
 							assert(_data[0] != 4);

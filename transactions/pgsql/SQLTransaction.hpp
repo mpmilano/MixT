@@ -1,6 +1,7 @@
 #pragma once
 #include "SQLConnection.hpp"
 #include <pqxx/pqxx>
+#include "BlobUtils.hpp"
 
 namespace myria{ namespace pgsql {
 
@@ -10,7 +11,6 @@ namespace myria{ namespace pgsql {
 			GDataStore& gstore;
 		private:
 			LockedSQLConnection sql_conn;
-			std::unique_lock<std::mutex> conn_lock;
 		public:
 			const std::string why;
 			bool commit_on_delete = false;
@@ -21,7 +21,7 @@ namespace myria{ namespace pgsql {
 			SQLTransaction(const SQLTransaction&) = delete;
 			
 			template<typename... Args>
-			prepared(TransactionNames name, Args && ... args){
+			void prepared(TransactionNames name, Args && ... args){
 				char trans{3};
 				sql_conn.conn->send(trans,name,args...);
 			}
@@ -88,13 +88,13 @@ namespace myria{ namespace pgsql {
 				prepared(TransactionNames::initialize_with_id,t,rg,id,c,b);
 			}
 
-			template<typename Data, typename Vers>
+			template<typename Vers>
 			void increment(Name n, Vers& vers){
 				prepared(TransactionNames::increment,n);
 				receive(vers);
 			}
 
-			template<typename RG, typename Data, typename Vers, typename Clock>
+			template<typename RG, typename Vers, typename Clock>
 			void increment(const RG& rg, Name n, const Clock& c, Vers& vers){
 				prepared(TransactionNames::increment,rg,n,c);
 				receive(vers);
@@ -102,7 +102,7 @@ namespace myria{ namespace pgsql {
 
 			void exec(const std::string &str){
 				char trans{2};
-				sql_conn.conn->send(trans,str.c_str());
+				sql_conn.conn->send(trans,str);
 			}
 	
 			bool store_commit(){

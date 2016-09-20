@@ -41,7 +41,12 @@ namespace myria { namespace pgsql {
 							  Arg1 && a1, Args && ... args);
 
 				void exec(const std::string s) {
+                                    try{
 					trans.exec(s);
+                                    }
+                                    catch(const std::exception& e){
+                                        std::cout << e.what() << std::endl;
+                                    }
 				}
 
 				void store_commit() {

@@ -1,9 +1,9 @@
 TRANS_DIR= `pwd`/
 IP_quad=`ifconfig | sed s/broadcast.*//g | tr " " "\n" | grep 128.84 | rev | sed s/'\..*'//g | rev`
 storeList='pgsql::SQLStore<Level::strong>, pgsql::SQLStore<Level::causal>'
-CPPFLAGS= -I$(PWD) -I$(PWD)/mtl -I$(PWD)/myria-utils -I$(PWD)/mutils-networking -I$(PWD)/mutils -I$(PWD)/mutils-containers -I$(PWD)/mutils-serialization -I$(PWD)/mutils-tasks -I$(PWD)/testing -I$(PWD)/pgsql -I$(PWD)/tracker -g -stdlib=libc++ --std=c++14 -Wall -DNUM_CAUSAL_GROUPS="4" -DSTORE_LIST=$(storeList) -DMY_IP=\"$(MY_IP)\" -DMAX_THREADS=$(MAX_THREADS) -ferror-limit=1 -Wall -Werror -Wextra
-LDFLAGS= -stdlib=libc++ --std=c++14 -lpqxx -lm -pthread
-object_files=FutureFreePool.o GlobalPool.o CooperativeCache.o Ends.o utils.o test_utils.o Basics.o Tracker.o Ostreams.o SerializationSupport.o  IfBuilder.o  WhileBuilder.o ConExpr.o SQLStore.o GSQLObject.o SQLConnection.o SQLTransaction.o SQL_internal_utils.o TempBuilder.o TransactionBasics.o ServerSocket.o Socket.o ClockManager.o abiutils.o
+CPPFLAGS= -I$(PWD) -I$(PWD)/mtl -I$(PWD)/myria-utils -I$(PWD)/mutils-networking -I$(PWD)/mutils -I$(PWD)/mutils-containers -I$(PWD)/mutils-serialization -I$(PWD)/mutils-tasks -I$(PWD)/testing -I$(PWD)/pgsql -I$(PWD)/tracker -g -stdlib=libc++ --std=c++1z -Wall -DNUM_CAUSAL_GROUPS="4" -DSTORE_LIST=$(storeList) -DMY_IP=\"$(MY_IP)\" -DMAX_THREADS=$(MAX_THREADS) -ferror-limit=1 -Wall -Werror -Wextra
+LDFLAGS= -stdlib=libc++ --std=c++1z -lpqxx -lm -pthread
+object_files=FutureFreePool.o GlobalPool.o CooperativeCache.o Ends.o utils.o test_utils.o Basics.o Tracker.o Ostreams.o SerializationSupport.o  IfBuilder.o  WhileBuilder.o ConExpr.o SQLStore.o GSQLObject.o SQLConnection.o SQLTransaction.o SQL_internal_utils.o TempBuilder.o TransactionBasics.o ServerSocket.o Socket.o ClockManager.o abiutils.o batched_connection_server.o batched_connection_client.o batched_connection_common.o BlobUtils.o
 export IP_quad
 export TRANS_DIR
 export CPPFLAGS
@@ -111,6 +111,17 @@ GlobalPool.o:
 	clang++ -c */GlobalPool.cpp $(CPPFLAGS)
 abiutils.o:
 	clang++ -c */abiutils.cpp $(CPPFLAGS)
+batched_connection_server.o:
+	clang++ -c */batched_connection_server.cpp $(CPPFLAGS)
+
+batched_connection_client.o:
+	clang++ -c */batched_connection_client.cpp $(CPPFLAGS)
+
+batched_connection_common.o:
+	clang++ -c */batched_connection_common.cpp $(CPPFLAGS)
+BlobUtils.o:
+	clang++ -c */BlobUtils.cpp $(CPPFLAGS)
+
 
 run: test
 	PGHOST='127.0.0.1' PGPORT='5432' PGDATABASE='DataStore' PGUSER='research' PGPASSWORD='swimsand' ./test
