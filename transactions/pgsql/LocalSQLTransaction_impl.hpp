@@ -336,7 +336,6 @@ namespace myria { namespace pgsql {
 					sendBack(conn,extract_version(increment_c(Table::IntStore,*k,*id,*ends)));
 				}
 
-
 		}
 	}
 }

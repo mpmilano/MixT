@@ -40,7 +40,9 @@ namespace myria { namespace pgsql {
 				auto prepared(SQL_Conn& sql_conn, LocalTransactionNames name, const std::string &stmt,
 							  Arg1 && a1, Args && ... args);
 
-				virtual void exec(const std::string) = 0;
+				void exec(const std::string s) {
+					trans.exec(s);
+				}
 
 				void store_commit() {
 					trans.commit();
@@ -125,8 +127,6 @@ namespace myria { namespace pgsql {
 				void initialize_with_id(char const * const bytes);
 				
 				void increment(char const * const bytes);
-
-				void exec(const std::string);
 
 			};
 			
@@ -220,7 +220,6 @@ namespace myria { namespace pgsql {
 				void update_data(char const * const bytes);
 				void initialize_with_id(char const * const bytes);
 				void increment(char const * const bytes);
-				void exec(const std::string);
 			};
 		}
 	}

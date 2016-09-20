@@ -100,13 +100,7 @@ namespace myria{ namespace pgsql {
 				receive(vers);
 			}
 
-			auto exec(const std::string &str){
-				char trans{2};
-				sql_conn.conn->send(trans,str.c_str());
-				return sql_conn.conn->receive_tpl<Tpl>();
-			}
-
-			void exec_noresponse(const std::string &str){
+			void exec(const std::string &str){
 				char trans{2};
 				sql_conn.conn->send(trans,str.c_str());
 			}
