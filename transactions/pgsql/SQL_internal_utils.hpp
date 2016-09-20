@@ -22,7 +22,7 @@ namespace myria{ namespace pgsql {
 		template<typename Trans>
 		bool obj_exists(Name id, Trans owner){
 			//level doesn't matter here for now.
-			return cmds::obj_exists(Level::undef,*owner,id).size() > 0;
+			return owner->exists(id);
 		}
 	}
 }

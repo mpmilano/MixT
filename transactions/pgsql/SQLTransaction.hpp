@@ -79,7 +79,7 @@ namespace myria{ namespace pgsql {
 			}
 
 			template<typename Blob>
-			void initialize_with_id(Table t, Name id, const Blob &b){
+			void initialize_with_id(Table t, Name id, const Blob &b) {
 				prepared(TransactionNames::initialize_with_id,t,id,b);
 			}
 			
@@ -89,14 +89,14 @@ namespace myria{ namespace pgsql {
 			}
 
 			template<typename Data, typename Vers>
-			void increment(Table t, Name n, Data &d, Vers& vers){
-				prepared(TransactionNames::increment, t,n,d);
+			void increment(Name n, Vers& vers){
+				prepared(TransactionNames::increment,n);
 				receive(vers);
 			}
 
 			template<typename RG, typename Data, typename Vers, typename Clock>
-			void increment(Table t, const RG& rg, Name n, const Clock& c, Data &d, Vers& vers){
-				prepared(TransactionNames::increment,t,rg,n,c,d);
+			void increment(const RG& rg, Name n, const Clock& c, Vers& vers){
+				prepared(TransactionNames::increment,rg,n,c);
 				receive(vers);
 			}
 
