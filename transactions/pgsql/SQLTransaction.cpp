@@ -27,20 +27,16 @@ namespace myria{ namespace pgsql {
 			sql_conn.conn->send(start_trans);
 		}
 		
-
-		bool SQLTransaction::is_serialize_error(const pqxx::pqxx_exception &r) const{
-			auto s = std::string(r.base().what());
-			return s.find("could not serialize access") != std::string::npos;
-		}
-		
 		std::list<SQLStore_impl::GSQLObject*> objs;
 		void SQLTransaction::add_obj(SQLStore_impl::GSQLObject* gso){
 			objs.push_back(gso);
 		}
 
 		void SQLTransaction::store_abort(){
-			char trans{1};
-			sql_conn.conn->send(trans);
+			if(!remote_aborted){
+				char trans{1};
+				sql_conn.conn->send(trans);
+			}
 			commit_on_delete = false;
 		}
 		
@@ -51,6 +47,9 @@ namespace myria{ namespace pgsql {
 				}};
 			if (commit_on_delete) {
 				store_commit();
+			}
+			else {
+				store_abort();
 			}
 		}
 	}

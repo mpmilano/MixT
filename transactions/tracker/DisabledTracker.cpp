@@ -13,8 +13,8 @@ namespace myria { namespace tracker {
 
 		void Tracker::onRead(
 			TrackingContext&,
-			DataStore<Level::causal>&, Name name, const Clock &version,
-			const std::function<void (char const *)> &construct_nd_merge){}
+			DataStore<Level::causal>&, Name, const Clock &,
+			const std::function<void (char const *)> &){}
 		
 		void Tracker::onRead(
 			TrackingContext&,

@@ -2,16 +2,21 @@
 #include "LocalSQLConnection.hpp"
 #include "LocalSQLTransaction.hpp"
 #include "SQLConstants.hpp"
+#include "simple_rpc.hpp"
 
 namespace myria {
 	namespace pgsql {
 		namespace local {
+
+			using mutils::simple_rpc::receiver;
+			
 			template<Level l>
 			class SQLReceiver{
 			public:
-				mutils::batched_connection::receiver r;
+				
+				receiver r;
 
-				using action_t = typename mutils::batched_connection::receiver::action_t;
+				using action_t = typename receiver::action_t;
 				using sizes_t = std::vector<std::size_t>;
 
 				static std::function<void (void*, mutils::connection&)> new_connection(){
@@ -19,11 +24,17 @@ namespace myria {
 						(void* data, mutils::connection& conn) {
 						char* _data = (char*) data;
 						if (!db_connection->current_trans) {
-							assert(_data[0] == 4);
-							LocalSQLConnection<l> &conn_test = *db_connection;
-							db_connection->current_trans
-								= std::make_unique<LocalSQLTransaction<l> >(conn_test);
-							db_connection->client_connection = &conn;
+							if (_data[0] != 4 && _data[0] != 1){
+								std::cout << (int) _data[0] << std::endl;
+							}
+							assert(_data[0] == 4 || _data[0] == 1);
+							//if we're aborting a non-existant transaction, there's nothing to do.
+							if (_data[0] == 4){
+								LocalSQLConnection<l> &conn_test = *db_connection;
+								db_connection->current_trans
+									= std::make_unique<LocalSQLTransaction<l> >(conn_test);
+								db_connection->client_connection = &conn;
+							}
 						}
 						else if (_data[0] == 0){
 							//we're finishing this transaction
@@ -33,13 +44,11 @@ namespace myria {
 						}
 						else if (_data[0] == 1){
 							//we're aborting this transaction
-							auto trans = std::move(db_connection->current_trans);
-							db_connection->client_connection = nullptr;
-							trans->aborted_or_committed = true;
-							//there is no explicit abort in pqxx we need to worry about
+							db_connection->current_trans->store_abort();
 						}
 						else if (_data[0] == 2){
-							db_connection->current_trans->exec(*from_bytes<std::string>(nullptr,_data + 1));
+							assert(false);
+							//db_connection->current_trans->exec(*from_bytes<std::string>(nullptr,_data + 1));
 						}
 						else {
 							assert(_data[0] != 4);

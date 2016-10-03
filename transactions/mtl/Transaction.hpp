@@ -57,7 +57,6 @@ namespace myria { namespace mtl {
 				action([s, env_exprs = mtl::environment_expressions(s.curr)]
                                            (std::unique_ptr<VMObjectLog> &log,
 						tracker::Tracker& trk, T const * const param) {
-						
 
 						//We're assuming that operations behave normally,
 						//By which we mean if they need to handle in-a-transaction
@@ -116,7 +115,7 @@ namespace myria { namespace mtl {
 							using namespace std::chrono;
 							auto backoff = 2us;
 							
-                                                        try {
+							try {
 								ctx.full_commit();
 								break;
 							}
@@ -124,15 +123,15 @@ namespace myria { namespace mtl {
 								//the strong component has failed, and that's not getting re-executed, so let's bail.
 								throw e;
 							}
-                                                        catch (...) {
+							catch (...) {
 								std::this_thread::sleep_for(backoff);
 								backoff *= 2;
 								//we really don't want this to fail guys.
 							}
 						} while (true);
 
-                                                assert(log);
-                                                log->addField(LogFields::num_causal_tries,causal_count);
+						assert(log);
+						log->addField(LogFields::num_causal_tries,causal_count);
 						
 					}),
 				print([s](std::ostream &os) -> std::ostream& {
@@ -153,8 +152,6 @@ namespace myria { namespace mtl {
 			}
 			
 		};
-		
-		struct SerializationFailure : mutils::StaticMyriaException<MACRO_GET_STR("Error: Serialization Failure")> {};
                 //struct ClassCastException : mutils::StaticMyriaException<MACRO_GET_STR("Error: Class Cast Exception")> {};
 
 	} }

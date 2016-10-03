@@ -1,9 +1,10 @@
 #pragma once
 #include "test_utils.hpp"
+#include "Basics.hpp"
 #include <pqxx/pqxx>
 #include <mutex>
 #include <resource_pool.hpp>
-#include "batched_connection.hpp"
+#include "simple_rpc.hpp"
 #include "SQLConstants.hpp"
 
 namespace myria{ namespace pgsql {
@@ -20,12 +21,16 @@ namespace myria{ namespace pgsql {
 
 		using SQLTransaction_p = SQLTransaction*;
 
+		using mutils::simple_rpc::weak_connection;
+		using mutils::simple_rpc::locked_connection;
+		using mutils::simple_rpc::connections;
+
 		struct WeakSQLConnection{
-			mutils::batched_connection::weak_connection conn;
+			weak_connection conn;
 			
 			LockedSQLConnection acquire_if_locked() const;
 			LockedSQLConnection lock();
-			WeakSQLConnection(mutils::batched_connection::weak_connection conn);
+			WeakSQLConnection(weak_connection conn);
 			WeakSQLConnection(LockedSQLConnection &l);
 			WeakSQLConnection(LockedSQLConnection &&l);
 		};
@@ -34,8 +39,8 @@ namespace myria{ namespace pgsql {
 		
 		struct LockedSQLConnection {
 
-			mutils::batched_connection::locked_connection conn;
-			LockedSQLConnection(mutils::batched_connection::locked_connection conn);
+			locked_connection conn;
+			LockedSQLConnection(locked_connection conn);
 
 			SQLTransaction_p current_trans() const;
 
@@ -51,12 +56,16 @@ namespace myria{ namespace pgsql {
 
 		template<Level l>
 		struct SQLConnectionPool {
-			mutils::batched_connection::batched_connections bc{
+			connections bc{
 				(l == Level::strong ? ip_addr : 0),
-					(l == Level::strong ? strong_sql_port : causal_sql_port),5000*8
+					(l == Level::strong ? strong_sql_port : causal_sql_port),(MAX_THREADS*2)
 					};
 			LockedSQLConnection acquire(){
 				return bc.spawn();
+			}
+			template<typename duration>
+			auto find_abandoned(const duration& d){
+				return bc.abandoned_conections(d);
 			}
 		};
 

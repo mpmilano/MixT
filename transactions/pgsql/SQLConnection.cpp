@@ -18,7 +18,7 @@ namespace myria{ namespace pgsql {
 		using namespace tracker;
 		using namespace mutils;
 
-		WeakSQLConnection::WeakSQLConnection(mutils::batched_connection::weak_connection conn)
+		WeakSQLConnection::WeakSQLConnection(weak_connection conn)
 			:conn(std::move(conn)){}
 
 		LockedSQLConnection WeakSQLConnection::lock(){
@@ -35,7 +35,7 @@ namespace myria{ namespace pgsql {
 			return LockedSQLConnection(conn.acquire_if_locked());
 		}
 
-		LockedSQLConnection::LockedSQLConnection(mutils::batched_connection::locked_connection conn)
+		LockedSQLConnection::LockedSQLConnection(locked_connection conn)
 			:conn(std::move(conn)){}
 
 		SQLTransaction_p LockedSQLConnection::current_trans() const {

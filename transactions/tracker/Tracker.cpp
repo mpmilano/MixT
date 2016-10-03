@@ -130,14 +130,14 @@ namespace myria { namespace tracker {
 				i.pending_nonces.erase(name);
 			}
 
-                        bool tracking_candidate(Tracker &t, Name name, const Tracker::Clock &version){
-                                t.updateClock();
-                                if (!ends::is_same(version,{{-1,-1,-1,-1}}) && ends::prec(version,t.i->global_min)) {
-                                        t.i->tracking.erase(name);
-                                        return false;
-                                }
-                                else return t.i->exceptions.count(name) == 0;
-                        }
+			bool tracking_candidate(Tracker &t, Name name, const Tracker::Clock &version){
+				t.updateClock();
+				if (!ends::is_same(version,{{-1,-1,-1,-1}}) && ends::prec(version,t.i->global_min)) {
+					t.i->tracking.erase(name);
+					return false;
+				}
+				else return t.i->exceptions.count(name) == 0;
+			}
 		}
 
 		void Tracker::assert_nonempty_tracking() const {

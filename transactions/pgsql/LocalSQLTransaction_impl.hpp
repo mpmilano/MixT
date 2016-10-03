@@ -15,6 +15,7 @@ namespace myria { namespace pgsql {
 				const static std::string query =
 					"select ID from \"BlobStore\" where id = $1 union select id from \"IntStore\" where id = $1 limit 1";
 				auto r = trans.prepared(trans.conn, LocalTransactionNames::exists,query,id);
+				trans.all_fine();
 				trans.sendBack(trans.conn,r.size() > 0);
 			}
 
@@ -26,6 +27,7 @@ namespace myria { namespace pgsql {
 					"delete from \"IntStore\" where ID = $1";
 				trans.prepared(trans.conn,LocalTransactionNames::Del1,bs,id);
 				trans.prepared(trans.conn,LocalTransactionNames::Del2,is,id);
+				trans.all_fine();
 			}
 
 			
@@ -40,13 +42,7 @@ namespace myria { namespace pgsql {
 			
 			template<typename E>
 			auto LocalSQLTransaction_super::exec_prepared_hlpr(E &e){
-				try{
-					return e.exec();
-				}
-				catch(const std::exception& e){
-					std::cout << e.what() << std::endl;
-					throw e;
-				}
+				return e.exec();
 			}
 			
 			template<typename E, typename A, typename... B>
@@ -73,7 +69,10 @@ namespace myria { namespace pgsql {
 
 			LocalSQLTransaction<Level::strong>::LocalSQLTransaction(LocalSQLConnection<l> &conn)
 				:LocalSQLTransaction_super(conn.conn),
-				 conn(conn){}
+				 conn(conn){
+				trans.exec("set search_path to \"BlobStore\",public");
+				trans.exec("SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL SERIALIZABLE");
+			}
 
 			auto LocalSQLTransaction<Level::strong>::select_version_s(Table t, Name id){
 					static const std::string bs =
@@ -153,13 +152,16 @@ namespace myria { namespace pgsql {
 			void LocalSQLTransaction<Level::strong>::select_version(char const * const bytes){
 				auto table = mutils::from_bytes<Table>(&this->dsm,bytes);
 				auto id = mutils::from_bytes<Name>(&this->dsm,bytes + mutils::bytes_size(*table));
-				sendBack(conn,extract_version(select_version_s(*table,*id)));
+				auto r = select_version_s(*table,*id);
+				all_fine();
+				sendBack(conn,extract_version(r));
 			}
 				
 			void LocalSQLTransaction<Level::strong>::select_version_data(char const * const bytes){
 				auto table = mutils::from_bytes<Table>(&this->dsm,bytes);
 				auto id = mutils::from_bytes<Name>(&this->dsm,bytes + mutils::bytes_size(*table));
 				auto r = select_version_data_s(*table,*id);
+				all_fine();
 				sendBack(conn,extract_version(r));
 				if (*table == Table::BlobStore){
 					pqxx::binarystring bs{r[0][1]};
@@ -177,25 +179,51 @@ namespace myria { namespace pgsql {
 					std::unique_ptr<Table> t; std::unique_ptr<int> k;
 					std::unique_ptr<Name> id; std::unique_ptr<std::array<int,NUM_CAUSAL_GROUPS> > ends; 
 					auto offset = from_bytes_v(&this->dsm,bytes,t,k,id,ends);
-					sendBack(conn,extract_version(update_data_s(*t,*id,bytes + offset)));
+					auto r = update_data_s(*t,*id,bytes + offset);
+					all_fine();
+					sendBack(conn,extract_version(r));
 				}
 				
 				void LocalSQLTransaction<Level::strong>::initialize_with_id(char const * const bytes){
 					std::unique_ptr<Table> t; std::unique_ptr<Name> id;
 					auto offset = from_bytes_v(&this->dsm,bytes,t,id);
 					initialize_with_id_s(*t,*id,offset + bytes);
+					all_fine();
 				}
 				
 				void LocalSQLTransaction<Level::strong>::increment(char const * const bytes){
-					sendBack(conn,extract_version(increment_s(Table::IntStore,*from_bytes<Name>(&this->dsm,bytes))));
+					auto r = increment_s(Table::IntStore,*from_bytes<Name>(&this->dsm,bytes));
+					all_fine();
+					sendBack(conn,extract_version(r));
 				}
+
+			void LocalSQLTransaction<Level::strong>::store_abort() {
+				aborted_or_committed = true;
+				conn.client_connection = nullptr;
+				assert(this == conn.current_trans.get());
+				conn.current_trans.reset();
+			}
+
+			void LocalSQLTransaction<Level::strong>::indicate_serialization_failure() {
+				char abort{1};
+				conn.client_connection->send(abort);
+			}
+
+			void LocalSQLTransaction<Level::strong>::all_fine() {
+				char ok{0};
+				conn.client_connection->send(ok);
+			}
+
 
 
 			//CAUSAL LAND
 
 			LocalSQLTransaction<Level::causal>::LocalSQLTransaction(LocalSQLConnection<l> &conn)
 				:LocalSQLTransaction_super(conn.conn),
-				 conn(conn){}
+				 conn(conn){
+				trans.exec("set search_path to causalstore,public");
+				trans.exec("SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL REPEATABLE READ");
+			}
 
 			auto LocalSQLTransaction<Level::causal>::select_version_c(Table t, Name id){
 					using namespace std;
@@ -304,13 +332,16 @@ namespace myria { namespace pgsql {
 				void LocalSQLTransaction<Level::causal>::select_version(char const * const bytes){
 					auto table = mutils::from_bytes<Table>(&this->dsm,bytes);
 					auto id = mutils::from_bytes<Name>(&this->dsm,bytes + mutils::bytes_size(*table));
-					sendBack(conn,extract_version(select_version_c(*table,*id)));
+					auto r = select_version_c(*table,*id);
+					all_fine();
+					sendBack(conn,extract_version(r));
 				}
 				
 				void LocalSQLTransaction<Level::causal>::select_version_data(char const * const bytes){
 					auto table = mutils::from_bytes<Table>(&this->dsm,bytes);
 					auto id = mutils::from_bytes<Name>(&this->dsm,bytes + mutils::bytes_size(*table));
 					auto r = select_version_data_c(*table,*id);
+					all_fine();
 					sendBack(conn,extract_version(r));
 					if (*table == Table::BlobStore){
 						pqxx::binarystring bs{r[0][4]};
@@ -327,20 +358,42 @@ namespace myria { namespace pgsql {
 					std::unique_ptr<Table> t; std::unique_ptr<int> k;
 					std::unique_ptr<Name> id; std::unique_ptr<std::array<int,NUM_CAUSAL_GROUPS> > ends; 
 					auto size = from_bytes_v(&this->dsm,bytes,t,k,id,ends);
-					sendBack(conn,extract_version(update_data_c(*t,*k,*id,*ends,bytes + size)));
+					auto r = update_data_c(*t,*k,*id,*ends,bytes + size);
+					all_fine();
+					sendBack(conn,extract_version(r));
 				}
 				void LocalSQLTransaction<Level::causal>::initialize_with_id(char const * const bytes){
 					std::unique_ptr<Table> t; std::unique_ptr<int> k; std::unique_ptr<Name> id;
 					std::unique_ptr<std::array<int,NUM_CAUSAL_GROUPS> > ends; 
 					auto offset = from_bytes_v(&this->dsm,bytes,t,k,id,ends);
 					initialize_with_id_c(*t,*k,*id,*ends,bytes + offset);
+					all_fine();
 				}
 				void LocalSQLTransaction<Level::causal>::increment(char const * const bytes){
 					std::unique_ptr<int> k;
 					std::unique_ptr<Name> id; std::unique_ptr<std::array<int,NUM_CAUSAL_GROUPS> > ends;
 					from_bytes_v(&this->dsm,bytes,k,id,ends);
-					sendBack(conn,extract_version(increment_c(Table::IntStore,*k,*id,*ends)));
+					auto r = increment_c(Table::IntStore,*k,*id,*ends);
+					all_fine();
+					sendBack(conn,extract_version(r));
 				}
+
+			void LocalSQLTransaction<Level::causal>::store_abort() {
+				aborted_or_committed = true;
+					conn.client_connection = nullptr;
+					assert(this == conn.current_trans.get());
+					conn.current_trans.reset();
+				}
+			
+			void LocalSQLTransaction<Level::causal>::indicate_serialization_failure() {
+				char abort{1};
+				conn.client_connection->send(abort);
+			}
+
+			void LocalSQLTransaction<Level::causal>::all_fine() {
+				char ok{0};
+				conn.client_connection->send(ok);
+			}
 
 		}
 	}

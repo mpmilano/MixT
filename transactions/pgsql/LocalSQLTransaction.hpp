@@ -15,6 +15,11 @@ namespace myria { namespace pgsql {
 					};
 
 			template<Level> class LocalSQLConnection;
+
+			bool is_serialize_error(const pqxx::pqxx_exception &r) {
+				auto s = std::string(r.base().what());
+				return s.find("could not serialize access") != std::string::npos;
+			}
 			
 			class LocalSQLTransaction_super{
 			public:
@@ -40,19 +45,33 @@ namespace myria { namespace pgsql {
 				auto prepared(SQL_Conn& sql_conn, LocalTransactionNames name, const std::string &stmt,
 							  Arg1 && a1, Args && ... args);
 
+				/*
 				void exec(const std::string s) {
-                                    try{
-					trans.exec(s);
-                                    }
-                                    catch(const std::exception& e){
-                                        std::cout << e.what() << std::endl;
-                                    }
-				}
+					try{
+						trans.exec(s);
+						all_fine();
+					}
+					catch(const pqxx::pqxx_exception& e){
+						assert(is_serialize_error(e));
+						indicate_serialization_failure();
+						store_abort();
+					}
+					}//*/
 
 				void store_commit() {
-					trans.commit();
-					aborted_or_committed = true;
+					try{
+						trans.commit();
+						aborted_or_committed = true;
+						all_fine();
+					}
+					catch(const pqxx::pqxx_exception& e){
+						assert(is_serialize_error(e));
+						indicate_serialization_failure();
+						store_abort();
+					}
 				}
+
+				virtual void store_abort() = 0;
 
 				//Commands:
 				mutils::DeserializationManager dsm{{}};
@@ -65,33 +84,46 @@ namespace myria { namespace pgsql {
 				virtual void obj_exists(Name id) = 0;
 				
 				virtual void remove(Name id) = 0;
+
+				virtual void indicate_serialization_failure() = 0;
+				virtual void all_fine() = 0;
 				
 				void receiveSQLCommand(TransactionNames name, char const * const bytes){
 					using namespace mutils;
-					switch(name){
-					case TransactionNames::exists:
-						obj_exists(*from_bytes<Name>(&dsm,bytes));
-						break;
-					case TransactionNames::Del:
-						remove(*from_bytes<Name>(&dsm,bytes));
-						break;
-					case TransactionNames::select_version:
-						select_version(bytes);
-						break;
-					case TransactionNames::select_version_data:
-						select_version_data(bytes);
-						break;
-					case TransactionNames::update_data:
-						update_data(bytes);
-						break;
-					case TransactionNames::initialize_with_id:
-						initialize_with_id(bytes);
-						break;
-					case TransactionNames::increment:
-						increment(bytes);
-						break;
-					case TransactionNames::MAX:
-						assert(false && "this should not be send");
+					try{
+						switch(name){
+						case TransactionNames::exists:
+							obj_exists(*from_bytes<Name>(&dsm,bytes));
+							break;
+						case TransactionNames::Del:
+							remove(*from_bytes<Name>(&dsm,bytes));
+							break;
+						case TransactionNames::select_version:
+							select_version(bytes);
+							break;
+						case TransactionNames::select_version_data:
+							select_version_data(bytes);
+							break;
+						case TransactionNames::update_data:
+							update_data(bytes);
+							break;
+						case TransactionNames::initialize_with_id:
+							initialize_with_id(bytes);
+							break;
+						case TransactionNames::increment:
+							increment(bytes);
+							break;
+						case TransactionNames::MAX:
+							assert(false && "this should not be send");
+						}
+					}
+					catch(const pqxx::pqxx_exception& e){
+						if (!is_serialize_error(e)){
+							std::cout << e.base().what() << std::endl;
+							assert(false);
+						}
+						indicate_serialization_failure();
+						store_abort();
 					}
 				}
 			};
@@ -133,6 +165,10 @@ namespace myria { namespace pgsql {
 				
 				void increment(char const * const bytes);
 
+				void store_abort();
+
+				void indicate_serialization_failure();
+				void all_fine();
 			};
 			
 			template<>
@@ -225,6 +261,11 @@ namespace myria { namespace pgsql {
 				void update_data(char const * const bytes);
 				void initialize_with_id(char const * const bytes);
 				void increment(char const * const bytes);
+
+				void store_abort();
+
+				void indicate_serialization_failure();
+				void all_fine();
 			};
 		}
 	}

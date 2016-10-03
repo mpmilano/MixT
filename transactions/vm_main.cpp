@@ -1,6 +1,7 @@
 
 #include "GloballyBackedExecutor.hpp"
 #include <iostream>
+#include <sys/resource.h>
 #include <fstream>
 #include <thread>
 #include "SQLStore.hpp"
@@ -139,9 +140,9 @@ namespace synth_test {
 				}
 			}
 		}
-		catch(pqxx::pqxx_exception &e){
+		catch(const SerializationFailure &e){
 			log_messages->addField(LogFields::remote_failure,true);
-			log_messages->addField(LogFields::remote_failure_string, std::string(e.base().what()));
+			log_messages->addField(LogFields::remote_failure_string, std::string(e.what()));
 		}
 	}
 
@@ -277,7 +278,7 @@ namespace synth_test {
 
 }
 
-int main(){
+int real_main(){
 	{
 		constexpr auto debug_ip = decode_ip("23.163.4.2");
 		assert(decode_ip(std::string{"23.163.4.2"}) == debug_ip);
@@ -320,5 +321,27 @@ int main(){
 	logFile << global_log->single() << endl;
 	logFile << results;
 	
+	return 0;
+}
 
+int main(){
+	
+	const rlim_t kStackSize = 128 * 1024 * 1024;   // min stack size = 16 MB
+	struct rlimit rl;
+	int result;
+	
+	result = getrlimit(RLIMIT_STACK, &rl);
+	if (result == 0)
+	{
+		if (rl.rlim_cur < kStackSize)
+		{
+			rl.rlim_cur = kStackSize;
+			result = setrlimit(RLIMIT_STACK, &rl);
+			if (result != 0)
+			{
+				fprintf(stderr, "setrlimit returned result = %d\n", result);
+			}
+		}
+	}
+	return real_main();
 }

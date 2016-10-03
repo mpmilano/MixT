@@ -19,7 +19,9 @@ namespace myria{ namespace pgsql {
 		using namespace mutils;
 		using Internals = SQLStore_impl::GSQLObject::Internals;
 
+		
 		void SQLStore_impl::init_common(){
+			/*
 				auto t = begin_transaction("Setting up this new SQLStore; gotta configure search paths and stuff.");
 				((SQLTransaction*)t.get())
 					->exec(level == Level::strong ?
@@ -30,8 +32,8 @@ namespace myria{ namespace pgsql {
 						   "SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL SERIALIZABLE"
 						   : "SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL REPEATABLE READ");
 				auto cres = t->store_commit();
-				assert(cres);
-			}
+				assert(cres);//*/
+		}
 		
 		SQLStore_impl::SQLStore_impl(SQLConnectionPool<Level::causal>& pool, GDataStore &store, /*int instanceID,*/ Level l)
 			:_store(store),clock{{0,0,0,0}},level(l),default_connection{pool.acquire()} {

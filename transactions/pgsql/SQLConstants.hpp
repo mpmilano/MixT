@@ -1,4 +1,6 @@
 #pragma once
+#include "mutils.hpp"
+#include "test_utils.hpp"
 #include "cexprutils.hpp"
 
 namespace myria {

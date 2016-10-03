@@ -160,13 +160,16 @@ std::string PreparedTest<Mem,Arg>::run_tests(Meta& meta, bool (*stop) (Meta&, Po
 		auto decision = choose_action(meta,pool);
 		futures->emplace_back(pool.launch(decision.first,decision.second) );
 	}
+
+	std::cout << "Launches Complete.  Waiting for tasks to terminate: " << std::endl;
 	
 	std::stringstream ss;
-	while (!futures->empty()){
+	for (unsigned int timeout = 0; timeout < 10 && !futures->empty(); ++timeout){
+		std::cout << futures->size() << " tasks remain" << std::endl;
 		std::unique_ptr<future_list> new_futures{new future_list()};
 		for (auto &f : *futures){
 			if (f.valid()){
-				if (f.wait_for(1ms) != future_status::timeout){
+				if (f.wait_for(100us) != future_status::timeout){
 					try {
 						auto strp = f.get();
 						if (strp){
