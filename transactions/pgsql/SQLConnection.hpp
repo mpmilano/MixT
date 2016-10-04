@@ -4,7 +4,7 @@
 #include <pqxx/pqxx>
 #include <mutex>
 #include <resource_pool.hpp>
-#include "simple_rpc.hpp"
+#include "proxy_connection.hpp"
 #include "SQLConstants.hpp"
 
 namespace myria{ namespace pgsql {
@@ -21,9 +21,9 @@ namespace myria{ namespace pgsql {
 
 		using SQLTransaction_p = SQLTransaction*;
 
-		using mutils::simple_rpc::weak_connection;
-		using mutils::simple_rpc::locked_connection;
-		using mutils::simple_rpc::connections;
+		using mutils::proxy_connection::weak_connection;
+		using mutils::proxy_connection::locked_connection;
+		using mutils::proxy_connection::connections;
 
 		struct WeakSQLConnection{
 			weak_connection conn;

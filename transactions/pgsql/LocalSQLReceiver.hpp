@@ -8,7 +8,7 @@ namespace myria {
 	namespace pgsql {
 		namespace local {
 
-			using mutils::simple_rpc::receiver;
+			using mutils::proxy_connection::receiver;
 			
 			template<Level l>
 			class SQLReceiver{
@@ -19,10 +19,10 @@ namespace myria {
 				using action_t = typename receiver::action_t;
 				using sizes_t = std::vector<std::size_t>;
 
-				static std::function<void (void*, mutils::connection&)> new_connection(){
+				static std::function<void (const void*, mutils::connection&)> new_connection(){
 					return [db_connection = std::make_shared<LocalSQLConnection<l> >()] 
-						(void* data, mutils::connection& conn) {
-						char* _data = (char*) data;
+						(const void* data, mutils::connection& conn) {
+						const char* _data = (const char*) data;
 						if (!db_connection->current_trans) {
 							if (_data[0] != 4 && _data[0] != 1){
 								std::cout << (int) _data[0] << std::endl;
