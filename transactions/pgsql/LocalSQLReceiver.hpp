@@ -8,7 +8,7 @@ namespace myria {
 	namespace pgsql {
 		namespace local {
 
-			using mutils::proxy_connection::receiver;
+			using mutils::batched_connection::receiver;
 			
 			template<Level l>
 			class SQLReceiver{

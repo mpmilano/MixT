@@ -21,9 +21,9 @@ namespace myria{ namespace pgsql {
 
 		using SQLTransaction_p = SQLTransaction*;
 
-		using mutils::proxy_connection::weak_connection;
-		using mutils::proxy_connection::locked_connection;
-		using mutils::proxy_connection::connections;
+		using mutils::batched_connection::weak_connection;
+		using mutils::batched_connection::locked_connection;
+		using mutils::batched_connection::connections;
 
 		struct WeakSQLConnection{
 			weak_connection conn;

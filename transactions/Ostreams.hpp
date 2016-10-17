@@ -3,26 +3,6 @@
 #include "Print.hpp"
 #include "Massert.hpp"
 
-namespace std{
-		template<std::size_t size, typename T>
-	std::ostream & operator<<(std::ostream &os, const std::array<T,size>& so){
-		os << "[";
-		for (auto &e : so){
-			os << e << ",";
-		}
-		return os << "]";
-	}
-	
-	template<typename T>
-	std::ostream & operator<<(std::ostream &os, const std::vector<T>& so){
-		os << "<[";
-		for (auto &e : so){
-			os << e << ",";
-		}
-		return os << "]>";
-	}
-}
-
 namespace mutils{
 		
 	template<typename A, typename B, typename C>
