@@ -26,13 +26,13 @@ namespace myria{
 			template<typename... Args>
 			void prepared(TransactionNames name, Args && ... args){
 				char trans{3};
-				sql_conn.conn->send(trans,name,args...);
+				sql_conn->conn.send(trans,name,args...);
 			}
 
 
 			template<typename... T>
 			void receive(T& ... t){
-				sql_conn.conn->receive(t...);
+				sql_conn->conn.receive(t...);
 			}
 
 			void check_serialization_failure()  {
@@ -81,7 +81,7 @@ namespace myria{
 					v.resize(sizeof(int));
 					
 				}
-				sql_conn.conn->receive(v.size(),v.data());
+				sql_conn->conn.receive(v.size(),v.data());
 				return v;
 			}
 
@@ -134,13 +134,13 @@ namespace myria{
 			/*
 			void exec(const std::string &str){
 				char trans{2};
-				sql_conn.conn->send(trans,str);
+				sql_conn->conn.send(trans,str);
 				check_serialization_failure();
 			}//*/
 	
 			bool store_commit(){
 				char trans{0};
-				sql_conn.conn->send(trans);
+				sql_conn->conn.send(trans);
 				check_serialization_failure();
 				return true;
 			}

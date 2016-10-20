@@ -21,10 +21,10 @@ namespace myria{ namespace pgsql {
 			:gstore(store),sql_conn(std::move(c)),
 			 why(why)
 		{
-			assert(!sql_conn.in_trans());
-			sql_conn.current_trans_vp() = this;
+			assert(!sql_conn->in_trans());
+			sql_conn->current_trans = this;
 			char start_trans{4};
-			sql_conn.conn->send(start_trans);
+			sql_conn->conn.send(start_trans);
 		}
 		
 		std::list<SQLStore_impl::GSQLObject*> objs;
@@ -35,7 +35,7 @@ namespace myria{ namespace pgsql {
 		void SQLTransaction::store_abort(){
 			if(!remote_aborted){
 				char trans{1};
-				sql_conn.conn->send(trans);
+				sql_conn->conn.send(trans);
 			}
 			commit_on_delete = false;
 		}
@@ -43,7 +43,7 @@ namespace myria{ namespace pgsql {
 		SQLTransaction::~SQLTransaction(){
 			auto &sql_conn = this->sql_conn;
 			AtScopeEnd ase{[&sql_conn](){
-					sql_conn.current_trans_vp() = nullptr;
+					sql_conn->current_trans = nullptr;
 				}};
 			if (commit_on_delete) {
 				store_commit();

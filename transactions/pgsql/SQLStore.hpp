@@ -108,8 +108,8 @@ namespace myria { namespace pgsql {
 
 			std::string why_in_transaction() const {
 				if (in_transaction()){
-					assert(this->default_connection.acquire_if_locked().current_trans());
-					return this->default_connection.acquire_if_locked().current_trans()->why;
+					assert(this->default_connection.acquire_if_locked()->current_trans);
+					return this->default_connection.acquire_if_locked()->current_trans->why;
 				}
 				else return "error: not in transaction";
 			}
