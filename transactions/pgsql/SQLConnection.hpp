@@ -48,9 +48,5 @@ namespace myria{ namespace pgsql {
 			LockedSQLConnection acquire(){
 				return rp.acquire();
 			}
-			template<typename duration>
-			auto find_abandoned(const duration& d){
-				return bc.abandoned_conections(d);
-			}
 		};
 	} }
