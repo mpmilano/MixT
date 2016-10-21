@@ -37,11 +37,16 @@ namespace myria{ namespace pgsql {
 		using LockedSQLConnection = mutils::ResourcePool<SQLConnection>::LockedResource;
 		using WeakSQLConnection = mutils::ResourcePool<SQLConnection>::WeakResource;
 
+		unsigned int get_eth0_addr();
+		const unsigned int eth0_addr = get_eth0_addr();
+
 		template<Level l>
 		struct SQLConnectionPool{
+			
 			connections bc{
 				(l == Level::strong ? ip_addr : 0),
-					(l == Level::strong ? strong_sql_port : causal_sql_port),(MAX_THREADS/2)
+					(l == Level::strong ? strong_sql_port : causal_sql_port),(MAX_THREADS/2),
+					eth0_addr
 					};
 			mutils::ResourcePool<SQLConnection> rp{MAX_THREADS,MAX_THREADS,
 					[this]{return new SQLConnection(bc.spawn());}};
