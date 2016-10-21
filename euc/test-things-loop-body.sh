@@ -12,7 +12,7 @@ scp  -o "UserKnownHostsFile /dev/null" -o strictHostKeyChecking=no -i MyriaInsta
 scp  -o "UserKnownHostsFile /dev/null" -o strictHostKeyChecking=no -i MyriaInstances.pem as-gentoo.sh ubuntu@"$foo":as-gentoo.sh
 if [[ $[1 + (i - 1)/2 ] = 1 ]]
 then
-	ssh  -o "UserKnownHostsFile /dev/null"  -o strictHostKeyChecking=no -R 5432:"$causal_target_1":5432 -i MyriaInstances.pem ubuntu@"$foo" sudo /bin/bash vm-actions.sh $i $configuration $write_percent $strong_percent "$foo" $strong_target $first_iter
+	ssh  -o "UserKnownHostsFile /dev/null"  -o strictHostKeyChecking=no -R 9877:"$causal_target_1":9877 -i MyriaInstances.pem ubuntu@"$foo" sudo /bin/bash vm-actions.sh $i $configuration $write_percent $strong_percent "$foo" $strong_target $first_iter
 else 
-	ssh  -o "UserKnownHostsFile /dev/null"  -o strictHostKeyChecking=no -R 5432:"$causal_target_2":5432 -i MyriaInstances.pem ubuntu@"$foo" sudo /bin/bash vm-actions.sh $i $configuration $write_percent $strong_percent "$foo" $strong_target $first_iter
+	ssh  -o "UserKnownHostsFile /dev/null"  -o strictHostKeyChecking=no -R 9877:"$causal_target_2":9877 -i MyriaInstances.pem ubuntu@"$foo" sudo /bin/bash vm-actions.sh $i $configuration $write_percent $strong_percent "$foo" $strong_target $first_iter
 fi
