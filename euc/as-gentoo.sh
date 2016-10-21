@@ -42,3 +42,4 @@ extra_macro_defs="-D$2 -DWRITE_PERCENT=$3 -DSTRONG_PERCENT=$4" causalGroup="$1" 
 #done
 wait
 echo "done waiting"
+exit
