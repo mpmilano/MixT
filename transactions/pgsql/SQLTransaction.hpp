@@ -131,13 +131,7 @@ namespace myria{
 				receive(vers);
 			}
 
-			/*
-			void exec(const std::string &str){
-				char trans{2};
-				sql_conn->conn.send(trans,str);
-				check_serialization_failure();
-			}//*/
-	
+
 			bool store_commit(){
 				char trans{0};
 				sql_conn->conn.send(trans);

@@ -46,12 +46,9 @@ namespace myria {
 							//we're aborting this transaction
 							db_connection->current_trans->store_abort();
 						}
-						else if (_data[0] == 2){
-							assert(false);
-							//db_connection->current_trans->exec(*from_bytes<std::string>(nullptr,_data + 1));
-						}
 						else {
 							assert(_data[0] != 4);
+							assert(_data[0] == 3);
 							TransactionNames name = *((TransactionNames*) (_data + 1));
 							return db_connection->current_trans->receiveSQLCommand(
 								name, _data + 1 + sizeof(name));
@@ -63,7 +60,7 @@ namespace myria {
 				SQLReceiver():r((l == Level::strong?
 								 strong_sql_port :
 								 causal_sql_port),
-								new_connection){}
+				 				new_connection){}
 			};
 		}
 	}

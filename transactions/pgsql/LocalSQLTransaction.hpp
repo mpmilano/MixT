@@ -45,19 +45,6 @@ namespace myria { namespace pgsql {
 				auto prepared(SQL_Conn& sql_conn, LocalTransactionNames name, const std::string &stmt,
 							  Arg1 && a1, Args && ... args);
 
-				/*
-				void exec(const std::string s) {
-					try{
-						trans.exec(s);
-						all_fine();
-					}
-					catch(const pqxx::pqxx_exception& e){
-						assert(is_serialize_error(e));
-						indicate_serialization_failure();
-						store_abort();
-					}
-					}//*/
-
 				void store_commit() {
 					try{
 						trans.commit();
