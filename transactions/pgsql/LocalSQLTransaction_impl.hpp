@@ -11,36 +11,34 @@ namespace myria { namespace pgsql {
 			using namespace mutils;
 
 			template<typename Trans>
-			void obj_exists(Trans &trans, Name id){
+			void obj_exists(Trans &trans, Name id, mutils::connection& socket){
 				const static std::string query =
 					"select ID from \"BlobStore\" where id = $1 union select id from \"IntStore\" where id = $1 limit 1";
 				auto r = trans.prepared(*trans.conn, LocalTransactionNames::exists,query,id);
-				trans.all_fine();
-				trans.sendBack(trans.conn,r.size() > 0);
+				trans.all_fine(socket);
+				trans.sendBack(r.size() > 0,socket);
 			}
 
 			template<typename Trans>
-			void remove(Trans& trans, Name id){
+			void remove(Trans& trans, Name id, mutils::connection& socket){
 				const static std::string bs =
 					"delete from \"BlobStore\" where ID = $1";
 				const static std::string is =
 					"delete from \"IntStore\" where ID = $1";
 				trans.prepared(*trans.conn,LocalTransactionNames::Del1,bs,id);
 				trans.prepared(*trans.conn,LocalTransactionNames::Del2,is,id);
-				trans.all_fine();
+				trans.all_fine(socket);
 			}
 
 			
 			template<typename SQLConn>
-			LocalSQLTransaction_super::LocalSQLTransaction_super(SQLConn &conn, mutils::connection &socket):
+			LocalSQLTransaction_super::LocalSQLTransaction_super(SQLConn &conn):
 				trans(conn.conn)
-			{
-				conn.client_connection = &socket;
-			}
+			{}
 		
-			template<typename Conn, typename T>
-			void LocalSQLTransaction_super::sendBack(std::unique_ptr<Conn> &conn, const T& t){
-				conn->client_connection->send(t);
+			template<typename T>
+			void LocalSQLTransaction_super::sendBack(const T& t,mutils::connection& socket){
+				socket.send(t);
 			}
 			
 			template<typename E>
@@ -70,8 +68,8 @@ namespace myria { namespace pgsql {
 			
 			//STRONG SECTION
 
-			LocalSQLTransaction<Level::strong>::LocalSQLTransaction(std::unique_ptr<LocalSQLConnection<l> > conn, mutils::connection& socket)
-				:LocalSQLTransaction_super(*conn,socket),
+			LocalSQLTransaction<Level::strong>::LocalSQLTransaction(std::unique_ptr<LocalSQLConnection<l> > conn)
+				:LocalSQLTransaction_super(*conn),
 				 conn(std::move(conn)){
 				trans.exec("set search_path to \"BlobStore\",public");
 				trans.exec("SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL SERIALIZABLE");
@@ -145,87 +143,81 @@ namespace myria { namespace pgsql {
 					return where;
 				}
 
-			void LocalSQLTransaction<Level::strong>::obj_exists(Name id){
-				return ::myria::pgsql::local::obj_exists(*this,id);
+			void LocalSQLTransaction<Level::strong>::obj_exists(Name id, mutils::connection& socket){
+				return ::myria::pgsql::local::obj_exists(*this,id,socket);
 			}
-			void LocalSQLTransaction<Level::strong>::remove(Name id){
-				return ::myria::pgsql::local::remove(*this,id);
+			void LocalSQLTransaction<Level::strong>::remove(Name id, mutils::connection& socket){
+				return ::myria::pgsql::local::remove(*this,id,socket);
 			}
 				
-			void LocalSQLTransaction<Level::strong>::select_version(char const * const bytes){
+			void LocalSQLTransaction<Level::strong>::select_version(char const * const bytes, mutils::connection& socket){
 				auto table = mutils::from_bytes<Table>(&this->dsm,bytes);
 				auto id = mutils::from_bytes<Name>(&this->dsm,bytes + mutils::bytes_size(*table));
 				auto r = select_version_s(*table,*id);
-				all_fine();
-				sendBack(conn,extract_version(r));
+				all_fine(socket);
+				sendBack(extract_version(r), socket);
 			}
 				
-			void LocalSQLTransaction<Level::strong>::select_version_data(char const * const bytes){
+			void LocalSQLTransaction<Level::strong>::select_version_data(char const * const bytes, mutils::connection& socket){
 				auto table = mutils::from_bytes<Table>(&this->dsm,bytes);
 				auto id = mutils::from_bytes<Name>(&this->dsm,bytes + mutils::bytes_size(*table));
 				auto r = select_version_data_s(*table,*id);
-				all_fine();
-				sendBack(conn,extract_version(r));
+				all_fine(socket);
+				sendBack(extract_version(r),socket);
 				if (*table == Table::BlobStore){
 					pqxx::binarystring bs{r[0][1]};
-					sendBack(conn,mutils::Bytes{(char*)bs.data(),bs.size()});
+					sendBack(mutils::Bytes{(char*)bs.data(),bs.size()},socket);
 				}
 				else {
 					int send{-1};
 					r[0][1].to(send);
 					assert(send >= 0);
-					sendBack(conn,send);
+					sendBack(send,socket);
 				}
 			}
 				
-				void LocalSQLTransaction<Level::strong>::update_data(char const * const bytes){
+			void LocalSQLTransaction<Level::strong>::update_data(char const * const bytes, mutils::connection& socket){
 					std::unique_ptr<Table> t; std::unique_ptr<int> k;
 					std::unique_ptr<Name> id; std::unique_ptr<std::array<int,NUM_CAUSAL_GROUPS> > ends; 
 					auto offset = from_bytes_v(&this->dsm,bytes,t,k,id,ends);
 					auto r = update_data_s(*t,*id,bytes + offset);
-					all_fine();
-					sendBack(conn,extract_version(r));
+					all_fine(socket);
+					sendBack(extract_version(r),socket);
 				}
 				
-				void LocalSQLTransaction<Level::strong>::initialize_with_id(char const * const bytes){
+			void LocalSQLTransaction<Level::strong>::initialize_with_id(char const * const bytes, mutils::connection& socket){
 					std::unique_ptr<Table> t; std::unique_ptr<Name> id;
 					auto offset = from_bytes_v(&this->dsm,bytes,t,id);
 					initialize_with_id_s(*t,*id,offset + bytes);
-					all_fine();
+					all_fine(socket);
 				}
 				
-				void LocalSQLTransaction<Level::strong>::increment(char const * const bytes){
+			void LocalSQLTransaction<Level::strong>::increment(char const * const bytes, mutils::connection& socket){
 					auto r = increment_s(Table::IntStore,*from_bytes<Name>(&this->dsm,bytes));
-					all_fine();
-					sendBack(conn,extract_version(r));
+					all_fine(socket);
+					sendBack(extract_version(r),socket);
 				}
 
-			void LocalSQLTransaction<Level::strong>::store_abort(std::unique_ptr<LocalSQLTransaction<Level::strong> > o) {
-				o->aborted_or_committed = true;/*
-				conn->client_connection = nullptr;
-				assert(this == conn->current_trans.get());
-				conn->current_trans.reset();//*/
-			}
-			LocalSQLTransaction<Level::strong>::~LocalSQLTransaction(){
-				conn->client_connection = nullptr;
+			void LocalSQLTransaction<Level::strong>::store_abort(std::unique_ptr<LocalSQLTransaction<Level::strong> > o,mutils::connection& ) {
+				o->aborted_or_committed = true;
 			}
 
-			void LocalSQLTransaction<Level::strong>::indicate_serialization_failure() {
+			void LocalSQLTransaction<Level::strong>::indicate_serialization_failure(mutils::connection& socket) {
 				char abort{1};
-				conn->client_connection->send(abort);
+				socket.send(abort);
 			}
 
-			void LocalSQLTransaction<Level::strong>::all_fine() {
+			void LocalSQLTransaction<Level::strong>::all_fine(mutils::connection& socket) {
 				char ok{0};
-				conn->client_connection->send(ok);
+				socket.send(ok);
 			}
 
 
 
 			//CAUSAL LAND
 
-			LocalSQLTransaction<Level::causal>::LocalSQLTransaction(std::unique_ptr<LocalSQLConnection<l> > conn, mutils::connection& socket)
-				:LocalSQLTransaction_super(*conn,socket),
+			LocalSQLTransaction<Level::causal>::LocalSQLTransaction(std::unique_ptr<LocalSQLConnection<l> > conn)
+				:LocalSQLTransaction_super(*conn),
 				 conn(std::move(conn)){
 				trans.exec("set search_path to causalstore,public");
 				trans.exec("SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL REPEATABLE READ");
@@ -327,82 +319,75 @@ namespace myria { namespace pgsql {
 					return vers;
 				}
 
-				void LocalSQLTransaction<Level::causal>::obj_exists(Name id){
-					return ::myria::pgsql::local::obj_exists(*this,id);
+			void LocalSQLTransaction<Level::causal>::obj_exists(Name id,mutils::connection& socket){
+				return ::myria::pgsql::local::obj_exists(*this,id,socket);
 				}
 				
-				void LocalSQLTransaction<Level::causal>::remove(Name id){
-					return ::myria::pgsql::local::remove(*this,id);
-				}
+			void LocalSQLTransaction<Level::causal>::remove(Name id,mutils::connection& socket){
+				return ::myria::pgsql::local::remove(*this,id,socket);
+			}
 				
-				void LocalSQLTransaction<Level::causal>::select_version(char const * const bytes){
+			void LocalSQLTransaction<Level::causal>::select_version(char const * const bytes, mutils::connection& socket){
 					auto table = mutils::from_bytes<Table>(&this->dsm,bytes);
 					auto id = mutils::from_bytes<Name>(&this->dsm,bytes + mutils::bytes_size(*table));
 					auto r = select_version_c(*table,*id);
-					all_fine();
-					sendBack(conn,extract_version(r));
+					all_fine(socket);
+					sendBack(extract_version(r),socket);
 				}
 				
-				void LocalSQLTransaction<Level::causal>::select_version_data(char const * const bytes){
+			void LocalSQLTransaction<Level::causal>::select_version_data(char const * const bytes, mutils::connection& socket){
 					auto table = mutils::from_bytes<Table>(&this->dsm,bytes);
 					auto id = mutils::from_bytes<Name>(&this->dsm,bytes + mutils::bytes_size(*table));
 					auto r = select_version_data_c(*table,*id);
-					all_fine();
-					sendBack(conn,extract_version(r));
+					all_fine(socket);
+					sendBack(extract_version(r),socket);
 					if (*table == Table::BlobStore){
 						pqxx::binarystring bs{r[0][4]};
-						sendBack(conn,mutils::Bytes{(char*)bs.data(),bs.size()});
+						sendBack(mutils::Bytes{(char*)bs.data(),bs.size()},socket);
 					}
 					else {
 						int send{-1};
 						r[0][4].to(send);
 						assert(send >= 0);
-						sendBack(conn,send);
+						sendBack(send,socket);
 					}
 				}
-				void LocalSQLTransaction<Level::causal>::update_data(char const * const bytes){
+			void LocalSQLTransaction<Level::causal>::update_data(char const * const bytes,mutils::connection& socket){
 					std::unique_ptr<Table> t; std::unique_ptr<int> k;
 					std::unique_ptr<Name> id; std::unique_ptr<std::array<int,NUM_CAUSAL_GROUPS> > ends; 
 					auto size = from_bytes_v(&this->dsm,bytes,t,k,id,ends);
 					auto r = update_data_c(*t,*k,*id,*ends,bytes + size);
-					all_fine();
-					sendBack(conn,extract_version(r));
+					all_fine(socket);
+					sendBack(extract_version(r),socket);
 				}
-				void LocalSQLTransaction<Level::causal>::initialize_with_id(char const * const bytes){
+			void LocalSQLTransaction<Level::causal>::initialize_with_id(char const * const bytes,mutils::connection& socket){
 					std::unique_ptr<Table> t; std::unique_ptr<int> k; std::unique_ptr<Name> id;
 					std::unique_ptr<std::array<int,NUM_CAUSAL_GROUPS> > ends; 
 					auto offset = from_bytes_v(&this->dsm,bytes,t,k,id,ends);
 					initialize_with_id_c(*t,*k,*id,*ends,bytes + offset);
-					all_fine();
+					all_fine(socket);
 				}
-				void LocalSQLTransaction<Level::causal>::increment(char const * const bytes){
+			void LocalSQLTransaction<Level::causal>::increment(char const * const bytes,mutils::connection& socket){
 					std::unique_ptr<int> k;
 					std::unique_ptr<Name> id; std::unique_ptr<std::array<int,NUM_CAUSAL_GROUPS> > ends;
 					from_bytes_v(&this->dsm,bytes,k,id,ends);
 					auto r = increment_c(Table::IntStore,*k,*id,*ends);
-					all_fine();
-					sendBack(conn,extract_version(r));
+					all_fine(socket);
+					sendBack(extract_version(r),socket);
 				}
 
-			void LocalSQLTransaction<Level::causal>::store_abort(std::unique_ptr<LocalSQLTransaction<Level::causal> > o) {
+			void LocalSQLTransaction<Level::causal>::store_abort(std::unique_ptr<LocalSQLTransaction<Level::causal> > o,mutils::connection& ) {
 				o->aborted_or_committed = true;
-				/*conn->client_connection = nullptr;
-				assert(this == conn->current_trans.get());
-				conn->current_trans.reset();//*/
 				}
-			LocalSQLTransaction<Level::causal>::~LocalSQLTransaction(){
-				conn->client_connection = nullptr;
-			}
 			
-			void LocalSQLTransaction<Level::causal>::indicate_serialization_failure() {
+			void LocalSQLTransaction<Level::causal>::indicate_serialization_failure(mutils::connection& socket) {
 				char abort{1};
-				conn->client_connection->send(abort);
+				socket.send(abort);
 			}
 
-			void LocalSQLTransaction<Level::causal>::all_fine() {
+			void LocalSQLTransaction<Level::causal>::all_fine(mutils::connection& socket) {
 				char ok{0};
-				assert(conn->client_connection);
-				conn->client_connection->send(ok);
+				socket.send(ok);
 			}
 
 		}

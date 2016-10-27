@@ -35,18 +35,16 @@ namespace myria {
 								if (_data[0] == 4){
 									assert(!current_trans);
 									current_trans.reset(new LocalSQLTransaction<l>(
-															std::move(db_connection),
-															conn
-															));
+															std::move(db_connection)));
 								}
 							}
 							else if (_data[0] == 0){
 								//we're finishing this transaction
-								current_trans->store_commit(std::move(current_trans));
+								current_trans->store_commit(std::move(current_trans),conn);
 							}
 							else if (_data[0] == 1){
 								//we're aborting this transaction
-								current_trans->store_abort(std::move(current_trans));
+								current_trans->store_abort(std::move(current_trans),conn);
 							}
 							else {
 								assert(_data[0] != 4);
@@ -54,7 +52,9 @@ namespace myria {
 								TransactionNames name = *((TransactionNames*) (_data + 1));
 								current_trans = current_trans->receiveSQLCommand(
 									std::move(current_trans),
-									name, _data + 1 + sizeof(name));
+									name, _data + 1 + sizeof(name),
+									conn
+									);
 							}
 							
 						}
