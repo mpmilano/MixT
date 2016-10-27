@@ -34,17 +34,18 @@ namespace myria {
 								//if we're aborting a non-existant transaction, there's nothing to do.
 								if (_data[0] == 4){
 									assert(!current_trans);
+									assert(db_connection);
 									current_trans.reset(new LocalSQLTransaction<l>(
 															std::move(db_connection)));
 								}
 							}
 							else if (_data[0] == 0){
 								//we're finishing this transaction
-								current_trans->store_commit(std::move(current_trans),conn);
+								db_connection = current_trans->store_commit(std::move(current_trans),conn);
 							}
 							else if (_data[0] == 1){
 								//we're aborting this transaction
-								current_trans->store_abort(std::move(current_trans),conn);
+								db_connection = current_trans->store_abort(std::move(current_trans),conn);
 							}
 							else {
 								assert(_data[0] != 4);

@@ -47,7 +47,8 @@ namespace myria { namespace pgsql {
 							  Arg1 && a1, Args && ... args);
 
 				template<typename LocalSQLTransaction>
-				static void store_commit(std::unique_ptr<LocalSQLTransaction> o, mutils::connection& socket) {
+				typename std::unique_ptr<typename LocalSQLTransaction::SQLConn>
+				store_commit(std::unique_ptr<LocalSQLTransaction> o, mutils::connection& socket) {
 					try{
 						o->trans.commit();
 						o->aborted_or_committed = true;
@@ -58,6 +59,7 @@ namespace myria { namespace pgsql {
 						o->indicate_serialization_failure(socket);
 						o->store_abort(std::move(o),socket);
 					}
+					return std::move(o->conn);
 				}
 
 				//Commands:
@@ -124,8 +126,9 @@ namespace myria { namespace pgsql {
 			class LocalSQLTransaction<Level::strong> : public LocalSQLTransaction_super{
 			public:
 				static constexpr Level l = Level::strong;
-				
-				std::unique_ptr<LocalSQLConnection<l> > conn;
+
+				using SQLConn = LocalSQLConnection<l>;
+				std::unique_ptr<SQLConn > conn;
 
 				LocalSQLTransaction(std::unique_ptr<LocalSQLConnection<l> > conn);
 				
@@ -155,7 +158,7 @@ namespace myria { namespace pgsql {
 				
 				void increment(char const * const bytes,mutils::connection& socket);
 
-				static void store_abort(std::unique_ptr<LocalSQLTransaction<Level::strong> >,mutils::connection& socket);
+				static std::unique_ptr<SQLConn> store_abort(std::unique_ptr<LocalSQLTransaction<Level::strong> >,mutils::connection& socket);
 
 				void indicate_serialization_failure(mutils::connection& socket);
 				void all_fine(mutils::connection& socket);
@@ -166,7 +169,8 @@ namespace myria { namespace pgsql {
 			public:
 				static constexpr Level l = Level::causal;
 
-				std::unique_ptr<LocalSQLConnection<l> > conn;
+				using SQLConn = LocalSQLConnection<l>;
+				std::unique_ptr<SQLConn > conn;
 				
 				LocalSQLTransaction(std::unique_ptr<LocalSQLConnection<l> > conn);
 				
@@ -252,7 +256,7 @@ namespace myria { namespace pgsql {
 				void initialize_with_id(char const * const bytes,mutils::connection& socket);
 				void increment(char const * const bytes,mutils::connection& socket);
 
-				static void store_abort(std::unique_ptr<LocalSQLTransaction<Level::causal> >,mutils::connection& socket);
+				static std::unique_ptr<SQLConn> store_abort(std::unique_ptr<LocalSQLTransaction<Level::causal> >,mutils::connection& socket);
 
 				void indicate_serialization_failure(mutils::connection& socket);
 				void all_fine(mutils::connection& socket);

@@ -198,8 +198,9 @@ namespace myria { namespace pgsql {
 					sendBack(extract_version(r),socket);
 				}
 
-			void LocalSQLTransaction<Level::strong>::store_abort(std::unique_ptr<LocalSQLTransaction<Level::strong> > o,mutils::connection& ) {
+			std::unique_ptr<LocalSQLConnection<Level::strong> > LocalSQLTransaction<Level::strong>::store_abort(std::unique_ptr<LocalSQLTransaction<Level::strong> > o,mutils::connection& ) {
 				o->aborted_or_committed = true;
+				return std::move(o->conn);
 			}
 
 			void LocalSQLTransaction<Level::strong>::indicate_serialization_failure(mutils::connection& socket) {
@@ -376,8 +377,9 @@ namespace myria { namespace pgsql {
 					sendBack(extract_version(r),socket);
 				}
 
-			void LocalSQLTransaction<Level::causal>::store_abort(std::unique_ptr<LocalSQLTransaction<Level::causal> > o,mutils::connection& ) {
+			std::unique_ptr<LocalSQLConnection<Level::causal> > LocalSQLTransaction<Level::causal>::store_abort(std::unique_ptr<LocalSQLTransaction<Level::causal> > o,mutils::connection& ) {
 				o->aborted_or_committed = true;
+				return std::move(o->conn);
 				}
 			
 			void LocalSQLTransaction<Level::causal>::indicate_serialization_failure(mutils::connection& socket) {
