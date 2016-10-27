@@ -22,16 +22,16 @@ test_causal: $(object_files)
 	clang++ test_causal.cpp $(object_files) -o test_causal_receiver -DRCVR_LEVEL=Level::causal $(CPPFLAGS) $(LDFLAGS)
 
 batched_connection_server.o:
-	clang++ -c ../*/batched_connection_server.cpp $(CPPFLAGS)
+	clang++ -c -O3 ../*/batched_connection_server.cpp $(CPPFLAGS)
 
 simple_rpc.o:
 	clang++ -c ../*/simple_rpc.cpp $(CPPFLAGS)
 
 batched_connection_client.o:
-	clang++ -c ../*/batched_connection_client.cpp $(CPPFLAGS)
+	clang++ -c -O3 ../*/batched_connection_client.cpp $(CPPFLAGS)
 
 batched_connection_common.o:
-	clang++ -c ../*/batched_connection_common.cpp $(CPPFLAGS)
+	clang++ -c -O3 ../*/batched_connection_common.cpp $(CPPFLAGS)
 
 ServerSocket.o:
 	clang++ -c ../*/ServerSocket.cpp $(CPPFLAGS)
