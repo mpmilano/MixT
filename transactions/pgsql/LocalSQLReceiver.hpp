@@ -19,42 +19,52 @@ namespace myria {
 				using action_t = typename receiver::action_t;
 				using sizes_t = std::vector<std::size_t>;
 
-				static std::function<void (const void*, mutils::connection&)> new_connection(){
-					return [db_connection = std::make_shared<LocalSQLConnection<l> >()] 
-						(const void* data, mutils::connection& conn) {
-						const char* _data = (const char*) data;
-						if (!db_connection->current_trans) {
-							if (_data[0] != 4 && _data[0] != 1){
-								std::cout << (int) _data[0] << std::endl;
+				static action_t new_connection(){
+					struct ReceiverFun : public mutils::batched_connection::ReceiverFun{
+						std::unique_ptr<LocalSQLConnection<l> > db_connection{
+							new LocalSQLConnection<l>()};
+						std::unique_ptr<LocalSQLTransaction<l> > current_trans{nullptr};
+						void operator()(const void* data, mutils::connection& conn){
+							const char* _data = (const char*) data;
+							if (!current_trans) {
+								if (_data[0] != 4 && _data[0] != 1){
+									std::cout << (int) _data[0] << std::endl;
+								}
+								assert(_data[0] == 4 || _data[0] == 1);
+								//if we're aborting a non-existant transaction, there's nothing to do.
+								if (_data[0] == 4){
+									assert(!current_trans);
+									current_trans.reset(new LocalSQLTransaction<l>(
+															std::move(db_connection),
+															conn
+															));
+								}
 							}
-							assert(_data[0] == 4 || _data[0] == 1);
-							//if we're aborting a non-existant transaction, there's nothing to do.
-							if (_data[0] == 4){
-								LocalSQLConnection<l> &conn_test = *db_connection;
-								db_connection->current_trans
-									= std::make_unique<LocalSQLTransaction<l> >(conn_test);
-								db_connection->client_connection = &conn;
+							else if (_data[0] == 0){
+								//we're finishing this transaction
+								current_trans->store_commit(std::move(current_trans));
 							}
+							else if (_data[0] == 1){
+								//we're aborting this transaction
+								current_trans->store_abort(std::move(current_trans));
+							}
+							else {
+								assert(_data[0] != 4);
+								assert(_data[0] == 3);
+								TransactionNames name = *((TransactionNames*) (_data + 1));
+								current_trans = current_trans->receiveSQLCommand(
+									std::move(current_trans),
+									name, _data + 1 + sizeof(name));
+							}
+							
 						}
-						else if (_data[0] == 0){
-							//we're finishing this transaction
-							auto trans = std::move(db_connection->current_trans);
-							trans->store_commit();
-							db_connection->client_connection = nullptr;
-						}
-						else if (_data[0] == 1){
-							//we're aborting this transaction
-							db_connection->current_trans->store_abort();
-						}
-						else {
-							assert(_data[0] != 4);
-							assert(_data[0] == 3);
-							TransactionNames name = *((TransactionNames*) (_data + 1));
-							return db_connection->current_trans->receiveSQLCommand(
-								name, _data + 1 + sizeof(name));
-						}
-						
+						ReceiverFun(ReceiverFun&& o)
+							:db_connection(std::move(o.db_connection)),
+							 current_trans(std::move(o.current_trans))
+							{}
+						ReceiverFun() = default;
 					};
+					return action_t{new ReceiverFun()};
 				}
 				
 				SQLReceiver():r((l == Level::strong?

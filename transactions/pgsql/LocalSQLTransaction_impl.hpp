@@ -14,7 +14,7 @@ namespace myria { namespace pgsql {
 			void obj_exists(Trans &trans, Name id){
 				const static std::string query =
 					"select ID from \"BlobStore\" where id = $1 union select id from \"IntStore\" where id = $1 limit 1";
-				auto r = trans.prepared(trans.conn, LocalTransactionNames::exists,query,id);
+				auto r = trans.prepared(*trans.conn, LocalTransactionNames::exists,query,id);
 				trans.all_fine();
 				trans.sendBack(trans.conn,r.size() > 0);
 			}
@@ -25,19 +25,22 @@ namespace myria { namespace pgsql {
 					"delete from \"BlobStore\" where ID = $1";
 				const static std::string is =
 					"delete from \"IntStore\" where ID = $1";
-				trans.prepared(trans.conn,LocalTransactionNames::Del1,bs,id);
-				trans.prepared(trans.conn,LocalTransactionNames::Del2,is,id);
+				trans.prepared(*trans.conn,LocalTransactionNames::Del1,bs,id);
+				trans.prepared(*trans.conn,LocalTransactionNames::Del2,is,id);
 				trans.all_fine();
 			}
 
 			
-			LocalSQLTransaction_super::LocalSQLTransaction_super(pqxx::connection &conn):
-				trans(conn)
-			{}
+			template<typename SQLConn>
+			LocalSQLTransaction_super::LocalSQLTransaction_super(SQLConn &conn, mutils::connection &socket):
+				trans(conn.conn)
+			{
+				conn.client_connection = &socket;
+			}
 		
 			template<typename Conn, typename T>
-			void LocalSQLTransaction_super::sendBack(Conn &conn, const T& t){
-				conn.client_connection->send(t);
+			void LocalSQLTransaction_super::sendBack(std::unique_ptr<Conn> &conn, const T& t){
+				conn->client_connection->send(t);
 			}
 			
 			template<typename E>
@@ -67,9 +70,9 @@ namespace myria { namespace pgsql {
 			
 			//STRONG SECTION
 
-			LocalSQLTransaction<Level::strong>::LocalSQLTransaction(LocalSQLConnection<l> &conn)
-				:LocalSQLTransaction_super(conn.conn),
-				 conn(conn){
+			LocalSQLTransaction<Level::strong>::LocalSQLTransaction(std::unique_ptr<LocalSQLConnection<l> > conn, mutils::connection& socket)
+				:LocalSQLTransaction_super(*conn,socket),
+				 conn(std::move(conn)){
 				trans.exec("set search_path to \"BlobStore\",public");
 				trans.exec("SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL SERIALIZABLE");
 			}
@@ -80,7 +83,7 @@ namespace myria { namespace pgsql {
 					static const std::string is =
 						"select Version from \"IntStore\" where ID=$1";
 					auto &s = (t == Table::BlobStore ? bs : is );
-					return prepared(conn,(t == Table::BlobStore ?
+					return prepared(*conn,(t == Table::BlobStore ?
 									 LocalTransactionNames::select_version_s_b :
 									 LocalTransactionNames::select_version_s_i
 										),s,id);
@@ -95,8 +98,8 @@ namespace myria { namespace pgsql {
 						"select version, data  from \"BlobStore\" where index = 0 and ID = $1";
 					static const std::string is = "select version, data from \"IntStore\" where ID = $1 and index = 0";
 					switch(t) {
-					case Table::BlobStore : return prepared(conn,LocalTransactionNames::select1,bs,id); 
-					case Table::IntStore : return prepared(conn,LocalTransactionNames::select2,is,id); 
+					case Table::BlobStore : return prepared(*conn,LocalTransactionNames::select1,bs,id); 
+					case Table::IntStore : return prepared(*conn,LocalTransactionNames::select2,is,id); 
 					}
 					assert(false && "forgot a case");
 				}				
@@ -107,8 +110,8 @@ namespace myria { namespace pgsql {
 					static const std::string is =
 						"update \"IntStore\" set data=$2,Version=Version + 1 where ID=$1 returning version";
 					switch(t) {
-					case Table::BlobStore : return prepared(conn,LocalTransactionNames::Updates1,bs,id,make_blob(*from_bytes<Bytes>(&this->dsm,b)));
-					case Table::IntStore : return prepared(conn,LocalTransactionNames::Updates2,is,id,((int*)b)[0]);
+					case Table::BlobStore : return prepared(*conn,LocalTransactionNames::Updates1,bs,id,make_blob(*from_bytes<Bytes>(&this->dsm,b)));
+					case Table::IntStore : return prepared(*conn,LocalTransactionNames::Updates2,is,id,((int*)b)[0]);
 					}
 					assert(false && "forgot a case");
 				}
@@ -118,7 +121,7 @@ namespace myria { namespace pgsql {
 						   && "Error: increment currently only defined on integers");
 					const static std::string s =
 						"update \"IntStore\" set data = data + 1 where id = $1 returning version";
-					return prepared(conn,LocalTransactionNames::Increment,s,id);
+					return prepared(*conn,LocalTransactionNames::Increment,s,id);
 				}				
 
 			void LocalSQLTransaction<Level::strong>::initialize_with_id_s(Table t, Name id, char const * const b){
@@ -127,8 +130,8 @@ namespace myria { namespace pgsql {
 					const static std::string is =
 						"INSERT INTO \"IntStore\" (id,data) VALUES ($1,$2)";
 					switch(t) {
-					case Table::BlobStore : prepared(conn,LocalTransactionNames::Insert1,bs,id,make_blob(*from_bytes<Bytes>(&this->dsm,b))); return;
-					case Table::IntStore : prepared(conn,LocalTransactionNames::Insert2,is,id,b,((int*)b)[0]); return;
+					case Table::BlobStore : prepared(*conn,LocalTransactionNames::Insert1,bs,id,make_blob(*from_bytes<Bytes>(&this->dsm,b))); return;
+					case Table::IntStore : prepared(*conn,LocalTransactionNames::Insert2,is,id,b,((int*)b)[0]); return;
 					}
 					assert(false && "forgot a case");
 				}
@@ -197,30 +200,33 @@ namespace myria { namespace pgsql {
 					sendBack(conn,extract_version(r));
 				}
 
-			void LocalSQLTransaction<Level::strong>::store_abort() {
-				aborted_or_committed = true;
-				conn.client_connection = nullptr;
-				assert(this == conn.current_trans.get());
-				conn.current_trans.reset();
+			void LocalSQLTransaction<Level::strong>::store_abort(std::unique_ptr<LocalSQLTransaction<Level::strong> > o) {
+				o->aborted_or_committed = true;/*
+				conn->client_connection = nullptr;
+				assert(this == conn->current_trans.get());
+				conn->current_trans.reset();//*/
+			}
+			LocalSQLTransaction<Level::strong>::~LocalSQLTransaction(){
+				conn->client_connection = nullptr;
 			}
 
 			void LocalSQLTransaction<Level::strong>::indicate_serialization_failure() {
 				char abort{1};
-				conn.client_connection->send(abort);
+				conn->client_connection->send(abort);
 			}
 
 			void LocalSQLTransaction<Level::strong>::all_fine() {
 				char ok{0};
-				conn.client_connection->send(ok);
+				conn->client_connection->send(ok);
 			}
 
 
 
 			//CAUSAL LAND
 
-			LocalSQLTransaction<Level::causal>::LocalSQLTransaction(LocalSQLConnection<l> &conn)
-				:LocalSQLTransaction_super(conn.conn),
-				 conn(conn){
+			LocalSQLTransaction<Level::causal>::LocalSQLTransaction(std::unique_ptr<LocalSQLConnection<l> > conn, mutils::connection& socket)
+				:LocalSQLTransaction_super(*conn,socket),
+				 conn(std::move(conn)){
 				trans.exec("set search_path to causalstore,public");
 				trans.exec("SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL REPEATABLE READ");
 			}
@@ -239,7 +245,7 @@ namespace myria { namespace pgsql {
 						return v;
 					}();
 					auto &s = v.at((int)t);
-					return prepared(conn,s.first,s.second,id);
+					return prepared(*conn,s.first,s.second,id);
 				}
 				
 				auto LocalSQLTransaction<Level::causal>::select_version_data_c(Table t, Name id){
@@ -251,8 +257,8 @@ namespace myria { namespace pgsql {
 						"select vc1,vc2,vc3,vc4, data from \"BlobStore\" where index = 0 and ID = $1";
 					static const std::string is = "select vc1,vc2,vc3,vc4, data from \"IntStore\" where index = 0 and ID = $1";
 					switch(t) {
-					case Table::BlobStore : return prepared(conn,LocalTransactionNames::select1,bs,id); 
-					case Table::IntStore : return prepared(conn,LocalTransactionNames::select2,is,id); 
+					case Table::BlobStore : return prepared(*conn,LocalTransactionNames::select1,bs,id); 
+					case Table::IntStore : return prepared(*conn,LocalTransactionNames::select2,is,id); 
 					}
 				assert(false && "forgot a case");
 				}				
@@ -265,7 +271,7 @@ namespace myria { namespace pgsql {
 					};
 					static const constexpr auto update_cmds = update_data_c_cmd(tnames,"$5");
 					auto p = update_cmds.at(((int)t) * (NUM_CAUSAL_GROUPS) + (k-1));
-#define argh_344234(x...) prepared(conn,p.first,p.second,id,ends[md(k+1)-1],ends[md(k+2)-1],ends[md(k+3)-1],x)
+#define argh_344234(x...) prepared(*conn,p.first,p.second,id,ends[md(k+1)-1],ends[md(k+2)-1],ends[md(k+3)-1],x)
 					if (t == Table::IntStore){
 						return argh_344234(*((int*)b));
 					}
@@ -284,7 +290,7 @@ namespace myria { namespace pgsql {
 					};
 					static const constexpr auto update_cmds = update_data_c_cmd(tnames,"data + 1");
 					auto p = update_cmds.at(((int)t) * (NUM_CAUSAL_GROUPS) + (k-1));
-					return prepared(conn,p.first,p.second,id,ends[md(k+1)-1],ends[md(k+2)-1],ends[md(k+3)-1]);
+					return prepared(*conn,p.first,p.second,id,ends[md(k+1)-1],ends[md(k+2)-1],ends[md(k+3)-1]);
 				}
 				
 				template<typename Blob>
@@ -294,8 +300,8 @@ namespace myria { namespace pgsql {
 					const static std::string bs = "INSERT INTO \"BlobStore\" (index,id) VALUES (0,$1), (1,$1), (2,$1)";
 					const static std::string is = "INSERT INTO \"IntStore\" (index,id) VALUES (0,$1), (1,$1), (2,$1)";
 					if (t == Table::IntStore){
-						prepared(conn,LocalTransactionNames::initci,is,id);
-					} else prepared(conn,LocalTransactionNames::initcb,bs,id);
+						prepared(*conn,LocalTransactionNames::initci,is,id);
+					} else prepared(*conn,LocalTransactionNames::initcb,bs,id);
 					
 					static const constexpr LocalTransactionNames tnames[NUM_CAUSAL_GROUPS * Table_max] = {
 						LocalTransactionNames::udc1,LocalTransactionNames::udc4,LocalTransactionNames::udc7,
@@ -304,7 +310,7 @@ namespace myria { namespace pgsql {
 					};
 					constexpr const auto update_cmds = update_data_c_cmd(tnames,"$5");
 					const auto &p = update_cmds.at(((int)t) * (NUM_CAUSAL_GROUPS) + (k-1));
-					prepared(conn,p.first,p.second,id,ends[md(k+1) - 1],ends[md(k+2) - 1],ends[md(k+3) - 1],b);
+					prepared(*conn,p.first,p.second,id,ends[md(k+1) - 1],ends[md(k+2) - 1],ends[md(k+3) - 1],b);
 				}
 
 				auto LocalSQLTransaction<Level::causal>::extract_version(const pqxx::result &r){
@@ -378,21 +384,25 @@ namespace myria { namespace pgsql {
 					sendBack(conn,extract_version(r));
 				}
 
-			void LocalSQLTransaction<Level::causal>::store_abort() {
-				aborted_or_committed = true;
-					conn.client_connection = nullptr;
-					assert(this == conn.current_trans.get());
-					conn.current_trans.reset();
+			void LocalSQLTransaction<Level::causal>::store_abort(std::unique_ptr<LocalSQLTransaction<Level::causal> > o) {
+				o->aborted_or_committed = true;
+				/*conn->client_connection = nullptr;
+				assert(this == conn->current_trans.get());
+				conn->current_trans.reset();//*/
 				}
+			LocalSQLTransaction<Level::causal>::~LocalSQLTransaction(){
+				conn->client_connection = nullptr;
+			}
 			
 			void LocalSQLTransaction<Level::causal>::indicate_serialization_failure() {
 				char abort{1};
-				conn.client_connection->send(abort);
+				conn->client_connection->send(abort);
 			}
 
 			void LocalSQLTransaction<Level::causal>::all_fine() {
 				char ok{0};
-				conn.client_connection->send(ok);
+				assert(conn->client_connection);
+				conn->client_connection->send(ok);
 			}
 
 		}

@@ -26,14 +26,15 @@ namespace myria { namespace pgsql {
 				pqxx::work trans;
 				bool aborted_or_committed{false};
 
-				LocalSQLTransaction_super(pqxx::connection &conn);
+				template<typename SQLConn>
+				LocalSQLTransaction_super(SQLConn &conn, mutils::connection &socket);
 
 				virtual ~LocalSQLTransaction_super(){
 					assert(aborted_or_committed);
 				}
 
 				template<typename Conn, typename T>
-				void sendBack(Conn &conn, const T& t);
+				void sendBack(std::unique_ptr<Conn> &conn, const T& t);
 
 				template<typename E>
 				auto exec_prepared_hlpr(E &e);
@@ -45,20 +46,19 @@ namespace myria { namespace pgsql {
 				auto prepared(SQL_Conn& sql_conn, LocalTransactionNames name, const std::string &stmt,
 							  Arg1 && a1, Args && ... args);
 
-				void store_commit() {
+				template<typename LocalSQLTransaction>
+				static void store_commit(std::unique_ptr<LocalSQLTransaction> o) {
 					try{
-						trans.commit();
-						aborted_or_committed = true;
-						all_fine();
+						o->trans.commit();
+						o->aborted_or_committed = true;
+						o->all_fine();
 					}
 					catch(const pqxx::pqxx_exception& e){
 						assert(is_serialize_error(e));
-						indicate_serialization_failure();
-						store_abort();
+						o->indicate_serialization_failure();
+						o->store_abort(std::move(o));
 					}
 				}
-
-				virtual void store_abort() = 0;
 
 				//Commands:
 				mutils::DeserializationManager dsm{{}};
@@ -74,31 +74,32 @@ namespace myria { namespace pgsql {
 
 				virtual void indicate_serialization_failure() = 0;
 				virtual void all_fine() = 0;
-				
-				void receiveSQLCommand(TransactionNames name, char const * const bytes){
+
+				template<typename LocalSQLTransaction>
+				static std::unique_ptr<LocalSQLTransaction> receiveSQLCommand(std::unique_ptr<LocalSQLTransaction> o, TransactionNames name, char const * const bytes){
 					using namespace mutils;
 					try{
 						switch(name){
 						case TransactionNames::exists:
-							obj_exists(*from_bytes<Name>(&dsm,bytes));
+							o->obj_exists(*from_bytes<Name>(&o->dsm,bytes));
 							break;
 						case TransactionNames::Del:
-							remove(*from_bytes<Name>(&dsm,bytes));
+							o->remove(*from_bytes<Name>(&o->dsm,bytes));
 							break;
 						case TransactionNames::select_version:
-							select_version(bytes);
+							o->select_version(bytes);
 							break;
 						case TransactionNames::select_version_data:
-							select_version_data(bytes);
+							o->select_version_data(bytes);
 							break;
 						case TransactionNames::update_data:
-							update_data(bytes);
+							o->update_data(bytes);
 							break;
 						case TransactionNames::initialize_with_id:
-							initialize_with_id(bytes);
+							o->initialize_with_id(bytes);
 							break;
 						case TransactionNames::increment:
-							increment(bytes);
+							o->increment(bytes);
 							break;
 						case TransactionNames::MAX:
 							assert(false && "this should not be send");
@@ -109,9 +110,11 @@ namespace myria { namespace pgsql {
 							std::cout << e.base().what() << std::endl;
 							assert(false);
 						}
-						indicate_serialization_failure();
-						store_abort();
+						o->indicate_serialization_failure();
+						o->store_abort(std::move(o));
+						return nullptr;
 					}
+					return o;
 				}
 			};
 
@@ -122,9 +125,9 @@ namespace myria { namespace pgsql {
 			public:
 				static constexpr Level l = Level::strong;
 				
-				LocalSQLConnection<l> &conn;
+				std::unique_ptr<LocalSQLConnection<l> > conn;
 
-				LocalSQLTransaction(LocalSQLConnection<l> &conn);
+				LocalSQLTransaction(std::unique_ptr<LocalSQLConnection<l> > conn, mutils::connection& socket);
 				
 				auto select_version_s(Table t, Name id);
 				
@@ -152,10 +155,11 @@ namespace myria { namespace pgsql {
 				
 				void increment(char const * const bytes);
 
-				void store_abort();
+				static void store_abort(std::unique_ptr<LocalSQLTransaction<Level::strong> >);
 
 				void indicate_serialization_failure();
 				void all_fine();
+				~LocalSQLTransaction();
 			};
 			
 			template<>
@@ -163,9 +167,9 @@ namespace myria { namespace pgsql {
 			public:
 				static constexpr Level l = Level::causal;
 
-				LocalSQLConnection<l> &conn;
+				std::unique_ptr<LocalSQLConnection<l> > conn;
 				
-				LocalSQLTransaction(LocalSQLConnection<l> &conn);
+				LocalSQLTransaction(std::unique_ptr<LocalSQLConnection<l> > conn, mutils::connection& socket);
 				
 				static constexpr int group_mapper(int k){
 					if (k < 1) assert(false && "Error: k is 1-indexed");
@@ -249,10 +253,11 @@ namespace myria { namespace pgsql {
 				void initialize_with_id(char const * const bytes);
 				void increment(char const * const bytes);
 
-				void store_abort();
+				static void store_abort(std::unique_ptr<LocalSQLTransaction<Level::causal> >);
 
 				void indicate_serialization_failure();
 				void all_fine();
+				~LocalSQLTransaction();
 			};
 		}
 	}
