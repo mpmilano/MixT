@@ -57,7 +57,7 @@ namespace myria { namespace pgsql {
 					catch(const pqxx::pqxx_exception& e){
 						assert(is_serialize_error(e));
 						o->indicate_serialization_failure(socket);
-						o->store_abort(std::move(o),socket);
+						return (o->store_abort(std::move(o),socket));
 					}
 					return std::move(o->conn);
 				}
@@ -123,8 +123,8 @@ namespace myria { namespace pgsql {
 							assert(false);
 						}
 						o->indicate_serialization_failure(socket);
-						o->store_abort(std::move(o),socket);
-						return resource_return{nullptr,std::move(o->conn)};
+						return resource_return{nullptr,
+								o->store_abort(std::move(o),socket)};
 					}
 					return resource_return{std::move(o),nullptr};
 				}
