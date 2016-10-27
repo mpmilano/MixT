@@ -42,20 +42,25 @@ namespace myria {
 							else if (_data[0] == 0){
 								//we're finishing this transaction
 								db_connection = current_trans->store_commit(std::move(current_trans),conn);
+								assert(db_connection);
 							}
 							else if (_data[0] == 1){
 								//we're aborting this transaction
 								db_connection = current_trans->store_abort(std::move(current_trans),conn);
+								assert(db_connection);
 							}
 							else {
 								assert(_data[0] != 4);
 								assert(_data[0] == 3);
 								TransactionNames name = *((TransactionNames*) (_data + 1));
-								current_trans = current_trans->receiveSQLCommand(
+								auto pair = current_trans->receiveSQLCommand(
 									std::move(current_trans),
 									name, _data + 1 + sizeof(name),
 									conn
 									);
+								current_trans = std::move(pair.first);
+								db_connection = std::move(pair.second);
+								assert(current_trans || db_connection);
 							}
 							
 						}

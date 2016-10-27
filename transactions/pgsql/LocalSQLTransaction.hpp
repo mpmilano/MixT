@@ -78,8 +78,18 @@ namespace myria { namespace pgsql {
 				virtual void all_fine(mutils::connection& socket) = 0;
 
 				template<typename LocalSQLTransaction>
-				static std::unique_ptr<LocalSQLTransaction> receiveSQLCommand(std::unique_ptr<LocalSQLTransaction> o, TransactionNames name, char const * const bytes, mutils::connection& socket){
+				auto receiveSQLCommand(std::unique_ptr<LocalSQLTransaction> o, TransactionNames name, char const * const bytes, mutils::connection& socket){
 					using namespace mutils;
+
+					struct resource_return{
+						std::unique_ptr<LocalSQLTransaction> first;
+						std::unique_ptr<typename LocalSQLTransaction::SQLConn> second;
+						resource_return(decltype(first) first, decltype(second) second)
+							:first(std::move(first)),second(std::move(second)){}
+						resource_return(resource_return&& o)
+							:first(std::move(o.first)),second(std::move(o.second)){}
+					};
+					
 					try{
 						switch(name){
 						case TransactionNames::exists:
@@ -114,9 +124,9 @@ namespace myria { namespace pgsql {
 						}
 						o->indicate_serialization_failure(socket);
 						o->store_abort(std::move(o),socket);
-						return nullptr;
+						return resource_return{nullptr,std::move(o->conn)};
 					}
-					return o;
+					return resource_return{std::move(o),nullptr};
 				}
 			};
 
