@@ -164,7 +164,10 @@ std::string PreparedTest<Mem,Arg>::run_tests(Meta& meta, bool (*stop) (Meta&, Po
 	std::cout << "Launches Complete.  Waiting for tasks to terminate: " << std::endl;
 	
 	std::stringstream ss;
-	for (unsigned int timeout = 0; timeout < 10 && !futures->empty(); ++timeout){
+	int old_size = 0;
+	for (unsigned int timeout = 0; timeout < 5 && !futures->empty(); ){
+		if (old_size == futures->size()) ++timeout;
+		old_size = futures->size();
 		std::cout << futures->size() << " tasks remain" << std::endl;
 		std::unique_ptr<future_list> new_futures{new future_list()};
 		for (auto &f : *futures){

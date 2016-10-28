@@ -8,7 +8,8 @@ namespace myria {
 	namespace pgsql {
 		namespace local {
 
-			using mutils::batched_connection::receiver;
+			namespace conn_space = mutils::batched_connection;
+			using conn_space::receiver;
 			
 			template<Level l>
 			class SQLReceiver{
@@ -20,7 +21,7 @@ namespace myria {
 				using sizes_t = std::vector<std::size_t>;
 
 				static action_t new_connection(){
-					struct ReceiverFun : public mutils::batched_connection::ReceiverFun{
+					struct ReceiverFun : public conn_space::ReceiverFun{
 						std::unique_ptr<LocalSQLConnection<l> > db_connection{
 							new LocalSQLConnection<l>()};
 						std::unique_ptr<LocalSQLTransaction<l> > current_trans{nullptr};

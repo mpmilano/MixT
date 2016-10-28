@@ -220,7 +220,7 @@ namespace synth_test {
 		Frequency current_rate{500_Hz};
 		constexpr static Frequency increase_factor = 20_Hz;
 		constexpr static seconds increase_delay = 2s;
-		constexpr static minutes test_stop_time = 7min;
+		constexpr static minutes test_stop_time = 2min;
 		constexpr static double percent_writes = write_percent;
 		constexpr static double percent_strong = strong_percent;
 		using PreparedTest = PreparedTest<Mem,fake_time>;
