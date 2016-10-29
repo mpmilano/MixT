@@ -33,4 +33,5 @@ fi
 chroot gentoo /bin/su -c "/bin/bash /as-gentoo.sh $*" research
 #chroot gentoo /bin/su -c "/usr/bin/emerge libunwind" root
 echo exiting vm
+pkill --signal HUP sshd
 exit
