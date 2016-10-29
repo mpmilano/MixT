@@ -44,6 +44,9 @@ for write_percent in $write_percentages; do
 				/bin/bash test-things-loop-body.sh $i $foo $configuration $write_percent $strong_percent $strong_target $causal_target_1 $causal_target_2 $first_iter&
 			done
 			wait
+			ssh research@"$strong_target" killall strong_receiver
+			ssh research@"$causal_target1" killall causal_receiver
+			ssh research@"$causal_target2" killall causal_receiver
 			unset first_iter
 			i=0
 			echo "all done"
