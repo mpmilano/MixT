@@ -4,10 +4,6 @@
 #some expression to be run against it as a string in $*.
 #makes the various fields available as bash variables
 
-#struct myria_log { const int submit_time; const int run_time; const int cc_num_tries; const int done_time; const bool is_write; const bool is_read; const bool is_strong; const bool is_causal; const bool is_serialization_error; const std::string remote_failure_string; const bool remote_failure; const int num_causal_tries; const bool transaction_action; const int tracker_strong_afterread_tombstone_exists; const int tracker_strong_afterread_nonce_unavailable; const int tracker_causal_afterread_candidate;  }; 
-
-#[]() -> struct myria_log {struct myria_log ret {1743, 1743, 0, 1760, false, 1, false, 1, false, "", false, 1, 1, 0, 0, 0}; return ret; }()
-
 import sys
 import functools
 from collections import namedtuple
@@ -49,36 +45,3 @@ def stream_operator(preprocess_fun):
                         tracker_strong_afterread_nonce_unavailable=int(entries[14]),
                         tracker_causal_afterread_candidate=int(entries[15]))))
     return to_return
-
-    
-'''
-function set_vars {
-	submit_time=$1
-	run_time=$2
-	cc_num_tries=$3
-	done_time=$4
-	is_write=$5
-	is_read=$6
-	is_strong=$7
-	is_causal=$8
-	is_serialization_error=$9
-	remote_failure_string="$10"
-	remote_failure=$11
-	num_causal_tries=$12
-	transaction_action="$13"
-	tracker_strong_afterread_tombstone_exists=$14
-	tracker_strong_afterread_nonce_unavailable=$15
-	tracker_causal_afterread_candidate=$16
-}
-
-echo $sed_command
-while read line; do
-	if [[ `echo "$line" | grep '\[\]\(\)' | grep myria_log` ]]; then
-		shortened_line="`echo "$line" | rev | cut -d '{' -f1 | rev | cut -d'}' -f1 | tr ',' ' '  | sed s/'  '/' '/g`"
-		set_vars $shortened_line
-		eval $*
-	fi
-done < /dev/stdin
-
-
-'''
