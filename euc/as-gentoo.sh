@@ -7,24 +7,24 @@ git checkout master
 git pull
 #git checkout 8aa31399d5e62f5ad1f94459ecffb94bc0f18fc8
 if [[ -d mutils ]]
-then cd mutils; git pull; cd ..
+then cd mutils; git checkout master; git pull; cd ..
 else git clone https://github.com/mpmilano/mutils.git
 fi
 if [[ -d mutils-tasks ]]
-then cd mutils-tasks; git pull; cd ..
+then cd mutils-tasks; git checkout master;  git pull; cd ..
 else git clone https://github.com/mpmilano/mutils-tasks.git
 fi
 cd mutils-tasks; git checkout master; cd ..
 if [[ -d mutils-serialization ]]
-then cd mutils-serialization; git pull; cd ..
+then cd mutils-serialization;  git checkout master; git pull;  cd ..
 else git clone https://github.com/mpmilano/mutils-serialization.git
 fi
 if [[ -d mutils-containers ]]
-then cd mutils-containers; git pull; cd ..
+then cd mutils-containers;  git checkout master; git pull;  cd ..
 else git clone https://github.com/mpmilano/mutils-containers.git
 fi
 if [[ -d mutils-networking ]]
-then cd mutils-networking; git pull; cd ..
+then cd mutils-networking;  git checkout master; git pull;  cd ..
 else git clone https://github.com/mpmilano/mutils-networking.git
 fi
 source pg_env.sh
