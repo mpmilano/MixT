@@ -292,7 +292,7 @@ int real_main(){
 	auto logger = build_VMObjectLogger();
 	auto global_log = logger->template beginStruct<LoggedStructs::globals>();
 	std::cout << "hello world from VM "<< my_unique_id << " in group " << CAUSAL_GROUP << std::endl;
-	std::cout << "connecting to " << string_of_ip(get_strong_ip()) << std::endl;
+	std::cout << "connecting to " << string_of_ip(get_strong_ip()) << " and " << string_of_ip(get_causal_ip()) << std::endl;
 
 	using pool_fun_t = typename synth_test::TestParameters::PreparedTest::action_t;
 

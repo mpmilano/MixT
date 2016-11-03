@@ -47,7 +47,7 @@ namespace myria{ namespace pgsql {
 			}
 			
 			connections bc{
-				(l == Level::strong ? ip_addr : 0),
+				(l == Level::strong ? strong_ip_addr : causal_ip_addr),
 					(l == Level::strong ? strong_sql_port : causal_sql_port),(MAX_THREADS/2)};
 			mutils::ResourcePool<SQLConnection> rp{MAX_THREADS,MAX_THREADS,
 					[this]{return new SQLConnection(bc.spawn());}};
