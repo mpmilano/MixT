@@ -19,7 +19,7 @@ namespace myria{
 		private:
 			LockedSQLConnection sql_conn;
 			bool remote_aborted{false};
-			std::ofstream log_file{std::string("/tmp/trans_event_log_client") + sql_conn->id};
+			std::ofstream &log_file{sql_conn->conn.log_file};
 			void log_receive_start(const std::string&);
 			void log_receive_stop(const std::string&);
 			void log_send(const std::string&);
