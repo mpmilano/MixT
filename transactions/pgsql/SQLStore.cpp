@@ -87,7 +87,8 @@ namespace myria{ namespace pgsql {
 		}
 
 		int SQLStore_impl::instance_id() const{
-			return ip_addr;
+			constexpr auto ret = mutils::decode_ip(MY_IP);
+			return ret;
 		}
 
 

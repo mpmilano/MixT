@@ -42,7 +42,8 @@ namespace mutils{
 		constexpr auto group = CAUSAL_GROUP;
 		constexpr char const * const causal_remote_ip_1{CAUSAL_REMOTE_IP_1};
 		constexpr char const * const causal_remote_ip_2{CAUSAL_REMOTE_IP_2};
-		static_assert(causal_remote_ip_2[0] && causal_remote_ip_1[0]);
+		static_assert(causal_remote_ip_1[0],"error: define CAUSAL_REMOTE_IP_1 macro");
+		static_assert(causal_remote_ip_2[0],"error: define CAUSAL_REMOTE_IP_2 macro");
 		if (group % 2 == 0){
 			return mutils::decode_ip(causal_remote_ip_1);
 		}

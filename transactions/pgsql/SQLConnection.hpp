@@ -1,10 +1,10 @@
 #pragma once
 #include "test_utils.hpp"
 #include "Basics.hpp"
+#include "batched_connection.hpp"
 #include <pqxx/pqxx>
 #include <mutex>
 #include <resource_pool.hpp>
-#include "proxy_connection.hpp"
 #include "SQLConstants.hpp"
 
 namespace myria{ namespace pgsql {

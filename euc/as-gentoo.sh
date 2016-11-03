@@ -30,16 +30,12 @@ fi
 source pg_env.sh
 killall -9 vm
 rm /tmp/Myria*
-if [[ $7 ]];
+if [[ $9 ]];
 then make clean
 else rm vm_main.o; rm vm
 fi
-extra_macro_defs="-D$2 -DWRITE_PERCENT=$3 -DSTRONG_PERCENT=$4" causalGroup="$1" MY_IP="$5" STRONG_REMOTE_IP="$6" make -j4 vm
+extra_macro_defs="-D$2 -DWRITE_PERCENT=$3 -DSTRONG_PERCENT=$4" causalGroup="$1" MY_IP="$5" CAUSAL_REMOTE_IP_1="$7" CAUSAL_REMOTE_IP_2="$8"  STRONG_REMOTE_IP="$6" make -j4 vm
 ./vm
-#for ((i=1; i <= $2; i++))
-#do
-#	./vm &
-#done
 wait
 echo "done waiting"
 exit
