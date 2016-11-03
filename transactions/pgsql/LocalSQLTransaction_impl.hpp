@@ -32,8 +32,8 @@ namespace myria { namespace pgsql {
 
 			
 			template<typename SQLConn>
-			LocalSQLTransaction_super::LocalSQLTransaction_super(SQLConn &conn, std::size_t sock_id, std::size_t conn_id):
-				trans(conn.conn),log_file(open_logfile(sock_id,conn_id))
+			LocalSQLTransaction_super::LocalSQLTransaction_super(SQLConn &conn, std::ofstream& log_file):
+				trans(conn.conn),log_file(log_file)
 			{
 				log_receive("transaction start");
 			}
@@ -77,8 +77,8 @@ namespace myria { namespace pgsql {
 			
 			//STRONG SECTION
 
-			LocalSQLTransaction<Level::strong>::LocalSQLTransaction(std::unique_ptr<LocalSQLConnection<l> > conn, std::size_t sock_id, std::size_t conn_id)
-				:LocalSQLTransaction_super(*conn,sock_id,conn_id),
+			LocalSQLTransaction<Level::strong>::LocalSQLTransaction(std::unique_ptr<LocalSQLConnection<l> > conn, std::ofstream& log_file)
+				:LocalSQLTransaction_super(*conn,log_file),
 				 conn(std::move(conn)){
 				trans.exec("set search_path to \"BlobStore\",public");
 				trans.exec("SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL SERIALIZABLE");
@@ -229,8 +229,8 @@ namespace myria { namespace pgsql {
 
 			//CAUSAL LAND
 
-			LocalSQLTransaction<Level::causal>::LocalSQLTransaction(std::unique_ptr<LocalSQLConnection<l> > conn, std::size_t sock_id, std::size_t conn_id)
-				:LocalSQLTransaction_super(*conn, sock_id, conn_id),
+			LocalSQLTransaction<Level::causal>::LocalSQLTransaction(std::unique_ptr<LocalSQLConnection<l> > conn, std::ofstream& log_file)
+				:LocalSQLTransaction_super(*conn, log_file),
 				 conn(std::move(conn)){
 				trans.exec("set search_path to causalstore,public");
 				trans.exec("SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL REPEATABLE READ");

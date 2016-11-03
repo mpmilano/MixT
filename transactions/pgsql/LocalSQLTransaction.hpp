@@ -7,10 +7,7 @@ namespace myria { namespace pgsql {
 
 		namespace local{
 
-			std::ofstream open_logfile(std::size_t sock_id, std::size_t conn_id){
-				return std::ofstream{std::string("/tmp/trans_event_log_server") + std::to_string(sock_id) + "-" + std::to_string(conn_id)};
-			}
-		
+	
 			enum class LocalTransactionNames{
 				exists, Del1, Del2, select_version_s_i, select_version_s_b,
 					select1, select2, Updates1, Updates2, Increment, Insert1, Insert2,
@@ -31,7 +28,7 @@ namespace myria { namespace pgsql {
 
 				pqxx::work trans;
 				bool aborted_or_committed{false};
-				std::ofstream log_file;
+				std::ofstream &log_file;
 
 				void log_receive(const std::string& s){
 					log_file << "received: " << s << std::endl;
@@ -44,7 +41,7 @@ namespace myria { namespace pgsql {
 				}
 
 				template<typename SQLConn>
-				LocalSQLTransaction_super(SQLConn &conn, std::size_t sock_id, std::size_t conn_id);
+				LocalSQLTransaction_super(SQLConn &conn, std::ofstream& log_file);
 
 				virtual ~LocalSQLTransaction_super(){
 					assert(aborted_or_committed);
@@ -165,7 +162,7 @@ namespace myria { namespace pgsql {
 				using SQLConn = LocalSQLConnection<l>;
 				std::unique_ptr<SQLConn > conn;
 
-				LocalSQLTransaction(std::unique_ptr<LocalSQLConnection<l> > conn, std::size_t sock_id, std::size_t conn_id);
+				LocalSQLTransaction(std::unique_ptr<LocalSQLConnection<l> > conn, std::ofstream& log_file);
 				
 				auto select_version_s(Table t, Name id);
 				
@@ -207,7 +204,7 @@ namespace myria { namespace pgsql {
 				using SQLConn = LocalSQLConnection<l>;
 				std::unique_ptr<SQLConn > conn;
 				
-				LocalSQLTransaction(std::unique_ptr<LocalSQLConnection<l> > conn, std::size_t sock_id, std::size_t conn_id);
+				LocalSQLTransaction(std::unique_ptr<LocalSQLConnection<l> > conn, std::ofstream& log_file);
 				
 				static constexpr int group_mapper(int k){
 					if (k < 1) assert(false && "Error: k is 1-indexed");
