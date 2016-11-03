@@ -2,6 +2,8 @@
 #include "SQLConnection.hpp"
 #include <pqxx/pqxx>
 #include "BlobUtils.hpp"
+#include <iostream>
+#include <fstream>
 
 namespace myria{
 
@@ -13,9 +15,14 @@ namespace myria{
 		struct SQLTransaction {
 			
 			GDataStore& gstore;
+			const std::string level_string = (gstore.level == Level::strong ? "strong" : "causal");
 		private:
 			LockedSQLConnection sql_conn;
 			bool remote_aborted{false};
+			std::ofstream log_file{std::string("/tmp/trans_event_log_client") + sql_conn->id};
+			void log_receive_start(const std::string&);
+			void log_receive_stop(const std::string&);
+			void log_send(const std::string&);
 		public:
 			const std::string why;
 			bool commit_on_delete = false;
@@ -24,20 +31,23 @@ namespace myria{
 			SQLTransaction(const SQLTransaction&) = delete;
 			
 			template<typename... Args>
-			void prepared(TransactionNames name, Args && ... args){
+			void prepared(const std::string& what, TransactionNames name, Args && ... args){
 				char trans{3};
+				log_send(what);
 				sql_conn->conn.send(trans,name,args...);
 			}
 
 
 			template<typename... T>
-			void receive(T& ... t){
+			void receive(const std::string &what, T& ... t){
+				log_receive_start(what);
 				sql_conn->conn.receive(t...);
+				log_receive_stop(what);
 			}
 
 			void check_serialization_failure()  {
 				char failed{-1};
-				receive(failed);
+				receive(level_string + " check_failure", failed);
 				assert(failed != -1);
 				assert(failed == 1 || failed == 0);
 				if (failed == 1){
@@ -47,93 +57,96 @@ namespace myria{
 			}
 			
 			bool exists(Name n){
-				prepared(TransactionNames::exists,n);
+				prepared(level_string + " exists",TransactionNames::exists,n);
 				check_serialization_failure();
 				bool b{false};
-				receive(b);
+				receive("exists", b);
 				return b;
 			}
 
 			void Del(Name n){
-				prepared(TransactionNames::Del,n);
+				prepared("del",TransactionNames::Del,n);
 				check_serialization_failure();
 			}
 			
 			template<typename Vers>
 			void select_version(Table t, Name n, Vers& vers){
-				prepared(TransactionNames::select_version, t,n);
+				prepared(level_string + " select version", TransactionNames::select_version, t,n);
 				check_serialization_failure();
-				receive(vers);
+				receive(level_string + " select version",vers);
 			}
 
 			template<typename Vers>
 			std::vector<char> select_version_data(Table t, Name n, Vers& vers){
-				prepared(TransactionNames::select_version_data,t,n);
+				prepared(level_string + " selct_version_data",TransactionNames::select_version_data,t,n);
 				check_serialization_failure();
-				receive(vers);
+				receive(level_string + " select_version_data",vers);
 				std::vector<char> v;
 				if (t == Table::BlobStore) {
 					std::size_t size{0};
-					receive(size);
+					receive(level_string + " blob_store size",size);
 					v.resize(size);
 				}
 				else {
 					v.resize(sizeof(int));
 					
 				}
+				log_receive_start(level_string + " receive data");
 				sql_conn->conn.receive(v.size(),v.data());
+				log_receive_stop(level_string + " receive data");
 				return v;
 			}
 
 			template<typename Data, typename Vers>
 			void update_data(Table t, Name n, Data &d, Vers& vers){
 				assert(gstore.level == Level::strong);
-				prepared(TransactionNames::update_data, t,n,d);
+				prepared("update_data, strong",TransactionNames::update_data, t,n,d);
 				check_serialization_failure();
-				receive(vers);
+				receive("update_data version, strong", vers);
 			}
 
 			template<typename RG, typename Data, typename Vers, typename Clock>
 			void update_data(Table t, const RG& rg, Name n, const Clock& c, Data &d, Vers& vers){
 				assert(gstore.level == Level::causal);
-				prepared(TransactionNames::update_data,t,rg,n,c,d);
+				prepared("update_data, causal",TransactionNames::update_data,t,rg,n,c,d);
 				check_serialization_failure();
-				receive(vers);
+				receive("update_data version, causal", vers);
 			}
 
 			template<typename Blob>
 			void initialize_with_id(Table t, Name id, const Blob &b) {
 				assert(gstore.level == Level::strong);
-				prepared(TransactionNames::initialize_with_id,t,id,b);
+				prepared("initialize_with_id, strong",TransactionNames::initialize_with_id,t,id,b);
 				check_serialization_failure();
 			}
 			
 			template<typename RG, typename Clock, typename Blob>
 			void initialize_with_id(Table t, const RG& rg, Name id, const Clock& c, const Blob &b){
 				assert(gstore.level == Level::causal);
-				prepared(TransactionNames::initialize_with_id,t,rg,id,c,b);
+				prepared("initialize_with_id, causal",TransactionNames::initialize_with_id,t,rg,id,c,b);
 				check_serialization_failure();
 			}
 
 			template<typename Vers>
 			void increment(Name n, Vers& vers){
 				assert(gstore.level == Level::strong);
-				prepared(TransactionNames::increment,n);
+				prepared("increment, strong",TransactionNames::increment,n);
 				check_serialization_failure();
-				receive(vers);
+				receive("increment, strong", vers);
 			}
 
 			template<typename RG, typename Vers, typename Clock>
 			void increment(const RG& rg, Name n, const Clock& c, Vers& vers){
 				assert(gstore.level == Level::causal);
-				prepared(TransactionNames::increment,rg,n,c);
+				prepared("increment, causal",TransactionNames::increment,rg,n,c);
 				check_serialization_failure();
-				receive(vers);
+				receive("increment, causal", vers);
 			}
 
 
 			bool store_commit(){
 				char trans{0};
+				log_send(level_string + " commit");
 				sql_conn->conn.send(trans);
 				check_serialization_failure();
 				return true;

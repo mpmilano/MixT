@@ -1,10 +1,15 @@
 #pragma once
 #include "SQLConstants.hpp"
 #include <pqxx/result>
+#include <fstream>
 
 namespace myria { namespace pgsql {
 
 		namespace local{
+
+			std::ofstream open_logfile(std::size_t sock_id, std::size_t conn_id){
+				return std::ofstream{std::string("/tmp/trans_event_log_server") + std::to_string(sock_id) + "-" + std::to_string(conn_id)};
+			}
 		
 			enum class LocalTransactionNames{
 				exists, Del1, Del2, select_version_s_i, select_version_s_b,
@@ -23,18 +28,30 @@ namespace myria { namespace pgsql {
 			
 			class LocalSQLTransaction_super{
 			public:
+
 				pqxx::work trans;
 				bool aborted_or_committed{false};
+				std::ofstream log_file;
+
+				void log_receive(const std::string& s){
+					log_file << "received: " << s << std::endl;
+					log_file.flush();
+				}
+				
+				void log_send(const std::string& s){
+					log_file << "sent: " << s << std::endl;
+					log_file.flush();
+				}
 
 				template<typename SQLConn>
-				LocalSQLTransaction_super(SQLConn &conn);
+				LocalSQLTransaction_super(SQLConn &conn, std::size_t sock_id, std::size_t conn_id);
 
 				virtual ~LocalSQLTransaction_super(){
 					assert(aborted_or_committed);
 				}
 
 				template<typename T>
-				void sendBack(const T& t, mutils::connection& socket);
+				void sendBack(const std::string&, const T& t, mutils::connection& socket);
 
 				template<typename E>
 				auto exec_prepared_hlpr(E &e);
@@ -49,6 +66,7 @@ namespace myria { namespace pgsql {
 				template<typename LocalSQLTransaction>
 				typename std::unique_ptr<typename LocalSQLTransaction::SQLConn>
 				store_commit(std::unique_ptr<LocalSQLTransaction> o, mutils::connection& socket) {
+					log_receive("commit");
 					try{
 						o->trans.commit();
 						o->aborted_or_committed = true;
@@ -93,24 +111,31 @@ namespace myria { namespace pgsql {
 					try{
 						switch(name){
 						case TransactionNames::exists:
+							log_receive("exists");
 							o->obj_exists(*from_bytes<Name>(&o->dsm,bytes),socket);
 							break;
 						case TransactionNames::Del:
+							log_receive("del");
 							o->remove(*from_bytes<Name>(&o->dsm,bytes),socket);
 							break;
 						case TransactionNames::select_version:
+							log_receive("select_version");
 							o->select_version(bytes,socket);
 							break;
 						case TransactionNames::select_version_data:
+							log_receive("select-version-data");
 							o->select_version_data(bytes,socket);
 							break;
 						case TransactionNames::update_data:
+							log_receive("update-data");
 							o->update_data(bytes,socket);
 							break;
 						case TransactionNames::initialize_with_id:
+							log_receive("initialize-with-id");
 							o->initialize_with_id(bytes,socket);
 							break;
 						case TransactionNames::increment:
+							log_receive("increment");
 							o->increment(bytes,socket);
 							break;
 						case TransactionNames::MAX:
@@ -140,7 +165,7 @@ namespace myria { namespace pgsql {
 				using SQLConn = LocalSQLConnection<l>;
 				std::unique_ptr<SQLConn > conn;
 
-				LocalSQLTransaction(std::unique_ptr<LocalSQLConnection<l> > conn);
+				LocalSQLTransaction(std::unique_ptr<LocalSQLConnection<l> > conn, std::size_t sock_id, std::size_t conn_id);
 				
 				auto select_version_s(Table t, Name id);
 				
@@ -182,7 +207,7 @@ namespace myria { namespace pgsql {
 				using SQLConn = LocalSQLConnection<l>;
 				std::unique_ptr<SQLConn > conn;
 				
-				LocalSQLTransaction(std::unique_ptr<LocalSQLConnection<l> > conn);
+				LocalSQLTransaction(std::unique_ptr<LocalSQLConnection<l> > conn, std::size_t sock_id, std::size_t conn_id);
 				
 				static constexpr int group_mapper(int k){
 					if (k < 1) assert(false && "Error: k is 1-indexed");

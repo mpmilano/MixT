@@ -24,6 +24,7 @@ namespace myria{ namespace pgsql {
 			assert(!sql_conn->in_trans());
 			sql_conn->current_trans = this;
 			char start_trans{4};
+			log_send(level_string + " start");
 			sql_conn->conn.send(start_trans);
 		}
 		
@@ -35,6 +36,7 @@ namespace myria{ namespace pgsql {
 		void SQLTransaction::store_abort(){
 			if(!remote_aborted){
 				char trans{1};
+				log_send(level_string + " abort");
 				sql_conn->conn.send(trans);
 			}
 			commit_on_delete = false;
@@ -51,6 +53,20 @@ namespace myria{ namespace pgsql {
 			else {
 				store_abort();
 			}
+		}
+
+		void SQLTransaction::log_receive_start(const std::string& event_id){
+			log_file << "starting " << event_id << std::endl;
+			log_file.flush();
+		}
+		void SQLTransaction::log_receive_stop(const std::string& event_id){
+			log_file << "done " << event_id << std::endl;
+			log_file.flush();
+		}
+		
+		void SQLTransaction::log_send(const std::string& event_id){
+			log_file << "sending " << event_id << std::endl;
+			log_file.flush();
 		}
 	}
 }

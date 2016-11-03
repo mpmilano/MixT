@@ -16,7 +16,7 @@ namespace myria { namespace pgsql {
 					"select ID from \"BlobStore\" where id = $1 union select id from \"IntStore\" where id = $1 limit 1";
 				auto r = trans.prepared(*trans.conn, LocalTransactionNames::exists,query,id);
 				trans.all_fine(socket);
-				trans.sendBack(r.size() > 0,socket);
+				trans.sendBack("obj_exists", r.size() > 0,socket);
 			}
 
 			template<typename Trans>
@@ -32,12 +32,15 @@ namespace myria { namespace pgsql {
 
 			
 			template<typename SQLConn>
-			LocalSQLTransaction_super::LocalSQLTransaction_super(SQLConn &conn):
-				trans(conn.conn)
-			{}
+			LocalSQLTransaction_super::LocalSQLTransaction_super(SQLConn &conn, std::size_t sock_id, std::size_t conn_id):
+				trans(conn.conn),log_file(open_logfile(sock_id,conn_id))
+			{
+				log_receive("transaction start");
+			}
 		
 			template<typename T>
-			void LocalSQLTransaction_super::sendBack(const T& t,mutils::connection& socket){
+			void LocalSQLTransaction_super::sendBack(const std::string &message, const T& t,mutils::connection& socket){
+				log_send(message);
 				socket.send(t);
 			}
 			
@@ -68,8 +71,8 @@ namespace myria { namespace pgsql {
 			
 			//STRONG SECTION
 
-			LocalSQLTransaction<Level::strong>::LocalSQLTransaction(std::unique_ptr<LocalSQLConnection<l> > conn)
-				:LocalSQLTransaction_super(*conn),
+			LocalSQLTransaction<Level::strong>::LocalSQLTransaction(std::unique_ptr<LocalSQLConnection<l> > conn, std::size_t sock_id, std::size_t conn_id)
+				:LocalSQLTransaction_super(*conn,sock_id,conn_id),
 				 conn(std::move(conn)){
 				trans.exec("set search_path to \"BlobStore\",public");
 				trans.exec("SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL SERIALIZABLE");
@@ -155,7 +158,7 @@ namespace myria { namespace pgsql {
 				auto id = mutils::from_bytes<Name>(&this->dsm,bytes + mutils::bytes_size(*table));
 				auto r = select_version_s(*table,*id);
 				all_fine(socket);
-				sendBack(extract_version(r), socket);
+				sendBack("select_version", extract_version(r), socket);
 			}
 				
 			void LocalSQLTransaction<Level::strong>::select_version_data(char const * const bytes, mutils::connection& socket){
@@ -163,16 +166,16 @@ namespace myria { namespace pgsql {
 				auto id = mutils::from_bytes<Name>(&this->dsm,bytes + mutils::bytes_size(*table));
 				auto r = select_version_data_s(*table,*id);
 				all_fine(socket);
-				sendBack(extract_version(r),socket);
+				sendBack("version", extract_version(r),socket);
 				if (*table == Table::BlobStore){
 					pqxx::binarystring bs{r[0][1]};
-					sendBack(mutils::Bytes{(char*)bs.data(),bs.size()},socket);
+					sendBack("data",mutils::Bytes{(char*)bs.data(),bs.size()},socket);
 				}
 				else {
 					int send{-1};
 					r[0][1].to(send);
 					assert(send >= 0);
-					sendBack(send,socket);
+					sendBack("data",send,socket);
 				}
 			}
 				
@@ -182,7 +185,7 @@ namespace myria { namespace pgsql {
 					auto offset = from_bytes_v(&this->dsm,bytes,t,k,id,ends);
 					auto r = update_data_s(*t,*id,bytes + offset);
 					all_fine(socket);
-					sendBack(extract_version(r),socket);
+					sendBack("version",extract_version(r),socket);
 				}
 				
 			void LocalSQLTransaction<Level::strong>::initialize_with_id(char const * const bytes, mutils::connection& socket){
@@ -195,21 +198,24 @@ namespace myria { namespace pgsql {
 			void LocalSQLTransaction<Level::strong>::increment(char const * const bytes, mutils::connection& socket){
 					auto r = increment_s(Table::IntStore,*from_bytes<Name>(&this->dsm,bytes));
 					all_fine(socket);
-					sendBack(extract_version(r),socket);
+					sendBack("version",extract_version(r),socket);
 				}
 
 			std::unique_ptr<LocalSQLConnection<Level::strong> > LocalSQLTransaction<Level::strong>::store_abort(std::unique_ptr<LocalSQLTransaction<Level::strong> > o,mutils::connection& ) {
+				o->log_receive("aborting");
 				o->aborted_or_committed = true;
 				return std::move(o->conn);
 			}
 
 			void LocalSQLTransaction<Level::strong>::indicate_serialization_failure(mutils::connection& socket) {
 				char abort{1};
+				log_send("serialization failure");
 				socket.send(abort);
 			}
 
 			void LocalSQLTransaction<Level::strong>::all_fine(mutils::connection& socket) {
 				char ok{0};
+				log_send("all fine");
 				socket.send(ok);
 			}
 
@@ -217,8 +223,8 @@ namespace myria { namespace pgsql {
 
 			//CAUSAL LAND
 
-			LocalSQLTransaction<Level::causal>::LocalSQLTransaction(std::unique_ptr<LocalSQLConnection<l> > conn)
-				:LocalSQLTransaction_super(*conn),
+			LocalSQLTransaction<Level::causal>::LocalSQLTransaction(std::unique_ptr<LocalSQLConnection<l> > conn, std::size_t sock_id, std::size_t conn_id)
+				:LocalSQLTransaction_super(*conn, sock_id, conn_id),
 				 conn(std::move(conn)){
 				trans.exec("set search_path to causalstore,public");
 				trans.exec("SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL REPEATABLE READ");
@@ -333,7 +339,7 @@ namespace myria { namespace pgsql {
 					auto id = mutils::from_bytes<Name>(&this->dsm,bytes + mutils::bytes_size(*table));
 					auto r = select_version_c(*table,*id);
 					all_fine(socket);
-					sendBack(extract_version(r),socket);
+					sendBack("version",extract_version(r),socket);
 				}
 				
 			void LocalSQLTransaction<Level::causal>::select_version_data(char const * const bytes, mutils::connection& socket){
@@ -341,16 +347,16 @@ namespace myria { namespace pgsql {
 					auto id = mutils::from_bytes<Name>(&this->dsm,bytes + mutils::bytes_size(*table));
 					auto r = select_version_data_c(*table,*id);
 					all_fine(socket);
-					sendBack(extract_version(r),socket);
+					sendBack("version",extract_version(r),socket);
 					if (*table == Table::BlobStore){
 						pqxx::binarystring bs{r[0][4]};
-						sendBack(mutils::Bytes{(char*)bs.data(),bs.size()},socket);
+						sendBack("data",mutils::Bytes{(char*)bs.data(),bs.size()},socket);
 					}
 					else {
 						int send{-1};
 						r[0][4].to(send);
 						assert(send >= 0);
-						sendBack(send,socket);
+						sendBack("data",send,socket);
 					}
 				}
 			void LocalSQLTransaction<Level::causal>::update_data(char const * const bytes,mutils::connection& socket){
@@ -359,7 +365,7 @@ namespace myria { namespace pgsql {
 					auto size = from_bytes_v(&this->dsm,bytes,t,k,id,ends);
 					auto r = update_data_c(*t,*k,*id,*ends,bytes + size);
 					all_fine(socket);
-					sendBack(extract_version(r),socket);
+					sendBack("version",extract_version(r),socket);
 				}
 			void LocalSQLTransaction<Level::causal>::initialize_with_id(char const * const bytes,mutils::connection& socket){
 					std::unique_ptr<Table> t; std::unique_ptr<int> k; std::unique_ptr<Name> id;
@@ -374,21 +380,24 @@ namespace myria { namespace pgsql {
 					from_bytes_v(&this->dsm,bytes,k,id,ends);
 					auto r = increment_c(Table::IntStore,*k,*id,*ends);
 					all_fine(socket);
-					sendBack(extract_version(r),socket);
+					sendBack("version",extract_version(r),socket);
 				}
 
 			std::unique_ptr<LocalSQLConnection<Level::causal> > LocalSQLTransaction<Level::causal>::store_abort(std::unique_ptr<LocalSQLTransaction<Level::causal> > o,mutils::connection& ) {
 				o->aborted_or_committed = true;
+				o->log_receive("aborting");
 				return std::move(o->conn);
 				}
 			
 			void LocalSQLTransaction<Level::causal>::indicate_serialization_failure(mutils::connection& socket) {
 				char abort{1};
+				log_send("serialization failure");
 				socket.send(abort);
 			}
 
 			void LocalSQLTransaction<Level::causal>::all_fine(mutils::connection& socket) {
 				char ok{0};
+				log_send("all fine");
 				socket.send(ok);
 			}
 
