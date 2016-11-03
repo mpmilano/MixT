@@ -76,8 +76,9 @@ namespace myria {
 								current_trans->log_file.flush();
 							}
 							else {
-								open_logfile() << "done processing this request; transaction was destroyed"
-											   << std::endl;
+								open_logfile(sock_id, conn_id)
+									<< "done processing this request; transaction was destroyed"
+									<< std::endl;
 							}
 						}
 						ReceiverFun(ReceiverFun&& o)
