@@ -65,7 +65,13 @@ namespace myria { namespace pgsql {
 					sql_conn.prepared[nameint] = true;
 				}
 				auto fwd = trans.prepared(namestr)(std::forward<Arg1>(a1));
-				
+
+				log_file << "beginning actual SQL command" << std::endl;
+				log_file.flush();
+				mutils::AtScopeEnd ase{[&](){
+						log_file << "SQL command complete" << std::endl;
+						log_file.flush();
+					}};
 				return exec_prepared_hlpr(fwd,std::forward<Args>(args)...);
 			}
 			
