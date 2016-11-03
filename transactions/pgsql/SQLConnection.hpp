@@ -32,7 +32,7 @@ namespace myria{ namespace pgsql {
 			const std::string id;
 			SQLTransaction* current_trans{nullptr};
 			bool in_trans() const;
-			SQLConnection(connection conn):conn{std::move(conn)},id(std::to_string(conn.id) + "-" + std::to_string(conn.sock.sock.raw_fd())){}
+			SQLConnection(connection conn):conn{std::move(conn)},id(std::to_string(conn.id) + "-" + std::to_string(conn.sock.socket_id)){}
 		};
 		
 		using LockedSQLConnection = mutils::ResourcePool<SQLConnection>::LockedResource;

@@ -70,7 +70,15 @@ namespace myria {
 								db_connection = std::move(pair.second);
 								assert(current_trans || db_connection);
 							}
-							
+
+							if (current_trans){
+								current_trans->log_file << "done processing this request" << std::endl;
+								current_trans->log_file.flush();
+							}
+							else {
+								open_logfile() << "done processing this request; transaction was destroyed"
+											   << std::endl;
+							}
 						}
 						ReceiverFun(ReceiverFun&& o)
 							:sock_id(o.sock_id),
