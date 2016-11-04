@@ -165,7 +165,7 @@ std::string PreparedTest<Mem,Arg>::run_tests(Meta& meta, bool (*stop) (Meta&, Po
 	
 	std::stringstream ss;
 	int old_size = 0;
-	for (unsigned int timeout = 0; timeout < 5 && !futures->empty(); ){
+	for (unsigned int timeout = 0; true || timeout < 5 && !futures->empty() ; ){
 		if (old_size == futures->size()) ++timeout;
 		old_size = futures->size();
 		std::cout << futures->size() << " tasks remain" << std::endl;
