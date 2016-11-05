@@ -1,8 +1,4 @@
 #echo `whoami` "is now here: " `pwd` "with id" $1
-export extra_macro_defs="-D$2 -DWRITE_PERCENT=$3 -DSTRONG_PERCENT=$4"
-export causalGroup="$1"
-export MY_IP="$5"
-shift 5
 cd
 cd consistency-tester/transactions/
 git checkout pg_env.sh
@@ -32,6 +28,10 @@ then cd mutils-networking;  git checkout master; git pull;  cd ..
 else git clone https://github.com/mpmilano/mutils-networking.git
 fi
 source pg_env.sh
+export extra_macro_defs="-D$2 -DWRITE_PERCENT=$3 -DSTRONG_PERCENT=$4"
+export causalGroup="$1"
+export MY_IP="$5"
+shift 5
 killall -9 vm
 rm /tmp/Myria*
 first_iter=$8
