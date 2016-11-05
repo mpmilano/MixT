@@ -7,10 +7,16 @@ strong_target=$6
 causal_target_1=$7
 causal_target_2=$8
 starting_rate=$9
-increase_by=$10
-increase_delay=$11
-test_stop_time=$12
-first_iter=$13
+shift
+increase_by=$9
+shift
+increase_delay=$9
+shift
+test_stop_time=$9
+shift
+first_iter=$9
+
+echo $increase_by
 
 scp  -o "UserKnownHostsFile /dev/null" -o strictHostKeyChecking=no -i MyriaInstances.pem vm-actions.sh ubuntu@"$foo":vm-actions.sh
 scp  -o "UserKnownHostsFile /dev/null" -o strictHostKeyChecking=no -i MyriaInstances.pem as-gentoo.sh ubuntu@"$foo":as-gentoo.sh

@@ -1,4 +1,8 @@
 #echo `whoami` "is now here: " `pwd` "with id" $1
+export extra_macro_defs="-D$2 -DWRITE_PERCENT=$3 -DSTRONG_PERCENT=$4"
+export causalGroup="$1"
+export MY_IP="$5"
+shift 5
 cd
 cd consistency-tester/transactions/
 git checkout pg_env.sh
@@ -30,11 +34,12 @@ fi
 source pg_env.sh
 killall -9 vm
 rm /tmp/Myria*
+first_iter=$8
 if [[ $first_iter ]];
 then make clean
 else rm vm_main.o; rm vm
 fi
-extra_macro_defs="-D$2 -DWRITE_PERCENT=$3 -DSTRONG_PERCENT=$4" causalGroup="$1" MY_IP="$5" CAUSAL_REMOTE_IP_1="$7" CAUSAL_REMOTE_IP_2="$8"  STRONG_REMOTE_IP="$6" starting_rate=$9 increase_by=$10 increase_delay=$11 test_stop_time=$12 make -j4 vm
+ CAUSAL_REMOTE_IP_1="$2" CAUSAL_REMOTE_IP_2="$3"  STRONG_REMOTE_IP="$1" starting_rate=$4 increase_by=$5 increase_delay=$6 test_stop_time=$7 make -j4 vm
 ./vm
 wait
 echo "done waiting"

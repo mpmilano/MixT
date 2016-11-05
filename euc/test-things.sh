@@ -46,7 +46,7 @@ then
 	exit 1
 fi
 
-
+echo "$increase_by"
 
 for write_percent in $write_percentages; do 
 	for strong_percent in $strong_percentages; do
