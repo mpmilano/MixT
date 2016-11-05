@@ -76,13 +76,13 @@ struct SupportedOperation {
 			operation_impl(DataStore &ds):ds(ds){}
 			
 			return_raw act(std::true_type*, mtl::TransactionContext* _ctx,typename convert_SelfType<Handle&>::template act<Args>... a){
-				auto *ctx = dynamic_cast<typename DataStore::StoreContext*>(_ctx->template get_store_context<DataStore::level>(ds,"operation!").get());
+				auto *ctx = dynamic_cast<typename DataStore::StoreContext*>(_ctx->template get_store_context<DataStore::level>(ds whendebug(,"operation!")).get());
 				return ds.operation(_ctx,*ctx,OperationIdentifier<Name>{nullptr},
 									this->template reduce_selfTypes(((Args*)nullptr), a)...);
 			}
 
 			std::nullptr_t act(std::false_type*, mtl::TransactionContext* _ctx,typename convert_SelfType<Handle&>::template act<Args>... a){
-				auto *ctx = dynamic_cast<typename DataStore::StoreContext*>(_ctx->template get_store_context<DataStore::level>(ds,"operation!").get());
+				auto *ctx = dynamic_cast<typename DataStore::StoreContext*>(_ctx->template get_store_context<DataStore::level>(ds whendebug(,"operation!")).get());
 				ds.operation(_ctx,*ctx,OperationIdentifier<Name>{nullptr},
 									this->template reduce_selfTypes(((Args*)nullptr), a)...);
 				return nullptr;

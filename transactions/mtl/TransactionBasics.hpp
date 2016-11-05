@@ -65,16 +65,26 @@ namespace myria {
 			void full_abort();
 			
 			template<Level lev, typename Store>
-			auto& get_store_context(Store& str, const std::string& why){
+			auto& get_store_context(Store& str
+#ifndef NDEBUG
+									, const std::string& why
+#endif
+				){
 				choose_strong<lev> choice{nullptr}; //true_type when lev == strong
 				auto& store_ctx = get_store_context(choice);
 				if (store_ctx.get() == nullptr){
 					assert(!str.in_transaction());
 					assert(trackingContext);
 					assert(trackingContext->logger);
+#ifndef NDEBUG
 					std::stringstream strem;
 					strem << "thread " << std::this_thread::get_id() << " called get_store_context: " << why;
-					store_ctx.reset(str.begin_transaction(trackingContext->logger,strem.str()).release());
+#endif
+					store_ctx.reset(str.begin_transaction(trackingContext->logger
+#ifndef NDEBUG
+														  ,strem.str()
+#endif
+										).release());
 					assert(trackingContext->logger);
 				}
 				return store_ctx;

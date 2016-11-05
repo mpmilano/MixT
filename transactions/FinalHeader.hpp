@@ -12,6 +12,8 @@ namespace myria{
 	template<Level l1, Level l2, typename T, HandleAccess HA, typename...  ops>
 	std::enable_if_t<l1 != l2, std::shared_ptr<Handle<l1,HA,T,ops...> > > release_delete(Handle<l2,HA,T,ops...>* ){
 		assert(false && "this should be unreachable");
+		struct dead_code{};
+		throw dead_code{};
 	}
 
 	template<Level l, HandleAccess ha, typename T, typename... ops>

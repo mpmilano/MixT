@@ -19,30 +19,32 @@ namespace myria{
 		private:
 			LockedSQLConnection sql_conn;
 			bool remote_aborted{false};
-			std::ofstream &log_file{sql_conn->conn.log_file};
-			void log_receive_start(const std::string&);
-			void log_receive_stop(const std::string&);
-			void log_send(const std::string&);
+#define log_receive_start(...) ;
+#define log_receive_stop(...) ;
+#define log_send(...) ;
+
 		public:
+#ifndef NDEBUG
 			const std::string why;
+#endif
 			bool commit_on_delete = false;
-			SQLTransaction(GDataStore& store, LockedSQLConnection c, std::string why);
+			SQLTransaction(GDataStore& store, LockedSQLConnection c whendebug(, std::string why));
 	
 			SQLTransaction(const SQLTransaction&) = delete;
 			
 			template<typename... Args>
-			void prepared(const std::string& what, TransactionNames name, Args && ... args){
+			void prepared(const std::string& , TransactionNames name, Args && ... args){
 				char trans{3};
-				log_send(what);
+				//log_send(what);
 				sql_conn->conn.send(trans,name,args...);
 			}
 
 
 			template<typename... T>
-			void receive(const std::string &what, T& ... t){
-				log_receive_start(what);
+			void receive(const std::string &, T& ... t){
+				//log_receive_start(what);
 				sql_conn->conn.receive(t...);
-				log_receive_stop(what);
+				//log_receive_stop(what);
 			}
 
 			void check_serialization_failure()  {

@@ -86,12 +86,14 @@ namespace synth_test {
                 return start_time;
 	}
 
+#ifndef NDEBUG
 	template<typename Strong, typename Causal>
 	void store_asserts(Strong &strong, Causal& causal, Tracker &trk){
 		assert(!strong.in_transaction());
 		assert(!causal.in_transaction());
 		assert(!trk.get_StrongStore().in_transaction());
 	}
+#endif
 	
 	template<typename Hndl>
 	void perform_increment(unique_ptr<VMObjectLog>& log_messages,
@@ -151,9 +153,10 @@ namespace synth_test {
 		std::unique_ptr<VMObjectLog> log_messages;
 		log_start(mem,log_messages,_start_time);
 		SQLStore<Level::strong> &strong = mem.i->ss.inst_strong();
-		SQLStore<Level::causal> &causal = mem.i->sc.inst_causal();
 		auto &trk = mem.trk;
-		store_asserts(strong,causal,trk);
+#ifndef NDEBUG
+		store_asserts(strong,mem.i->sc.inst_causal(),trk);
+#endif
 		perform_operation(log_messages, trk,
 						  strong.template existingObject<HandleAccess::all,int>(log_messages,name),
 						  perform_increment
@@ -167,10 +170,11 @@ namespace synth_test {
 		std::unique_ptr<VMObjectLog> log_messages;
 		log_start(mem,log_messages,_start_time);
 		assert(log_messages);
-		SQLStore<Level::strong> &strong = mem.i->ss.inst_strong();
 		SQLStore<Level::causal> &causal = mem.i->sc.inst_causal();
 		auto &trk = mem.trk;
-		store_asserts(strong,causal,trk);
+#ifndef NDEBUG
+		store_asserts(mem.i->ss.inst_strong(),causal,trk);
+#endif
 		perform_operation(log_messages,trk,
 						  causal.template existingObject<HandleAccess::all,int>(log_messages,name),
 						  perform_increment
@@ -185,9 +189,10 @@ namespace synth_test {
 		std::unique_ptr<VMObjectLog> log_messages;
 		log_start(mem,log_messages,_start_time);
 		SQLStore<Level::strong> &strong = mem.i->ss.inst_strong();
-		SQLStore<Level::causal> &causal = mem.i->sc.inst_causal();
 		auto &trk = mem.trk;
-		store_asserts(strong,causal,trk);
+#ifndef NDEBUG
+		store_asserts(strong,mem.i->sc.inst_causal(),trk);
+#endif
 		perform_operation(log_messages, trk,
 						  strong.template existingObject<HandleAccess::all,int>(log_messages,name),
 						  perform_read
@@ -200,10 +205,11 @@ namespace synth_test {
 		auto name = get_name_read(0.5);
 		std::unique_ptr<VMObjectLog> log_messages;
 		log_start(mem,log_messages,_start_time);
-		SQLStore<Level::strong> &strong = mem.i->ss.inst_strong();
 		SQLStore<Level::causal> &causal = mem.i->sc.inst_causal();
 		auto &trk = mem.trk;
-		store_asserts(strong,causal,trk);
+#ifndef NDEBUG
+		store_asserts(mem.i->ss.inst_strong(),causal,trk);
+#endif
 		perform_operation(log_messages,trk,
 						  causal.template existingObject<HandleAccess::all,int>(log_messages,name),
 						  perform_read
@@ -234,6 +240,7 @@ namespace synth_test {
 			if (!do_write && is_strong) return pair<int,fake_time>(2,micros(elapsed_time()));
 			if (!do_write && !is_strong) return pair<int,fake_time>(3,micros(elapsed_time()));
 			assert(false);
+			struct dead_code{}; throw dead_code{};
 		}
 
 		bool stop (Pool&) const {
@@ -279,10 +286,12 @@ namespace synth_test {
 }
 
 int real_main(){
+#ifndef NDEBUG
 	{
 		constexpr auto debug_ip = decode_ip("23.163.4.2");
 		assert(decode_ip(std::string{"23.163.4.2"}) == debug_ip);
 	}
+#endif
 
 	std::cout << "In configuration; " << (causal_enabled ? "with causal" : " with only strong" ) << std::endl;
 	ofstream logFile;

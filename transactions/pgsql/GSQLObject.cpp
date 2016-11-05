@@ -44,10 +44,13 @@ namespace myria{ namespace pgsql {
 		SQLStore_impl::GSQLObject::GSQLObject(SQLStore_impl::GSQLObject&& gso)
 			:i(gso.i){gso.i = nullptr;}
 
-				SQLStore_impl::GSQLObject::GSQLObject(SQLStore_impl &ss, Table t, Name id, int size)
+		SQLStore_impl::GSQLObject::GSQLObject(SQLStore_impl &ss, Table t, Name id, int size)
 			:i(new Internals{t,id,size,ss,nullptr}){
 			i->buf1 = (char*) malloc(size);
-			auto b = load(nullptr);
+#ifndef NDEBUG
+			auto b =
+#endif
+				load(nullptr);
 			assert(b);
 		}
 

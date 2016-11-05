@@ -14,6 +14,7 @@ namespace myria { namespace mtl {
 
 		std::tuple<> gt_environment_expressions(std::nullptr_t const * const){
 			assert(false && "cannot retrieve handles, replacement failed!");
+			struct dead_code{}; throw dead_code{};
 		}
 
 		VarScopeEnd end_var_scope() {

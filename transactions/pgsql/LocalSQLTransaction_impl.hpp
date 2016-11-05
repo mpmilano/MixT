@@ -32,14 +32,14 @@ namespace myria { namespace pgsql {
 
 			
 			template<typename SQLConn>
-			LocalSQLTransaction_super::LocalSQLTransaction_super(SQLConn &conn, std::ofstream& log_file):
-				trans(conn.conn),log_file(log_file)
+			LocalSQLTransaction_super::LocalSQLTransaction_super(SQLConn &conn):
+				trans(conn.conn)
 			{
 				log_receive("transaction start");
 			}
 		
 			template<typename T>
-			void LocalSQLTransaction_super::sendBack(const std::string &message, const T& t,mutils::connection& socket){
+			void LocalSQLTransaction_super::sendBack(const std::string &, const T& t,mutils::connection& socket){
 				log_send(message);
 				socket.send(t);
 			}
@@ -66,19 +66,20 @@ namespace myria { namespace pgsql {
 				}
 				auto fwd = trans.prepared(namestr)(std::forward<Arg1>(a1));
 
+				/*
 				log_file << "beginning actual SQL command" << std::endl;
 				log_file.flush();
 				mutils::AtScopeEnd ase{[&](){
 						log_file << "SQL command complete" << std::endl;
 						log_file.flush();
-					}};
+					}};//*/
 				return exec_prepared_hlpr(fwd,std::forward<Args>(args)...);
 			}
 			
 			//STRONG SECTION
 
-			LocalSQLTransaction<Level::strong>::LocalSQLTransaction(std::unique_ptr<LocalSQLConnection<l> > conn, std::ofstream& log_file)
-				:LocalSQLTransaction_super(*conn,log_file),
+			LocalSQLTransaction<Level::strong>::LocalSQLTransaction(std::unique_ptr<LocalSQLConnection<l> > conn)
+				:LocalSQLTransaction_super(*conn),
 				 conn(std::move(conn)){
 				trans.exec("set search_path to \"BlobStore\",public");
 				trans.exec("SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL SERIALIZABLE");
@@ -109,6 +110,7 @@ namespace myria { namespace pgsql {
 					case Table::IntStore : return prepared(*conn,LocalTransactionNames::select2,is,id); 
 					}
 					assert(false && "forgot a case");
+					struct dead_code{}; throw dead_code{};
 				}				
 
 				auto LocalSQLTransaction<Level::strong>::update_data_s(Table t, Name id, char const * const b){
@@ -121,6 +123,7 @@ namespace myria { namespace pgsql {
 					case Table::IntStore : return prepared(*conn,LocalTransactionNames::Updates2,is,id,((int*)b)[0]);
 					}
 					assert(false && "forgot a case");
+					struct dead_code{}; throw dead_code{};
 				}
 				
 				auto LocalSQLTransaction<Level::strong>::increment_s(Table t, Name id){
@@ -141,6 +144,7 @@ namespace myria { namespace pgsql {
 					case Table::IntStore : prepared(*conn,LocalTransactionNames::Insert2,is,id,b,((int*)b)[0]); return;
 					}
 					assert(false && "forgot a case");
+					struct dead_code{}; throw dead_code{};
 				}
 
 			auto LocalSQLTransaction<Level::strong>::extract_version(const pqxx::result &res){
@@ -208,7 +212,7 @@ namespace myria { namespace pgsql {
 				}
 
 			std::unique_ptr<LocalSQLConnection<Level::strong> > LocalSQLTransaction<Level::strong>::store_abort(std::unique_ptr<LocalSQLTransaction<Level::strong> > o,mutils::connection& ) {
-				o->log_receive("aborting");
+				//o->log_receive("aborting");
 				o->aborted_or_committed = true;
 				return std::move(o->conn);
 			}
@@ -229,8 +233,8 @@ namespace myria { namespace pgsql {
 
 			//CAUSAL LAND
 
-			LocalSQLTransaction<Level::causal>::LocalSQLTransaction(std::unique_ptr<LocalSQLConnection<l> > conn, std::ofstream& log_file)
-				:LocalSQLTransaction_super(*conn, log_file),
+			LocalSQLTransaction<Level::causal>::LocalSQLTransaction(std::unique_ptr<LocalSQLConnection<l> > conn)
+				:LocalSQLTransaction_super(*conn),
 				 conn(std::move(conn)){
 				trans.exec("set search_path to causalstore,public");
 				trans.exec("SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL REPEATABLE READ");
@@ -266,6 +270,7 @@ namespace myria { namespace pgsql {
 					case Table::IntStore : return prepared(*conn,LocalTransactionNames::select2,is,id); 
 					}
 				assert(false && "forgot a case");
+				struct dead_code{}; throw dead_code{};
 				}				
 
 				auto LocalSQLTransaction<Level::causal>::update_data_c(Table t, int k, Name id, const std::array<int,NUM_CAUSAL_GROUPS> &ends, char const* const b){
@@ -391,7 +396,7 @@ namespace myria { namespace pgsql {
 
 			std::unique_ptr<LocalSQLConnection<Level::causal> > LocalSQLTransaction<Level::causal>::store_abort(std::unique_ptr<LocalSQLTransaction<Level::causal> > o,mutils::connection& ) {
 				o->aborted_or_committed = true;
-				o->log_receive("aborting");
+				//o->log_receive("aborting");
 				return std::move(o->conn);
 				}
 			

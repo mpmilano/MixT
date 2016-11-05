@@ -11,7 +11,7 @@
 #include "SafeSet.hpp"
 namespace myria{ namespace pgsql {
 
-		std::unique_ptr<SQLTransaction> small_transaction(SQLStore_impl &store, const std::string &why);
+		std::unique_ptr<SQLTransaction> small_transaction(SQLStore_impl &store whendebug(, const std::string &why));
 		
 		std::pair<std::unique_ptr<SQLTransaction>, SQLTransaction*> enter_store_transaction(SQLStore_impl& store);
 		

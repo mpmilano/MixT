@@ -52,15 +52,12 @@ namespace {
 				:ss(super.trk,strong_p),
 				 sc(super.trk,causal_p),
 				 dsm({&ss,&sc}){
-				auto pid = super.memid % (65535 - 1025); //make sure this can be used as a port numbxer
 				auto &ss = this->ss.inst();
 				auto &cs = sc.inst();
 				if (!super.trk.strongRegistered())
 					super.trk.registerStore(ss);
 				if (!super.trk.causalRegistered())
 					super.trk.registerStore(cs);
-				//I'm assuming that pid won't get larger than the number of allowable ports...
-				assert(pid + 1024 < 49151);
 			}
 		};
 		std::unique_ptr<Continue_build> i;
@@ -164,7 +161,7 @@ std::string PreparedTest<Mem,Arg>::run_tests(Meta& meta, bool (*stop) (Meta&, Po
 	std::cout << "Launches Complete.  Waiting for tasks to terminate: " << std::endl;
 	
 	std::stringstream ss;
-	int old_size = 0;
+	std::size_t old_size = 0;
 	for (unsigned int timeout = 0; timeout < 5 && !futures->empty() ; ){
 		if (old_size == futures->size()) ++timeout;
 		old_size = futures->size();

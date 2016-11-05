@@ -66,7 +66,9 @@ namespace myria { namespace mtl {
 				auto cache_stack_p = std::make_unique<std::list<std::unique_ptr<StrongCache> > >();
 				auto& cache_stack = *cache_stack_p;
 				c_old_mut.emplace<decltype(cache_stack_p)>(id,cache_stack_p.release());
+				#ifndef NDEBUG
 				const auto& c_old = c_old_mut;
+				#endif
 
 				cache_stack.emplace_back(std::make_unique<StrongCache>());
 
@@ -82,6 +84,7 @@ namespace myria { namespace mtl {
 
 				assert(c_old.contains(id));
 
+#ifndef NDEBUG
 				{
 					auto it = cache_stack.begin();
 					for (auto &c : *c_old.get<std::unique_ptr<std::list<std::unique_ptr<StrongCache> > > >(id)){
@@ -90,6 +93,7 @@ namespace myria { namespace mtl {
 					}
 					//Debugging!
 				}
+#endif
 				//TODO: error propogation
 				return true;
 			}

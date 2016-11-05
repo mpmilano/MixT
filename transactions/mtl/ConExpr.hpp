@@ -273,6 +273,7 @@ namespace myria { namespace mtl {
 		template<typename T, restrict(std::is_scalar<T>::value)>
 		T extract_type_f(T *t){
 			assert(false);
+			struct dead_code{}; throw dead_code{};
 			return *t;
 		}
 

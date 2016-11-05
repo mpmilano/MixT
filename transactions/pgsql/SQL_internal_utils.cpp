@@ -9,9 +9,9 @@ namespace myria{ namespace pgsql {
 		using namespace mutils;
 		using Internals = SQLStore_impl::GSQLObject::Internals;
 
-		unique_ptr<SQLTransaction> small_transaction(SQLStore_impl &store, const std::string &why) {
+		unique_ptr<SQLTransaction> small_transaction(SQLStore_impl &store whendebug(, const std::string &why)) {
 			unique_ptr<SQLTransaction> owner
-				((SQLTransaction*)store.begin_transaction(why).release());
+				((SQLTransaction*)store.begin_transaction(whendebug(why)).release());
 			owner->commit_on_delete = true;
 			return owner;
 		}
@@ -21,7 +21,7 @@ namespace myria{ namespace pgsql {
 			unique_ptr<SQLTransaction> t_owner;
 			SQLTransaction *trns = nullptr;
 			if (!(store).in_transaction()){
-				t_owner = small_transaction(store,"enter_store_transaction found no active transaction running");
+				t_owner = small_transaction(store whendebug(,"enter_store_transaction found no active transaction running"));
 				trns = t_owner.get();
 			}
 			else trns = (store).default_connection.lock()->current_trans;

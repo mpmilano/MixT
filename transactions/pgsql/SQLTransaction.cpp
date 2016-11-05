@@ -17,9 +17,9 @@ namespace myria{ namespace pgsql {
 		using namespace tracker;
 		using namespace mutils;
 		
-		SQLTransaction::SQLTransaction(GDataStore& store, LockedSQLConnection c, std::string why)
-			:gstore(store),sql_conn(std::move(c)),
-			 why(why)
+		SQLTransaction::SQLTransaction(GDataStore& store, LockedSQLConnection c whendebug(, std::string why))
+			:gstore(store),sql_conn(std::move(c))
+			 whendebug(,why(why))
 		{
 			assert(!sql_conn->in_trans());
 			sql_conn->current_trans = this;
@@ -55,6 +55,7 @@ namespace myria{ namespace pgsql {
 			}
 		}
 
+		/*
 		void SQLTransaction::log_receive_start(const std::string& event_id){
 			log_file << "starting " << event_id << std::endl;
 			log_file.flush();
@@ -67,6 +68,6 @@ namespace myria{ namespace pgsql {
 		void SQLTransaction::log_send(const std::string& event_id){
 			log_file << "sending " << event_id << std::endl;
 			log_file.flush();
-		}
+		}//*/
 	}
 }

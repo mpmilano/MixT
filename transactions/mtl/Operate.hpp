@@ -127,7 +127,7 @@ namespace myria{
 				 strong_call_t{[=](int id, TransactionContext* ctx, StrongCache &c, const StrongStore &s) {
 						assert(ctx);
 						eat([&](){run_ast_strong(ctx,c,s,*args); return nullptr;}()...);
-						ctx->template get_store_context<Operate::level>(first(cached(c,*args)...).store(),"Doing a strong operation");
+						ctx->template get_store_context<Operate::level>(first(cached(c,*args)...).store() whendebug(,"Doing a strong operation"));
 						auto ret = do_op_2<Name>(ctx,cached(c,*args)...);
 						c.insert(id,ret);
 						return mutils::heap_copy(ret);
@@ -151,7 +151,7 @@ namespace myria{
 				 causal_call_t{[=](int id, TransactionContext* ctx, CausalCache &c, const CausalStore &s) {
 						 assert(ctx);
 						 eat(run_ast_causal(ctx,c,s,*args)...);
-						 ctx->template get_store_context<Operate::level>(first(cached(c,*args)...).store(),"Doing a causal operation");
+						 ctx->template get_store_context<Operate::level>(first(cached(c,*args)...).store() whendebug(,"Doing a causal operation"));
 						 auto ret = do_op_2<Name>(ctx,cached(c,*args)...);
 						 c.insert(id,ret);
 						 return mutils::heap_copy(ret);

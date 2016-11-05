@@ -63,7 +63,12 @@ namespace myria { namespace tracker {
    - obj
 */
 
+#ifndef NDEBUG
 #define fail_on_false(a...) {auto bawef = a; assert(bawef);}
+#else
+#define fail_on_false(...) ;
+#endif
+		
 		namespace {
 		
 			void respond_to_request(std::shared_ptr<std::mutex> m, std::shared_ptr<CooperativeCache::cache_t> cache, Socket socket){
@@ -80,9 +85,13 @@ namespace myria { namespace tracker {
 						CooperativeCache::CooperativeCache::lock l{*m};
 						o = cache->at(requested);
 					}
-					for (auto &e : o){
-						assert(e.third.data());
-					}
+					assert([&]{
+							for (auto &e : o){
+								assert(e.third.data());
+							}
+							return true;
+						}());
+
 					
 					socket.send(true);
 					socket.send(o.size());
@@ -164,9 +173,11 @@ namespace myria { namespace tracker {
 									track_with_eviction(tomb.nonce,ret);
 								}
 								//std::cout << "retrieved " << tomb.nonce << " via Cache" << std::endl;
+#ifndef NDEBUG
 								for (auto &e : ret){
 									assert(e.third.data());
 								}
+#endif
 								return ret;
 							}
 							catch (const ProtocolException &e){
@@ -212,6 +223,7 @@ namespace myria { namespace tracker {
 		}	
 
 		std::vector<char> const *  CooperativeCache::find(const obj_bundle& b,const Name& n, const Tracker::Clock &version){
+			(void) version;
 			for (auto &e : b){
 				assert(e.third.data());
 				const Name& ename = e.first;

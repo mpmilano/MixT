@@ -35,9 +35,11 @@ namespace myria{ namespace pgsql {
 			return current_trans;
 		}
 
+#ifndef NDEBUG
 		template<>
 		bool SQLConnectionPool<Level::strong>::constructed = false;
 		template<>
 		bool SQLConnectionPool<Level::causal>::constructed = false;
+#endif
 	}
 }

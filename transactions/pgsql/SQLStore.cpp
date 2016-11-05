@@ -47,14 +47,14 @@ namespace myria{ namespace pgsql {
 				init_common();
 			}
 
-		unique_ptr<SQLTransaction> SQLStore_impl::begin_transaction(const std::string &why)
+		unique_ptr<SQLTransaction> SQLStore_impl::begin_transaction(whendebug(const std::string &why))
 		{
 			assert(!(default_connection.is_locked() &&
 					 default_connection.lock()->in_trans()) &&
 				   "Concurrency support doesn't exist yet."
 				);
 			return unique_ptr<SQLTransaction>(
-				new SQLTransaction(_store,default_connection.lock(),why));
+				new SQLTransaction(_store,default_connection.lock() whendebug(,why)));
 		}
 		
 		bool SQLStore_impl::in_transaction() const {
@@ -77,7 +77,7 @@ namespace myria{ namespace pgsql {
 		}
 
 		void SQLStore_impl::remove(Name id) {
-			small_transaction(*this,std::string("Trying to remove something of name ") + std::to_string(id))
+			small_transaction(*this whendebug(,std::string("Trying to remove something of name ") + std::to_string(id)))
 				->Del(id);
 		}
 
@@ -100,6 +100,7 @@ namespace myria{ namespace pgsql {
 			if (l == Level::strong) return this->inst_strong();
 			else if (l == Level::causal) return this->inst_causal();
 			else assert(false && "what?");
+			struct dead_code{}; throw dead_code{};
 		}
 
 

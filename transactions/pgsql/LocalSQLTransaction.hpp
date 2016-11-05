@@ -28,6 +28,8 @@ namespace myria { namespace pgsql {
 
 				pqxx::work trans;
 				bool aborted_or_committed{false};
+
+				/*
 				std::ofstream &log_file;
 
 				void log_receive(const std::string& s){
@@ -38,10 +40,12 @@ namespace myria { namespace pgsql {
 				void log_send(const std::string& s){
 					log_file << "sent: " << s << std::endl;
 					log_file.flush();
-				}
+					}//*/
+#define log_receive(...) ;
+#define log_send(...) ;
 
 				template<typename SQLConn>
-				LocalSQLTransaction_super(SQLConn &conn, std::ofstream& log_file);
+				LocalSQLTransaction_super(SQLConn &conn);
 
 				virtual ~LocalSQLTransaction_super(){
 					assert(aborted_or_committed);
@@ -136,13 +140,15 @@ namespace myria { namespace pgsql {
 							o->increment(bytes,socket);
 							break;
 						case TransactionNames::MAX:
-							assert(false && "this should not be send");
+							assert(false && "this should not be sent");
+							struct dead_code{}; throw dead_code{};
 						}
 					}
 					catch(const pqxx::pqxx_exception& e){
 						if (!is_serialize_error(e)){
 							std::cout << e.base().what() << std::endl;
 							assert(false);
+							struct dead_code{}; throw dead_code{};
 						}
 						o->indicate_serialization_failure(socket);
 						return resource_return{nullptr,
@@ -162,7 +168,7 @@ namespace myria { namespace pgsql {
 				using SQLConn = LocalSQLConnection<l>;
 				std::unique_ptr<SQLConn > conn;
 
-				LocalSQLTransaction(std::unique_ptr<LocalSQLConnection<l> > conn, std::ofstream& log_file);
+				LocalSQLTransaction(std::unique_ptr<LocalSQLConnection<l> > conn);
 				
 				auto select_version_s(Table t, Name id);
 				
@@ -204,10 +210,13 @@ namespace myria { namespace pgsql {
 				using SQLConn = LocalSQLConnection<l>;
 				std::unique_ptr<SQLConn > conn;
 				
-				LocalSQLTransaction(std::unique_ptr<LocalSQLConnection<l> > conn, std::ofstream& log_file);
+				LocalSQLTransaction(std::unique_ptr<LocalSQLConnection<l> > conn);
 				
 				static constexpr int group_mapper(int k){
-					if (k < 1) assert(false && "Error: k is 1-indexed");
+					if (k < 1) {
+						assert(false && "Error: k is 1-indexed");
+						struct dead_code{}; throw dead_code{};
+					}
 					constexpr int sizes = NUM_CAUSAL_GROUPS / NUM_CAUSAL_MASTERS;
 					constexpr int overflow = NUM_CAUSAL_GROUPS - sizes * NUM_CAUSAL_MASTERS;
 					return (k < overflow ? 0

@@ -102,12 +102,15 @@ namespace myria { namespace mtl {
 							
 							CausalCache cachec{caches};
 							CausalStore storec{stores};
+							
+#ifndef NDEBUG
 							//causal should also not be in a transaction yet
 							if (trk.get_CausalStore().in_transaction()){
 								std::cerr << "In a transaction when we shouldn't be: " << trk.get_CausalStore().why_in_transaction() << std::endl;
 								std::cerr << "My threadID is: " << std::this_thread::get_id() << std::endl;
 							}
 							assert(!trk.get_CausalStore().in_transaction());
+#endif
 							call_all_causal(&ctx,cachec,storec,s.curr);
 							
 							//causal commits definitionally can't fail!

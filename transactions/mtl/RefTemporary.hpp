@@ -65,6 +65,7 @@ namespace myria { namespace mtl {
 				catch (const StoreMiss&){
 					std::cerr << "tried to reference variable " << this->name << std::endl;
 					assert(false && "we don't have that in the store");
+					struct dead_code{}; throw dead_code{};
 				}
 			}
 

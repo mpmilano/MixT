@@ -25,10 +25,6 @@ namespace mutils{
 //was as microseconds
 	duration elapsed_time();
 
-#ifndef STRONG_REMOTE_IP
-#define STRONG_REMOTE_IP "127.0.0.1"
-#endif
-	
 	constexpr unsigned int get_strong_ip(){
 		constexpr char const * const strong_remote_ip{STRONG_REMOTE_IP};
 		//if string is non-zero in length

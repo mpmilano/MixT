@@ -188,7 +188,10 @@ namespace myria { namespace tracker {
 			else if (auto *t2 = dynamic_cast<const DataStore<Level::causal>*  >(&gds)){
 				return t2 == i->registeredCausal;
 			}
-			else assert(false && "there's a third kind of GDataStore?");
+			else {
+				assert(false && "there's a third kind of GDataStore?");
+				struct dead_code{}; throw dead_code{};
+			}
 		}
 
 		namespace{
@@ -235,8 +238,8 @@ namespace myria { namespace tracker {
 				using namespace TDS;
 				const Tracker::Tombstone t {nonce,get_ip(),trk.cache_port};
 				assert(i.cache.contains(nonce));
-                                if (get<TDS::exists>(*i.causalDS)(*i.registeredCausal,t.name())) throw mtl::CannotProceedError{"Tomb name collission"};
-                                else get<TDS::newTomb>(*i.causalDS)(trk, ctx,*i.registeredCausal,t.name(), t);
+				if (get<TDS::exists>(*i.causalDS)(*i.registeredCausal,t.name())) throw mtl::CannotProceedError{"Tomb name collission"};
+				else get<TDS::newTomb>(*i.causalDS)(trk, ctx,*i.registeredCausal,t.name(), t);
 			}
 		}
 

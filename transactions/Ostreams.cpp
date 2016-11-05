@@ -30,6 +30,7 @@ namespace myria{
 		else if (l == Level::undef)
 			return os << levelStr<Level::undef>();
 		assert(false && "fell through");
+		struct dead_code{}; throw dead_code{};
 		return os;
 	}
 

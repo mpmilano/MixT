@@ -19,6 +19,7 @@ namespace myria { namespace mtl {
 	
 			void put(StoreContext<Level::strong> *ctx, const T&) {
 				assert(false && "error: modifying strong Handle in causal context! the type system is supposed to prevent this!");
+				struct dead_code{}; throw dead_code{};
 			}
 	
 			bool ro_isValid(StoreContext<Level::strong> *ctx) const {
@@ -39,10 +40,12 @@ namespace myria { namespace mtl {
 	
 			int bytes_size() const {
 				assert(false && "wait why are you ... stop!");
+				struct dead_code{}; throw dead_code{};
 			}
 	
 			int to_bytes(char* v) const {
 				assert(false && "wait why are you ... stop!");
+				struct dead_code{}; throw dead_code{};
 			}
 		
 		};
@@ -88,18 +91,25 @@ namespace myria { namespace mtl {
 				if(auto *co = dynamic_cast<CachedObject<T>* >(&r)){
 					return co->get(ctx);
 				}
-				else assert(false && "Error: attempt get on non CachedObject. This should have been cached earlier");
+				else {
+					assert(false && "Error: attempt get on non CachedObject. This should have been cached earlier");
+					struct dead_code{}; throw dead_code{};
+				}
 			}
 		
 			void put(StoreContext<Level::strong> *ctx, const T&) {
 				assert(false && "error: modifying strong Handle in causal context! the type system is supposed to prevent this!");
+				struct dead_code{}; throw dead_code{};
 			}
 		
 			bool ro_isValid(StoreContext<Level::strong> *ctx) const {
 				if(auto *co = dynamic_cast<CachedObject<T>* >(&r)){
 					return co->ro_isValid(ctx);
 				}
-				else assert(false && "Error: attempt isValid on non CachedObject. This should have been cached earlier");
+				else {
+					assert(false && "Error: attempt isValid on non CachedObject. This should have been cached earlier");
+					struct dead_code{}; throw dead_code{};
+				}
 			}
 		
 			const DataStore<Level::strong>& store() const {
@@ -116,10 +126,12 @@ namespace myria { namespace mtl {
 		
 			int bytes_size() const {
 				assert(false && "wait why are you ... stop!");
+				struct dead_code{}; throw dead_code{};
 			}
 		
 			int to_bytes(char* v) const {
 				assert(false && "wait why are you ... stop!");
+				struct dead_code{}; throw dead_code{};
 			}
 		
 		};	

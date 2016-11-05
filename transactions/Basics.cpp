@@ -42,6 +42,7 @@ namespace myria{
 		default:
 			std::cerr << "out of range for LoggedStructs: " << static_cast<int>(ls) << std::endl;
 			assert(false);
+			struct dead_code{}; throw dead_code{};
 		};
 	}
 	
@@ -68,6 +69,7 @@ namespace myria{
 		default:
 			std::cerr << "out of range for LogFields: " << static_cast<int>(lf) << std::endl;
 			assert(false);
+			struct dead_code{}; throw dead_code{};
 		};
 	}
 	
@@ -80,6 +82,7 @@ namespace myria{
 		default:
 			std::cerr << "out of range for GlobalsFields: " << static_cast<int>(gf) << std::endl;
 			assert(false);
+			struct dead_code{}; throw dead_code{};
 		};
 	}
 }

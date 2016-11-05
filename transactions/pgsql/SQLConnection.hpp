@@ -21,6 +21,7 @@ namespace myria{ namespace pgsql {
 		using mutils::batched_connection::connections;
 
 		struct SQLConnection{
+#ifndef NDEBUG
 			void onAcquire(...){
 				assert(!current_trans);
 			}
@@ -28,6 +29,7 @@ namespace myria{ namespace pgsql {
 			void onRelease(){
 				assert(!current_trans);
 			}
+#endif
 			connection conn;
 			SQLTransaction* current_trans{nullptr};
 			bool in_trans() const;
@@ -40,11 +42,14 @@ namespace myria{ namespace pgsql {
 		//should be a singleton per level
 		template<Level l>
 		struct SQLConnectionPool{
+
+#ifndef NDEBUG
 			static bool constructed;
 			SQLConnectionPool(){
 				assert(!constructed);
 				constructed = true;
 			}
+#endif
 			
 			connections bc{
 				(l == Level::strong ? strong_ip_addr : causal_ip_addr),

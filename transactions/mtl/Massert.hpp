@@ -28,6 +28,7 @@ namespace myria { namespace mtl {
 				auto ret = mtl::run_ast_strong(ctx, a,b,t);
 				if (runs_with_strong(get_level<T>::value)){
 					assert(ret);
+					if (!ret) return false;
 				}
 				return true;
 			}
@@ -35,6 +36,7 @@ namespace myria { namespace mtl {
 				auto ret = mtl::run_ast_causal(ctx, a,b,t);
 				if (runs_with_causal(get_level<T>::value)){
 					assert(ret);
+					if (!ret) return false;
 				}
 				return true;
 			}

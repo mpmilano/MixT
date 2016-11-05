@@ -34,6 +34,7 @@ namespace myria { namespace pgsql {
 				std::map<int,std::unique_ptr<SQLStore> > ss;
 				
 				void inst(Level l2){
+					(void)l2;
 					assert(l == l2);
 					if (ss.count(0) == 0 || (!ss.at(0))){
 						assert(this->this_mgr);
@@ -48,6 +49,7 @@ namespace myria { namespace pgsql {
 				
 				SQLStore<Level::strong>& choose_s(std::false_type*){
 					assert(false && "Error: This is not a strong instance manager");
+					struct dead_code{}; throw dead_code{};
 				}
 				
 				SQLStore<Level::causal>& choose_c(std::true_type*){
@@ -57,6 +59,7 @@ namespace myria { namespace pgsql {
 				
 				SQLStore<Level::causal>& choose_c(std::false_type*){
 					assert(false && "Error: This is not a causal instance manager");
+					struct dead_code{}; throw dead_code{};
 				}
 				
 			public:
@@ -106,6 +109,7 @@ namespace myria { namespace pgsql {
 				return *this;
 			}
 
+#ifndef NDEBUG
 			std::string why_in_transaction() const {
 				if (in_transaction()){
 					assert(this->default_connection.acquire_if_locked()->current_trans);
@@ -113,6 +117,7 @@ namespace myria { namespace pgsql {
 				}
 				else return "error: not in transaction";
 			}
+#endif
 
 			const std::array<int, NUM_CAUSAL_GROUPS>& local_time() const {
 				return this->clock;
@@ -129,7 +134,9 @@ namespace myria { namespace pgsql {
 					gso(std::move(gs)),tds(tds){
 					assert(this);
 					if (_t){
+#ifndef NDEBUG
 						mutils::ensure_registered(*_t,tds);
+#endif
 						this->t = std::shared_ptr<T>{_t.release()};
 					}
 				}
@@ -182,9 +189,11 @@ namespace myria { namespace pgsql {
 				void post_object(const std::function<void (char const * const,std::size_t)>&f) const {
 					return gso.post_object(f);
 				}
+#ifndef NDEBUG
 				void ensure_registered(mutils::DeserializationManager &m){
 					assert(m. template registered<deserialization_context>());
 				}
+#endif
 			};
 
 			template<HandleAccess ha, typename T>
@@ -203,7 +212,10 @@ namespace myria { namespace pgsql {
 					(std::is_same<T,int>::value ? Table::IntStore : Table::BlobStore);
 				int size = mutils::bytes_size(init);
 				std::vector<char> v(size);
-				int tb_size = mutils::to_bytes(init,&v[0]);
+#ifndef NDEBUG
+				int tb_size =
+#endif
+					mutils::to_bytes(init,&v[0]);
 				assert(size == tb_size);
 				GSQLObject gso(*this,t,name,v);
 				SQLHandle<ha,T> ret{trk,tc,std::make_shared<SQLObject<T> >(std::move(gso),mutils::heap_copy(init),this_mgr),*this };
@@ -254,9 +266,17 @@ namespace myria { namespace pgsql {
 
 			using StoreContext = SQLContext;
 
-			std::unique_ptr<mtl::StoreContext<l> > begin_transaction(std::unique_ptr<mutils::abs_StructBuilder>&, const std::string &why)
+			std::unique_ptr<mtl::StoreContext<l> > begin_transaction(std::unique_ptr<mutils::abs_StructBuilder>&
+#ifndef NDEBUG
+																	 , const std::string &why
+#endif
+				)
 				{
-					auto ret = SQLStore_impl::begin_transaction(why);
+					auto ret = SQLStore_impl::begin_transaction(
+#ifndef NDEBUG
+						why
+#endif
+						);
 					return std::unique_ptr<mtl::StoreContext<l> >(new SQLContext{std::move(ret),this_mgr});
 				}
 
