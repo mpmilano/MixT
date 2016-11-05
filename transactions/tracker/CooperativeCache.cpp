@@ -203,13 +203,11 @@ namespace myria { namespace tracker {
 							AtScopeEnd ase2{[](){std::cout << "listening done; cache closed" << std::endl;}};
 							ServerSocket server(portno);
 							
-							FutureFreePool pool;
 							while (true) {
-								Socket newsockfd = server.receive();
-								if (!newsockfd.valid()) continue;
 								//fork off a new thread to handle the request.
-								pool.launch([m,cache,newsockfd](int) {
-										respond_to_request(m,cache,newsockfd);});
+								GlobalPool::inst.push([m,cache,newsockfd = server.receive()](int) mutable {
+										if (newsockfd.valid())
+											respond_to_request(m,cache,std::move(newsockfd));});
 							}
 						}
 						catch(const std::exception & e){
