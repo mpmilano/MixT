@@ -127,6 +127,7 @@ namespace myria { namespace pgsql {
 				}
 				
 				auto LocalSQLTransaction<Level::strong>::increment_s(Table t, Name id){
+					(void)t;
 					assert(t == Table::IntStore
 						   && "Error: increment currently only defined on integers");
 					const static std::string s =
@@ -151,6 +152,7 @@ namespace myria { namespace pgsql {
 					int where;
 					assert(!res.empty());
 					bool worked = res[0][0].to(where);
+					(void)worked;
 					assert(worked);
 					assert(where != -1);
 					return where;
@@ -334,6 +336,10 @@ namespace myria { namespace pgsql {
 					assert(res3);
 					auto res4 = r[0][3].to(vers[3]);
 					assert(res4);
+					(void)res1;
+					(void)res2;
+					(void)res3;
+					(void)res4;
 					return vers;
 				}
 
