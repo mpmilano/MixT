@@ -30,6 +30,30 @@ then
 	exit 1
 fi
 
+elif [[ -z "$starting_rate" ]]
+then
+	echo "failure: specify $starting_rate as environment variable."
+	exit 1
+fi
+
+elif [[ -z "$increase_by" ]]
+then
+	echo "failure: specify $increase_by as environment variable."
+	exit 1
+fi
+
+elif [[ -z "$increase_delay" ]]
+then
+	echo "failure: specify $increase_delay as environment variable."
+	exit 1
+fi
+elif [[ -z "$test_stop_time" ]]
+then
+	echo "failure: specify $test_stop_time as environment variable."
+	exit 1
+fi
+
+
 
 for write_percent in $write_percentages; do 
 	for strong_percent in $strong_percentages; do
@@ -41,7 +65,7 @@ for write_percent in $write_percentages; do
 			for foo in $instance_list
 			do
 				i=$[i%4 + 1]
-				/bin/bash test-things-loop-body.sh $i $foo $configuration $write_percent $strong_percent $strong_target $causal_target_1 $causal_target_2 $first_iter&
+				/bin/bash test-things-loop-body.sh $i $foo $configuration $write_percent $strong_percent $strong_target $causal_target_1 $causal_target_2 $starting_rate $increase_by $increase_delay $test_stop_time $first_iter&
 			done
 			wait
 			ssh research@"$strong_target" killall strong_receiver
