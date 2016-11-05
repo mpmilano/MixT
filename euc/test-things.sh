@@ -28,25 +28,18 @@ elif [[ -z "$write_percentages" ]]
 then
 	echo "failure: specify $write_percentages as environment variable."
 	exit 1
-fi
-
 elif [[ -z "$starting_rate" ]]
 then
 	echo "failure: specify $starting_rate as environment variable."
 	exit 1
-fi
-
 elif [[ -z "$increase_by" ]]
 then
 	echo "failure: specify $increase_by as environment variable."
 	exit 1
-fi
-
 elif [[ -z "$increase_delay" ]]
 then
 	echo "failure: specify $increase_delay as environment variable."
 	exit 1
-fi
 elif [[ -z "$test_stop_time" ]]
 then
 	echo "failure: specify $test_stop_time as environment variable."
