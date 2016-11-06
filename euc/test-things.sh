@@ -48,6 +48,10 @@ elif [[ -z "$max_threads" ]]
 then
 	echo "failure: specify max_threads as environment variable."
 	exit 1
+elif [[ -z "$ndebug" ]]
+then
+	echo "failure: specify ndebug (either spaceful string or -DNDEBUG) as environment variable."
+	exit 1
 fi
 
 echo "$increase_by"
@@ -62,7 +66,7 @@ for write_percent in $write_percentages; do
 			for foo in $instance_list
 			do
 				i=$[i%4 + 1]
-				/bin/bash test-things-loop-body.sh $i $foo $configuration $write_percent $strong_percent $strong_target $causal_target_1 $causal_target_2 $starting_rate $increase_by $increase_delay $test_stop_time $max_threads $first_iter&
+				/bin/bash test-things-loop-body.sh $i $foo $configuration $ndebug $write_percent $strong_percent $strong_target $causal_target_1 $causal_target_2 $starting_rate $increase_by $increase_delay $test_stop_time $max_threads $first_iter&
 			done
 			wait
 			ssh research@"$strong_target" killall strong_receiver

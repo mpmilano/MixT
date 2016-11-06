@@ -55,7 +55,7 @@ namespace myria{ namespace pgsql {
 			}
 		}
 
-		/*
+#ifndef NDEBUG
 		void SQLTransaction::log_receive_start(const std::string& event_id){
 			log_file << "starting " << event_id << std::endl;
 			log_file.flush();
@@ -68,6 +68,7 @@ namespace myria{ namespace pgsql {
 		void SQLTransaction::log_send(const std::string& event_id){
 			log_file << "sending " << event_id << std::endl;
 			log_file.flush();
-		}//*/
+		}
+#endif
 	}
 }

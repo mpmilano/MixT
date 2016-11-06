@@ -29,7 +29,7 @@ namespace myria { namespace pgsql {
 				pqxx::work trans;
 				bool aborted_or_committed{false};
 
-				/*
+#ifndef NDEBUG
 				std::ofstream &log_file;
 
 				void log_receive(const std::string& s){
@@ -40,12 +40,14 @@ namespace myria { namespace pgsql {
 				void log_send(const std::string& s){
 					log_file << "sent: " << s << std::endl;
 					log_file.flush();
-					}//*/
+					}
+#else
 #define log_receive(...) ;
 #define log_send(...) ;
+#endif
 
 				template<typename SQLConn>
-				LocalSQLTransaction_super(SQLConn &conn);
+				LocalSQLTransaction_super(SQLConn &conn whendebug(, std::ofstream& log_file));
 
 				virtual ~LocalSQLTransaction_super(){
 					assert(aborted_or_committed);
@@ -168,7 +170,7 @@ namespace myria { namespace pgsql {
 				using SQLConn = LocalSQLConnection<l>;
 				std::unique_ptr<SQLConn > conn;
 
-				LocalSQLTransaction(std::unique_ptr<LocalSQLConnection<l> > conn);
+				LocalSQLTransaction(std::unique_ptr<LocalSQLConnection<l> > conn whendebug(, std::ofstream& log_file));
 				
 				auto select_version_s(Table t, Name id);
 				
@@ -210,7 +212,7 @@ namespace myria { namespace pgsql {
 				using SQLConn = LocalSQLConnection<l>;
 				std::unique_ptr<SQLConn > conn;
 				
-				LocalSQLTransaction(std::unique_ptr<LocalSQLConnection<l> > conn);
+				LocalSQLTransaction(std::unique_ptr<LocalSQLConnection<l> > conn whendebug(, std::ofstream& log_file));
 				
 				static constexpr int group_mapper(int k){
 					if (k < 1) {

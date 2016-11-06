@@ -19,8 +19,9 @@ namespace myria {
 				using action_t = typename receiver::action_t;
 				using sizes_t = std::vector<std::size_t>;
 
-				static action_t new_connection(){
+				static action_t new_connection(whendebug(std::ofstream& log_file)){
 					struct ReceiverFun : public conn_space::ReceiverFun{
+						whendebug(std::ofstream& log_file;)
 						std::unique_ptr<LocalSQLConnection<l> > db_connection{
 							new LocalSQLConnection<l>()};
 						std::unique_ptr<LocalSQLTransaction<l> > current_trans{nullptr};
@@ -37,10 +38,14 @@ namespace myria {
 								if (_data[0] == 4){
 									assert(!current_trans);
 									assert(db_connection);
-									current_trans.reset(new LocalSQLTransaction<l>(std::move(db_connection)));
+									current_trans.reset(new LocalSQLTransaction<l>(std::move(db_connection) whendebug(, log_file)));
 								}
 								else {
 									//if we're aborting a non-existant transaction, there's nothing to do.
+#ifndef NDEBUG
+									log_file << "aborting non-existant transaction" << std::endl;
+									log_file.flush();
+#endif
 								}
 							}
 							else if (_data[0] == 0){
@@ -67,7 +72,7 @@ namespace myria {
 								assert(current_trans || db_connection);
 							}
 
-							/*
+#ifndef NDEBUG
 							if (current_trans){
 								current_trans->log_file << "done processing this request" << std::endl;
 								current_trans->log_file.flush();
@@ -75,15 +80,22 @@ namespace myria {
 							else {
 								log_file << "done processing this request; transaction was destroyed"
 										 << std::endl;
-							}//*/
+							}
+#endif
 						}
 						ReceiverFun(ReceiverFun&& o)
-							:db_connection(std::move(o.db_connection)),
-							 current_trans(std::move(o.current_trans))
+							:whendebug(log_file(o.log_file),)
+							db_connection(std::move(o.db_connection)),
+							current_trans(std::move(o.current_trans))
 							{}
+#ifndef NDEBUG
+						ReceiverFun(std::ofstream& log_file)
+							:log_file(log_file){}
+#else
 						ReceiverFun() = default;
+#endif
 					};
-					return action_t{new ReceiverFun()};
+					return action_t{new ReceiverFun(whendebug(log_file))};
 				}
 				
 				SQLReceiver():r((l == Level::strong?
