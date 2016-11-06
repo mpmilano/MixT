@@ -8,7 +8,6 @@ namespace myria {
 	namespace pgsql {
 		namespace local {
 
-			namespace conn_space = mutils::batched_connection;
 			using conn_space::receiver;
 			
 			template<Level l>

@@ -17,8 +17,8 @@ namespace myria{ namespace pgsql {
 				MAX
 		};
 
-		using mutils::batched_connection::connection;
-		using mutils::batched_connection::connections;
+		using conn_space::connection;
+		using conn_space::connections;
 
 		struct SQLConnection{
 #ifndef NDEBUG

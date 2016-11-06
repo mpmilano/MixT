@@ -150,7 +150,6 @@ namespace myria { namespace pgsql {
 							assert(false);
 							struct dead_code{}; throw dead_code{};
 						}
-						assert(false && "we can serialization error here");
 						o->indicate_serialization_failure(socket);
 						return resource_return{nullptr,
 								o->store_abort(std::move(o),socket)};
