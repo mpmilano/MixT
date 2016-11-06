@@ -2,12 +2,11 @@
 #include "mutils.hpp"
 #include "test_utils.hpp"
 #include "cexprutils.hpp"
-#include "simple_rpc.hpp"
 
 namespace myria {
 	namespace pgsql {
 
-		namespace conn_space = mutils::simple_rpc;
+		namespace conn_space = mutils::batched_connection;
 		
 		constexpr const int strong_sql_port = 9876;
 		constexpr const int causal_sql_port = 9877;
