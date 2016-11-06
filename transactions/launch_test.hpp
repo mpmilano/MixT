@@ -162,7 +162,7 @@ std::string PreparedTest<Mem,Arg>::run_tests(Meta& meta, bool (*stop) (Meta&, Po
 	
 	std::stringstream ss;
 	std::size_t old_size = 0;
-	for (unsigned int timeout = 0; timeout < 5000000 && !futures->empty() ; ){
+	for (unsigned int timeout = 0; timeout < 100 && !futures->empty() ; ){
 		if (old_size == futures->size()) ++timeout;
 		old_size = futures->size();
 		std::cout << futures->size() << " tasks remain" << std::endl;
@@ -197,6 +197,7 @@ std::string PreparedTest<Mem,Arg>::run_tests(Meta& meta, bool (*stop) (Meta&, Po
 			}
 		}
 		futures = std::move(new_futures);
+		sleep(1);
 	}
 	return ss.str();
 }
