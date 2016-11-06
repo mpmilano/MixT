@@ -257,7 +257,7 @@ namespace synth_test {
 				last_rate_raise = high_resolution_clock::now();
 			}
 			p.set_mem_to(num_clients);
-			return getArrivalInterval(num_clients * rate_per_client);
+			return getArrivalInterval(rate_per_client * num_clients);
 		}
 
 #define method_to_fun(foo,Arg) [](auto& x, Arg y){return x.foo(y);}
