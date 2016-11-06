@@ -47,7 +47,7 @@ stress_test2.o:
 stress_test3.o:
 	clang++ -c stress_test.cpp -DTEST_MODE=3 $(CPPFLAGS)
 vm_main.o:
-	clang++ -c vm_main.cpp -DSTARTING_RATE=$(starting_rate) -DINCREASE_BY=$(increase_by) -DINCREASE_DELAY=$(increase_delay) -DTEST_STOP_TIME=$(test_stop_time) -DconcurrencySetting=$(concurrencySetting) $(extra_macro_defs) $(CPPFLAGS)
+	clang++ -c vm_main.cpp -DNUM_CLIENTS=$(num_clients) -DCLIENT_RATE=$(client_rate)  -DINCREASE_BY=$(increase_by) -DINCREASE_DELAY=$(increase_delay) -DTEST_STOP_TIME=$(test_stop_time) -DconcurrencySetting=$(concurrencySetting) $(extra_macro_defs) $(CPPFLAGS)
 groups_test.o:
 	clang++ -c groups_test.cpp -DconcurrencySetting=$(concurrencySetting) $(extra_macro_defs)  $(CPPFLAGS)
 sqlstore_clean:

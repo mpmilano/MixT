@@ -32,14 +32,25 @@ export extra_macro_defs="-D$2 -DWRITE_PERCENT=$3 -DSTRONG_PERCENT=$4 $6"
 export causalGroup="$1"
 export MY_IP="$5"
 shift 6
+export CAUSAL_REMOTE_IP_1="$2"
+export CAUSAL_REMOTE_IP_2="$3"
+export STRONG_REMOTE_IP="$1"
+shift 3
+export num_clients=$1
+export client_rate=$2
+export increase_by=$3
+export increase_delay=$4
+export test_stop_time=$5
+shift 5
+export MAX_THREADS=$1
+export first_iter=$2
 killall -9 vm
 rm /tmp/Myria*
-first_iter=$9
 if [[ $first_iter ]];
 then make clean
 else rm vm_main.o; rm vm
 fi
-MAX_THREADS=$8 CAUSAL_REMOTE_IP_1="$2" CAUSAL_REMOTE_IP_2="$3"  STRONG_REMOTE_IP="$1" starting_rate=$4 increase_by=$5 increase_delay=$6 test_stop_time=$7 make -j4 vm
+make -j4 vm
 ./vm
 wait
 echo "done waiting"

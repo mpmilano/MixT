@@ -226,8 +226,9 @@ namespace synth_test {
 		using time_t = std::chrono::time_point<std::chrono::high_resolution_clock>;
 		const time_t start_time{high_resolution_clock::now()};
 		time_t last_rate_raise{start_time};
-		Frequency current_rate{STARTING_RATE};
-		constexpr static Frequency increase_factor = INCREASE_BY;
+		constexpr static Frequency rate_per_client{CLIENT_RATE};
+		unsigned int num_clients = NUM_CLIENTS;
+		constexpr static unsigned int increase_factor = INCREASE_BY;
 		constexpr static seconds increase_delay = INCREASE_DELAY;
 		constexpr static minutes test_stop_time = TEST_STOP_TIME;
 		constexpr static double percent_writes = write_percent;
@@ -252,12 +253,11 @@ namespace synth_test {
 
 		milliseconds delay(Pool& p){
 			if (high_resolution_clock::now() - last_rate_raise > increase_delay){
-				current_rate += increase_factor;
+				num_clients += increase_factor;
 				last_rate_raise = high_resolution_clock::now();
 			}
-			//there should always be 10 request/second/client
-			p.set_mem_to(current_rate.hertz / 10);
-			return getArrivalInterval(current_rate);
+			p.set_mem_to(num_clients);
+			return getArrivalInterval(num_clients * rate_per_client);
 		}
 
 #define method_to_fun(foo,Arg) [](auto& x, Arg y){return x.foo(y);}
@@ -268,18 +268,19 @@ namespace synth_test {
 			milliseconds (*delay) (TestParameters&,Pool&) = method_to_fun(delay,Pool&);
 			auto ret = launcher.run_tests(*this,stop,choose,delay);
 
-			global_log.addField(GlobalsFields::request_frequency_final,current_rate);
+			global_log.addField(GlobalsFields::request_frequency_final,rate_per_client*num_clients);
 			return ret;
 		}
 		
 		abs_StructBuilder &global_log;
 		
 		TestParameters(decltype(global_log) &gl):global_log(gl){
-			global_log.addField(GlobalsFields::request_frequency,current_rate);
+			global_log.addField(GlobalsFields::request_frequency,rate_per_client * num_clients);
 			global_log.addField(GlobalsFields::request_frequency_step,increase_factor);
 		}
 	};
-	constexpr Frequency TestParameters::increase_factor;
+	constexpr Frequency TestParameters::rate_per_client;
+	constexpr unsigned int TestParameters::increase_factor;
 	constexpr seconds TestParameters::increase_delay;
 	constexpr minutes TestParameters::test_stop_time;
 	constexpr double TestParameters::percent_writes;
