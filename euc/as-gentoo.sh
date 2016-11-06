@@ -34,12 +34,12 @@ export MY_IP="$5"
 shift 5
 killall -9 vm
 rm /tmp/Myria*
-first_iter=$8
+first_iter=$9
 if [[ $first_iter ]];
 then make clean
 else rm vm_main.o; rm vm
 fi
- CAUSAL_REMOTE_IP_1="$2" CAUSAL_REMOTE_IP_2="$3"  STRONG_REMOTE_IP="$1" starting_rate=$4 increase_by=$5 increase_delay=$6 test_stop_time=$7 make -j4 vm
+MAX_THREADS=$8 CAUSAL_REMOTE_IP_1="$2" CAUSAL_REMOTE_IP_2="$3"  STRONG_REMOTE_IP="$1" starting_rate=$4 increase_by=$5 increase_delay=$6 test_stop_time=$7 make -j4 vm
 ./vm
 wait
 echo "done waiting"

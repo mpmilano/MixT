@@ -14,7 +14,7 @@ namespace myria{
 			transaction_action, 
 			tracker_strong_afterread_tombstone_exists,
 			tracker_strong_afterread_nonce_unavailable,
-			tracker_causal_afterread_candidate,
+			tracker_causal_afterread_candidate,item_name,
 			MAX
 		};
 

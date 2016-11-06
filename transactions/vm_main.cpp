@@ -73,7 +73,7 @@ namespace synth_test {
 	using oper_f = void (*) (unique_ptr<VMObjectLog>& ,
 							 Tracker &, Hndl );
 
-	auto log_start(Mem& mem, unique_ptr<VMObjectLog>& log_messages, fake_time _start_time){
+	auto log_start(Mem& mem, unique_ptr<VMObjectLog>& log_messages, int name, fake_time _start_time){
 		log_messages = mem.log_builder->template beginStruct<LoggedStructs::log>();
 		microseconds start_time(_start_time);
 		auto run_time = elapsed_time();
@@ -82,8 +82,9 @@ namespace synth_test {
 							   duration_cast<milliseconds>(start_time).count());
 		log_messages->addField(LogFields::run_time,
 							   duration_cast<milliseconds>(run_time).count());
-                assert(log_messages);
-                return start_time;
+		log_messages->addField(LogFields::item_name,name);
+		assert(log_messages);
+		return start_time;
 	}
 
 #ifndef NDEBUG
@@ -113,8 +114,10 @@ namespace synth_test {
 					let_remote(tmp) = hndl IN(mtl_ignore(tmp))
 			);
 
+#ifndef NDEBUG
 		struct tmptest{ int a;};
 		Handle<Level::strong,HandleAccess::all, tmptest> j;
+#endif
 		
 		log_messages->addField(
 			LogFields::is_read,true);
@@ -151,7 +154,7 @@ namespace synth_test {
 	std::string perform_strong_increment(int, Mem& mem, fake_time _start_time){
 		auto name = get_name_write();
 		std::unique_ptr<VMObjectLog> log_messages;
-		log_start(mem,log_messages,_start_time);
+		log_start(mem,log_messages,name,_start_time);
 		SQLStore<Level::strong> &strong = mem.i->ss.inst_strong();
 		auto &trk = mem.trk;
 #ifndef NDEBUG
@@ -168,7 +171,7 @@ namespace synth_test {
 	std::string perform_causal_increment(int,Mem& mem,fake_time _start_time){
 		auto name = get_name_write();
 		std::unique_ptr<VMObjectLog> log_messages;
-		log_start(mem,log_messages,_start_time);
+		log_start(mem,log_messages,name,_start_time);
 		assert(log_messages);
 		SQLStore<Level::causal> &causal = mem.i->sc.inst_causal();
 		auto &trk = mem.trk;
@@ -187,7 +190,7 @@ namespace synth_test {
 	std::string perform_strong_read(int, Mem& mem, fake_time _start_time){
 		auto name = get_name_read(0.5);
 		std::unique_ptr<VMObjectLog> log_messages;
-		log_start(mem,log_messages,_start_time);
+		log_start(mem,log_messages,name,_start_time);
 		SQLStore<Level::strong> &strong = mem.i->ss.inst_strong();
 		auto &trk = mem.trk;
 #ifndef NDEBUG
@@ -204,7 +207,7 @@ namespace synth_test {
 	std::string perform_causal_read(int, Mem& mem, fake_time _start_time){
 		auto name = get_name_read(0.5);
 		std::unique_ptr<VMObjectLog> log_messages;
-		log_start(mem,log_messages,_start_time);
+		log_start(mem,log_messages,name,_start_time);
 		SQLStore<Level::causal> &causal = mem.i->sc.inst_causal();
 		auto &trk = mem.trk;
 #ifndef NDEBUG

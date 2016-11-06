@@ -14,10 +14,12 @@ increase_delay=$9
 shift
 test_stop_time=$9
 shift
+max_threads=$9
+shift
 first_iter=$9
 
 echo $increase_by
 
 scp  -o "UserKnownHostsFile /dev/null" -o strictHostKeyChecking=no -i MyriaInstances.pem vm-actions.sh ubuntu@"$foo":vm-actions.sh
 scp  -o "UserKnownHostsFile /dev/null" -o strictHostKeyChecking=no -i MyriaInstances.pem as-gentoo.sh ubuntu@"$foo":as-gentoo.sh
-ssh  -o "UserKnownHostsFile /dev/null"  -o strictHostKeyChecking=no -i MyriaInstances.pem ubuntu@"$foo" sudo /bin/bash vm-actions.sh $i $configuration $write_percent $strong_percent "$foo" $strong_target $causal_target_1 $causal_target_2 $starting_rate $increase_by $increase_delay $test_stop_time $first_iter
+ssh  -o "UserKnownHostsFile /dev/null"  -o strictHostKeyChecking=no -i MyriaInstances.pem ubuntu@"$foo" sudo /bin/bash vm-actions.sh $i $configuration $write_percent $strong_percent "$foo" $strong_target $causal_target_1 $causal_target_2 $starting_rate $increase_by $increase_delay $test_stop_time $max_threads $first_iter

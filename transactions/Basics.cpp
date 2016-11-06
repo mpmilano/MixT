@@ -22,6 +22,8 @@ namespace myria{
 			LogFields::tracker_strong_afterread_tombstone_exists, "int tracker_strong_afterread_tombstone_exists", "0",
 			LogFields::tracker_strong_afterread_nonce_unavailable, "int tracker_strong_afterread_nonce_unavailable", "0",
 			LogFields::tracker_causal_afterread_candidate, "int tracker_causal_afterread_candidate", "0",
+
+			LogFields::item_name, "int item_name", "0",
 			
 			LoggedStructs::globals,"struct myria_globals","ERROR",
 			GlobalsFields::request_frequency,"::mutils::Frequency request_frequency","0_Hz",
