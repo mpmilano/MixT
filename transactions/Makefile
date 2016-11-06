@@ -1,7 +1,7 @@
 TRANS_DIR= `pwd`/
 IP_quad=`ifconfig | sed s/broadcast.*//g | tr " " "\n" | grep 128.84 | rev | sed s/'\..*'//g | rev`
 storeList='pgsql::SQLStore<Level::strong>, pgsql::SQLStore<Level::causal>'
-CPPFLAGS= -I$(PWD) -I$(PWD)/mtl -I$(PWD)/myria-utils -I$(PWD)/mutils-networking -I$(PWD)/mutils -I$(PWD)/mutils-containers -I$(PWD)/mutils-serialization -I$(PWD)/mutils-tasks -I$(PWD)/testing -I$(PWD)/pgsql -I$(PWD)/tracker -g -stdlib=libc++ --std=c++1z -Wall -DNUM_CAUSAL_GROUPS="4" -DSTORE_LIST=$(storeList) -DMY_IP=\"$(MY_IP)\" -DMAX_THREADS=$(MAX_THREADS) -DIP_QUAD=$(IP_quad) -DSTRONG_REMOTE_IP=\"$(STRONG_REMOTE_IP)\" -DCAUSAL_GROUP=$(causalGroup) -DCAUSAL_REMOTE_IP_1=\"$(CAUSAL_REMOTE_IP_1)\" -DCAUSAL_REMOTE_IP_2=\"$(CAUSAL_REMOTE_IP_2)\"  -ferror-limit=1 -Wall -Werror -Wextra
+CPPFLAGS= -I$(PWD) -I$(PWD)/mtl -I$(PWD)/myria-utils -I$(PWD)/mutils-networking -I$(PWD)/mutils -I$(PWD)/mutils-containers -I$(PWD)/mutils-serialization -I$(PWD)/mutils-tasks -I$(PWD)/testing -I$(PWD)/pgsql -I$(PWD)/tracker -g -stdlib=libc++ --std=c++1z -Wall -DNUM_CAUSAL_GROUPS="4" -DSTORE_LIST=$(storeList) -DMY_IP=\"$(MY_IP)\" -DMAX_THREADS=$(MAX_THREADS) -DIP_QUAD=$(IP_quad) -DSTRONG_REMOTE_IP=\"$(STRONG_REMOTE_IP)\" -DCAUSAL_GROUP=$(causalGroup) -DCAUSAL_REMOTE_IP_1=\"$(CAUSAL_REMOTE_IP_1)\" -DCAUSAL_REMOTE_IP_2=\"$(CAUSAL_REMOTE_IP_2)\" $(extra_macro_defs) -ferror-limit=1 -Wall -Werror -Wextra
 LDFLAGS= -stdlib=libc++ --std=c++1z -lpqxx -lm -pthread
 object_files=FutureFreePool.o GlobalPool.o CooperativeCache.o Ends.o utils.o test_utils.o Basics.o Tracker.o Ostreams.o SerializationSupport.o  IfBuilder.o  WhileBuilder.o ConExpr.o SQLStore.o GSQLObject.o SQLConnection.o SQLTransaction.o SQL_internal_utils.o TempBuilder.o TransactionBasics.o ServerSocket.o Socket.o ClockManager.o abiutils.o batched_connection_common.o batched_connection_client.o batched_connection_server.o BlobUtils.o eventfd.o simple_rpc.o
 
@@ -9,7 +9,7 @@ all: $(object_files) list_example.o
 	clang++ $(object_files) list_example.o -o test $(LDFLAGS)
 
 test_causal: $(object_files) 
-	clang++ test_causal.cpp -DconcurrencySetting=$(concurrencySetting) $(extra_macro_defs) DisabledTracker.o SQLStore.o Ends.o utils.o Basics.o Ostreams.o SerializationSupport.o GSQLObject.o SQLConnection.o SQLTransaction.o SQL_internal_utils.o ServerSocket.o Socket.o batched_connection_client.o batched_connection_common.o BlobUtils.o -o test_causal $(CPPFLAGS) $(LDFLAGS)
+	clang++ test_causal.cpp DisabledTracker.o SQLStore.o Ends.o utils.o Basics.o Ostreams.o SerializationSupport.o GSQLObject.o SQLConnection.o SQLTransaction.o SQL_internal_utils.o ServerSocket.o Socket.o batched_connection_client.o batched_connection_common.o BlobUtils.o -o test_causal $(CPPFLAGS) $(LDFLAGS)
 
 stress1: $(object_files) strxess_test1.o
 	clang++ $(object_files) stress_test.o -o stress1 $(LDFLAGS)
@@ -47,9 +47,9 @@ stress_test2.o:
 stress_test3.o:
 	clang++ -c stress_test.cpp -DTEST_MODE=3 $(CPPFLAGS)
 vm_main.o:
-	clang++ -c vm_main.cpp -DNUM_CLIENTS=$(num_clients) -DCLIENT_RATE=$(client_rate)  -DINCREASE_BY=$(increase_by) -DINCREASE_DELAY=$(increase_delay) -DTEST_STOP_TIME=$(test_stop_time) -DconcurrencySetting=$(concurrencySetting) $(extra_macro_defs) $(CPPFLAGS)
+	clang++ -c vm_main.cpp -DNUM_CLIENTS=$(num_clients) -DCLIENT_RATE=$(client_rate)  -DINCREASE_BY=$(increase_by) -DINCREASE_DELAY=$(increase_delay) -DTEST_STOP_TIME=$(test_stop_time) $(CPPFLAGS)
 groups_test.o:
-	clang++ -c groups_test.cpp -DconcurrencySetting=$(concurrencySetting) $(extra_macro_defs)  $(CPPFLAGS)
+	clang++ -c groups_test.cpp  $(CPPFLAGS)
 sqlstore_clean:
 	touch SQLStore.o; rm SQLStore.o
 tracker_clean:
