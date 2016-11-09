@@ -108,12 +108,21 @@ namespace myria { namespace pgsql {
 			void LocalSQLConnection_super::tick(){
 				try {
 					if (transactions.size() > 0){
-						auto &front = transactions.front();
-						if (front.actions.size() > 0){
-							auto &action = front.actions.front();
-							if (!action.submitted){
-								action.submitted = true;
-								action.query();
+						while (true){
+							auto &front = transactions.front();
+							if (front.actions.size() > 0){
+								auto &action = front.actions.front();
+								if (!action.submitted){
+									action.submitted = true;
+									action.query();
+								}
+								break;
+							}
+							else {
+								if (front.no_future_actions()){
+									transactions.pop_front();
+								}
+								else break;
 							}
 						}
 					}

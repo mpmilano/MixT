@@ -27,6 +27,7 @@ int main(){
 					"set search_path to \"BlobStore\",public;");
 				trans.commit([]{});
 			}
+			std::cout << "on transaction 2" << std::endl;
 			c.template prepare<long int>(name,"update  \"BlobStore\".\"IntStore\" set data=$1 where id = 1");
 			c.template prepare<Bytes>("blobcheck","update  \"BlobStore\".\"BlobStore\" set data=$1 where id = 1");
 			transaction trans{c,2};
@@ -51,9 +52,11 @@ int main(){
 			trans.commit([](){
 					std::cout << "we committed" << std::endl;
 				});
+			std::cout << "commit transaction 2" << std::endl;
 			for (int i = 0; i < 10000; ++i){
 				c.tick();
 			}
+			std::cout << "normal termination" << std::endl;
 		}
 		catch(const std::exception& e){
 			std::cout << e.what() << std::endl;
