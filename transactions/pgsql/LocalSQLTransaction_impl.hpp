@@ -61,7 +61,7 @@ namespace myria { namespace pgsql {
 				auto nameint = (int) name;
 				auto namestr = std::to_string(nameint);
 				if (!sql_conn.prepared.at(nameint)){
-					sql_conn.conn.prepare(namestr,stmt);
+					sql_conn.prepare(namestr,stmt);
 					sql_conn.prepared[nameint] = true;
 				}
 				auto fwd = trans.prepared(namestr)(std::forward<Arg1>(a1));
@@ -112,7 +112,7 @@ namespace myria { namespace pgsql {
 					}
 					assert(false && "forgot a case");
 					struct dead_code{}; throw dead_code{};
-				}				
+				}
 
 				auto LocalSQLTransaction<Level::strong>::update_data_s(Table t, Name id, char const * const b){
 					static const std::string bs =

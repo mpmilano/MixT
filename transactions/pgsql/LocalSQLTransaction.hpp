@@ -1,26 +1,15 @@
 #pragma once
 #include "SQLConstants.hpp"
-#include <pqxx/result>
 #include <fstream>
 
 namespace myria { namespace pgsql {
 
 		namespace local{
 
-	
-			enum class LocalTransactionNames{
-				exists, Del1, Del2, select_version_s_i, select_version_s_b,
-					select1, select2, Updates1, Updates2, Increment, Insert1, Insert2,
-					Sel1i,Sel1b,udc1,udc2,udc3,udc4,udc5,udc6,udc7,udc8,
-					ic1,ic2,ic3,ic4,ic5,ic6,ic7,ic8,initci,initcb,
-					MAX
-					};
-
 			template<Level> class LocalSQLConnection;
 
-			bool is_serialize_error(const pqxx::pqxx_exception &r) {
-				auto s = std::string(r.base().what());
-				return s.find("could not serialize access") != std::string::npos;
+			bool is_serialize_error() {
+				assert(false && "look up how to check this once basic things work");
 			}
 			
 			class LocalSQLTransaction_super{
