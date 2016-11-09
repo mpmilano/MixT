@@ -21,7 +21,7 @@ int main(){
 			using transaction = typename LocalSQLConnection_super::transaction;
 			const std::string name = "test_statement";
 			{
-				transaction trans{c};
+				transaction trans{c,1};
 				trans.template exec_async<std::function<void ()> >(
 					[]{},
 					"set search_path to \"BlobStore\",public;");
@@ -29,7 +29,7 @@ int main(){
 			}
 			c.template prepare<long int>(name,"update  \"BlobStore\".\"IntStore\" set data=$1 where id = 1");
 			c.template prepare<Bytes>("blobcheck","update  \"BlobStore\".\"BlobStore\" set data=$1 where id = 1");
-			transaction trans{c};
+			transaction trans{c,2};
 			trans.template exec_async<std::function<void ()> >(
 				[]{},
 				"set search_path to \"BlobStore\",public;");
@@ -51,7 +51,7 @@ int main(){
 			trans.commit([](){
 					std::cout << "we committed" << std::endl;
 				});
-			while (true){
+			for (int i = 0; i < 10000; ++i){
 				c.tick();
 			}
 		}

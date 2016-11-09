@@ -75,43 +75,77 @@ namespace myria { namespace pgsql {
 				assert(conn);
 			}
 
-			LocalSQLConnection_super::transaction::transaction(LocalSQLConnection_super &conn)
-				:conn(conn) {
+			LocalSQLConnection_super::transaction::transaction(LocalSQLConnection_super &conn, const std::size_t tid)
+				:transaction_id(tid),
+				 conn(conn),
+				 my_trans((conn.transactions.emplace_back(*this), &conn.transactions.back()))
+			{
+#ifndef NDEBUG
+				for (auto &trans : conn.transactions){
+					assert(trans.no_future_actions() || &trans == my_trans);
+				}
+#endif
 				exec_async<std::function<void()> >([]{},"BEGIN");
 			}
 			LocalSQLConnection_super::result LocalSQLConnection_super::transaction::exec_sync (const std::string &command) {
+				assert(!no_future_actions());
 				return result{command,conn,PQexec(conn.conn,command.c_str())};
 			}
 
 			void LocalSQLConnection_super::transaction::commit(std::function<void ()> action){
+				assert(!no_future_actions());
 				exec_async(action, "END");
-				sent_destroy = true;
+				indicate_no_future_actions();
 			}
 			
 			void LocalSQLConnection_super::transaction::abort(std::function<void ()> action){
+				assert(!no_future_actions());
 				exec_async(action, "ABORT");
 				exec_async<std::function<void ()> >([]{}, "END");
-				sent_destroy = true;
+				indicate_no_future_actions();
 			}
 
 			void LocalSQLConnection_super::tick(){
-				if (actions.size() > 0){
-					auto &front = actions.front();
-					if (!front.submitted){
-						front.submitted = true;
-						front.query();
+				try {
+					if (transactions.size() > 0){
+						auto &front = transactions.front();
+						if (front.actions.size() > 0){
+							auto &action = front.actions.front();
+							if (!action.submitted){
+								action.submitted = true;
+								action.query();
+							}
+						}
+					}
+					PQconsumeInput(conn);
+					while (!PQisBusy(conn)){
+						if (auto* res = PQgetResult(conn)){
+							//clear out completed (or abortive)
+							//transactions
+							while (true){
+								auto& trans = transactions.front();
+								if (trans.actions.size() == 0 && trans.no_future_actions()){
+									//this transaction is over, and it's not why we woke up.
+									//kill it and start the next transaction.
+									transactions.pop_front();
+								}
+								else break;
+							}
+							auto &trans = transactions.front();
+							auto &actions = trans.actions;
+							auto &action = actions.front();
+							AtScopeEnd ase{[&]{actions.pop_front();}};
+							assert(action.submitted);
+							std::cout << "executing response evaluator for " << action.query_str << std::endl;
+							action.on_complete(result{action.query_str,*this,res});
+						}
+						else break;
 					}
 				}
-				PQconsumeInput(conn);
-				while (!PQisBusy(conn)){
-					if (auto* res = PQgetResult(conn)){
-						auto &action = actions.front();
-						AtScopeEnd ase{[&]{actions.pop_front();}};
-						assert(action.submitted);
-						std::cout << "executing response evaluator for " << action.query_str << std::endl;
-						action.on_complete(result{action.query_str,*this,res});
-					}
-					else break;
+				catch (SerializationFailure& sf){
+					transactions.front().indicate_no_future_actions();
+					transactions.pop_front();
+					throw sf;
 				}
 			}
 			

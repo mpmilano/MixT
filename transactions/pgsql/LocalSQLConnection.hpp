@@ -45,8 +45,40 @@ namespace myria { namespace pgsql {
 				bool submitted{false};
 				deferred_action(const deferred_action&) = delete;
 			};
+
+			struct transaction;
+
+			struct deferred_transaction{
+			private:
+				bool no_fut_actions{false};
+			public:
+				bool no_future_actions() const {
+					return no_fut_actions;
+				}
+				
+				void indicate_no_future_actions(){
+					if (!no_fut_actions){
+						if (trans){
+							trans->indicate_no_future_actions();
+						}
+						else no_fut_actions = true;
+					}
+				}
+				transaction* trans;
+				std::list<deferred_action> actions;
+				deferred_transaction(transaction& trans)
+					:trans(&trans){}
+
+				~deferred_transaction(){
+					if (trans){
+						trans->my_trans = nullptr;
+					}
+				}
+
+				friend struct transaction;
+			};
 			
-			std::list<deferred_action> actions;
+			std::list<deferred_transaction> transactions;
 			
 			PGconn *conn;
 			std::shared_ptr<bool> aborting{new bool{false}};
@@ -61,10 +93,27 @@ namespace myria { namespace pgsql {
 			}
 
 			struct transaction {
+			private:
+				bool no_fut_actions{false};
+			public:
 
-				bool sent_destroy{false};
+				bool no_future_actions() const {
+					return no_fut_actions;
+				}
+
+				void indicate_no_future_actions(){
+					if (!no_fut_actions){
+						assert(my_trans);
+						assert(!my_trans->no_fut_actions);
+						no_fut_actions = true;
+						my_trans->no_fut_actions = true;
+					}
+				}
+				
+				const std::size_t transaction_id;
 				LocalSQLConnection_super &conn;
-				transaction(LocalSQLConnection_super &conn);
+				deferred_transaction* my_trans;
+				transaction(LocalSQLConnection_super &conn, const std::size_t tid);
 
 				result exec_sync (const std::string &command);
 
@@ -120,7 +169,9 @@ namespace myria { namespace pgsql {
 
 				template<typename F>
 				void exec_async(F action, const std::string &command){
-					conn.actions.emplace_back(
+					assert(!no_future_actions());
+					assert(my_trans);
+					my_trans->actions.emplace_back(
 						prep_return_func(action),
 						command,
 						[=]{
@@ -135,6 +186,8 @@ namespace myria { namespace pgsql {
 				
 				template<typename F, typename... Args>
 				void exec_prepared(F action, const std::string& name, const Args & ... args){
+					assert(!no_future_actions());
+					assert(my_trans);
 					using namespace std;
 					shared_ptr<vector<char> > scratch_buf{new vector<char>};
 					const vector<const char* > param_values{{PGSQLinfo<Args>::pg_data(*scratch_buf,args)...}};
@@ -142,7 +195,7 @@ namespace myria { namespace pgsql {
 					const vector<int> param_formats{{one<Args>::value...}};
 					int result_format = 1;
 					auto &conn = this->conn;
-					conn.actions.emplace_back(
+					my_trans->actions.emplace_back(
 						prep_return_func(action),
 						name,
 						[&conn, sb = std::move(scratch_buf),name,
@@ -162,8 +215,11 @@ namespace myria { namespace pgsql {
 
 				~transaction(){
 					if (!conn.aborting){
-						assert(sent_destroy);
-						if (!sent_destroy) abort([]{});
+						assert(no_future_actions());
+						if (!no_future_actions()) abort([]{});
+					}
+					if (my_trans){
+						my_trans->trans = nullptr;
 					}
 				}
 			};
