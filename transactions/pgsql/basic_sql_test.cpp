@@ -1,5 +1,7 @@
 #include "LocalSQLConnection.hpp"
 #include "BlobUtils.hpp"
+#include "pgtransaction.hpp"
+#include "pgexceptions.hpp"
 #include <pqxx/pqxx>
 using namespace myria;
 using namespace pgsql;
@@ -18,7 +20,7 @@ int main(){
 	}
 		try {
 			LocalSQLConnection_super c;
-			using transaction = typename LocalSQLConnection_super::transaction;
+			using transaction = pgtransaction;
 			const std::string name = "test_statement";
 			{
 				transaction trans{c,1};
