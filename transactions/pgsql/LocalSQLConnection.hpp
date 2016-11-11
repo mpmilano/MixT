@@ -8,7 +8,9 @@
 
 namespace myria { namespace pgsql {
 		namespace local{
-			
+
+
+			extern const std::function<void ()> noop;
 			class LocalSQLConnection_super;
 			
 			/*throws failure condition on error */
@@ -47,7 +49,7 @@ namespace myria { namespace pgsql {
 			
 		};
 			
-			template<Level l> struct LocalSQLConnection : public LocalSQLConnection_super {};
+			template<Level l> class LocalSQLConnection : public LocalSQLConnection_super {};
 		}
 	}
 }

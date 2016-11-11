@@ -2,7 +2,8 @@
 #include "LocalSQLConnection.hpp"
 #include "LocalSQLTransaction.hpp"
 #include "SQLConstants.hpp"
-#include "simple_rpc.hpp"
+#include "dual_connection.hpp"
+#include "pgexceptions.hpp"
 
 namespace myria {
 	namespace pgsql {
@@ -14,18 +15,47 @@ namespace myria {
 			class SQLReceiver{
 			public:
 				
-				receiver r;
+				mutils::dual_connection_receiver<receiver> r;
 
-				using action_t = typename receiver::action_t;
 				using sizes_t = std::vector<std::size_t>;
 
-				static action_t new_connection(whendebug(std::ofstream& log_file)){
-					struct ReceiverFun : public conn_space::ReceiverFun{
+				static mutils::dualstate_action_t new_connection(whendebug(std::ofstream& log_file,) ::mutils::connection& data, ::mutils::connection& control) {
+					struct ReceiverFun : public mutils::dual_state_receiver {
 						whendebug(std::ofstream& log_file;)
 						std::unique_ptr<LocalSQLConnection<l> > db_connection{
 							new LocalSQLConnection<l>()};
 						std::unique_ptr<LocalSQLTransaction<l> > current_trans{nullptr};
-						void operator()(const void* data, mutils::connection& conn){
+
+						mutils::connection& data_conn;
+						mutils::connection& control_conn;
+
+						int underlying_fd() {
+							return (db_connection ?
+									db_connection->underlying_fd() :
+									current_trans->conn->underlying_fd());
+						}
+
+						void async_tick() {
+							try {
+								if (db_connection){
+									db_connection->tick();
+								}
+								else {
+									current_trans->conn->tick();
+								}
+							}
+							catch (const SerializationFailure& sf){
+								char serialization_failure{1};
+								control_conn.send(serialization_failure);
+								db_connection = current_trans->store_abort(std::move(current_trans),control_conn);
+							}
+							catch (const SQLFailure& sf){
+								assert(false && "fatal SQL error");
+								struct diedie{}; throw diedie{};
+							}
+						}
+						
+					void deliver_new_data_event(const void* data){
 							const char* _data = (const char*) data;
 							if (!current_trans) {
 								
@@ -50,12 +80,12 @@ namespace myria {
 							}
 							else if (_data[0] == 0){
 								//we're finishing this transaction
-								db_connection = current_trans->store_commit(std::move(current_trans),conn);
+								db_connection = current_trans->store_commit(std::move(current_trans),data_conn);
 								assert(db_connection);
 							}
 							else if (_data[0] == 1){
 								//we're aborting this transaction
-								db_connection = current_trans->store_abort(std::move(current_trans),conn);
+								db_connection = current_trans->store_abort(std::move(current_trans),data_conn);
 								assert(db_connection);
 							}
 							else {
@@ -65,7 +95,7 @@ namespace myria {
 								auto pair = current_trans->receiveSQLCommand(
 									std::move(current_trans),
 									name, _data + 1 + sizeof(name),
-									conn
+									data_conn
 									);
 								current_trans = std::move(pair.first);
 								db_connection = std::move(pair.second);
@@ -83,19 +113,25 @@ namespace myria {
 							}
 #endif
 						}
+
+						void deliver_new_control_event(const void*){
+							assert(false && "this channel was not supposed to be used...");
+						}
+						
 						ReceiverFun(ReceiverFun&& o)
 							:whendebug(log_file(o.log_file),)
 							db_connection(std::move(o.db_connection)),
-							current_trans(std::move(o.current_trans))
+							current_trans(std::move(o.current_trans)),
+							data_conn(o.data_conn),
+							control_conn(o.control_conn)
 							{}
-#ifndef NDEBUG
-						ReceiverFun(std::ofstream& log_file)
-							:log_file(log_file){}
-#else
-						ReceiverFun() = default;
-#endif
+						
+						ReceiverFun(whendebug(std::ofstream& log_file,) ::mutils::connection& data, ::mutils::connection& control)
+							:whendebug(log_file(log_file),)
+							 data_conn(data),control_conn(control)
+							{}
 					};
-					return action_t{new ReceiverFun(whendebug(log_file))};
+					return mutils::dualstate_action_t{new ReceiverFun(whendebug(log_file,) data, control)};
 				}
 				
 				SQLReceiver():r((l == Level::strong?

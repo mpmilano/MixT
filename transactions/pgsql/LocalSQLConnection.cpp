@@ -8,6 +8,9 @@ using namespace mutils;
 
 namespace myria { namespace pgsql {
 		namespace local{
+
+			const std::function<void ()> noop{[]{}};
+			
 			void check_error(LocalSQLConnection_super &conn,
 							 const std::string &command,
 							 int result){

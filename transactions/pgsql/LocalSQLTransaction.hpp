@@ -1,5 +1,6 @@
 #pragma once
 #include "SQLConstants.hpp"
+#include "pgtransaction.hpp"
 #include <fstream>
 
 namespace myria { namespace pgsql {
@@ -15,18 +16,18 @@ namespace myria { namespace pgsql {
 			class LocalSQLTransaction_super{
 			public:
 
-				pqxx::work trans;
+				pgtransaction trans;
 				bool aborted_or_committed{false};
 
 #ifndef NDEBUG
 				std::ofstream &log_file;
 
-				void log_receive(const std::string& s){
+				static void log_receive(std::ofstream &log_file, const std::string& s){
 					log_file << "received: " << s << std::endl;
 					log_file.flush();
 				}
 				
-				void log_send(const std::string& s){
+				static void log_send(std::ofstream &log_file, const std::string& s){
 					log_file << "sent: " << s << std::endl;
 					log_file.flush();
 					}
@@ -35,8 +36,7 @@ namespace myria { namespace pgsql {
 #define log_send(...) ;
 #endif
 
-				template<typename SQLConn>
-				LocalSQLTransaction_super(SQLConn &conn whendebug(, std::ofstream& log_file));
+				LocalSQLTransaction_super(LocalSQLConnection_super &conn whendebug(, std::ofstream& log_file));
 
 				virtual ~LocalSQLTransaction_super(){
 					assert(aborted_or_committed);
@@ -45,30 +45,16 @@ namespace myria { namespace pgsql {
 				template<typename T>
 				void sendBack(const std::string&, const T& t, mutils::connection& socket);
 
-				template<typename E>
-				auto exec_prepared_hlpr(E &e);
-				
-				template<typename E, typename A, typename... B>
-				auto exec_prepared_hlpr(E &e, A&& a, B && ... b);
-				
-				template<typename SQL_Conn, typename Arg1, typename... Args>
-				auto prepared(SQL_Conn& sql_conn, LocalTransactionNames name, const std::string &stmt,
-							  Arg1 && a1, Args && ... args);
+				template<typename F, typename Arg1, typename... Args>
+				void prepared(const F& f,LocalSQLConnection_super& sql_conn, LocalTransactionNames name, const std::string &stmt,  Arg1 && a1, Args && ... args);
 
 				template<typename LocalSQLTransaction>
 				typename std::unique_ptr<typename LocalSQLTransaction::SQLConn>
 				store_commit(std::unique_ptr<LocalSQLTransaction> o, mutils::connection& socket) {
-					log_receive("commit");
-					try{
-						o->trans.commit();
-						o->aborted_or_committed = true;
-						o->all_fine(socket);
-					}
-					catch(const pqxx::pqxx_exception& e){
-						assert(is_serialize_error(e));
-						o->indicate_serialization_failure(socket);
-						return (o->store_abort(std::move(o),socket));
-					}
+					whendebug(auto& log_file = o->log_file);
+					log_receive(log_file,"commit");
+					o->trans.commit([&]{all_fine(log_file,socket);});
+					o->aborted_or_committed = true;
 					return std::move(o->conn);
 				}
 
@@ -84,8 +70,17 @@ namespace myria { namespace pgsql {
 				
 				virtual void remove(Name id, mutils::connection& socket) = 0;
 
-				virtual void indicate_serialization_failure(mutils::connection& socket) = 0;
-				virtual void all_fine(mutils::connection& socket) = 0;
+				static void indicate_serialization_failure(std::ofstream& log_file, mutils::connection& socket) {
+					char abort{1};
+					log_send(log_file,"serialization failure");
+					socket.send(abort);
+				}
+				
+				static void all_fine(std::ofstream& log_file, mutils::connection& socket) {
+					char ok{0};
+					log_send(log_file,"all fine");
+					socket.send(ok);
+				}
 
 				template<typename LocalSQLTransaction>
 				auto receiveSQLCommand(std::unique_ptr<LocalSQLTransaction> o, TransactionNames name, char const * const bytes, mutils::connection& socket){
@@ -99,51 +94,38 @@ namespace myria { namespace pgsql {
 						resource_return(resource_return&& o)
 							:first(std::move(o.first)),second(std::move(o.second)){}
 					};
-					
-					try{
-						switch(name){
-						case TransactionNames::exists:
-							log_receive("exists");
-							o->obj_exists(*from_bytes<Name>(&o->dsm,bytes),socket);
-							break;
-						case TransactionNames::Del:
-							log_receive("del");
-							o->remove(*from_bytes<Name>(&o->dsm,bytes),socket);
-							break;
-						case TransactionNames::select_version:
-							log_receive("select_version");
-							o->select_version(bytes,socket);
-							break;
-						case TransactionNames::select_version_data:
-							log_receive("select-version-data");
-							o->select_version_data(bytes,socket);
-							break;
-						case TransactionNames::update_data:
-							log_receive("update-data");
-							o->update_data(bytes,socket);
-							break;
-						case TransactionNames::initialize_with_id:
-							log_receive("initialize-with-id");
-							o->initialize_with_id(bytes,socket);
-							break;
-						case TransactionNames::increment:
-							log_receive("increment");
-							o->increment(bytes,socket);
-							break;
-						case TransactionNames::MAX:
-							assert(false && "this should not be sent");
-							struct dead_code{}; throw dead_code{};
-						}
-					}
-					catch(const pqxx::pqxx_exception& e){
-						if (!is_serialize_error(e)){
-							std::cout << e.base().what() << std::endl;
-							assert(false);
-							struct dead_code{}; throw dead_code{};
-						}
-						o->indicate_serialization_failure(socket);
-						return resource_return{nullptr,
-								o->store_abort(std::move(o),socket)};
+					switch(name){
+					case TransactionNames::exists:
+						log_receive(log_file,"exists");
+						o->obj_exists(*from_bytes<Name>(&o->dsm,bytes),socket);
+						break;
+					case TransactionNames::Del:
+						log_receive(log_file,"del");
+						o->remove(*from_bytes<Name>(&o->dsm,bytes),socket);
+						break;
+					case TransactionNames::select_version:
+						log_receive(log_file,"select_version");
+						o->select_version(bytes,socket);
+						break;
+					case TransactionNames::select_version_data:
+						log_receive(log_file,"select-version-data");
+						o->select_version_data(bytes,socket);
+						break;
+					case TransactionNames::update_data:
+						log_receive(log_file,"update-data");
+						o->update_data(bytes,socket);
+						break;
+					case TransactionNames::initialize_with_id:
+						log_receive(log_file,"initialize-with-id");
+						o->initialize_with_id(bytes,socket);
+						break;
+					case TransactionNames::increment:
+						log_receive(log_file,"increment");
+						o->increment(bytes,socket);
+						break;
+					case TransactionNames::MAX:
+						assert(false && "this should not be sent");
+						struct dead_code{}; throw dead_code{};
 					}
 					return resource_return{std::move(o),nullptr};
 				}
@@ -158,26 +140,31 @@ namespace myria { namespace pgsql {
 
 				using SQLConn = LocalSQLConnection<l>;
 				std::unique_ptr<SQLConn > conn;
+				
+				LocalSQLTransaction(std::unique_ptr<LocalSQLConnection<l> > conn whendebug(, std::ofstream& log_file))
+				:LocalSQLTransaction_super(*conn whendebug (,log_file)),
+				 conn(std::move(conn)){
+				trans.exec_async(noop,"set search_path to \"BlobStore\",public");
+				trans.exec_async(noop,"SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL SERIALIZABLE");
+			}
+				
+				void select_version_s(std::function<void (long int)> action, Table t, Name id);
+				
+				void select_version_data_s(std::function<void (long int, long int)> action, Table t, Name id);
 
-				LocalSQLTransaction(std::unique_ptr<LocalSQLConnection<l> > conn whendebug(, std::ofstream& log_file));
+				void select_version_data_s(std::function<void (long int, mutils::Bytes)> action, Table t, Name id);
 				
-				auto select_version_s(Table t, Name id);
+				void update_data_s(std::function<void (long int)> action, Table t, Name id, char const * const b);
 				
-				auto select_version_data_s(Table t, Name id);
-				
-				auto update_data_s(Table t, Name id, char const * const b);
-				
-				auto increment_s(Table t, Name id);				
+				void increment_s(std::function<void (long int)> action, Table t, Name id);
 
 				void initialize_with_id_s(Table t, Name id, char const * const b);
-				
-				auto extract_version(const pqxx::result &r);
 
-				void obj_exists(Name id,mutils::connection& socket);
+				void obj_exists(Name id, mutils::connection& socket);
 				
-				void remove(Name id,mutils::connection& socket);
+				void remove(Name id, mutils::connection& socket);
 				
-				void select_version(char const * const bytes,mutils::connection& socket);
+				void select_version(char const * const bytes, mutils::connection& socket);
 				
 				void select_version_data(char const * const bytes,mutils::connection& socket);
 				
@@ -200,8 +187,13 @@ namespace myria { namespace pgsql {
 
 				using SQLConn = LocalSQLConnection<l>;
 				std::unique_ptr<SQLConn > conn;
-				
-				LocalSQLTransaction(std::unique_ptr<LocalSQLConnection<l> > conn whendebug(, std::ofstream& log_file));
+
+				LocalSQLTransaction(std::unique_ptr<LocalSQLConnection<l> > conn whendebug(, std::ofstream& log_file))
+				:LocalSQLTransaction_super(*conn whendebug(, log_file)),
+				 conn(std::move(conn)) {
+				trans.exec_async(noop,"set search_path to causalstore,public");
+				trans.exec_async(noop,"SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL REPEATABLE READ");
+			}
 				
 				static constexpr int group_mapper(int k){
 					if (k < 1) {
@@ -264,18 +256,18 @@ namespace myria { namespace pgsql {
 					return ret;
 				}
 				
-				auto select_version_c(Table t, Name id);
+				void select_version_c(std::function<void (long int, long int, long int, long int)> action, Table t, Name id);
 				
-				auto select_version_data_c(Table t, Name id);
+				void select_version_data_c(std::function<void (long int, long int, long int, long int, long int)> action, Table t, Name id);
+					
+				void select_version_data_c(std::function<void (long int, long int, long int, long int, mutils::Bytes)> action, Table t, Name id);
 
-				auto update_data_c(Table t, int k, Name id, const std::array<int,NUM_CAUSAL_GROUPS> &ends, char const* const b);
+				void update_data_c(std::function<void (long int, long int, long int, long int)> action,Table t, int k, Name id, const std::array<int,NUM_CAUSAL_GROUPS> &ends, char const* const b);
 				
-				auto increment_c(Table t, int k, Name id, const std::array<int,NUM_CAUSAL_GROUPS> &ends);
+				void increment_c(std::function<void (long int, long int, long int, long int)> action, Table t, int k, Name id, const std::array<int,NUM_CAUSAL_GROUPS> &ends);
 				
 				template<typename Blob>
-				void initialize_with_id_c(Table t, int k, Name id, const std::array<int,NUM_CAUSAL_GROUPS> &ends, const Blob& b);
-
-				auto extract_version(const pqxx::result &r);
+				void initialize_with_id_c(Table t, int k, Name id, const std::array<int,NUM_CAUSAL_GROUPS> &ends, const Blob &b);
 
 				void obj_exists(Name id,mutils::connection& socket);
 				
@@ -296,3 +288,5 @@ namespace myria { namespace pgsql {
 		}
 	}
 }
+
+#include "LocalSQLTransaction_impl.hpp"

@@ -49,19 +49,34 @@ struct PGSQLinfo<int> {
 	}
 };
 
+template<>
+struct PGSQLinfo<bool> {
+	static_assert(sizeof(bool)== 1,"Wow postgres is irritating");
+	static constexpr Oid value = 16;
+	static const char* pg_data(const std::vector<char>& , const bool& li) {
+		return (char*)&li;
+	}
+	static bool from_pg(char const * const v){
+		return *v != 0;
+	}
+	static int pg_size(std::vector<char>&, const bool&){
+		return sizeof(bool);
+	}
+};
+
 
 //we're gonna call this a bytea
 template<>
 struct PGSQLinfo<mutils::Bytes> {
 	/*bytea*/
 	static constexpr Oid value = 17;
-	static const char* pg_data(std::vector<char>&, mutils::Bytes& li) {
+	static const char* pg_data(std::vector<char>&, const mutils::Bytes& li) {
 		return (char*) li.bytes;
 	}
 	static mutils::Bytes from_pg(std::size_t size, char const * const v){
 		return mutils::Bytes{v,size};
 	}
-	static int pg_size(std::vector<char>&, mutils::Bytes& li){
+	static int pg_size(std::vector<char>&, const mutils::Bytes& li){
 		return li.size;
 	}
 };
