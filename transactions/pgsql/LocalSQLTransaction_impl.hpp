@@ -2,7 +2,6 @@
 #include "LocalSQLTransaction.hpp"
 #include "LocalSQLConnection.hpp"
 #include "Bytes.hpp"
-#include "BlobUtils.hpp"
 
 namespace myria { namespace pgsql {
 
