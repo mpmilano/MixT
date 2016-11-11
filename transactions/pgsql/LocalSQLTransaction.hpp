@@ -8,10 +8,6 @@ namespace myria { namespace pgsql {
 		namespace local{
 
 			template<Level> class LocalSQLConnection;
-
-			bool is_serialize_error() {
-				assert(false && "look up how to check this once basic things work");
-			}
 			
 			class LocalSQLTransaction_super{
 			public:
@@ -39,7 +35,8 @@ namespace myria { namespace pgsql {
 				LocalSQLTransaction_super(LocalSQLConnection_super &conn whendebug(, std::ofstream& log_file));
 
 				virtual ~LocalSQLTransaction_super(){
-					assert(aborted_or_committed);
+                                    std::cerr << "TURN THIS ASSERT BACK ON BUDDY" << std::endl;
+                                        //assert(aborted_or_committed);
 				}
 
 				template<typename T>
