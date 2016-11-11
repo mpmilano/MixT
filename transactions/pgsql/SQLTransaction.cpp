@@ -25,7 +25,7 @@ namespace myria{ namespace pgsql {
 			sql_conn->current_trans = this;
 			char start_trans{4};
 			log_send(level_string + " start");
-			sql_conn->conn.send(start_trans);
+			sql_conn->conn->send(start_trans);
 		}
 		
 		std::list<SQLStore_impl::GSQLObject*> objs;
@@ -37,7 +37,7 @@ namespace myria{ namespace pgsql {
 			if(!remote_aborted){
 				char trans{1};
 				log_send(level_string + " abort");
-				sql_conn->conn.send(trans);
+				sql_conn->conn->send(trans);
 			}
 			commit_on_delete = false;
 		}

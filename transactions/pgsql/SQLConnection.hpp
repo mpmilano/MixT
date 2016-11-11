@@ -6,6 +6,7 @@
 #include <mutex>
 #include <resource_pool.hpp>
 #include "SQLConstants.hpp"
+#include "dual_connection.hpp"
 
 namespace myria{ namespace pgsql {
 
@@ -17,9 +18,6 @@ namespace myria{ namespace pgsql {
 				MAX
 		};
 
-		using conn_space::connection;
-		using conn_space::connections;
-
 		struct SQLConnection{
 #ifndef NDEBUG
 			void onAcquire(...){
@@ -30,10 +28,10 @@ namespace myria{ namespace pgsql {
 				assert(!current_trans);
 			}
 #endif
-			connection conn;
+			std::unique_ptr<mutils::connection> conn;
 			SQLTransaction* current_trans{nullptr};
 			bool in_trans() const;
-			SQLConnection(connection conn):conn{std::move(conn)}{}
+			SQLConnection(std::unique_ptr<mutils::connection> conn):conn{std::move(conn)}{}
 		};
 		
 		using LockedSQLConnection = mutils::ResourcePool<SQLConnection>::LockedResource;
@@ -51,11 +49,13 @@ namespace myria{ namespace pgsql {
 			}
 #endif
 			
-			connections bc{
+			mutils::dual_connection_manager<mutils::batched_connection::connections> bc{
 				(l == Level::strong ? strong_ip_addr : causal_ip_addr),
 					(l == Level::strong ? strong_sql_port : causal_sql_port),(MAX_THREADS/2)};
 			mutils::ResourcePool<SQLConnection> rp{MAX_THREADS,MAX_THREADS,
-					[this]{return new SQLConnection(bc.spawn());}};
+					[this]{
+					using subcon = std::decay_t<decltype(bc.spawn())>;
+					return new SQLConnection(std::unique_ptr<mutils::connection>(new subcon(bc.spawn())));}};
 			LockedSQLConnection acquire(){
 				return rp.acquire();
 			}

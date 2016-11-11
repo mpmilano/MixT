@@ -21,7 +21,7 @@ namespace myria{
 			bool remote_aborted{false};
 			
 #ifndef NDEBUG
-			std::ofstream &log_file{sql_conn->conn.log_file};
+			std::ofstream &log_file{sql_conn->conn->get_log_file()};
 			
 			void log_receive_start(const std::string&);
 			void log_receive_stop(const std::string&);
@@ -44,14 +44,14 @@ namespace myria{
 			void prepared(const std::string& whendebug(what), TransactionNames name, Args && ... args){
 				char trans{3};
 				whendebug(log_send(what);)
-				sql_conn->conn.send(trans,name,args...);
+				sql_conn->conn->send(trans,name,args...);
 			}
 
 
 			template<typename... T>
 			void receive(const std::string & whendebug(what), T& ... t){
 				whendebug(log_receive_start(what);)
-				sql_conn->conn.receive(t...);
+				sql_conn->conn->receive(t...);
 				whendebug(log_receive_stop(what);)
 			}
 
@@ -102,7 +102,7 @@ namespace myria{
 					
 				}
 				log_receive_start(level_string + " receive data");
-				sql_conn->conn.receive(v.size(),v.data());
+				sql_conn->conn->receive(v.size(),v.data());
 				log_receive_stop(level_string + " receive data");
 				return v;
 			}
@@ -157,7 +157,7 @@ namespace myria{
 			bool store_commit(){
 				char trans{0};
 				log_send(level_string + " commit");
-				sql_conn->conn.send(trans);
+				sql_conn->conn->send(trans);
 				check_serialization_failure();
 				return true;
 			}
