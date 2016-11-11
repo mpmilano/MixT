@@ -1,5 +1,4 @@
 //oh look, a source file! We remember those.
-#include <pqxx/pqxx>
 #include <arpa/inet.h>
 #include "SQLStore_impl.hpp"
 #include "SQLTransaction.hpp"
@@ -12,7 +11,6 @@
 
 namespace myria{ namespace pgsql {
 
-		using namespace pqxx;
 		using namespace std;
 		using namespace mtl;
 		using namespace tracker;

@@ -1,5 +1,4 @@
 #pragma once
-#include <pqxx/pqxx>
 #include <arpa/inet.h>
 #include "SQLStore_impl.hpp"
 #include "SQLTransaction.hpp"

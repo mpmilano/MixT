@@ -11,7 +11,6 @@
 
 namespace myria{ namespace pgsql {
 		
-		using namespace pqxx;
 		using namespace std;
 		using namespace mtl;
 		using namespace tracker;

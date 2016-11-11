@@ -1,7 +1,5 @@
 //oh look, a source file! We remember those.
-#include <pqxx/pqxx>
 #include <arpa/inet.h>
-#include "BlobUtils.hpp"
 #include "SQLStore_impl.hpp"
 #include "SQLTransaction.hpp"
 #include "Tracker_common.hpp"
@@ -11,6 +9,7 @@
 #include "Ostreams.hpp"
 #include "SafeSet.hpp"
 #include "SQL_internal_utils.hpp"
+#include "Bytes.hpp"
 
 namespace myria{ namespace pgsql {
 
@@ -18,7 +17,6 @@ namespace myria{ namespace pgsql {
 			constexpr int max_ver_check_size = 100;
 		}
 		
-		using namespace pqxx;
 		using namespace std;
 		using namespace mtl;
 		using namespace tracker;
@@ -73,7 +71,7 @@ namespace myria{ namespace pgsql {
 				//assert(!ro_isValid(trans));
 
 				if (t == Table::BlobStore){
-					binarystring blob(&c.at(0),c.size());
+					mutils::Bytes blob{&c.at(0),c.size()};
 					if (ss.level == Level::strong)
 						trans->initialize_with_id(t,id,blob);
 					else
@@ -130,7 +128,7 @@ namespace myria{ namespace pgsql {
 						 trans->update_data(i->table,repl_group,i->key,i->_store.clock,x))
 	
 			if (i->table == Table::BlobStore){
-				binarystring blob(c,i->size);
+				mutils::Bytes blob(c,i->size);
 				if (i->_store.level == Level::strong){
 					upd_23425(blob,i->vers);
 				}

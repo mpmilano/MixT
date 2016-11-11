@@ -1,7 +1,5 @@
 #pragma once
 #include "SQLConnection.hpp"
-#include <pqxx/pqxx>
-#include "BlobUtils.hpp"
 #include <iostream>
 #include <fstream>
 
