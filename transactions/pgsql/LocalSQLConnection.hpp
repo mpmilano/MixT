@@ -49,7 +49,19 @@ namespace myria { namespace pgsql {
 			
 		};
 			
-			template<Level l> class LocalSQLConnection : public LocalSQLConnection_super {};
+			template<Level l> class LocalSQLConnection : public LocalSQLConnection_super {
+			public:
+				LocalSQLConnection(){
+					if (l == Level::strong){
+						pgresult{"strong searchpath",*this,PQexec(conn,"set search_path to \"BlobStore\",public")};
+						pgresult{"strong isolation level",*this,PQexec(conn,"SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL SERIALIZABLE")};
+					}
+					else {
+						pgresult{"causal searchpath",*this,PQexec(conn,"set search_path to causalstore,public")};
+						pgresult{"causal isolation level",*this,PQexec(conn,"SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL REPEATABLE READ")};
+					}
+				}
+			};
 		}
 	}
 }

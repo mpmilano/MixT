@@ -140,10 +140,7 @@ namespace myria { namespace pgsql {
 				
 				LocalSQLTransaction(std::unique_ptr<LocalSQLConnection<l> > conn whendebug(, std::ofstream& log_file))
 				:LocalSQLTransaction_super(*conn whendebug (,log_file)),
-				 conn(std::move(conn)){
-				trans.exec_async(noop,"set search_path to \"BlobStore\",public");
-				trans.exec_async(noop,"SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL SERIALIZABLE");
-			}
+				 conn(std::move(conn)){}
 				
 				void select_version_s(std::function<void (long int)> action, Table t, Name id);
 				
@@ -187,10 +184,7 @@ namespace myria { namespace pgsql {
 
 				LocalSQLTransaction(std::unique_ptr<LocalSQLConnection<l> > conn whendebug(, std::ofstream& log_file))
 				:LocalSQLTransaction_super(*conn whendebug(, log_file)),
-				 conn(std::move(conn)) {
-				trans.exec_async(noop,"set search_path to causalstore,public");
-				trans.exec_async(noop,"SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL REPEATABLE READ");
-			}
+				 conn(std::move(conn)){}
 				
 				static constexpr int group_mapper(int k){
 					if (k < 1) {
