@@ -290,12 +290,6 @@ namespace synth_test {
 }
 
 int real_main(){
-#ifndef NDEBUG
-	{
-		constexpr auto debug_ip = decode_ip("23.163.4.2");
-		assert(decode_ip(std::string{"23.163.4.2"}) == debug_ip);
-	}
-#endif
 
 	std::cout << "In configuration; " << (causal_enabled ? "with causal" : " with only strong" ) << std::endl;
 	ofstream logFile;
