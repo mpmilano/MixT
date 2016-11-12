@@ -248,7 +248,7 @@ namespace myria { namespace pgsql {
 				};
 				static const constexpr auto update_cmds = update_data_c_cmd(tnames,"data + 1");
 				auto p = update_cmds.at(((int)t) * (NUM_CAUSAL_GROUPS) + (k-1));
-				return prepared(action,*conn,p.first,p.second,id,ends[md(k+1)-1],ends[md(k+2)-1],ends[md(k+3)-1]);
+				//return prepared(action,*conn,p.first,p.second,id,ends[md(k+1)-1],ends[md(k+2)-1],ends[md(k+3)-1]);
 			}
 				
 
