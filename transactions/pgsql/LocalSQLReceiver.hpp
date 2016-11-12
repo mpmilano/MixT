@@ -50,6 +50,7 @@ namespace myria {
 								db_connection = current_trans->store_abort(std::move(current_trans),control_conn);
 							}
 							catch (const SQLFailure& sf){
+								std::cerr << sf.what << std::endl;
 								assert(false && "fatal SQL error");
 								struct diedie{}; throw diedie{};
 							}
