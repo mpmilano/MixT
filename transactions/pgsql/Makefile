@@ -12,7 +12,7 @@ export LDFLAGS
 all:
 	echo "don't use this target"
 simple_test: $(object_files)
-	clang++ basic_sql_test.cpp $(object_files) $(CPPFLAGS) $(LDFLAGS)
+	clang++ basic_sql_test.cpp $(object_files) $(CPPFLAGS) $(LDFLAGS) -lpqxx
 
 strong: $(object_files)
 	clang++ LocalSQLReceiver.cpp $(object_files) -o strong_receiver -DRCVR_LEVEL=Level::strong $(CPPFLAGS) $(LDFLAGS)
