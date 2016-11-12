@@ -11,7 +11,10 @@ namespace myria { namespace pgsql {
 			{
 #ifndef NDEBUG
 				for (auto &trans : conn.transactions){
-					assert(trans.no_future_actions() || &trans == my_trans);
+					if (!(trans.no_future_actions() || &trans == my_trans)){
+						assert(trans.trans);
+						assert();
+					}
 				}
 #endif
 				exec_async<std::function<void()> >([]{},"BEGIN");
@@ -54,7 +57,8 @@ namespace myria { namespace pgsql {
 				if (!conn.aborting){
 					assert(no_future_actions());
 					if (!no_future_actions()) abort([]{});
-					}
+				}
+				assert(my_trans);
 				if (my_trans){
 					my_trans->trans = nullptr;
 				}
