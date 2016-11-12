@@ -35,8 +35,8 @@ namespace myria { namespace pgsql {
 				LocalSQLTransaction_super(LocalSQLConnection_super &conn whendebug(, std::ofstream& log_file));
 
 				virtual ~LocalSQLTransaction_super(){
-                                    std::cerr << "TURN THIS ASSERT BACK ON BUDDY" << std::endl;
-                                        //assert(aborted_or_committed);
+					assert(aborted_or_committed);
+					trans.abort(noop);
 				}
 
 				template<typename T>
