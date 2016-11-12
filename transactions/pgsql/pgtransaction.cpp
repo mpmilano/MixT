@@ -13,7 +13,7 @@ namespace myria { namespace pgsql {
 				for (auto &trans : conn.transactions){
 					if (!(trans.no_future_actions() || &trans == my_trans)){
 						assert(trans.trans);
-						assert();
+						assert(trans.no_future_actions() || &trans == my_trans);
 					}
 				}
 #endif
