@@ -6,24 +6,41 @@ namespace myria { namespace pgsql {
 			template<Level l> class LocalSQLConnection : public LocalSQLConnection_super {
 			public:
 				LocalSQLConnection(){
-					pgtransaction tr{*this,0};
+					pgtransaction *tr{nullptr};
+					std::unique_ptr<pgtransaction> tr_o;
+					if (transactions.size() > 0 && !transactions.back().no_future_actions()){
+						tr = transactions.back().trans;
+					}
+					else{
+						tr_o.reset(new pgtransaction(*this,0));
+						tr = tr_o.get();
+					}
+
 					if (l == Level::strong){
-						tr.exec_async(noop,"set search_path to \"BlobStore\",public");
-						tr.exec_async(noop,"SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL SERIALIZABLE");
+						tr->exec_async(noop,"set search_path to \"BlobStore\",public");
+						tr->exec_async(noop,"SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL SERIALIZABLE");
 					}
 					else {
-						tr.exec_async(noop,"set search_path to causalstore,public");
-						tr.exec_async(noop,"SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL REPEATABLE READ");
+						tr->exec_async(noop,"set search_path to causalstore,public");
+						tr->exec_async(noop,"SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL REPEATABLE READ");
 					}
-					tr.commit(noop);
+					if (tr_o) tr_o->commit(noop);
 				}
 			};
 			
 			template<typename... Types>
 			void LocalSQLConnection_super::prepare(const std::string &name, const std::string &statement){
-				pgtransaction tr{*this,0};
-				tr.prepare(name, statement);
-				tr.commit(noop);
+				pgtransaction *tr{nullptr};
+				std::unique_ptr<pgtransaction> tr_o;
+				if (transactions.size() > 0 && !transactions.back().no_future_actions()){
+					tr = transactions.back().trans;
+				}
+				else{
+					tr_o.reset(new pgtransaction(*this,0));
+					tr = tr_o.get();
+				}
+				tr->prepare(name, statement);
+				if (tr_o) tr_o->commit(noop);
 			}
 			
 		}}}
