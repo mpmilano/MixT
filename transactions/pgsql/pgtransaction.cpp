@@ -22,7 +22,8 @@ namespace myria { namespace pgsql {
 			}
 
 			void pgtransaction::indicate_no_future_actions(){
-					if (!no_fut_actions){
+				assert(my_trans);
+					if (my_trans){
 						assert(my_trans);
 						assert(!my_trans->no_fut_actions);
 						no_fut_actions = true;

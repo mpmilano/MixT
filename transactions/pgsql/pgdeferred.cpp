@@ -6,12 +6,10 @@ namespace myria { namespace pgsql {
 		namespace local{
 
 			void deferred_transaction::indicate_no_future_actions(){
-				if (!no_fut_actions){
-					if (trans){
-						trans->indicate_no_future_actions();
-					}
-					else no_fut_actions = true;
+				if (trans){
+					trans->indicate_no_future_actions();
 				}
+				else no_fut_actions = true;
 			}
 
 			bool deferred_transaction::no_future_actions() const {
