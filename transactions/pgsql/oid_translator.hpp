@@ -15,11 +15,10 @@ struct PGSQLinfo<long int> {
 	/*bigint, but actually int8*/
 	static constexpr Oid value = 20;
 	static const char* pg_data(std::vector<char>& scratch_buf, const long int& li) {
-		auto old_size = scratch_buf.size();
-		scratch_buf.resize(old_size + sizeof(long int));
-		long int *buf = (long int*) scratch_buf.data() + old_size;
-		*buf = htobe64(li);
-		return (char*) buf;
+		auto argh = htobe64(li);
+		auto projected_index = scratch_buf.size();
+		scratch_buf.insert(scratch_buf.end(),(char*)&argh, ((char*)&argh) + sizeof(argh));
+		return &scratch_buf[projected_index];
 	}
 	static long int from_pg(char const * const v){
 		return be64toh(*((long int*)v));
@@ -35,11 +34,10 @@ struct PGSQLinfo<int> {
 	/*integer, but actually int4*/
 	static constexpr Oid value = 23;
 	static const char* pg_data(std::vector<char>& scratch_buf, const int& li) {
-		auto old_size = scratch_buf.size();
-		scratch_buf.resize(old_size + sizeof(int));
-		int *buf = (int*) scratch_buf.data() + old_size;
-		*buf = htobe32(li);
-		return (char*) buf;
+		auto argh = htobe32(li);
+		auto projected_index = scratch_buf.size();
+		scratch_buf.insert(scratch_buf.end(),(char*)&argh, ((char*)&argh) + sizeof(argh));
+		return &scratch_buf[projected_index];
 	}
 	static int from_pg(char const * const v){
 		return be32toh(*((int*)v));
