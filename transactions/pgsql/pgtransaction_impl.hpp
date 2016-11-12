@@ -1,6 +1,7 @@
 #pragma once
 #include "pgtransaction.hpp"
 #include "pgresult.hpp"
+#include "postgresql/libpq-fe.h"
 namespace myria { namespace pgsql {
 		namespace local{
 			
@@ -52,17 +53,20 @@ namespace myria { namespace pgsql {
 			void pgtransaction::exec_async(F action, const std::string &command){
 				assert(!no_future_actions());
 				assert(my_trans);
+				auto* pgconn = conn.conn;
+				auto &conn = this->conn;
 				my_trans->actions.emplace_back(
 					prep_return_func(action),
 					command,
-						[=]{
+					[&conn,command,pgconn]{
 						check_error(conn,command,PQsendQueryParams(
-										conn.conn,
+										pgconn,
 										command.c_str(),
 										0,nullptr,nullptr,nullptr,nullptr,
 										1));
 					}
 					);
+				conn.submit_new_transaction();
 			}
 
 			template<typename F, typename... Args>
@@ -90,6 +94,24 @@ namespace myria { namespace pgsql {
 										param_lengths.data(),
 										param_formats.data(),
 										result_format));});
+				conn.submit_new_transaction();
 			}
-			
+
+			template<typename... Types>
+			void pgtransaction::prepare(const std::string &name, const std::string &statement){
+				auto &conn = this->conn;
+				my_trans->actions.emplace_back(
+					[](pgresult){},name + statement,
+					[&conn,name,statement]{
+						Oid oids[] = {PGSQLinfo<Types>::value...};
+						check_error(
+							conn,
+							name + statement,
+							PQsendPrepare(conn.conn,name.c_str(),statement.c_str(),sizeof...(Types),oids));
+					}
+					);
+				conn.submit_new_transaction();
+			}
 		}}}
+
+#include "LocalSQLConnection_subcls.hpp"

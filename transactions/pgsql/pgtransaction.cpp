@@ -29,11 +29,12 @@ namespace myria { namespace pgsql {
 						my_trans->no_fut_actions = true;
 					}
 				}
-			
+
+			/*
 			pgresult pgtransaction::exec_sync (const std::string &command) {
 				assert(!no_future_actions());
 				return pgresult{command,conn,PQexec(conn.conn,command.c_str())};
-			}
+				}//*/
 
 			void pgtransaction::commit(std::function<void ()> action){
 				assert(!no_future_actions());

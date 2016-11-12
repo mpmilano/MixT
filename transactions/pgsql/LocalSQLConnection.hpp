@@ -36,11 +36,9 @@ namespace myria { namespace pgsql {
 			LocalSQLConnection_super(const LocalSQLConnection_super&) = delete;
 			
 			template<typename... Types>
-			void prepare(const std::string &name, const std::string &statement){
-				Oid oids[] = {PGSQLinfo<Types>::value...};
-				pgresult{statement,*this,PQprepare(conn,name.c_str(),statement.c_str(),sizeof...(Types),oids)};
-			}
+			void prepare(const std::string &name, const std::string &statement);
 
+			void submit_new_transaction();
 			void tick();
 			
 			int underlying_fd();
@@ -49,19 +47,6 @@ namespace myria { namespace pgsql {
 			
 		};
 			
-			template<Level l> class LocalSQLConnection : public LocalSQLConnection_super {
-			public:
-				LocalSQLConnection(){
-					if (l == Level::strong){
-						pgresult{"strong searchpath",*this,PQexec(conn,"set search_path to \"BlobStore\",public")};
-						pgresult{"strong isolation level",*this,PQexec(conn,"SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL SERIALIZABLE")};
-					}
-					else {
-						pgresult{"causal searchpath",*this,PQexec(conn,"set search_path to causalstore,public")};
-						pgresult{"causal isolation level",*this,PQexec(conn,"SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL REPEATABLE READ")};
-					}
-				}
-			};
 		}
 	}
 }

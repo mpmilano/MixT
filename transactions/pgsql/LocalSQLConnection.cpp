@@ -20,6 +20,7 @@ namespace myria { namespace pgsql {
 							 const std::string &command,
 							 int result){
 				if (!result){
+					assert(false && "command error");
 					throw SQLFailure{conn,command,PQerrorMessage(conn.conn)};
 				}
 			}
@@ -34,14 +35,13 @@ namespace myria { namespace pgsql {
 			namespace {
 				template<typename transaction_list>
 				void clear_completed_transactions(transaction_list &transactions){
-					if (transactions.size() > 0)
-						while (true){
-							auto &front = transactions.front();
-							if (front.actions.size() == 0 && front.no_future_actions()) {
-								transactions.pop_front();
-							}
-						else break;
+					while (transactions.size() > 0){
+						auto &front = transactions.front();
+						if (front.actions.size() == 0 && front.no_future_actions()) {
+							transactions.pop_front();
 						}
+						else break;
+					}
 				}
 			}
 
@@ -72,6 +72,21 @@ namespace myria { namespace pgsql {
 				}
 			}
 #endif
+
+			void LocalSQLConnection_super::submit_new_transaction(){
+				if (transactions.size() > 0){
+					auto &front = transactions.front();
+					if (front.actions.size() > 0){
+						auto &action = front.actions.front();
+						if (!action.submitted){
+							action.submitted = true;
+							action.query();
+							std::cout << "SUBMIT QUERY SUCCESS" << std::endl;
+						}
+					}
+				}
+			}
+			
 			void LocalSQLConnection_super::tick(){
 #ifndef NDEBUG
 				if (select_indicates_data_avilable(underlying_fd()))
@@ -79,19 +94,6 @@ namespace myria { namespace pgsql {
 #endif
 				clear_completed_transactions(transactions);
 
-				auto submit_new_transaction = [&]{
-							if (transactions.size() > 0){
-								auto &front = transactions.front();
-								if (front.actions.size() > 0){
-									auto &action = front.actions.front();
-									if (!action.submitted){
-										action.submitted = true;
-										action.query();
-									}
-								}
-							}
-						};
-				
 				try {
 					submit_new_transaction();
 					PQconsumeInput(conn);

@@ -21,7 +21,7 @@ namespace myria { namespace pgsql {
 				deferred_transaction* my_trans;
 				pgtransaction(LocalSQLConnection_super &conn, const std::size_t tid);
 
-				pgresult exec_sync (const std::string &command);
+				//pgresult exec_sync (const std::string &command);
 
 				void commit(std::function<void ()> action);
 
@@ -32,6 +32,9 @@ namespace myria { namespace pgsql {
 				
 				template<typename F, typename... Args>
 				void exec_prepared(F action, const std::string& name, const Args & ... args);
+				
+				template<typename... Types>
+				void prepare(const std::string &name, const std::string &statement);
 				
 				pgtransaction(const pgtransaction&) = delete;
 
