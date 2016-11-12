@@ -47,10 +47,12 @@ namespace myria { namespace pgsql {
 			}
 			
 			void pgtransaction::abort(std::function<void ()> action){
-				assert(!no_future_actions());
-				exec_async(action, "ABORT");
-				exec_async<std::function<void ()> >([]{}, "END");
-				indicate_no_future_actions();
+				//abort should be idempotent
+				if(!no_future_actions()){
+					exec_async(action, "ABORT");
+					exec_async<std::function<void ()> >([]{}, "END");
+					indicate_no_future_actions();
+				}
 			}
 			
 			pgtransaction::~pgtransaction(){
