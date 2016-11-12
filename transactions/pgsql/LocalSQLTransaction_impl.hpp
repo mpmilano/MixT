@@ -195,7 +195,7 @@ namespace myria { namespace pgsql {
 							v.push_back(pair<LocalTransactionNames,string>{
 									((Table)i == Table::IntStore ?
 									 LocalTransactionNames::Sel1i : LocalTransactionNames::Sel1b),
-										string("select {(int)vc1,(int)vc2,(int)vc3,(int)vc4} from ") + table_name((Table)i).str
+										string("select vc1,vc2,vc3,vc4 from ") + table_name((Table)i).str
 										+ " where ID=$1 and index=0"});
 						}
 						return v;
@@ -207,7 +207,7 @@ namespace myria { namespace pgsql {
 			void LocalSQLTransaction<Level::causal>::select_version_data_c(std::function<void (long int, long int, long int, long int, long int)> action, Table t, Name id){
 				assert(l == Level::causal);
 				assert(t == Table::IntStore);
-				static const std::string is = "select {(int)vc1,(int)vc2,(int)vc3,(int)vc4}, data from \"IntStore\" where index = 0 and ID = $1";
+				static const std::string is = "select vc1,vc2,vc3,vc4, data from \"IntStore\" where index = 0 and ID = $1";
 				prepared(action,*conn,LocalTransactionNames::select2,is,id);
 			}
 
@@ -215,7 +215,7 @@ namespace myria { namespace pgsql {
 				assert(l == Level::causal);
 				assert(t == Table::BlobStore);
 				static const std::string bs =
-					"select {(int)vc1,(int)vc2,(int)vc3,(int)vc4}, data from \"BlobStore\" where index = 0 and ID = $1";
+					"select vc1,vc2,vc3,vc4, data from \"BlobStore\" where index = 0 and ID = $1";
 				prepared(action, *conn,LocalTransactionNames::select1,bs,id);
 			}
 
