@@ -50,7 +50,7 @@ namespace myria { namespace pgsql {
 				store_commit(std::unique_ptr<LocalSQLTransaction> o, mutils::connection& socket) {
 					whendebug(auto& log_file = o->log_file);
 					log_receive(log_file,"commit");
-					o->trans.commit([&]{all_fine(log_file,socket);});
+					o->trans.commit([&]{all_fine(whendebug(log_file,) socket);});
 					o->aborted_or_committed = true;
 					return std::move(o->conn);
 				}
@@ -67,15 +67,15 @@ namespace myria { namespace pgsql {
 				
 				virtual void remove(Name id, mutils::connection& socket) = 0;
 
-				static void indicate_serialization_failure(std::ofstream& log_file, mutils::connection& socket) {
+				static void indicate_serialization_failure(whendebug(std::ofstream& log_file, )  mutils::connection& socket) {
 					char abort{1};
 					log_send(log_file,"serialization failure");
 					socket.send(abort);
 				}
 				
-				static void all_fine(std::ofstream& log_file, mutils::connection& socket) {
+				static void all_fine(whendebug(std::ofstream& log_file, ) mutils::connection& socket) {
 					char ok{0};
-					log_send(log_file,"all fine");
+					whendebug(log_send(log_file,"all fine"));
 					socket.send(ok);
 				}
 

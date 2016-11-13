@@ -77,14 +77,14 @@ namespace myria { namespace pgsql {
 										),s,id);
 				}
 				
-			void LocalSQLTransaction<Level::strong>::select_version_data_s(std::function<void (long int, long int)> action, Table t, Name id){
+			void LocalSQLTransaction<Level::strong>::select_version_data_s(std::function<void (long int, long int)> action, Table whendebug(t), Name id){
 				assert(l == Level::strong);
 				assert(t == Table::IntStore);
 				static const std::string is = "select version, data from \"IntStore\" where ID = $1 and index = 0";
 				prepared(action,*conn,LocalTransactionNames::select2,is,id);
 			}
 
-			void LocalSQLTransaction<Level::strong>::select_version_data_s(std::function<void (long int, mutils::Bytes)> action, Table t, Name id){
+			void LocalSQLTransaction<Level::strong>::select_version_data_s(std::function<void (long int, mutils::Bytes)> action, Table whendebug(t) , Name id){
 				assert(l == Level::strong);
 				static const std::string bs =
 					"select version, data  from \"BlobStore\" where index = 0 and ID = $1";
@@ -204,14 +204,14 @@ namespace myria { namespace pgsql {
 					return prepared(action,*conn,s.first,s.second,id);
 				}
 				
-			void LocalSQLTransaction<Level::causal>::select_version_data_c(std::function<void (long int, long int, long int, long int, long int)> action, Table t, Name id){
+			void LocalSQLTransaction<Level::causal>::select_version_data_c(std::function<void (long int, long int, long int, long int, long int)> action, Table whendebug(t), Name id){
 				assert(l == Level::causal);
 				assert(t == Table::IntStore);
 				static const std::string is = "select vc1,vc2,vc3,vc4, data from \"IntStore\" where index = 0 and ID = $1";
 				prepared(action,*conn,LocalTransactionNames::select2,is,id);
 			}
 
-			void LocalSQLTransaction<Level::causal>::select_version_data_c(std::function<void (long int, long int, long int, long int, mutils::Bytes)> action, Table t, Name id){
+			void LocalSQLTransaction<Level::causal>::select_version_data_c(std::function<void (long int, long int, long int, long int, mutils::Bytes)> action, Table whendebug(t), Name id){
 				assert(l == Level::causal);
 				assert(t == Table::BlobStore);
 				static const std::string bs =
