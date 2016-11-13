@@ -81,7 +81,7 @@ namespace myria { namespace pgsql {
 						if (!action.submitted){
 							action.submitted = true;
 							action.query();
-							std::cout << "SUBMIT QUERY SUCCESS" << std::endl;
+							whendebug(std::cout << "SUBMIT QUERY SUCCESS" << std::endl);
 						}
 					}
 				}
@@ -104,7 +104,7 @@ namespace myria { namespace pgsql {
 							auto &action = actions.front();
 							AtScopeEnd ase{[&]{actions.pop_front();}};
 							assert(action.submitted);
-							std::cout << "executing response evaluator for " << action.query_str << std::endl;
+							whendebug(std::cout << "executing response evaluator for " << action.query_str << std::endl);
 							action.on_complete(pgresult{action.query_str,*this,res});
 							clear_completed_transactions(transactions);
 						}
