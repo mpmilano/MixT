@@ -31,7 +31,7 @@ fi
 
 #echo "done so far" `pwd`
 echo $*
-chroot gentoo /bin/su -c "/usr/bin/screen /as-gentoo.sh $*" research
+chroot gentoo /bin/su -c "/bin/bash /as-gentoo.sh $*" research
 #chroot gentoo /bin/su -c "/usr/bin/emerge libunwind" root
 echo exiting vm
 pkill --signal HUP sshd
