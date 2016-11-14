@@ -20,6 +20,12 @@ namespace myria { namespace pgsql {
 							 const std::string &command,
 							 int result){
 				if (!result){
+					whendebug(
+						std::stringstream ss;
+						ss << "command error: [[" << command << "]] "
+						<< PQerrorMessage(conn.conn)
+						<< std::endl;
+						std::cout << ss.str());
 					assert(false && "command error");
 					throw SQLFailure{conn,command,PQerrorMessage(conn.conn)};
 				}
@@ -81,8 +87,11 @@ namespace myria { namespace pgsql {
 						if (!action.submitted){
 							action.submitted = true;
 							action.query();
-							whendebug(std::cout << "SUBMIT QUERY SUCCESS" << std::endl);
 						}
+					}
+					else if (front.no_future_actions()){
+						transactions.pop_front();
+						submit_new_transaction();
 					}
 				}
 			}
@@ -90,7 +99,6 @@ namespace myria { namespace pgsql {
 			void LocalSQLConnection_super::tick(){
 				clear_completed_transactions(transactions);
 
-				submit_new_transaction();
 				PQconsumeInput(conn);
 				while (!PQisBusy(conn)){
 					if (auto* res = PQgetResult(conn)){
@@ -99,11 +107,17 @@ namespace myria { namespace pgsql {
 						auto &action = actions.front();
 						AtScopeEnd ase{[&]{actions.pop_front();}};
 						assert(action.submitted);
-						whendebug(std::cout << "executing response evaluator for " << action.query_str << std::endl);
+						whendebug(
+							std::stringstream ss;
+							ss << "executing response evaluator for " << action.query_str << std::endl;
+							std::cout << ss.str();
+							);
 						action.on_complete(pgresult{action.query_str,*this,res});
 						clear_completed_transactions(transactions);
 					}
-					else break;
+					else {
+						submit_new_transaction();
+					}
 				}
 				//whendebug(std::cout << "PQ tick successfully completed!" << std::endl);
 				clear_completed_transactions(transactions);
