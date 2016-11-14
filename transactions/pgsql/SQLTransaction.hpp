@@ -5,7 +5,14 @@
 
 namespace myria{
 
-	struct SerializationFailure : mutils::StaticMyriaException<MACRO_GET_STR("Error: Serialization Failure")> {};
+	struct SerializationFailure : mutils::MyriaException {
+		const std::string why;
+		SerializationFailure(const std::string why)
+			:why(why){}
+		virtual const char* what() const noexcept {
+			return why.c_str();
+		}
+	};
 	
 	namespace pgsql {
 
@@ -62,8 +69,11 @@ namespace myria{
 					dc.receive(failure_bytes[i]);
 					if (failure_bytes[i] == falure_bytes_reference[i]) ++i;
 				}
+				mutils::DeserializationManager *dsm{nullptr};
+				std::size_t why_size{0};
+				cc.receive(why_size);
 				remote_aborted = true;
-				throw SerializationFailure();
+				throw SerializationFailure(*cc.template receive<std::string>(dsm,why_size));
 			}
 
 			template<typename... T>

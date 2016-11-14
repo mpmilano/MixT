@@ -119,6 +119,10 @@ namespace myria {
 							(void) v;
 							assert(*((long int*)v) == serialization_failure);
 							data_conn.send(serialization_failure);
+							const std::string why{"I do not know why this happened"};
+							std::size_t size = mutils::bytes_size(why);
+							control_conn.send(size);
+							control_conn.send(why);
 						}
 						
 						ReceiverFun(ReceiverFun&& o)
