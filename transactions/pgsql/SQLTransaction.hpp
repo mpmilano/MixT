@@ -45,14 +45,52 @@ namespace myria{
 				sql_conn->conn->send(trans,name,args...);
 			}
 
+			void handle_serialization_failure(mutils::ControlChannel& _cc){
+				mutils::connection& cc = _cc;
+				mutils::connection& dc = _cc.data_channel;
+				long int failure_nonce{-1};
+				cc.receive(failure_nonce);
+				cc.send(failure_nonce);
+				char failure_bytes[sizeof(failure_nonce)];
+				char const * const falure_bytes_reference = (char*)&failure_nonce;
+				//ensure the failure_bytes do not accidentally match the reference
+				for (std::size_t i = 0; i < sizeof(failure_nonce); ++i){
+					failure_bytes[i] = falure_bytes_reference[i]+1;
+				}
+				//drain the data socket until we find the failure nonce.
+				for (std::size_t i = 0; i < sizeof(failure_nonce);){
+					dc.receive(failure_bytes[i]);
+					if (failure_bytes[i] == falure_bytes_reference[i]) ++i;
+				}
+				remote_aborted = true;
+				throw SerializationFailure();
+			}
 
 			template<typename... T>
 			void receive(const std::string & whendebug(what), T& ... t){
 				whendebug(log_receive_start(what);)
-				sql_conn->conn->receive(t...);
+					try {
+						sql_conn->conn->receive(t...);
+					}
+					catch (mutils::ControlChannel& cc){
+						handle_serialization_failure(cc);
+					}
 				whendebug(log_receive_stop(what);)
 			}
 			
+			template<typename... T>
+			void receive_data(const std::string & whendebug(what), const T& ... t){
+				whendebug(log_receive_start(what);)
+					try {
+						sql_conn->conn->receive_data(t...);
+					}
+					catch (mutils::ControlChannel& cc){
+						handle_serialization_failure(cc);
+					}
+				whendebug(log_receive_stop(what);)
+			}
+
+
 			bool exists(Name n){
 				prepared(level_string + " exists",TransactionNames::exists,n);
 				bool b{false};
@@ -84,12 +122,9 @@ namespace myria{
 					v.resize(sizeof(int));
 					
 				}
-				log_receive_start(level_string + " receive data");
-				sql_conn->conn->receive(v.size(),v.data());
-				log_receive_stop(level_string + " receive data");
+				receive_data(level_string + " receive data", v.size(),v.data());
 				return v;
 			}
-
 			template<typename Data, typename Vers>
 			void update_data(Table t, Name n, Data &d, Vers& vers){
 				assert(gstore.level == Level::strong);
@@ -136,7 +171,7 @@ namespace myria{
 				log_send(level_string + " commit");
 				sql_conn->conn->send(trans);
 				//we actually do need to block until commits happen
-				sql_conn->conn->receive(trans);
+				receive(trans);
 				return true;
 			}
 

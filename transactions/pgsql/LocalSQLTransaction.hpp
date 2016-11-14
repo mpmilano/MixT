@@ -168,7 +168,7 @@ namespace myria { namespace pgsql {
 				
 				void increment(char const * const bytes,mutils::connection& socket);
 
-				static std::unique_ptr<SQLConn> store_abort(std::unique_ptr<LocalSQLTransaction<Level::strong> >,mutils::connection& socket);
+				static std::unique_ptr<SQLConn> store_abort(std::unique_ptr<LocalSQLTransaction<Level::strong> >);
 
 				void indicate_serialization_failure(mutils::connection& socket);
 				void all_fine(mutils::connection& socket);
@@ -271,7 +271,7 @@ namespace myria { namespace pgsql {
 				void initialize_with_id(char const * const bytes,mutils::connection& socket);
 				void increment(char const * const bytes,mutils::connection& socket);
 
-				static std::unique_ptr<SQLConn> store_abort(std::unique_ptr<LocalSQLTransaction<Level::causal> >,mutils::connection& socket);
+				static std::unique_ptr<SQLConn> store_abort(std::unique_ptr<LocalSQLTransaction<Level::causal> >);
 
 				void indicate_serialization_failure(mutils::connection& socket);
 				void all_fine(mutils::connection& socket);

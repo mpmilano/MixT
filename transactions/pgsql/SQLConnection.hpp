@@ -56,9 +56,9 @@ namespace myria{ namespace pgsql {
 			
 			mutils::dual_connection_manager<mutils::batched_connection::connections> bc{
 				(l == Level::strong ? strong_ip_addr : causal_ip_addr),
-					(l == Level::strong ? strong_sql_port : causal_sql_port),(num_connections())};
+					(l == Level::strong ? strong_sql_port : causal_sql_port),(num_connections()/2)};
 			
-			mutils::ResourcePool<SQLConnection> rp{2*num_connections()/3,num_connections()/3,
+			mutils::ResourcePool<SQLConnection> rp{num_connections()/4,num_connections()/4,
 					[this]{
 					using subcon = std::decay_t<decltype(bc.spawn())>;
 					return new SQLConnection(std::unique_ptr<mutils::connection>(new subcon(bc.spawn())));}};

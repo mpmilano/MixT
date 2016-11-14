@@ -178,7 +178,7 @@ namespace myria { namespace pgsql {
 							Table::IntStore,*mutils::from_bytes<Name>(&this->dsm,bytes));
 			}
 
-			std::unique_ptr<LocalSQLConnection<Level::strong> > LocalSQLTransaction<Level::strong>::store_abort(std::unique_ptr<LocalSQLTransaction<Level::strong> > o,mutils::connection& ) {
+			std::unique_ptr<LocalSQLConnection<Level::strong> > LocalSQLTransaction<Level::strong>::store_abort(std::unique_ptr<LocalSQLTransaction<Level::strong> > o) {
 				whendebug(o->log_receive(o->log_file,"aborting");)
 				o->aborted_or_committed = true;
 				o->trans.abort(noop);
@@ -346,7 +346,7 @@ namespace myria { namespace pgsql {
 					Table::IntStore,*k,*id,*ends);
 			}
 
-			std::unique_ptr<LocalSQLConnection<Level::causal> > LocalSQLTransaction<Level::causal>::store_abort(std::unique_ptr<LocalSQLTransaction<Level::causal> > o,mutils::connection& ) {
+			std::unique_ptr<LocalSQLConnection<Level::causal> > LocalSQLTransaction<Level::causal>::store_abort(std::unique_ptr<LocalSQLTransaction<Level::causal> > o) {
 				o->aborted_or_committed = true;
 				whendebug(o->log_receive(o->log_file,"aborting"));
 				o->trans.abort(noop);

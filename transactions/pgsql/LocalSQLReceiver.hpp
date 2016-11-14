@@ -28,6 +28,7 @@ namespace myria {
 
 						mutils::connection& data_conn;
 						mutils::connection& control_conn;
+						const long int serialization_failure = mutils::long_rand();
 
 						int underlying_fd() {
 							return (db_connection ?
@@ -45,9 +46,8 @@ namespace myria {
 								}
 							}
 							catch (const SerializationFailure& sf){
-								char serialization_failure{1};
 								control_conn.send(serialization_failure);
-								db_connection = current_trans->store_abort(std::move(current_trans),control_conn);
+								db_connection = current_trans->store_abort(std::move(current_trans));
 							}
 							catch (const SQLFailure& sf){
 								std::cerr << sf.what() << std::endl;
@@ -86,7 +86,7 @@ namespace myria {
 							}
 							else if (_data[0] == 1){
 								//we're aborting this transaction
-								db_connection = current_trans->store_abort(std::move(current_trans),data_conn);
+								db_connection = current_trans->store_abort(std::move(current_trans));
 								assert(db_connection);
 							}
 							else {
@@ -115,8 +115,10 @@ namespace myria {
 #endif
 						}
 
-						void deliver_new_control_event(const void*){
-							assert(false && "this channel was not supposed to be used...");
+						void deliver_new_control_event(const void* v){
+							(void) v;
+							assert(*((long int*)v) == serialization_failure);
+							data_conn.send(serialization_failure);
 						}
 						
 						ReceiverFun(ReceiverFun&& o)

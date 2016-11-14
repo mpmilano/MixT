@@ -229,8 +229,8 @@ namespace synth_test {
 		constexpr static Frequency rate_per_client{CLIENT_RATE};
 		unsigned int num_clients = NUM_CLIENTS;
 		constexpr static unsigned int increase_factor = INCREASE_BY;
-		constexpr static seconds increase_delay = INCREASE_DELAY;
-		constexpr static minutes test_stop_time = TEST_STOP_TIME;
+		constexpr static auto increase_delay = INCREASE_DELAY;
+		constexpr static auto test_stop_time = TEST_STOP_TIME;
 		constexpr static double percent_writes = write_percent;
 		constexpr static double percent_strong = strong_percent;
 		using PreparedTest = PreparedTest<Mem,fake_time>;
@@ -281,8 +281,8 @@ namespace synth_test {
 	};
 	constexpr Frequency TestParameters::rate_per_client;
 	constexpr unsigned int TestParameters::increase_factor;
-	constexpr seconds TestParameters::increase_delay;
-	constexpr minutes TestParameters::test_stop_time;
+	constexpr decltype(TestParameters::increase_delay) TestParameters::increase_delay;
+	constexpr decltype(TestParameters::test_stop_time) TestParameters::test_stop_time;
 	constexpr double TestParameters::percent_writes;
 	constexpr double TestParameters::percent_strong;
 
