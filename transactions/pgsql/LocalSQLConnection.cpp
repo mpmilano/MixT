@@ -87,15 +87,17 @@ namespace myria { namespace pgsql {
 						if (!action.submitted){
 							action.submitted = true;
 							action.query();
+							return true;
 						}
+						else return false;
 					}
 					else if (front.no_future_actions()){
 						transactions.pop_front();
-						submit_new_transaction();
+						return submit_new_transaction();
 					}
+					else return false;
 				}
 				else return false;
-				return true;
 			}
 			
 			void LocalSQLConnection_super::tick(){
