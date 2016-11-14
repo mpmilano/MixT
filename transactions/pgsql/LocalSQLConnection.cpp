@@ -45,25 +45,25 @@ namespace myria { namespace pgsql {
 				}
 			}
 
-#ifndef NDEBUG
+/*
 			namespace {
 				bool select_indicates_data_avilable(int fd){
 					fd_set rfds;
 					struct timeval tv;
 					int retval;
 
-					/* Watch stdin (fd 0) to see when it has input. */
+					// Watch stdin (fd 0) to see when it has input. 
 
 					FD_ZERO(&rfds);
 					FD_SET(fd, &rfds);
 
-					/* Wait up to one second. */
+					// Wait up to one second. 
 
 					tv.tv_sec = 1;
 					tv.tv_usec = 0;
 
 					retval = select(fd + 1, &rfds, NULL, NULL, &tv);
-					/* Don't rely on the value of tv now! */
+					// Don't rely on the value of tv now! 
 
 					if (retval == -1)
 						perror("select()");
@@ -71,7 +71,7 @@ namespace myria { namespace pgsql {
 					assert(false && "select error");
 				}
 			}
-#endif
+//*/
 
 			void LocalSQLConnection_super::submit_new_transaction(){
 				if (transactions.size() > 0){
@@ -88,10 +88,6 @@ namespace myria { namespace pgsql {
 			}
 			
 			void LocalSQLConnection_super::tick(){
-#ifndef NDEBUG
-				if (select_indicates_data_avilable(underlying_fd()))
-					std::cout << "======SELECT indicates data available" << std::endl;
-#endif
 				clear_completed_transactions(transactions);
 
 				submit_new_transaction();
