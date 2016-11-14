@@ -36,7 +36,7 @@ namespace myria { namespace pgsql {
 					tr = transactions.back().trans;
 				}
 				else{
-					tr_o.reset(new pgtransaction(*this,0));
+					tr_o.reset(new pgtransaction(*this,1));
 					tr = tr_o.get();
 				}
 				tr->prepare(name, statement);

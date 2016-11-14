@@ -26,10 +26,12 @@ namespace myria { namespace pgsql {
 					"delete from \"IntStore\" where ID = $1";
 				trans.prepared(noop,*trans.conn,LocalTransactionNames::Del1,bs,id);
 				trans.prepared(noop,*trans.conn,LocalTransactionNames::Del2,is,id);
-			}			
+			}
+
+			
 
 			LocalSQLTransaction_super::LocalSQLTransaction_super(LocalSQLConnection_super &conn whendebug(, std::ofstream& log_file)):
-				trans(conn,0/*currently unused*/) whendebug(,log_file(log_file))
+				trans(conn,mutils::gensym()) whendebug(,log_file(log_file))
 			{
 				log_receive(log_file,"transaction start");
 			}
