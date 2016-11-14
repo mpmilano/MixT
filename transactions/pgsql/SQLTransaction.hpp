@@ -171,7 +171,7 @@ namespace myria{
 				log_send(level_string + " commit");
 				sql_conn->conn->send(trans);
 				//we actually do need to block until commits happen
-				receive(trans);
+				receive("check committed",trans);
 				return true;
 			}
 
