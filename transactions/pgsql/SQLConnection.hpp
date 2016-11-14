@@ -48,12 +48,17 @@ namespace myria{ namespace pgsql {
 			}
 #endif
 
-			using num_connections = typename std::integral_constant<unsigned int,3*NUM_CLIENTS/4>::type;
+			constexpr unsigned long num_connections(){
+				using namespace std::chrono;
+				using namespace mutils;
+				return 3*(NUM_CLIENTS + (INCREASE_BY*(TEST_STOP_TIME/INCREASE_DELAY)))/4;
+			}
 			
 			mutils::dual_connection_manager<mutils::batched_connection::connections> bc{
 				(l == Level::strong ? strong_ip_addr : causal_ip_addr),
-					(l == Level::strong ? strong_sql_port : causal_sql_port),(num_connections::value)};
-			mutils::ResourcePool<SQLConnection> rp{2*num_connections::value/3,num_connections::value/3,
+					(l == Level::strong ? strong_sql_port : causal_sql_port),(num_connections())};
+			
+			mutils::ResourcePool<SQLConnection> rp{2*num_connections()/3,num_connections()/3,
 					[this]{
 					using subcon = std::decay_t<decltype(bc.spawn())>;
 					return new SQLConnection(std::unique_ptr<mutils::connection>(new subcon(bc.spawn())));}};
