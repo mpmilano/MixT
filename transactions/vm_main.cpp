@@ -140,7 +140,6 @@ namespace synth_test {
 					auto end = elapsed_time();
 					log_messages->addField(LogFields::done_time,
 										   duration_cast<milliseconds>(end).count());
-					assert(false);
 					//log_messages->addField(LogFields::is_serialization_error,true);
 					log_messages->addField(LogFields::remote_failure_string, std::string(sf.what()) + " was the error");
 					continue;

@@ -94,30 +94,22 @@ namespace myria { namespace pgsql {
 #endif
 				clear_completed_transactions(transactions);
 
-				try {
-					submit_new_transaction();
-					PQconsumeInput(conn);
-					while (!PQisBusy(conn)){
-						if (auto* res = PQgetResult(conn)){
-							auto &trans = transactions.front();
-							auto &actions = trans.actions;
-							auto &action = actions.front();
-							AtScopeEnd ase{[&]{actions.pop_front();}};
-							assert(action.submitted);
-							whendebug(std::cout << "executing response evaluator for " << action.query_str << std::endl);
-							action.on_complete(pgresult{action.query_str,*this,res});
-							clear_completed_transactions(transactions);
-						}
-						else break;
+				submit_new_transaction();
+				PQconsumeInput(conn);
+				while (!PQisBusy(conn)){
+					if (auto* res = PQgetResult(conn)){
+						auto &trans = transactions.front();
+						auto &actions = trans.actions;
+						auto &action = actions.front();
+						AtScopeEnd ase{[&]{actions.pop_front();}};
+						assert(action.submitted);
+						whendebug(std::cout << "executing response evaluator for " << action.query_str << std::endl);
+						action.on_complete(pgresult{action.query_str,*this,res});
+						clear_completed_transactions(transactions);
 					}
-					//whendebug(std::cout << "PQ tick successfully completed!" << std::endl);
+					else break;
 				}
-				catch (SerializationFailure& sf){
-					whendebug(std::cerr << "serialization failure detected!" << std::endl);
-					transactions.front().indicate_no_future_actions();
-					transactions.pop_front();
-					throw sf;
-				}
+				//whendebug(std::cout << "PQ tick successfully completed!" << std::endl);
 				clear_completed_transactions(transactions);
 				submit_new_transaction();
 			}

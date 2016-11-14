@@ -35,10 +35,7 @@ namespace myria { namespace pgsql {
 					|| status == PGRES_COPY_OUT
 					|| status == PGRES_COPY_BOTH
 					|| status == PGRES_COPY_IN){
-#ifndef NDEBUG
-					std::cout << "result successfully processed: status was :" <<
-						PQresStatus(status) << std::endl;
-#endif
+
 				}
 				else if (status == PGRES_BAD_RESPONSE
 						 || status == PGRES_FATAL_ERROR
