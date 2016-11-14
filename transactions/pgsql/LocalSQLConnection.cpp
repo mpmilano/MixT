@@ -79,7 +79,7 @@ namespace myria { namespace pgsql {
 			}
 //*/
 
-			void LocalSQLConnection_super::submit_new_transaction(){
+			bool LocalSQLConnection_super::submit_new_transaction(){
 				if (transactions.size() > 0){
 					auto &front = transactions.front();
 					if (front.actions.size() > 0){
@@ -94,6 +94,8 @@ namespace myria { namespace pgsql {
 						submit_new_transaction();
 					}
 				}
+				else return false;
+				return true;
 			}
 			
 			void LocalSQLConnection_super::tick(){
@@ -115,8 +117,8 @@ namespace myria { namespace pgsql {
 						action.on_complete(pgresult{action.query_str,*this,res});
 						clear_completed_transactions(transactions);
 					}
-					else {
-						submit_new_transaction();
+					else if (!submit_new_transaction()){
+						break;
 					}
 				}
 				//whendebug(std::cout << "PQ tick successfully completed!" << std::endl);

@@ -38,7 +38,7 @@ namespace myria { namespace pgsql {
 			template<typename... Types>
 			void prepare(const std::string &name, const std::string &statement);
 
-			void submit_new_transaction();
+			bool submit_new_transaction();
 			void tick();
 			
 			int underlying_fd();
