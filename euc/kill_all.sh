@@ -7,5 +7,6 @@ then
 fi
 
 for foo in $instance_list; do
-	ssh -o "UserKnownHostsFile /dev/null"  -o strictHostKeyChecking=no -i MyriaInstances.pem ubuntu@$foo sudo killall -9 screen
+	ssh -o "UserKnownHostsFile /dev/null"  -o strictHostKeyChecking=no -i MyriaInstances.pem ubuntu@$foo sudo killall -9 vm &
 done
+wait
