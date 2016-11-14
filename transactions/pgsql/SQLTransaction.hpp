@@ -53,6 +53,7 @@ namespace myria{
 			}
 
 			void handle_serialization_failure(mutils::ControlChannel& _cc){
+				assert(false);
 				mutils::connection& cc = _cc;
 				mutils::connection& dc = _cc.data_channel;
 				long int failure_nonce{-1};

@@ -43,6 +43,7 @@ namespace myria { namespace pgsql {
 				else if (status == PGRES_BAD_RESPONSE
 						 || status == PGRES_FATAL_ERROR
 						 || status == PGRES_NONFATAL_ERROR){
+					assert(false);
 					if (auto _errorcode = PQresultErrorField(res,PG_DIAG_SQLSTATE)){
 						std::string errorcode{_errorcode};
 						if (errorcode == "40000"
