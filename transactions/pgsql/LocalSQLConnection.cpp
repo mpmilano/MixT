@@ -16,7 +16,7 @@ namespace myria { namespace pgsql {
 
 			const std::function<void ()> noop{[]{}};
 
-		  void check_error(std::size_t transaction_id, LocalSQLConnection_super &conn,
+		  void check_error(std::size_t whendebug(transaction_id), LocalSQLConnection_super &conn,
 				   const std::string &command,
 				   int result){
 		    if (!result){
