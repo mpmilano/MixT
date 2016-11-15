@@ -16,7 +16,7 @@ namespace myria { namespace pgsql {
 
 			const std::function<void ()> noop{[]{}};
 
-		  void check_error(std::size_t transaction_id, LocalSQLConnection_super &conn,
+		  void check_error(std::size_t whendebug(transaction_id), LocalSQLConnection_super &conn,
 				   const std::string &command,
 				   int result){
 		    if (!result){
@@ -86,12 +86,14 @@ namespace myria { namespace pgsql {
 						auto &action = front.actions.front();
 						if (!action.submitted){
 							action.submitted = true;
+#ifndef NDEBUG
 							std::stringstream ss;
 							ss << "connection: " << connection_id
 							   << " transaction: " << front.transaction_id
 							   << "submitting query " <<
 							  action.query_str << std::endl;
 							std::cout << ss.str();
+#endif
 							action.query();
 							return true;
 						}
