@@ -10,7 +10,7 @@ namespace myria{
 	
 	enum class LogFields{
 		submit_time, run_time, cc_num_tries, done_time, is_write, is_read, is_strong,is_causal,
-			is_serialization_error, remote_failure_string, remote_failure, num_causal_tries,
+			remote_failure_string, num_causal_tries,
 			transaction_action, 
 			tracker_strong_afterread_tombstone_exists,
 			tracker_strong_afterread_nonce_unavailable,

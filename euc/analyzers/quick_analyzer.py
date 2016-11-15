@@ -15,7 +15,7 @@ def concat_all(l):
         r += s
     return r
 
-myria_log = namedtuple("myria_log",['submit_time', 'run_time', 'cc_num_tries', 'done_time', 'is_write', 'is_read', 'is_strong', 'is_causal', 'is_serialization_error', 'remote_failure_string', 'remote_failure', 'num_causal_tries', 'transaction_action', 'tracker_strong_afterread_tombstone_exists', 'tracker_strong_afterread_nonce_unavailable', 'tracker_causal_afterread_candidate'])
+myria_log = namedtuple("myria_log",['submit_time', 'run_time', 'cc_num_tries', 'done_time', 'is_write', 'is_read', 'is_strong', 'is_causal', 'remote_failure_string', 'num_causal_tries', 'transaction_action', 'tracker_strong_afterread_tombstone_exists', 'tracker_strong_afterread_nonce_unavailable', 'tracker_causal_afterread_candidate'])
 
 def compose(*functions):
     return functools.reduce(lambda f, g: lambda x: f(g(x)), functions, lambda x: x)
@@ -36,12 +36,10 @@ def stream_operator(preprocess_fun):
                         is_read=bool(entries[5]),
                         is_strong=bool(entries[6]),
                         is_causal=bool(entries[7]),
-                        is_serialization_error=bool(entries[8]),
-                        remote_failure_string=entries[9],
-                        remote_failure=bool(entries[10]),
-                        num_causal_tries=int(entries[11]),
-                        transaction_action=bool(entries[12]),
-                        tracker_strong_afterread_tombstone_exists=int(entries[13]),
-                        tracker_strong_afterread_nonce_unavailable=int(entries[14]),
-                        tracker_causal_afterread_candidate=int(entries[15]))))
+                        remote_failure_string=entries[8],
+                        num_causal_tries=int(entries[9]),
+                        transaction_action=bool(entries[10]),
+                        tracker_strong_afterread_tombstone_exists=int(entries[11]),
+                        tracker_strong_afterread_nonce_unavailable=int(entries[12]),
+                        tracker_causal_afterread_candidate=int(entries[13]))))
     return to_return

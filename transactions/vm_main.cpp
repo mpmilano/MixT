@@ -147,7 +147,6 @@ namespace synth_test {
 			}
 		}
 		catch(const SerializationFailure &e){
-			log_messages->addField(LogFields::remote_failure,true);
 			log_messages->addField(LogFields::remote_failure_string, std::string(e.what()) + " was the error");
 		}
 	}

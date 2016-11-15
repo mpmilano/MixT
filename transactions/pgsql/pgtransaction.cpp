@@ -60,7 +60,6 @@ namespace myria { namespace pgsql {
 					assert(no_future_actions());
 					if (!no_future_actions()) abort([]{});
 				}
-				assert(my_trans);
 				if (my_trans){
 					my_trans->trans = nullptr;
 				}

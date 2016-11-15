@@ -86,12 +86,14 @@ namespace myria { namespace pgsql {
 						auto &action = front.actions.front();
 						if (!action.submitted){
 							action.submitted = true;
+#ifndef NDEBUG
 							std::stringstream ss;
 							ss << "connection: " << connection_id
 							   << " transaction: " << front.transaction_id
 							   << "submitting query " <<
 							  action.query_str << std::endl;
 							std::cout << ss.str();
+#endif
 							action.query();
 							return true;
 						}
