@@ -17,7 +17,7 @@ namespace myria { namespace pgsql {
 			}
 
 			deferred_transaction::deferred_transaction(pgtransaction& trans)
-				:trans(&trans){}
+			  :transaction_id(trans.transaction_id),trans(&trans){}
 			
 			deferred_transaction::~deferred_transaction(){
 				if (trans){

@@ -14,7 +14,7 @@ namespace myria { namespace pgsql {
 			class LocalSQLConnection_super;
 			
 			/*throws failure condition on error */
-			void check_error(LocalSQLConnection_super &conn, const std::string& command, int result);
+		  void check_error(std::size_t,LocalSQLConnection_super &conn, const std::string& command, int result);
 
 			struct pgtransaction;
 
@@ -24,7 +24,7 @@ namespace myria { namespace pgsql {
 			using sizes_t = std::vector<std::size_t>;
 			
 			std::vector<bool> prepared;
-
+		  std::size_t connection_id = mutils::gensym();
 
 			
 			std::list<deferred_transaction> transactions;

@@ -55,18 +55,19 @@ namespace myria { namespace pgsql {
 				assert(my_trans);
 				auto* pgconn = conn.conn;
 				auto &conn = this->conn;
+				auto transaction_id = this->transaction_id;
 				my_trans->actions.emplace_back(
 					prep_return_func(action),
 					command,
-					[&conn,command,pgconn]{
-						check_error(conn,command,PQsendQueryParams(
+					[&conn,command,pgconn,transaction_id]{
+					  check_error(transaction_id,conn,command,PQsendQueryParams(
 										pgconn,
 										command.c_str(),
 										0,nullptr,nullptr,nullptr,nullptr,
 										1));
 					}
 					);
-				conn.submit_new_transaction();
+				conn.tick();
 			}
 
 			template<typename F, typename... Args>
@@ -80,12 +81,13 @@ namespace myria { namespace pgsql {
 				const vector<int> param_formats{{one<Args>::value...}};
 				int result_format = 1;
 				auto &conn = this->conn;
+				auto transaction_id = this->transaction_id;
 				my_trans->actions.emplace_back(
 					prep_return_func(action),
 					name,
 					[&conn, sb = std::move(scratch_buf),name,
-					 param_values,param_lengths,param_formats,result_format]{
-						check_error(conn,
+					 param_values,param_lengths,param_formats,result_format,transaction_id]{
+					  check_error(transaction_id,conn,
 									name,
 									PQsendQueryPrepared(
 										conn.conn,name.c_str(),
@@ -94,23 +96,24 @@ namespace myria { namespace pgsql {
 										param_lengths.data(),
 										param_formats.data(),
 										result_format));});
-				conn.submit_new_transaction();
+				conn.tick();
 			}
 
 			template<typename... Types>
 			void pgtransaction::prepare(const std::string &name, const std::string &statement){
 				auto &conn = this->conn;
+				auto transaction_id = this->transaction_id;
 				my_trans->actions.emplace_back(
 					[](pgresult){},name + statement,
-					[&conn,name,statement]{
+					[&conn,name,statement,transaction_id]{
 						Oid oids[] = {PGSQLinfo<Types>::value...};
-						check_error(
+						check_error(transaction_id,
 							conn,
 							name + statement,
 							PQsendPrepare(conn.conn,name.c_str(),statement.c_str(),sizeof...(Types),oids));
 					}
 					);
-				conn.submit_new_transaction();
+				conn.tick();
 			}
 		}}}
 

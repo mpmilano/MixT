@@ -15,21 +15,21 @@ namespace myria { namespace pgsql {
 		namespace local{
 
 			const std::function<void ()> noop{[]{}};
-			
-			void check_error(LocalSQLConnection_super &conn,
-							 const std::string &command,
-							 int result){
-				if (!result){
-					whendebug(
-						std::stringstream ss;
-						ss << "command error: [[" << command << "]] "
-						<< PQerrorMessage(conn.conn)
-						<< std::endl;
-						std::cout << ss.str());
-					assert(false && "command error");
-					throw SQLFailure{conn,command,PQerrorMessage(conn.conn)};
-				}
-			}
+
+		  void check_error(std::size_t transaction_id, LocalSQLConnection_super &conn,
+				   const std::string &command,
+				   int result){
+		    if (!result){
+		      whendebug(
+				std::stringstream ss;
+				ss << "connection: " << conn.connection_id << " transaction: " << transaction_id << " command error: [[" << command << "]] "
+				<< PQerrorMessage(conn.conn)
+				<< std::endl;
+				std::cout << ss.str());
+		      assert(false && "command error");
+		      throw SQLFailure{conn,command,PQerrorMessage(conn.conn)};
+		    }
+		  }
 
 			LocalSQLConnection_super::LocalSQLConnection_super()
 				:prepared(((std::size_t) LocalTransactionNames::MAX),false),
@@ -86,6 +86,12 @@ namespace myria { namespace pgsql {
 						auto &action = front.actions.front();
 						if (!action.submitted){
 							action.submitted = true;
+							std::stringstream ss;
+							ss << "connection: " << connection_id
+							   << " transaction: " << front.transaction_id
+							   << "submitting query " <<
+							  action.query_str << std::endl;
+							std::cout << ss.str();
 							action.query();
 							return true;
 						}
@@ -113,9 +119,11 @@ namespace myria { namespace pgsql {
 						assert(action.submitted);
 						whendebug(
 							std::stringstream ss;
-							ss << "executing response evaluator for " << action.query_str << std::endl;
+							ss << "connection: " << connection_id << " transaction: " << trans.transaction_id
+							<< " executing response evaluator for " << action.query_str << "<[[" << PQcmdStatus(res) << "]]>" << std::endl;
 							std::cout << ss.str();
 							);
+					       
 						action.on_complete(pgresult{action.query_str,*this,res});
 						clear_completed_transactions(transactions);
 					}
@@ -124,8 +132,8 @@ namespace myria { namespace pgsql {
 					}
 				}
 				//whendebug(std::cout << "PQ tick successfully completed!" << std::endl);
-				clear_completed_transactions(transactions);
-				submit_new_transaction();
+				//clear_completed_transactions(transactions);
+				//submit_new_transaction();
 			}
 			
 			int LocalSQLConnection_super::underlying_fd() {

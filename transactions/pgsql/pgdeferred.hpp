@@ -26,6 +26,7 @@ namespace myria { namespace pgsql {
 				bool no_fut_actions{false};
 			public:
 				bool no_future_actions() const;
+				const std::size_t transaction_id;
 				
 				void indicate_no_future_actions();
 				pgtransaction* trans;
