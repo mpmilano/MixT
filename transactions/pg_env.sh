@@ -1,8 +1,8 @@
 #!/bin/bash
 alias make="/usr/bin/make -j 8"
-export PGHOST='/run/postgresql';
+export PGHOST='/run/postgresql2';
 #export PGPORT='5432';
-export PGDATABASE='DataStore';
+export PGDATABASE='datastore';
 export PGUSER='research';
 export PGPASSWORD='researchVM'
 export extra_macro_defs='-DNORMAL -DWRITE_PERCENT=.3 -DSTRONG_PERCENT=.95'
