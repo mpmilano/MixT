@@ -350,5 +350,10 @@ int main(){
 			}
 		}
 	}
-	return real_main();
+	try {
+		return real_main();
+	}
+	catch(const std::exception &e){
+		std::cout << e.what() << std::endl;
+	}
 }
