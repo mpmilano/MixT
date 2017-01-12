@@ -162,15 +162,15 @@ namespace myria { namespace pgsql {
 			}
 				
 			void LocalSQLTransaction<Level::strong>::update_data(char const * const bytes, mutils::connection& socket){
-					std::unique_ptr<Table> t; std::unique_ptr<int> k;
-					std::unique_ptr<Name> id; std::unique_ptr<std::array<int,NUM_CAUSAL_GROUPS> > ends; 
+					context_ptr<const Table> t; context_ptr<const int> k;
+					context_ptr<const Name> id; context_ptr<const std::array<int,NUM_CAUSAL_GROUPS> > ends; 
 					auto offset = mutils::from_bytes_noalloc_v(&this->dsm,bytes,t,k,id,ends);
 					update_data_s([&](long int version){sendBack("version",(int)version,socket);},
 								  *t,*id,bytes + offset);
 				}
 				
 			void LocalSQLTransaction<Level::strong>::initialize_with_id(char const * const bytes, mutils::connection& ){
-					std::unique_ptr<Table> t; std::unique_ptr<Name> id;
+					context_ptr<const Table> t; context_ptr<const Name> id;
 					auto offset = mutils::from_bytes_noalloc_v(&this->dsm,bytes,t,id);
 					initialize_with_id_s(*t,*id,offset + bytes);
 				}
@@ -317,8 +317,8 @@ namespace myria { namespace pgsql {
 				}
 			
 			void LocalSQLTransaction<Level::causal>::update_data(char const * const bytes,mutils::connection& socket){
-					std::unique_ptr<Table> t; std::unique_ptr<int> k;
-					std::unique_ptr<Name> id; std::unique_ptr<std::array<int,NUM_CAUSAL_GROUPS> > ends; 
+					context_ptr<const Table> t; context_ptr<const int> k;
+					context_ptr<const Name> id; context_ptr<const std::array<int,NUM_CAUSAL_GROUPS> > ends; 
 					auto size = mutils::from_bytes_noalloc_v(&this->dsm,bytes,t,k,id,ends);
 					update_data_c(
 						[&](long int vc1, long int vc2, long int vc3, long int vc4){
@@ -337,8 +337,8 @@ namespace myria { namespace pgsql {
 					//initialize_with_id_c(*t,*k,*id,*ends,bytes + offset);
 			}
 			void LocalSQLTransaction<Level::causal>::increment(char const * const bytes,mutils::connection& socket){
-				std::unique_ptr<int> k;
-				std::unique_ptr<Name> id; std::unique_ptr<std::array<int,NUM_CAUSAL_GROUPS> > ends;
+				context_ptr<const int> k;
+				context_ptr<const Name> id; context_ptr<const std::array<int,NUM_CAUSAL_GROUPS> > ends;
 				mutils::from_bytes_noalloc_v(&this->dsm,bytes,k,id,ends);
 				increment_c(
 					[&](long int vc1, long int vc2, long int vc3, long int vc4){
