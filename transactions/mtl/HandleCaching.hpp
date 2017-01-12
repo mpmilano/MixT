@@ -12,17 +12,17 @@ namespace myria { namespace mtl {
 			CachedObject(decltype(t) t, DataStore<Level::strong> &st, Name name, bool is_valid_only)
 				:t(std::move(t)),st(st),nm(name),is_valid_only(is_valid_only){}
 	
-			const T& get(StoreContext<Level::strong>*ctx) {
+			const T& get(StoreContext<Level::strong>*) {
 				assert(!is_valid_only);
 				return *t;
 			}
 	
-			void put(StoreContext<Level::strong> *ctx, const T&) {
+			void put(StoreContext<Level::strong> *, const T&) {
 				assert(false && "error: modifying strong Handle in causal context! the type system is supposed to prevent this!");
 				struct dead_code{}; throw dead_code{};
 			}
 	
-			bool ro_isValid(StoreContext<Level::strong> *ctx) const {
+			bool ro_isValid(StoreContext<Level::strong> *) const {
 				return t.get() || is_valid_only;
 			}
 	
@@ -43,7 +43,7 @@ namespace myria { namespace mtl {
 				struct dead_code{}; throw dead_code{};
 			}
 	
-			int to_bytes(char* v) const {
+			int to_bytes(char* ) const {
 				assert(false && "wait why are you ... stop!");
 				struct dead_code{}; throw dead_code{};
 			}
@@ -51,7 +51,7 @@ namespace myria { namespace mtl {
 		};
 
 		template<HandleAccess ha, typename T,typename... Ops>
-		Handle<Level::strong,ha,T,Ops...> run_ast_strong(TransactionContext* tctx, const StrongCache& c, const StrongStore&, const Handle<Level::strong,ha,T,Ops...>& _h) {
+		Handle<Level::strong,ha,T,Ops...> run_ast_strong(TransactionContext* tctx, const StrongCache& , const StrongStore&, const Handle<Level::strong,ha,T,Ops...>& _h) {
 
 			assert(tctx);
 			auto ctx = tctx->execution_context;
@@ -97,7 +97,7 @@ namespace myria { namespace mtl {
 				}
 			}
 		
-			void put(StoreContext<Level::strong> *ctx, const T&) {
+			void put(StoreContext<Level::strong> *, const T&) {
 				assert(false && "error: modifying strong Handle in causal context! the type system is supposed to prevent this!");
 				struct dead_code{}; throw dead_code{};
 			}
@@ -129,7 +129,7 @@ namespace myria { namespace mtl {
 				struct dead_code{}; throw dead_code{};
 			}
 		
-			int to_bytes(char* v) const {
+			int to_bytes(char* ) const {
 				assert(false && "wait why are you ... stop!");
 				struct dead_code{}; throw dead_code{};
 			}
@@ -138,7 +138,7 @@ namespace myria { namespace mtl {
 
 		template<HandleAccess ha, typename T,typename... Ops>
 		Handle<Level::strong,ha,T,Ops...> run_ast_causal(
-			mtl::TransactionContext *tctx, mtl::CausalCache& cache, const mtl::CausalStore &s, const Handle<Level::strong,ha,T,Ops...>& h) {
+			mtl::TransactionContext *tctx, mtl::CausalCache& , const mtl::CausalStore &, const Handle<Level::strong,ha,T,Ops...>& h) {
 			return Handle<Level::strong,ha,T,Ops...>(tctx,std::make_shared<LocalObject<T> >(h.remote_object()));
 		}
 
