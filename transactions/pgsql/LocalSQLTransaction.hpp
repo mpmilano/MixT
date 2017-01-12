@@ -94,11 +94,11 @@ namespace myria { namespace pgsql {
 					switch(name){
 					case TransactionNames::exists:
 						log_receive(log_file,"exists");
-						o->obj_exists(*from_bytes<Name>(&o->dsm,bytes),socket);
+						o->obj_exists(*from_bytes_noalloc<Name>(&o->dsm,bytes),socket);
 						break;
 					case TransactionNames::Del:
 						log_receive(log_file,"del");
-						o->remove(*from_bytes<Name>(&o->dsm,bytes),socket);
+						o->remove(*from_bytes_noalloc<Name>(&o->dsm,bytes),socket);
 						break;
 					case TransactionNames::select_version:
 						log_receive(log_file,"select_version");

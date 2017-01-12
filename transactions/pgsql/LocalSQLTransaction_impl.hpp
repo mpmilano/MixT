@@ -100,7 +100,7 @@ namespace myria { namespace pgsql {
 				static const std::string is =
 					"update \"IntStore\" set data=$2,Version=Version + 1 where ID=$1 returning version";
 				switch(t) {
-				case Table::BlobStore : return prepared(action,*conn,LocalTransactionNames::Updates1,bs,id,(*mutils::from_bytes<mutils::Bytes>(&this->dsm,b)));
+				case Table::BlobStore : return prepared(action,*conn,LocalTransactionNames::Updates1,bs,id,(*mutils::from_bytes_noalloc<mutils::Bytes>(&this->dsm,b)));
 				case Table::IntStore : return prepared(action,*conn,LocalTransactionNames::Updates2,is,id,((int*)b)[0]);
 				}
 				assert(false && "forgot a case");
@@ -122,7 +122,7 @@ namespace myria { namespace pgsql {
 					const static std::string is =
 						"INSERT INTO \"IntStore\" (id,data) VALUES ($1,$2)";
 					switch(t) {
-					case Table::BlobStore : prepared(noop,*conn,LocalTransactionNames::Insert1,bs,id,(*mutils::from_bytes<mutils::Bytes>(&this->dsm,b))); return;
+					case Table::BlobStore : prepared(noop,*conn,LocalTransactionNames::Insert1,bs,id,(*mutils::from_bytes_noalloc<mutils::Bytes>(&this->dsm,b))); return;
 					case Table::IntStore : prepared(noop,*conn,LocalTransactionNames::Insert2,is,id,((int*)b)[0]); return;
 					}
 					assert(false && "forgot a case");
@@ -137,15 +137,15 @@ namespace myria { namespace pgsql {
 			}
 				
 			void LocalSQLTransaction<Level::strong>::select_version(char const * const bytes, mutils::connection& socket){
-				auto table = mutils::from_bytes<Table>(&this->dsm,bytes);
-				auto id = mutils::from_bytes<Name>(&this->dsm,bytes + mutils::bytes_size(*table));
+				auto table = mutils::from_bytes_noalloc<Table>(&this->dsm,bytes);
+				auto id = mutils::from_bytes_noalloc<Name>(&this->dsm,bytes + mutils::bytes_size(*table));
 				select_version_s([&](long int r){sendBack("select_version", (int)r, socket);},
 								 *table,*id);
 			}
 				
 			void LocalSQLTransaction<Level::strong>::select_version_data(char const * const bytes, mutils::connection& socket){
-				auto table = mutils::from_bytes<Table>(&this->dsm,bytes);
-				auto id = mutils::from_bytes<Name>(&this->dsm,bytes + mutils::bytes_size(*table));
+				auto table = mutils::from_bytes_noalloc<Table>(&this->dsm,bytes);
+				auto id = mutils::from_bytes_noalloc<Name>(&this->dsm,bytes + mutils::bytes_size(*table));
 				
 				if (*table == Table::BlobStore){
 					select_version_data_s([&](long int version, mutils::Bytes data){
@@ -164,20 +164,20 @@ namespace myria { namespace pgsql {
 			void LocalSQLTransaction<Level::strong>::update_data(char const * const bytes, mutils::connection& socket){
 					std::unique_ptr<Table> t; std::unique_ptr<int> k;
 					std::unique_ptr<Name> id; std::unique_ptr<std::array<int,NUM_CAUSAL_GROUPS> > ends; 
-					auto offset = mutils::from_bytes_v(&this->dsm,bytes,t,k,id,ends);
+					auto offset = mutils::from_bytes_noalloc_v(&this->dsm,bytes,t,k,id,ends);
 					update_data_s([&](long int version){sendBack("version",(int)version,socket);},
 								  *t,*id,bytes + offset);
 				}
 				
 			void LocalSQLTransaction<Level::strong>::initialize_with_id(char const * const bytes, mutils::connection& ){
 					std::unique_ptr<Table> t; std::unique_ptr<Name> id;
-					auto offset = mutils::from_bytes_v(&this->dsm,bytes,t,id);
+					auto offset = mutils::from_bytes_noalloc_v(&this->dsm,bytes,t,id);
 					initialize_with_id_s(*t,*id,offset + bytes);
 				}
 				
 			void LocalSQLTransaction<Level::strong>::increment(char const * const bytes, mutils::connection& socket){
 				increment_s([&](long int vers){sendBack("version",(int)vers,socket);},
-							Table::IntStore,*mutils::from_bytes<Name>(&this->dsm,bytes));
+							Table::IntStore,*mutils::from_bytes_noalloc<Name>(&this->dsm,bytes));
 			}
 
 			std::unique_ptr<LocalSQLConnection<Level::strong> > LocalSQLTransaction<Level::strong>::store_abort(std::unique_ptr<LocalSQLTransaction<Level::strong> > o) {
@@ -235,9 +235,8 @@ namespace myria { namespace pgsql {
 					return argh_344234(*((int*)b));
 				}
 				else {
-					return argh_344234((*mutils::from_bytes<mutils::Bytes>(&this->dsm,b)));
+					return argh_344234((*mutils::from_bytes_noalloc<mutils::Bytes>(&this->dsm,b)));
 				}
-				
 			}
 				
 			
@@ -286,8 +285,8 @@ namespace myria { namespace pgsql {
 			}
 				
 			void LocalSQLTransaction<Level::causal>::select_version(char const * const bytes, mutils::connection& socket){
-					auto table = mutils::from_bytes<Table>(&this->dsm,bytes);
-					auto id = mutils::from_bytes<Name>(&this->dsm,bytes + mutils::bytes_size(*table));
+					auto table = mutils::from_bytes_noalloc<Table>(&this->dsm,bytes);
+					auto id = mutils::from_bytes_noalloc<Name>(&this->dsm,bytes + mutils::bytes_size(*table));
 					select_version_c(
 						[&](long int vc1, long int vc2, long int vc3, long int vc4){
 							sendBack("version",std::array<int,4>{{(int)vc1,(int)vc2,(int)vc3,(int)vc4}},socket);
@@ -296,8 +295,8 @@ namespace myria { namespace pgsql {
 				}
 				
 			void LocalSQLTransaction<Level::causal>::select_version_data(char const * const bytes, mutils::connection& socket){
-					auto table = mutils::from_bytes<Table>(&this->dsm,bytes);
-					auto id = mutils::from_bytes<Name>(&this->dsm,bytes + mutils::bytes_size(*table));
+					auto table = mutils::from_bytes_noalloc<Table>(&this->dsm,bytes);
+					auto id = mutils::from_bytes_noalloc<Name>(&this->dsm,bytes + mutils::bytes_size(*table));
 					if (*table == Table::BlobStore){
 						select_version_data_c(
 							[&](long int vc1, long int vc2, long int vc3, long int vc4, mutils::Bytes b){
@@ -320,7 +319,7 @@ namespace myria { namespace pgsql {
 			void LocalSQLTransaction<Level::causal>::update_data(char const * const bytes,mutils::connection& socket){
 					std::unique_ptr<Table> t; std::unique_ptr<int> k;
 					std::unique_ptr<Name> id; std::unique_ptr<std::array<int,NUM_CAUSAL_GROUPS> > ends; 
-					auto size = mutils::from_bytes_v(&this->dsm,bytes,t,k,id,ends);
+					auto size = mutils::from_bytes_noalloc_v(&this->dsm,bytes,t,k,id,ends);
 					update_data_c(
 						[&](long int vc1, long int vc2, long int vc3, long int vc4){
 							sendBack("version",std::array<int,4>{{(int)vc1,(int)vc2,(int)vc3,(int)vc4}},socket);
@@ -340,7 +339,7 @@ namespace myria { namespace pgsql {
 			void LocalSQLTransaction<Level::causal>::increment(char const * const bytes,mutils::connection& socket){
 				std::unique_ptr<int> k;
 				std::unique_ptr<Name> id; std::unique_ptr<std::array<int,NUM_CAUSAL_GROUPS> > ends;
-				mutils::from_bytes_v(&this->dsm,bytes,k,id,ends);
+				mutils::from_bytes_noalloc_v(&this->dsm,bytes,k,id,ends);
 				increment_c(
 					[&](long int vc1, long int vc2, long int vc3, long int vc4){
 						sendBack("version",std::array<int,4>{{(int)vc1,(int)vc2,(int)vc3,(int)vc4}},socket);
