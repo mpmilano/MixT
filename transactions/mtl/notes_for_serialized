@@ -1,1 +1,30 @@
 Initial commit (making sure I'm on the right branch)
+
+Hypothesis: a transactions language is necessary for the performance of MyriaStore, because locks are currently held for too long.
+
+Biggest stumbling block: while-loops.  "Proper" transaction splitting needs the creation of a variable number of temporaries to hold the intermediate values within while-loops.
+Clearly this would be a lot of DB traffic.
+
+Thoughts:
+
+1: the pure translation.  MTL client-side outputs a SQL (or otherwise interface-compliant) program to be run as the complete transaction on the remote.  This basically won't work, because SQL can't cross stores and we can't issue a SQL query to retrieve temporaries from the wrong database.  And even if we could, we probably shouldn't.
+
+Option 2: print the transaction.  Actually send the transaction's resolved C++ code over to the server and have the server compile it.  We're probably going to get slammed seven ways to betsy by the reviewers because of the obvious unsolved security issues in "here, take this turing-complete memory-munging code and run with it".
+
+Option 3: interpreter.  Effectively hardcode everything into some sort of set of commands and expressions that are allowable.  Biggest issue: types are templated a lot, and one of the things they're templated on is the underlying data type in the program.  We can't enumerate all of those.  Does this just summarize to option 2 after all?
+
+Option 4: an option 1+2 variant.  Output a valid C++ program which has already been split and explicitly calls loads and stores via the host's datastores.  Ship that program over to the server.
+
+What's required:
+
+ - runCausal and runStrong now output commands rather than actually interpret events.  Total re-organization of that relationship must occur.
+ - Must figure out context in which to place shipped-over code.  What code elements will we need on the other side? DB interface at least; what about closed-over variables? EnvironmentExpressions are now explicitly serialized, But show's doing the serialization and deserialization on the other side?
+ - must restore a local DB interface, rather than the one we have now (which is networked and concurrent).
+
+
+=============================
+
+Design: MTL vs MTL-local
+
+MTL's purpose is to generate a valid C++ program which uses (a) MTL-local constructs, (b) fully-qualified names of basic MyriaStore classes (Handles, DataStores, Etc), and (c) Registered DataStore interface classes.
+

@@ -5,6 +5,9 @@ CPPFLAGS= -I$(PWD) -I$(PWD)/mtl -I$(PWD)/myria-utils -I$(PWD)/mutils-networking 
 LDFLAGS= -stdlib=libc++ --std=c++1z -lm -pthread
 object_files=FutureFreePool.o GlobalPool.o CooperativeCache.o Ends.o utils.o test_utils.o Basics.o Tracker.o Ostreams.o SerializationSupport.o  IfBuilder.o  WhileBuilder.o ConExpr.o SQLStore.o GSQLObject.o SQLConnection.o SQLTransaction.o SQL_internal_utils.o TempBuilder.o TransactionBasics.o ServerSocket.o Socket.o ClockManager.o abiutils.o batched_connection_common.o batched_connection_client.o batched_connection_server.o eventfd.o epoll.o dual_connection.o
 
+vm: $(object_files) vm_main.o
+	@clang++ $(object_files) vm_main.o -o vm $(LDFLAGS)
+
 all: $(object_files) list_example.o
 	@clang++ $(object_files) list_example.o -o test $(LDFLAGS)
 
@@ -20,8 +23,6 @@ stress2: $(object_files) stress_test2.o
 stress3:  $(object_files) stress_test3.o
 	@clang++ $(object_files) stress_test.o -o stress3 $(LDFLAGS)
 
-vm: $(object_files) vm_main.o
-	@clang++ $(object_files) vm_main.o -o vm $(LDFLAGS)
 groups: $(object_files) groups_test.o
 	@clang++ $(object_files) groups_test.o -o groups $(LDFLAGS)
 

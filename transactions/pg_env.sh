@@ -5,7 +5,7 @@ export PGHOST='/run/postgresql';
 export PGDATABASE='DataStore';
 export PGUSER='research';
 export PGPASSWORD='researchVM'
-export extra_macro_defs='-DNORMAL -DWRITE_PERCENT=.3 -DSTRONG_PERCENT=.95'
+export extra_macro_defs='-DNORMAL -DWRITE_PERCENT=.3 -DSTRONG_PERCENT=.05'
 export causalGroup=3
 export MY_IP=128.84.217.139
 export STRONG_REMOTE_IP=128.253.3.197
