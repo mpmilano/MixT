@@ -2,43 +2,45 @@
 #pragma once
 
 #include "LocalSQLConnection.hpp"
-namespace myria { namespace pgsql {
-		namespace local{
+namespace myria {
+namespace pgsql {
+namespace local {
 
-			struct pgresult;
+struct pgresult;
 
-			struct pgtransaction {
-			private:
-				bool no_fut_actions{false};
-			public:
+struct pgtransaction {
+private:
+  bool no_fut_actions{false};
 
-				bool no_future_actions() const ;
+public:
+  bool no_future_actions() const;
 
-				void indicate_no_future_actions();
-				
-				const std::size_t transaction_id;
-				LocalSQLConnection_super &conn;
-				deferred_transaction* my_trans;
-				pgtransaction(LocalSQLConnection_super &conn, const std::size_t tid);
+  void indicate_no_future_actions();
 
-				//pgresult exec_sync (const std::string &command);
+  const std::size_t transaction_id;
+  LocalSQLConnection_super &conn;
+  deferred_transaction *my_trans;
+  pgtransaction(LocalSQLConnection_super &conn, const std::size_t tid);
 
-				void commit(std::function<void ()> action);
+  // pgresult exec_sync (const std::string &command);
 
-				void abort(std::function<void ()> action);
+  void commit(std::function<void()> action);
 
-				template<typename F>
-				void exec_async(F action, const std::string &command);
-				
-				template<typename F, typename... Args>
-				void exec_prepared(F action, const std::string& name, const Args & ... args);
-				
-				template<typename... Types>
-				void prepare(const std::string &name, const std::string &statement);
-				
-				pgtransaction(const pgtransaction&) = delete;
+  void abort(std::function<void()> action);
 
-				~pgtransaction();
-			};
-		}}}
+  template <typename F> void exec_async(F action, const std::string &command);
+
+  template <typename F, typename... Args>
+  void exec_prepared(F action, const std::string &name, const Args &... args);
+
+  template <typename... Types>
+  void prepare(const std::string &name, const std::string &statement);
+
+  pgtransaction(const pgtransaction &) = delete;
+
+  ~pgtransaction();
+};
+}
+}
+}
 #include "pgtransaction_impl.hpp"

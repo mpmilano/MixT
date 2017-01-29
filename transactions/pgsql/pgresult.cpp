@@ -48,7 +48,8 @@ namespace myria { namespace pgsql {
 							|| errorcode == "40003"
 							|| errorcode == "40P01"){
 							throw SerializationFailure{
-								conn,
+								control_conn,
+									conn,
 									command,
 									PQresultErrorMessage(res)};
 						}

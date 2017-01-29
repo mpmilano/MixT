@@ -5,7 +5,7 @@ using namespace mutils;
 using namespace pgsql;
 using namespace local;
 
-int main(){
-	SQLReceiver<RCVR_LEVEL> r;
-	r.r.acceptor_fun();
+int main() {
+  SQLReceiver<RCVR_LEVEL> r;
+  r.r.acceptor_fun();
 }

@@ -17,6 +17,8 @@ export increase_delay=1s
 export test_stop_time=1min
 export num_clients=20
 export client_rate=5_Hz
+export preferred_db_cons=4000
+export spare_db_cons=3000
 export instance_list='128.84.105.76 128.84.105.110 128.84.105.128 128.84.105.81 128.84.105.98 128.84.105.153 128.84.105.90 128.84.105.122 128.84.105.121 '
 function ssh-euc() {
 	host=$1;

@@ -6,6 +6,7 @@ namespace myria { namespace pgsql {
 			struct pgresult {
 				const std::string command;
 				LocalSQLConnection_super& conn;
+				mutils::connection &control_conn;
 				PGresult * res;
 				~pgresult();
 				pgresult(const pgresult&) = delete;
