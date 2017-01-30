@@ -23,7 +23,7 @@ namespace myria {
 					struct ReceiverFun : public mutils::dual_state_receiver {
 						whendebug(std::ofstream& log_file;)
 						std::unique_ptr<LocalSQLConnection<l> > db_connection{
-							new LocalSQLConnection<l>()};
+							new LocalSQLConnection<l>(whendebug(log_file))};
 						std::unique_ptr<LocalSQLTransaction<l> > current_trans{nullptr};
 
 						mutils::connection& data_conn;

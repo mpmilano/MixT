@@ -28,10 +28,13 @@ namespace myria { namespace pgsql {
 
 			
 			std::list<deferred_transaction> transactions;
+#ifndef NDEBUG
+			std::ofstream& log_file;
+#endif
 			
 			PGconn *conn;
 			std::shared_ptr<bool> aborting{new bool{false}};
-			LocalSQLConnection_super();
+			LocalSQLConnection_super(whendebug(std::ofstream& log_file));
 
 			LocalSQLConnection_super(const LocalSQLConnection_super&) = delete;
 			

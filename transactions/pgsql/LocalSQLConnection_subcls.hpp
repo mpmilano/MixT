@@ -5,7 +5,8 @@ namespace myria { namespace pgsql {
 
 			template<Level l> class LocalSQLConnection : public LocalSQLConnection_super {
 			public:
-				LocalSQLConnection(){
+				LocalSQLConnection(whendebug(std::ofstream& log_file))
+					whendebug(:LocalSQLConnection_super(log_file)){
 					pgtransaction *tr{nullptr};
 					std::unique_ptr<pgtransaction> tr_o;
 					if (transactions.size() > 0 && !transactions.back().no_future_actions()){

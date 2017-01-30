@@ -31,8 +31,9 @@ namespace myria { namespace pgsql {
 		    }
 		  }
 
-			LocalSQLConnection_super::LocalSQLConnection_super()
+			LocalSQLConnection_super::LocalSQLConnection_super(whendebug(std::ofstream& log_file))
 				:prepared(((std::size_t) LocalTransactionNames::MAX),false),
+				 whendebug(log_file(log_file),)
 				 conn(PQconnectdb(""))
 			{
 				assert(conn);
@@ -92,7 +93,7 @@ namespace myria { namespace pgsql {
 							   << " transaction: " << front.transaction_id
 							   << "submitting query " <<
 							  action.query_str << std::endl;
-							std::cout << ss.str();
+							log_file << ss.str();
 #endif
 							action.query();
 							return true;
@@ -123,7 +124,7 @@ namespace myria { namespace pgsql {
 							std::stringstream ss;
 							ss << "connection: " << connection_id << " transaction: " << trans.transaction_id
 							<< " executing response evaluator for " << action.query_str << "<[[" << PQcmdStatus(res) << "]]>" << std::endl;
-							std::cout << ss.str();
+							log_file << ss.str();
 							);
 					       
 						action.on_complete(pgresult{action.query_str,*this,res});
