@@ -141,13 +141,13 @@ namespace synth_test {
 					log_messages->addField(LogFields::done_time,
 										   duration_cast<milliseconds>(end).count());
 					//log_messages->addField(LogFields::is_serialization_error,true);
-					log_messages->addField(LogFields::remote_failure_string, std::string(sf.what()) + " was the error");
+					log_messages->addField(LogFields::remote_failure_string, std::string(sf.what()) + ": serialization failure");
 					continue;
 				}
 			}
 		}
 		catch(const SerializationFailure &e){
-			log_messages->addField(LogFields::remote_failure_string, std::string(e.what()) + " was the error");
+			log_messages->addField(LogFields::remote_failure_string, std::string(e.what()) + ": serialization failure");
 		}
 	}
 

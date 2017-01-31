@@ -6,6 +6,7 @@
 #include <resource_pool.hpp>
 #include "SQLConstants.hpp"
 #include "dual_connection.hpp"
+#include <sys/sysinfo.h>
 
 namespace myria{ namespace pgsql {
 
@@ -30,6 +31,7 @@ namespace myria{ namespace pgsql {
 			std::unique_ptr<mutils::connection> conn;
 			SQLTransaction* current_trans{nullptr};
 			bool in_trans() const;
+			struct sysinfo collect_machine_stats();
 			SQLConnection(std::unique_ptr<mutils::connection> conn):conn{std::move(conn)}{}
 		};
 		
@@ -51,17 +53,17 @@ namespace myria{ namespace pgsql {
 			constexpr unsigned long num_connections(){
 				using namespace std::chrono;
 				using namespace mutils;
-				return 3*(NUM_CLIENTS + (INCREASE_BY*(TEST_STOP_TIME/INCREASE_DELAY)))/4;
+				return 4*(NUM_CLIENTS + (INCREASE_BY*(TEST_STOP_TIME/INCREASE_DELAY)));
 			}
 			
 			mutils::dual_connection_manager<mutils::batched_connection::connections> bc{
 				(l == Level::strong ? strong_ip_addr : causal_ip_addr),
 					(l == Level::strong ? strong_sql_port : causal_sql_port),(num_connections()/2)};
 			
-			mutils::ResourcePool<SQLConnection> rp{num_connections()/4,num_connections()/4,
+			mutils::ResourcePool<SQLConnection> rp{3*num_connections()/4,num_connections()/4,
 					[this]{
 					using subcon = std::decay_t<decltype(bc.spawn())>;
-					return new SQLConnection(std::unique_ptr<mutils::connection>(new subcon(bc.spawn())));}};
+					return new SQLConnection(std::unique_ptr<mutils::connection>(new subcon(bc.spawn())));},false /*disallow overdraws*/};
 			LockedSQLConnection acquire(){
 				return rp.acquire();
 			}

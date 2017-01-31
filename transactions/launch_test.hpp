@@ -199,6 +199,11 @@ std::string PreparedTest<Mem,Arg>::run_tests(Meta& meta, bool (*stop) (Meta&, Po
 		futures = std::move(new_futures);
 		sleep(1);
 	}
+	auto strong_info = strong.acquire()->collect_machine_stats();
+	auto causal_info = causal.acquire()->collect_machine_stats();
+	std::cout << "memory usage on the remote hosts: " << std::endl;
+	std::cout << "causal: " << causal_info.totalram - causal_info.freeram << std::endl;
+	std::cout << "strong: " << strong_info.totalram - strong_info.freeram << std::endl;
 	return ss.str();
 }
 

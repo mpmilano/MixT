@@ -19,6 +19,7 @@
 #include <netinet/in.h>
 #include <net/if.h>
 #include <arpa/inet.h>
+#include <sys/sysinfo.h>
 
 
 
@@ -31,6 +32,14 @@ namespace myria{ namespace pgsql {
 
 		bool SQLConnection::in_trans() const{
 			return current_trans;
+		}
+
+		struct sysinfo SQLConnection::collect_machine_stats(){
+			constexpr char key{6};
+			conn->send(key);
+			return *conn->template receive<struct sysinfo>(
+				nullptr,
+				*conn->template receive<std::size_t>(nullptr,sizeof(std::size_t)));
 		}
 
 #ifndef NDEBUG

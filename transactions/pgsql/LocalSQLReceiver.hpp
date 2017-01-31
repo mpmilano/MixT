@@ -1,4 +1,5 @@
 #pragma once
+#include <sys/sysinfo.h>
 #include "LocalSQLConnection.hpp"
 #include "LocalSQLTransaction.hpp"
 #include "SQLConstants.hpp"
@@ -58,7 +59,15 @@ namespace myria {
 						
 					void deliver_new_data_event(const void* data){
 							const char* _data = (const char*) data;
-							if (!current_trans) {
+							//request for diagnostics
+							if (_data[0] == 6) {
+								struct sysinfo reply;
+								sysinfo(&reply);
+								std::size_t reply_size = mutils::bytes_size(reply);
+								data_conn.send(reply_size);
+								data_conn.send(reply);
+							}
+							else if (!current_trans) {
 								
 								if (_data[0] != 4 && _data[0] != 1){
 									std::cout << (int) _data[0] << std::endl;
@@ -119,7 +128,7 @@ namespace myria {
 							(void) v;
 							assert(*((long int*)v) == serialization_failure);
 							data_conn.send(serialization_failure);
-							const std::string why{"I do not know why this happened"};
+							const std::string why{""};
 							std::size_t size = mutils::bytes_size(why);
 							control_conn.send(size);
 							control_conn.send(why);
