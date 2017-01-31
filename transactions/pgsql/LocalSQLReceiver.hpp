@@ -5,6 +5,7 @@
 #include "SQLConstants.hpp"
 #include "dual_connection.hpp"
 #include "pgexceptions.hpp"
+#include "Ostreams.hpp"
 
 namespace myria {
 	namespace pgsql {
@@ -64,6 +65,10 @@ namespace myria {
 								struct sysinfo reply;
 								sysinfo(&reply);
 								std::size_t reply_size = mutils::bytes_size(reply);
+#ifndef NDEBUG
+								std::cout << "memory usage on this host " << std::endl;
+								std::cout << l << "l: " << reply.totalram - reply.freeram << std::endl;
+#endif
 								data_conn.send(reply_size);
 								data_conn.send(reply);
 							}
