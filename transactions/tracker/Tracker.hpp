@@ -21,7 +21,7 @@
 
 namespace myria { 
 
-	template<Level l, HandleAccess HA, typename T,typename... Ops>
+	template<typename l, typename T,typename... Ops>
 	struct Handle;
 	namespace tracker {
 
@@ -57,33 +57,49 @@ namespace myria {
 			};
 
 			using Clock = std::array<int,NUM_CAUSAL_GROUPS>;
-			template<Level l>
-			using TrackerDS =
-				std::tuple<
-				Handle<l, HandleAccess::all, Tombstone> (*)
-				(tracker::Tracker &trk, mtl::TransactionContext& ctx, DataStore<l>&, Name, const Tombstone&), //newTomb
-				bool (*) (DataStore<l>&, Name), //exists
-                                std::unique_ptr<RemoteObject<l, Clock> > (*) (std::unique_ptr<mutils::abs_StructBuilder>&, DataStore<l>&, Name), //existingClock
-                                std::unique_ptr<RemoteObject<l, Tombstone> > (*) (std::unique_ptr<mutils::abs_StructBuilder>&, DataStore<l>&, Name) //existingTomb
-				>;
-			using TrackerDSStrong = TrackerDS<Level::strong>;
-			using TrackerDSCausal = TrackerDS<Level::causal>;
-			using StampedObject = mutils::TrivialTriple<Name, Tracker::Clock, std::vector<char> >;
+		  
+		  struct GenericTrackerDS {
+		    using newTomb_t = std::unique_ptr<LabelFreeHandle<Tombstone> > (*) (tracker::Tracker &trk, mtl::TransactionContext& ctx, GDataStore&, Name, const Tombstone&);
+		    newTomb_t newTomb;
+		    using exists_t = bool (*) (GDataStore&, Name);
+		    exists_t exists;
+		    using existingClock_t = std::unique_ptr<TypedRemoteObject<Clock> > (*) (std::unique_ptr<mutils::abs_StructBuilder>&, GDataStore&, Name);
+		    existingClock_t existingClock;
+		    using existingTomb_t = std::unique_ptr<TypedRemoteObject<Tombstone> > (*) (std::unique_ptr<mutils::abs_StructBuilder>&, GDataStore&, Name);
+		    existingTomb_t existingTomb;
+		    virtual ~GenericTrackerDS() = default;
+		    GenericTrackerDS(newTomb_t newTomb, exists_t exists, existingClock_t existingClock, existingTomb_t existingTomb)
+		      :newTomb(newTomb),exists(exists),existingClock(existingClock),existingTomb(existingTomb){}
+		  };
 
-			//hiding private members of this class. No implementation available.
-			struct Internals;
-                        Internals *i;
-			
+		  /*
+		  template<typename l>
+		  struct TrackerDS : public GenericTrackerDS{
+		    
+		    using newTomb_t = Handle<l, Tombstone> (*) (tracker::Tracker &trk, mtl::TransactionContext& ctx, DataStore<l>&, Name, const Tombstone&);
+		    using exists_t = bool (*) (DataStore<l>&, Name);
+		    using existingClock_t = std::unique_ptr<RemoteObject<l, Clock> > (*) (std::unique_ptr<mutils::abs_StructBuilder>&, DataStore<l>&, Name);
+		    using existingTomb_t = std::unique_ptr<RemoteObject<l, Tombstone> > (*) (std::unique_ptr<mutils::abs_StructBuilder>&, DataStore<l>&, Name);
+		    TrackerDS(newTomb_t newTomb, exists_t exists, existingClock_t existingClock, existingTomb_t existingTomb)
+		      :GenericTrackerDS([](){}){}
+		      };//*/
+		  
+		  using StampedObject = mutils::TrivialTriple<Name, Tracker::Clock, std::vector<char> >;
+
+		  //hiding private members of this class. No implementation available.
+		  struct Internals;
+		  Internals *i;
+		  
 		private:
-			void onRead(
-				TrackingContext&,
-				DataStore<Level::causal>&, Name name, const Clock &version,
-				const std::function<void (char const *)> &construct_nd_merge);
-			void onRead(
-				TrackingContext&,
-				DataStore<Level::strong>&, Name name, const Clock &version,
-				const std::function<void (char const *)> &construct_nd_merge);
-			
+		  void onCausalRead(
+			      TrackingContext&,
+			      GDataStore&, Name name, const Clock &version,
+			      const std::function<void (char const *)> &construct_nd_merge);
+		  void onStrongRead(
+			      TrackingContext&,
+			      GDataStore&, Name name, const Clock &version,
+			      const std::function<void (char const *)> &construct_nd_merge);
+		  
 		public:
 			static constexpr int clockport = 9999;
                         void updateClock();
@@ -92,26 +108,26 @@ namespace myria {
 
 			bool registered(const GDataStore&) const;
 
-			const DataStore<Level::strong>& get_StrongStore() const;
-			const DataStore<Level::causal>& get_CausalStore() const;
-			DataStore<Level::strong>& get_StrongStore();
-			DataStore<Level::causal>& get_CausalStore();
+			const GDataStore& get_StrongStore() const;
+			const GDataStore& get_CausalStore() const;
+			GDataStore& get_StrongStore();
+			GDataStore& get_CausalStore();
 
 			bool strongRegistered() const;
 			bool causalRegistered() const;
 
-			void registerStore(DataStore<Level::strong> &,
-							   std::unique_ptr<TrackerDSStrong>);
-			void registerStore(DataStore<Level::causal> &,
-							   std::unique_ptr<TrackerDSCausal>);
+			void registerStrongStore(GDataStore<Level::strong>,
+							   std::unique_ptr<GenericTrackerDS>);
+			void registerCausalStore(DataStore<Level::causal>,
+							   std::unique_ptr<GenericTrackerDS>);
 
 			template<typename DS>
 			void registerStore(DS &ds);
 
 			void exemptItem(Name name);
 
-			template<typename T, Level l, HandleAccess ha,typename... Ops>
-			void exemptItem(const Handle<l,ha,T,Ops...>& h){
+			template<typename T, typename l, typename... Ops>
+			void exemptItem(const Handle<l,T,Ops...>& h){
 				exemptItem(h.name());
 			}
 
@@ -125,29 +141,29 @@ namespace myria {
 			   guaranteed up-to-date.
 			 */
 
-			void onWrite(mtl::TransactionContext&, DataStore<Level::strong>&, Name name, Tombstone*);
-			void onWrite(mtl::TransactionContext&, DataStore<Level::strong>&, Name name, Clock*);
-			void onWrite(mtl::TransactionContext&, DataStore<Level::strong>&, Name name, void*);
+			void onStrongWrite(mtl::TransactionContext&, GDataStore&, Name name, Tombstone*);
+			void onStrongWrite(mtl::TransactionContext&, GDataStore&, Name name, Clock*);
+			void onStrongWrite(mtl::TransactionContext&, GDataStore&, Name name, void*);
 			
 
-			void onWrite(DataStore<Level::causal>&, Name name, const Clock &version, Tombstone*);
-			void onWrite(DataStore<Level::causal>&, Name name, const Clock &version, Clock*);
-			void onWrite(DataStore<Level::causal>&, Name name, const Clock &version, void*);
+			void onCausalWrite(GDataStore&, Name name, const Clock &version, Tombstone*);
+			void onCausalWrite(GDataStore&, Name name, const Clock &version, Clock*);
+			void onCausalWrite(GDataStore&, Name name, const Clock &version, void*);
 
-			void onCreate(DataStore<Level::causal>&, Name name,Tombstone*);
-			void onCreate(DataStore<Level::causal>&, Name name,Clock*);
-			void onCreate(DataStore<Level::causal>&, Name name,void*);
+			void onCausalCreate(GDataStore&, Name name,Tombstone*);
+			void onCausalCreate(GDataStore&, Name name,Clock*);
+			void onCausalCreate(GDataStore&, Name name,void*);
 			
-			void onCreate(DataStore<Level::strong>&, Name name, Tombstone*);
-			void onCreate(DataStore<Level::strong>&, Name name, Clock*);
-			void onCreate(DataStore<Level::strong>&, Name name, void*);
+			void onStrongCreate(GDataStore&, Name name, Tombstone*);
+			void onStrongCreate(GDataStore&, Name name, Clock*);
+			void onStrongCreate(GDataStore&, Name name, void*);
 
-			void afterRead(mtl::StoreContext<Level::strong>&, TrackingContext&, 
-						   DataStore<Level::strong>&, Name name, Tombstone*);
-			void afterRead(mtl::StoreContext<Level::strong>&, TrackingContext&, 
-						   DataStore<Level::strong>&, Name name, Clock*);
-			void afterRead(mtl::StoreContext<Level::strong>&, TrackingContext&, 
-						   DataStore<Level::strong>&, Name name, void*);
+			void afterStrongRead(mtl::GStoreContext&, TrackingContext&, 
+						   GDataStore&, Name name, Tombstone*);
+			void afterStrongRead(mtl::GStoreContext&, TrackingContext&, 
+						   GDataStore&, Name name, Clock*);
+			void afterStrongRead(mtl::GStoreContext&, TrackingContext&, 
+						   GDataStore&, Name name, void*);
 
 			//return is non-null when read value cannot be used.
 			template<typename DS, typename T>
@@ -157,9 +173,9 @@ namespace myria {
 				   std::unique_ptr<T> candidate,
 				   Tombstone*,
 				   std::unique_ptr<T> (*merge)(char const *,
-											   std::unique_ptr<T>)
-				   = [](char const *,std::unique_ptr<T> r){return r;}
-				);
+							       std::unique_ptr<T>)
+			       = [](char const *,std::unique_ptr<T> r){return r;}
+			       );
 
 			//return is non-null when read value cannot be used.
 			template<typename DS, typename T>
@@ -169,11 +185,11 @@ namespace myria {
 				   std::unique_ptr<T> candidate,
 				   Clock*,
 				   std::unique_ptr<T> (*merge)(char const *,
-											   std::unique_ptr<T>)
-				   = [](char const *,std::unique_ptr<T> r){return r;}
-				);
+							       std::unique_ptr<T>)
+			       = [](char const *,std::unique_ptr<T> r){return r;}
+			       );
 
-						//return is non-null when read value cannot be used.
+		  //return is non-null when read value cannot be used.
 			template<typename DS, typename T>
 			std::unique_ptr<T>
 			onRead(TrackingContext&, DS&, Name name,
@@ -181,18 +197,18 @@ namespace myria {
 				   std::unique_ptr<T> candidate,
 				   void*,
 				   std::unique_ptr<T> (*merge)(char const*,
-											   std::unique_ptr<T>)
+							       std::unique_ptr<T>)
 				   = [](char const*,std::unique_ptr<T> r){return r;}
 				);
 
 			//for when merging locally is too hard or expensive
-			bool waitForRead(TrackingContext&, DataStore<Level::causal>&, Name name, const Clock& version, Tombstone*);
-			bool waitForRead(TrackingContext&, DataStore<Level::causal>&, Name name, const Clock& version, Clock*);
-			bool waitForRead(TrackingContext&, DataStore<Level::causal>&, Name name, const Clock& version, void*);
+			bool waitForCausalRead(TrackingContext&, GDataStore&, Name name, const Clock& version, Tombstone*);
+			bool waitForCausalRead(TrackingContext&, GDataStore&, Name name, const Clock& version, Clock*);
+			bool waitForCausalRead(TrackingContext&, GDataStore&, Name name, const Clock& version, void*);
 
-			void afterRead(TrackingContext&, DataStore<Level::causal>&, Name name, const Clock& version, const std::vector<char> &data, Tombstone*);
-			void afterRead(TrackingContext&, DataStore<Level::causal>&, Name name, const Clock& version, const std::vector<char> &data, Clock*);
-			void afterRead(TrackingContext&, DataStore<Level::causal>&, Name name, const Clock& version, const std::vector<char> &data, void*);
+			void afterCausalRead(TrackingContext&, GDataStore&, Name name, const Clock& version, const std::vector<char> &data, Tombstone*);
+			void afterCausalRead(TrackingContext&, GDataStore&, Name name, const Clock& version, const std::vector<char> &data, Clock*);
+			void afterCausalRead(TrackingContext&, GDataStore&, Name name, const Clock& version, const std::vector<char> &data, void*);
 
 			//for testing
 			void assert_nonempty_tracking() const;

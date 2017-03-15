@@ -17,13 +17,16 @@ namespace myria{
   struct GenericHandle;
 
   template<typename label>
-  struct GenericHandle<Label<label> > {};
+  struct GenericHandle<Label<label> > {virtual ~GenericHandle() = default;};
+
+  template<typename T>
+  struct LabelFreeHandle {virtual ~LabelFreeHandle() = default;};
 
   template<typename l2, typename T2, typename... ops2>
   std::unique_ptr<Handle<l2,ops2...> > hndl_from_bytes(mutils::DeserializationManager* dm, char const * __v);
 	
   template<typename l, typename T, typename... SupportedOperations>
-  struct Handle : public GenericHandle<l>, public SupportedOperations::template SupportsOn<Handle<l,T,SupportedOperations...> >... {
+  struct Handle : public GenericHandle<l>, public LabelFreeHandle<T>, public SupportedOperations::template SupportsOn<Handle<l,T,SupportedOperations...> >... {
 
 
     const std::shared_ptr<RemoteObject<l,T> > _ro;
@@ -113,13 +116,13 @@ namespace myria{
     }
     
     std::shared_ptr<const T> get(std::true_type*, tracker::Tracker& tracker, mtl::StoreContext<l>& ctx, tracker::TrackingContext &trkc, std::shared_ptr<const T> ret) const{
-      tracker.afterRead(ctx,trkc,_ro->store(),_ro->name(),(T*)nullptr);
+      tracker.afterStrongRead(ctx,trkc,_ro->store(),_ro->name(),(T*)nullptr);
       return ret;
     }
     
     std::shared_ptr<const T> get(std::false_type*, tracker::Tracker& tracker, mtl::StoreContext<l>& ctx, tracker::TrackingContext &trkc, std::shared_ptr<const T> ret)const{
-      mutils::AtScopeEnd ase{[&](){tracker.afterRead(trkc,_ro->store(),_ro->name(),_ro->timestamp(),_ro->o_bytes(&ctx,&tracker,&trkc),(T*)nullptr);}};
-      if (tracker.waitForRead(trkc,_ro->store(),_ro->name(),_ro->timestamp(),(T*)nullptr)){
+      mutils::AtScopeEnd ase{[&](){tracker.afterCausalRead(trkc,_ro->store(),_ro->name(),_ro->timestamp(),_ro->o_bytes(&ctx,&tracker,&trkc),(T*)nullptr);}};
+      if (tracker.waitForCausalRead(trkc,_ro->store(),_ro->name(),_ro->timestamp(),(T*)nullptr)){
 	return ret;
       }
       else return _ro->get(&ctx,&tracker,&trkc);
@@ -143,13 +146,13 @@ namespace myria{
     
     void put(tracker::Tracker& tracker, mtl::TransactionContext &ctx, const T& t, std::true_type*) {
       assert(_ro);
-      tracker.onWrite(ctx,_ro->store(),_ro->name(),(T*)nullptr);
+      tracker.onStrongWrite(ctx,_ro->store(),_ro->name(),(T*)nullptr);
       _ro->put(ctx.template get_store_context<l>(_ro->store(),"calling put() via handle").get(),t);
     }
     
     void put(tracker::Tracker& tracker, mtl::TransactionContext &ctx, const T& t, std::false_type*) {
       assert(_ro);
-      tracker.onWrite(_ro->store(),_ro->name(),_ro->timestamp(),(T*)nullptr);
+      tracker.onCausalWrite(_ro->store(),_ro->name(),_ro->timestamp(),(T*)nullptr);
       _ro->put(ctx.template get_store_context<l>(_ro->store(),"calling put() via handle").get(),t);
     }
     
