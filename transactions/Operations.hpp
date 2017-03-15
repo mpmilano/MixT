@@ -3,14 +3,7 @@
 #include "RemoteObject.hpp"
 
 namespace myria{
-
-	namespace mtl{
-		template<typename>
-		struct get_level;
-		template<typename>
-		struct extract_type;
-	}
-	
+  
 enum class RegisteredOperations {
 	Increment, Insert, Clone
 };

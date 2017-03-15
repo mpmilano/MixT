@@ -9,13 +9,10 @@
 #include "CTString.hpp"
 #include "recollapse.hpp"
 #include <memory>
+#include "Basics.hpp"
+
 
 namespace myria {
-
-struct VMObjectLog
-{
-};
-
 namespace mtl {
 
 template <typename>
