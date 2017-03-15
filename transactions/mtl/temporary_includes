@@ -1,7 +1,0 @@
-#pragma once
-            
-#include "MutableTemporary.hpp"
-#include "RefTemporary.hpp"
-#include "TempCreators.hpp"
-#include "Temporary.hpp"
-#include "TemporaryMutation.hpp"
