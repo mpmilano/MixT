@@ -76,38 +76,38 @@ namespace myria { namespace tracker {
     void Tracker::afterStrongRead(mtl::GStoreContext&, TrackingContext&, 
 				  GDataStore&, Name name, void*){}
 
-		bool Tracker::waitForRead(TrackingContext&, DataStore<Level::causal>&, Name , const Clock& , Tombstone*){return true;}
-		bool Tracker::waitForRead(TrackingContext&, DataStore<Level::causal>&, Name , const Clock& , Clock*){return true;}
-		bool Tracker::waitForRead(TrackingContext&, DataStore<Level::causal>&, Name , const Clock& , void*){return true;}
+    bool waitForCausalRead(TrackingContext&, GDataStore&, Name name, const Clock& version, Tombstone*){return true;}
+    bool waitForCausalRead(TrackingContext&, GDataStore&, Name name, const Clock& version, Clock*){return true;}
+    bool waitForCausalRead(TrackingContext&, GDataStore&, Name name, const Clock& version, void*){return true;}
+    
+    void afterCausalRead(TrackingContext&, GDataStore&, Name name, const Clock& version, const std::vector<char> &data, Tombstone*){}
+    void afterCausalRead(TrackingContext&, GDataStore&, Name name, const Clock& version, const std::vector<char> &data, Clock*){}
+    void afterCausalRead(TrackingContext&, GDataStore&, Name name, const Clock& version, const std::vector<char> &data, void*){}
+
+    void Tracker::assert_nonempty_tracking() const {}
+    const CooperativeCache& Tracker::getcache() const {assert(false);struct dead_code{}; throw dead_code{};}
+    
+    Tracker::Tracker(int cache_port, CacheBehaviors  /*= CacheBehaviors::full*/)
+      :i(new Internals()),cache_port(cache_port){}
+    
+    Tracker::~Tracker(){delete i;}
+    
+    struct TrackingContext::Internals{};		
+    
+    TrackingContext::TrackingContext(std::unique_ptr<mutils::abs_StructBuilder>& l, Tracker& t, bool):trk(t),logger(l){}
+    
+    void TrackingContext::commitContext(){}
+    void TrackingContext::abortContext(){}
+    TrackingContext::~TrackingContext(){}
+
 		
-		void Tracker::afterRead(TrackingContext&, DataStore<Level::causal>&, Name , const Clock& , const std::vector<char> &, Tombstone*){}
-		void Tracker::afterRead(TrackingContext&, DataStore<Level::causal>&, Name , const Clock& , const std::vector<char> &, Clock*){}
-		void Tracker::afterRead(TrackingContext&, DataStore<Level::causal>&, Name , const Clock& , const std::vector<char> &, void*){}
-
-		void Tracker::assert_nonempty_tracking() const {}
-		const CooperativeCache& Tracker::getcache() const {assert(false);struct dead_code{}; throw dead_code{};}
-
-		Tracker::Tracker(int cache_port, CacheBehaviors  /*= CacheBehaviors::full*/)
-			:i(new Internals()),cache_port(cache_port){}
-		
-		Tracker::~Tracker(){delete i;}
-
-		struct TrackingContext::Internals{};		
-
-		TrackingContext::TrackingContext(std::unique_ptr<mutils::abs_StructBuilder>& l, Tracker& t, bool):trk(t),logger(l){}
-		
-		void TrackingContext::commitContext(){}
-		void TrackingContext::abortContext(){}
-		TrackingContext::~TrackingContext(){}
-
-		
-	}
-	namespace mtl{
-		void TransactionContext::commitContext(){
-			trackingContext->commitContext();
-		}
-		void TransactionContext::abortContext(){
-			trackingContext->abortContext();
-		}
-	}
+  }
+  namespace mtl{
+    void TransactionContext::commitContext(){
+      trackingContext->commitContext();
+    }
+    void TransactionContext::abortContext(){
+      trackingContext->abortContext();
+    }
+  }
 }
