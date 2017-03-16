@@ -9,42 +9,34 @@ namespace myria { namespace tracker {
 		//I'm just going to guess the names of the functions here.
 		template<typename DS>
 		auto wrapStore(DS &){
-			constexpr Level l = ds_level(mutils::mke_p<DS>());
-			using newTomb_t = Handle<l, HandleAccess::all, Tracker::Tombstone>
-				(*) (tracker::Tracker &trk, mtl::TransactionContext& ctx, DataStore<l>&, Name, const Tracker::Tombstone&);
-			using existingClock_t = std::unique_ptr<RemoteObject<l, Tracker::Clock> >
-                                (*) (std::unique_ptr<mutils::abs_StructBuilder>&, DataStore<l>&, Name);
-			using existingTomb_t = std::unique_ptr<RemoteObject<l, Tracker::Tombstone> >
-                                (*) (std::unique_ptr<mutils::abs_StructBuilder>&, DataStore<l>&, Name);
-	
-			using exists_t = bool (*) (DataStore<l>&, Name);
-	
-			using TrackerDS = std::tuple<newTomb_t,
-										 exists_t,
-										 existingClock_t,
-										 existingTomb_t
-										 >;
-			static const newTomb_t newTomb = [](tracker::Tracker &trk, mtl::TransactionContext& ctx, DataStore<l> &_ds, Name name, auto &e){
-				auto &ds = dynamic_cast<DS&>(_ds);
-				Handle<l,HandleAccess::all,Tracker::Tombstone> ret = ds.template newObject<HandleAccess::all>(trk,&ctx, name,e);
-				return ret;
-			};
-			static const exists_t exists = [](DataStore<l> &_ds, Name name){
-				auto &ds = dynamic_cast<DS&>(_ds);
+		  using l = typename DS::label;
+		  using newTomb_t = typename Tracker::GenericTrackerDS::newTomb_t;
+		  using existingClock_t = typename Tracker::GenericTrackerDS::existingClock_t;
+		  using existingTomb_t = typename Tracker::GenericTrackerDS::existingTomb_t;
+		  using exists_t = typename Tracker::GenericTrackerDS::exists_t;
+		  static const newTomb_t newTomb = [](tracker::Tracker &trk, mtl::TransactionContext& ctx, GDataStore &_ds, Name name, auto &e){
+		    auto &ds = dynamic_cast<DS&>(_ds);
+		    return std::make_unique<LabelFreeHandle<Tracker::Tombstone> >
+		    (new Handle<l,Tracker::Tombstone> (ds.template newObject<HandleAccess::all>(trk,&ctx, name,e)));
+		  };
+		  static const exists_t exists = [](GDataStore &_ds, Name name){
+		    auto &ds = dynamic_cast<DS&>(_ds);
 				return ds.exists(name);
-			};
-			static const existingClock_t existClock =
-                                [](std::unique_ptr<mutils::abs_StructBuilder>& asb, DataStore<l> &_ds, Name name) -> std::unique_ptr<RemoteObject<l, Tracker::Clock> >{
-				auto &ds = dynamic_cast<DS&>(_ds);
-				return ds.template existingRaw<Tracker::Clock>(asb,name);
-			};
-			static const existingTomb_t existTomb =
-                                [](std::unique_ptr<mutils::abs_StructBuilder>& asb, DataStore<l> &_ds, Name name) -> std::unique_ptr<RemoteObject<l, Tracker::Tombstone> >{
-				auto &ds = dynamic_cast<DS&>(_ds);
-				return ds.template existingRaw<Tracker::Tombstone>(asb,name);
-			};
-			return std::unique_ptr<TrackerDS>(
-				new TrackerDS{newTomb, exists,existClock,existTomb});
+		  };
+		  static const existingClock_t existClock =
+		    [](std::unique_ptr<mutils::abs_StructBuilder>& asb, GDataStore &_ds, Name name)
+			  -> std::unique_ptr<TypedRemoteObject<Tracker::Clock> >{
+		    auto &ds = dynamic_cast<DS&>(_ds);
+		    return ds.template existingRaw<Tracker::Clock>(asb,name);
+		  };
+		  static const existingTomb_t existTomb =
+		    [](std::unique_ptr<mutils::abs_StructBuilder>& asb, GDataStore &_ds, Name name)
+		    -> std::unique_ptr<TypedRemoteObject<Tracker::Tombstone> >{
+		    auto &ds = dynamic_cast<DS&>(_ds);
+		    return ds.template existingRaw<Tracker::Tombstone>(asb,name);
+		  };
+		  return std::unique_ptr<GenericTrackerDS>
+		    (new GenericTrackerDS{newTomb, exists,existClock,existTomb});
 		}
 
 		template<typename DS>
