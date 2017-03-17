@@ -216,10 +216,7 @@ using resolved_label_min =
 template <typename L1, typename L2>
 using label_lte = std::integral_constant<bool, L2::flows_to(L1{})>;
 
-std::ostream& operator<<(std::ostream& o, const Label<top>&)
-{
-  return o << "top";
-}
+	std::ostream& operator<<(std::ostream& o, const Label<top>&);
 template <typename... labels>
 std::ostream& operator<<(std::ostream& o, const Label<label_min_of<labels...>>&)
 {
@@ -238,8 +235,5 @@ std::ostream& operator<<(std::ostream& o, const Label<temp_label<seq, depth>>&)
   return o << "temp<" << seq << depth << ">";
 }
 
-std::ostream& operator<<(std::ostream& o, const Label<bottom>&)
-{
-  return o << "bottom";
-}
+	std::ostream& operator<<(std::ostream& o, const Label<bottom>&);
 }

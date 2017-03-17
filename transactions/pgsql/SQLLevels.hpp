@@ -30,7 +30,7 @@ namespace myria { namespace pgsql {
 
 			template<typename... lbls>
 			constexpr static auto min_with(const lbls&...){
-				return std::conditional_t<exists<std::is_same<lbls,Label<bottom> >::value...>(),
+				return std::conditional_t<mutils::exists<std::is_same<lbls,Label<bottom> >::value...>(),
 																	Label<bottom>,
 																	Label
 																	>{};
@@ -38,15 +38,15 @@ namespace myria { namespace pgsql {
 
 			template<typename... lbls>
 			constexpr static bool is_min_of(const lbls&...){
-				constexpr bool res = !exists<std::is_same<lbls,Label<bottom> >::value...>();
+				constexpr bool res = !mutils::exists<std::is_same<lbls,Label<bottom> >::value...>();
 				return res;
 			}
 
 			template <typename... lbls>
 			constexpr static bool is_max_of(const lbls&...)
 				{
-					constexpr bool res = !(exists<std::is_same<lbls,Label<top> >::value...>()
-																 || exists<std::is_same<lbls,Label<pgsql::strong> >::value...>());
+					constexpr bool res = !(mutils::exists<std::is_same<lbls,Label<top> >::value...>()
+																 || mutils::exists<std::is_same<lbls,Label<pgsql::strong> >::value...>());
 					return res;
 				}
 			
@@ -79,24 +79,24 @@ namespace myria { namespace pgsql {
 
 			template<typename... lbls>
 			constexpr static auto min_with(const lbls&...){
-				return std::conditional_t<exists<std::is_same<lbls,Label<bottom> >::value...>(),
+				return std::conditional_t<mutils::exists<std::is_same<lbls,Label<bottom> >::value...>(),
 																	Label<bottom>,
-																	std::conditional_t<exists<std::is_same<lbls,Label<pgsql::causal> >::value...>(),
+																	std::conditional_t<mutils::exists<std::is_same<lbls,Label<pgsql::causal> >::value...>(),
 																										 Label<pgsql::causal>,
 																										 Label > >{};
 			}
 
 			template<typename... lbls>
 			constexpr static bool is_min_of(const lbls&...){
-				constexpr bool res =  !(exists<std::is_same<lbls,Label<bottom> >::value...>()
-																|| exists<std::is_same<lbls,Label<pgsql::causal> >::value...>());
+				constexpr bool res =  !(mutils::exists<std::is_same<lbls,Label<bottom> >::value...>()
+																|| mutils::exists<std::is_same<lbls,Label<pgsql::causal> >::value...>());
 				return res;
 			}
 
 			template <typename... lbls>
 			constexpr static bool is_max_of(const lbls&...)
 				{
-					constexpr bool res = !exists<std::is_same<lbls,Label<top> >::value...>();
+					constexpr bool res = !mutils::exists<std::is_same<lbls,Label<top> >::value...>();
 					return res;
 				}
 
@@ -107,6 +107,5 @@ namespace myria { namespace pgsql {
 
 			static constexpr char description[] = "strong";
 		};
-	constexpr char Label<pgsql::strong>::description[];
-	constexpr char Label<pgsql::causal>::description[];
+
 	}
