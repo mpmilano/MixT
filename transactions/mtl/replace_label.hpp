@@ -11,7 +11,7 @@ namespace label_inference {
 template <typename, typename>
 struct replace_label;
 
-template <long long target1, long long target2, typename newlabel>
+template <int target1, int target2, typename newlabel>
 struct replace_label<Label<temp_label<target1, target2>>, Label<newlabel>>
 {
   using old_label = Label<temp_label<target1, target2>>;
@@ -54,8 +54,8 @@ struct replace_label<Label<temp_label<target1, target2>>, Label<newlabel>>
     return Expression<DECT(label_replace(l{})), y, VarReference<v>>{};
   }
 
-  template <long long i>
-  static constexpr auto _replace(Expression<Label<top>, long long, Constant<i>> a)
+  template <int i>
+  static constexpr auto _replace(Expression<Label<top>, int, Constant<i>> a)
   {
     static_assert(!std::is_same<old_label, Label<top>>::value);
     return a;
@@ -104,14 +104,14 @@ struct replace_label<Label<temp_label<target1, target2>>, Label<newlabel>>
   }
 };
 
-template <long long target1, long long target2, typename newlabel>
+template <int target1, int target2, typename newlabel>
 template <typename ast>
 constexpr auto replace_label<Label<temp_label<target1, target2>>, Label<newlabel>>::replace(ast a)
 {
   return replace_label::_replace(a);
 }
 
-template <long long target1, long long target2, typename newlabel>
+template <int target1, int target2, typename newlabel>
 template <typename l>
 constexpr auto replace_label<Label<temp_label<target1, target2>>, Label<newlabel>>::label_replace(l)
 {

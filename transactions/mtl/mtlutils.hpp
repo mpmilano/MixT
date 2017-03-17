@@ -565,8 +565,8 @@ toInt(char c)
   };
 }
 
-constexpr long long
-exp(long long base, long long exponent)
+constexpr int
+exp(int base, int exponent)
 {
   return (exponent == 0 ? 1 : base * exp(base, exponent - 1));
 }
@@ -575,8 +575,8 @@ template <char a, char b>
 void
 print_varname(std::ostream& o, String<'a', 'n', 'o', 'r', 'm', a, b>)
 {
-  long long _a = a;
-  long long _b = b;
+  int _a = a;
+  int _b = b;
   o << "anorm(" << _a << "," << _b << ")";
 }
 
@@ -584,8 +584,8 @@ template <char a, char b>
 void
 print_varname(std::ostream& o, String<1, a, b>)
 {
-  long long _a = a;
-  long long _b = b;
+  int _a = a;
+  int _b = b;
   o << "[" << _a << "," << _b << "]";
 }
 
@@ -593,8 +593,8 @@ template <char a, char b>
 void
 print_varname(std::ostream& o, String<'w', 'h', 'i', 'l', 'e', a, b>)
 {
-  long long _a = a;
-  long long _b = b;
+  int _a = a;
+  int _b = b;
   o << "while(" << _a << "," << _b << ")";
 }
 

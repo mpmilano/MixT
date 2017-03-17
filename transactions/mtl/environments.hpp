@@ -7,7 +7,8 @@
 #include <iostream>
 #include "mtlutils.hpp"
 #include "top.hpp"
-#include "shim.hpp"
+#include "Basics.hpp"
+#include "Handle.hpp"
 
 namespace myria {
 
@@ -299,9 +300,10 @@ template <typename T, typename l, char... str>
 struct type_binding<String<str...>, T, Label<l>, type_location::remote> : public type_binding_super<String<str...>, typename T::type, Label<l>>
 {
   static_assert(is_handle<T>::value);
+	static_assert(!std::is_same<T,typename T::type>::value);
 
   constexpr type_binding() = default;
-  using super = type_binding_super<String<str...>, T, Label<l>>;
+	using super = type_binding_super<String<str...>, typename T::type, Label<l> >;
   using name = typename super::name;
   using label = typename super::label;
 

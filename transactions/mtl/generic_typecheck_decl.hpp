@@ -14,8 +14,8 @@ namespace myria { namespace mtl  { namespace typecheck_phase {
 		constexpr auto _label_inference(Expression<l,y,VarReference<v> >){
 		}
 
-		template<typename l, long long i>
-		constexpr auto _label_inference(Expression<long long ,y,Constant<i> >){
+		template<typename l, int i>
+		constexpr auto _label_inference(Expression<int ,y,Constant<i> >){
 		}
 
 		template<typename l, typename y, char op, typename L, typename R>

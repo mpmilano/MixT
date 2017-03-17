@@ -28,7 +28,7 @@ print_ast(std::ostream& o, const Expression<VarReference<v>>&)
   print_varname(o, v{});
 }
 
-template <long long i>
+template <int i>
 void
 print_ast(std::ostream& o, const Expression<Constant<i>>&)
 {

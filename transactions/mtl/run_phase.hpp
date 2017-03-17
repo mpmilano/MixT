@@ -21,8 +21,8 @@ auto _run_phase(typename AST<l>::template Expression<y, typename AST<l>::templat
   return s.get(v{}).get(ctx);
 }
 
-template <typename l, typename TranCtx, typename store, long long i>
-auto _run_phase(typename AST<l>::template Expression<long long, typename AST<l>::template Constant<i>>*, TranCtx& ctx, store& s)
+template <typename l, typename TranCtx, typename store, int i>
+auto _run_phase(typename AST<l>::template Expression<int, typename AST<l>::template Constant<i>>*, TranCtx& ctx, store& s)
 {
   return i;
 }

@@ -200,10 +200,10 @@ constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Expressio
 }
 
 template <typename l>
-template <long long i, typename old_api>
-constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Expression<Label<top>, long long, typecheck_phase::Constant<i>>)
+template <int i, typename old_api>
+constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Expression<Label<top>, int, typecheck_phase::Constant<i>>)
 {
-  return extracted_phase<label, phase_api<label, requires<>, provides<>, typename old_api::inherits>, Expression<long long, Constant<i>>>{};
+  return extracted_phase<label, phase_api<label, requires<>, provides<>, typename old_api::inherits>, Expression<int, Constant<i>>>{};
 }
 
 template <typename l>

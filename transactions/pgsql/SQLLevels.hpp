@@ -1,6 +1,7 @@
 #pragma once
 
 #include "top.hpp"
+#include "AST_split.hpp"
 
 namespace myria { namespace pgsql {
 
@@ -13,15 +14,15 @@ namespace myria { namespace pgsql {
 			constexpr Label() = default;
 			
 			constexpr static bool flows_to(const Label<bottom>&){
-				return false;
+				return true;
 			}
 
 			constexpr static bool flows_to(const Label<top>&){
-				return true;
+				return false;
 			}
 
 			constexpr static bool flows_to(const Label<pgsql::strong>&){
-				return true;
+				return false;
 			}
 
 			constexpr static bool flows_to(const Label&){
@@ -38,15 +39,19 @@ namespace myria { namespace pgsql {
 
 			template<typename... lbls>
 			constexpr static bool is_min_of(const lbls&...){
+				constexpr bool res2 = (lbls::flows_to(Label{}) && ... && true);
 				constexpr bool res = !mutils::exists<std::is_same<lbls,Label<bottom> >::value...>();
+				static_assert(res == res2);
 				return res;
 			}
 
 			template <typename... lbls>
 			constexpr static bool is_max_of(const lbls&...)
 				{
+					constexpr bool res2 = (Label::flows_to(lbls{}) && ... && true);
 					constexpr bool res = !(mutils::exists<std::is_same<lbls,Label<top> >::value...>()
 																 || mutils::exists<std::is_same<lbls,Label<pgsql::strong> >::value...>());
+					static_assert(res == res2);
 					return res;
 				}
 			
@@ -54,6 +59,8 @@ namespace myria { namespace pgsql {
 			using is_causal = std::true_type;
 			
 			using requires_causal_tracking = std::true_type;
+			using is_label = std::true_type;
+			
 			static constexpr char description[] = "causal";
 		};
 
@@ -62,15 +69,15 @@ namespace myria { namespace pgsql {
 			constexpr Label() = default;
 
 			constexpr static bool flows_to(const Label<bottom>&){
-				return false;
-			}
-
-			constexpr static bool flows_to(const Label<top>&){
 				return true;
 			}
 
-			constexpr static bool flows_to(const Label<pgsql::causal>&){
+			constexpr static bool flows_to(const Label<top>&){
 				return false;
+			}
+
+			constexpr static bool flows_to(const Label<pgsql::causal>&){
+				return true;
 			}
 
 			constexpr static bool flows_to(const Label&){
@@ -88,15 +95,19 @@ namespace myria { namespace pgsql {
 
 			template<typename... lbls>
 			constexpr static bool is_min_of(const lbls&...){
+				constexpr bool res2 = (lbls::flows_to(Label{}) && ... && true);
 				constexpr bool res =  !(mutils::exists<std::is_same<lbls,Label<bottom> >::value...>()
 																|| mutils::exists<std::is_same<lbls,Label<pgsql::causal> >::value...>());
+				static_assert(res == res2);
 				return res;
 			}
 
 			template <typename... lbls>
 			constexpr static bool is_max_of(const lbls&...)
 				{
+					constexpr bool res2 = (Label::flows_to(lbls{}) && ... && true);
 					constexpr bool res = !mutils::exists<std::is_same<lbls,Label<top> >::value...>();
+					static_assert(res == res2);
 					return res;
 				}
 
@@ -104,8 +115,18 @@ namespace myria { namespace pgsql {
 			using is_causal = std::false_type;
 
 			using requires_causal_tracking = std::false_type;
+			using is_label = std::true_type;
 
 			static constexpr char description[] = "strong";
 		};
+
+	namespace mtl { namespace split_phase {
+			static_assert(!are_equivalent(Label<top>{}, Label<pgsql::strong>{} ));
+			static_assert(!are_equivalent(Label<top>{}, Label<pgsql::causal>{} ));
+			static_assert(!are_equivalent(Label<top>{}, Label<bottom>{} ));
+			static_assert(!are_equivalent(Label<bottom>{}, Label<pgsql::strong>{} ));
+			static_assert(!are_equivalent(Label<bottom>{}, Label<pgsql::causal>{} ));
+			static_assert(!are_equivalent(Label<pgsql::causal>{}, Label<pgsql::strong>{} ));
+		}}
 
 	}

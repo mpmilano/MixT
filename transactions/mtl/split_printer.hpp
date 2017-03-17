@@ -30,9 +30,9 @@ print_ast(std::ostream& o, const typename AST<l>::template Expression<y, typenam
   print_varname(o, v{});
 }
 
-template <typename l, long long i>
+template <typename l, int i>
 void
-print_ast(std::ostream& o, const typename AST<l>::template Expression<long long, typename AST<l>::template Constant<i>>&)
+print_ast(std::ostream& o, const typename AST<l>::template Expression<int, typename AST<l>::template Constant<i>>&)
 {
   o << i;
 }

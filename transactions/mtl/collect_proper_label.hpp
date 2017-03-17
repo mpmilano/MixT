@@ -75,67 +75,67 @@ constexpr auto _collect_labels_helper(Statement<Label<label_min_of<l, r>>, Seque
 }
 
 // temp
-template <long long l, long long r, typename y, typename v, typename e>
+template <int l, int r, typename y, typename v, typename e>
 constexpr auto _collect_labels_helper(Binding<Label<temp_label<l, r>>, y, v, e>)
 {
   return collect_labels_helper(e{});
 }
 
-template <long long l, long long r, typename y, typename s, typename f>
+template <int l, int r, typename y, typename s, typename f>
 constexpr auto _collect_labels_helper(Expression<Label<temp_label<l, r>>, y, FieldReference<s, f>>)
 {
   return collect_labels_helper(s{});
 }
 
-template <long long l, long long r, typename y, typename v>
+template <int l, int r, typename y, typename v>
 constexpr auto _collect_labels_helper(Expression<Label<temp_label<l, r>>, y, VarReference<v>>)
 {
   return mutils::typeset<>{};
 }
 
-template <long long l, long long r, typename y, char op, typename L, typename R>
+template <int l, int r, typename y, char op, typename L, typename R>
 constexpr auto _collect_labels_helper(Expression<Label<temp_label<l, r>>, y, BinOp<op, L, R>>)
 {
   return collect_labels_helper(L{}).combine(collect_labels_helper(R{}));
 }
 
-template <long long l, long long r, typename v, typename e>
+template <int l, int r, typename v, typename e>
 constexpr auto _collect_labels_helper(Statement<Label<temp_label<l, r>>, Assignment<v, e>>)
 {
   return collect_labels_helper(v{}).combine(collect_labels_helper(e{}));
 }
 
-template <long long l, long long r, typename b, typename e>
+template <int l, int r, typename b, typename e>
 constexpr auto _collect_labels_helper(Statement<Label<temp_label<l, r>>, Let<b, e>>)
 {
   return collect_labels_helper(b{}).combine(collect_labels_helper(e{}));
 }
 
-template <long long l, long long r, typename b, typename e>
+template <int l, int r, typename b, typename e>
 constexpr auto _collect_labels_helper(Statement<Label<temp_label<l, r>>, LetRemote<b, e>>)
 {
   return collect_labels_helper(b{}).combine(collect_labels_helper(e{}));
 }
 
-template <long long l, long long r, typename c, typename t, typename e>
+template <int l, int r, typename c, typename t, typename e>
 constexpr auto _collect_labels_helper(Statement<Label<temp_label<l, r>>, If<c, t, e>>)
 {
   return collect_labels_helper(c{}).combine(collect_labels_helper(t{})).combine(collect_labels_helper(e{}));
 }
 
-template <long long l, long long r, typename c, typename e>
+template <int l, int r, typename c, typename e>
 constexpr auto _collect_labels_helper(Statement<Label<temp_label<l, r>>, While<c, e>>)
 {
   return collect_labels_helper(c{}).combine(collect_labels_helper(e{}));
 }
 
-template <long long l, long long r>
+template <int l, int r>
 constexpr auto _collect_labels_helper(Statement<Label<temp_label<l, r>>, Sequence<>>)
 {
   return mutils::typeset<>{};
 }
 
-template <long long l, long long r, typename s1, typename... seq>
+template <int l, int r, typename s1, typename... seq>
 constexpr auto _collect_labels_helper(Statement<Label<temp_label<l, r>>, Sequence<s1, seq...>>)
 {
   return collect_labels_helper(s1{}).combine(collect_labels_helper(seq{})...);
@@ -163,8 +163,8 @@ constexpr auto _collect_labels_helper(Expression<l, y, VarReference<v>>)
   return mutils::typeset<l>{};
 }
 
-template <long long i>
-constexpr auto _collect_labels_helper(Expression<Label<top>, long long, Constant<i>>)
+template <int i>
+constexpr auto _collect_labels_helper(Expression<Label<top>, int, Constant<i>>)
 {
   return mutils::typeset<Label<top>>{};
 }

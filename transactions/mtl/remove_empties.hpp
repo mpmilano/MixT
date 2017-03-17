@@ -33,8 +33,8 @@ auto _clear_empty_statements(typename AST<l>::template Expression<y, typename AS
   return ret{};
 }
 
-template <typename l, long long i>
-auto _clear_empty_statements(typename AST<l>::template Expression<long long, typename AST<l>::template Constant<i>> a)
+template <typename l, int i>
+auto _clear_empty_statements(typename AST<l>::template Expression<int, typename AST<l>::template Constant<i>> a)
 {
   struct ret
   {

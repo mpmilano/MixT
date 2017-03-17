@@ -38,12 +38,14 @@ struct Label<top>
   {
     return true;
   }
+
+	using requires_causal_tracking = std::false_type;
 };
 
-template <long long, long long>
+template <int, int>
 struct temp_label;
 // temporary labels which have not been inferred yet.
-template <long long seq, long long depth>
+template <int seq, int depth>
 struct Label<temp_label<seq, depth>>
 {
   // you better not be trying to call flow analysis stuff on this label.
@@ -51,11 +53,11 @@ struct Label<temp_label<seq, depth>>
 
 template <typename>
 struct is_temp_label;
-template <long long a, long long b>
+template <int a, int b>
 struct is_temp_label<Label<temp_label<a, b>>> : public std::true_type
 {
 };
-template <long long a, long long b>
+template <int a, int b>
 struct is_temp_label<temp_label<a, b>> : public std::true_type
 {
 };
@@ -67,21 +69,21 @@ struct is_temp_label : public std::false_type
 template <typename l, typename r>
 struct label_min_of;
 
-template <long long l1, long long l2, typename r>
+template <int l1, int l2, typename r>
 struct Label<label_min_of<Label<temp_label<l1, l2>>, Label<r>>>
 {
   static constexpr auto resolve() { return Label{}; }
   static constexpr bool can_resolve() { return false; }
 };
 
-template <long long l1, long long l2, typename r>
+template <int l1, int l2, typename r>
 struct Label<label_min_of<Label<r>, Label<temp_label<l1, l2>>>>
 {
   static constexpr auto resolve() { return Label{}; }
   static constexpr bool can_resolve() { return false; }
 };
 
-template <long long l1, long long l2, long long r1, long long r2>
+template <int l1, int l2, int r1, int r2>
 struct Label<label_min_of<Label<temp_label<l1, l2>>, Label<temp_label<r1, r2>>>>
 {
   static constexpr auto resolve() { return Label{}; }
@@ -117,7 +119,7 @@ struct Label<label_min_of<Label<r>, Label<label_min_of<l1, l2>>>>
   }
 };
 
-template <typename l1, typename l2, long long r1, long long r2>
+template <typename l1, typename l2, int r1, int r2>
 struct Label<label_min_of<Label<label_min_of<l1, l2>>, Label<temp_label<r1, r2>>>>
 {
   static constexpr bool can_resolve() { return Label<label_min_of<l1, l2>>::can_resolve(); }
@@ -134,7 +136,7 @@ struct Label<label_min_of<Label<label_min_of<l1, l2>>, Label<temp_label<r1, r2>>
   }
 };
 
-template <typename l1, typename l2, long long r1, long long r2>
+template <typename l1, typename l2, int r1, int r2>
 struct Label<label_min_of<Label<temp_label<r1, r2>>, Label<label_min_of<l1, l2>>>>
 {
   static constexpr bool can_resolve() { return Label<label_min_of<l1, l2>>::can_resolve(); }
@@ -207,6 +209,9 @@ struct Label<bottom>
   {
     return (true && ... && Label::flows_to(labels{}));
   }
+
+	using requires_causal_tracking = std::false_type;
+	
 };
 
 template <typename l, typename r>
@@ -229,7 +234,7 @@ std::ostream& operator<<(std::ostream& o, const Label<label_min_of<labels...>>&)
   return o << ")";
 }
 
-template <long long seq, long long depth>
+template <int seq, int depth>
 std::ostream& operator<<(std::ostream& o, const Label<temp_label<seq, depth>>&)
 {
   return o << "temp<" << seq << depth << ">";

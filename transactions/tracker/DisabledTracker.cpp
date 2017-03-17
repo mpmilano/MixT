@@ -76,13 +76,13 @@ namespace myria { namespace tracker {
     void Tracker::afterStrongRead(mtl::GStoreContext&, TrackingContext&, 
 				  GDataStore&, Name , void*){}
 
-    bool waitForCausalRead(TrackingContext&, GDataStore&, Name, const Tracker::Clock& version, Tracker::Tombstone*){return true;}
-    bool waitForCausalRead(TrackingContext&, GDataStore&, Name name, const Tracker::Clock& version, Tracker::Clock*){return true;}
-    bool waitForCausalRead(TrackingContext&, GDataStore&, Name name, const Tracker::Clock& version, void*){return true;}
+    bool Tracker::waitForCausalRead(TrackingContext&, GDataStore&, Name, const Tracker::Clock& version, Tracker::Tombstone*){return true;}
+    bool Tracker::waitForCausalRead(TrackingContext&, GDataStore&, Name name, const Tracker::Clock& version, Tracker::Clock*){return true;}
+    bool Tracker::waitForCausalRead(TrackingContext&, GDataStore&, Name name, const Tracker::Clock& version, void*){return true;}
     
-    void afterCausalRead(TrackingContext&, GDataStore&, Name name, const Tracker::Clock& version, const std::vector<char> &data, Tracker::Tombstone*){}
-    void afterCausalRead(TrackingContext&, GDataStore&, Name name, const Tracker::Clock& version, const std::vector<char> &data, Tracker::Clock*){}
-    void afterCausalRead(TrackingContext&, GDataStore&, Name name, const Tracker::Clock& version, const std::vector<char> &data, void*){}
+    void Tracker::afterCausalRead(TrackingContext&, GDataStore&, Name name, const Tracker::Clock& version, const std::vector<char> &data, Tracker::Tombstone*){}
+    void Tracker::afterCausalRead(TrackingContext&, GDataStore&, Name name, const Tracker::Clock& version, const std::vector<char> &data, Tracker::Clock*){}
+    void Tracker::afterCausalRead(TrackingContext&, GDataStore&, Name name, const Tracker::Clock& version, const std::vector<char> &data, void*){}
 
     void Tracker::assert_nonempty_tracking() const {}
     const CooperativeCache& Tracker::getcache() const {assert(false);struct dead_code{}; throw dead_code{};}

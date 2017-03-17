@@ -113,7 +113,7 @@ struct String
 
   static constexpr bool is_number();
 
-  static constexpr long long parseInt();
+  static constexpr int parseInt();
 };
 
 template <char... str>

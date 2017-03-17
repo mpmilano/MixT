@@ -70,14 +70,14 @@ struct AST<Label<l>>
     using subexpr = typename VarReference<Var>::subexpr;
   };
 
-  template <long long>
+  template <int>
   struct Constant
   {
   };
-  template <long long i>
-  struct Expression<long long, Constant<i>>
+  template <int i>
+  struct Expression<int, Constant<i>>
   {
-    using yield = long long;
+    using yield = int;
     using subexpr = Constant<i>;
   };
 
@@ -400,8 +400,8 @@ struct AST<Label<l>>
   template <typename Yields, typename label2, typename Str, typename Fld, typename phase_api>
   static constexpr auto _collect_phase(phase_api, typecheck_phase::Expression<label2, Yields, typecheck_phase::FieldReference<Str, Fld>>);
 
-  template <long long i, typename phase_api>
-  static constexpr auto _collect_phase(phase_api, typecheck_phase::Expression<Label<top>, long long, typecheck_phase::Constant<i>>);
+  template <int i, typename phase_api>
+  static constexpr auto _collect_phase(phase_api, typecheck_phase::Expression<Label<top>, int, typecheck_phase::Constant<i>>);
 
   template <char op, typename label2, typename Yields, typename L, typename R, typename phase_api>
   static constexpr auto _collect_phase(phase_api, typecheck_phase::Expression<label2, Yields, typecheck_phase::BinOp<op, L, R>>);
@@ -417,10 +417,10 @@ struct AST<Label<l>>
   template <typename label2, typename phase_api, typename... seq>
   static constexpr auto _collect_phase(phase_api, typecheck_phase::Statement<label2, typecheck_phase::Sequence<seq...>>);
 
-  template <typename AST, typename phase_api>
-  static constexpr auto collect_phase(phase_api, AST)
+  template <typename _AST, typename phase_api>
+  static constexpr auto collect_phase(phase_api, _AST)
   {
-    return _collect_phase(phase_api{}, AST{});
+    return AST::_collect_phase(phase_api{}, _AST{});
   }
 
   template <typename>

@@ -29,7 +29,7 @@ namespace myria{
   struct Handle : public GenericHandle<l>, public LabelFreeHandle<T>, public SupportedOperations::template SupportsOn<Handle<l,T,SupportedOperations...> >... {
 
 
-    const std::shared_ptr<RemoteObject<l,T> > _ro;
+    std::shared_ptr<RemoteObject<l,T> > _ro;
   private:
     //for dropping operation support
     //the first parameter is to ensure we are calling this constructor intentionally,
@@ -39,6 +39,7 @@ namespace myria{
     Handle(std::integral_constant<std::size_t, sizeof...(SupportedOperations)>*,decltype(_ro) _ro):_ro(_ro){}
   public:
     using label = l;
+		using type = T;
 
     /**
      * use this constructor for *new* objects
@@ -66,7 +67,7 @@ namespace myria{
 
     Handle& downCast() { return *this;}
 	
-    const int uid = mutils::gensym();
+    int uid = mutils::gensym();
 	
     RemoteObject<l,T>& remote_object() {
       assert(_ro);
@@ -75,6 +76,7 @@ namespace myria{
 
     Handle() {}
     Handle(const Handle& h) = default;
+		Handle& operator=(const Handle& o) = default;
 
     typedef T stored_type;
 
@@ -105,7 +107,7 @@ namespace myria{
       assert(ctx.trackingContext);
       
       //If the Transacion Context does not yet exist for this store, we create it now.
-      auto &store_ctx = *ctx.template get_store_context<l>(_ro->store() whendebug(,"calling get() via handle"));
+      auto &store_ctx = ctx.store_context(whendebug("calling get() via handle"));
 
       constexpr std::integral_constant<bool, !l::requires_causal_tracking::value> *choice{nullptr};
       return get(choice,tracker,store_ctx, *ctx.trackingContext, _ro->get(&store_ctx,&tracker,ctx.trackingContext.get()));
@@ -143,19 +145,19 @@ namespace myria{
     void put(tracker::Tracker& tracker, mtl::SingleTransactionContext<l> &ctx, const T& t, std::true_type*) {
       assert(_ro);
       tracker.onStrongWrite(ctx,_ro->store(),_ro->name(),(T*)nullptr);
-      _ro->put(ctx.template get_store_context<l>(_ro->store(),"calling put() via handle").get(),t);
+      _ro->put(&ctx.store_context(whendebug("calling put() via handle")),t);
     }
     
     void put(tracker::Tracker& tracker, mtl::SingleTransactionContext<l> &ctx, const T& t, std::false_type*) {
       assert(_ro);
       tracker.onCausalWrite(_ro->store(),_ro->name(),_ro->timestamp(),(T*)nullptr);
-      _ro->put(ctx.template get_store_context<l>(_ro->store(),"calling put() via handle").get(),t);
+      _ro->put(&ctx.store_context(whendebug("calling put() via handle")),t);
     }
     
     bool isValid(mtl::SingleTransactionContext<l> *ctx) const {
       if (!_ro) return false;
       assert(ctx);
-      auto *ptr = ctx->template get_store_context<l>(_ro->store(),"calling isValid via handle").get();
+      auto *ptr = &ctx->store_context(whendebug("calling isValid via handle"));
       return _ro->ro_isValid(ptr);
     }
     

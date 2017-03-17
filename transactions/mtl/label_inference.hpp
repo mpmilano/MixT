@@ -10,19 +10,19 @@ namespace mtl {
 namespace typecheck_phase {
 namespace label_inference {
 
-template <long long l1, long long l2, long long r1, long long r2>
+template <int l1, int l2, int r1, int r2>
 constexpr bool less_than(Label<temp_label<l1, l2>>, Label<temp_label<r1, r2>>)
 {
   return (l1 < r1 ? true : l2 < r2);
 }
 
-template <long long l1, long long l2, typename l>
+template <int l1, int l2, typename l>
 constexpr bool less_than(Label<l>, Label<temp_label<l1, l2>>)
 {
   return true;
 }
 
-template <long long l1, long long l2, typename l>
+template <int l1, int l2, typename l>
 constexpr bool less_than(Label<temp_label<l1, l2>>, Label<l>)
 {
   return false;
@@ -143,8 +143,8 @@ constexpr auto _collect_constraints(Expression<l, y, VarReference<v>>)
   return constraints<>{};
 }
 
-template <typename pc_label, long long i>
-constexpr auto _collect_constraints(Expression<Label<top>, long long, Constant<i>>)
+template <typename pc_label, int i>
+constexpr auto _collect_constraints(Expression<Label<top>, int, Constant<i>>)
 {
   return constraints<>{};
 }
@@ -294,7 +294,7 @@ std::ostream& operator<<(std::ostream& o, substitution<newl, oldl>)
   return o << oldl{} << " ==> " << newl{};
 }
 
-template <typename _ast, typename label, long long to1, long long to2, typename... constraint>
+template <typename _ast, typename label, int to1, int to2, typename... constraint>
 constexpr auto replace_all_less_than(constraints<must_flow_to<label, Label<temp_label<to1, to2>>>, constraint...>)
 {
   static_assert(!std::is_same<label, Label<temp_label<to1, to2>>>::value);

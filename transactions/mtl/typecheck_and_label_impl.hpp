@@ -9,7 +9,7 @@ namespace typecheck_phase {
 
 // expressions
 
-template <long long seqnum, long long depth, typename Obj, typename F, typename Env>
+template <int seqnum, int depth, typename Obj, typename F, typename Env>
 constexpr auto _typecheck(Env, parse_phase::Expression<parse_phase::FieldReference<Obj, F>>)
 {
   using checked_struct = DECT(typecheck<seqnum, depth + 1>(Env{}, Obj{}));
@@ -19,7 +19,7 @@ constexpr auto _typecheck(Env, parse_phase::Expression<parse_phase::FieldReferen
   return Expression<typename checked_struct::label, field_type, FieldReference<checked_struct, F>>{};
 }
 
-template <long long seqnum, long long depth, typename Var, typename Env>
+template <int seqnum, int depth, typename Var, typename Env>
 constexpr auto _typecheck(Env, parse_phase::Expression<parse_phase::VarReference<Var>>)
 {
   using match = DECT(Env::get_binding(Var{}));
@@ -28,13 +28,13 @@ constexpr auto _typecheck(Env, parse_phase::Expression<parse_phase::VarReference
   return Expression<label, type, VarReference<Var>>{};
 }
 
-template <long long seqnum, long long depth, long long i, typename label, typename... Env>
+template <int seqnum, int depth, int i, typename label, typename... Env>
 constexpr auto _typecheck(type_environment<label, Env...>, parse_phase::Expression<parse_phase::Constant<i>>)
 {
-  return Expression<Label<top>, long long, Constant<i>>{};
+  return Expression<Label<top>, int, Constant<i>>{};
 }
 
-template <long long seqnum, long long depth, char op, typename L, typename R, typename env>
+template <int seqnum, int depth, char op, typename L, typename R, typename env>
 constexpr auto _typecheck(env, parse_phase::Expression<parse_phase::BinOp<op, L, R>>)
 {
   using next_l = DECT(typecheck<seqnum, depth + 1>(env{}, L{}));
@@ -54,7 +54,7 @@ constexpr auto enhance_env(type_environment<labele, Env...>, Binding<label, yiel
 }
 
 // statements
-template <long long seqnum, long long depth, typename Name, typename Expr, typename Body, typename old_env>
+template <int seqnum, int depth, typename Name, typename Expr, typename Body, typename old_env>
 constexpr auto _typecheck(old_env, parse_phase::Statement<parse_phase::Let<parse_phase::Binding<Name, Expr>, Body>>)
 {
   using binding_expr = DECT(typecheck<seqnum, depth + 1>(old_env{}, Expr{}));
@@ -65,7 +65,7 @@ constexpr auto _typecheck(old_env, parse_phase::Statement<parse_phase::Let<parse
   return Statement<resolved_label_min<typename binding_expr::label, typename old_env::pc_label>, Let<next_binding, next_body>>{};
 }
 
-template <long long seqnum, long long depth, typename Name, typename Expr, typename Body, typename label_env, typename... Env>
+template <int seqnum, int depth, typename Name, typename Expr, typename Body, typename label_env, typename... Env>
 constexpr auto _typecheck(type_environment<label_env, Env...>, parse_phase::Statement<parse_phase::LetRemote<parse_phase::Binding<Name, Expr>, Body>>)
 {
   using old_env = type_environment<label_env, Env...>;
@@ -81,17 +81,25 @@ constexpr auto _typecheck(type_environment<label_env, Env...>, parse_phase::Stat
   return Statement<resolved_label_min<label_env, typename handle::label>, LetRemote<next_binding, next_body>>{};
 }
 
-template <long long seqnum, long long depth, typename Var, typename Expr, typename pc_label, typename... Env>
+	template<typename U, typename V>
+	constexpr bool check_type_mismatch(){
+		constexpr bool ret = std::is_assignable<U,V>::value || std::is_same<U,V>::value ||
+			(std::is_integral<U>::value && std::is_integral<V>::value && std::is_convertible<V,U>::value);
+		static_assert(ret);
+		return ret;
+	}
+	
+template <int seqnum, int depth, typename Var, typename Expr, typename pc_label, typename... Env>
 constexpr auto _typecheck(type_environment<pc_label, Env...>, parse_phase::Statement<parse_phase::Assignment<Var, Expr>>)
 {
   using env = type_environment<pc_label, Env...>;
   using new_var = DECT(typecheck<seqnum, depth + 1>(env{}, Var{}));
   using new_expr = DECT(typecheck<seqnum + 1, depth + 1>(env{}, Expr{}));
-  static_assert(std::is_same<typename new_var::yield, typename new_expr::yield>::value, "Error: type mismatch in assignment");
+  static_assert(check_type_mismatch<typename new_var::yield, typename new_expr::yield>(), "Error: type mismatch in assignment");
   return Statement<resolved_label_min<resolved_label_min<typename new_expr::label, typename new_var::label>, pc_label>, Assignment<new_var, new_expr>>{};
 }
 
-template <long long seqnum, long long depth, typename condition, typename body, typename pc_label, typename... Env>
+template <int seqnum, int depth, typename condition, typename body, typename pc_label, typename... Env>
 constexpr auto _typecheck(type_environment<pc_label, Env...>, parse_phase::Statement<parse_phase::While<condition, body>>)
 {
   using old_env = type_environment<pc_label, Env...>;
@@ -103,7 +111,7 @@ constexpr auto _typecheck(type_environment<pc_label, Env...>, parse_phase::State
   return Statement<resolved_label_min<pc_label, typename next_condition::label>, While<next_condition, next_body>>{};
 }
 
-template <long long seqnum, long long depth, typename condition, typename then, typename els, typename pc_label, typename... Env>
+template <int seqnum, int depth, typename condition, typename then, typename els, typename pc_label, typename... Env>
 constexpr auto _typecheck(type_environment<pc_label, Env...>, parse_phase::Statement<parse_phase::If<condition, then, els>>)
 {
   using old_env = type_environment<pc_label, Env...>;
@@ -115,19 +123,19 @@ constexpr auto _typecheck(type_environment<pc_label, Env...>, parse_phase::State
   return Statement<resolved_label_min<pc_label, typename next_condition::label>, If<next_condition, next_then, next_else>>{};
 }
 
-template <long long seqnum, long long depth, typename Env>
+template <int seqnum, int depth, typename Env>
 constexpr auto _typecheck(parse_phase::Sequence<> a)
 {
   return Sequence<>{};
 }
 
-template <long long seqnum, long long depth, typename Env, typename stmt, typename... Statements>
+template <int seqnum, int depth, typename Env, typename stmt, typename... Statements>
 constexpr auto _typecheck(parse_phase::Sequence<stmt, Statements...>)
 {
   return Sequence<DECT(typecheck<seqnum, depth>(Env{}, stmt{}))>::append(_typecheck<seqnum + 1, depth, Env>(parse_phase::Sequence<Statements...>{}));
 }
 
-template <long long seqnum, long long depth, typename Env, typename... Statements>
+template <int seqnum, int depth, typename Env, typename... Statements>
 constexpr auto _typecheck(Env, parse_phase::Statement<parse_phase::Sequence<Statements...>>)
 {
   using label = typename Env::pc_label;
@@ -136,13 +144,13 @@ constexpr auto _typecheck(Env, parse_phase::Statement<parse_phase::Sequence<Stat
 
 // entry points
 
-template <long long seqnum, long long depth, typename T, typename pc_label, typename... Bindings>
+template <int seqnum, int depth, typename T, typename pc_label, typename... Bindings>
 constexpr auto typecheck(type_environment<pc_label, Bindings...>, parse_phase::Statement<T>)
 {
   using checked = DECT(_typecheck<seqnum, depth>(type_environment<pc_label, Bindings...>{}, parse_phase::Statement<T>{}));
   return checked{};
 }
-template <long long seqnum, long long depth, typename T, typename pc_label, typename... Bindings>
+template <int seqnum, int depth, typename T, typename pc_label, typename... Bindings>
 constexpr auto typecheck(type_environment<pc_label, Bindings...>, parse_phase::Expression<T>)
 {
   using checked = DECT(_typecheck<seqnum, depth>(type_environment<pc_label, Bindings...>{}, parse_phase::Expression<T>{}));

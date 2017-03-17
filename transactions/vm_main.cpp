@@ -17,7 +17,9 @@
 #include "ObjectBuilder.hpp"
 #include "launch_test.hpp"
 //*/
+#include "transaction.hpp"
 #include "transaction_macros.hpp"
+#include "split_printer.hpp"
 
 using namespace std;
 using namespace chrono;
@@ -99,10 +101,8 @@ namespace synth_test {
 	template<typename Hndl>
 	void perform_increment(unique_ptr<VMObjectLog>& log_messages,
 										 Tracker &trk, Hndl hndl){
-		/*
-		TRANSACTION(log_messages,trk,hndl,
-					mtl_ignore(do_op<RegisteredOperations::Increment>(hndl))
-			)//*/
+		constexpr auto trans = TRANSACTION(let remote x = hndl in {x = x + 1})::WITH(hndl);
+		trans.run(trk,hndl);
 			log_messages->addField(
 				LogFields::is_write,true);
 	}
@@ -110,11 +110,8 @@ namespace synth_test {
 	template<typename Hndl>
 	void perform_read(unique_ptr<VMObjectLog>& log_messages,
 							 Tracker &trk, Hndl hndl){
-		/*
-		TRANSACTION(log_messages,
-					trk,hndl,
-					let_remote(tmp) = hndl IN(mtl_ignore(tmp))
-					);//*/
+		constexpr auto trans = TRANSACTION(let remote x = hndl in {})::WITH(hndl);
+		trans.run(trk,hndl);
 
 #ifndef NDEBUG
 		struct tmptest{ int a;};

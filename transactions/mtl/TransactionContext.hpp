@@ -29,13 +29,14 @@ namespace myria {
     };
 
 		struct GTransactionContext {
-			tracker::Tracker &trk;
+			tracker::Tracker *trk;
 			std::unique_ptr<tracker::TrackingContext> trackingContext;
-			auto& tracker(){ return trk;}
+			auto& tracker(){ return *trk;}
 			virtual ~GTransactionContext() = default;
 			void commitContext();
 			void abortContext();
 			GTransactionContext(tracker::Tracker& t);
+			GTransactionContext() = default;
 		};
 
 		template<typename label>
@@ -50,7 +51,9 @@ namespace myria {
 
 		template<typename... labels> 
 		struct TransactionContext : public SingleTransactionContext<labels>...{
-			TransactionContext(tracker::Tracker& t):GTransactionContext(t){}
+			TransactionContext(tracker::Tracker& t):GTransactionContext(t){
+				assert(this->trk);
+			}
 		};
     
   }}

@@ -61,12 +61,12 @@ struct is_var_reference : public std::false_type
 {
 };
 
-template <long long int>
+template <int>
 struct Constant
 {
   using subexpr = Constant;
 };
-template <long long int i>
+template <int i>
 struct Expression<Constant<i>>
 {
   using subexpr = typename Constant<i>::subexpr;
@@ -135,7 +135,7 @@ template <char op, typename varl, typename varr>
 struct is_depth_1<BinOp<op, Expression<VarReference<varl>>, Expression<VarReference<varr>>>> : public std::true_type
 {
 };
-template <long long l>
+template <int l>
 struct is_depth_1<Constant<l>> : public std::true_type
 {
 };

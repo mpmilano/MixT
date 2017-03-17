@@ -338,11 +338,11 @@ String<str...>::is_number()
 }
 
 template <char... str>
-constexpr long long
+constexpr int
 String<str...>::parseInt()
 {
-  long long multiplier = exp(10, string_length - 1);
-  long long accum = 0;
+  int multiplier = exp(10, string_length - 1);
+  int accum = 0;
   for (int i = 0; i < string_length; ++i) {
     accum += toInt(string[i]) * multiplier;
     multiplier /= 10;

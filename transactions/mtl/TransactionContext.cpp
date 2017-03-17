@@ -7,6 +7,6 @@ namespace myria {
   namespace mtl {
 
 		GTransactionContext::GTransactionContext(tracker::Tracker& t)
-	:trk(t),trackingContext(t.generateContext()){}
+	:trk(&t),trackingContext(t.generateContext()){}
 
 	}}

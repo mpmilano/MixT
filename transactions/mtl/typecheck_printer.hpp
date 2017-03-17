@@ -29,9 +29,9 @@ print_ast(std::ostream& o, const Expression<l, y, VarReference<v>>&)
   o << "@" << l{};
 }
 
-template <long long i>
+template <int i>
 void
-print_ast(std::ostream& o, const Expression<Label<top>, long long, Constant<i>>&)
+print_ast(std::ostream& o, const Expression<Label<top>, int, Constant<i>>&)
 {
   o << i;
 }

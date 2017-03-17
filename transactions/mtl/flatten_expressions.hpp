@@ -34,7 +34,7 @@ constexpr auto remove_layer(Expression<VarReference<Var>>)
   static_assert(seqnum == 0 && seqnum == 1, "Error: cannot remove layer from this expression");
 }
 
-template <char seqnum, char depth, template <typename> class SubStatement, long long i>
+template <char seqnum, char depth, template <typename> class SubStatement, int i>
 constexpr auto remove_layer(Expression<Constant<i>>)
 {
   using new_name = generate_name<seqnum, depth>;
@@ -105,7 +105,7 @@ constexpr auto _flatten_exprs(Statement<Let<Binding<name, Expression<VarReferenc
   return Statement<Let<Binding<name, Expression<VarReference<var>>>, DECT(flatten_exprs<seqnum, depth + 1>(body{}))>>{};
 }
 
-template <char seqnum, char depth, typename name, long long i, typename body>
+template <char seqnum, char depth, typename name, int i, typename body>
 constexpr auto _flatten_exprs(Statement<Let<Binding<name, Expression<Constant<i>>>, body>>)
 {
   // already flat, moving on
@@ -120,7 +120,7 @@ constexpr auto _flatten_exprs(Statement<Let<Binding<name, Expression<BinOp<op, E
                        DECT(flatten_exprs<seqnum, depth + 1>(body{}))>>{};
 }
 /*
-                template <char seqnum, char depth, typename name, char op, long long varL, typename varR, typename body>
+                template <char seqnum, char depth, typename name, char op, int varL, typename varR, typename body>
                 constexpr auto _flatten_exprs(Statement<Let<Binding<name,Expression<BinOp<op,Expression<Constant<varL>>,Expression<VarReference<varR>>>>>,
    body>>) {
                 //already flat, moving on
@@ -128,7 +128,7 @@ constexpr auto _flatten_exprs(Statement<Let<Binding<name, Expression<BinOp<op, E
                                                                                                  DECT(flatten_exprs<seqnum,depth+1>(body{}))>>{};
         }
 
-                template <char seqnum, char depth, typename name, char op, typename varL, long long varR, typename body>
+                template <char seqnum, char depth, typename name, char op, typename varL, int varR, typename body>
                 constexpr auto _flatten_exprs(Statement<Let<Binding<name,Expression<BinOp<op,Expression<VarReference<varL>>,Expression<Constant<varR>>>>>,
    body>>) {
                 //already flat, moving on
@@ -143,7 +143,7 @@ constexpr auto _flatten_exprs(Statement<Let<Binding<name, Expression<FieldRefere
   return Statement<Let<Binding<name, Expression<FieldReference<Expression<VarReference<var>>, Field>>>, DECT(flatten_exprs<seqnum, depth + 1>(body{}))>>{};
 }
 
-template <char seqnum, char depth, typename name, long long var, typename Field, typename body>
+template <char seqnum, char depth, typename name, int var, typename Field, typename body>
 constexpr auto _flatten_exprs(Statement<Let<Binding<name, Expression<FieldReference<Expression<Constant<var>>, Field>>>, body>>)
 {
   // already flat, moving on

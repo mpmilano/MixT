@@ -54,15 +54,15 @@ struct Expression<Label<l>, Yields, FieldReference<Struct, Field>>
   using subexpr = typename FieldReference<Struct, Field>::subexpr;
 };
 
-template <long long>
+template <int>
 struct Constant
 {
 };
-template <long long i>
-struct Expression<Label<top>, long long, Constant<i>>
+template <int i>
+struct Expression<Label<top>, int, Constant<i>>
 {
   using label = Label<top>;
-  using yield = long long;
+  using yield = int;
   using subexpr = Constant<i>;
 };
 
