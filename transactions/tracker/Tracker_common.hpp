@@ -17,7 +17,7 @@ namespace myria { namespace tracker {
 		  static const newTomb_t newTomb = [](tracker::Tracker &trk, mtl::GTransactionContext& ctx, GDataStore &_ds, Name name, auto &e){
 		    auto &ds = dynamic_cast<DS&>(_ds);
 		    return std::make_unique<LabelFreeHandle<Tracker::Tombstone> >
-		    (new Handle<l,Tracker::Tombstone> (ds.template newObject(trk,dynamic_cast<SingleTransactionContext<typename DS::label>* >(&ctx), name,e)));
+		    (new Handle<l,Tracker::Tombstone> (ds.template newObject(trk,dynamic_cast<mtl::SingleTransactionContext<typename DS::label>* >(&ctx), name,e)));
 		  };
 		  static const exists_t exists = [](GDataStore &_ds, Name name){
 		    auto &ds = dynamic_cast<DS&>(_ds);
@@ -35,8 +35,8 @@ namespace myria { namespace tracker {
 		    auto &ds = dynamic_cast<DS&>(_ds);
 		    return ds.template existingRaw<Tracker::Tombstone>(name);
 		  };
-		  return std::unique_ptr<GenericTrackerDS>
-		    (new GenericTrackerDS{newTomb, exists,existClock,existTomb});
+		  return std::unique_ptr<typename Tracker::GenericTrackerDS>
+		    (new typename Tracker::GenericTrackerDS{newTomb, exists,existClock,existTomb});
 		}
 
 		template<typename DS>

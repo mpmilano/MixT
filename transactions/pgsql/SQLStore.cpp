@@ -22,24 +22,24 @@ namespace myria{ namespace pgsql {
 			/*
 				auto t = begin_transaction("Setting up this new SQLStore; gotta configure search paths and stuff.");
 				((SQLTransaction*)t.get())
-					->exec(level == Level::strong ?
+					->exec(level == Label<strong> ?
 						   "set search_path to \"BlobStore\",public"
 						   : "set search_path to causalstore,public");
 				((SQLTransaction*)t.get())
-					->exec(level == Level::strong ?
+					->exec(level == Label<strong> ?
 						   "SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL SERIALIZABLE"
 						   : "SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL REPEATABLE READ");
 				auto cres = t->store_commit();
 				assert(cres);//*/
 		}
 		
-		SQLStore_impl::SQLStore_impl(SQLConnectionPool<Level::causal>& pool, GDataStore &store /*int instanceID,*/ )
+		SQLStore_impl::SQLStore_impl(SQLConnectionPool<Label<causal> >& pool, GDataStore &store /*int instanceID,*/ )
 			:_store(store),clock{{0,0,0,0}},level(Level::causal),default_connection{pool.acquire()} {
 				init_common();
 			}
 
-		SQLStore_impl::SQLStore_impl(SQLConnectionPool<Level::strong>& pool, GDataStore &store /*int instanceID,*/ )
-			:_store(store),clock{{0,0,0,0}},level(Level::causal),default_connection{pool.acquire()} {
+		SQLStore_impl::SQLStore_impl(SQLConnectionPool<Label<strong>>& pool, GDataStore &store /*int instanceID,*/ )
+			:_store(store),clock{{0,0,0,0}},level(Level::strong),default_connection{pool.acquire()} {
 				init_common();
 			}
 
@@ -50,7 +50,7 @@ namespace myria{ namespace pgsql {
 				   "Concurrency support doesn't exist yet."
 				);
 			return unique_ptr<SQLTransaction>(
-				new SQLTransaction(_store,default_connection.lock() whendebug(,why)));
+				new SQLTransaction(level,_store,default_connection.lock() whendebug(,why)));
 		}
 		
 		bool SQLStore_impl::in_transaction() const {

@@ -1,5 +1,8 @@
 #pragma once
 #include <iostream>
+#include <set>
+#include "TrivialPair.hpp"
+#include "Handle.hpp"
 
 namespace mutils{
 		
@@ -44,8 +47,8 @@ namespace myria{
 	auto print_util(const std::shared_ptr<const std::nullptr_t>&);	
 
 
-	template<typename T, restrict(!std::is_same<T CMA std::nullptr_t>::value)>
-    const auto& print_util(const std::shared_ptr<const T> &sp){
+	template<typename T>
+	const auto& print_util(const std::shared_ptr<const T> &sp, std::enable_if_t<!std::is_same<T,std::nullptr_t>::value>* = nullptr){
 		return *sp;
 	}
 

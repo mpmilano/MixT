@@ -44,9 +44,9 @@ namespace myria{ namespace pgsql {
 
 #ifndef NDEBUG
 		template<>
-		bool SQLConnectionPool<Level::strong>::constructed = false;
+		bool SQLConnectionPool<Label<strong> >::constructed = false;
 		template<>
-		bool SQLConnectionPool<Level::causal>::constructed = false;
+		bool SQLConnectionPool<Label<causal> >::constructed = false;
 #endif
 	}
 }

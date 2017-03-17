@@ -2,18 +2,28 @@
 #include <iostream>
 #include "SQLStore_impl.hpp"
 #include "Tracker_common.hpp"
-#include "Tracker_support_structs.hpp"
 #include "SQLTransaction.hpp"
-#include "RemoteCons.hpp"
+#include "Operations.hpp"
+#include "SQLConstants.hpp"
 
 namespace myria { namespace pgsql {
-	
+
+		template<typename l>
+		class SQLStore;
+
+		template<typename> struct sqlstore_label_str;
+		template<typename l> struct sqlstore_label_str<SQLStore<l> >{
+			using type = l;
+		};
+
+		template<typename t> using sqlstore_label = typename sqlstore_label_str<t>::type;
+		
 		template<typename l>
 		class SQLStore : public SQLStore_impl, public DataStore<l> {
 		public:
 
-			using level = l;
-			using label = l;
+			using label = sqlstore_label<SQLStore>;
+			using level_t = std::integral_constant<Level,(label::is_strong::value ? Level::strong : Level::causal)>;
 			
 			virtual ~SQLStore() {}
 
@@ -49,42 +59,25 @@ namespace myria { namespace pgsql {
 					}
 				}
 
-				SQLStore<Label<strong> >& choose_s(std::true_type*){
-					assert(ss.at(0));
-					return *ss.at(0);
-				}
-				
-				SQLStore<Label<strong> >& choose_s(std::false_type*){
-					assert(false && "Error: This is not a strong instance manager");
-					struct dead_code{}; throw dead_code{};
-				}
-				
-				SQLStore<Label<causal> >& choose_c(std::true_type*){
-					assert(ss.at(0));
-					return *ss.at(0);
-				}
-				
-				SQLStore<Label<causal> >& choose_c(std::false_type*){
-					assert(false && "Error: This is not a causal instance manager");
-					struct dead_code{}; throw dead_code{};
-				}
-				
+
 			public:
 				
 				SQLStore<Label<strong> >& inst_strong(){
+					assert (level_t::value == Level::strong);
 					inst(Label<strong>{} );
-					choose_strong<l> choice{nullptr};
-					return choose_s(choice);
+					assert(ss.at(0));
+					return *ss.at(0);
 				}
 				
 				SQLStore<Label<causal> >& inst_causal(){
+					assert (level_t::value == Level::causal);
 					inst(Label<causal>{} );
-					choose_causal<l> choice{nullptr};
-					return choose_c(choice);
+					assert(ss.at(0));
+					return *ss.at(0);
 				}
 
 				auto& inst(){
-					inst(l);
+					inst(l{});
 					assert(ss.at(0));
 					return *ss.at(0);
 				}
@@ -94,7 +87,7 @@ namespace myria { namespace pgsql {
 
 		private:
 			SQLStore(tracker::Tracker& trk, mutils::DeserializationManager &this_mgr,SQLConnectionPool<l> &p)
-				:SQLStore_impl(p,*this,l),DataStore<l>(),this_mgr(this_mgr) {
+				:SQLStore_impl(p,*this),DataStore<l>(),this_mgr(this_mgr) {
 				trk.registerStore(*this);
 			}
 		public:
@@ -104,7 +97,7 @@ namespace myria { namespace pgsql {
 			using Store = SQLStore;	
 
 			static constexpr int id() {
-				return SQLStore_impl::ds_id_nl() + (int) l;
+				return SQLStore_impl::ds_id_nl() + (int) level_t::value;
 			}
 
 			int ds_id() const {
@@ -203,18 +196,19 @@ namespace myria { namespace pgsql {
 #endif
 			};
 
-			template<HandleAccess ha, typename T>
-			using SQLHandle = std::conditional_t<is_remote_cons<T>::value,
-												 Handle<l,ha,T,SupportedOperation<RegisteredOperations::Clone,SelfType,SelfType> >,
-												 std::conditional_t<mutils::is_set<T>::value,
-																	Handle<l,ha,T,SupportedOperation<RegisteredOperations::Insert,void,SelfType,mutils::extract_type_if_set<T> > >,
-																	std::conditional_t<
-																		std::is_same<T,int>::value,
-																		Handle<l,ha,T,SupportedOperation<RegisteredOperations::Increment,void,SelfType> >,
-																		Handle<l,ha,T> > > >;
+			template<typename T>
+			using SQLHandle = 
+				std::conditional_t<mutils::is_set<T>::value,
+													 Handle<l,T,SupportedOperation<RegisteredOperations::Insert,void,SelfType,mutils::extract_type_if_set<T> > >,
+													 std::conditional_t<
+														 std::is_same<T,int>::value,
+														 Handle<l,T,SupportedOperation<RegisteredOperations::Increment,void,SelfType> >,
+														 Handle<l,T> > >;
 
-			template<HandleAccess ha, typename T>
-			SQLHandle<ha,T> newObject(tracker::Tracker &trk, mtl::TransactionContext *tc, Name name, const T& init){
+			using TransactionContext = mtl::SingleTransactionContext<label>;
+			
+			template<typename T>
+			SQLHandle<T> newObject(tracker::Tracker &trk, TransactionContext *tc, Name name, const T& init){
 				static constexpr Table t =
 					(std::is_same<T,int>::value ? Table::IntStore : Table::BlobStore);
 				int size = mutils::bytes_size(init);
@@ -225,22 +219,23 @@ namespace myria { namespace pgsql {
 					mutils::to_bytes(init,&v[0]);
 				assert(size == tb_size);
 				GSQLObject gso(*this,t,name,v);
-				SQLHandle<ha,T> ret{trk,tc,std::make_shared<SQLObject<T> >(std::move(gso),mutils::heap_copy(init),this_mgr),*this };
-				trk.onCreate(*this,name,(T*)nullptr);
+				SQLHandle<T> ret{trk,tc,std::make_shared<SQLObject<T> >(std::move(gso),mutils::heap_copy(init),this_mgr),*this };
+				if (level_t::value == Level::causal) trk.onCausalCreate(*this,name,(T*)nullptr);
+				else trk.onStrongCreate(*this,name,(T*)nullptr);
 				return ret;
 			}
 
-			template<HandleAccess ha, typename T>
-			auto newObject(tracker::Tracker &trk, mtl::TransactionContext *tc, const T& init){
-				return newObject<ha,T>(trk,tc, mutils::int_rand(),init);
+			template<typename T>
+			auto newObject(tracker::Tracker &trk, TransactionContext *tc, const T& init){
+				return newObject<T>(trk,tc, mutils::int_rand(),init);
 			}
 
-			template<HandleAccess ha, typename T>
+			template<typename T>
 			auto existingObject(Name name){
 				static constexpr Table t =
 					(std::is_same<T,int>::value ? Table::IntStore : Table::BlobStore);
 				GSQLObject gso(*this,t,name);
-				return SQLHandle<ha,T>{std::make_shared<SQLObject<T> >(std::move(gso),nullptr,this_mgr),*this};
+				return SQLHandle<T>{std::make_shared<SQLObject<T> >(std::move(gso),nullptr,this_mgr),*this};
 			}
 
 			template<typename T>
@@ -252,14 +247,14 @@ namespace myria { namespace pgsql {
 			}
 
 			//deserializing this RemoteObject, not its stored thing.
-			template<HandleAccess ha, typename T>
-			static std::unique_ptr<SQLHandle<ha,T> > from_bytes(mutils::DeserializationManager* mngr, char const * v){
+			template<typename T>
+			static std::unique_ptr<SQLHandle<T> > from_bytes(mutils::DeserializationManager* mngr, char const * v){
 				//this really can't be called via the normal deserialization process; it needs to be called in the process of deserializing a RemoteObject.
 				assert(mngr);
 				auto &insance_manager = mngr->template mgr<deserialization_context>();
 				auto gsql_obj = GSQLObject::from_bytes(insance_manager,v);
 				auto &this_ds = dynamic_cast<SQLStore&>(gsql_obj.store()); //this should never fail
-				return std::make_unique<SQLHandle<ha,T> >(std::make_shared<SQLObject<T> >(std::move(gsql_obj),nullptr,*mngr),this_ds);
+				return std::make_unique<SQLHandle<T> >(std::make_shared<SQLObject<T> >(std::move(gsql_obj),nullptr,*mngr),this_ds);
 			}
 
 			struct SQLContext : mtl::StoreContext<l> {
@@ -295,21 +290,21 @@ namespace myria { namespace pgsql {
 				return SQLStore_impl::instance_id();
 			}
 
-			void operation(mtl::TransactionContext*, SQLContext& ctx,
+			void operation(TransactionContext*, SQLContext& ctx,
 						   OperationIdentifier<RegisteredOperations::Increment>, SQLObject<int> &o){
 				o.gso.increment(ctx.i.get());
 			}
 
 			template<typename T>
-			SQLHandle<HandleAccess::all,T> operation(mtl::TransactionContext* transaction_context, SQLContext& ctx,
-													 OperationIdentifier<RegisteredOperations::Clone>, SQLObject<T> &o){
+			SQLHandle<T> operation(TransactionContext* transaction_context, SQLContext& ctx,
+														 OperationIdentifier<RegisteredOperations::Clone>, SQLObject<T> &o){
 				auto &trk_c = transaction_context->trackingContext;
 				auto &trk = trk_c->trk;
-				return newObject<HandleAccess::all,T>(trk,transaction_context,*o.get(&ctx,&trk,trk_c.get()));
+				return newObject<T>(trk,transaction_context,*o.get(&ctx,&trk,trk_c.get()));
 			}
 
 			template<typename T>
-			void operation(mtl::TransactionContext*, SQLContext& ,
+			void operation(TransactionContext*, SQLContext& ,
 						   OperationIdentifier<RegisteredOperations::Insert>, SQLObject<std::set<T> > &, T& ){
 				//assert(false && "this is unimplemented.");
 				//o.gso.increment(ctx->i.get());

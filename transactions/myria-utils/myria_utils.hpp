@@ -1,3 +1,4 @@
+#pragma once
 #include "macro_utils.hpp"
 
 namespace mutils{

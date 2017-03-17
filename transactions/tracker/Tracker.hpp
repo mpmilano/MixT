@@ -108,9 +108,9 @@ namespace myria {
 			bool strongRegistered() const;
 			bool causalRegistered() const;
 
-			void registerStrongStore(GDataStore,
+			void registerStrongStore(GDataStore&,
 							   std::unique_ptr<GenericTrackerDS>);
-			void registerCausalStore(GDataStore,
+			void registerCausalStore(GDataStore&,
 							   std::unique_ptr<GenericTrackerDS>);
 
 			template<typename DS>

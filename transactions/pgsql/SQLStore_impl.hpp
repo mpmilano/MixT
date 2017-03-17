@@ -29,8 +29,7 @@ namespace myria { namespace pgsql {
 		struct SQLStore_impl;
 		
 		struct SQLInstanceManager_abs : public mutils::RemoteDeserializationContext {
-			virtual SQLStore<Label<strong> >& inst_strong() = 0;
-			virtual SQLStore<Label<causal> >& inst_causal() = 0;
+			virtual SQLStore<Label<strong> >& inst(Level) = 0;
 			
 			virtual ~SQLInstanceManager_abs(){}
 			SQLInstanceManager_abs(const SQLInstanceManager_abs&) = delete;
@@ -45,7 +44,7 @@ namespace myria { namespace pgsql {
 			SQLStore_impl(SQLConnectionPool<Label<strong> >& pool, GDataStore &store /*int instanceID,*/ );
 			GDataStore &_store;
 		public:
-			Level l;
+			Level level;
 			
 			virtual ~SQLStore_impl();
 

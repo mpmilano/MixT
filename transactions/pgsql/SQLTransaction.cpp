@@ -16,8 +16,8 @@ namespace myria{ namespace pgsql {
 		using namespace tracker;
 		using namespace mutils;
 		
-		SQLTransaction::SQLTransaction(GDataStore& store, LockedSQLConnection c whendebug(, std::string why))
-			:gstore(store),sql_conn(std::move(c))
+		SQLTransaction::SQLTransaction(Level level, GDataStore& store, LockedSQLConnection c whendebug(, std::string why))
+			:gstore(store),level(level),level_string(gstore.level_description),sql_conn(std::move(c))
 			 whendebug(,why(why))
 		{
 			assert(!sql_conn->in_trans());

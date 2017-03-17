@@ -1,5 +1,6 @@
 #pragma once
 #include "SQLConnection.hpp"
+#include "myria_utils.hpp"
 #include <iostream>
 #include <fstream>
 
@@ -20,7 +21,8 @@ namespace myria{
 		struct SQLTransaction {
 			
 			GDataStore& gstore;
-			const std::string level_string = (gstore.level == Level::strong ? "strong" : "causal");
+			const Level level;
+			const std::string level_string;
 		private:
 			LockedSQLConnection sql_conn;
 			bool remote_aborted{false};
@@ -41,7 +43,7 @@ namespace myria{
 			const std::string why;
 #endif
 			bool commit_on_delete = false;
-			SQLTransaction(GDataStore& store, LockedSQLConnection c whendebug(, std::string why));
+			SQLTransaction(Level level, GDataStore& store, LockedSQLConnection c whendebug(, std::string why));
 	
 			SQLTransaction(const SQLTransaction&) = delete;
 			
@@ -138,40 +140,40 @@ namespace myria{
 			}
 			template<typename Data, typename Vers>
 			void update_data(Table t, Name n, Data &d, Vers& vers){
-				assert(gstore.level == Level::strong);
+				assert(level == Level::strong);
 				prepared("update_data, strong",TransactionNames::update_data, t,n,d);
 				receive("update_data version, strong", vers);
 			}
 
 			template<typename RG, typename Data, typename Vers, typename Clock>
 			void update_data(Table t, const RG& rg, Name n, const Clock& c, Data &d, Vers& vers){
-				assert(gstore.level == Level::causal);
+				assert(level == Level::causal);
 				prepared("update_data, causal",TransactionNames::update_data,t,rg,n,c,d);
 				receive("update_data version, causal", vers);
 			}
 
 			template<typename Blob>
 			void initialize_with_id(Table t, Name id, const Blob &b) {
-				assert(gstore.level == Level::strong);
+				assert(level == Level::strong);
 				prepared("initialize_with_id, strong",TransactionNames::initialize_with_id,t,id,b);
 			}
 			
 			template<typename RG, typename Clock, typename Blob>
 			void initialize_with_id(Table t, const RG& rg, Name id, const Clock& c, const Blob &b){
-				assert(gstore.level == Level::causal);
+				assert(level == Level::causal);
 				prepared("initialize_with_id, causal",TransactionNames::initialize_with_id,t,rg,id,c,b);
 			}
 
 			template<typename Vers>
 			void increment(Name n, Vers& vers){
-				assert(gstore.level == Level::strong);
+				assert(level == Level::strong);
 				prepared("increment, strong",TransactionNames::increment,n);
 				receive("increment, strong", vers);
 			}
 
 			template<typename RG, typename Vers, typename Clock>
 			void increment(const RG& rg, Name n, const Clock& c, Vers& vers){
-				assert(gstore.level == Level::causal);
+				assert(level == Level::causal);
 				prepared("increment, causal",TransactionNames::increment,rg,n,c);
 				receive("increment, causal", vers);
 			}

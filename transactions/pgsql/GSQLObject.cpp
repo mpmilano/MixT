@@ -230,8 +230,8 @@ namespace myria{ namespace pgsql {
 			//TODO: this is not symmetric! That is a bad design! Bad!
 			int* arr = (int*)c;
 			arr[0] = (i->level == Level::strong ?
-					  SQLStore<Level::strong>::id() :
-					  SQLStore<Level::causal>::id());
+								SQLStore<Label<strong> >::id() :
+								SQLStore<Label<causal> >::id());
 			arr[1] = i->key;
 			arr[2] = i->size;
 			arr[3] = i->store_id;

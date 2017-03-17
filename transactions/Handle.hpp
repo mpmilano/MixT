@@ -3,8 +3,8 @@
 #include "../BitSet.hpp"
 #include "Basics.hpp"
 #include "RemoteObject.hpp"
-#include "Store.hpp"
 #include "Tracker.hpp"
+#include "top.hpp"
 #include <memory>
 
 namespace myria{
@@ -38,18 +38,16 @@ namespace myria{
     //of space
     Handle(std::integral_constant<std::size_t, sizeof...(SupportedOperations)>*,decltype(_ro) _ro):_ro(_ro){}
   public:
-
-    using level_t = label;
     using label = l;
 
     /**
      * use this constructor for *new* objects
      */
     template<typename DataStore, template<typename> class RO>
-      Handle(tracker::Tracker &trk, mtl::TransactionContext *tc, std::shared_ptr<RO<T> > _ro, DataStore& ds):
+      Handle(tracker::Tracker &trk, mtl::SingleTransactionContext<l> *tc, std::shared_ptr<RO<T> > _ro, DataStore& ds):
       SupportedOperations::template SupportsOn<Handle>(SupportedOperations::template SupportsOn<Handle>::template wrap_operation<RO>(ds))...,
       _ro(_ro){
-	static_assert(std::is_same<DataStore::level,label>::value);
+	static_assert(std::is_same<typename DataStore::label,label>::value);
 	assert(tc);
 	auto &ctx = *tc;
 	do_onwrite(ctx,trk,*_ro);
@@ -63,22 +61,20 @@ namespace myria{
       SupportedOperations::template SupportsOn<Handle>
       (SupportedOperations::template SupportsOn<Handle>::template wrap_operation<RO>(ds))...,
       _ro(_ro){
-	static_assert(std::is_same<DataStore::level,label>::value);
+	static_assert(std::is_same<typename DataStore::label,label>::value);
       }
 
     Handle& downCast() { return *this;}
 	
     const int uid = mutils::gensym();
 	
-    typename RemoteObject<l,T>& remote_object() {
+    RemoteObject<l,T>& remote_object() {
       assert(_ro);
       return *_ro;
     }
 
     Handle() {}
     Handle(const Handle& h) = default;
-		
-    using level = level_t;
 
     typedef T stored_type;
 
@@ -102,7 +98,7 @@ namespace myria{
       return hndl_from_bytes<l,T,SupportedOperations...>(rdc,v);
     }
 
-    std::shared_ptr<const T> get(tracker::Tracker& tracker, mtl::TransactionContext *tc) const {
+    std::shared_ptr<const T> get(tracker::Tracker& tracker, mtl::SingleTransactionContext<l> *tc) const {
       assert(_ro);
       assert(tc);
       auto &ctx = *tc;
@@ -132,11 +128,11 @@ namespace myria{
       return *this;
     }
     
-    operator Handle<l,ha,T>(){
-      return Handle<l,ha,T>((std::integral_constant<std::size_t,0>*)nullptr, _ro);
+    operator Handle<l,T>(){
+      return Handle<l,T>((std::integral_constant<std::size_t,0>*)nullptr, _ro);
     }
     
-    void put(tracker::Tracker& tracker, mtl::TransactionContext *tc, const T& t){
+    void put(tracker::Tracker& tracker, mtl::SingleTransactionContext<l> *tc, const T& t){
       assert(tc);
       auto &ctx = *tc;
       assert(ctx.trackingContext);
@@ -144,19 +140,19 @@ namespace myria{
       return put(tracker, ctx,t,choice);
     }
     
-    void put(tracker::Tracker& tracker, mtl::TransactionContext &ctx, const T& t, std::true_type*) {
+    void put(tracker::Tracker& tracker, mtl::SingleTransactionContext<l> &ctx, const T& t, std::true_type*) {
       assert(_ro);
       tracker.onStrongWrite(ctx,_ro->store(),_ro->name(),(T*)nullptr);
       _ro->put(ctx.template get_store_context<l>(_ro->store(),"calling put() via handle").get(),t);
     }
     
-    void put(tracker::Tracker& tracker, mtl::TransactionContext &ctx, const T& t, std::false_type*) {
+    void put(tracker::Tracker& tracker, mtl::SingleTransactionContext<l> &ctx, const T& t, std::false_type*) {
       assert(_ro);
       tracker.onCausalWrite(_ro->store(),_ro->name(),_ro->timestamp(),(T*)nullptr);
       _ro->put(ctx.template get_store_context<l>(_ro->store(),"calling put() via handle").get(),t);
     }
     
-    bool isValid(mtl::TransactionContext *ctx) const {
+    bool isValid(mtl::SingleTransactionContext<l> *ctx) const {
       if (!_ro) return false;
       assert(ctx);
       auto *ptr = ctx->template get_store_context<l>(_ro->store(),"calling isValid via handle").get();
@@ -180,18 +176,18 @@ namespace myria{
       friend struct Handle;
     
   private:
-    static void do_onwrite(mtl::TransactionContext &tc, tracker::Tracker &tr, RemoteObject<l,T> &ro, std::enable_if_t<!l::requires_causal_tracking::value>* = nullptr){
-      tr.onWrite(tc,ro.store(),ro.name(),(T*)nullptr);
+    static void do_onwrite(mtl::SingleTransactionContext<l> &tc, tracker::Tracker &tr, RemoteObject<l,T> &ro, std::enable_if_t<!l::requires_causal_tracking::value>* = nullptr){
+      tr.onStrongWrite(tc,ro.store(),ro.name(),(T*)nullptr);
     }
-    static void do_onwrite(mtl::TransactionContext &, tracker::Tracker &tr, RemoteObject<Level::causal,T> &ro, std::enable_if_t<l::requires_causal_tracking::value>* = nullptr){
-      tr.onWrite(ro.store(),ro.name(),ro.timestamp(),(T*)nullptr);
+    static void do_onwrite(mtl::SingleTransactionContext<l> &, tracker::Tracker &tr, RemoteObject<l,T> &ro, std::enable_if_t<l::requires_causal_tracking::value>* = nullptr){
+      tr.onCausalWrite(ro.store(),ro.name(),ro.timestamp(),(T*)nullptr);
     }
   };
   
   template<typename T>
   struct is_handle;
-  template<Level l, HandleAccess ha, typename T, typename... Ops>
-  struct is_handle<Handle<l,ha,T,Ops...> > : std::true_type {};
+  template<typename l, typename T, typename... Ops>
+  struct is_handle<Handle<l,T,Ops...> > : std::true_type {};
   template<typename T>
   struct is_handle : std::false_type {};
   

@@ -42,10 +42,10 @@ namespace myria { namespace tracker {
 		struct Tracker::Internals{
 			Internals(const Internals&) = delete;
 			GDataStore *registeredStrong {nullptr};
-			std::unique_ptr<TrackerDSStrong > strongDS;
+			std::unique_ptr<GenericTrackerDS > strongDS;
 
 			GDataStore *registeredCausal {nullptr};
-			std::unique_ptr<TrackerDSCausal > causalDS;
+			std::unique_ptr<GenericTrackerDS > causalDS;
 
 			Clock global_min{{0,0,0,0}};
 

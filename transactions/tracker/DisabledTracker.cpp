@@ -22,7 +22,7 @@ namespace myria { namespace tracker {
 			const std::function<void (char const *)> &){}
 
 		bool Tracker::registered(const GDataStore& gd) const {
-		  auto ds* = &gd;
+		  auto *ds = &gd;
 		  return ds == i->strongStore || ds == i->causalStore;
 		}
 		
@@ -32,10 +32,10 @@ namespace myria { namespace tracker {
 		GDataStore& Tracker::get_StrongStore() {return *i->strongStore;}
 		GDataStore& Tracker::get_CausalStore() {return *i->causalStore;}
 
-		void Tracker::registerStore(GDataStore &ss,
-					    std::unique_ptr<TrackerDSStrong>){i->strongStore = &ss;}
-		void Tracker::registerStore(GDataStore &cs,
-					    std::unique_ptr<TrackerDSCausal>){i->causalStore = &cs;}
+		void Tracker::registerStrongStore(GDataStore &ss,
+					    std::unique_ptr<GenericTrackerDS>){i->strongStore = &ss;}
+		void Tracker::registerCausalStore(GDataStore &cs,
+					    std::unique_ptr<GenericTrackerDS>){i->causalStore = &cs;}
 
 		bool Tracker::strongRegistered() const{
 			return i->strongStore;
@@ -47,8 +47,8 @@ namespace myria { namespace tracker {
 
 		void Tracker::exemptItem(Name ){}
 
-                std::unique_ptr<TrackingContext> Tracker::generateContext(std::unique_ptr<mutils::abs_StructBuilder>& l, bool){
-			return std::make_unique<TrackingContext>(l,*this);
+		std::unique_ptr<TrackingContext> Tracker::generateContext(bool){
+			return std::make_unique<TrackingContext>(*this);
 		}
 		
 		void Tracker::onStrongWrite(mtl::GTransactionContext&, GDataStore&, Name , Tombstone*){}
@@ -70,19 +70,19 @@ namespace myria { namespace tracker {
 
 
     void Tracker::afterStrongRead(mtl::GStoreContext&, TrackingContext&, 
-				  GDataStore&, Name name, Tombstone*){}
+				  GDataStore&, Name , Tombstone*){}
     void Tracker::afterStrongRead(mtl::GStoreContext&, TrackingContext&, 
-				  GDataStore&, Name name, Clock*){}
+				  GDataStore&, Name , Clock*){}
     void Tracker::afterStrongRead(mtl::GStoreContext&, TrackingContext&, 
-				  GDataStore&, Name name, void*){}
+				  GDataStore&, Name , void*){}
 
-    bool waitForCausalRead(TrackingContext&, GDataStore&, Name name, const Clock& version, Tombstone*){return true;}
-    bool waitForCausalRead(TrackingContext&, GDataStore&, Name name, const Clock& version, Clock*){return true;}
-    bool waitForCausalRead(TrackingContext&, GDataStore&, Name name, const Clock& version, void*){return true;}
+    bool waitForCausalRead(TrackingContext&, GDataStore&, Name, const Tracker::Clock& version, Tracker::Tombstone*){return true;}
+    bool waitForCausalRead(TrackingContext&, GDataStore&, Name name, const Tracker::Clock& version, Tracker::Clock*){return true;}
+    bool waitForCausalRead(TrackingContext&, GDataStore&, Name name, const Tracker::Clock& version, void*){return true;}
     
-    void afterCausalRead(TrackingContext&, GDataStore&, Name name, const Clock& version, const std::vector<char> &data, Tombstone*){}
-    void afterCausalRead(TrackingContext&, GDataStore&, Name name, const Clock& version, const std::vector<char> &data, Clock*){}
-    void afterCausalRead(TrackingContext&, GDataStore&, Name name, const Clock& version, const std::vector<char> &data, void*){}
+    void afterCausalRead(TrackingContext&, GDataStore&, Name name, const Tracker::Clock& version, const std::vector<char> &data, Tracker::Tombstone*){}
+    void afterCausalRead(TrackingContext&, GDataStore&, Name name, const Tracker::Clock& version, const std::vector<char> &data, Tracker::Clock*){}
+    void afterCausalRead(TrackingContext&, GDataStore&, Name name, const Tracker::Clock& version, const std::vector<char> &data, void*){}
 
     void Tracker::assert_nonempty_tracking() const {}
     const CooperativeCache& Tracker::getcache() const {assert(false);struct dead_code{}; throw dead_code{};}
