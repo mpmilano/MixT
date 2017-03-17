@@ -2,11 +2,13 @@
 #include "mutils.hpp"
 #include "test_utils.hpp"
 #include "cexprutils.hpp"
+#include <iostream>
 
 namespace myria {
 	namespace pgsql {
 
 		enum class Level {strong,causal};
+		std::ostream& operator<<(std::ostream&, Level);
 
 		namespace conn_space = mutils::batched_connection;
 		
