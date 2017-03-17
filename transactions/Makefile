@@ -3,7 +3,7 @@ IP_quad=`ifconfig | sed s/broadcast.*//g | tr " " "\n" | grep 128.84 | rev | sed
 storeList='pgsql::SQLStore<Level::strong>, pgsql::SQLStore<Level::causal>'
 CPPFLAGS= -I$(PWD) -I$(PWD)/mtl -I$(PWD)/myria-utils -I$(PWD)/mutils-networking -I$(PWD)/mutils -I$(PWD)/mutils-containers -I$(PWD)/mutils-serialization -I$(PWD)/mutils-tasks -I$(PWD)/testing -I$(PWD)/pgsql -I$(PWD)/tracker -g -stdlib=libc++ --std=c++1z -Wall -DNUM_CAUSAL_GROUPS="4" -DSTORE_LIST=$(storeList) -DMY_IP=\"$(MY_IP)\" -DMAX_THREADS=$(MAX_THREADS) -DIP_QUAD=$(IP_quad) -DSTRONG_REMOTE_IP=\"$(STRONG_REMOTE_IP)\" -DCAUSAL_GROUP=$(causalGroup) -DCAUSAL_REMOTE_IP_1=\"$(CAUSAL_REMOTE_IP_1)\" -DCAUSAL_REMOTE_IP_2=\"$(CAUSAL_REMOTE_IP_2)\" $(extra_macro_defs) -ferror-limit=1 -Wall -Werror -Wextra -DNUM_CLIENTS=$(num_clients) -DINCREASE_BY=$(increase_by) -DINCREASE_DELAY=$(increase_delay) -DTEST_STOP_TIME=$(test_stop_time)
 LDFLAGS= -stdlib=libc++ --std=c++1z -lm -pthread
-object_files=FutureFreePool.o GlobalPool.o CooperativeCache.o Ends.o utils.o test_utils.o Basics.o Tracker.o Ostreams.o SerializationSupport.o  IfBuilder.o  WhileBuilder.o ConExpr.o SQLStore.o GSQLObject.o SQLConnection.o SQLTransaction.o SQL_internal_utils.o TempBuilder.o TransactionBasics.o ServerSocket.o Socket.o ClockManager.o abiutils.o batched_connection_common.o batched_connection_client.o batched_connection_server.o eventfd.o epoll.o dual_connection.o
+object_files=FutureFreePool.o GlobalPool.o CooperativeCache.o Ends.o utils.o test_utils.o Basics.o Tracker.o Ostreams.o SerializationSupport.o  IfBuilder.o  WhileBuilder.o ConExpr.o SQLStore.o GSQLObject.o SQLConnection.o SQLTransaction.o SQL_internal_utils.o TempBuilder.o TransactionContext.o ServerSocket.o Socket.o ClockManager.o abiutils.o batched_connection_common.o batched_connection_client.o batched_connection_server.o eventfd.o epoll.o dual_connection.o
 
 all: $(object_files) list_example.o
 	@clang++ $(object_files) list_example.o -o test $(LDFLAGS)
@@ -80,8 +80,8 @@ Tracker.o:
 	@clang++ -c */DisabledTracker.cpp $(CPPFLAGS) && ln -s DisabledTracker.o Tracker.o
 ClockManager.o:
 	@clang++ -c */ClockManager.cpp $(CPPFLAGS)
-TransactionBasics.o:
-	@clang++ -c */TransactionBasics.cpp $(CPPFLAGS)
+TransactionContext.o:
+	@clang++ -c */TransactionContext.cpp $(CPPFLAGS)
 Ostreams.o:
 	@clang++ -c Ostreams.cpp $(CPPFLAGS)
 SerializationSupport.o:

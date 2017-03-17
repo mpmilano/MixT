@@ -233,7 +233,7 @@ namespace myria { namespace pgsql {
 			}
 
 			template<HandleAccess ha, typename T>
-			auto existingObject(std::unique_ptr<VMObjectLog>&, Name name){
+			auto existingObject(Name name){
 				static constexpr Table t =
 					(std::is_same<T,int>::value ? Table::IntStore : Table::BlobStore);
 				GSQLObject gso(*this,t,name);
@@ -241,7 +241,7 @@ namespace myria { namespace pgsql {
 			}
 
 			template<typename T>
-			std::unique_ptr<SQLObject<T> > existingRaw(std::unique_ptr<mutils::abs_StructBuilder>&, Name name){
+			std::unique_ptr<SQLObject<T> > existingRaw(Name name){
 				static constexpr Table t =
 					(std::is_same<T,int>::value ? Table::IntStore : Table::BlobStore);
 				return std::unique_ptr<SQLObject<T> >
@@ -270,9 +270,9 @@ namespace myria { namespace pgsql {
 
 			using StoreContext = SQLContext;
 
-			std::unique_ptr<mtl::StoreContext<l> > begin_transaction(std::unique_ptr<mutils::abs_StructBuilder>&
+			std::unique_ptr<mtl::StoreContext<l> > begin_transaction(
 #ifndef NDEBUG
-																	 , const std::string &why
+				const std::string &why
 #endif
 				)
 				{

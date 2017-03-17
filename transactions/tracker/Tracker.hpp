@@ -15,7 +15,7 @@
 #include "TrivialPair.hpp"
 #include "RemoteObject.hpp"
 #include "Ends.hpp"
-#include "TransactionBasics.hpp"
+#include "TransactionContext.hpp"
 #include "TrackingContext.hpp"
 #include "ObjectBuilder.hpp"
 
@@ -63,26 +63,15 @@ namespace myria {
 		    newTomb_t newTomb;
 		    using exists_t = bool (*) (GDataStore&, Name);
 		    exists_t exists;
-		    using existingClock_t = std::unique_ptr<TypedRemoteObject<Clock> > (*) (std::unique_ptr<mutils::abs_StructBuilder>&, GDataStore&, Name);
+		    using existingClock_t = std::unique_ptr<TypedRemoteObject<Clock> > (*) (GDataStore&, Name);
 		    existingClock_t existingClock;
-		    using existingTomb_t = std::unique_ptr<TypedRemoteObject<Tombstone> > (*) (std::unique_ptr<mutils::abs_StructBuilder>&, GDataStore&, Name);
+		    using existingTomb_t = std::unique_ptr<TypedRemoteObject<Tombstone> > (*) (GDataStore&, Name);
 		    existingTomb_t existingTomb;
 		    virtual ~GenericTrackerDS() = default;
 		    GenericTrackerDS(newTomb_t newTomb, exists_t exists, existingClock_t existingClock, existingTomb_t existingTomb)
 		      :newTomb(newTomb),exists(exists),existingClock(existingClock),existingTomb(existingTomb){}
 		  };
 
-		  /*
-		  template<typename l>
-		  struct TrackerDS : public GenericTrackerDS{
-		    
-		    using newTomb_t = Handle<l, Tombstone> (*) (tracker::Tracker &trk, mtl::TransactionContext& ctx, DataStore<l>&, Name, const Tombstone&);
-		    using exists_t = bool (*) (DataStore<l>&, Name);
-		    using existingClock_t = std::unique_ptr<RemoteObject<l, Clock> > (*) (std::unique_ptr<mutils::abs_StructBuilder>&, DataStore<l>&, Name);
-		    using existingTomb_t = std::unique_ptr<RemoteObject<l, Tombstone> > (*) (std::unique_ptr<mutils::abs_StructBuilder>&, DataStore<l>&, Name);
-		    TrackerDS(newTomb_t newTomb, exists_t exists, existingClock_t existingClock, existingTomb_t existingTomb)
-		      :GenericTrackerDS([](){}){}
-		      };//*/
 		  
 		  using StampedObject = mutils::TrivialTriple<Name, Tracker::Clock, std::vector<char> >;
 
@@ -131,7 +120,7 @@ namespace myria {
 				exemptItem(h.name());
 			}
 
-                        std::unique_ptr<TrackingContext> generateContext(std::unique_ptr<mutils::abs_StructBuilder> &logger, bool commitOnDelete = false);
+			std::unique_ptr<TrackingContext> generateContext(bool commitOnDelete = false);
 
 			/**
 			   The primary interface methods here are tripled.  

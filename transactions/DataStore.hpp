@@ -15,11 +15,11 @@ namespace myria{
 		//we'll delete the TransactionContext
 		//when the transaction is over.  Do any cleanup you need to do then.
 		//the parameters to this function should just be passed directly to TransactionContext's constructor.
-		virtual std::unique_ptr<mtl::StoreContext<l> > begin_transaction(std::unique_ptr<mutils::abs_StructBuilder>&
+		virtual std::unique_ptr<mtl::StoreContext<l> > begin_transaction(
 #ifndef NDEBUG
-										     , const std::string& why
+			const std::string& why
 #endif
-										     ) = 0;
+			) = 0;
 	  _DataStore(): GDataStore(){}
 		virtual ~_DataStore(l::description) = default;
 	
@@ -32,9 +32,9 @@ namespace myria{
 		//we'll delete the TransactionContext
 		//when the transaction is over.  Do any cleanup you need to do then.
 		//the parameters to this function should just be passed directly to TransactionContext's constructor.
-        virtual std::unique_ptr<mtl::StoreContext<l> > begin_transaction(std::unique_ptr<mutils::abs_StructBuilder>&
+        virtual std::unique_ptr<mtl::StoreContext<l> > begin_transaction(
 #ifndef NDEBUG
-										     , const std::string& why
+					const std::string& why
 #endif
 										     ) = 0;
 	  _DataStore() : GDataStore(){}

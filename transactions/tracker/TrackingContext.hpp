@@ -1,5 +1,4 @@
 #pragma once
-#include "ObjectBuilder.hpp"
 
 namespace myria { namespace tracker {
 
@@ -9,8 +8,7 @@ namespace myria { namespace tracker {
 			struct Internals;
 			Internals *i{nullptr};
 			Tracker &trk;
-                        std::unique_ptr<mutils::abs_StructBuilder> &logger;
-                        TrackingContext(std::unique_ptr<mutils::abs_StructBuilder> &logger, Tracker& t, bool commitOnDelete = false);
+			TrackingContext(Tracker& t, bool commitOnDelete = false);
 			void commitContext();
 			void abortContext();
 			virtual ~TrackingContext();

@@ -24,10 +24,10 @@ struct transaction_struct
   constexpr transaction_struct() = default;
   using transaction = split;
 
-  static auto run(std::unique_ptr<VMObjectLog>& log, tracker::Tracker& trk, const typename bound_values::type&... v)
+  static auto run(tracker::Tracker& trk, const typename bound_values::type&... v)
   {
     using namespace runnable_transaction;
-    typename split::context ctx{ trk.generateContext(log) };
+    typename split::context ctx{trk};
     return begin_interp<transaction>(ctx, bound_values{ v }...);
   }
 };

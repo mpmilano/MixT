@@ -94,7 +94,7 @@ namespace myria { namespace tracker {
     
     struct TrackingContext::Internals{};		
     
-    TrackingContext::TrackingContext(std::unique_ptr<mutils::abs_StructBuilder>& l, Tracker& t, bool):trk(t),logger(l){}
+    TrackingContext::TrackingContext(Tracker& t, bool):trk(t){}
     
     void TrackingContext::commitContext(){}
     void TrackingContext::abortContext(){}

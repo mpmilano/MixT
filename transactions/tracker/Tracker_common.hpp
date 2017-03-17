@@ -24,16 +24,16 @@ namespace myria { namespace tracker {
 				return ds.exists(name);
 		  };
 		  static const existingClock_t existClock =
-		    [](std::unique_ptr<mutils::abs_StructBuilder>& asb, GDataStore &_ds, Name name)
+		    [](GDataStore &_ds, Name name)
 			  -> std::unique_ptr<TypedRemoteObject<Tracker::Clock> >{
 		    auto &ds = dynamic_cast<DS&>(_ds);
-		    return ds.template existingRaw<Tracker::Clock>(asb,name);
+		    return ds.template existingRaw<Tracker::Clock>(name);
 		  };
 		  static const existingTomb_t existTomb =
-		    [](std::unique_ptr<mutils::abs_StructBuilder>& asb, GDataStore &_ds, Name name)
+		    [](GDataStore &_ds, Name name)
 		    -> std::unique_ptr<TypedRemoteObject<Tracker::Tombstone> >{
 		    auto &ds = dynamic_cast<DS&>(_ds);
-		    return ds.template existingRaw<Tracker::Tombstone>(asb,name);
+		    return ds.template existingRaw<Tracker::Tombstone>(name);
 		  };
 		  return std::unique_ptr<GenericTrackerDS>
 		    (new GenericTrackerDS{newTomb, exists,existClock,existTomb});
