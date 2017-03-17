@@ -11,15 +11,15 @@ namespace myria { namespace tracker {
 			GDataStore* causalStore{nullptr};
 		};
 
-		void Tracker::onCausalRead(
+		void Tracker::onRead(
 			TrackingContext&,
 			GDataStore&, Name, const Clock &,
-			const std::function<void (char const *)> &){}
+			const std::function<void (char const *)> &, std::true_type*){}
 		
-		void Tracker::onStrongRead(
+		void Tracker::onRead(
 			TrackingContext&,
 			GDataStore&, Name, const Clock &,
-			const std::function<void (char const *)> &){}
+			const std::function<void (char const *)> &, std::false_type*){}
 
 		bool Tracker::registered(const GDataStore& gd) const {
 		  auto *ds = &gd;
@@ -32,10 +32,10 @@ namespace myria { namespace tracker {
 		GDataStore& Tracker::get_StrongStore() {return *i->strongStore;}
 		GDataStore& Tracker::get_CausalStore() {return *i->causalStore;}
 
-		void Tracker::registerStrongStore(GDataStore &ss,
-					    std::unique_ptr<GenericTrackerDS>){i->strongStore = &ss;}
-		void Tracker::registerCausalStore(GDataStore &cs,
-					    std::unique_ptr<GenericTrackerDS>){i->causalStore = &cs;}
+		void Tracker::registerStore(GDataStore &ss,
+																std::unique_ptr<GenericTrackerDS>, std::false_type*){i->strongStore = &ss;}
+		void Tracker::registerStore(GDataStore &cs,
+																std::unique_ptr<GenericTrackerDS>, std::true_type*){i->causalStore = &cs;}
 
 		bool Tracker::strongRegistered() const{
 			return i->strongStore;

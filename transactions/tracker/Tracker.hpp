@@ -83,14 +83,14 @@ namespace myria {
 		  Internals *i;
 		  
 		private:
-		  void onCausalRead(
+		  void onRead(
 			      TrackingContext&,
 			      GDataStore&, Name name, const Clock &version,
-			      const std::function<void (char const *)> &construct_nd_merge);
-		  void onStrongRead(
+			      const std::function<void (char const *)> &construct_nd_merge, std::true_type* requires_tracking);
+		  void onRead(
 			      TrackingContext&,
 			      GDataStore&, Name name, const Clock &version,
-			      const std::function<void (char const *)> &construct_nd_merge);
+			      const std::function<void (char const *)> &construct_nd_merge, std::false_type* requires_tracking);
 		  
 		public:
 			static constexpr int clockport = 9999;
@@ -108,13 +108,14 @@ namespace myria {
 			bool strongRegistered() const;
 			bool causalRegistered() const;
 
-			void registerStrongStore(GDataStore&,
-							   std::unique_ptr<GenericTrackerDS>);
-			void registerCausalStore(GDataStore&,
-							   std::unique_ptr<GenericTrackerDS>);
 
 			template<typename DS>
 			void registerStore(DS &ds);
+
+			void registerStore(GDataStore &,
+												 std::unique_ptr<GenericTrackerDS>, std::true_type*);
+			void registerStore(GDataStore &,
+												 std::unique_ptr<GenericTrackerDS>, std::false_type*);
 
 			void exemptItem(Name name);
 

@@ -10,7 +10,7 @@ namespace myria{
 	}
 
 	template<typename l1, typename l2, typename T, typename...  ops>
-	std::enable_if_t<!std::is_same<l1,  l2>, std::shared_ptr<Handle<l1,T,ops...> > > release_delete(Handle<l2,T,ops...>* ){
+	std::enable_if_t<!std::is_same<l1,  l2>::value, std::shared_ptr<Handle<l1,T,ops...> > > release_delete(Handle<l2,T,ops...>* ){
 		assert(false && "this should be unreachable");
 		struct dead_code{};
 		throw dead_code{};

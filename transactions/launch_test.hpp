@@ -16,7 +16,6 @@
 #include "ObjectBuilder.hpp"
 #include "test_utils.hpp"
 //*/
-#include "Transaction_macros.hpp"
 #include "abiutils.hpp"
 
 //The "new" vm_main

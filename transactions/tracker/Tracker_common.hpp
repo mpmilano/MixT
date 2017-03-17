@@ -16,7 +16,7 @@ namespace myria { namespace tracker {
 		  using exists_t = typename Tracker::GenericTrackerDS::exists_t;
 		  static const newTomb_t newTomb = [](tracker::Tracker &trk, mtl::GTransactionContext& ctx, GDataStore &_ds, Name name, auto &e){
 		    auto &ds = dynamic_cast<DS&>(_ds);
-		    return std::make_unique<LabelFreeHandle<Tracker::Tombstone> >
+		    return std::unique_ptr<LabelFreeHandle<Tracker::Tombstone> >
 		    (new Handle<l,Tracker::Tombstone> (ds.template newObject(trk,dynamic_cast<mtl::SingleTransactionContext<typename DS::label>* >(&ctx), name,e)));
 		  };
 		  static const exists_t exists = [](GDataStore &_ds, Name name){
@@ -41,7 +41,8 @@ namespace myria { namespace tracker {
 
 		template<typename DS>
 		void Tracker::registerStore(DS &ds){
-			registerStore(ds,wrapStore(ds));
+			constexpr typename DS::label::requires_causal_tracking *choice{nullptr};
+			registerStore(ds,wrapStore(ds),choice);
 		}
 
 		template<typename DS, typename T>
@@ -79,8 +80,9 @@ namespace myria { namespace tracker {
 				assert(!mem.merged);
 				mem.merged = merge((char const *) arg, std::move(mem.candidate));
 				}};
-			
-			onRead(ctx,ds,name,version,c_merge);
+
+			constexpr typename DS::label::requires_causal_tracking *choice{nullptr};
+			onRead(ctx,ds,name,version,c_merge,choice);
 			if (mem.merged) return std::move(mem.merged);
 			else return std::move(mem.candidate);
 		}

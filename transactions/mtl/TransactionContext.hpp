@@ -1,5 +1,6 @@
 #pragma once
 #include "TrackingContext.hpp"
+#include "macro_utils.hpp"
 #include <memory>
 
 namespace myria {
@@ -17,12 +18,14 @@ namespace myria {
       virtual bool store_commit() = 0;
       virtual void store_abort() = 0;
       virtual ~GStoreContext() = default;
+			GStoreContext() = default;
     };
     template<typename l>
     struct StoreContext : public GStoreContext {
-      virtual _DataStore<l,l::requires_causal_tracking>& store() = 0;
+      virtual _DataStore<l,l::requires_causal_tracking::value>& store() = 0;
       virtual ~StoreContext() = default;
 			StoreContext(const StoreContext&) = delete;
+			StoreContext() = default;
     };
 
 		struct GTransactionContext {
@@ -39,7 +42,7 @@ namespace myria {
 		struct SingleTransactionContext : public virtual GTransactionContext{
 			std::unique_ptr<StoreContext<label> > s_ctx;
 			virtual ~SingleTransactionContext() = default;
-			StoreContext<label>& store_context(){
+			StoreContext<label>& store_context(whendebug(...)){
 				assert(s_ctx);
 				return *s_ctx;
 			}

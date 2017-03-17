@@ -176,12 +176,16 @@ namespace myria{
       friend struct Handle;
     
   private:
-    static void do_onwrite(mtl::SingleTransactionContext<l> &tc, tracker::Tracker &tr, RemoteObject<l,T> &ro, std::enable_if_t<!l::requires_causal_tracking::value>* = nullptr){
+    static void do_onwrite(mtl::SingleTransactionContext<l> &tc, tracker::Tracker &tr, RemoteObject<l,T> &ro,std::false_type*){
       tr.onStrongWrite(tc,ro.store(),ro.name(),(T*)nullptr);
     }
-    static void do_onwrite(mtl::SingleTransactionContext<l> &, tracker::Tracker &tr, RemoteObject<l,T> &ro, std::enable_if_t<l::requires_causal_tracking::value>* = nullptr){
+    static void do_onwrite(mtl::SingleTransactionContext<l> &, tracker::Tracker &tr, RemoteObject<l,T> &ro,std::true_type*){
       tr.onCausalWrite(ro.store(),ro.name(),ro.timestamp(),(T*)nullptr);
     }
+		static void do_onwrite(mtl::SingleTransactionContext<l> &ctx, tracker::Tracker &tr, RemoteObject<l,T> &ro){
+			typename l::requires_causal_tracking* choice{nullptr};
+			do_onwrite(ctx,tr,ro,choice);
+		}
   };
   
   template<typename T>
@@ -190,6 +194,14 @@ namespace myria{
   struct is_handle<Handle<l,T,Ops...> > : std::true_type {};
   template<typename T>
   struct is_handle : std::false_type {};
+
+	template<typename T>
+	struct label_from_handle_str;
+	template<typename l, typename T, typename... Ops>
+	struct label_from_handle_str<Handle<l,T,Ops...> >{
+		using type = l;
+	};
+	template<typename T> using label_from_handle = typename label_from_handle_str<T>::type;
   
   template<typename T>
   struct is_not_handle : std::integral_constant<bool, !is_handle<T>::value >::type {};

@@ -23,13 +23,13 @@ namespace myria {
 
 		static const constexpr int repl_group{CAUSAL_GROUP};
 
-		constexpr mutils::CTString table_name(Table t){
+		constexpr mutils::CexprString table_name(Table t){
 			using namespace mutils;
 			constexpr auto bs = "\"BlobStore\"";
 			constexpr auto is = "\"IntStore\"";
 			switch (t){
-			case Table::BlobStore : return CTString{} + bs;
-			case Table::IntStore : return CTString{} + is;
+			case Table::BlobStore : return CexprString{} + bs;
+			case Table::IntStore : return CexprString{} + is;
 			};
 		}
 		namespace local{

@@ -206,17 +206,17 @@ namespace myria { namespace pgsql {
 					using namespace std;
 					using namespace mutils;
 					struct ReturnThis{
-						static constexpr CTString vcs1(unsigned int i, unsigned int stop, unsigned int _k){
-							return CTString{} + ", vc" + md(_k+i)+ "=$"+ (i+1) +
-												  ( i==(stop-1) ? CTString{} : vcs1(i+1,stop,_k));
+						static constexpr CexprString vcs1(unsigned int i, unsigned int stop, unsigned int _k){
+							return CexprString{} + ", vc" + md(_k+i)+ "=$"+ (i+1) +
+												  ( i==(stop-1) ? CexprString{} : vcs1(i+1,stop,_k));
 						}
 						
-						static constexpr CTString vcs2(unsigned int i, unsigned int stop){
-							return CTString{} + "vc" + i + "," + (i == (stop-1)? CTString{} : vcs2(i+1,stop));
+						static constexpr CexprString vcs2(unsigned int i, unsigned int stop){
+							return CexprString{} + "vc" + i + "," + (i == (stop-1)? CexprString{} : vcs2(i+1,stop));
 						}
 						
-						pair<LocalTransactionNames,CTString> ret[Table_max * (NUM_CAUSAL_GROUPS+1)]
-							{pair<LocalTransactionNames,CTString>{LocalTransactionNames::MAX,CTString{} }};
+						pair<LocalTransactionNames,CexprString> ret[Table_max * (NUM_CAUSAL_GROUPS+1)]
+							{pair<LocalTransactionNames,CexprString>{LocalTransactionNames::MAX,CexprString{} }};
 						
 						pair<LocalTransactionNames,string> at(std::size_t s) const {
 							return make_pair(ret[s].first,string{ret[s].second.str});
@@ -229,10 +229,10 @@ namespace myria { namespace pgsql {
 					ReturnThis ret;
 					int index{0};
 					for (int _t = 0; _t < Table_max; ++_t){
-						CTString t {table_name((Table)_t)};
+						CexprString t {table_name((Table)_t)};
 						for (int _k = 1; _k < (NUM_CAUSAL_GROUPS+1); ++_k){
-							auto k = to_ctstring(_k);
-							CTString main = CTString{}
+							auto k = to_cexprstring(_k);
+							CexprString main = CexprString{}
 							+ "update " + t + " set data = " + set
 								+ ReturnThis::vcs1(1,NUM_CAUSAL_GROUPS,_k)
 								+ ", lw = " + k

@@ -44,42 +44,42 @@ namespace myria { namespace pgsql {
 			private:
 				std::map<int,std::unique_ptr<SQLStore> > ss;
 				
-				void inst(Label<strong>){
+				auto& inst(Label<strong>){
 					assert(l::is_strong::value);
 					if (ss.count(0) == 0 || (!ss.at(0))){
 						assert(this->this_mgr);
 						ss[0].reset(new SQLStore(trk,*this->this_mgr,p));
 					}
+					assert(ss.at(0));
+					return *ss.at(0);
 				}
-				void inst(Label<causal>){
+				auto& inst(Label<causal>){
 					assert(l::is_causal::value);
 					if (ss.count(0) == 0 || (!ss.at(0))){
 						assert(this->this_mgr);
 						ss[0].reset(new SQLStore(trk,*this->this_mgr,p));
 					}
+					assert(ss.at(0));
+					return *ss.at(0);
 				}
-
 
 			public:
-				
-				SQLStore<Label<strong> >& inst_strong(){
-					assert (level_t::value == Level::strong);
-					inst(Label<strong>{} );
-					assert(ss.at(0));
-					return *ss.at(0);
+				SQLStore& inst(){
+					return inst(l{});
 				}
-				
-				SQLStore<Label<causal> >& inst_causal(){
-					assert (level_t::value == Level::causal);
-					inst(Label<causal>{} );
-					assert(ss.at(0));
-					return *ss.at(0);
-				}
-
-				auto& inst(){
-					inst(l{});
-					assert(ss.at(0));
-					return *ss.at(0);
+				SQLStore& inst(Level _l){
+#ifndef NDEBUG
+					switch(_l){
+					case Level::causal:
+						assert(l::is_causal::value);
+						break;
+					case Level::strong:
+						assert(l::is_strong::value);
+						break;
+					};
+#endif
+					(void)_l;
+					return inst();
 				}
 			};
 

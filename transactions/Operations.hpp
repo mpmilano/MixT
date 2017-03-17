@@ -1,6 +1,7 @@
 #pragma once
 #include "Basics.hpp"
 #include "RemoteObject.hpp"
+#include "Handle.hpp"
 
 namespace myria{
   
@@ -45,7 +46,8 @@ struct SupportedOperation {
 		using return_raw = typename convert_SelfType<Handle>::template act<Ret>;
 		using return_t = typename void_to_nullptr<return_raw>::type;
 
-		using TransactionContext = mtl::SingleTransactionContext<typename Handle::label>;
+		static_assert(is_handle<Handle>::value);
+		using TransactionContext = mtl::SingleTransactionContext<label_from_handle<Handle> >;
 	
 		struct operation_super {
 			virtual return_t act(TransactionContext* _ctx,typename convert_SelfType<Handle&>::template act<Args>...) = 0;
@@ -70,13 +72,13 @@ struct SupportedOperation {
 			operation_impl(DataStore &ds):ds(ds){}
 			
 			return_raw act(std::true_type*, TransactionContext* _ctx,typename convert_SelfType<Handle&>::template act<Args>... a){
-				auto *ctx = dynamic_cast<typename DataStore::StoreContext*>(_ctx->template get_store_context<DataStore::level>(ds whendebug(,"operation!")).get());
+				auto *ctx = dynamic_cast<typename DataStore::StoreContext*>(&_ctx->store_context(whendebug("operation!")));
 				return ds.operation(_ctx,*ctx,OperationIdentifier<Name>{nullptr},
 									this->template reduce_selfTypes(((Args*)nullptr), a)...);
 			}
 
 			std::nullptr_t act(std::false_type*, TransactionContext* _ctx,typename convert_SelfType<Handle&>::template act<Args>... a){
-				auto *ctx = dynamic_cast<typename DataStore::StoreContext*>(_ctx->template get_store_context<DataStore::level>(ds whendebug(,"operation!")).get());
+				auto *ctx = dynamic_cast<typename DataStore::StoreContext*>(&_ctx->store_context(whendebug("operation!")));
 				ds.operation(_ctx,*ctx,OperationIdentifier<Name>{nullptr},
 									this->template reduce_selfTypes(((Args*)nullptr), a)...);
 				return nullptr;
