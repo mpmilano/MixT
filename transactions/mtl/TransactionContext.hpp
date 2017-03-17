@@ -2,8 +2,8 @@
 
 namespace myria {
   struct GDataStore;
-  template<Level l>
-  class DataStore;
+  template<Level l, bool>
+  class _DataStore;
   
   namespace mtl {
     struct GStoreContext{
@@ -14,7 +14,7 @@ namespace myria {
     };
     template<typename l>
     struct StoreContext : public GStoreContext {
-      virtual DataStore<l>& store() = 0;
+      virtual _DataStore<l,l::requires_causal_tracking>& store() = 0;
       virtual ~StoreContext() = default;
     };
     

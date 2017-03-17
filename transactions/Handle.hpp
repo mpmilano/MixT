@@ -111,7 +111,7 @@ namespace myria{
       //If the Transacion Context does not yet exist for this store, we create it now.
       auto &store_ctx = *ctx.template get_store_context<l>(_ro->store() whendebug(,"calling get() via handle"));
 
-      constexpr std::integral_constant<bool, !l::requires_causal_tracking()> *choice{nullptr};
+      constexpr std::integral_constant<bool, !l::requires_causal_tracking::value> *choice{nullptr};
       return get(choice,tracker,store_ctx, *ctx.trackingContext, _ro->get(&store_ctx,&tracker,ctx.trackingContext.get()));
     }
     
@@ -140,7 +140,7 @@ namespace myria{
       assert(tc);
       auto &ctx = *tc;
       assert(ctx.trackingContext);
-      constexpr std::integral_constant<bool, !l::requires_causal_tracking()> *choice{nullptr};
+      constexpr std::integral_constant<bool, !l::requires_causal_tracking::value> *choice{nullptr};
       return put(tracker, ctx,t,choice);
     }
     
@@ -180,10 +180,10 @@ namespace myria{
       friend struct Handle;
     
   private:
-    static void do_onwrite(mtl::TransactionContext &tc, tracker::Tracker &tr, RemoteObject<l,T> &ro, std::enable_if_t<!l::requires_causal_tracking()>* = nullptr){
+    static void do_onwrite(mtl::TransactionContext &tc, tracker::Tracker &tr, RemoteObject<l,T> &ro, std::enable_if_t<!l::requires_causal_tracking::value>* = nullptr){
       tr.onWrite(tc,ro.store(),ro.name(),(T*)nullptr);
     }
-    static void do_onwrite(mtl::TransactionContext &, tracker::Tracker &tr, RemoteObject<Level::causal,T> &ro, std::enable_if_t<l::requires_causal_tracking()>* = nullptr){
+    static void do_onwrite(mtl::TransactionContext &, tracker::Tracker &tr, RemoteObject<Level::causal,T> &ro, std::enable_if_t<l::requires_causal_tracking::value>* = nullptr){
       tr.onWrite(ro.store(),ro.name(),ro.timestamp(),(T*)nullptr);
     }
   };

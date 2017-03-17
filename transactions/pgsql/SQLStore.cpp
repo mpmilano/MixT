@@ -33,15 +33,13 @@ namespace myria{ namespace pgsql {
 				assert(cres);//*/
 		}
 		
-		SQLStore_impl::SQLStore_impl(SQLConnectionPool<Level::causal>& pool, GDataStore &store, /*int instanceID,*/ Level l)
-			:_store(store),clock{{0,0,0,0}},level(l),default_connection{pool.acquire()} {
-				assert(l == Level::causal);
+		SQLStore_impl::SQLStore_impl(SQLConnectionPool<Level::causal>& pool, GDataStore &store /*int instanceID,*/ )
+			:_store(store),clock{{0,0,0,0}},level(Level::causal),default_connection{pool.acquire()} {
 				init_common();
 			}
 
-		SQLStore_impl::SQLStore_impl(SQLConnectionPool<Level::strong>& pool, GDataStore &store, /*int instanceID,*/ Level l)
-			:_store(store),clock{{0,0,0,0}},level(l),default_connection{pool.acquire()} {
-				assert(l == Level::strong);
+		SQLStore_impl::SQLStore_impl(SQLConnectionPool<Level::strong>& pool, GDataStore &store /*int instanceID,*/ )
+			:_store(store),clock{{0,0,0,0}},level(Level::causal),default_connection{pool.acquire()} {
 				init_common();
 			}
 
@@ -88,20 +86,6 @@ namespace myria{ namespace pgsql {
 			constexpr auto ret = mutils::decode_ip(MY_IP);
 			return ret;
 		}
-
-
-
-
-
-		
-		SQLStore_impl& SQLInstanceManager_abs::inst(Level l){
-			if (l == Level::strong) return this->inst_strong();
-			else if (l == Level::causal) return this->inst_causal();
-			else assert(false && "what?");
-			struct dead_code{}; throw dead_code{};
-		}
-
-
 
 
 		SQLStore_impl::~SQLStore_impl(){

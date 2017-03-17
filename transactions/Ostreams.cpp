@@ -22,18 +22,7 @@ namespace myria{
 
 	}
 
-	std::ostream & operator<<(std::ostream &os, Level l){
-		if (l == Level::causal)
-			return os << levelStr<Level::causal>();
-		else if (l == Level::strong)
-			return os << levelStr<Level::strong>();
-		else if (l == Level::undef)
-			return os << levelStr<Level::undef>();
-		assert(false && "fell through");
-		struct dead_code{}; throw dead_code{};
-		return os;
-	}
-
+	
 	namespace tracker {
 		std::ostream& operator<<(std::ostream& os, const Tracker::Tombstone &){
 			return os << "tombstone";

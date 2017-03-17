@@ -5,6 +5,7 @@
 #include "cexprutils.hpp"
 #include "SQLConnection.hpp"
 #include "SQLConstants.hpp"
+#include "SQLLevels.hpp"
 #include <memory>
 #include <vector>
 #include <array>
@@ -21,7 +22,7 @@
 
 namespace myria { namespace pgsql {
 
-		template<Level l>
+		template<typename l>
 		class SQLStore;
 
 		struct SQLTransaction;
@@ -29,9 +30,8 @@ namespace myria { namespace pgsql {
 		struct SQLStore_impl;
 		
 		struct SQLInstanceManager_abs : public mutils::RemoteDeserializationContext {
-			virtual SQLStore<Level::strong>& inst_strong() = 0;
-			virtual SQLStore<Level::causal>& inst_causal() = 0;
-			SQLStore_impl& inst(Level l);
+			virtual SQLStore<Label<strong> >& inst_strong() = 0;
+			virtual SQLStore<Label<causal> >& inst_causal() = 0;
 			
 			virtual ~SQLInstanceManager_abs(){}
 			SQLInstanceManager_abs(const SQLInstanceManager_abs&) = delete;
@@ -42,19 +42,19 @@ namespace myria { namespace pgsql {
 		private:
 
 			void init_common();
-			SQLStore_impl(SQLConnectionPool<Level::causal>& pool, GDataStore &store, /*int instanceID,*/ Level);
-			SQLStore_impl(SQLConnectionPool<Level::strong>& pool, GDataStore &store, /*int instanceID,*/ Level);
+			SQLStore_impl(SQLConnectionPool<Label<causal> >& pool, GDataStore &store /*int instanceID,*/ );
+			SQLStore_impl(SQLConnectionPool<Label<strong> >& pool, GDataStore &store /*int instanceID,*/ );
 			GDataStore &_store;
 		public:
+			Level l;
 			
 			virtual ~SQLStore_impl();
 
-			template<Level l>
+			template<typename  l>
 			friend class SQLStore;
 
 			std::array<int, NUM_CAUSAL_GROUPS> clock;
 
-			const Level level;
 			WeakSQLConnection default_connection;
 	
 			SQLStore_impl(const SQLStore_impl&) = delete;

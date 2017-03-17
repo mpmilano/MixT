@@ -44,11 +44,11 @@ namespace {
 		tracker::Tracker trk;
 		const int memid;
 		struct Continue_build {
-			SQLStore<Level::strong>::SQLInstanceManager ss;
-			SQLStore<Level::causal>::SQLInstanceManager sc;
+			SQLStore<Label<strong> >::SQLInstanceManager ss;
+			SQLStore<Label<causal> >::SQLInstanceManager sc;
 			DeserializationManager dsm;
 			
-			Continue_build(Mem& super, SQLConnectionPool<Level::strong>& strong_p, SQLConnectionPool<Level::causal>& causal_p)
+			Continue_build(Mem& super, SQLConnectionPool<Label<strong> >& strong_p, SQLConnectionPool<Label<causal> >& causal_p)
 				:ss(super.trk,strong_p),
 				 sc(super.trk,causal_p),
 				 dsm({&ss,&sc}){
@@ -79,8 +79,8 @@ struct PreparedTest{
 	//static functions for TaskPool
 	static std::string exn_handler(std::exception_ptr eptr);
 
-	SQLConnectionPool<Level::strong> strong;
-	SQLConnectionPool<Level::causal> causal;
+	SQLConnectionPool<Label<strong> > strong;
+	SQLConnectionPool<Label<causal> > causal;
 	void pool_mem_init (Mem& m){
 		m.i.reset(new typename Mem::Continue_build(m,strong,causal));
 	}

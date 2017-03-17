@@ -8,11 +8,9 @@
 
 namespace myria { namespace pgsql {
 	
-		template<Level l>
+		template<typename l>
 		class SQLStore : public SQLStore_impl, public DataStore<l> {
 		public:
-
-			static constexpr Level level = l;
 			
 			virtual ~SQLStore() {}
 
@@ -33,45 +31,51 @@ namespace myria { namespace pgsql {
 			private:
 				std::map<int,std::unique_ptr<SQLStore> > ss;
 				
-				void inst(Level l2){
-					(void)l2;
-					assert(l == l2);
+				void inst(Label<strong>){
+					assert(l::is_strong::value);
+					if (ss.count(0) == 0 || (!ss.at(0))){
+						assert(this->this_mgr);
+						ss[0].reset(new SQLStore(trk,*this->this_mgr,p));
+					}
+				}
+				void inst(Label<causal>){
+					assert(l::is_causal::value);
 					if (ss.count(0) == 0 || (!ss.at(0))){
 						assert(this->this_mgr);
 						ss[0].reset(new SQLStore(trk,*this->this_mgr,p));
 					}
 				}
 
-				SQLStore<Level::strong>& choose_s(std::true_type*){
+				SQLStore<Label<strong> >& choose_s(std::true_type*){
 					assert(ss.at(0));
 					return *ss.at(0);
 				}
 				
-				SQLStore<Level::strong>& choose_s(std::false_type*){
+				SQLStore<Label<strong> >& choose_s(std::false_type*){
 					assert(false && "Error: This is not a strong instance manager");
 					struct dead_code{}; throw dead_code{};
 				}
 				
-				SQLStore<Level::causal>& choose_c(std::true_type*){
+				SQLStore<Label<causal> >& choose_c(std::true_type*){
 					assert(ss.at(0));
 					return *ss.at(0);
 				}
 				
-				SQLStore<Level::causal>& choose_c(std::false_type*){
+				SQLStore<Label<causal> >& choose_c(std::false_type*){
 					assert(false && "Error: This is not a causal instance manager");
 					struct dead_code{}; throw dead_code{};
 				}
 				
 			public:
 				
-				SQLStore<Level::strong>& inst_strong(){
-					inst(Level::strong);
+				SQLStore<Label<strong> >& inst_strong(){
+					inst(Label<strong>{} );
 					choose_strong<l> choice{nullptr};
 					return choose_s(choice);
 				}
 				
-				SQLStore<Level::causal>& inst_causal(){
-					inst(Level::causal);
+				SQLStore<Label<causal> >& inst_causal(){
+					inst(Label<causal>{} );
 					choose_causal<l> choice{nullptr};
 					return choose_c(choice);
 				}

@@ -4,20 +4,20 @@
 
 namespace myria{
 
-	template<Level l, typename T, HandleAccess HA, typename...  ops>
-	std::shared_ptr<Handle<l,HA,T,ops...> > release_delete(Handle<l,HA,T,ops...>* ro){
-		return std::shared_ptr<Handle<l,HA,T,ops...> >(ro, release_deleter<Handle<l,HA,T,ops...> >());
+	template<typename l, typename T, typename...  ops>
+	std::shared_ptr<Handle<l,T,ops...> > release_delete(Handle<l,T,ops...>* ro){
+		return std::shared_ptr<Handle<l,T,ops...> >(ro, release_deleter<Handle<l,T,ops...> >());
 	}
 
-	template<Level l1, Level l2, typename T, HandleAccess HA, typename...  ops>
-	std::enable_if_t<l1 != l2, std::shared_ptr<Handle<l1,HA,T,ops...> > > release_delete(Handle<l2,HA,T,ops...>* ){
+	template<typename l1, typename l2, typename T, typename...  ops>
+	std::enable_if_t<!std::is_same<l1,  l2>, std::shared_ptr<Handle<l1,T,ops...> > > release_delete(Handle<l2,T,ops...>* ){
 		assert(false && "this should be unreachable");
 		struct dead_code{};
 		throw dead_code{};
 	}
 
-	template<Level l, HandleAccess ha, typename T, typename... ops>
-	std::unique_ptr<Handle<l,ha,T,ops...> > hndl_from_bytes(mutils::DeserializationManager* dm, char const * __v)
+	template<typename l, typename T, typename... ops>
+	std::unique_ptr<Handle<l,T,ops...> > hndl_from_bytes(mutils::DeserializationManager* dm, char const * __v)
 	{
 		//using Handle = Handle<l,ha,T,ops...>;
 		assert(__v);
@@ -29,11 +29,11 @@ namespace myria{
 			typedef mutils::fold_types<mutils::Pointerize,stores,std::tuple<> > ptr_stores;
 			ptr_stores lst;
 			auto ret = 
-				mutils::fold(lst,[&](const auto &e, const std::shared_ptr<Handle<l,ha,T,ops...> > &acc) -> std::shared_ptr<Handle<l,ha,T,ops...> > {
+				mutils::fold(lst,[&](const auto &e, const std::shared_ptr<Handle<l,T,ops...> > &acc) -> std::shared_ptr<Handle<l,T,ops...> > {
 						using DS = std::decay_t<decltype(*e)>;
 						if (read_id == DS::id()) {
 							assert(!acc);
-							auto fold_ret = DS::template from_bytes<ha,T>(dm,v);
+							auto fold_ret = DS::template from_bytes<T>(dm,v);
 							static_assert(std::is_same<typename decltype(fold_ret)::element_type::stored_type,T>::value,"Error: from_bytes error");
 							assert(fold_ret);
 							return release_delete<l>(fold_ret.release());
@@ -44,10 +44,10 @@ namespace myria{
 								<< read_id << std::endl;
 			assert(ret);
 			assert(ret.unique());
-			std::get_deleter<release_deleter<Handle<l,ha,T,ops...> > >(ret)->release();
-			return std::unique_ptr<Handle<l,ha,T,ops...> >{ret.get()};
+			std::get_deleter<release_deleter<Handle<l,T,ops...> > >(ret)->release();
+			return std::unique_ptr<Handle<l,T,ops...> >{ret.get()};
 		}
-		else return std::make_unique<Handle<l,ha,T,ops...>>();
+		else return std::make_unique<Handle<l,T,ops...>>();
 	}
 
 

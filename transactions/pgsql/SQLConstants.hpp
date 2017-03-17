@@ -6,6 +6,8 @@
 namespace myria {
 	namespace pgsql {
 
+		enum class Level {strong,causal};
+
 		namespace conn_space = mutils::batched_connection;
 		
 		constexpr const int strong_sql_port = 9876;

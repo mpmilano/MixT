@@ -5,42 +5,45 @@
 
 namespace myria{
 
-	template<Level l>
-	class DataStore;
+	template<typename l, bool requires_tracking>
+	class _DataStore;
 
-	template<>
-	class DataStore<Level::strong> : public GDataStore{
+	template<typename l>
+	class _DataStore<l, false> : public GDataStore{
 	public:
 
 		//we'll delete the TransactionContext
 		//when the transaction is over.  Do any cleanup you need to do then.
 		//the parameters to this function should just be passed directly to TransactionContext's constructor.
-        virtual std::unique_ptr<mtl::StoreContext<Level::strong> > begin_transaction(std::unique_ptr<mutils::abs_StructBuilder>&
+		virtual std::unique_ptr<mtl::StoreContext<l> > begin_transaction(std::unique_ptr<mutils::abs_StructBuilder>&
 #ifndef NDEBUG
 										     , const std::string& why
 #endif
 										     ) = 0;
-	  DataStore(){}
-        virtual ~DataStore() {}
+	  _DataStore(): GDataStore(){}
+		virtual ~_DataStore(l::description) = default;
 	
 	};
 
-	template<>
-	class DataStore<Level::causal> : public GDataStore{
+	template<typename l>
+	class _DataStore<l, true> : public GDataStore{
 	public:
 
 		//we'll delete the TransactionContext
 		//when the transaction is over.  Do any cleanup you need to do then.
 		//the parameters to this function should just be passed directly to TransactionContext's constructor.
-        virtual std::unique_ptr<mtl::StoreContext<Level::causal> > begin_transaction(std::unique_ptr<mutils::abs_StructBuilder>&
+        virtual std::unique_ptr<mtl::StoreContext<l> > begin_transaction(std::unique_ptr<mutils::abs_StructBuilder>&
 #ifndef NDEBUG
 										     , const std::string& why
 #endif
 										     ) = 0;
-	  DataStore(){}
+	  _DataStore() : GDataStore(){}
 
 		virtual const std::array<int, NUM_CAUSAL_GROUPS>& local_time() const = 0;
-        virtual ~DataStore() {}
+		virtual ~_DataStore(l::description) = default;
 	
 	};
+
+	template<typename l>
+	using DataStore = _DataStore<l,l::requires_causal_tracking::value>;
 }
