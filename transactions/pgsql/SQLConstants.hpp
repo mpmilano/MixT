@@ -1,5 +1,6 @@
 #pragma once
 #include "mutils.hpp"
+#include "batched_connection.hpp"
 #include "test_utils.hpp"
 #include "cexprutils.hpp"
 #include <iostream>
