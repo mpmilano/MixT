@@ -5,7 +5,7 @@
 #include <vector>
 #include <cassert>
 #include <iostream>
-#include "utils.hpp"
+#include "mtlutils.hpp"
 #include "top.hpp"
 #include "shim.hpp"
 

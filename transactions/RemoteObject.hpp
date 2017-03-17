@@ -2,8 +2,8 @@
 
 #include "type_utils.hpp"
 #include "tuple_extras.hpp"
-#include "Store.hpp"
 #include "SerializationSupport.hpp"
+#include "DataStore.hpp"
 
 namespace myria{
   namespace tracker {
@@ -13,8 +13,8 @@ namespace myria{
 
   struct GeneralRemoteObject{
     const int id = mutils::gensym();
-    virtual const DataStore<level>& store() const = 0;
-    virtual DataStore<level>& store() = 0;
+    virtual const GDataStore& store() const = 0;
+    virtual GDataStore& store() = 0;
     virtual Name name() const = 0;
     virtual const std::array<int,NUM_CAUSAL_GROUPS>& timestamp() const = 0;
     virtual ~GeneralRemoteObject() = default;
@@ -31,6 +31,7 @@ namespace myria{
   class RemoteObject : public TypedRemoteObject<T>
   {
     //extend this plz!
+		using level = l;
     
     virtual bool ro_isValid(mtl::StoreContext<l>*) const = 0;
     virtual std::shared_ptr<const T> get(mtl::StoreContext<l>*, tracker::Tracker*/* = nullptr*/, tracker::TrackingContext*/* = nullptr*/) = 0;
@@ -40,6 +41,10 @@ namespace myria{
     RemoteObject(const RemoteObject&) = delete;
     
   public:
+
+		virtual const DataStore<level>& store() const = 0;
+    virtual DataStore<level>& store() = 0;
+		
     RemoteObject(){}
     virtual ~RemoteObject() = default;
     template<typename l2, typename T2,typename...>

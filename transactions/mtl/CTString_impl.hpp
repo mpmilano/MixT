@@ -3,7 +3,7 @@
 #include "CTString_decl.hpp"
 #include "CTString_split.hpp"
 #include "CTString_strip_paren_group.hpp"
-#include "utils.hpp"
+#include "mtlutils.hpp"
 
 namespace mutils {
 
@@ -358,15 +358,6 @@ template <char... str>
 constexpr String<str...> const* const String<str...>::p;
 template <char... str>
 constexpr const as_value<String<str...>> String<str...>::v;
-
-template <typename>
-struct is_string : public std::false_type
-{
-};
-template <char... str>
-struct is_string<String<str...>> : public std::true_type
-{
-};
 
 template <char... str>
 std::ostream& operator<<(std::ostream& o, const String<str...>&)

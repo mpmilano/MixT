@@ -1,9 +1,10 @@
 #pragma once
 #include "TrackingContext.hpp"
+#include <memory>
 
 namespace myria {
   struct GDataStore;
-  template<Level l, bool>
+  template<typename, bool>
   class _DataStore;
 
 	namespace tracker{
@@ -25,12 +26,13 @@ namespace myria {
     };
 
 		struct GTransactionContext {
-			Tracker &trk;
-			std::unique_ptr<tracker::TrackingContext> trkc;
+			tracker::Tracker &trk;
+			std::unique_ptr<tracker::TrackingContext> trackingContext;
 			auto& tracker(){ return trk;}
 			virtual ~GTransactionContext() = default;
-			GTransactionContext(Tracker& t)
-				:trk(t),trkc(t.generateContext()){}
+			void commitContext();
+			void abortContext();
+			GTransactionContext(tracker::Tracker& t);
 		};
 
 		template<typename label>

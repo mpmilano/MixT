@@ -23,6 +23,9 @@ namespace myria {
 
 	template<typename l, typename T,typename... Ops>
 	struct Handle;
+
+	template<typename T>
+  struct LabelFreeHandle;
 	namespace tracker {
 
 		class CooperativeCache;
@@ -59,7 +62,7 @@ namespace myria {
 			using Clock = std::array<int,NUM_CAUSAL_GROUPS>;
 		  
 		  struct GenericTrackerDS {
-		    using newTomb_t = std::unique_ptr<LabelFreeHandle<Tombstone> > (*) (tracker::Tracker &trk, mtl::TransactionContext& ctx, GDataStore&, Name, const Tombstone&);
+		    using newTomb_t = std::unique_ptr<LabelFreeHandle<Tombstone> > (*) (tracker::Tracker &trk, mtl::GTransactionContext& ctx, GDataStore&, Name, const Tombstone&);
 		    newTomb_t newTomb;
 		    using exists_t = bool (*) (GDataStore&, Name);
 		    exists_t exists;
@@ -105,9 +108,9 @@ namespace myria {
 			bool strongRegistered() const;
 			bool causalRegistered() const;
 
-			void registerStrongStore(GDataStore<Level::strong>,
+			void registerStrongStore(GDataStore,
 							   std::unique_ptr<GenericTrackerDS>);
-			void registerCausalStore(DataStore<Level::causal>,
+			void registerCausalStore(GDataStore,
 							   std::unique_ptr<GenericTrackerDS>);
 
 			template<typename DS>
@@ -130,9 +133,9 @@ namespace myria {
 			   guaranteed up-to-date.
 			 */
 
-			void onStrongWrite(mtl::TransactionContext&, GDataStore&, Name name, Tombstone*);
-			void onStrongWrite(mtl::TransactionContext&, GDataStore&, Name name, Clock*);
-			void onStrongWrite(mtl::TransactionContext&, GDataStore&, Name name, void*);
+			void onStrongWrite(mtl::GTransactionContext&, GDataStore&, Name name, Tombstone*);
+			void onStrongWrite(mtl::GTransactionContext&, GDataStore&, Name name, Clock*);
+			void onStrongWrite(mtl::GTransactionContext&, GDataStore&, Name name, void*);
 			
 
 			void onCausalWrite(GDataStore&, Name name, const Clock &version, Tombstone*);

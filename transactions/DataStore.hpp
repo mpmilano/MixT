@@ -20,8 +20,8 @@ namespace myria{
 			const std::string& why
 #endif
 			) = 0;
-	  _DataStore(): GDataStore(){}
-		virtual ~_DataStore(l::description) = default;
+	  _DataStore(): GDataStore(l::description){}
+		virtual ~_DataStore() = default;
 	
 	};
 
@@ -37,10 +37,10 @@ namespace myria{
 					const std::string& why
 #endif
 										     ) = 0;
-	  _DataStore() : GDataStore(){}
+		_DataStore(): GDataStore(l::description){}
 
 		virtual const std::array<int, NUM_CAUSAL_GROUPS>& local_time() const = 0;
-		virtual ~_DataStore(l::description) = default;
+		virtual ~_DataStore() = default;
 	
 	};
 

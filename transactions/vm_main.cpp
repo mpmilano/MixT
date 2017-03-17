@@ -17,7 +17,7 @@
 #include "ObjectBuilder.hpp"
 #include "launch_test.hpp"
 //*/
-#include "Transaction_macros.hpp"
+#include "transaction_macros.hpp"
 
 using namespace std;
 using namespace chrono;
@@ -99,6 +99,7 @@ namespace synth_test {
 	template<typename Hndl>
 	void perform_increment(unique_ptr<VMObjectLog>& log_messages,
 										 Tracker &trk, Hndl hndl){
+		/*
 		TRANSACTION(log_messages,trk,hndl,
 					mtl_ignore(do_op<RegisteredOperations::Increment>(hndl))
 			)//*/
@@ -109,10 +110,11 @@ namespace synth_test {
 	template<typename Hndl>
 	void perform_read(unique_ptr<VMObjectLog>& log_messages,
 							 Tracker &trk, Hndl hndl){
+		/*
 		TRANSACTION(log_messages,
 					trk,hndl,
 					let_remote(tmp) = hndl IN(mtl_ignore(tmp))
-			);
+					);//*/
 
 #ifndef NDEBUG
 		struct tmptest{ int a;};

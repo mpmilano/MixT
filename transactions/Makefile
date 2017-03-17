@@ -3,7 +3,7 @@ IP_quad=`ifconfig | sed s/broadcast.*//g | tr " " "\n" | grep 128.84 | rev | sed
 storeList='pgsql::SQLStore<Level::strong>, pgsql::SQLStore<Level::causal>'
 CPPFLAGS= -I$(PWD) -I$(PWD)/mtl -I$(PWD)/myria-utils -I$(PWD)/mutils-networking -I$(PWD)/mutils -I$(PWD)/mutils-containers -I$(PWD)/mutils-serialization -I$(PWD)/mutils-tasks -I$(PWD)/testing -I$(PWD)/pgsql -I$(PWD)/tracker -g -stdlib=libc++ --std=c++1z -Wall -DNUM_CAUSAL_GROUPS="4" -DSTORE_LIST=$(storeList) -DMY_IP=\"$(MY_IP)\" -DMAX_THREADS=$(MAX_THREADS) -DIP_QUAD=$(IP_quad) -DSTRONG_REMOTE_IP=\"$(STRONG_REMOTE_IP)\" -DCAUSAL_GROUP=$(causalGroup) -DCAUSAL_REMOTE_IP_1=\"$(CAUSAL_REMOTE_IP_1)\" -DCAUSAL_REMOTE_IP_2=\"$(CAUSAL_REMOTE_IP_2)\" $(extra_macro_defs) -ferror-limit=1 -Wall -Werror -Wextra -DNUM_CLIENTS=$(num_clients) -DINCREASE_BY=$(increase_by) -DINCREASE_DELAY=$(increase_delay) -DTEST_STOP_TIME=$(test_stop_time)
 LDFLAGS= -stdlib=libc++ --std=c++1z -lm -pthread
-object_files=FutureFreePool.o GlobalPool.o CooperativeCache.o Ends.o utils.o test_utils.o Basics.o Tracker.o Ostreams.o SerializationSupport.o  IfBuilder.o  WhileBuilder.o ConExpr.o SQLStore.o GSQLObject.o SQLConnection.o SQLTransaction.o SQL_internal_utils.o TempBuilder.o TransactionContext.o ServerSocket.o Socket.o ClockManager.o abiutils.o batched_connection_common.o batched_connection_client.o batched_connection_server.o eventfd.o epoll.o dual_connection.o
+object_files=FutureFreePool.o GlobalPool.o CooperativeCache.o Ends.o utils.o test_utils.o Basics.o Tracker.o Ostreams.o SerializationSupport.o SQLStore.o GSQLObject.o SQLConnection.o SQLTransaction.o SQL_internal_utils.o TransactionContext.o ServerSocket.o Socket.o ClockManager.o abiutils.o batched_connection_common.o batched_connection_client.o batched_connection_server.o eventfd.o epoll.o dual_connection.o
 
 all: $(object_files) list_example.o
 	@clang++ $(object_files) list_example.o -o test $(LDFLAGS)
@@ -100,14 +100,6 @@ SQLTransaction.o:
 	@clang++ -c */SQLTransaction.cpp -DNUM_CAUSAL_MASTERS="2" -DCAUSAL_GROUP=$(causalGroup) $(CPPFLAGS)
 SQL_internal_utils.o:
 	@clang++ -c */SQL_internal_utils.cpp -DNUM_CAUSAL_MASTERS="2" -DCAUSAL_GROUP=$(causalGroup) $(CPPFLAGS)
-TempBuilder.o:
-	@clang++ -c */TempBuilder.cpp $(CPPFLAGS)
-ConExpr.o:
-	@clang++ -c */ConExpr.cpp $(CPPFLAGS)
-WhileBuilder.o:
-	@clang++ -c */WhileBuilder.cpp $(CPPFLAGS)
-IfBuilder.o:
-	@clang++ -c */IfBuilder.cpp $(CPPFLAGS)
 CooperativeCache.o:
 	@clang++ -c */CooperativeCache.cpp $(CPPFLAGS)
 FutureFreePool.o:
@@ -138,12 +130,7 @@ run: test
 debug: test
 	PGHOST='127.0.0.1' PGPORT='5432' PGDATABASE='DataStore' PGUSER='research' PGPASSWORD='swimsand'  gdb ./test
 
-testing: utils.o Tracker.o SerializationSupport.o WhileBuilder.o ConExpr.o SQLStore.o TempBuilder.o
-	export TRANS_DIR=$(TRANS_DIR); $(MAKE) -C tests
-
-sql_testing: utils.o Tracker.o SerializationSupport.o WhileBuilder.o ConExpr.o SQLStore.o TempBuilder.o
-	export TRANS_DIR=$(TRANS_DIR); cd tests && $(MAKE) sql
 
 
 clean:
-	rm *.o; rm chat; rm test; rm stress1; rm stress2; rm stress3; rm vm
+	rm *.o; rm vm

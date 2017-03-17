@@ -14,10 +14,10 @@ namespace myria { namespace tracker {
 		  using existingClock_t = typename Tracker::GenericTrackerDS::existingClock_t;
 		  using existingTomb_t = typename Tracker::GenericTrackerDS::existingTomb_t;
 		  using exists_t = typename Tracker::GenericTrackerDS::exists_t;
-		  static const newTomb_t newTomb = [](tracker::Tracker &trk, mtl::TransactionContext& ctx, GDataStore &_ds, Name name, auto &e){
+		  static const newTomb_t newTomb = [](tracker::Tracker &trk, mtl::GTransactionContext& ctx, GDataStore &_ds, Name name, auto &e){
 		    auto &ds = dynamic_cast<DS&>(_ds);
 		    return std::make_unique<LabelFreeHandle<Tracker::Tombstone> >
-		    (new Handle<l,Tracker::Tombstone> (ds.template newObject<HandleAccess::all>(trk,&ctx, name,e)));
+		    (new Handle<l,Tracker::Tombstone> (ds.template newObject(trk,dynamic_cast<SingleTransactionContext<typename DS::label>* >(&ctx), name,e)));
 		  };
 		  static const exists_t exists = [](GDataStore &_ds, Name name){
 		    auto &ds = dynamic_cast<DS&>(_ds);

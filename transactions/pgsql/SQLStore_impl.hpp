@@ -1,7 +1,6 @@
 #pragma once
 
 #include "DataStore.hpp"
-#include "Transaction.hpp"
 #include "cexprutils.hpp"
 #include "SQLConnection.hpp"
 #include "SQLConstants.hpp"

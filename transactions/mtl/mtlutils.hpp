@@ -1,4 +1,5 @@
 #pragma once
+#include "CTString.hpp"
 
 #define DECT(x...) std::decay_t<decltype(x)>
 

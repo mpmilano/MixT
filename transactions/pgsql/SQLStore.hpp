@@ -11,6 +11,9 @@ namespace myria { namespace pgsql {
 		template<typename l>
 		class SQLStore : public SQLStore_impl, public DataStore<l> {
 		public:
+
+			using level = l;
+			using label = l;
 			
 			virtual ~SQLStore() {}
 
