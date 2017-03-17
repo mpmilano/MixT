@@ -34,12 +34,12 @@ namespace myria{ namespace pgsql {
 		}
 		
 		SQLStore_impl::SQLStore_impl(SQLConnectionPool<Label<causal> >& pool, GDataStore &store /*int instanceID,*/ )
-			:_store(store),clock{{0,0,0,0}},level(Level::causal),default_connection{pool.acquire()} {
+			:_store(store),level(Level::causal),clock{{0,0,0,0}},default_connection{pool.acquire()} {
 				init_common();
 			}
 
 		SQLStore_impl::SQLStore_impl(SQLConnectionPool<Label<strong>>& pool, GDataStore &store /*int instanceID,*/ )
-			:_store(store),clock{{0,0,0,0}},level(Level::strong),default_connection{pool.acquire()} {
+			:_store(store),level(Level::strong),clock{{0,0,0,0}},default_connection{pool.acquire()} {
 				init_common();
 			}
 

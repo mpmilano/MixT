@@ -76,13 +76,13 @@ namespace myria { namespace tracker {
     void Tracker::afterStrongRead(mtl::GStoreContext&, TrackingContext&, 
 				  GDataStore&, Name , void*){}
 
-    bool Tracker::waitForCausalRead(TrackingContext&, GDataStore&, Name, const Tracker::Clock& version, Tracker::Tombstone*){return true;}
-    bool Tracker::waitForCausalRead(TrackingContext&, GDataStore&, Name name, const Tracker::Clock& version, Tracker::Clock*){return true;}
-    bool Tracker::waitForCausalRead(TrackingContext&, GDataStore&, Name name, const Tracker::Clock& version, void*){return true;}
+    bool Tracker::waitForCausalRead(TrackingContext&, GDataStore&, Name, const Tracker::Clock& , Tracker::Tombstone*){return true;}
+    bool Tracker::waitForCausalRead(TrackingContext&, GDataStore&, Name , const Tracker::Clock& , Tracker::Clock*){return true;}
+    bool Tracker::waitForCausalRead(TrackingContext&, GDataStore&, Name , const Tracker::Clock& , void*){return true;}
     
-    void Tracker::afterCausalRead(TrackingContext&, GDataStore&, Name name, const Tracker::Clock& version, const std::vector<char> &data, Tracker::Tombstone*){}
-    void Tracker::afterCausalRead(TrackingContext&, GDataStore&, Name name, const Tracker::Clock& version, const std::vector<char> &data, Tracker::Clock*){}
-    void Tracker::afterCausalRead(TrackingContext&, GDataStore&, Name name, const Tracker::Clock& version, const std::vector<char> &data, void*){}
+    void Tracker::afterCausalRead(TrackingContext&, GDataStore&, Name , const Tracker::Clock& , const std::vector<char> &, Tracker::Tombstone*){}
+    void Tracker::afterCausalRead(TrackingContext&, GDataStore&, Name , const Tracker::Clock& , const std::vector<char> &, Tracker::Clock*){}
+    void Tracker::afterCausalRead(TrackingContext&, GDataStore&, Name , const Tracker::Clock& , const std::vector<char> &, void*){}
 
     void Tracker::assert_nonempty_tracking() const {}
     const CooperativeCache& Tracker::getcache() const {assert(false);struct dead_code{}; throw dead_code{};}

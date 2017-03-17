@@ -193,7 +193,7 @@ struct Label<bottom>
   }
 
   template <typename... T2>
-  constexpr static auto min_with(const T2&... t2)
+  constexpr static auto min_with(const T2&... )
   {
     return Label{};
   }

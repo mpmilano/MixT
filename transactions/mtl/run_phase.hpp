@@ -22,7 +22,7 @@ auto _run_phase(typename AST<l>::template Expression<y, typename AST<l>::templat
 }
 
 template <typename l, typename TranCtx, typename store, int i>
-auto _run_phase(typename AST<l>::template Expression<int, typename AST<l>::template Constant<i>>*, TranCtx& ctx, store& s)
+auto _run_phase(typename AST<l>::template Expression<int, typename AST<l>::template Constant<i>>*, TranCtx& , store& )
 {
   return i;
 }
@@ -106,6 +106,7 @@ auto _run_phase(typename AST<l>::template Binding<Label<label>, Yield, String<na
 {
   constexpr Expr* expr{ nullptr };
   constexpr String<name...> varname{};
+	(void)varname;
   auto expr_result = run_phase<l>(expr, ctx, s);
   s.get(String<name...>{}).bind(expr_result);
 }
@@ -153,7 +154,7 @@ auto _run_phase(typename AST<l>::template Statement<typename AST<l>::template As
 }
 
 template <typename l, typename TranCtx, typename store, char... var>
-auto _run_phase(typename AST<l>::template Statement<typename AST<l>::template IncrementOccurance<String<var...>>>*, TranCtx& ctx, store& s)
+auto _run_phase(typename AST<l>::template Statement<typename AST<l>::template IncrementOccurance<String<var...>>>*, TranCtx& , store& s)
 {
   s.get(String<var...>{}).increment();
 }
@@ -198,7 +199,7 @@ auto _run_phase(typename AST<l>::template Statement<typename AST<l>::template Fo
 }
 
 template <typename l, typename TranCtx, typename store>
-auto _run_phase(typename AST<l>::template Statement<typename AST<l>::template Sequence<>>*, TranCtx& ctx, store& s)
+auto _run_phase(typename AST<l>::template Statement<typename AST<l>::template Sequence<>>*, TranCtx& , store& )
 {
 }
 

@@ -13,7 +13,6 @@ using namespace mutils;
 template <char... _str>
 constexpr auto parse_let(String<'l', 'e', 't', ' ', _str...>)
 {
-  using str = String<'l', 'e', 't', ' ', _str...>;
   constexpr auto binding = String<_str...>::split(zero{}, in_s{}).trim_ends();
   constexpr auto body = String<_str...>::split(one{}, in_s{}).trim_ends().template strip_paren_group<'{', '}'>(zero{}).trim_ends();
   return parse_phase::Let<std::decay_t<decltype(parse_binding(binding))>, std::decay_t<decltype(parse_statement(body))>>{};
@@ -22,7 +21,6 @@ constexpr auto parse_let(String<'l', 'e', 't', ' ', _str...>)
 template <char... _str>
 constexpr auto parse_let_remote(String<'l', 'e', 't', ' ', 'r', 'e', 'm', 'o', 't', 'e', ' ', _str...>)
 {
-  using str = String<'l', 'e', 't', ' ', 'r', 'e', 'm', 'o', 't', 'e', ' ', _str...>;
   constexpr auto binding = String<_str...>::split(zero{}, in_s{}).trim_ends();
   constexpr auto body = String<_str...>::split(one{}, in_s{}).trim_ends().template strip_paren_group<'{', '}'>(zero{}).trim_ends();
   return parse_phase::LetRemote<std::decay_t<decltype(parse_binding(binding))>, std::decay_t<decltype(parse_statement(body))>>{};
@@ -31,7 +29,6 @@ constexpr auto parse_let_remote(String<'l', 'e', 't', ' ', 'r', 'e', 'm', 'o', '
 template <char... _str>
 constexpr auto parse_if(String<'i', 'f', _str...>)
 {
-  using str = String<'i', 'f', _str...>;
   static_assert(String<_str...>::trim_ends().string[0] == '(');
   constexpr auto condition_s = String<_str...>::trim_ends().template strip_paren_group<'(', ')'>(zero{}).trim_ends();
   constexpr auto remainder_s = String<_str...>::trim_ends().template strip_paren_group<'(', ')'>(one{}).trim_ends();

@@ -311,13 +311,13 @@ constexpr auto _desugar_while(const Expression<e> a)
 }
 
 template <char seqnum, char depth, typename b, typename body>
-constexpr auto _desugar_while(const Statement<Let<b, body>> a)
+constexpr auto _desugar_while(const Statement<Let<b, body>> )
 {
   return Statement<Let<b, DECT(desugar_while<seqnum, depth + 1>(body{}))>>{};
 }
 
 template <char seqnum, char depth, typename b, typename body>
-constexpr auto _desugar_while(const Statement<LetRemote<b, body>> a)
+constexpr auto _desugar_while(const Statement<LetRemote<b, body>> )
 {
   return Statement<LetRemote<b, DECT(desugar_while<seqnum, depth + 1>(body{}))>>{};
 }

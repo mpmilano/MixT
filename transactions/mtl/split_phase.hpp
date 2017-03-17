@@ -289,7 +289,7 @@ labels_in_descending_order(Label<lbl1>, const Labels&... l)
 }
 
 template <typename AST, typename oldinherit>
-constexpr auto _split_computation(AST a, mutils::typelist<> l)
+constexpr auto _split_computation(AST , mutils::typelist<> )
 {
   return runnable_transaction::pretransaction<>{};
 }

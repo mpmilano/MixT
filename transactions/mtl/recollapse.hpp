@@ -27,7 +27,7 @@ constexpr bool _contains_anorm(typename AST<l>::template Expression<y, typename 
 
 template <typename l, typename cand, int i>
 constexpr bool
-_contains_anorm(typename AST<l>::template Expression<int, typename AST<l>::template Constant<i>> a)
+_contains_anorm(typename AST<l>::template Expression<int, typename AST<l>::template Constant<i>> )
 {
   return false;
 }

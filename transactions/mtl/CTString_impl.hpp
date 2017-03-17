@@ -187,7 +187,7 @@ constexpr bool String<str...>::ends_with(String<str2...>)
     return true;
   else {
     int j = 0;
-    for (int i = string_length - limit; i < string_length; (++i, ++j))
+    for (unsigned int i = string_length - limit; i < string_length; (++i, ++j))
       if (String<str2...>::string[j] != string[i])
         return false;
   }
@@ -200,7 +200,7 @@ constexpr bool String<str...>::contains(String<str2...>)
 {
   constexpr auto* my_str = String<str...>::string;
   constexpr auto* other_str = String<str2...>::string;
-  for (int index = 0; index < sizeof...(str); ++index) {
+  for (unsigned int index = 0; index < sizeof...(str); ++index) {
     if (my_str[index] == other_str[0] && CTString::begins_with(my_str + index, other_str))
       return true;
   }
@@ -216,7 +216,7 @@ constexpr bool String<str...>::contains_outside_parens(String<str2...>)
   static_assert(String<str2...>::string[0] != '(' && String<str2...>::string[0] != '{');
   constexpr auto* my_str = String<str...>::string;
   constexpr auto* other_str = String<str2...>::string;
-  for (int index = 0; index < sizeof...(str); ++index) {
+  for (unsigned int index = 0; index < sizeof...(str); ++index) {
     if (my_str[index] == '(')
       ++paren_count;
     if (my_str[index] == '{')
@@ -330,7 +330,7 @@ template <char... str>
 constexpr bool
 String<str...>::is_number()
 {
-  for (int i = 0; i < string_length; ++i) {
+  for (unsigned int i = 0; i < string_length; ++i) {
     if (!isDigit(string[i]))
       return false;
   }
@@ -343,7 +343,7 @@ String<str...>::parseInt()
 {
   int multiplier = exp(10, string_length - 1);
   int accum = 0;
-  for (int i = 0; i < string_length; ++i) {
+  for (unsigned int i = 0; i < string_length; ++i) {
     accum += toInt(string[i]) * multiplier;
     multiplier /= 10;
   }

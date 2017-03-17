@@ -2,15 +2,19 @@
 
 namespace mutils {
 namespace CTString {
+
+	
+	template<typename SoFar, typename Remains>
+	struct then_case_str{
+		using first = SoFar;
+    using second = Remains;
+	};
+
+	
 template <typename SoFar, typename SplitOn>
 static constexpr auto split(String<>)
 {
-  struct pair
-  {
-    using first = SoFar;
-    using second = String<>;
-  };
-  return pair{};
+  return then_case_str<SoFar,String<> >{};
 }
 
 template <typename SoFar, typename SplitOn, typename Remains>
@@ -47,17 +51,13 @@ static constexpr auto split(String<'{', str2...>)
 {
   return split<SoFar, SplitOn, '{', '}', str2...>(String<'{', str2...>{});
 }
-
+	
 template <typename SoFar, typename SplitOn, typename Remains>
 static constexpr auto split(Remains)
 {
   static_assert(SoFar::string[(SoFar::string_length == 0 ? 0 : SoFar::string_length - 1)] != '(' &&
                 SoFar::string[(SoFar::string_length == 0 ? 0 : SoFar::string_length - 1)] != '{');
-  struct then_case
-  {
-    using first = SoFar;
-    using second = Remains;
-  };
+	using then_case = then_case_str<SoFar,Remains>;
   using split_case_sofar = std::decay_t<decltype(SoFar::append(Remains::first_char()))>;
   return std::conditional_t<
     /*if */ Remains::begins_with(SplitOn{}),

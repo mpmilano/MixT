@@ -61,7 +61,6 @@ constexpr auto _typecheck(old_env, parse_phase::Statement<parse_phase::Let<parse
   using next_binding = Binding<Label<temp_label<seqnum, depth>>, typename binding_expr::yield, Name, binding_expr>;
   using new_env = DECT(enhance_env<type_location::local>(old_env{}, next_binding{}));
   using next_body = DECT(typecheck<seqnum + 1, depth + 1>(new_env{}, Body{}));
-  using label = typename next_binding::label;
   return Statement<resolved_label_min<typename binding_expr::label, typename old_env::pc_label>, Let<next_binding, next_body>>{};
 }
 
@@ -124,7 +123,7 @@ constexpr auto _typecheck(type_environment<pc_label, Env...>, parse_phase::State
 }
 
 template <int seqnum, int depth, typename Env>
-constexpr auto _typecheck(parse_phase::Sequence<> a)
+constexpr auto _typecheck(parse_phase::Sequence<> )
 {
   return Sequence<>{};
 }

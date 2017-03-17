@@ -75,6 +75,7 @@ template <typename l, typename L, typename R>
 void
 print_ast(std::ostream& o, const typename AST<l>::template Statement<typename AST<l>::template Assignment<L, R>>&, const std::string& tab)
 {
+	o << tab;
   print_ast<l>(o, L{});
   o << " = ";
   print_ast<l>(o, R{});
@@ -84,7 +85,7 @@ template <typename l, char... var>
 void
 print_ast(std::ostream& o, const typename AST<l>::template Statement<typename AST<l>::template IncrementOccurance<String<var...>>>&, const std::string& tab)
 {
-  o << "use(";
+  o << tab << "use(";
   print_varname(o, String<var...>{});
   o << ")";
 }
