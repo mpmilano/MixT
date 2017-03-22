@@ -16,14 +16,14 @@ namespace myria { namespace pgsql {
 				bool aborted_or_committed{false};
 
 #ifndef NDEBUG
-				std::ofstream &log_file;
+				std::ostream &log_file;
 
-				static void log_receive(std::ofstream &log_file, const std::string& s){
+				static void log_receive(std::ostream &log_file, const std::string& s){
 					log_file << "received: " << s << std::endl;
 					log_file.flush();
 				}
 				
-				static void log_send(std::ofstream &log_file, const std::string& s){
+				static void log_send(std::ostream &log_file, const std::string& s){
 					log_file << "sent: " << s << std::endl;
 					log_file.flush();
 					}
@@ -32,7 +32,7 @@ namespace myria { namespace pgsql {
 #define log_send(...) ;
 #endif
 
-				LocalSQLTransaction_super(LocalSQLConnection_super &conn whendebug(, std::ofstream& log_file));
+				LocalSQLTransaction_super(LocalSQLConnection_super &conn whendebug(, std::ostream& log_file));
 
 				virtual ~LocalSQLTransaction_super(){
 					assert(aborted_or_committed);
@@ -67,13 +67,13 @@ namespace myria { namespace pgsql {
 				
 				virtual void remove(Name id, mutils::connection& socket) = 0;
 
-				static void indicate_serialization_failure(whendebug(std::ofstream& log_file, )  mutils::connection& socket) {
+				static void indicate_serialization_failure(whendebug(std::ostream& log_file, )  mutils::connection& socket) {
 					char abort{1};
 					log_send(log_file,"serialization failure");
 					socket.send(abort);
 				}
 				
-				static void all_fine(whendebug(std::ofstream& log_file, ) mutils::connection& socket) {
+				static void all_fine(whendebug(std::ostream& log_file, ) mutils::connection& socket) {
 					char ok{0};
 					whendebug(log_send(log_file,"all fine"));
 					socket.send(ok);
@@ -138,7 +138,7 @@ namespace myria { namespace pgsql {
 				using SQLConn = LocalSQLConnection<l>;
 				std::unique_ptr<SQLConn > conn;
 				
-				LocalSQLTransaction(std::unique_ptr<LocalSQLConnection<l> > conn whendebug(, std::ofstream& log_file))
+				LocalSQLTransaction(std::unique_ptr<LocalSQLConnection<l> > conn whendebug(, std::ostream& log_file))
 				:LocalSQLTransaction_super(*conn whendebug (,log_file)),
 				 conn(std::move(conn)){}
 				
@@ -182,7 +182,7 @@ namespace myria { namespace pgsql {
 				using SQLConn = LocalSQLConnection<l>;
 				std::unique_ptr<SQLConn > conn;
 
-				LocalSQLTransaction(std::unique_ptr<LocalSQLConnection<l> > conn whendebug(, std::ofstream& log_file))
+				LocalSQLTransaction(std::unique_ptr<LocalSQLConnection<l> > conn whendebug(, std::ostream& log_file))
 				:LocalSQLTransaction_super(*conn whendebug(, log_file)),
 				 conn(std::move(conn)){}
 				

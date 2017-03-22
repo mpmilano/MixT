@@ -41,6 +41,7 @@ namespace myria {
 					select1, select2, Updates1, Updates2, Increment, Insert1, Insert2,
 					Sel1i,Sel1b,udc1,udc2,udc3,udc4,udc5,udc6,udc7,udc8,
 					ic1,ic2,ic3,ic4,ic5,ic6,ic7,ic8,initci,initcb,
+					usertest1,usertest2,usertest3,usertest4,
 					MAX
 					};
 		}

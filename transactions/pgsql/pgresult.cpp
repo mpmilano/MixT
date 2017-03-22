@@ -55,5 +55,8 @@ namespace myria { namespace pgsql {
 					}
 					throw SQLFailure{conn,command,PQresultErrorMessage(res)};
 				}
+				else {
+					assert(false && "odd case");
+				}
 			}
 		}}}

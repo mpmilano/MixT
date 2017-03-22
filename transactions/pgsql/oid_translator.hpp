@@ -28,10 +28,13 @@ struct PGSQLinfo<long int> {
 	}
 };
 
+
+
+/*
 template<>
 struct PGSQLinfo<int> {
 	static_assert(sizeof(int) >= 4,"Wow postgres is irritating");
-	/*integer, but actually int4*/
+	//integer, but actually int4
 	static constexpr Oid value = 23;
 	static const char* pg_data(std::vector<char>& scratch_buf, const int& li) {
 		auto argh = htobe32(li);
@@ -46,7 +49,7 @@ struct PGSQLinfo<int> {
 		return sizeof(int);
 	}
 };
-
+//*/
 template<>
 struct PGSQLinfo<bool> {
 	static_assert(sizeof(bool)== 1,"Wow postgres is irritating");

@@ -1,7 +1,7 @@
 TRANS_DIR= `pwd`/
 IP_quad=`ifconfig | sed s/broadcast.*//g | tr " " "\n" | grep 128.84 | rev | sed s/'\..*'//g | rev`
 storeList='pgsql::SQLStore<Level::strong>, pgsql::SQLStore<Level::causal>'
-CPPFLAGS= -I$(PWD) -I$(PWD)/../ -I$(PWD)/../mtl -I$(PWD)/..//myria-utils -I$(PWD)/../mutils-networking -I$(PWD)/../mutils -I$(PWD)/../mutils-containers -I$(PWD)/../mutils-serialization -I$(PWD)/../mutils-tasks -I$(PWD)/../testing -I$(PWD)/pgsql -I$(PWD)/../tracker -g -stdlib=libc++ --std=c++1z -Wall -DNUM_CAUSAL_GROUPS="4" -DCAUSAL_GROUP=$(causalGroup) -DSTRONG_REMOTE_IP=\"$(STRONG_REMOTE_IP)\" -DCAUSAL_REMOTE_IP_1=\"$(CAUSAL_REMOTE_IP_1)\" -DCAUSAL_REMOTE_IP_2=\"$(CAUSAL_REMOTE_IP_2)\" -DSTORE_LIST=$(storeList) -DMY_IP=\"$(MY_IP)\" -DMAX_THREADS=$(MAX_THREADS) -ferror-limit=1 -Wall -Werror -Wextra -DNUM_CAUSAL_MASTERS="2" -DNUM_CLIENTS=$(num_clients) -DINCREASE_BY=$(increase_by) -DINCREASE_DELAY=$(increase_delay) -DTEST_STOP_TIME=$(test_stop_time) -DNDEBUG
+CPPFLAGS= -I$(PWD) -I$(PWD)/../ -I$(PWD)/../mtl -I$(PWD)/..//myria-utils -I$(PWD)/../mutils-networking -I$(PWD)/../mutils -I$(PWD)/../mutils-containers -I$(PWD)/../mutils-serialization -I$(PWD)/../mutils-tasks -I$(PWD)/../testing -I$(PWD)/pgsql -I$(PWD)/../tracker -g -stdlib=libc++ --std=c++1z -Wall -DNUM_CAUSAL_GROUPS="4" -DCAUSAL_GROUP=$(causalGroup) -DSTRONG_REMOTE_IP=\"$(STRONG_REMOTE_IP)\" -DCAUSAL_REMOTE_IP_1=\"$(CAUSAL_REMOTE_IP_1)\" -DCAUSAL_REMOTE_IP_2=\"$(CAUSAL_REMOTE_IP_2)\" -DSTORE_LIST=$(storeList) -DMY_IP=\"$(MY_IP)\" -DMAX_THREADS=$(MAX_THREADS) -ferror-limit=1 -Wall -Werror -Wextra -DNUM_CAUSAL_MASTERS="2" -DNUM_CLIENTS=$(num_clients) -DINCREASE_BY=$(increase_by) -DINCREASE_DELAY=$(increase_delay) -DTEST_STOP_TIME=$(test_stop_time) 
 LDFLAGS= -stdlib=libc++ --std=c++1z -lpq -lm -pthread 
 object_files=ServerSocket.o SerializationSupport.o utils.o Socket.o batched_connection_server.o batched_connection_client.o batched_connection_common.o SQLConstants.o SQLConnection.o LocalSQLConnection.o eventfd.o epoll.o oid_translator.o pgtransaction.o pgexceptions.o pgresult.o pgdeferred.o dual_connection.o dual_connection_superstate.o Ostreams.o
 export IP_quad
@@ -11,8 +11,6 @@ export LDFLAGS
 
 all:
 	echo "don't use this target"
-simple_test: $(object_files)
-	clang++ basic_sql_test.cpp $(object_files) $(CPPFLAGS) $(LDFLAGS) -lpqxx
 
 strong: $(object_files)
 	clang++ LocalSQLReceiver.cpp $(object_files) -o strong_receiver -DRCVR_LEVEL=Level::strong $(CPPFLAGS) $(LDFLAGS)
@@ -20,8 +18,8 @@ strong: $(object_files)
 causal: $(object_files)
 	clang++ LocalSQLReceiver.cpp $(object_files) -o causal_receiver -DRCVR_LEVEL=Level::causal $(CPPFLAGS) $(LDFLAGS)
 
-test_causal: $(object_files)
-	clang++ test_causal.cpp $(object_files) -o test_causal_receiver -DRCVR_LEVEL=Level::causal $(CPPFLAGS) $(LDFLAGS)
+test: $(object_files)
+	clang++ test_local_transactions.cpp $(object_files) -o test $(CPPFLAGS) $(LDFLAGS)
 
 oid_translator.o:
 	clang++ -c -O3 oid_translator.cpp $(CPPFLAGS)

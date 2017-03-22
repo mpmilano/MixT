@@ -58,7 +58,7 @@ namespace myria{ namespace pgsql {
 			
 			mutils::dual_connection_manager<mutils::batched_connection::connections> bc{
 				(l::is_strong::value ? strong_ip_addr : causal_ip_addr),
-					(l::is_causal::value ? strong_sql_port : causal_sql_port),(num_connections()/2)};
+					(l::is_strong::value ? strong_sql_port : causal_sql_port),(num_connections()/2)};
 			
 			mutils::ResourcePool<SQLConnection> rp{3*num_connections()/4,num_connections()/4,
 					[this]{

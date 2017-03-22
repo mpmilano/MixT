@@ -21,9 +21,9 @@ namespace myria {
 
 				using sizes_t = std::vector<std::size_t>;
 
-				static mutils::dualstate_action_t new_connection(whendebug(std::ofstream& log_file,) ::mutils::connection& data, ::mutils::connection& control) {
+				static mutils::dualstate_action_t new_connection(whendebug(std::ostream& log_file,) ::mutils::connection& data, ::mutils::connection& control) {
 					struct ReceiverFun : public mutils::dual_state_receiver {
-						whendebug(std::ofstream& log_file;)
+						whendebug(std::ostream& log_file;)
 						std::unique_ptr<LocalSQLConnection<l> > db_connection{
 							new LocalSQLConnection<l>(whendebug(log_file))};
 						std::unique_ptr<LocalSQLTransaction<l> > current_trans{nullptr};
@@ -147,7 +147,7 @@ namespace myria {
 							control_conn(o.control_conn)
 							{}
 						
-						ReceiverFun(whendebug(std::ofstream& log_file,) ::mutils::connection& data, ::mutils::connection& control)
+						ReceiverFun(whendebug(std::ostream& log_file,) ::mutils::connection& data, ::mutils::connection& control)
 							:whendebug(log_file(log_file),)
 							 data_conn(data),control_conn(control)
 							{}

@@ -31,7 +31,7 @@ namespace myria { namespace pgsql {
 		    }
 		  }
 
-			LocalSQLConnection_super::LocalSQLConnection_super(whendebug(std::ofstream& log_file))
+			LocalSQLConnection_super::LocalSQLConnection_super(whendebug(std::ostream& log_file))
 				:prepared(((std::size_t) LocalTransactionNames::MAX),false),
 				 whendebug(log_file(log_file),)
 				 conn(PQconnectdb(""))

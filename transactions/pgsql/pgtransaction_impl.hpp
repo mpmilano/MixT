@@ -33,19 +33,16 @@ namespace myria { namespace pgsql {
 			template<typename... Args>
 			std::function<void (pgresult)> prep_return_func(std::function<void (Args...)> action ){
 				return [action](pgresult r){
+#ifndef NDEBUG
 					if (sizeof...(Args) > 0){
 						assert(PQntuples(r.res) == 1);
 						assert(PQnfields(r.res) == sizeof...(Args));
 						assert(PQbinaryTuples(r.res) == 1);
-						std::tuple<Args...> tpl = deserialize<0,Args...>(r.res);
-						mutils::callFunc(action,tpl);
 					}
-					else {
-						//this code needs to be here for cases when this branch doesn't match.
-						//whenever this branch matches the tuple will be empty.
-						std::tuple<Args...> tpl = deserialize<0,Args...>(nullptr);
-						mutils::callFunc(action,tpl);
-					}
+#endif
+					PGresult* ds_ptr = (sizeof...(Args) > 0 ? r.res : nullptr);
+					std::tuple<Args...> tpl = deserialize<0,Args...>(ds_ptr);
+					mutils::callFunc(action,tpl);
 				};
 			}
 
@@ -75,7 +72,7 @@ namespace myria { namespace pgsql {
 				assert(!no_future_actions());
 				assert(my_trans);
 				using namespace std;
-				shared_ptr<vector<char> > scratch_buf{new vector<char>};
+				shared_ptr<vector<char> > scratch_buf{new vector<char>(4096,0)};
 				const vector<const char* > param_values{{PGSQLinfo<Args>::pg_data(*scratch_buf,args)...}};
 				const vector<int> param_lengths {{PGSQLinfo<Args>::pg_size(*scratch_buf,args)...}};
 				const vector<int> param_formats{{one<Args>::value...}};
@@ -85,7 +82,7 @@ namespace myria { namespace pgsql {
 				my_trans->actions.emplace_back(
 					prep_return_func(action),
 					name,
-					[&conn, sb = std::move(scratch_buf),name,
+					[&conn, scratch_buf,name,
 					 param_values,param_lengths,param_formats,result_format,transaction_id]{
 					  check_error(transaction_id,conn,
 									name,

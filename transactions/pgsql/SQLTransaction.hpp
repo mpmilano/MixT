@@ -28,7 +28,7 @@ namespace myria{
 			bool remote_aborted{false};
 			
 #ifndef NDEBUG
-			std::ofstream &log_file{sql_conn->conn->get_log_file()};
+			std::ostream &log_file{sql_conn->conn->get_log_file()};
 			
 			void log_receive_start(const std::string&);
 			void log_receive_stop(const std::string&);

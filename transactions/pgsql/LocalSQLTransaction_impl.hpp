@@ -30,7 +30,7 @@ namespace myria { namespace pgsql {
 
 			
 
-			LocalSQLTransaction_super::LocalSQLTransaction_super(LocalSQLConnection_super &conn whendebug(, std::ofstream& log_file)):
+			LocalSQLTransaction_super::LocalSQLTransaction_super(LocalSQLConnection_super &conn whendebug(, std::ostream& log_file)):
 				trans(conn,mutils::gensym()) whendebug(,log_file(log_file))
 			{
 				log_receive(log_file,"transaction start");
@@ -101,7 +101,7 @@ namespace myria { namespace pgsql {
 					"update \"IntStore\" set data=$2,Version=Version + 1 where ID=$1 returning version";
 				switch(t) {
 				case Table::BlobStore : return prepared(action,*conn,LocalTransactionNames::Updates1,bs,id,(*mutils::from_bytes_noalloc<mutils::Bytes>(&this->dsm,b)));
-				case Table::IntStore : return prepared(action,*conn,LocalTransactionNames::Updates2,is,id,((int*)b)[0]);
+				case Table::IntStore : return prepared(action,*conn,LocalTransactionNames::Updates2,is,id,((long int*)b)[0]);
 				}
 				assert(false && "forgot a case");
 					struct dead_code{}; throw dead_code{};
@@ -123,7 +123,7 @@ namespace myria { namespace pgsql {
 						"INSERT INTO \"IntStore\" (id,data) VALUES ($1,$2)";
 					switch(t) {
 					case Table::BlobStore : prepared(noop,*conn,LocalTransactionNames::Insert1,bs,id,(*mutils::from_bytes_noalloc<mutils::Bytes>(&this->dsm,b))); return;
-					case Table::IntStore : prepared(noop,*conn,LocalTransactionNames::Insert2,is,id,((int*)b)[0]); return;
+					case Table::IntStore : prepared(noop,*conn,LocalTransactionNames::Insert2,is,id,((long int*)b)[0]); return;
 					}
 					assert(false && "forgot a case");
 					struct dead_code{}; throw dead_code{};
@@ -230,9 +230,9 @@ namespace myria { namespace pgsql {
 				};
 				static const constexpr auto update_cmds = update_data_c_cmd(tnames,"$5");
 				auto p = update_cmds.at(((int)t) * (NUM_CAUSAL_GROUPS) + (k-1));
-#define argh_344234(x...) prepared(action,*conn,p.first,p.second,id,ends[md(k+1)-1],ends[md(k+2)-1],ends[md(k+3)-1],x)
+#define argh_344234(x...) prepared(action,*conn,p.first,p.second,id,(long int) ends[md(k+1)-1],(long int)ends[md(k+2)-1],(long int) ends[md(k+3)-1],x)
 				if (t == Table::IntStore){
-					return argh_344234(*((int*)b));
+					return argh_344234(*((long int*)b));
 				}
 				else {
 					return argh_344234((*mutils::from_bytes_noalloc<mutils::Bytes>(&this->dsm,b)));
@@ -250,9 +250,7 @@ namespace myria { namespace pgsql {
 				static const constexpr auto update_cmds = update_data_c_cmd(tnames,"data + 1");
 				auto p = update_cmds.at(((int)t) * (NUM_CAUSAL_GROUPS) + (k-1));
 				(void)action; (void) id; (void) ends;
-				//TODO - debugging
-				action(ends[0],ends[1],ends[2],ends[3]);
-				//return prepared(action,*conn,p.first,p.second,id,ends[md(k+1)-1],ends[md(k+2)-1],ends[md(k+3)-1]);
+				return prepared(action,*conn,p.first,p.second,id,(long int)ends[md(k+1)-1],(long int)ends[md(k+2)-1],(long int)ends[md(k+3)-1]);
 			}
 				
 
