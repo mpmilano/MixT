@@ -14,16 +14,16 @@ struct PGSQLinfo<long int> {
 	static_assert(sizeof(long int) >= 8,"Wow postgres is irritating");
 	/*bigint, but actually int8*/
 	static constexpr Oid value = 20;
-	static const char* pg_data(std::vector<char>& scratch_buf, const long int& li) {
+	static std::size_t pg_data_index(std::vector<char>& scratch_buf, const long int& li) {
 		auto argh = htobe64(li);
 		auto projected_index = scratch_buf.size();
 		scratch_buf.insert(scratch_buf.end(),(char*)&argh, ((char*)&argh) + sizeof(argh));
-		return &scratch_buf[projected_index];
+		return projected_index;
 	}
 	static long int from_pg(char const * const v){
 		return be64toh(*((long int*)v));
 	}
-	static int pg_size(std::vector<char>&, const long int&){
+	static std::size_t pg_size(std::vector<char>&, const long int&){
 		return sizeof(long int);
 	}
 };
@@ -54,8 +54,10 @@ template<>
 struct PGSQLinfo<bool> {
 	static_assert(sizeof(bool)== 1,"Wow postgres is irritating");
 	static constexpr Oid value = 16;
-	static const char* pg_data(const std::vector<char>& , const bool& li) {
-		return (char*)&li;
+	static std::size_t pg_data_index(std::vector<char>& scratch_buf, const bool& li) {
+		auto index = scratch_buf.size();
+		scratch_buf.insert(scratch_buf.end(),(char*)&li, ((char*)&li) + sizeof(li));
+		return index;
 	}
 	static bool from_pg(char const * const v){
 		return *v != 0;
@@ -71,8 +73,10 @@ template<>
 struct PGSQLinfo<mutils::Bytes> {
 	/*bytea*/
 	static constexpr Oid value = 17;
-	static const char* pg_data(std::vector<char>&, const mutils::Bytes& li) {
-		return (char*) li.bytes;
+	static std::size_t pg_data_index(std::vector<char>& scratch_buf, const mutils::Bytes& li) {
+		auto index = scratch_buf.size();
+		scratch_buf.insert(scratch_buf.end(),(char*)&li.bytes, ((char*)&li.bytes) + li.size);
+		return index;
 	}
 	static mutils::Bytes from_pg(std::size_t size, char const * const v){
 		return mutils::Bytes{v,size};

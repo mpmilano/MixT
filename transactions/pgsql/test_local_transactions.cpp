@@ -36,17 +36,24 @@ namespace myria { namespace pgsql { namespace local{
 							new LocalSQLConnection<Level::causal>{std::cout}},
 							std::cout}};
 					const long int sixty{60};
+					const long int fouroseven{407};
 					static_assert(sizeof(sixty) >= 8);
-
+/*
 					trans->update_data_c([](long int, long int, long int, long int){cout << "Action complete" << endl;},Table::IntStore,1,250, std::array<int,NUM_CAUSAL_GROUPS>{{0,0,0,0}},(const char*)&sixty);
 					trans->update_data_c([](long int, long int, long int, long int){cout << "Action complete" << endl;},Table::IntStore,1,250, std::array<int,NUM_CAUSAL_GROUPS>{{0,0,0,0}},(const char*)&sixty);
 					trans->update_data_c([](long int, long int, long int, long int){cout << "Action complete" << endl;},Table::IntStore,1,250, std::array<int,NUM_CAUSAL_GROUPS>{{0,0,0,0}},(const char*)&sixty);
 					trans->update_data_c([](long int, long int, long int, long int){cout << "Action complete" << endl;},Table::IntStore,1,250, std::array<int,NUM_CAUSAL_GROUPS>{{0,0,0,0}},(const char*)&sixty);
 					//*/
+
+					const long int all_bits_used = std::numeric_limits<long int>::max();
+					const long int all_bits_used2 = std::numeric_limits<long int>::min();
+					
+					
 					std::function<void (long int, long int, long int, long int)> action = [](long int i, long int j, long int k, long int l){cout << "selected " << i  << ", " << j << ", " << k << ", " << l;};
 					
-					trans->prepared(action,*trans->conn,LocalTransactionNames::usertest1,"select $1::bigint as constant, $2::bigint as r2, $3::bigint as r3, $4::bigint as r4 from \"IntStore\" where not id = $2::bigint and not vc1=$3::bigint limit 1;",sixty,sixty,sixty,sixty);
+					trans->prepared(action,*trans->conn,LocalTransactionNames::usertest1,"select $1::bigint as constant, $2::bigint as r2, $3::bigint as r3, $4::bigint as r4 from \"IntStore\" where not id = $2::bigint and not vc1=$3::bigint limit 1;",all_bits_used,all_bits_used2,sixty,fouroseven);
 					auto conn = trans->store_commit(std::move(trans),sock);
+					std::cout << "the value you are looking for is" << all_bits_used << endl;
 					while(true) conn->tick();
 										
 					return 0;

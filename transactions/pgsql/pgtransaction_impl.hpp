@@ -72,9 +72,14 @@ namespace myria { namespace pgsql {
 				assert(!no_future_actions());
 				assert(my_trans);
 				using namespace std;
-				shared_ptr<vector<char> > scratch_buf{new vector<char>(4096,0)};
-				const vector<const char* > param_values{{PGSQLinfo<Args>::pg_data(*scratch_buf,args)...}};
-				const vector<int> param_lengths {{PGSQLinfo<Args>::pg_size(*scratch_buf,args)...}};
+				shared_ptr<vector<char> > scratch_buf{new vector<char>()};
+				const vector<std::size_t> indices{{PGSQLinfo<Args>::pg_data_index(*scratch_buf,args)...}};
+				vector<const char* > param_values;
+				for (const auto& indx : indices){
+					param_values.push_back(&(*scratch_buf)[indx]);
+				}
+				assert(scratch_buf->size() >= (PGSQLinfo<Args>::pg_size(*scratch_buf,args) + ... + 0));
+				const vector<int> param_lengths {{static_cast<int>(PGSQLinfo<Args>::pg_size(*scratch_buf,args))...}};
 				const vector<int> param_formats{{one<Args>::value...}};
 				int result_format = 1;
 				auto &conn = this->conn;
