@@ -107,7 +107,7 @@ namespace myria{
       assert(ctx.trackingContext);
       
       //If the Transacion Context does not yet exist for this store, we create it now.
-      auto &store_ctx = ctx.store_context(whendebug("calling get() via handle"));
+      auto &store_ctx = ctx.store_context(this->store() whendebug(, "calling get() via handle"));
 
       constexpr std::integral_constant<bool, !l::requires_causal_tracking::value> *choice{nullptr};
       return get(choice,tracker,store_ctx, *ctx.trackingContext, _ro->get(&store_ctx,&tracker,ctx.trackingContext.get()));
@@ -145,19 +145,19 @@ namespace myria{
     void put(tracker::Tracker& tracker, mtl::SingleTransactionContext<l> &ctx, const T& t, std::true_type*) {
       assert(_ro);
       tracker.onStrongWrite(ctx,_ro->store(),_ro->name(),(T*)nullptr);
-      _ro->put(&ctx.store_context(whendebug("calling put() via handle")),t);
+      _ro->put(&ctx.store_context(this->store() whendebug(, "calling put() via handle")),t);
     }
     
     void put(tracker::Tracker& tracker, mtl::SingleTransactionContext<l> &ctx, const T& t, std::false_type*) {
       assert(_ro);
       tracker.onCausalWrite(_ro->store(),_ro->name(),_ro->timestamp(),(T*)nullptr);
-      _ro->put(&ctx.store_context(whendebug("calling put() via handle")),t);
+      _ro->put(&ctx.store_context(this->store() whendebug(, "calling put() via handle")),t);
     }
     
     bool isValid(mtl::SingleTransactionContext<l> *ctx) const {
       if (!_ro) return false;
       assert(ctx);
-      auto *ptr = &ctx->store_context(whendebug("calling isValid via handle"));
+      auto *ptr = &ctx->store_context(this->store() whendebug(, "calling isValid via handle"));
       return _ro->ro_isValid(ptr);
     }
     

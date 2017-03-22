@@ -43,8 +43,12 @@ namespace myria {
 		struct SingleTransactionContext : public virtual GTransactionContext{
 			std::unique_ptr<StoreContext<label> > s_ctx;
 			virtual ~SingleTransactionContext() = default;
-			StoreContext<label>& store_context(whendebug(...)){
-				assert(s_ctx);
+			template<typename l>
+			using DataStore = _DataStore<l,l::requires_causal_tracking::value>;
+			StoreContext<label>& store_context(DataStore<label>& ds whendebug(, const std::string& why)){
+				if(!s_ctx){
+					s_ctx = ds.begin_transaction(whendebug(why));
+				}
 				return *s_ctx;
 			}
 		};
