@@ -72,32 +72,22 @@ namespace myria { namespace pgsql {
 				assert(!no_future_actions());
 				assert(my_trans);
 				using namespace std;
-				shared_ptr<vector<char> > scratch_buf{new vector<char>()};
-				const vector<std::size_t> indices{{PGSQLinfo<Args>::pg_data_index(*scratch_buf,args)...}};
-				vector<const char* > param_values;
-				for (const auto& indx : indices){
-					param_values.push_back(&(*scratch_buf)[indx]);
-				}
-				assert(scratch_buf->size() >= (PGSQLinfo<Args>::pg_size(*scratch_buf,args) + ... + 0));
-				const vector<int> param_lengths {{static_cast<int>(PGSQLinfo<Args>::pg_size(*scratch_buf,args))...}};
-				const vector<int> param_formats{{one<Args>::value...}};
-				int result_format = 1;
 				auto &conn = this->conn;
 				auto transaction_id = this->transaction_id;
 				my_trans->actions.emplace_back(
 					prep_return_func(action),
 					name,
-					[&conn, scratch_buf,name,
-					 param_values,param_lengths,param_formats,result_format,transaction_id]{
+					[&conn,name,transaction_id, info = std::make_shared<PGSQLArgsHolder<Args...> >(args...)]{
+						constexpr int result_format = 1;
 					  check_error(transaction_id,conn,
-									name,
-									PQsendQueryPrepared(
-										conn.conn,name.c_str(),
-										sizeof...(Args),
-										param_values.data(),
-										param_lengths.data(),
-										param_formats.data(),
-										result_format));});
+												name,
+												PQsendQueryPrepared(
+													conn.conn,name.c_str(),
+													sizeof...(Args),
+													info->param_values.data(),
+													info->param_lengths.data(),
+													info->param_formats.data(),
+													result_format));});
 				conn.tick();
 			}
 

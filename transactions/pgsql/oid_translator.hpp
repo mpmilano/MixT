@@ -1,6 +1,7 @@
 #pragma once
 #include "postgresql/libpq-fe.h"
 #include "Bytes.hpp"
+#include "argswrapper.hpp"
 
 //WOW are Oids literally the worst.
 
@@ -9,61 +10,48 @@ namespace myria { namespace pgsql { namespace local{
 template<typename >
 struct PGSQLinfo;
 
+template<std::size_t indx, typename T>
+struct PGSQLinfo_wrapped : public PGSQLinfo<T> {
+	template<typename... T2>
+	PGSQLinfo_wrapped(T2&& ... t)
+		:PGSQLinfo<T>(std::forward<T2>(t)...){}
+};
+			
 template<>
 struct PGSQLinfo<long int> {
 	static_assert(sizeof(long int) >= 8,"Wow postgres is irritating");
 	/*bigint, but actually int8*/
 	static constexpr Oid value = 20;
-	static std::size_t pg_data_index(std::vector<char>& scratch_buf, const long int& li) {
-		auto argh = htobe64(li);
-		auto projected_index = scratch_buf.size();
-		scratch_buf.insert(scratch_buf.end(),(char*)&argh, ((char*)&argh) + sizeof(argh));
-		return projected_index;
-	}
+	const long int bigendian;
+	char const * const pg_data{(const char*) &bigendian};
+	static constexpr std::size_t pg_size{sizeof(long int)};
+
+	
+	PGSQLinfo(const long int& li)
+		:bigendian(htobe64(li)){}
+	
+	PGSQLinfo(PGSQLinfo&& o)
+		:bigendian(o.bigendian){}
+	
+	PGSQLinfo(const PGSQLinfo& o)
+		:bigendian(o.bigendian){}
+	
 	static long int from_pg(char const * const v){
 		return be64toh(*((long int*)v));
 	}
-	static std::size_t pg_size(std::vector<char>&, const long int&){
-		return sizeof(long int);
-	}
 };
 
-
-
-/*
-template<>
-struct PGSQLinfo<int> {
-	static_assert(sizeof(int) >= 4,"Wow postgres is irritating");
-	//integer, but actually int4
-	static constexpr Oid value = 23;
-	static const char* pg_data(std::vector<char>& scratch_buf, const int& li) {
-		auto argh = htobe32(li);
-		auto projected_index = scratch_buf.size();
-		scratch_buf.insert(scratch_buf.end(),(char*)&argh, ((char*)&argh) + sizeof(argh));
-		return &scratch_buf[projected_index];
-	}
-	static int from_pg(char const * const v){
-		return be32toh(*((int*)v));
-	}
-	static int pg_size(std::vector<char>&, const int&){
-		return sizeof(int);
-	}
-};
-//*/
 template<>
 struct PGSQLinfo<bool> {
 	static_assert(sizeof(bool)== 1,"Wow postgres is irritating");
 	static constexpr Oid value = 16;
-	static std::size_t pg_data_index(std::vector<char>& scratch_buf, const bool& li) {
-		auto index = scratch_buf.size();
-		scratch_buf.insert(scratch_buf.end(),(char*)&li, ((char*)&li) + sizeof(li));
-		return index;
-	}
+
+	char const * const pg_data;
+	static constexpr std::size_t pg_size{sizeof(bool)};
+	PGSQLinfo(const bool& b):pg_data((char*)&b){}
+
 	static bool from_pg(char const * const v){
 		return *v != 0;
-	}
-	static int pg_size(std::vector<char>&, const bool&){
-		return sizeof(bool);
 	}
 };
 
@@ -73,16 +61,15 @@ template<>
 struct PGSQLinfo<mutils::Bytes> {
 	/*bytea*/
 	static constexpr Oid value = 17;
-	static std::size_t pg_data_index(std::vector<char>& scratch_buf, const mutils::Bytes& li) {
-		auto index = scratch_buf.size();
-		scratch_buf.insert(scratch_buf.end(),(char*)&li.bytes, ((char*)&li.bytes) + li.size);
-		return index;
-	}
+	char const * const pg_data;
+	const std::size_t pg_size;
+	PGSQLinfo(const mutils::Bytes& li)
+		:pg_data((char*)&li.bytes),
+		 pg_size(li.size)
+		{}
+
 	static mutils::Bytes from_pg(std::size_t size, char const * const v){
 		return mutils::Bytes{v,size};
-	}
-	static int pg_size(std::vector<char>&, const mutils::Bytes& li){
-		return li.size;
 	}
 };
 
@@ -98,4 +85,27 @@ struct PGSQLinfo<const T&> : public PGSQLinfo<T> {};
 template<typename T>
 struct PGSQLinfo<const T> : public PGSQLinfo<T> {};
 
+			template<typename T> struct dummy_client{};
+			template<typename Arg> using PGwrapped = PGSQLinfo_wrapped<Arg::index(), typename Arg::type>;
+
+			template<typename... Args>
+			struct PGSQLArgsHolder_str : private PGwrapped<Args>...{
+
+				PGSQLArgsHolder_str(const PGSQLArgsHolder_str&) = delete;
+				PGSQLArgsHolder_str(PGSQLArgsHolder_str&&) = delete;
+				
+				const std::vector<const char*> param_values;
+				const std::vector<int> param_lengths;
+				const std::vector<int> param_formats{one<Args>::value...};
+				PGSQLArgsHolder_str(const typename Args::type& ...args)
+					:PGwrapped<Args>(args)...,
+					param_values{{PGwrapped<Args>::pg_data...}},
+					param_lengths{{((int)PGwrapped<Args>::pg_size)...}}
+					{}
+			};
+
+			template<typename... Args>
+			using PGSQLArgsHolder = mutils::argswrapper<dummy_client, PGSQLArgsHolder_str,Args...>;
+
 		}}}
+
