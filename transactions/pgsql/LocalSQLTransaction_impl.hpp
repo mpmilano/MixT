@@ -13,8 +13,9 @@ namespace myria { namespace pgsql {
 			void obj_exists(Trans &trans, Name id, mutils::connection& socket){
 				const static std::string query =
 					"select * from (select 1::boolean as one from \"BlobStore\" where id = $1 union select 1::boolean from \"IntStore\" where id = $1 limit 1) as sq1 union select 0::boolean as one where not exists (select 1::boolean as one from \"BlobStore\" where id = $1 union select  1::boolean from \"IntStore\" where id = $1 limit 1)";
-				trans.template prepared<std::function<void (bool)> >([&](bool b){
-						trans.sendBack("obj_exists", b,socket);
+				whendebug(auto& log_file = trans.conn->log_file);
+				trans.template prepared<std::function<void (bool)> >([whendebug(&log_file,) &socket](bool b){
+						Trans::sendBack(whendebug(log_file,"obj_exists",) b,socket);
 					},*trans.conn, LocalTransactionNames::exists,query,id);
 			}
 
@@ -30,15 +31,15 @@ namespace myria { namespace pgsql {
 
 			
 
-			LocalSQLTransaction_super::LocalSQLTransaction_super(LocalSQLConnection_super &conn whendebug(, std::ostream& log_file)):
-				trans(conn,mutils::gensym()) whendebug(,log_file(log_file))
+			LocalSQLTransaction_super::LocalSQLTransaction_super(LocalSQLConnection_super &conn ):
+				trans(conn,mutils::gensym())
 			{
-				log_receive(log_file,"transaction start");
+				log_receive(conn.log_file,"transaction start");
 			}
 			
 		
 			template<typename T>
-			void LocalSQLTransaction_super::sendBack(const std::string & whendebug(message), const T& t,mutils::connection& socket){
+			void LocalSQLTransaction_super::sendBack(whendebug(std::ostream& log_file, const std::string& message, ) const T& t,mutils::connection& socket){
 				log_send(log_file,message);
 				socket.send(t);
 			}
@@ -53,7 +54,7 @@ namespace myria { namespace pgsql {
 					sql_conn.prepared[nameint] = true;
 				}
 				
-
+				auto &log_file = sql_conn.log_file;
 #ifndef NDEBUG
 				log_file << "beginning actual SQL command" << std::endl;
 				log_file.flush();
@@ -137,37 +138,39 @@ namespace myria { namespace pgsql {
 			}
 				
 			void LocalSQLTransaction<Level::strong>::select_version(char const * const bytes, mutils::connection& socket){
-				auto table = mutils::from_bytes_noalloc<Table>(&this->dsm,bytes);
-				auto id = mutils::from_bytes_noalloc<Name>(&this->dsm,bytes + mutils::bytes_size(*table));
-				select_version_s([&](long int r){sendBack("select_version", (int)r, socket);},
-								 *table,*id);
+				auto table = *mutils::from_bytes_noalloc<Table>(&this->dsm,bytes);
+				auto id = *mutils::from_bytes_noalloc<Name>(&this->dsm,bytes + mutils::bytes_size(table));
+				select_version_s([whendebug(&log_file = conn->log_file, ) &socket]
+												 (long int r){sendBack(whendebug(log_file,"select_version",) (int)r, socket);},
+								 table,id);
 			}
 				
 			void LocalSQLTransaction<Level::strong>::select_version_data(char const * const bytes, mutils::connection& socket){
-				auto table = mutils::from_bytes_noalloc<Table>(&this->dsm,bytes);
-				auto id = mutils::from_bytes_noalloc<Name>(&this->dsm,bytes + mutils::bytes_size(*table));
-				
-				if (*table == Table::BlobStore){
-					select_version_data_s([&](long int version, mutils::Bytes data){
-							sendBack("version",(int)version,socket);
-							sendBack("data",data,socket);
-						},*table,*id);
+				auto table = *mutils::from_bytes_noalloc<Table>(&this->dsm,bytes);
+				auto id = *mutils::from_bytes_noalloc<Name>(&this->dsm,bytes + mutils::bytes_size(table));
+				whendebug(auto& log_file = conn->log_file);
+				if (table == Table::BlobStore){
+					select_version_data_s([whendebug(&log_file, ) &socket](long int version, mutils::Bytes data){
+							sendBack(whendebug(log_file,"version",) (int)version,socket);
+							sendBack(whendebug(log_file,"data",) data,socket);
+						},table,id);
 				}
 				else {
-					select_version_data_s([&](long int version, long int data){
-							sendBack("version",(int)version,socket);
-							sendBack("data",(int)data,socket);
-						},*table,*id);
+					select_version_data_s([whendebug(&log_file, )  &socket](long int version, long int data){
+							sendBack(whendebug(log_file,"version",) (int)version,socket);
+							sendBack(whendebug(log_file,"data",) (int)data,socket);
+						},table,id);
 				}
 			}
 				
 			void LocalSQLTransaction<Level::strong>::update_data(char const * const bytes, mutils::connection& socket){
-					context_ptr<const Table> t; context_ptr<const int> k;
-					context_ptr<const Name> id; context_ptr<const std::array<int,NUM_CAUSAL_GROUPS> > ends; 
-					auto offset = mutils::from_bytes_noalloc_v(&this->dsm,bytes,t,k,id,ends);
-					update_data_s([&](long int version){sendBack("version",(int)version,socket);},
-								  *t,*id,bytes + offset);
-				}
+				context_ptr<const Table> t; context_ptr<const int> k;
+				context_ptr<const Name> id; context_ptr<const std::array<int,NUM_CAUSAL_GROUPS> > ends; 
+				auto offset = mutils::from_bytes_noalloc_v(&this->dsm,bytes,t,k,id,ends);
+				whendebug(auto& log_file = conn->log_file);
+				update_data_s([whendebug(&log_file, )  &socket](long int version){sendBack(whendebug(log_file, "version"),(int)version,socket);},
+											*t,*id,bytes + offset);
+			}
 				
 			void LocalSQLTransaction<Level::strong>::initialize_with_id(char const * const bytes, mutils::connection& ){
 					context_ptr<const Table> t; context_ptr<const Name> id;
@@ -176,12 +179,13 @@ namespace myria { namespace pgsql {
 				}
 				
 			void LocalSQLTransaction<Level::strong>::increment(char const * const bytes, mutils::connection& socket){
-				increment_s([&](long int vers){sendBack("version",(int)vers,socket);},
+				whendebug(auto& log_file = conn->log_file);
+				increment_s([whendebug(&log_file), &socket](long int vers){sendBack(whendebug(log_file,"version",) (int)vers,socket);},
 							Table::IntStore,*mutils::from_bytes_noalloc<Name>(&this->dsm,bytes));
 			}
 
 			std::unique_ptr<LocalSQLConnection<Level::strong> > LocalSQLTransaction<Level::strong>::store_abort(std::unique_ptr<LocalSQLTransaction<Level::strong> > o) {
-				whendebug(o->log_receive(o->log_file,"aborting");)
+				whendebug(o->log_receive(o->conn->log_file,"aborting");)
 				o->aborted_or_committed = true;
 				o->trans.abort(noop);
 				return std::move(o->conn);
@@ -283,34 +287,34 @@ namespace myria { namespace pgsql {
 			}
 				
 			void LocalSQLTransaction<Level::causal>::select_version(char const * const bytes, mutils::connection& socket){
-					auto table = mutils::from_bytes_noalloc<Table>(&this->dsm,bytes);
-					auto id = mutils::from_bytes_noalloc<Name>(&this->dsm,bytes + mutils::bytes_size(*table));
+					auto table = *mutils::from_bytes_noalloc<Table>(&this->dsm,bytes);
+					auto id = *mutils::from_bytes_noalloc<Name>(&this->dsm,bytes + mutils::bytes_size(table));
 					select_version_c(
-						[&](long int vc1, long int vc2, long int vc3, long int vc4){
-							sendBack("version",std::array<int,4>{{(int)vc1,(int)vc2,(int)vc3,(int)vc4}},socket);
+						[&socket whendebug(, &log_file = conn->log_file) ](long int vc1, long int vc2, long int vc3, long int vc4){
+							sendBack(whendebug(log_file,"version", ) std::array<int,4>{{(int)vc1,(int)vc2,(int)vc3,(int)vc4}},socket);
 						},
-						*table,*id);
+						table,id);
 				}
 				
 			void LocalSQLTransaction<Level::causal>::select_version_data(char const * const bytes, mutils::connection& socket){
-					auto table = mutils::from_bytes_noalloc<Table>(&this->dsm,bytes);
-					auto id = mutils::from_bytes_noalloc<Name>(&this->dsm,bytes + mutils::bytes_size(*table));
-					if (*table == Table::BlobStore){
+					auto table = *mutils::from_bytes_noalloc<Table>(&this->dsm,bytes);
+					auto id = *mutils::from_bytes_noalloc<Name>(&this->dsm,bytes + mutils::bytes_size(table));
+					if (table == Table::BlobStore){
 						select_version_data_c(
-							[&](long int vc1, long int vc2, long int vc3, long int vc4, mutils::Bytes b){
-								sendBack("version",std::array<int,4>{{(int)vc1,(int)vc2,(int)vc3,(int)vc4}},socket);
-								sendBack("data",b,socket);
+							[&socket whendebug(, &log_file = conn->log_file) ](long int vc1, long int vc2, long int vc3, long int vc4, mutils::Bytes b){
+								sendBack(whendebug(log_file,"version", ) std::array<int,4>{{(int)vc1,(int)vc2,(int)vc3,(int)vc4}},socket);
+								sendBack(whendebug(log_file,"data", ) b,socket);
 							},
-							*table,*id);
+							table,id);
 						
 					}
 					else {
 						select_version_data_c(
-							[&](long int vc1, long int vc2, long int vc3, long int vc4, long int data){
-								sendBack("version",std::array<int,4>{{(int)vc1,(int)vc2,(int)vc3,(int)vc4}},socket);
-								sendBack("data",(int)data,socket);
+							[&socket whendebug(, &log_file = conn->log_file) ](long int vc1, long int vc2, long int vc3, long int vc4, long int data){
+								sendBack(whendebug(log_file,"version", ) std::array<int,4>{{(int)vc1,(int)vc2,(int)vc3,(int)vc4}},socket);
+								sendBack(whendebug(log_file,"data", ) (int)data,socket);
 							},
-							*table,*id);
+							table,id);
 					}
 				}
 			
@@ -319,8 +323,8 @@ namespace myria { namespace pgsql {
 					context_ptr<const Name> id; context_ptr<const std::array<int,NUM_CAUSAL_GROUPS> > ends; 
 					auto size = mutils::from_bytes_noalloc_v(&this->dsm,bytes,t,k,id,ends);
 					update_data_c(
-						[&](long int vc1, long int vc2, long int vc3, long int vc4){
-							sendBack("version",std::array<int,4>{{(int)vc1,(int)vc2,(int)vc3,(int)vc4}},socket);
+						[&socket whendebug(, &log_file = conn->log_file) ](long int vc1, long int vc2, long int vc3, long int vc4){
+							sendBack(whendebug(log_file,"version", ) std::array<int,4>{{(int)vc1,(int)vc2,(int)vc3,(int)vc4}},socket);
 						},
 						*t,*k,*id,*ends,bytes + size);
 				}
@@ -332,22 +336,22 @@ namespace myria { namespace pgsql {
 						const char* what() const noexcept { return "unsupported";}
 					};
 					throw unsupported_operation{};
-					//initialize_with_id_c(*t,*k,*id,*ends,bytes + offset);
+					//initialize_with_id_c(*t,*k,id,*ends,bytes + offset);
 			}
 			void LocalSQLTransaction<Level::causal>::increment(char const * const bytes,mutils::connection& socket){
 				context_ptr<const int> k;
 				context_ptr<const Name> id; context_ptr<const std::array<int,NUM_CAUSAL_GROUPS> > ends;
 				mutils::from_bytes_noalloc_v(&this->dsm,bytes,k,id,ends);
 				increment_c(
-					[&](long int vc1, long int vc2, long int vc3, long int vc4){
-						sendBack("version",std::array<int,4>{{(int)vc1,(int)vc2,(int)vc3,(int)vc4}},socket);
+					[&socket whendebug(, &log_file = conn->log_file) ](long int vc1, long int vc2, long int vc3, long int vc4){
+						sendBack(whendebug(log_file, "version"), std::array<int,4>{{(int)vc1,(int)vc2,(int)vc3,(int)vc4}},socket);
 					},
 					Table::IntStore,*k,*id,*ends);
 			}
 
 			std::unique_ptr<LocalSQLConnection<Level::causal> > LocalSQLTransaction<Level::causal>::store_abort(std::unique_ptr<LocalSQLTransaction<Level::causal> > o) {
 				o->aborted_or_committed = true;
-				whendebug(o->log_receive(o->log_file,"aborting"));
+				whendebug(o->log_receive(o->conn->log_file,"aborting"));
 				o->trans.abort(noop);
 				return std::move(o->conn);
 			}

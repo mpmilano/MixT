@@ -46,10 +46,11 @@ struct PGSQLinfo<bool> {
 	static_assert(sizeof(bool)== 1,"Wow postgres is irritating");
 	static constexpr Oid value = 16;
 
-	char const * const pg_data;
+	const bool b;
+	char const * const pg_data{(char*)&b};
 	static constexpr std::size_t pg_size{sizeof(bool)};
-	PGSQLinfo(const bool& b):pg_data((char*)&b){}
-
+	PGSQLinfo(const bool& b):b{b}{}
+	
 	static bool from_pg(char const * const v){
 		return *v != 0;
 	}
@@ -61,12 +62,16 @@ template<>
 struct PGSQLinfo<mutils::Bytes> {
 	/*bytea*/
 	static constexpr Oid value = 17;
-	char const * const pg_data;
 	const std::size_t pg_size;
+	std::vector<char> data;
+	char const * const pg_data;
 	PGSQLinfo(const mutils::Bytes& li)
-		:pg_data((char*)&li.bytes),
-		 pg_size(li.size)
-		{}
+		:pg_size(li.size),
+		 data(li.size,0),
+		 pg_data(data.data())
+		{
+			memcpy(data.data(), li.bytes, li.size);
+		}
 
 	static mutils::Bytes from_pg(std::size_t size, char const * const v){
 		return mutils::Bytes{v,size};

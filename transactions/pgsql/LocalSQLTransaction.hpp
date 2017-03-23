@@ -16,14 +16,13 @@ namespace myria { namespace pgsql {
 				bool aborted_or_committed{false};
 
 #ifndef NDEBUG
-				std::ostream &log_file;
 
-				static void log_receive(std::ostream &log_file, const std::string& s){
+				static void log_receive(std::ostream &log_file, const std::string &s){
 					log_file << "received: " << s << std::endl;
 					log_file.flush();
 				}
 				
-				static void log_send(std::ostream &log_file, const std::string& s){
+				static void log_send(std::ostream &log_file, const std::string &s){
 					log_file << "sent: " << s << std::endl;
 					log_file.flush();
 					}
@@ -32,7 +31,7 @@ namespace myria { namespace pgsql {
 #define log_send(...) ;
 #endif
 
-				LocalSQLTransaction_super(LocalSQLConnection_super &conn whendebug(, std::ostream& log_file));
+				LocalSQLTransaction_super(LocalSQLConnection_super &conn);
 
 				virtual ~LocalSQLTransaction_super(){
 					assert(aborted_or_committed);
@@ -40,7 +39,7 @@ namespace myria { namespace pgsql {
 				}
 
 				template<typename T>
-				void sendBack(const std::string&, const T& t, mutils::connection& socket);
+				static void sendBack(whendebug(std::ostream& log_file, const std::string&, )const T& t, mutils::connection& socket);
 
 				template<typename F, typename Arg1, typename... Args>
 				void prepared(const F& f,LocalSQLConnection_super& sql_conn, LocalTransactionNames name, const std::string &stmt,  Arg1 && a1, Args && ... args);
@@ -48,7 +47,7 @@ namespace myria { namespace pgsql {
 				template<typename LocalSQLTransaction>
 				typename std::unique_ptr<typename LocalSQLTransaction::SQLConn>
 				store_commit(std::unique_ptr<LocalSQLTransaction> o, mutils::connection& socket) {
-					whendebug(auto& log_file = o->log_file);
+					whendebug(auto& log_file = o->conn->log_file);
 					log_receive(log_file,"commit");
 					o->trans.commit([&]{all_fine(whendebug(log_file,) socket);});
 					o->aborted_or_committed = true;
@@ -91,6 +90,7 @@ namespace myria { namespace pgsql {
 						resource_return(resource_return&& o)
 							:first(std::move(o.first)),second(std::move(o.second)){}
 					};
+					whendebug(auto &log_file = o->conn->log_file);
 					switch(name){
 					case TransactionNames::exists:
 						log_receive(log_file,"exists");
@@ -138,8 +138,8 @@ namespace myria { namespace pgsql {
 				using SQLConn = LocalSQLConnection<l>;
 				std::unique_ptr<SQLConn > conn;
 				
-				LocalSQLTransaction(std::unique_ptr<LocalSQLConnection<l> > conn whendebug(, std::ostream& log_file))
-				:LocalSQLTransaction_super(*conn whendebug (,log_file)),
+				LocalSQLTransaction(std::unique_ptr<LocalSQLConnection<l> > conn)
+				:LocalSQLTransaction_super(*conn),
 				 conn(std::move(conn)){}
 				
 				void select_version_s(std::function<void (long int)> action, Table t, Name id);
@@ -182,9 +182,9 @@ namespace myria { namespace pgsql {
 				using SQLConn = LocalSQLConnection<l>;
 				std::unique_ptr<SQLConn > conn;
 
-				LocalSQLTransaction(std::unique_ptr<LocalSQLConnection<l> > conn whendebug(, std::ostream& log_file))
-				:LocalSQLTransaction_super(*conn whendebug(, log_file)),
-				 conn(std::move(conn)){}
+				LocalSQLTransaction(std::unique_ptr<LocalSQLConnection<l> > conn)
+					:LocalSQLTransaction_super(*conn),
+					 conn(std::move(conn)){}
 				
 				static constexpr int group_mapper(int k){
 					if (k < 1) {

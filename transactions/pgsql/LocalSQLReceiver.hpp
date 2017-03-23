@@ -83,11 +83,12 @@ namespace myria {
 								if (_data[0] == 4){
 									assert(!current_trans);
 									assert(db_connection);
-									current_trans.reset(new LocalSQLTransaction<l>(std::move(db_connection) whendebug(, log_file)));
+									current_trans.reset(new LocalSQLTransaction<l>(std::move(db_connection)));
 								}
 								else {
 									//if we're aborting a non-existant transaction, there's nothing to do.
 #ifndef NDEBUG
+									auto &log_file = (current_trans ? current_trans->conn->log_file : db_connection->log_file);
 									log_file << "aborting non-existant transaction" << std::endl;
 									log_file.flush();
 #endif
@@ -119,11 +120,11 @@ namespace myria {
 
 #ifndef NDEBUG
 							if (current_trans){
-								current_trans->log_file << "done processing this request" << std::endl;
-								current_trans->log_file.flush();
+								current_trans->conn->log_file << "done processing this request" << std::endl;
+								current_trans->conn->log_file.flush();
 							}
 							else {
-								log_file << "done processing this request; transaction was destroyed"
+								db_connection->log_file << "done processing this request; transaction was destroyed"
 										 << std::endl;
 							}
 #endif
