@@ -102,7 +102,8 @@ namespace myria { namespace pgsql {
 					"update \"IntStore\" set data=$2,Version=Version + 1 where ID=$1 returning version";
 				switch(t) {
 				case Table::BlobStore : return prepared(action,*conn,LocalTransactionNames::Updates1,bs,id,(*mutils::from_bytes_noalloc<mutils::Bytes>(&this->dsm,b)));
-				case Table::IntStore : return prepared(action,*conn,LocalTransactionNames::Updates2,is,id,((long int*)b)[0]);
+				case Table::IntStore :
+					return prepared(action,*conn,LocalTransactionNames::Updates2,is,id,((long int*)b)[0]);
 				}
 				assert(false && "forgot a case");
 					struct dead_code{}; throw dead_code{};
@@ -164,9 +165,9 @@ namespace myria { namespace pgsql {
 			}
 				
 			void LocalSQLTransaction<Level::strong>::update_data(char const * const bytes, mutils::connection& socket){
-				context_ptr<const Table> t; context_ptr<const int> k;
-				context_ptr<const Name> id; context_ptr<const std::array<int,NUM_CAUSAL_GROUPS> > ends; 
-				auto offset = mutils::from_bytes_noalloc_v(&this->dsm,bytes,t,k,id,ends);
+				context_ptr<const Table> t; context_ptr<const Name> id; context_ptr<const int> k;
+				auto offset = mutils::from_bytes_noalloc_v(&this->dsm,bytes,t,id,k);
+				assert(*id < 1158720275);
 				whendebug(auto& log_file = conn->log_file);
 				update_data_s([whendebug(&log_file, )  &socket](long int version){sendBack(whendebug(log_file, "version"),(int)version,socket);},
 											*t,*id,bytes + offset);

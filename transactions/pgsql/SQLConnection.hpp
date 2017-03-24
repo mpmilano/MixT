@@ -36,7 +36,7 @@ namespace myria{ namespace pgsql {
 		};
 		
 		using LockedSQLConnection = mutils::ResourcePool<SQLConnection>::LockedResource;
-		using WeakSQLConnection = mutils::ResourcePool<SQLConnection>::WeakResource;
+		using WeakSQLConnection = LockedSQLConnection; //mutils::ResourcePool<SQLConnection>::WeakResource;
 
 		//should be a singleton per level
 		template<typename l>

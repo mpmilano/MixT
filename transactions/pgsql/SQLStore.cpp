@@ -18,18 +18,6 @@ namespace myria{ namespace pgsql {
 
 		
 		void SQLStore_impl::init_common(){
-			/*
-				auto t = begin_transaction("Setting up this new SQLStore; gotta configure search paths and stuff.");
-				((SQLTransaction*)t.get())
-					->exec(level == Label<strong> ?
-						   "set search_path to \"BlobStore\",public"
-						   : "set search_path to causalstore,public");
-				((SQLTransaction*)t.get())
-					->exec(level == Label<strong> ?
-						   "SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL SERIALIZABLE"
-						   : "SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL REPEATABLE READ");
-				auto cres = t->store_commit();
-				assert(cres);//*/
 		}
 		
 		SQLStore_impl::SQLStore_impl(SQLConnectionPool<Label<causal> >& pool, GDataStore &store /*int instanceID,*/ )
@@ -44,10 +32,8 @@ namespace myria{ namespace pgsql {
 
 		unique_ptr<SQLTransaction> SQLStore_impl::begin_transaction(whendebug(const std::string &why))
 		{
-			assert(!(default_connection.is_locked() &&
-					 default_connection.lock()->in_trans()) &&
-				   "Concurrency support doesn't exist yet."
-				);
+			assert(!default_connection.lock()->in_trans() &&
+						 "Concurrency support doesn't exist yet.");
 			return unique_ptr<SQLTransaction>(
 				new SQLTransaction(level,_store,default_connection.lock() whendebug(,why)));
 		}

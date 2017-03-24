@@ -17,6 +17,7 @@ namespace myria { namespace pgsql {
 						tr = tr_o.get();
 					}
 
+					tr->exec_async(noop,"SET AUTOCOMMIT to OFF");
 					if (l == Level::strong){
 						tr->exec_async(noop,"set search_path to \"BlobStore\",public");
 						tr->exec_async(noop,"SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL SERIALIZABLE");
