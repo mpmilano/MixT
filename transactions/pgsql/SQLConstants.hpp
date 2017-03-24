@@ -37,12 +37,18 @@ namespace myria {
 		}
 		namespace local{
 			enum class LocalTransactionNames{
-				exists, Del1, Del2, select_version_s_i, select_version_s_b,
-					select1, select2, Updates1, Updates2, Increment, Insert1, Insert2,
-					Sel1i,Sel1b,udc1,udc2,udc3,udc4,udc5,udc6,udc7,udc8,
-					ic1,ic2,ic3,ic4,ic5,ic6,ic7,ic8,initci,initcb,
-					usertest1,usertest2,usertest3,usertest4,
-					MAX
+				exists = 0,
+					Del1 = 1, Del2 = 2,
+					select_version_s_i = 3, select_version_s_b = 4,
+					select1 = 5, select2 = 6,
+					Updates1 = 7, Updates2 = 8,
+					Increment = 9,
+					Insert1 = 10, Insert2 = 11,
+					Sel1i = 12, Sel1b = 13,
+					udc1 = 14,udc2 = 15,udc3 = 16,udc4 = 17,udc5 = 18,udc6 = 19,udc7 = 20,udc8 = 21,
+					ic1 = 22,ic2 = 23,ic3 = 24,ic4 = 25,ic5 = 26,ic6 = 27,ic7 = 28,ic8 = 29,initci = 30,initcb = 31,
+					usertest1 = 32,usertest2 = 33,usertest3 = 34,usertest4 = 35,
+					MAX = 36
 					};
 		}
 	}

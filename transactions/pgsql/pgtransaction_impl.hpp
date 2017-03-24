@@ -31,10 +31,13 @@ namespace myria { namespace pgsql {
 			}
 			
 			template<typename... Args>
-			std::function<void (pgresult)> prep_return_func(std::function<void (Args...)> action ){
-				return [action](pgresult r){
+			std::function<void (pgresult)> prep_return_func(whendebug(const std::string& command, ) std::function<void (Args...)> action ){
+				return [=](pgresult r){
 #ifndef NDEBUG
 					if (sizeof...(Args) > 0){
+						if (!(PQntuples(r.res) == 1 && PQnfields(r.res) == sizeof...(Args) && PQbinaryTuples(r.res) == 1)){
+							std::cerr << "Error: command was " << command << std::endl;
+						}
 						assert(PQntuples(r.res) == 1);
 						assert(PQnfields(r.res) == sizeof...(Args));
 						assert(PQbinaryTuples(r.res) == 1);
@@ -54,7 +57,7 @@ namespace myria { namespace pgsql {
 				auto &conn = this->conn;
 				auto transaction_id = this->transaction_id;
 				my_trans->actions.emplace_back(
-					prep_return_func(action),
+					prep_return_func(whendebug(command, ) action),
 					command,
 					[&conn,command,pgconn,transaction_id]{
 					  check_error(transaction_id,conn,command,PQsendQueryParams(
@@ -75,7 +78,7 @@ namespace myria { namespace pgsql {
 				auto &conn = this->conn;
 				auto transaction_id = this->transaction_id;
 				my_trans->actions.emplace_back(
-					prep_return_func(action),
+					prep_return_func(whendebug(name, )action),
 					name,
 					[&conn,name,transaction_id, info = std::make_shared<PGSQLArgsHolder<Args...> >(args...)]{
 						constexpr int result_format = 1;
