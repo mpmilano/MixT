@@ -51,9 +51,9 @@ namespace myria { namespace tracker {
 			return std::make_unique<TrackingContext>(*this);
 		}
 		
-		void Tracker::onStrongWrite(mtl::GTransactionContext&, GDataStore&, Name , Tombstone*){}
-		void Tracker::onStrongWrite(mtl::GTransactionContext&, GDataStore&, Name , Clock*){}
-		void Tracker::onStrongWrite(mtl::GTransactionContext&, GDataStore&, Name , void*){}
+		void Tracker::onStrongWrite(GDataStore&, Name , Tombstone*){}
+		void Tracker::onStrongWrite(GDataStore&, Name , Clock*){}
+		void Tracker::onStrongWrite(GDataStore&, Name , void*){}
 			
 
 		void Tracker::onCausalWrite(GDataStore&, Name , const Clock &, Tombstone*){}
@@ -99,15 +99,5 @@ namespace myria { namespace tracker {
     void TrackingContext::commitContext(){}
     void TrackingContext::abortContext(){}
     TrackingContext::~TrackingContext(){}
-
-		
-  }
-  namespace mtl{
-    void GTransactionContext::commitContext(){
-      trackingContext->commitContext();
-    }
-    void GTransactionContext::abortContext(){
-      trackingContext->abortContext();
-    }
   }
 }

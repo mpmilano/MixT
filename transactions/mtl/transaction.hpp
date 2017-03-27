@@ -27,7 +27,7 @@ struct transaction_struct
   static auto run(tracker::Tracker& trk, const typename bound_values::type&... v)
   {
     using namespace runnable_transaction;
-    typename split::context ctx{trk};
+		tracker::TrackingContext ctx{trk};
     return begin_interp<transaction>(ctx, bound_values{ v }...);
   }
 };
@@ -36,7 +36,7 @@ template <char... Str>
 struct pre_transaction_str<mutils::String<Str...>>
 {
   using transaction_text = mutils::String<Str...>;
-	template<typename label> using requires_tracking = label::requires_causal_tracking;
+	template<typename label> using requires_tracking = typename label::requires_causal_tracking;
 
   template <typename... bound_values>
   constexpr static auto compile()

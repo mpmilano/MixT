@@ -116,8 +116,6 @@ struct transaction
     return transaction<phases..., t2...>{};
   }
 
-  using context = TransactionContext<typename phases::label...>;
-
   template <typename... env>
   using all_store =
     typename store_from_typeset<DECT(mutils::typelist_ns::combine(typename phases::provides{}...)

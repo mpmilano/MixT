@@ -45,7 +45,7 @@ namespace myria{
      * use this constructor for *new* objects
      */
     template<typename DataStore, template<typename> class RO>
-      Handle(tracker::Tracker &trk, mtl::SingleTransactionContext<l> *tc, std::shared_ptr<RO<T> > _ro, DataStore& ds):
+      Handle(tracker::Tracker &trk, mtl::PhaseContext<l> *tc, std::shared_ptr<RO<T> > _ro, DataStore& ds):
       SupportedOperations::template SupportsOn<Handle>(SupportedOperations::template SupportsOn<Handle>::template wrap_operation<RO>(ds))...,
       _ro(_ro){
 	static_assert(std::is_same<typename DataStore::label,label>::value);
@@ -100,7 +100,7 @@ namespace myria{
       return hndl_from_bytes<l,T,SupportedOperations...>(rdc,v);
     }
 
-    std::shared_ptr<const T> get(tracker::Tracker& tracker, mtl::SingleTransactionContext<l> *tc) const {
+    std::shared_ptr<const T> get(tracker::Tracker& tracker, mtl::PhaseContext<l> *tc) const {
       assert(_ro);
       assert(tc);
       auto &ctx = *tc;
@@ -134,7 +134,7 @@ namespace myria{
       return Handle<l,T>((std::integral_constant<std::size_t,0>*)nullptr, _ro);
     }
     
-    void put(tracker::Tracker& tracker, mtl::SingleTransactionContext<l> *tc, const T& t){
+    void put(tracker::Tracker& tracker, mtl::PhaseContext<l> *tc, const T& t){
       assert(tc);
       auto &ctx = *tc;
       assert(ctx.trackingContext);
@@ -142,19 +142,19 @@ namespace myria{
       return put(tracker, ctx,t,choice);
     }
     
-    void put(tracker::Tracker& tracker, mtl::SingleTransactionContext<l> &ctx, const T& t, std::true_type*) {
+    void put(tracker::Tracker& tracker, mtl::PhaseContext<l> &ctx, const T& t, std::true_type*) {
       assert(_ro);
       tracker.onStrongWrite(ctx,_ro->store(),_ro->name(),(T*)nullptr);
       _ro->put(&ctx.store_context(this->store() whendebug(, "calling put() via handle")),t);
     }
     
-    void put(tracker::Tracker& tracker, mtl::SingleTransactionContext<l> &ctx, const T& t, std::false_type*) {
+    void put(tracker::Tracker& tracker, mtl::PhaseContext<l> &ctx, const T& t, std::false_type*) {
       assert(_ro);
       tracker.onCausalWrite(_ro->store(),_ro->name(),_ro->timestamp(),(T*)nullptr);
       _ro->put(&ctx.store_context(this->store() whendebug(, "calling put() via handle")),t);
     }
     
-    bool isValid(mtl::SingleTransactionContext<l> *ctx) const {
+    bool isValid(mtl::PhaseContext<l> *ctx) const {
       if (!_ro) return false;
       assert(ctx);
       auto *ptr = &ctx->store_context(this->store() whendebug(, "calling isValid via handle"));
@@ -178,13 +178,13 @@ namespace myria{
       friend struct Handle;
     
   private:
-    static void do_onwrite(mtl::SingleTransactionContext<l> &tc, tracker::Tracker &tr, RemoteObject<l,T> &ro,std::false_type*){
+    static void do_onwrite(mtl::PhaseContext<l> &tc, tracker::Tracker &tr, RemoteObject<l,T> &ro,std::false_type*){
       tr.onStrongWrite(tc,ro.store(),ro.name(),(T*)nullptr);
     }
-    static void do_onwrite(mtl::SingleTransactionContext<l> &, tracker::Tracker &tr, RemoteObject<l,T> &ro,std::true_type*){
+    static void do_onwrite(mtl::PhaseContext<l> &, tracker::Tracker &tr, RemoteObject<l,T> &ro,std::true_type*){
       tr.onCausalWrite(ro.store(),ro.name(),ro.timestamp(),(T*)nullptr);
     }
-		static void do_onwrite(mtl::SingleTransactionContext<l> &ctx, tracker::Tracker &tr, RemoteObject<l,T> &ro){
+		static void do_onwrite(mtl::PhaseContext<l> &ctx, tracker::Tracker &tr, RemoteObject<l,T> &ro){
 			typename l::requires_causal_tracking* choice{nullptr};
 			do_onwrite(ctx,tr,ro,choice);
 		}

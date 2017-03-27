@@ -62,7 +62,7 @@ namespace myria {
 			using Clock = std::array<int,NUM_CAUSAL_GROUPS>;
 		  
 		  struct GenericTrackerDS {
-		    using newTomb_t = std::unique_ptr<LabelFreeHandle<Tombstone> > (*) (tracker::Tracker &trk, mtl::GTransactionContext& ctx, GDataStore&, Name, const Tombstone&);
+		    using newTomb_t = std::unique_ptr<LabelFreeHandle<Tombstone> > (*) (tracker::Tracker &trk, void* ctx, GDataStore&, Name, const Tombstone&);
 		    newTomb_t newTomb;
 		    using exists_t = bool (*) (GDataStore&, Name);
 		    exists_t exists;
@@ -134,9 +134,9 @@ namespace myria {
 			   guaranteed up-to-date.
 			 */
 
-			void onStrongWrite(mtl::GTransactionContext&, GDataStore&, Name name, Tombstone*);
-			void onStrongWrite(mtl::GTransactionContext&, GDataStore&, Name name, Clock*);
-			void onStrongWrite(mtl::GTransactionContext&, GDataStore&, Name name, void*);
+			void onStrongWrite(GDataStore&, Name name, Tombstone*);
+			void onStrongWrite(GDataStore&, Name name, Clock*);
+			void onStrongWrite(GDataStore&, Name name, void*);
 			
 
 			void onCausalWrite(GDataStore&, Name name, const Clock &version, Tombstone*);

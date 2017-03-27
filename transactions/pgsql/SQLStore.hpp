@@ -205,7 +205,7 @@ namespace myria { namespace pgsql {
 														 Handle<l,T,SupportedOperation<RegisteredOperations::Increment,void,SelfType> >,
 														 Handle<l,T> > >;
 
-			using TransactionContext = mtl::SingleTransactionContext<label>;
+			using TransactionContext = mtl::PhaseContext<label>;
 			
 			template<typename T>
 			SQLHandle<T> newObject(tracker::Tracker &trk, TransactionContext *tc, Name name, const T& init){
@@ -263,6 +263,7 @@ namespace myria { namespace pgsql {
 				SQLContext(decltype(i) i, mutils::DeserializationManager& mngr):i(std::move(i)),mngr(mngr){}
 				DataStore<l>& store() {return dynamic_cast<DataStore<l>&>( i->gstore);}
 				bool store_commit() {return i->store_commit();}
+				bool aborted() const {return i->aborted();}
 				void store_abort() {i->store_abort();}
 			};
 

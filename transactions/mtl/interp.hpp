@@ -12,19 +12,12 @@ namespace mtl {
 namespace runnable_transaction {
 
 	template<typename phase1, typename store>
-	auto common_interp(TrackingContext& ctx, store& s){
+	auto common_interp(tracker::TrackingContext& tctx, store& s){
 		using label = typename phase1::label;
 		do {
 			try {
 				s.begin_phase();
-				struct PhaseContext{
-					std::unique_ptr<StoreContext<label> > s_ctx;
-					SingleTransactionContext<label> &sctx; //PhaseContext(DECT(sctx) &sctx):sctx(sctx){}
-					~PhaseContext(){ 
-						if (sctx.s_ctx && !sctx.s_ctx->aborted() && !sctx.s_ctx->committed()) sctx.s_ctx->store_commit();
-						sctx.s_ctx.reset();
-					} };
-				PhaseContext ose{ctx};
+				PhaseContext<label> ctx{tctx};
 				return run_phase<phase1>(ctx, s);
 			}
 			catch(const SerializationFailure& sf){
@@ -36,22 +29,22 @@ namespace runnable_transaction {
 		while(!label::can_abort::value);
 	}
 	
-template <typename store, typename TransactionContext, typename phase1>
-auto interp2(transaction<phase1>*, TransactionContext& ctx, store& s)
+template <typename store,typename phase1>
+auto interp2(transaction<phase1>*, tracker::TrackingContext& ctx, store& s)
 {
 	return common_interp<phase1>(ctx,s);
 }
 
-template <typename store, typename TransactionContext, typename phase1, typename phase2, typename... phase>
-auto interp2(transaction<phase1, phase2, phase...>*, TransactionContext& ctx, store& s)
+template <typename store, typename phase1, typename phase2, typename... phase>
+auto interp2(transaction<phase1, phase2, phase...>*, tracker::TrackingContext &ctx, store& s)
 {
 	constexpr transaction<phase2, phase...>* remains{ nullptr };
 	common_interp<phase1>(ctx,s);
 	return interp2(remains, ctx, s);
 }
 
-template <typename split, typename TransactionContext, typename... required>
-auto begin_interp(TransactionContext& ctx, required... vals)
+template <typename split, typename... required>
+auto begin_interp(tracker::TrackingContext& ctx, required... vals)
 {
   constexpr split* np{ nullptr };
   using store_t = typename split::template all_store<required...>;

@@ -47,7 +47,7 @@ struct SupportedOperation {
 		using return_t = typename void_to_nullptr<return_raw>::type;
 
 		static_assert(is_handle<Handle>::value);
-		using TransactionContext = mtl::SingleTransactionContext<label_from_handle<Handle> >;
+		using TransactionContext = mtl::PhaseContext<label_from_handle<Handle> >;
 	
 		struct operation_super {
 			virtual return_t act(TransactionContext* _ctx,typename convert_SelfType<Handle&>::template act<Args>...) = 0;
