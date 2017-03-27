@@ -36,6 +36,7 @@ template <char... Str>
 struct pre_transaction_str<mutils::String<Str...>>
 {
   using transaction_text = mutils::String<Str...>;
+	template<typename label> using requires_tracking = label::requires_causal_tracking;
 
   template <typename... bound_values>
   constexpr static auto compile()
@@ -53,6 +54,7 @@ struct pre_transaction_str<mutils::String<Str...>>
           {
             using namespace split_phase;
             using split_t = DECT(split_computation<inferred_t, bound_values...>());
+						//this is where we should introduce the tombstones, I think. if (labels::exists_predicate<requires_tracking>()){}
             using recollapsed_t = DECT(recollapse(split_t{}));
             return recollapsed_t{};
           }

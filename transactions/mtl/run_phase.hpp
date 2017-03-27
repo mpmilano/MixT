@@ -228,7 +228,7 @@ template <typename phase, typename TranCtx, typename store>
 auto run_phase(TranCtx& ctx, store& s)
 {
   constexpr typename phase::ast* np{ nullptr };
-  return run_phase<typename phase::level>(np, ctx, s);
+  return run_phase<typename phase::label>(np, ctx, s);
 }
 }
 }

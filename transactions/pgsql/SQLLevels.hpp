@@ -59,6 +59,7 @@ namespace myria { namespace pgsql {
 			using is_causal = std::true_type;
 			
 			using requires_causal_tracking = std::true_type;
+			using can_abort = std::false_type;
 			using is_label = std::true_type;
 			
 			static constexpr char description[] = "causal";
@@ -115,6 +116,7 @@ namespace myria { namespace pgsql {
 			using is_causal = std::false_type;
 
 			using requires_causal_tracking = std::false_type;
+			using can_abort = std::true_type;
 			using is_label = std::true_type;
 
 			static constexpr char description[] = "strong";

@@ -16,33 +16,34 @@ namespace myria {
     struct GStoreContext{
       virtual GDataStore& store() = 0;
       virtual bool store_commit() = 0;
-      virtual void store_abort() = 0;
-      virtual ~GStoreContext() = default;
+			virtual bool aborted() const = 0;
 			GStoreContext() = default;
+		protected:
+			~GStoreContext() = default;
     };
     template<typename l>
     struct StoreContext : public GStoreContext {
       virtual _DataStore<l,l::requires_causal_tracking::value>& store() = 0;
-      virtual ~StoreContext() = default;
 			StoreContext(const StoreContext&) = delete;
 			StoreContext() = default;
+			virtual ~StoreContext() = default;
     };
 
 		struct GTransactionContext {
 			tracker::Tracker *trk;
 			std::unique_ptr<tracker::TrackingContext> trackingContext;
 			auto& tracker(){ return *trk;}
-			virtual ~GTransactionContext() = default;
 			void commitContext();
 			void abortContext();
 			GTransactionContext(tracker::Tracker& t);
 			GTransactionContext() = default;
+		protected:
+			~GTransactionContext() = default;
 		};
 
 		template<typename label>
 		struct SingleTransactionContext : public virtual GTransactionContext{
 			std::unique_ptr<StoreContext<label> > s_ctx;
-			virtual ~SingleTransactionContext() = default;
 			template<typename l>
 			using DataStore = _DataStore<l,l::requires_causal_tracking::value>;
 			StoreContext<label>& store_context(DataStore<label>& ds whendebug(, const std::string& why)){
@@ -51,6 +52,12 @@ namespace myria {
 				}
 				return *s_ctx;
 			}
+			bool store_abort(){
+				if (s_ctx) return s_ctx->store_abort();
+				else return true;
+			}
+		protected:
+			~SingleTransactionContext() = default;
 		};
 
 		template<typename... labels> 

@@ -30,9 +30,16 @@ struct store : public holders...
     return *ret;
   }
 
-  store& reset_indices()
+  store& begin_phase()
   {
-    bool b = (true && ... && holders::reset_index(this));
+    bool b = (true && ... && holders::begin_phase());
+    (void)b;
+    return *this;
+  }
+
+	store& rollback_phase()
+  {
+    bool b = (true && ... && holders::rollback_phase());
     (void)b;
     return *this;
   }
@@ -93,7 +100,7 @@ struct phase<l, AST, reqs, mutils::typeset<_provides...>, owns, passthrough>
 {
   constexpr phase() = default;
   using ast = AST;
-  using level = l;
+  using label = l;
   using requirements = reqs;
   using provides = mutils::typeset<_provides...>;
   using owned = owns;
@@ -109,7 +116,7 @@ struct transaction
     return transaction<phases..., t2...>{};
   }
 
-  using context = TransactionContext<typename phases::level...>;
+  using context = TransactionContext<typename phases::label...>;
 
   template <typename... env>
   using all_store =

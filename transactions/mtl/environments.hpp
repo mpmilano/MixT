@@ -34,6 +34,7 @@ struct type_binding;
 template <typename T, char... str>
 struct value_holder
 {
+	T pre_phase_t;
   T t;
   value_holder(T t)
     : t(t)
@@ -58,7 +59,16 @@ struct value_holder
     t = t2;
     return *this;
   }
-  static bool reset_index(value_holder*) { return true; }
+	bool reset_index() { return true; }
+	bool begin_phase(){
+		pre_phase_t = t;
+		return reset_index();
+	}
+	
+	bool rollback_phase(){
+		t = pre_phase_t;
+		return true;
+	}
 
   template <typename Other>
   static constexpr mutils::mismatch get_holder(value_holder*, std::enable_if_t<!std::is_same<Other, name>::value, Other>)
@@ -92,6 +102,7 @@ struct type_holder
 {
   std::vector<T> t;
   int curr_pos{ -1 };
+	unsigned int rollback_size{0};
   bool bound = false;
   using name = String<str...>;
 
@@ -99,11 +110,20 @@ struct type_holder
   type_holder(const type_holder&) = delete;
   type_holder(value<T, str...> v) { bind(v.t); }
 
-  static bool reset_index(type_holder* _this)
+  bool reset_index()
   {
-    _this->curr_pos = -1;
+    curr_pos = -1;
     return true;
   }
+	bool begin_phase(){
+		rollback_size = t.size();
+		return reset_index();
+	}
+	bool rollback_phase(){
+		t.resize(rollback_size);
+		return true;
+	}
+	
 
   template <typename TranCtx, typename... Args>
   type_holder& push(TranCtx&, Args&&... args)

@@ -43,6 +43,7 @@ namespace myria{
 			const std::string why;
 #endif
 			bool commit_on_delete = false;
+			bool committed_or_aborted{false};
 			SQLTransaction(Level level, GDataStore& store, LockedSQLConnection c whendebug(, std::string why));
 	
 			SQLTransaction(const SQLTransaction&) = delete;
@@ -180,12 +181,17 @@ namespace myria{
 
 
 			bool store_commit(){
-				char trans{0};
-				log_send(level_string + " commit");
-				sql_conn->conn->send(trans);
-				//we actually do need to block until commits happen
-				receive("check committed",trans);
-				return true;
+				assert(!committed_or_aborted);
+				if (!committed_or_aborted){
+					char trans{0};
+					log_send(level_string + " commit");
+					sql_conn->conn->send(trans);
+					//we actually do need to block until commits happen
+					receive("check committed",trans);
+					committed_or_aborted = true;
+					return true;
+				}
+				return false;
 			}
 
 			void store_abort();

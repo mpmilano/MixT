@@ -32,12 +32,14 @@ namespace myria{ namespace pgsql {
 		}
 
 		void SQLTransaction::store_abort(){
+			assert(!committed_or_aborted);
 			if(!remote_aborted){
 				char trans{1};
 				log_send(level_string + " abort");
 				sql_conn->conn->send(trans);
 			}
 			commit_on_delete = false;
+			committed_or_aborted = true;
 		}
 		
 		SQLTransaction::~SQLTransaction(){
@@ -45,11 +47,13 @@ namespace myria{ namespace pgsql {
 			AtScopeEnd ase{[&sql_conn](){
 					sql_conn->current_trans = nullptr;
 				}};
-			if (commit_on_delete) {
-				store_commit();
-			}
-			else {
-				store_abort();
+			if (!committed_or_aborted){
+				if (commit_on_delete) {
+					store_commit();
+				}
+				else {
+					store_abort();
+				}
 			}
 		}
 

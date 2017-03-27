@@ -314,7 +314,7 @@ constexpr auto _split_computation(AST a, mutils::typelist<curr_label, Labels...>
   return runnable_transaction::pretransaction<DECT(transaction_prephase(final_phase{}))>::append(
     _split_computation<AST, next_inherits, Labels...>(a, mutils::typelist<Labels...>{}));
 }
-
+	
 template <typename AST, typename... bindings>
 constexpr auto split_computation()
 {

@@ -196,7 +196,25 @@ struct AST<Label<l>>
   struct Statement<Assignment<Var, Expr>>
   {
     using substatement = typename Assignment<Var, Expr>::substatement;
-  };
+  };	
+
+	struct WriteTombstone {
+		using substatement = WriteTombstone;
+	};
+template <>
+struct Statement<WriteTombstone >
+{
+  using substatement = typename WriteTombstone::substatement;
+};
+
+struct GenerateTombstone {
+	using substatement = GenerateTombstone;
+};
+template <>
+struct Statement<GenerateTombstone >
+{
+  using substatement = typename GenerateTombstone::substatement;
+};
 
   template <typename Var>
   struct IncrementOccurance;
