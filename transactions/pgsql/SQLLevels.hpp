@@ -122,6 +122,9 @@ namespace myria { namespace pgsql {
 			static constexpr char description[] = "strong";
 		};
 
+	std::ostream& operator<<(std::ostream& o, const Label<pgsql::strong>&);
+	std::ostream& operator<<(std::ostream& o, const Label<pgsql::causal>&);
+
 	namespace mtl { namespace split_phase {
 			static_assert(!are_equivalent(Label<top>{}, Label<pgsql::strong>{} ));
 			static_assert(!are_equivalent(Label<top>{}, Label<pgsql::causal>{} ));

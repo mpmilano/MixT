@@ -183,14 +183,14 @@ namespace myria{
 
 
 			bool store_commit(){
-				assert(!committed || aborted);
-				if (!committed || aborted){
+				assert(!_committed || _aborted);
+				if (!_committed || _aborted){
 					char trans{0};
 					log_send(level_string + " commit");
 					sql_conn->conn->send(trans);
 					//we actually do need to block until commits happen
 					receive("check committed",trans);
-					committed = true;
+					_committed = true;
 					return true;
 				}
 				return false;

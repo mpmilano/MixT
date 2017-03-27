@@ -104,13 +104,12 @@ namespace myria{
       assert(_ro);
       assert(tc);
       auto &ctx = *tc;
-      assert(ctx.trackingContext);
       
       //If the Transacion Context does not yet exist for this store, we create it now.
       auto &store_ctx = ctx.store_context(this->store() whendebug(, "calling get() via handle"));
 
       constexpr std::integral_constant<bool, !l::requires_causal_tracking::value> *choice{nullptr};
-      return get(choice,tracker,store_ctx, *ctx.trackingContext, _ro->get(&store_ctx,&tracker,ctx.trackingContext.get()));
+      return get(choice,tracker,store_ctx, ctx.trackingContext, _ro->get(&store_ctx,&tracker,&ctx.trackingContext));
     }
     
     std::shared_ptr<const T> get(std::true_type*, tracker::Tracker& tracker, mtl::StoreContext<l>& ctx, tracker::TrackingContext &trkc, std::shared_ptr<const T> ret) const{
@@ -137,14 +136,13 @@ namespace myria{
     void put(tracker::Tracker& tracker, mtl::PhaseContext<l> *tc, const T& t){
       assert(tc);
       auto &ctx = *tc;
-      assert(ctx.trackingContext);
       constexpr std::integral_constant<bool, !l::requires_causal_tracking::value> *choice{nullptr};
       return put(tracker, ctx,t,choice);
     }
     
     void put(tracker::Tracker& tracker, mtl::PhaseContext<l> &ctx, const T& t, std::true_type*) {
       assert(_ro);
-      tracker.onStrongWrite(ctx,_ro->store(),_ro->name(),(T*)nullptr);
+      tracker.onStrongWrite(_ro->store(),_ro->name(),(T*)nullptr);
       _ro->put(&ctx.store_context(this->store() whendebug(, "calling put() via handle")),t);
     }
     
@@ -178,8 +176,8 @@ namespace myria{
       friend struct Handle;
     
   private:
-    static void do_onwrite(mtl::PhaseContext<l> &tc, tracker::Tracker &tr, RemoteObject<l,T> &ro,std::false_type*){
-      tr.onStrongWrite(tc,ro.store(),ro.name(),(T*)nullptr);
+    static void do_onwrite(mtl::PhaseContext<l> &, tracker::Tracker &tr, RemoteObject<l,T> &ro,std::false_type*){
+      tr.onStrongWrite(ro.store(),ro.name(),(T*)nullptr);
     }
     static void do_onwrite(mtl::PhaseContext<l> &, tracker::Tracker &tr, RemoteObject<l,T> &ro,std::true_type*){
       tr.onCausalWrite(ro.store(),ro.name(),ro.timestamp(),(T*)nullptr);

@@ -48,11 +48,6 @@ namespace myria {
 			}
 			PhaseContext(tracker::TrackingContext &trackingContext)
 				:trackingContext(trackingContext){}
-
-			~PhaseContext(){ 
-				if (s_ctx && !s_ctx->aborted() && !s_ctx->committed()) s_ctx->store_commit();
-			}
-			
 		};
     
   }}
