@@ -14,13 +14,13 @@ namespace runnable_transaction {
 	template<typename phase1, typename Ctx, typename S>
 	void run_phase1(Ctx &ctx, S &s, std::enable_if_t<std::is_void<DECT(run_phase<phase1>(ctx, s))>::value >* = nullptr){
 		run_phase<phase1>(ctx, s);
-		ctx.s_ctx->store_commit();
+		if (ctx.s_ctx) ctx.s_ctx->store_commit();
 	}
 
 	template<typename phase1, typename Ctx, typename S>
 	auto run_phase1(Ctx &ctx, S &s, std::enable_if_t<!std::is_void<DECT(run_phase<phase1>(ctx, s))>::value >* = nullptr){
 		auto ret = run_phase<phase1>(ctx, s);
-		ctx.s_ctx->store_commit();
+		if (ctx.s_ctx) ctx.s_ctx->store_commit();
 		return ret;
 	}
 	
