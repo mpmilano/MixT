@@ -71,9 +71,9 @@ namespace myria{
 					failure_bytes[i] = falure_bytes_reference[i]+1;
 				}
 				//drain the data socket until we find the failure nonce.
-				for (std::size_t i = 0; i < sizeof(failure_nonce);){
+				for (std::size_t i = 0; i < sizeof(failure_nonce);++i){
 					dc.receive(failure_bytes[i]);
-					if (failure_bytes[i] == falure_bytes_reference[i]) ++i;
+					if (failure_bytes[i] != falure_bytes_reference[i]) i=0;
 				}
 				mutils::DeserializationManager *dsm{nullptr};
 				std::size_t why_size{0};
