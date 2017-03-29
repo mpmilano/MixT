@@ -53,9 +53,9 @@ namespace myria { namespace pgsql {
 					sql_conn.prepare<Arg1,Args...>(namestr,stmt);
 					sql_conn.prepared[nameint] = true;
 				}
-				
-				auto &log_file = sql_conn.log_file;
+
 #ifndef NDEBUG
+				auto &log_file = sql_conn.log_file;
 				log_file << "beginning actual SQL command" << std::endl;
 				log_file.flush();
 				mutils::AtScopeEnd ase{[&](){
@@ -169,7 +169,7 @@ namespace myria { namespace pgsql {
 				auto offset = mutils::from_bytes_noalloc_v(&this->dsm,bytes,t,id,k);
 				assert(*id < 1158720275);
 				whendebug(auto& log_file = conn->log_file);
-				update_data_s([whendebug(&log_file, )  &socket](long int version){sendBack(whendebug(log_file, "version"),(int)version,socket);},
+				update_data_s([whendebug(&log_file, )  &socket](long int version){sendBack(whendebug(log_file, "version", )(int)version,socket);},
 											*t,*id,bytes + offset);
 			}
 				
@@ -181,7 +181,7 @@ namespace myria { namespace pgsql {
 				
 			void LocalSQLTransaction<Level::strong>::increment(char const * const bytes, mutils::connection& socket){
 				whendebug(auto& log_file = conn->log_file);
-				increment_s([whendebug(&log_file), &socket](long int vers){sendBack(whendebug(log_file,"version",) (int)vers,socket);},
+				increment_s([whendebug(&log_file, ) &socket](long int vers){sendBack(whendebug(log_file,"version",) (int)vers,socket);},
 							Table::IntStore,*mutils::from_bytes_noalloc<Name>(&this->dsm,bytes));
 			}
 
@@ -345,7 +345,7 @@ namespace myria { namespace pgsql {
 				mutils::from_bytes_noalloc_v(&this->dsm,bytes,k,id,ends);
 				increment_c(
 					[&socket whendebug(, &log_file = conn->log_file) ](long int vc1, long int vc2, long int vc3, long int vc4){
-						sendBack(whendebug(log_file, "version"), std::array<int,4>{{(int)vc1,(int)vc2,(int)vc3,(int)vc4}},socket);
+						sendBack(whendebug(log_file, "version", ) std::array<int,4>{{(int)vc1,(int)vc2,(int)vc3,(int)vc4}},socket);
 					},
 					Table::IntStore,*k,*id,*ends);
 			}
