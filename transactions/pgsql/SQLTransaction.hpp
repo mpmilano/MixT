@@ -66,10 +66,6 @@ namespace myria{
 				cc.send(failure_nonce);
 				char failure_bytes[sizeof(failure_nonce)];
 				char const * const falure_bytes_reference = (char*)&failure_nonce;
-				//ensure the failure_bytes do not accidentally match the reference
-				for (std::size_t i = 0; i < sizeof(failure_nonce); ++i){
-					failure_bytes[i] = falure_bytes_reference[i]+1;
-				}
 				//drain the data socket until we find the failure nonce.
 				for (std::size_t i = 0; i < sizeof(failure_nonce);++i){
 					dc.receive(failure_bytes[i]);
