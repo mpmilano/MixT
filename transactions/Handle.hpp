@@ -100,7 +100,7 @@ namespace myria{
       return hndl_from_bytes<l,T,SupportedOperations...>(rdc,v);
     }
 
-    std::shared_ptr<const T> get(tracker::Tracker& tracker, mtl::PhaseContext<l> *tc) const {
+    std::shared_ptr<const T> get(mtl::PhaseContext<l> *tc) const {
       assert(_ro);
       assert(tc);
       auto &ctx = *tc;
@@ -109,20 +109,15 @@ namespace myria{
       auto &store_ctx = ctx.store_context(this->store() whendebug(, "calling get() via handle"));
 
       constexpr std::integral_constant<bool, !l::requires_causal_tracking::value> *choice{nullptr};
-      return get(choice,tracker,store_ctx, ctx.trackingContext, _ro->get(&store_ctx,&tracker,&ctx.trackingContext));
+      return get(choice,store_ctx, ctx.trackingContext, _ro->get(&store_ctx));
     }
     
-    std::shared_ptr<const T> get(std::true_type*, tracker::Tracker& tracker, mtl::StoreContext<l>& ctx, tracker::TrackingContext &trkc, std::shared_ptr<const T> ret) const{
-      tracker.afterStrongRead(ctx,trkc,_ro->store(),_ro->name(),(T*)nullptr);
+    std::shared_ptr<const T> get(std::true_type*, mtl::StoreContext<l>& ctx, tracker::TrackingContext &, std::shared_ptr<const T> ret) const{
       return ret;
     }
     
-    std::shared_ptr<const T> get(std::false_type*, tracker::Tracker& tracker, mtl::StoreContext<l>& ctx, tracker::TrackingContext &trkc, std::shared_ptr<const T> ret)const{
-      mutils::AtScopeEnd ase{[&](){tracker.afterCausalRead(trkc,_ro->store(),_ro->name(),_ro->timestamp(),_ro->o_bytes(&ctx,&tracker,&trkc),(T*)nullptr);}};
-      if (tracker.waitForCausalRead(trkc,_ro->store(),_ro->name(),_ro->timestamp(),(T*)nullptr)){
-	return ret;
-      }
-      else return _ro->get(&ctx,&tracker,&trkc);
+    std::shared_ptr<const T> get(std::false_type*, mtl::StoreContext<l>& ctx, tracker::TrackingContext &, std::shared_ptr<const T> ret) const{
+			return _ro->get(&ctx);
     }
     
     Handle clone() const {
@@ -133,23 +128,21 @@ namespace myria{
       return Handle<l,T>((std::integral_constant<std::size_t,0>*)nullptr, _ro);
     }
     
-    void put(tracker::Tracker& tracker, mtl::PhaseContext<l> *tc, const T& t){
+    void put(mtl::PhaseContext<l> *tc, const T& t){
       assert(tc);
       auto &ctx = *tc;
       constexpr std::integral_constant<bool, !l::requires_causal_tracking::value> *choice{nullptr};
-      return put(tracker, ctx,t,choice);
+      return put(ctx,t,choice);
     }
     
-    void put(tracker::Tracker& tracker, mtl::PhaseContext<l> &ctx, const T& t, std::true_type*) {
+    void put(mtl::PhaseContext<l> &ctx, const T& t, std::true_type*) {
       assert(_ro);
-      tracker.onStrongWrite(_ro->store(),_ro->name(),(T*)nullptr);
-      _ro->put(&ctx.store_context(this->store() whendebug(, "calling put() via handle")),t);
+			_ro->put(&ctx.store_context(this->store() whendebug(, "calling put() via handle")),t);
     }
     
-    void put(tracker::Tracker& tracker, mtl::PhaseContext<l> &ctx, const T& t, std::false_type*) {
+    void put(mtl::PhaseContext<l> &ctx, const T& t, std::false_type*) {
       assert(_ro);
-      tracker.onCausalWrite(_ro->store(),_ro->name(),_ro->timestamp(),(T*)nullptr);
-      _ro->put(&ctx.store_context(this->store() whendebug(, "calling put() via handle")),t);
+			_ro->put(&ctx.store_context(this->store() whendebug(, "calling put() via handle")),t);
     }
     
     bool isValid(mtl::PhaseContext<l> *ctx) const {

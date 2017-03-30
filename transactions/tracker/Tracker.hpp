@@ -62,7 +62,7 @@ namespace myria {
 			using Clock = std::array<int,NUM_CAUSAL_GROUPS>;
 		  
 		  struct GenericTrackerDS {
-		    using newTomb_t = std::unique_ptr<LabelFreeHandle<Tombstone> > (*) (tracker::Tracker &trk, void* ctx, GDataStore&, Name, const Tombstone&);
+		    using newTomb_t = std::unique_ptr<LabelFreeHandle<Tombstone> > (*) (void* ctx, GDataStore&, Name, const Tombstone&);
 		    newTomb_t newTomb;
 		    using exists_t = bool (*) (GDataStore&, Name);
 		    exists_t exists;

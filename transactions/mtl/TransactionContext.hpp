@@ -17,6 +17,7 @@ namespace myria {
       virtual GDataStore& store() = 0;
       virtual bool store_commit() = 0;
 			virtual bool aborted() const = 0;
+			virtual void reset() = 0;
 			GStoreContext() = default;
 		protected:
 			~GStoreContext() = default;
@@ -46,6 +47,11 @@ namespace myria {
 				if (s_ctx) return s_ctx->store_abort();
 				else return true;
 			}
+
+			void reset(){
+				if (s_ctx) s_ctx->reset();
+			}
+			
 			PhaseContext(tracker::TrackingContext &trackingContext)
 				:trackingContext(trackingContext){}
 		};

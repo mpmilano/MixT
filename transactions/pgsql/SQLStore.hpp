@@ -86,11 +86,16 @@ namespace myria { namespace pgsql {
 			mutils::DeserializationManager &this_mgr;
 
 		private:
+			tracker::Tracker &trk;
 			SQLStore(tracker::Tracker& trk, mutils::DeserializationManager &this_mgr,SQLConnectionPool<l> &p)
-				:SQLStore_impl(p,*this),DataStore<l>(),this_mgr(this_mgr) {
+				:SQLStore_impl(p,*this),DataStore<l>(),this_mgr(this_mgr),trk(trk) {
 				trk.registerStore(*this);
 			}
 		public:
+
+			tracker::Tracker& tracker(){
+				return trk;
+			}
 
 			using deserialization_context = SQLInstanceManager;
 
@@ -143,15 +148,12 @@ namespace myria { namespace pgsql {
 				int fail_counter = 0;
 
 		
-				std::shared_ptr<const T> get(mtl::StoreContext<l>* _tc, tracker::Tracker* trk, tracker::TrackingContext* trkc) {
+				std::shared_ptr<const T> get(mtl::StoreContext<l>* _tc) {
 					SQLContext *sctx = (SQLContext*) _tc;
 					SQLTransaction *tc = (_tc ? sctx->i.get() : nullptr);
 					auto *res = gso.load(tc);
 					assert(res);
-					if (res != nullptr && trk != nullptr && trkc != nullptr){
-						t = trk->onRead(*trkc,store(),name(),timestamp(),
-										mutils::from_bytes<T>(&tds,res),(T*)nullptr);
-					}
+					t.reset(mutils::from_bytes<T>(&tds,res).release());
 					return t;
 				}
 
@@ -196,6 +198,8 @@ namespace myria { namespace pgsql {
 #endif
 			};
 
+			template<typename T> using StoreObject = SQLObject<T>;
+
 			template<typename T>
 			using SQLHandle = 
 				std::conditional_t<mutils::is_set<T>::value,
@@ -208,7 +212,7 @@ namespace myria { namespace pgsql {
 			using TransactionContext = mtl::PhaseContext<label>;
 			
 			template<typename T>
-			SQLHandle<T> newObject(tracker::Tracker &trk, TransactionContext *tc, Name name, const T& init){
+			SQLHandle<T> newObject(TransactionContext *tc, Name name, const T& init){
 				static constexpr Table t =
 					(std::is_same<T,int>::value ? Table::IntStore : Table::BlobStore);
 				int size = mutils::bytes_size(init);
@@ -219,15 +223,13 @@ namespace myria { namespace pgsql {
 					mutils::to_bytes(init,&v[0]);
 				assert(size == tb_size);
 				GSQLObject gso(*this,t,name,v);
-				SQLHandle<T> ret{trk,tc,std::make_shared<SQLObject<T> >(std::move(gso),mutils::heap_copy(init),this_mgr),*this };
-				if (level_t::value == Level::causal) trk.onCausalCreate(*this,name,(T*)nullptr);
-				else trk.onStrongCreate(*this,name,(T*)nullptr);
+				SQLHandle<T> ret{tracker(),tc,std::make_shared<SQLObject<T> >(std::move(gso),mutils::heap_copy(init),this_mgr),*this };
 				return ret;
 			}
 
 			template<typename T>
-			auto newObject(tracker::Tracker &trk, TransactionContext *tc, const T& init){
-				return newObject<T>(trk,tc, mutils::int_rand(),init);
+			auto newObject(TransactionContext *tc, const T& init){
+				return newObject<T>(tc, mutils::int_rand(),init);
 			}
 
 			template<typename T>
@@ -258,13 +260,21 @@ namespace myria { namespace pgsql {
 			}
 
 			struct SQLContext : mtl::StoreContext<l> {
+				SQLStore &parent;
 				std::unique_ptr<SQLTransaction> i;
 				mutils::DeserializationManager & mngr;
-				SQLContext(decltype(i) i, mutils::DeserializationManager& mngr):i(std::move(i)),mngr(mngr){}
+				SQLContext(SQLStore& parent,
+									 decltype(i) i,
+									 mutils::DeserializationManager& mngr)
+					:parent(parent),i(std::move(i)),mngr(mngr){}
 				DataStore<l>& store() {return dynamic_cast<DataStore<l>&>( i->gstore);}
 				bool store_commit() {return i->store_commit();}
 				bool aborted() const {return i->aborted();}
 				void store_abort() {i->store_abort();}
+				void reset(){
+					SQLStore_impl &grandparent = parent;
+					if (i) i = grandparent.begin_transaction(whendebug(i->why));
+				}
 			};
 
 			using StoreContext = SQLContext;
@@ -280,7 +290,7 @@ namespace myria { namespace pgsql {
 						why
 #endif
 						);
-					return std::unique_ptr<mtl::StoreContext<l> >(new SQLContext{std::move(ret),this_mgr});
+					return std::unique_ptr<mtl::StoreContext<l> >(new SQLContext{*this,std::move(ret),this_mgr});
 				}
 
 			bool in_transaction() const {
@@ -291,9 +301,12 @@ namespace myria { namespace pgsql {
 				return SQLStore_impl::instance_id();
 			}
 
-			void operation(TransactionContext*, SQLContext& ctx,
-						   OperationIdentifier<RegisteredOperations::Increment>, SQLObject<int> &o){
+			void operation(TransactionContext* , SQLContext& ctx,
+										 OperationIdentifier<RegisteredOperations::Increment>, SQLObject<int> &o){
 				o.gso.increment(ctx.i.get());
+			}
+
+			void simulate_operation(OperationIdentifier<RegisteredOperations::Increment>, const int &){
 			}
 
 			template<typename T>

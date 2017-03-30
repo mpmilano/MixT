@@ -2,20 +2,40 @@
 #include "Basics.hpp"
 #include "RemoteObject.hpp"
 #include "Handle.hpp"
+#include "CTString.hpp"
 
 namespace myria{
   
-enum class RegisteredOperations {
-	Increment, Insert, Clone
+struct SelfType{
+	constexpr SelfType() = default;
 };
 
-struct SelfType{};
+template<typename Name>
+struct OperationIdentifier;
 
-template<RegisteredOperations Name>
-struct OperationIdentifier_struct{};
+	namespace RegisteredOperations{
+		using Increment = mutils::String<'i','n','c','r','e','m','e','n','t'>;
+		using Clone = mutils::String<'c','l','o','n','e'>;
+		using Insert = mutils::String<'i','n','s','e','r','t'>;
+	}
 
-template<RegisteredOperations Name>
-using OperationIdentifier = OperationIdentifier_struct<Name>*;
+	template<>
+	struct OperationIdentifier<RegisteredOperations::Increment >{
+		constexpr OperationIdentifier() = default;
+		using name = RegisteredOperations::Increment;
+	};
+
+	template<>
+	struct OperationIdentifier<RegisteredOperations::Clone >{
+		constexpr OperationIdentifier() = default;
+		using name = RegisteredOperations::Clone;
+	};
+
+	template<>
+	struct OperationIdentifier<RegisteredOperations::Insert >{
+		constexpr OperationIdentifier() = default;
+		using name = RegisteredOperations::Insert;
+	};
 
 template<typename Handle>
 struct convert_SelfType{
@@ -36,7 +56,7 @@ struct convert_SelfType{
 	};
 
 
-	template<RegisteredOperations Name, typename Ret, typename... Args> 
+	template<typename Name, typename Ret, typename... Args>
 struct SupportedOperation {
 
 	template<typename Handle>
@@ -59,7 +79,6 @@ struct SupportedOperation {
 			DataStore &ds;
 			
 			static constexpr RO<typename Handle::stored_type>& reduce_selfTypes(SelfType*, Handle& h){
-
 				return static_cast<RO<typename Handle::stored_type>& >(*h._ro);
 			}
 			
@@ -72,14 +91,14 @@ struct SupportedOperation {
 			operation_impl(DataStore &ds):ds(ds){}
 			
 			return_raw act(std::true_type*, TransactionContext* _ctx,typename convert_SelfType<Handle&>::template act<Args>... a){
-				auto *ctx = dynamic_cast<typename DataStore::StoreContext*>(&_ctx->store_context(ds whendebug(, "operation!")));
-				return ds.operation(_ctx,*ctx,OperationIdentifier<Name>{nullptr},
+				auto *ctx = dynamic_cast<typename DataStore::StoreContext*>(&_ctx->store_context(ds whendebug(, OperationIdentifier<Name>::name::string)));
+				return ds.operation(_ctx,*ctx,OperationIdentifier<Name>{},
 									this->template reduce_selfTypes(((Args*)nullptr), a)...);
 			}
 
 			std::nullptr_t act(std::false_type*, TransactionContext* _ctx,typename convert_SelfType<Handle&>::template act<Args>... a){
-				auto *ctx = dynamic_cast<typename DataStore::StoreContext*>(&_ctx->store_context(ds whendebug(, "operation!")));
-				ds.operation(_ctx,*ctx,OperationIdentifier<Name>{nullptr},
+				auto *ctx = dynamic_cast<typename DataStore::StoreContext*>(&_ctx->store_context(ds whendebug(, OperationIdentifier<Name>::name::string)));
+				ds.operation(_ctx,*ctx,OperationIdentifier<Name>{},
 									this->template reduce_selfTypes(((Args*)nullptr), a)...);
 				return nullptr;
 			}
@@ -89,7 +108,16 @@ struct SupportedOperation {
 				return act(choice,_ctx,a...);
 			}
 
-			
+			auto write_set(TransactionContext* _ctx,typename convert_SelfType<Handle&>::template act<Args>... a){
+				auto *ctx = dynamic_cast<typename DataStore::StoreContext*>(&_ctx->store_context(ds whendebug(, "retrieve a write set")));
+				return ds.write_set(*ctx,OperationIdentifier<Name>{}, a...);
+			}
+
+			auto read_set(TransactionContext* _ctx,typename convert_SelfType<Handle&>::template act<Args>... a){
+				auto *ctx = dynamic_cast<typename DataStore::StoreContext*>(&_ctx->store_context(ds whendebug(, "retrieve a read set")));
+				return ds.read_set(*ctx,OperationIdentifier<Name>{}, a...);
+			}
+
 		};
 
 		using operation = std::shared_ptr<operation_super>;
@@ -116,7 +144,7 @@ struct SupportedOperation {
 	};
 };
 
-	template<typename Handle,RegisteredOperations Name, typename Ret, typename... Args>
+	template<typename Handle,typename Name, typename Ret, typename... Args>
 	struct handle_supports : std::is_base_of<typename SupportedOperation<Name,Ret,Args...>::template SupportsOn<Handle >, Handle > {};
 
 }

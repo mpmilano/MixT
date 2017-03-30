@@ -200,7 +200,7 @@ struct remote_holder : public type_holder<typename T::type, str...>
   remote_holder& push(TransactionContext& tc, Args&&... args)
   {
     super::push(tc, std::forward<Args>(args)...);
-    handle.put(tc.tracker(), &tc, this->t.back());
+    handle.put(&tc, this->t.back());
     list_usable = true;
     return *this;
   }
@@ -213,7 +213,7 @@ struct remote_holder : public type_holder<typename T::type, str...>
       return super::get(tc);
     } else {
       list_usable = true;
-      super::bind(*handle.get(tc.tracker(), &tc));
+      super::bind(*handle.get(&tc));
       return super::get(tc);
     }
   }

@@ -27,10 +27,11 @@ namespace runnable_transaction {
 	template<typename phase1, typename store>
 	auto common_interp(tracker::TrackingContext& tctx, store& s){
 		using label = typename phase1::label;
+		PhaseContext<label> ctx{tctx};
 		do {
 			try {
+				ctx.reset();
 				s.begin_phase();
-				PhaseContext<label> ctx{tctx};
 				return run_phase1<phase1>(ctx,s);
 			}
 			catch(const SerializationFailure& sf){
