@@ -9,7 +9,6 @@ namespace myria{
 
 	struct GDataStore {
 		const std::string level_description;
-		virtual tracker::Tracker& tracker() = 0;
 		virtual bool in_transaction() const = 0; //mostly for debugging
 #ifndef NDEBUG
 		virtual std::string why_in_transaction() const = 0; //entirely for debugging

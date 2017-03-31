@@ -104,6 +104,8 @@ struct phase<l, AST, reqs, mutils::typeset<_provides...>, owns, passthrough>
   using requirements = reqs;
   using provides = mutils::typeset<_provides...>;
   using owned = owns;
+
+	template<typename label> using has_label = std::conditional_t<std::is_same<l,label>::value, phase, mutils::mismatch>;
 };
 
 template <typename... phases>
@@ -121,6 +123,8 @@ struct transaction
     typename store_from_typeset<DECT(mutils::typelist_ns::combine(typename phases::provides{}...)
                                        .combine(mutils::typelist_ns::intersect(typename phases::requirements{}...))
                                        .combine(holder_to_value(mutils::typelist_ns::combine(typename phases::owned{}...))))>::template add<env...>;
+
+	template<typename label> using find_phase = DECT(*find_match<typename phases::template has_label<label>...>());
 };
 
 template <typename...>

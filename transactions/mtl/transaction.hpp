@@ -10,6 +10,7 @@
 #include "recollapse.hpp"
 #include <memory>
 #include "Basics.hpp"
+#include "transaction_listener.hpp"
 
 
 namespace myria {
@@ -29,6 +30,19 @@ struct transaction_struct
     using namespace runnable_transaction;
 		tracker::TrackingContext ctx{trk};
     return begin_interp<transaction>(ctx, bound_values{ v }...);
+  }
+
+	static auto run_optimistic(int ip, int port, tracker::Tracker& trk, const typename bound_values::type&... v)
+  {
+    using namespace runnable_transaction;
+		tracker::TrackingContext ctx{trk};
+    return begin_interp<transaction>(ctx, bound_values{ v }...);
+  }
+
+	template<typename label>
+	static auto listen(int ip, int port)
+  {
+		return transaction_listener<transaction::find_phase<label> >{};
   }
 };
 
