@@ -12,35 +12,6 @@ namespace myria {
 		namespace local {
 
 			using conn_space::receiver;
-
-			struct sql_socket : public mutils::connection {
-				mutils::connection& data_conn;
-				static constexpr bool success(){ return true;}
-				static constexpr bool error() {return false;}
-				bool valid() const {return data_conn->valid();}
-				std::size_t raw_receive(std::size_t how_many, std::size_t const * const sizes, void ** bufs){
-					return data_conn.raw_receive(how_many, sizes,bufs);
-				}
-				std::size_t raw_send(std::size_t old_how_many, std::size_t const * const old_sizes, void const * const * const old_bufs){
-					return send_prepend_extra(data_conn,old_how_many, old_sizes, old_bufs, success());
-				}
-
-				std::size_t send_error_string(const std::string &error){
-					constexpr std::size_t how_many{3};
-					constexpr bool _error = error();
-					const std::size_t string_size{error.size()};
-					const std::size_t[] sizes = {sizeof(_error), sizeof(string_size), string_size};
-					void const *const  bufs[] = {(void*)&_error, (void*) &string_size, (void*) error.c_str()};
-					return data_conn.raw_send(how_many, sizes, bufs);
-				}
-				
-#ifndef NDEBUG
-				std::ostream& get_log_file() {
-					return data_conn.get_log_file();
-				}
-#endif
-				
-			};
 			
 			template<Level l>
 			class SQLReceiver{
@@ -50,15 +21,15 @@ namespace myria {
 
 				using sizes_t = std::vector<std::size_t>;
 
-				static mutils::dualstate_action_t new_connection(whendebug(std::ostream& log_file,) ::mutils::connection& data) {
-					struct ReceiverFun : public mutils::ReceiverFun {
+				static mutils::dualstate_action_t new_connection(whendebug(std::ostream& log_file,) ::mutils::connection& data, ::mutils::connection& control) {
+					struct ReceiverFun : public mutils::dual_state_receiver {
 						whendebug(std::ostream& log_file;)
 						std::unique_ptr<LocalSQLConnection<l> > db_connection{
 							new LocalSQLConnection<l>(whendebug(log_file))};
 						std::unique_ptr<LocalSQLTransaction<l> > current_trans{nullptr};
 
-						sql_socket wrapped_conn;
-						
+						mutils::connection& data_conn;
+						mutils::connection& control_conn;
 						const long int serialization_failure = mutils::long_rand();
 
 						int underlying_fd() {
@@ -77,7 +48,7 @@ namespace myria {
 								}
 							}
 							catch (const SerializationFailure& sf){
-								wrapped_conn.send_error_string("?");
+								control_conn.send(serialization_failure);
 								db_connection = current_trans->store_abort(std::move(current_trans));
 							}
 							catch (const SQLFailure& sf){
@@ -87,8 +58,7 @@ namespace myria {
 							}
 						}
 						
-						void deliver_new_event(std::size_t, const void* data){
-						mutils::connection& data_conn = wrapped_conn;
+					void deliver_new_data_event(const void* data){
 							const char* _data = (const char*) data;
 							//request for diagnostics
 							if (_data[0] == 6) {
@@ -159,20 +129,31 @@ namespace myria {
 							}
 #endif
 						}
+
+						void deliver_new_control_event(const void* v){
+							(void) v;
+							assert(*((long int*)v) == serialization_failure);
+							data_conn.send(serialization_failure);
+							const std::string why{"?"};
+							std::size_t size = mutils::bytes_size(why);
+							control_conn.send(size);
+							control_conn.send(why);
+						}
 						
 						ReceiverFun(ReceiverFun&& o)
 							:whendebug(log_file(o.log_file),)
 							db_connection(std::move(o.db_connection)),
 							current_trans(std::move(o.current_trans)),
-							wrapped_conn(o.wrapped_conn)
+							data_conn(o.data_conn),
+							control_conn(o.control_conn)
 							{}
 						
-						ReceiverFun(whendebug(std::ostream& log_file,) ::mutils::connection& data)
+						ReceiverFun(whendebug(std::ostream& log_file,) ::mutils::connection& data, ::mutils::connection& control)
 							:whendebug(log_file(log_file),)
-							 wrapped_conn(data)
+							 data_conn(data),control_conn(control)
 							{}
 					};
-					return mutils::action_t{new ReceiverFun(whendebug(log_file,) data)};
+					return mutils::dualstate_action_t{new ReceiverFun(whendebug(log_file,) data, control)};
 				}
 				
 				SQLReceiver():r((l == Level::strong?

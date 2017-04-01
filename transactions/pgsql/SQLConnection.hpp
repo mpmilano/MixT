@@ -56,36 +56,13 @@ namespace myria{ namespace pgsql {
 				return 4*(NUM_CLIENTS + (INCREASE_BY*(TEST_STOP_TIME/INCREASE_DELAY)));
 			}
 			
-			mutils::batched_connection::connections bc{
+			mutils::dual_connection_manager<mutils::batched_connection::connections> bc{
 				(l::is_strong::value ? strong_ip_addr : causal_ip_addr),
-					(l::is_strong::value ? strong_sql_port : causal_sql_port),
-					static_cast<int>(num_connections()/2)};
-
-			struct receiver_socket : public mutils::connection{
-				using data_conn_t = std::decay_t<decltype(bc.spawn())>;
-				data_conn_t data_conn;
-				
-				receiver_socket(data_conn_t d):data_conn(std::move(d)){}
-				
-				whendebug(std::ostream& get_log_file(){return data_conn.get_log_file();});
-				static constexpr bool success(){ return true;}
-				static constexpr bool error() {return false;}
-				bool valid() const {return data_conn.valid();}
-				std::size_t raw_receive(std::size_t old_how_many, std::size_t const * const old_sizes, void ** old_bufs){
-					bool is_success;
-					auto ret = receive_prepend_extra(data_conn,old_how_many, old_sizes, old_bufs, is_success);
-					//note: do something with the boolean! Also check protocol for symmetry; assumed in this design, bad if not witnessed.
-					assert(false);
-					return ret;
-				}
-				std::size_t raw_send(std::size_t how_many, std::size_t const * const sizes, void const * const * const bufs){
-					return data_conn.raw_send(how_many, sizes,bufs);
-				}
-			};
+					(l::is_strong::value ? strong_sql_port : causal_sql_port),(num_connections()/2)};
 			
 			mutils::ResourcePool<SQLConnection> rp{3*num_connections()/4,num_connections()/4,
 					[this]{
-					using subcon = receiver_socket;
+					using subcon = std::decay_t<decltype(bc.spawn())>;
 					return new SQLConnection(std::unique_ptr<mutils::connection>(new subcon(bc.spawn())));},false /*disallow overdraws*/};
 			LockedSQLConnection acquire(){
 				return rp.acquire();
