@@ -9,6 +9,19 @@ namespace mtl {
 namespace runnable_transaction {
 
 template <typename... holders>
+struct store;
+	
+template <typename>
+struct store_from_typeset_str;
+template <typename... T>
+struct store_from_typeset_str<mutils::typeset<T...>>
+{
+  using type = store<T...>;
+};
+	template <typename T>
+using store_from_typeset = typename store_from_typeset_str<T>::type;
+	
+template <typename... holders>
 struct store : public ByteRepresentable, public holders...
 {
 
@@ -30,6 +43,19 @@ struct store : public ByteRepresentable, public holders...
 	store& operator=(const store& o){
 		auto ignore = {((void*)&holders::operator=(o))...,nullptr,nullptr};
 		(void)ignore;
+	}
+
+	template<typename... otherholders>
+	store& update_with(const store<otherholders...> & o){
+		auto ignore = {(void*)&otherholders::operator=(o),nullptr,nullptr};
+		(void)ignore;
+		return *this;
+	}
+	template<typename... otherholders>
+		store<otherholders...> copy_to(store<otherholders...> &ret) const {
+		auto ignore = {(void*)&ret.otherholders::operator=(*this),nullptr,nullptr};
+		(void)ignore;
+		return ret;
 	}
 
   template <char... str>
@@ -56,11 +82,11 @@ struct store : public ByteRepresentable, public holders...
   }
 
 	std::size_t bytes_size() const {
-		return (0 + ... + bytes_size(*holders::this));
+		return (0 + ... + bytes_size(*(holders*)this));
 	}
 
 	std::size_t to_bytes(char * v) const {
-		return mutils::to_bytes_v(v,*holders::this...);
+		return mutils::to_bytes_v(v,*((holders*)this)...);
 	}
 
 	std::unique_ptr<store> from_bytes(DeserializationManager* dsm, char* v){
@@ -87,9 +113,14 @@ struct store : public ByteRepresentable, public holders...
   template <typename... T>
   using add = DECT(*add_f(((T*)nullptr)...));
 
-	template<typename phase> using restrict_to = 
+	template<typename phase> using restrict_to_phase =
+		store_from_typeset<DECT(
+			phase::requirements::combine(
+				phase::provides::combine(
+					typename phase::owns{})))>;
 	
 };
+
 
 template <typename>
 struct is_store;
@@ -101,17 +132,6 @@ template <typename>
 struct is_store : public std::false_type
 {
 };
-
-template <typename>
-struct store_from_typeset_str;
-template <typename... T>
-struct store_from_typeset_str<mutils::typeset<T...>>
-{
-  using type = store<T...>;
-};
-
-template <typename T>
-using store_from_typeset = typename store_from_typeset_str<T>::type;
 
 template <typename l, typename AST, typename _provides, typename _inherits, typename reqs>
 struct prephase
