@@ -34,6 +34,9 @@ struct type_binding;
 template <typename T, char... str>
 struct value_holder
 {
+
+	static_assert(std::is_pod<value_holder>::value || !std::is_pod<T>::value);
+	using held_type = T;
 	T pre_phase_t;
   T t;
   value_holder(T t)
@@ -41,6 +44,12 @@ struct value_holder
   {
   }
   value_holder() = default;
+
+	value_holder& operator=(const value_holder& o){
+		pre_phase_t = o.pre_phase_t;
+		t = o.t;
+	}
+	
   using type = T;
   using name = String<str...>;
   template <typename TransactionContext>
@@ -82,6 +91,7 @@ struct value_holder
   }
   using value = value_holder;
 };
+	static_assert(std::is_pod<value_holder<int,'c'> >::value);
 
 template <typename T, char... str>
 using value = value_holder<T, str...>;
@@ -100,6 +110,9 @@ using value_with_stringname = typename value_with_stringname_str<T, N>::type;
 template <typename T, char... str>
 struct type_holder
 {
+
+	using held_type = T;
+	
   std::vector<T> t;
   int curr_pos{ -1 };
 	unsigned int rollback_size{0};
@@ -109,6 +122,13 @@ struct type_holder
   type_holder() = default;
   type_holder(const type_holder&) = delete;
   type_holder(value<T, str...> v) { bind(v.t); }
+
+	type_holder& operator=(const type_holder& o){
+		t = o.t;
+		curr_pos = o.curr_pos;
+		rollback_size = o.rollback_size;
+		bound = o.bound;
+	}
 
   bool reset_index()
   {
@@ -177,6 +197,13 @@ struct remote_holder : public type_holder<typename T::type, str...>
   bool initialized = false;
   bool list_usable = false;
   T handle;
+
+	remote_holder& operator=(const remote_holder& o){
+		super::operator=(o);
+		initialized = o.initialized;
+		list_usable = o.list_usable;
+		handle = o.handle;
+	}
 
   template <typename Other>
   static constexpr mutils::mismatch get_holder(remote_holder*, std::enable_if_t<!std::is_same<Other, name>::value, Other>)
@@ -360,3 +387,4 @@ constexpr auto holder_to_value(mutils::typeset<T...>)
 }
 }
 }
+

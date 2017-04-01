@@ -2,13 +2,14 @@
 #include "AST_split.hpp"
 #include "split_printer.hpp"
 #include "environments.hpp"
+#include "environments_serialization.hpp"
 
 namespace myria {
 namespace mtl {
 namespace runnable_transaction {
 
 template <typename... holders>
-struct store : public holders...
+struct store : public ByteRepresentable, public holders...
 {
 
   store() = default;
@@ -20,6 +21,16 @@ struct store : public holders...
   {
     get(typename val1::name{}).bind(val.t);
   }
+
+	store(const holders...& o){
+		auto ignore = {((void*)&holders::operator=(o))...,nullptr,nullptr};
+		(void)ignore;
+	}
+
+	store& operator=(const store& o){
+		auto ignore = {((void*)&holders::operator=(o))...,nullptr,nullptr};
+		(void)ignore;
+	}
 
   template <char... str>
   auto& get(String<str...> name)
@@ -43,6 +54,24 @@ struct store : public holders...
     (void)b;
     return *this;
   }
+
+	std::size_t bytes_size() const {
+		return (0 + ... + bytes_size(*holders::this));
+	}
+
+	std::size_t to_bytes(char * v) const {
+		return mutils::to_bytes_v(v,*holders::this...);
+	}
+
+	std::unique_ptr<store> from_bytes(DeserializationManager* dsm, char* v){
+		std::tuple<DeserializationManager*, char*,mutils::context_ptr<holders>... > tpl;
+		std::get<0>(tpl) = dsm;
+		std::get<1>(tpl) = v;
+		mutils::callFunc(from_bytes_noalloc_v_nc,tpl);
+		return mutils::callFunc([](DeserializationManager*, char*, const mutils::context_ptr<holders>&... v){
+				return new store(*v...);
+			});
+	}
 
   static constexpr store* add_f()
   {
