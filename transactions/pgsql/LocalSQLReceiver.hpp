@@ -87,7 +87,7 @@ namespace myria {
 							}
 						}
 						
-					void deliver_new_event(const void* data){
+						void deliver_new_event(std::size_t, const void* data){
 						mutils::connection& data_conn = wrapped_conn;
 							const char* _data = (const char*) data;
 							//request for diagnostics

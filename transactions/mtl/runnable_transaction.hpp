@@ -57,6 +57,9 @@ struct store : public holders...
 
   template <typename... T>
   using add = DECT(*add_f(((T*)nullptr)...));
+
+	template<typename phase> using restrict_to = 
+	
 };
 
 template <typename>

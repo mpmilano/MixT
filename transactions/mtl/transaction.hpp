@@ -41,9 +41,13 @@ struct transaction_struct
 
 	template<typename label>
 	static auto listen(int ip, int port)
-  {
-		return transaction_listener<transaction::find_phase<label> >{};
-  }
+		{
+			using phase = typename transaction::template find_phase<label>;
+			using store = typename transaction::all_store::template restrict_to<
+				DECT(phase::requirements::combine(phase::owned::combine(typename phase::provides{})))
+				>;
+			return transaction_listener<phase, store>{};
+		}
 };
 
 template <char... Str>

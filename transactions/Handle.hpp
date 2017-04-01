@@ -48,10 +48,10 @@ namespace myria{
       Handle(tracker::Tracker &trk, mtl::PhaseContext<l> *tc, std::shared_ptr<RO<T> > _ro, DataStore& ds):
       SupportedOperations::template SupportsOn<Handle>(SupportedOperations::template SupportsOn<Handle>::template wrap_operation<RO>(ds))...,
       _ro(_ro){
-	static_assert(std::is_same<typename DataStore::label,label>::value);
-	assert(tc);
-	auto &ctx = *tc;
-	do_onwrite(ctx,trk,*_ro);
+				static_assert(std::is_same<typename DataStore::label,label>::value);
+				assert(tc);
+				auto &ctx = *tc;
+				do_onwrite(ctx,trk,*_ro);
       }
 
     /**
