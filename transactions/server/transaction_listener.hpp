@@ -76,6 +76,7 @@ namespace myria {
 					if(!b){
 						assert(false && "populate the cache somehow! Do stuff!");
 						}*/
+					c.send(srm.bytes_size());
 					c.send(srm);
 					return true;
 				}
