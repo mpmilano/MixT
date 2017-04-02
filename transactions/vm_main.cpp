@@ -333,7 +333,7 @@ int real_main(int strong_relay_ip, int strong_relay_port, int causal_relay_ip, i
 }
 
 int main(int whendebug(argc), char** argv){
-	assert(argc >= 4);
+	assert(argc > 4);
 	const rlim_t kStackSize = 128 * 1024 * 1024;   // min stack size = 16 MB
 	struct rlimit rl;
 	int result;
