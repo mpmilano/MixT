@@ -15,6 +15,7 @@
 #include "runnable_transaction.hpp"
 #include "run_phase.hpp"
 #include "mtlbasics.hpp"
+#include "myria_utils.hpp"
 
 namespace myria {
 
@@ -61,8 +62,9 @@ namespace myria {
 
 			using label = typename phase::label;
 			
-			static bool run_if_match(txnID_t id, DeserializationManager& dsm, mutils::connection &c, 
+			static bool run_if_match(txnID_t id, mutils::DeserializationManager& dsm, mutils::connection &c, 
 															 char const * const _data){
+				using namespace mutils;
 				if (id == txnID){
 					std::size_t request_size = ((std::size_t*)_data)[0];
 					auto* data = _data + sizeof(request_size);

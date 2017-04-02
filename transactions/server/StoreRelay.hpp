@@ -10,18 +10,22 @@ namespace myria{
 		struct StoreRelay {
 			static_assert(std::is_base_of<DataStore<typename Store::label>, Store >::value);
 
-			std::function<std::unique_ptr<Store> ()> store;
-			std::function<RemoteDeserialization_v ()> dsm;
+			struct captive_store{
+				virtual Store& store() = 0;
+				virtual mutils::DeserializationManager &dsm() = 0;
+				virtual ~captive_store() = default;
+			};
+			
+			std::function<std::unique_ptr<captive_store> ()> new_connection;
 
-			struct StoreSession : public ReceiverFun{
-				std::unique_ptr<Store> store;
-				DeserializationManager dsm;
+			struct StoreSession : public mutils::rpc::ReceiverFun{
+				std::unique_ptr<captive_store> cstore;
+				Store& store{cstore->store()};
+				mutils::DeserializationManager &dsm{cstore->dsm()};
 				mutils::connection &c;
 				moodycamel::BlockingReaderWriterQueue<std::vector<char> > queue;
-				StoreSession(std::unique_ptr<Store> store,
-										 RemoteDeserialization_v dsm,
-										 DECT(c) &c)
-					:store(std::move(store)),dsm(std::move(dsm)),c(c){}
+				StoreSession(std::unique_ptr<captive_store> cstore,DECT(c) &c)
+					:cstore(std::move(cstore)),c(c),actions{[this]{this->thread_loop();}}{}
 
 				//events within thread
 				void thread_loop(){
@@ -38,7 +42,7 @@ namespace myria{
 					}
 				}
 				bool done{false};
-				std::thread actions{thread_loop};
+				std::thread actions;
 
 				//events outside of thread
 				
@@ -47,7 +51,6 @@ namespace myria{
 					assert(b);
 				}
 				void async_tick(){
-					void;
 				}
 				int underlying_fd(){
 					static mutils::eventfd fd;
@@ -61,17 +64,19 @@ namespace myria{
 				
 			};
 
-			std::unique_ptr<mutils::rpc::ReceiverFun> start_session(whendebug(std::ofstream&,) mutils::connection& c ){
-				return new StoreSession(store(), dsm(), c);
+			std::unique_ptr<mutils::rpc::ReceiverFun> start_session(whendebug(std::ostream&,) mutils::connection& c ){
+				return std::unique_ptr<mutils::rpc::ReceiverFun>{new StoreSession(new_connection(), c)};
 			}
+			mutils::rpc::new_connection_t start_session_wrapper =
+				std::bind(&StoreRelay::start_session,this,std::placeholders::_1 whendebug(, std::placeholders::_2));
 			
 			mutils::batched_connection::receiver receiver;
-			StoreRelay(int port,std::function<std::unique_ptr<Store> ()> store, std::function<RemoteDeserialization_v ()> dsm)
-				:store(std::move(store)),dsm(std::move(dsm)),receiver(port,start_session){}
+			StoreRelay(int port,DECT(new_connection) new_connection)
+				:new_connection(std::move(new_connection)),receiver(port,start_session_wrapper){}
 		};
 
 		template<typename Store, typename... transactions>
 		using RelayForTransactions =
-			StoreRelay<Store,listener_for<transactions, transactions::template find_phase<typename Store::label> >...>;
+			StoreRelay<Store,listener_for<transactions, typename transactions::template find_phase<typename Store::label> >...>;
 		
 	}}

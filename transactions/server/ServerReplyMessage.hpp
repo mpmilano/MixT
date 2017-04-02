@@ -5,7 +5,7 @@
 namespace myria {namespace server {
 
 		template<typename Name>
-		struct CacheEntry : public ByteRepresentable{
+		struct CacheEntry : public mutils::ByteRepresentable{
 			Name name; std::vector<char> bytes;
 			CacheEntry(Name name, std::vector<char> bytes)
 								 :name(std::move(name)),bytes(std::move(bytes)){}
@@ -14,7 +14,7 @@ namespace myria {namespace server {
 		};
 		
 		template<typename Name, typename Store>
-		struct ServerReplyMessage  : public ByteRepresentable {
+		struct ServerReplyMessage  : public mutils::ByteRepresentable {
 			std::vector<CacheEntry<Name> > cache_updates;
 			std::unique_ptr<Store> store;
 
@@ -47,12 +47,12 @@ namespace myria {namespace server {
 			}
 
 #ifndef NDEBUG
-			void ensure_registered(DeserializationManager&){}
+			void ensure_registered(mutils::DeserializationManager&){}
 #endif
 		};
 
 		template<typename Store>
-		struct ClientRequestMessage : public ByteRepresentable {
+		struct ClientRequestMessage : public mutils::ByteRepresentable {
 			std::unique_ptr<Store> store;
 			//std::context_ptr<typename Store::diff_t> diff;
 			ClientRequestMessage(decltype(store) store):store(std::move(store)){}
@@ -77,7 +77,7 @@ namespace myria {namespace server {
 			}
 
 #ifndef NDEBUG
-			void ensure_registered(DeserializationManager&){}
+			void ensure_registered(mutils::DeserializationManager&){}
 #endif
 			
 		};

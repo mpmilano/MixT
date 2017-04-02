@@ -21,3 +21,13 @@ namespace mutils{
 		}
 	};
 }
+namespace myria{
+	struct SerializationFailure : mutils::MyriaException {
+		const std::string why;
+		SerializationFailure(const std::string why)
+			:why(why){}
+		virtual const char* what() const noexcept {
+			return why.c_str();
+		}
+	};
+}

@@ -27,24 +27,24 @@ using store_from_typeset = typename store_from_typeset_str<T>::type;
 
 	template<typename , typename> struct contains_name;
 	template<typename name, typename... members>
-	struct contains_name<name,typeset<members...> >
+	struct contains_name<name,mutils::typeset<members...> >
 		: public std::integral_constant<bool, (std::is_same<typename members::name,name>::value || ... || false) >{};
 
 	template<typename, typename>
 	struct intersect_names_str;
 	template<typename rightset>
-	struct intersect_names_str<typeset<>, rightset >{
-		using type = typeset<>;
+	struct intersect_names_str<mutils::typeset<>, rightset >{
+		using type = mutils::typeset<>;
 	};
 	template<typename rightset, typename leftfirst, typename... leftsetmembers>
-	struct intersect_names_str<typeset<leftfirst, leftsetmembers...>, rightset >{
-		using type_start = std::conditional_t<contains_name<typename leftfirst::name, rightset>::value, typeset<leftfirst>, typeset<> >;
-		using type = DECT(type_start::combine(typename intersect_names_str<typeset<leftsetmembers...>, rightset >::type{}));
+	struct intersect_names_str<mutils::typeset<leftfirst, leftsetmembers...>, rightset >{
+		using type_start = std::conditional_t<contains_name<typename leftfirst::name, rightset>::value, mutils::typeset<leftfirst>, mutils::typeset<> >;
+		using type = DECT(type_start::combine(typename intersect_names_str<mutils::typeset<leftsetmembers...>, rightset >::type{}));
 	};
 	template<typename left, typename right> using intersect_names = typename intersect_names_str<left,right>::type;
 	
 template <typename... holders>
-struct store : public ByteRepresentable, public holders...
+struct store : public mutils::ByteRepresentable, public holders...
 {
 
   store() = default;
@@ -107,7 +107,7 @@ struct store : public ByteRepresentable, public holders...
   }
 	
 #ifndef NDEBUG
-	void ensure_registered(DeserializationManager&){}
+	void ensure_registered(mutils::DeserializationManager&){}
 #endif
 
 	std::size_t bytes_size() const {
@@ -125,12 +125,13 @@ struct store : public ByteRepresentable, public holders...
 		f(buf,size);
 	}
 
-	static std::unique_ptr<store> from_bytes(DeserializationManager* dsm, const char* v){
-		std::tuple<DeserializationManager*, const char*,mutils::context_ptr<const holders>... > tpl;
+	static std::unique_ptr<store> from_bytes(mutils::DeserializationManager* dsm, const char* v){
+		using namespace mutils;
+		std::tuple<mutils::DeserializationManager*, const char*,mutils::context_ptr<const holders>... > tpl;
 		std::get<0>(tpl) = dsm;
 		std::get<1>(tpl) = v;
 		struct funstr{
-			static store* from_bytes(DeserializationManager* dsm, const char* _v, mutils::context_ptr<const holders>&... v){
+			static store* from_bytes(mutils::DeserializationManager* dsm, const char* _v, mutils::context_ptr<const holders>&... v){
 				from_bytes_noalloc_v<holders...>(dsm,_v,v...);
 				return new store(initialize_from_holder{},*v...);
 			}};
@@ -154,7 +155,7 @@ struct store : public ByteRepresentable, public holders...
 	template<typename phase> using restrict_to_phase =
 		store_from_typeset<
 			intersect_names<
-				typeset<holders...>,
+				mutils::typeset<holders...>,
 				DECT(phase::requirements::combine(
 							 phase::provides::combine(
 								 typename phase::owned{})))> >;
@@ -233,7 +234,7 @@ struct transaction<p1,phases...>
                                        .combine(mutils::typelist_ns::intersect(typename p1::requirements{}, typename phases::requirements{}...))
                                        .combine(holder_to_value(mutils::typelist_ns::combine(typename p1::owned{}, typename phases::owned{}...))))>::template add<env...>;
 
-	template<typename label> using find_phase = DECT(*find_match<typename p1::template has_label<label>,typename phases::template has_label<label>...>());
+	template<typename label> using find_phase = DECT(*mutils::find_match<typename p1::template has_label<label>,typename phases::template has_label<label>...>());
 };
 
 template <typename...>

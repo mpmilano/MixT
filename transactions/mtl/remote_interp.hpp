@@ -11,7 +11,8 @@
 namespace myria { namespace mtl { namespace runnable_transaction {
 
 			template<typename phase, typename FullStore>
-			auto remote_interp(DeserializationManager* dsm, mutils::connection &c, FullStore &s){
+			auto remote_interp(mutils::DeserializationManager* dsm, mutils::connection &c, FullStore &s){
+				using namespace mutils;
 				using namespace server;
 				using restricted_store
 					= typename FullStore::template restrict_to_phase<phase>;

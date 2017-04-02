@@ -3,7 +3,7 @@
 
 namespace myria{ namespace mtl{
 	template<typename T>
-	context_ptr<const type_check<is_type_holder,T> > from_bytes_noalloc(DeserializationManager* dsm, const char * v, context_ptr<T> = context_ptr<T>{} ){
+	mutils::context_ptr<const mutils::type_check<is_type_holder,T> > from_bytes_noalloc(mutils::DeserializationManager* dsm, const char * v, mutils::context_ptr<T> = mutils::context_ptr<T>{} ){
 		using namespace mutils;
 		auto ret = new T;
 		ret->t = *from_bytes_noalloc<DECT(ret->t)>(dsm,v);
@@ -41,7 +41,7 @@ namespace myria{ namespace mtl{
 	}
 	
 	template<typename T>
-	context_ptr<const type_check<is_remote_holder,T> > from_bytes_noalloc(DeserializationManager* dsm, const char * v, context_ptr<T> = context_ptr<T>{}){
+	mutils::context_ptr<const mutils::type_check<is_remote_holder,T> > from_bytes_noalloc(mutils::DeserializationManager* dsm, const char * v, mutils::context_ptr<T> = mutils::context_ptr<T>{}){
 		auto ret = new T;
 		ret->t = *mutils::from_bytes_noalloc<DECT(ret->t)>(dsm,v);
 		v += mutils::bytes_size(ret->t);
@@ -61,7 +61,7 @@ namespace myria{ namespace mtl{
 	}
 
 	template<typename T>
-	context_ptr<const type_check<is_value_holder,T> > from_bytes_noalloc(DeserializationManager* dsm, const char * v, context_ptr<T> = context_ptr<T>{}){
+	mutils::context_ptr<const mutils::type_check<is_value_holder,T> > from_bytes_noalloc(mutils::DeserializationManager* dsm, const char * v, mutils::context_ptr<T> = mutils::context_ptr<T>{}){
 		auto ret = new T;
 		ret->t = *mutils::from_bytes_noalloc<DECT(ret->t)>(dsm,v);
 		v += mutils::bytes_size(ret->t);

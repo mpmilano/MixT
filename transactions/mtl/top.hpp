@@ -39,7 +39,6 @@ struct Label<top>
     return true;
   }
 
-	template<typename>
 	using requires_causal_tracking = std::false_type;
 	using can_abort = std::false_type;
 };
@@ -212,7 +211,6 @@ struct Label<bottom>
     return (true && ... && Label::flows_to(labels{}));
   }
 
-	template<typename>
 	using requires_causal_tracking = std::false_type;
 	using can_abort = std::false_type;
 	
