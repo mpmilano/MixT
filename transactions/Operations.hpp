@@ -108,16 +108,6 @@ struct SupportedOperation {
 				return act(choice,_ctx,a...);
 			}
 
-			auto write_set(TransactionContext* _ctx,typename convert_SelfType<Handle&>::template act<Args>... a){
-				auto *ctx = dynamic_cast<typename DataStore::StoreContext*>(&_ctx->store_context(ds whendebug(, "retrieve a write set")));
-				return ds.write_set(*ctx,OperationIdentifier<Name>{}, a...);
-			}
-
-			auto read_set(TransactionContext* _ctx,typename convert_SelfType<Handle&>::template act<Args>... a){
-				auto *ctx = dynamic_cast<typename DataStore::StoreContext*>(&_ctx->store_context(ds whendebug(, "retrieve a read set")));
-				return ds.read_set(*ctx,OperationIdentifier<Name>{}, a...);
-			}
-
 		};
 
 		using operation = std::shared_ptr<operation_super>;
