@@ -130,14 +130,11 @@ struct store : public ByteRepresentable, public holders...
 		std::get<0>(tpl) = dsm;
 		std::get<1>(tpl) = v;
 		struct funstr{
-			static std::size_t from_bytes(DeserializationManager* dsm, const char* _v, mutils::context_ptr<const holders>&... v){
-				return from_bytes_noalloc_v<holders...>(dsm,_v,v...);
-			}
-			static store* newstore(DeserializationManager*, const char*, const mutils::context_ptr<const holders>&... v){
-				return new store(initialize_from_holder{}, *v...);
-		}};
-		mutils::callFunc(funstr::from_bytes,tpl);
-		return std::unique_ptr<store>(mutils::callFunc(funstr::newstore,tpl));
+			static store* from_bytes(DeserializationManager* dsm, const char* _v, mutils::context_ptr<const holders>&... v){
+				from_bytes_noalloc_v<holders...>(dsm,_v,v...);
+				return new store(initialize_from_holder{},*v...);
+			}};
+		return std::unique_ptr<store>(mutils::callFunc(funstr::from_bytes,tpl));
 	}
 
   static constexpr store* add_f()
