@@ -50,19 +50,13 @@ namespace {
 			batched_connection::connection strong_connection;
 			batched_connection::connection causal_connection;
 			
-			Continue_build(Mem& super, SQLConnectionPool<Label<strong> >& strong_p, SQLConnectionPool<Label<causal> >& causal_p,
+			Continue_build(Mem& , SQLConnectionPool<Label<strong> >& strong_p, SQLConnectionPool<Label<causal> >& causal_p,
 										 batched_connection::connection strong_connection,	batched_connection::connection causal_connection)
 				:ss(strong_p),
 				 sc(causal_p),
 				 dsm({&ss,&sc}),
 				 strong_connection(std::move(strong_connection)),
 				 causal_connection(std::move(causal_connection)){
-				auto &ss = this->ss.inst();
-				auto &cs = sc.inst();
-				if (!super.trk.strongRegistered())
-					super.trk.registerStore(ss);
-				if (!super.trk.causalRegistered())
-					super.trk.registerStore(cs);
 			}
 		};
 		std::unique_ptr<Continue_build> i;
