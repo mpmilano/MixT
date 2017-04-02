@@ -246,7 +246,7 @@ struct pretransaction<>
   using processed = transaction<>;
 };
 
-	template <typename p1, typename... prephases>
+template <typename p1, typename... prephases>
 struct pretransaction<p1, prephases...>
 {
   constexpr pretransaction() = default;
