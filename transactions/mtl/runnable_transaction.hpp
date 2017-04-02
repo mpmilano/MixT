@@ -233,8 +233,7 @@ struct transaction<p1,phases...>
                                        .combine(mutils::typelist_ns::intersect(typename p1::requirements{}, typename phases::requirements{}...))
                                        .combine(holder_to_value(mutils::typelist_ns::combine(typename p1::owned{}, typename phases::owned{}...))))>::template add<env...>;
 
-	template<typename label> using find_phase = DECT(*find_match<typename p1::template has_label<label>,
-																									 typename phases::template has_label<label>...>());
+	template<typename label> using find_phase = DECT(*find_match<typename p1::template has_label<label>,typename phases::template has_label<label>...>());
 };
 
 template <typename...>
