@@ -108,9 +108,7 @@ namespace myria{
       
       //If the Transacion Context does not yet exist for this store, we create it now.
       auto &store_ctx = ctx.store_context(this->store() whendebug(, "calling get() via handle"));
-
-      constexpr std::integral_constant<bool, !l::requires_causal_tracking::value> *choice{nullptr};
-      return get(choice,store_ctx, ctx.trackingContext, _ro->get(&store_ctx));
+			return _ro->get(&store_ctx);
     }
     
     Handle clone() const {
@@ -124,18 +122,8 @@ namespace myria{
     void put(mtl::PhaseContext<l> *tc, const T& t){
       assert(tc);
       auto &ctx = *tc;
-      constexpr std::integral_constant<bool, !l::requires_causal_tracking::value> *choice{nullptr};
-      return put(ctx,t,choice);
-    }
-    
-    void put(mtl::PhaseContext<l> &ctx, const T& t, std::true_type*) {
-      assert(_ro);
-			_ro->put(&ctx.store_context(this->store() whendebug(, "calling put() via handle")),t);
-    }
-    
-    void put(mtl::PhaseContext<l> &ctx, const T& t, std::false_type*) {
-      assert(_ro);
-			_ro->put(&ctx.store_context(this->store() whendebug(, "calling put() via handle")),t);
+			assert(_ro);
+			return _ro->put(&ctx.store_context(this->store() whendebug(, "calling put() via handle")),t);
     }
     
     bool isValid(mtl::PhaseContext<l> *ctx) const {
