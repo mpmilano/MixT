@@ -62,11 +62,6 @@ struct store : public ByteRepresentable, public holders...
 		(void)ignore;
 	}
 
-	store& operator=(const store& o){
-		std::initializer_list<void*> ignore = {((void*)&holders::operator=(o))...,nullptr,nullptr};
-		(void)ignore;
-	}
-
 	template<typename... otherholders>
 	store& update_with(const store<otherholders...> & o){
 		static_assert((std::is_base_of<otherholders,store>::value && ... && true));
