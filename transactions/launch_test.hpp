@@ -42,15 +42,21 @@ namespace {
 		unique_ptr<VMObjectLogger> log_builder{build_VMObjectLogger()};
 		tracker::Tracker trk;
 		const int memid;
+		
 		struct Continue_build {
 			SQLStore<Label<strong> >::SQLInstanceManager ss;
 			SQLStore<Label<causal> >::SQLInstanceManager sc;
 			DeserializationManager dsm;
+			batched_connection::connection strong_connection;
+			batched_connection::connection causal_connection;
 			
-			Continue_build(Mem& super, SQLConnectionPool<Label<strong> >& strong_p, SQLConnectionPool<Label<causal> >& causal_p)
-				:ss(super.trk,strong_p),
-				 sc(super.trk,causal_p),
-				 dsm({&ss,&sc}){
+			Continue_build(Mem& super, SQLConnectionPool<Label<strong> >& strong_p, SQLConnectionPool<Label<causal> >& causal_p,
+										 batched_connection::connection strong_connection,	batched_connection::connection causal_connection)
+				:ss(strong_p),
+				 sc(causal_p),
+				 dsm({&ss,&sc}),
+				 strong_connection(std::move(strong_connection)),
+				 causal_connection(std::move(causal_connection)){
 				auto &ss = this->ss.inst();
 				auto &cs = sc.inst();
 				if (!super.trk.strongRegistered())
@@ -62,6 +68,10 @@ namespace {
 		std::unique_ptr<Continue_build> i;
 		
 		Mem& tracker_mem(){return *this;}
+		DeserializationManager* dsm() {
+			assert(i);
+			return &i->dsm;
+		}
 		
 		Mem(int memid)
 			:trk(memid + 1024, tracker::CacheBehaviors::full),
@@ -77,11 +87,12 @@ struct PreparedTest{
 
 	//static functions for TaskPool
 	static std::string exn_handler(std::exception_ptr eptr);
-
 	SQLConnectionPool<Label<strong> > strong;
 	SQLConnectionPool<Label<causal> > causal;
+	batched_connection::connections strong_connections;
+	batched_connection::connections causal_connections;
 	void pool_mem_init (Mem& m){
-		m.i.reset(new typename Mem::Continue_build(m,strong,causal));
+		m.i.reset(new typename Mem::Continue_build(m,strong,causal,strong_connections.spawn(),	causal_connections.spawn()));
 	}
 
 	using action_t = typename Pool::action_fp;
@@ -94,8 +105,10 @@ struct PreparedTest{
 	Pool pool;
 
 	//constructor
-	PreparedTest(std::vector<action_t> actions)
-		:pool{[this](int,Mem& m){return this->pool_mem_init(m);},
+	PreparedTest(std::vector<action_t> actions, int strong_ip, int strong_port, int strong_max, int causal_ip, int causal_port, int causal_max)
+		:strong_connections(strong_ip,strong_port,strong_max),
+		 causal_connections(causal_ip,causal_port, causal_max),
+		 pool{[this](int,Mem& m){return this->pool_mem_init(m);},
 			convert_vector(actions),
 				exn_handler}{}
 

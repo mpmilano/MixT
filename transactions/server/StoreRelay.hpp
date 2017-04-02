@@ -69,5 +69,9 @@ namespace myria{
 			StoreRelay(int port,std::function<std::unique_ptr<Store> ()> store, std::function<RemoteDeserialization_v ()> dsm)
 				:store(std::move(store)),dsm(std::move(dsm)),receiver(port,start_session){}
 		};
+
+		template<typename Store, typename... transactions>
+		using RelayForTransactions =
+			StoreRelay<Store,listener_for<transactions, transactions::template find_phase<typename Store::label> >...>;
 		
 	}}

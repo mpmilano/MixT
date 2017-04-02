@@ -23,7 +23,7 @@ namespace myria{
   struct LabelFreeHandle {virtual ~LabelFreeHandle() = default;};
 
   template<typename l2, typename T2, typename... ops2>
-  std::unique_ptr<Handle<l2,ops2...> > hndl_from_bytes(mutils::DeserializationManager* dm, char const * __v);
+  std::unique_ptr<Handle<l2,ops2...> > hndl_from_bytes(mutils::DeserializationManager* dm, char const * __v, Handle<l2,ops2...>* = nullptr);
 	
   template<typename l, typename T, typename... SupportedOperations>
   struct Handle : public GenericHandle<l>, public LabelFreeHandle<T>, public SupportedOperations::template SupportsOn<Handle<l,T,SupportedOperations...> >... {
@@ -97,7 +97,8 @@ namespace myria{
     }
 
     static std::unique_ptr<Handle> from_bytes(mutils::DeserializationManager* rdc, char const *v){
-      return hndl_from_bytes<l,T,SupportedOperations...>(rdc,v);
+			constexpr Handle* np{nullptr};
+      return hndl_from_bytes<l,T,SupportedOperations...>(rdc,v,np);
     }
 
     std::shared_ptr<const T> get(mtl::PhaseContext<l> *tc) const {
@@ -110,14 +111,6 @@ namespace myria{
 
       constexpr std::integral_constant<bool, !l::requires_causal_tracking::value> *choice{nullptr};
       return get(choice,store_ctx, ctx.trackingContext, _ro->get(&store_ctx));
-    }
-    
-    std::shared_ptr<const T> get(std::true_type*, mtl::StoreContext<l>& ctx, tracker::TrackingContext &, std::shared_ptr<const T> ret) const{
-      return ret;
-    }
-    
-    std::shared_ptr<const T> get(std::false_type*, mtl::StoreContext<l>& ctx, tracker::TrackingContext &, std::shared_ptr<const T> ret) const{
-			return _ro->get(&ctx);
     }
     
     Handle clone() const {
@@ -230,5 +223,9 @@ namespace mutils{
   template<typename T, typename P>
   std::enable_if_t<myria::is_handle<T>::value,std::unique_ptr<T> > from_bytes(P* p, char const *v){
     return T::from_bytes(p,v);
+  }
+	template<typename T, typename P>
+  std::enable_if_t<myria::is_handle<T>::value,std::unique_ptr<T> > from_bytes_noalloc(P* p, char const *v, context_ptr<T> = context_ptr<T>{}){
+    return std::unique_ptr<T>{T::from_bytes(p,v).release()};
   }
 }

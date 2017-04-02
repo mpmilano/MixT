@@ -1,7 +1,6 @@
 #pragma once
 #include <iostream>
 #include "SQLStore_impl.hpp"
-#include "Tracker_common.hpp"
 #include "SQLTransaction.hpp"
 #include "Operations.hpp"
 #include "SQLConstants.hpp"
@@ -29,10 +28,9 @@ namespace myria { namespace pgsql {
 
 			struct SQLInstanceManager : public SQLInstanceManager_abs{
 			public:
-				tracker::Tracker &trk;
 				SQLConnectionPool<l> &p;
-				SQLInstanceManager(tracker::Tracker &trk, SQLConnectionPool<l> &p)
-					:SQLInstanceManager_abs(),trk(trk),p(p){
+				SQLInstanceManager(SQLConnectionPool<l> &p)
+					:SQLInstanceManager_abs(),p(p){
 				}
 				SQLInstanceManager(const SQLInstanceManager&) = delete;
 				virtual ~SQLInstanceManager(){
@@ -48,7 +46,7 @@ namespace myria { namespace pgsql {
 					assert(l::is_strong::value);
 					if (ss.count(0) == 0 || (!ss.at(0))){
 						assert(this->this_mgr);
-						ss[0].reset(new SQLStore(trk,*this->this_mgr,p));
+						ss[0].reset(new SQLStore(*this->this_mgr,p));
 					}
 					assert(ss.at(0));
 					return *ss.at(0);
@@ -57,7 +55,7 @@ namespace myria { namespace pgsql {
 					assert(l::is_causal::value);
 					if (ss.count(0) == 0 || (!ss.at(0))){
 						assert(this->this_mgr);
-						ss[0].reset(new SQLStore(trk,*this->this_mgr,p));
+						ss[0].reset(new SQLStore(*this->this_mgr,p));
 					}
 					assert(ss.at(0));
 					return *ss.at(0);
@@ -86,9 +84,8 @@ namespace myria { namespace pgsql {
 			mutils::DeserializationManager &this_mgr;
 
 		private:
-			SQLStore(tracker::Tracker& trk, mutils::DeserializationManager &this_mgr,SQLConnectionPool<l> &p)
+			SQLStore(mutils::DeserializationManager &this_mgr,SQLConnectionPool<l> &p)
 				:SQLStore_impl(p,*this),DataStore<l>(),this_mgr(this_mgr) {
-				trk.registerStore(*this);
 			}
 		public:
 
@@ -143,15 +140,12 @@ namespace myria { namespace pgsql {
 				int fail_counter = 0;
 
 		
-				std::shared_ptr<const T> get(mtl::StoreContext<l>* _tc, tracker::Tracker* trk, tracker::TrackingContext* trkc) {
+				std::shared_ptr<const T> get(mtl::StoreContext<l>* _tc) {
 					SQLContext *sctx = (SQLContext*) _tc;
 					SQLTransaction *tc = (_tc ? sctx->i.get() : nullptr);
 					auto *res = gso.load(tc);
 					assert(res);
-					if (res != nullptr && trk != nullptr && trkc != nullptr){
-						t = trk->onRead(*trkc,store(),name(),timestamp(),
-										mutils::from_bytes<T>(&tds,res),(T*)nullptr);
-					}
+					t.reset(mutils::from_bytes<T>(&tds,res).release());
 					return t;
 				}
 
@@ -208,7 +202,7 @@ namespace myria { namespace pgsql {
 			using TransactionContext = mtl::PhaseContext<label>;
 			
 			template<typename T>
-			SQLHandle<T> newObject(tracker::Tracker &trk, TransactionContext *tc, Name name, const T& init){
+			SQLHandle<T> newObject(TransactionContext *tc, Name name, const T& init){
 				static constexpr Table t =
 					(std::is_same<T,int>::value ? Table::IntStore : Table::BlobStore);
 				int size = mutils::bytes_size(init);
@@ -219,15 +213,13 @@ namespace myria { namespace pgsql {
 					mutils::to_bytes(init,&v[0]);
 				assert(size == tb_size);
 				GSQLObject gso(*this,t,name,v);
-				SQLHandle<T> ret{trk,tc,std::make_shared<SQLObject<T> >(std::move(gso),mutils::heap_copy(init),this_mgr),*this };
-				if (level_t::value == Level::causal) trk.onCausalCreate(*this,name,(T*)nullptr);
-				else trk.onStrongCreate(*this,name,(T*)nullptr);
+				SQLHandle<T> ret{tc,std::make_shared<SQLObject<T> >(std::move(gso),mutils::heap_copy(init),this_mgr),*this };
 				return ret;
 			}
 
 			template<typename T>
-			auto newObject(tracker::Tracker &trk, TransactionContext *tc, const T& init){
-				return newObject<T>(trk,tc, mutils::int_rand(),init);
+			auto newObject(TransactionContext *tc, const T& init){
+				return newObject<T>(tc, mutils::int_rand(),init);
 			}
 
 			template<typename T>
@@ -299,9 +291,7 @@ namespace myria { namespace pgsql {
 			template<typename T>
 			SQLHandle<T> operation(TransactionContext* transaction_context, SQLContext& ctx,
 														 OperationIdentifier<RegisteredOperations::Clone>, SQLObject<T> &o){
-				auto &trk_c = transaction_context->trackingContext;
-				auto &trk = trk_c->trk;
-				return newObject<T>(trk,transaction_context,*o.get(&ctx,&trk,trk_c.get()));
+				return newObject<T>(transaction_context,*o.get(&ctx));
 			}
 
 			template<typename T>

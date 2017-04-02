@@ -11,7 +11,7 @@ namespace myria{
   }
 
 
-  struct GeneralRemoteObject{
+  struct GeneralRemoteObject : public mutils::ByteRepresentable{
     const int id = mutils::gensym();
     virtual const GDataStore& store() const = 0;
     virtual GDataStore& store() = 0;

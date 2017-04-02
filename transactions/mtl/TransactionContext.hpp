@@ -17,7 +17,6 @@ namespace myria {
       virtual GDataStore& store() = 0;
       virtual bool store_commit() = 0;
 			virtual bool aborted() const = 0;
-			virtual void reset() = 0;
 			GStoreContext() = default;
 		protected:
 			~GStoreContext() = default;
@@ -33,8 +32,6 @@ namespace myria {
 		template<typename label>
 		struct PhaseContext {
 			std::unique_ptr<StoreContext<label> > s_ctx;
-			tracker::TrackingContext &trackingContext;
-			auto& tracker(){ return trackingContext.trk;}
 			template<typename l>
 			using DataStore = _DataStore<l,l::requires_causal_tracking::value>;
 			StoreContext<label>& store_context(DataStore<label>& ds whendebug(, const std::string& why)){
@@ -48,12 +45,6 @@ namespace myria {
 				else return true;
 			}
 
-			void reset(){
-				if (s_ctx) s_ctx->reset();
-			}
-			
-			PhaseContext(tracker::TrackingContext &trackingContext)
-				:trackingContext(trackingContext){}
 		};
     
   }}

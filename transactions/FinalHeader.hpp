@@ -17,7 +17,7 @@ namespace myria{
 	}
 
 	template<typename l, typename T, typename... ops>
-	std::unique_ptr<Handle<l,T,ops...> > hndl_from_bytes(mutils::DeserializationManager* dm, char const * __v)
+	std::unique_ptr<Handle<l,T,ops...> > hndl_from_bytes(mutils::DeserializationManager* dm, char const * __v, Handle<l,T,ops...>*)
 	{
 		//using Handle = Handle<l,ha,T,ops...>;
 		assert(__v);

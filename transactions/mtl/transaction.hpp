@@ -11,12 +11,12 @@
 #include <memory>
 #include "Basics.hpp"
 #include "transaction_listener.hpp"
-
+#include "mtlbasics.hpp"
 
 namespace myria {
 namespace mtl {
 
-template <typename>
+	template <txnID_t, typename>
 struct pre_transaction_str;
 
 template <typename split, typename... bound_values>
@@ -25,33 +25,15 @@ struct transaction_struct
   constexpr transaction_struct() = default;
   using transaction = split;
 
-  static auto run(tracker::Tracker& trk, const typename bound_values::type&... v)
+	static auto run_optimistic(DeserializationManager* dsm, mutils::connection &c, const typename bound_values::type&... v)
   {
     using namespace runnable_transaction;
-		tracker::TrackingContext ctx{trk};
-    return begin_interp<transaction>(ctx, bound_values{ v }...);
+    return begin_interp<transaction>(dsm,c,bound_values{ v }...);
   }
-
-	static auto run_optimistic(int ip, int port, tracker::Tracker& trk, const typename bound_values::type&... v)
-  {
-    using namespace runnable_transaction;
-		tracker::TrackingContext ctx{trk};
-    return begin_interp<transaction>(ctx, bound_values{ v }...);
-  }
-
-	template<typename label>
-	static auto listen(int ip, int port)
-		{
-			using phase = typename transaction::template find_phase<label>;
-			using store = typename transaction::all_store::template restrict_to<
-				DECT(phase::requirements::combine(phase::owned::combine(typename phase::provides{})))
-				>;
-			return transaction_listener<phase, store>{};
-		}
 };
 
-template <char... Str>
-struct pre_transaction_str<mutils::String<Str...>>
+	template <txnID_t id, char... Str>
+	struct pre_transaction_str<id,mutils::String<Str...>>
 {
   using transaction_text = mutils::String<Str...>;
 	template<typename label> using requires_tracking = typename label::requires_causal_tracking;
@@ -71,7 +53,7 @@ struct pre_transaction_str<mutils::String<Str...>>
           using inferred_t = DECT(infer_labels(checked_t{}));
           {
             using namespace split_phase;
-            using split_t = DECT(split_computation<inferred_t, bound_values...>());
+            using split_t = DECT(split_computation<id, inferred_t, bound_values...>());
 						//this is where we should introduce the tombstones, I think. if (labels::exists_predicate<requires_tracking>()){}
             using recollapsed_t = DECT(recollapse(split_t{}));
             return recollapsed_t{};

@@ -73,7 +73,8 @@ namespace synth_test {
 
 	template<typename Hndl>
 	using oper_f = void (*) (unique_ptr<VMObjectLog>& ,
-							 Tracker &, Hndl );
+													 DeserializationManager* , mutils::connection&,
+													 Tracker &, Hndl );
 
 	auto log_start(Mem& mem, unique_ptr<VMObjectLog>& log_messages, int name, fake_time _start_time){
 		log_messages = mem.log_builder->template beginStruct<LoggedStructs::log>();
@@ -100,18 +101,18 @@ namespace synth_test {
 	
 	template<typename Hndl>
 	void perform_increment(unique_ptr<VMObjectLog>& log_messages,
-										 Tracker &trk, Hndl hndl){
-		constexpr auto trans = TRANSACTION(let remote x = hndl in {x = x + 1})::WITH(hndl);
-		trans.run(trk,hndl);
+												 DeserializationManager* dsm, mutils::connection& conn, Tracker &, Hndl hndl){
+		constexpr auto trans = TRANSACTION(1,let remote x = hndl in {x = x + 1})::WITH(hndl);
+		trans.run_optimistic(dsm,conn,hndl);
 			log_messages->addField(
 				LogFields::is_write,true);
 	}
 
 	template<typename Hndl>
 	void perform_read(unique_ptr<VMObjectLog>& log_messages,
-							 Tracker &trk, Hndl hndl){
-		constexpr auto trans = TRANSACTION(let remote x = hndl in {})::WITH(hndl);
-		trans.run(trk,hndl);
+										DeserializationManager* dsm, mutils::connection& conn, Tracker &, Hndl hndl){
+		constexpr auto trans = TRANSACTION(150,let remote x = hndl in {})::WITH(hndl);
+		trans.run_optimistic(dsm,conn,hndl);
 
 #ifndef NDEBUG
 		struct tmptest{ int a;};
@@ -125,11 +126,12 @@ namespace synth_test {
 
 	template<typename Hndl>
 	void perform_operation(unique_ptr<VMObjectLog>& log_messages,
-								  Tracker &trk, Hndl hndl, oper_f<Hndl> oper){
+												 DeserializationManager* dsm, mutils::connection& conn,
+												 Tracker &trk, Hndl hndl, oper_f<Hndl> oper){
 		try{ 
 			for(int tmp2 = 0; tmp2 < 10; ++tmp2){
 				try{
-					oper(log_messages,trk,hndl);
+					oper(log_messages,dsm,conn,trk,hndl);
 					auto end = elapsed_time();
 					log_messages->addField(LogFields::done_time,
 										   duration_cast<milliseconds>(end).count());
@@ -159,7 +161,7 @@ namespace synth_test {
 #ifndef NDEBUG
 		store_asserts(strong,mem.i->sc.inst(),trk);
 #endif
-		perform_operation(log_messages, trk,
+		perform_operation(log_messages, mem.dsm(), mem.i->strong_connection, trk,
 						  strong.template existingObject<int>(name),
 						  perform_increment
 			);
@@ -177,7 +179,7 @@ namespace synth_test {
 #ifndef NDEBUG
 		store_asserts(mem.i->ss.inst(),causal,trk);
 #endif
-		perform_operation(log_messages,trk,
+		perform_operation(log_messages,mem.dsm(), mem.i->causal_connection, trk,
 						  causal.template existingObject<int>(name),
 						  perform_increment
 			);
@@ -195,7 +197,7 @@ namespace synth_test {
 #ifndef NDEBUG
 		store_asserts(strong,mem.i->sc.inst(),trk);
 #endif
-		perform_operation(log_messages, trk,
+		perform_operation(log_messages, mem.dsm(), mem.i->strong_connection, trk,
 						  strong.template existingObject<int>(name),
 						  perform_read
 			);
@@ -212,7 +214,7 @@ namespace synth_test {
 #ifndef NDEBUG
 		store_asserts(mem.i->ss.inst(),causal,trk);
 #endif
-		perform_operation(log_messages,trk,
+		perform_operation(log_messages,mem.dsm(), mem.i->causal_connection, trk,
 						  causal.template existingObject<int>(name),
 						  perform_read
 			);
@@ -288,7 +290,7 @@ namespace synth_test {
 
 }
 
-int real_main(){
+int real_main(int strong_relay_ip, int strong_relay_port, int causal_relay_ip, int causal_relay_port){
 
 	std::cout << "In configuration; " << (causal_enabled ? "with causal" : " with only strong" ) << std::endl;
 	ofstream logFile;
@@ -310,7 +312,7 @@ int real_main(){
 				}};
 	
 	typename synth_test::TestParameters::PreparedTest
-		launcher{vec};
+		launcher{vec,strong_relay_ip,strong_relay_port,MAX_THREADS/2,causal_relay_ip,causal_relay_port,MAX_THREADS/2};
 	
 	std::cout << "beginning subtask generation loop" << std::endl;
 
@@ -330,8 +332,8 @@ int real_main(){
 	return 0;
 }
 
-int main(){
-	
+int main(int whendebug(argc), char** argv){
+	assert(argc >= 4);
 	const rlim_t kStackSize = 128 * 1024 * 1024;   // min stack size = 16 MB
 	struct rlimit rl;
 	int result;
@@ -350,7 +352,7 @@ int main(){
 		}
 	}
 	try {
-		return real_main();
+		return real_main(mutils::decode_ip(argv[1]),atoi(argv[2]),mutils::decode_ip(argv[3]),atoi(argv[4]));
 	}
 	catch(const std::exception &e){
 		std::cout << e.what() << std::endl;

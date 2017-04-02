@@ -1,7 +1,7 @@
 #pragma once
 #include "CTString_macro.hpp"
 
-#define TRANSACTION(x...) ::myria::mtl::pre_transaction_str<MUTILS_STRING(x)>
+#define TRANSACTION(n,x...) ::myria::mtl::pre_transaction_str<n,MUTILS_STRING(x)>
 
 #define WITH1(x) template with<::myria::mtl::value_with_stringname<DECT(x), MUTILS_STRING(x)>>()
 #define WITH2(x, y)                                                                                                                                            \

@@ -35,7 +35,6 @@ template <typename T, char... str>
 struct value_holder
 {
 
-	static_assert(std::is_pod<value_holder>::value || !std::is_pod<T>::value);
 	using held_type = T;
 	T pre_phase_t;
   T t;
@@ -48,6 +47,7 @@ struct value_holder
 	value_holder& operator=(const value_holder& o){
 		pre_phase_t = o.pre_phase_t;
 		t = o.t;
+		return *this;
 	}
 	
   using type = T;
@@ -91,7 +91,11 @@ struct value_holder
   }
   using value = value_holder;
 };
-	static_assert(std::is_pod<value_holder<int,'c'> >::value);
+	template<typename> struct is_value_holder;
+	template <typename T, char... str>
+	struct is_value_holder<value_holder<T,str...> > : public std::true_type{};
+	template <typename T>
+	struct is_value_holder : public std::false_type{};
 
 template <typename T, char... str>
 using value = value_holder<T, str...>;
@@ -128,6 +132,7 @@ struct type_holder
 		curr_pos = o.curr_pos;
 		rollback_size = o.rollback_size;
 		bound = o.bound;
+		return *this;
 	}
 
   bool reset_index()
@@ -186,6 +191,12 @@ struct type_holder
   using value = value_holder<T, str...>;
 };
 
+		template<typename> struct is_type_holder;
+	template <typename T, char... str>
+	struct is_type_holder<type_holder<T,str...> > : public std::true_type{};
+	template <typename T>
+	struct is_type_holder : public std::false_type{};
+
 template <typename T, char... str>
 struct remote_holder : public type_holder<typename T::type, str...>
 {
@@ -203,6 +214,7 @@ struct remote_holder : public type_holder<typename T::type, str...>
 		initialized = o.initialized;
 		list_usable = o.list_usable;
 		handle = o.handle;
+		return *this;
 	}
 
   template <typename Other>
@@ -247,6 +259,13 @@ struct remote_holder : public type_holder<typename T::type, str...>
 
   using value = remote_holder;
 };
+
+	template<typename> struct is_remote_holder;
+	template <typename T, char... str>
+	struct is_remote_holder<remote_holder<T,str...> > : public std::true_type{};
+	template <typename T>
+	struct is_remote_holder : public std::false_type{};
+	
 }
 }
 namespace mutils {
