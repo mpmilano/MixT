@@ -134,14 +134,15 @@ struct store : public ByteRepresentable, public holders...
 		std::tuple<DeserializationManager*, const char*,mutils::context_ptr<const holders>... > tpl;
 		std::get<0>(tpl) = dsm;
 		std::get<1>(tpl) = v;
-		/*
-		mutils::callFunc<std::size_t,DECT(tpl), DeserializationManager*, const char*,mutils::context_ptr<const holders>...>
-		(from_bytes_noalloc_v<holders...>,tpl);//*/
-		from_bytes_noalloc_v<holders...>(dsm,v,*(new mutils::context_ptr<const holders>)...);
-		struct funstr{ static store* fun(DeserializationManager*, const char*, const mutils::context_ptr<const holders>&... v){
-			return new store(initialize_from_holder{}, *v...);
+		struct funstr{
+			static std::size_t fun1(DeserializationManager* dsm, const char* _v, mutils::context_ptr<const holders>&... v){
+				return from_bytes_noalloc_v<holders...>(dsm,_v,v...);
+			}
+			static store* fun2(DeserializationManager*, const char*, const mutils::context_ptr<const holders>&... v){
+				return new store(initialize_from_holder{}, *v...);
 		}};
-		return std::unique_ptr<store>(mutils::callFunc(funstr::fun,tpl));
+		mutils::callFunc(funstr::fun1,tpl);
+		return std::unique_ptr<store>(mutils::callFunc(funstr::fun2,tpl));
 	}
 
   static constexpr store* add_f()
