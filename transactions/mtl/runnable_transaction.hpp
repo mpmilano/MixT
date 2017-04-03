@@ -112,11 +112,11 @@ struct store : public mutils::ByteRepresentable, public holders...
 #endif
 
 	std::size_t bytes_size() const {
-		return whendebug(mutils::bytes_size(std::string{typeid(store).name()}) + ) (0 + ... + bytes_size_reflect(*(holders*)this));
+		return whendebug(mutils::bytes_size(mutils::type_name<store>()) + ) (0 + ... + bytes_size_reflect(*(holders*)this));
 	}
 
 	std::size_t to_bytes(char * v) const {
-		return mutils::to_bytes_v(v,whendebug(std::string{typeid(store).name()}, )*((holders*)this)...);
+		return mutils::to_bytes_v(v,whendebug(mutils::type_name<store>(), )*((holders*)this)...);
 	}
 
 	void post_object(const std::function<void (char const * const,std::size_t)>& f) const {
@@ -129,8 +129,12 @@ struct store : public mutils::ByteRepresentable, public holders...
 	static std::unique_ptr<store> from_bytes(mutils::DeserializationManager* dsm, const char* v){
 		using namespace mutils;
 #ifndef NDEBUG
-		auto namestr = std::string{typeid(store).name()};
+		auto namestr = mutils::type_name<store>();
 		auto remotestr = mutils::from_bytes<std::string>(dsm,v);
+		if (!(namestr == *remotestr))
+			std::cout << namestr
+								<< std::endl << std::endl << std::endl
+								<< *remotestr << std::endl;
 		assert(namestr == *remotestr);
 		v+= mutils::bytes_size(*remotestr);
 #endif
