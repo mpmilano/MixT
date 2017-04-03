@@ -31,6 +31,7 @@ int main(int whendebug(argc), char** argv){
 	Relay relay{atoi(argv[1]), [pool = std::make_shared<SQLConnectionPool<Label<STORE_LEVEL > > >()]() mutable {
 			return std::unique_ptr<captive_store>{
 				new captive_sqlstore(*pool)}; }};
+	relay.receiver.acceptor_fun();
 
 	
 }
