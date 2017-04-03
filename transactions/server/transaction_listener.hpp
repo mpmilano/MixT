@@ -59,8 +59,10 @@ namespace myria {
 					if(!b){
 						assert(false && "populate the cache somehow! Do stuff!");
 						}*/
+					whendebug(logfile << "about to send response to client" << std::endl);
 					c.send(srm.bytes_size());
 					c.send(srm);
+					whendebug(logfile << "response sent to client" << std::endl);
 					return true;
 				}
 				else return false;
