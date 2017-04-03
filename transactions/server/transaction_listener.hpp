@@ -45,6 +45,8 @@ namespace myria {
 															 char const * const _data){
 				using namespace mutils;
 				if (id == txnID){
+					whendebug(auto &logfile = c.get_log_file(););
+					whendebug(logfile << "receiving with store " << type_name<store>() << std::endl);
 					std::size_t request_size = ((std::size_t*)_data)[0];
 					auto* data = _data + sizeof(request_size);
 					std::unique_ptr<ClientRequestMessage<store> > msg =
