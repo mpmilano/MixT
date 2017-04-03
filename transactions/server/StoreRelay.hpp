@@ -52,9 +52,8 @@ namespace myria{
 				}
 				void async_tick(){
 				}
-				mutils::eventfd fd;
 				int underlying_fd(){
-					return fd.underlying_fd();
+					return 0;
 				}
 
 				~StoreSession(){
