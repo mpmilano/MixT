@@ -11,11 +11,11 @@ export MY_IP=128.84.217.139
 export STRONG_REMOTE_IP=128.253.3.197
 export CAUSAL_REMOTE_IP_1=128.84.217.139
 export CAUSAL_REMOTE_IP_2=$CAUSAL_REMOTE_IP_1
-export MAX_THREADS=3000
-export increase_by=5
+export MAX_THREADS=30
+export increase_by=1
 export increase_delay=10s
-export test_stop_time=50min
-export num_clients=20
+export test_stop_time=1min
+export num_clients=1
 export client_rate=5_Hz
 #export instance_list=
 function ssh-euc() {

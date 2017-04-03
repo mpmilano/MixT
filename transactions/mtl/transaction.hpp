@@ -1,6 +1,7 @@
 #pragma once
 #include "parse_bindings.hpp"
 #include "parse_expressions.hpp"
+#include "better_constructable_array.hpp"
 #include "parse_statements.hpp"
 #include "flatten_expressions.hpp"
 #include "label_inference.hpp"
@@ -18,19 +19,26 @@ namespace mtl {
 
 	template <txnID_t, typename>
 struct pre_transaction_str;
+	
+	template <std::size_t num_remote, typename split, typename... bound_values>
+	struct transaction_struct;
 
-template <typename split, typename... bound_values>
-struct transaction_struct
-{
-  constexpr transaction_struct() = default;
-  using transaction = split;
-
-	static auto run_optimistic(DeserializationManager* dsm, mutils::connection &c, const typename bound_values::type&... v)
-  {
-    using namespace runnable_transaction;
-    return begin_interp<transaction>(dsm,c,bound_values{ v }...);
-  }
-};
+	template <typename split, typename... bound_values>
+	struct transaction_struct<1,split,bound_values...>
+	{
+		constexpr transaction_struct() = default;
+		using transaction = split;
+		template<typename label> using find_phase = typename transaction::template find_phase<label>;
+		
+		static auto run_optimistic(mutils::DeserializationManager* dsm, mutils::connection &c, const typename bound_values::type&... v)
+		{
+			using namespace runnable_transaction;
+			using namespace mutils;
+			return begin_interp<transaction,mutils::array<connection*,1,connection*>,bound_values...>
+				(dsm,mutils::array<connection*,1,connection*>{&c},bound_values{ v }...);
+		}
+		using all_store = typename transaction::template all_store<bound_values...>;
+	};
 
 	template <txnID_t id, char... Str>
 	struct pre_transaction_str<id,mutils::String<Str...>>
@@ -67,7 +75,7 @@ struct transaction_struct
   static constexpr auto with()
   {
     constexpr auto split = compile<type_binding<typename value::name, typename value::type, Label<top>, type_location::local>...>();
-    return transaction_struct<DECT(split), value...>{};
+    return transaction_struct<DECT(split)::number_remote_phases::value, DECT(split), value...>{};
   }
 };
 }

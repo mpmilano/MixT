@@ -25,7 +25,8 @@ namespace myria { namespace tracker {
 		  auto *ds = &gd;
 		  return ds == i->strongStore || ds == i->causalStore;
 		}
-		
+
+		/*
 		const GDataStore& Tracker::get_StrongStore() const {return *i->strongStore;}
 		const GDataStore& Tracker::get_CausalStore() const {return *i->causalStore;}
 		
@@ -43,7 +44,7 @@ namespace myria { namespace tracker {
 		
 		bool Tracker::causalRegistered() const{
 			return i->causalStore;
-		}
+			}//*/
 
 		void Tracker::exemptItem(Name ){}
 

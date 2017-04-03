@@ -23,7 +23,7 @@ namespace myria{
   struct LabelFreeHandle {virtual ~LabelFreeHandle() = default;};
 
   template<typename l2, typename T2, typename... ops2>
-  std::unique_ptr<Handle<l2,ops2...> > hndl_from_bytes(mutils::DeserializationManager* dm, char const * __v, Handle<l2,ops2...>* = nullptr);
+  std::unique_ptr<Handle<l2,T2,ops2...> > hndl_from_bytes(mutils::DeserializationManager* dm, char const * __v, Handle<l2,T2,ops2...>* = nullptr);
 	
   template<typename l, typename T, typename... SupportedOperations>
   struct Handle : public GenericHandle<l>, public LabelFreeHandle<T>, public SupportedOperations::template SupportsOn<Handle<l,T,SupportedOperations...> >... {

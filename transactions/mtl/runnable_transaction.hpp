@@ -228,6 +228,8 @@ struct transaction<p1,phases...>
     return transaction<p1,phases..., t2...>{};
   }
 
+	using number_remote_phases = std::integral_constant<std::size_t, (phases::label::run_remotely::value + ... + 0)>;
+
   template <typename... env>
   using all_store =
     typename store_from_typeset<DECT(mutils::typelist_ns::combine(typename p1::provides{}, typename phases::provides{}...)

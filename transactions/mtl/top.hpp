@@ -40,6 +40,7 @@ struct Label<top>
   }
 
 	using requires_causal_tracking = std::false_type;
+	using run_remotely = std::false_type;
 	using can_abort = std::false_type;
 };
 
@@ -212,6 +213,7 @@ struct Label<bottom>
   }
 
 	using requires_causal_tracking = std::false_type;
+	using run_remotely = std::false_type;
 	using can_abort = std::false_type;
 	
 };

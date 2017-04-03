@@ -22,7 +22,7 @@ auto _run_phase(typename AST<l>::template Expression<y, typename AST<l>::templat
 }
 
 template <typename l, typename TranCtx, typename store, int i>
-auto _run_phase(typename AST<l>::template Expression<int, typename AST<l>::template Constant<i>>*, TranCtx& , store& )
+auto _run_phase(typename AST<l>::template Expression<int, typename AST<l>::template Constant<i>>*, TranCtx&, store&)
 {
   return i;
 }
@@ -106,7 +106,7 @@ auto _run_phase(typename AST<l>::template Binding<Label<label>, Yield, String<na
 {
   constexpr Expr* expr{ nullptr };
   constexpr String<name...> varname{};
-	(void)varname;
+  (void)varname;
   auto expr_result = run_phase<l>(expr, ctx, s);
   s.get(String<name...>{}).bind(expr_result);
 }
@@ -154,7 +154,7 @@ auto _run_phase(typename AST<l>::template Statement<typename AST<l>::template As
 }
 
 template <typename l, typename TranCtx, typename store, char... var>
-auto _run_phase(typename AST<l>::template Statement<typename AST<l>::template IncrementOccurance<String<var...>>>*, TranCtx& , store& s)
+auto _run_phase(typename AST<l>::template Statement<typename AST<l>::template IncrementOccurance<String<var...>>>*, TranCtx&, store& s)
 {
   s.get(String<var...>{}).increment();
 }
@@ -199,7 +199,7 @@ auto _run_phase(typename AST<l>::template Statement<typename AST<l>::template Fo
 }
 
 template <typename l, typename TranCtx, typename store>
-auto _run_phase(typename AST<l>::template Statement<typename AST<l>::template Sequence<>>*, TranCtx& , store& )
+auto _run_phase(typename AST<l>::template Statement<typename AST<l>::template Sequence<>>*, TranCtx&, store&)
 {
 }
 
@@ -229,6 +229,42 @@ auto run_phase(TranCtx& ctx, store& s)
 {
   constexpr typename phase::ast* np{ nullptr };
   return run_phase<typename phase::label>(np, ctx, s);
+}
+
+template <typename phase1, typename Ctx, typename S>
+void
+run_phase1(Ctx& ctx, S& s, std::enable_if_t<std::is_void<DECT(run_phase<phase1>(ctx, s))>::value>* = nullptr)
+{
+  run_phase<phase1>(ctx, s);
+  if (ctx.s_ctx)
+    ctx.s_ctx->store_commit();
+}
+
+template <typename phase1, typename Ctx, typename S>
+auto run_phase1(Ctx& ctx, S& s, std::enable_if_t<!std::is_void<DECT(run_phase<phase1>(ctx, s))>::value>* = nullptr)
+{
+  auto ret = run_phase<phase1>(ctx, s);
+  if (ctx.s_ctx)
+    ctx.s_ctx->store_commit();
+  return ret;
+}
+
+template <typename phase1, typename store>
+auto common_interp(store& s)
+{
+  using label = typename phase1::label;
+	do {
+    try {
+			PhaseContext<label> ctx{};
+      s.begin_phase();
+      return run_phase1<phase1>(ctx, s);
+    } catch (const SerializationFailure& sf) {
+      s.rollback_phase();
+      whendebug(if (!label::can_abort::value) std::cout << "Error: label which cannot abort aborted! " << label{});
+      if (label::can_abort::value)
+        throw sf;
+    }
+  } while (!label::can_abort::value);
 }
 }
 }

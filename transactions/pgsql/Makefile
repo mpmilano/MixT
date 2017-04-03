@@ -1,7 +1,6 @@
 TRANS_DIR= `pwd`/
 IP_quad=`ifconfig | sed s/broadcast.*//g | tr " " "\n" | grep 128.84 | rev | sed s/'\..*'//g | rev`
-storeList='pgsql::SQLStore<Level::strong>, pgsql::SQLStore<Level::causal>'
-CPPFLAGS= -I$(PWD) -I$(PWD)/../ -I$(PWD)/../mtl -I$(PWD)/../server -I$(PWD)/..//myria-utils -I$(PWD)/../mutils-networking -I$(PWD)/../mutils -I$(PWD)/../mutils-containers -I$(PWD)/../mutils-serialization -I$(PWD)/../mutils-tasks -I$(PWD)/../testing -I$(PWD)/pgsql -I$(PWD)/../tracker -g -stdlib=libc++ --std=c++1z -Wall -DNUM_CAUSAL_GROUPS="4" -DCAUSAL_GROUP=$(causalGroup) -DSTRONG_REMOTE_IP=\"$(STRONG_REMOTE_IP)\" -DCAUSAL_REMOTE_IP_1=\"$(CAUSAL_REMOTE_IP_1)\" -DCAUSAL_REMOTE_IP_2=\"$(CAUSAL_REMOTE_IP_2)\" -DSTORE_LIST=$(storeList) -DMY_IP=\"$(MY_IP)\" -DMAX_THREADS=$(MAX_THREADS) -ferror-limit=1 -Wall -Werror -Wextra -DNUM_CAUSAL_MASTERS="2" -DNUM_CLIENTS=$(num_clients) -DINCREASE_BY=$(increase_by) -DINCREASE_DELAY=$(increase_delay) -DTEST_STOP_TIME=$(test_stop_time) 
+CPPFLAGS= -I$(PWD) -I$(PWD)/../ -I$(PWD)/../mtl -I$(PWD)/../server -I$(PWD)/..//myria-utils -I$(PWD)/../mutils-networking -I$(PWD)/../mutils -I$(PWD)/../mutils-containers -I$(PWD)/../mutils-serialization -I$(PWD)/../mutils-tasks -I$(PWD)/../testing -I$(PWD)/pgsql -I$(PWD)/../tracker -g -stdlib=libc++ --std=c++1z -Wall -DNUM_CAUSAL_GROUPS="4" -DCAUSAL_GROUP=$(causalGroup) -DSTRONG_REMOTE_IP=\"$(STRONG_REMOTE_IP)\" -DCAUSAL_REMOTE_IP_1=\"$(CAUSAL_REMOTE_IP_1)\" -DCAUSAL_REMOTE_IP_2=\"$(CAUSAL_REMOTE_IP_2)\" -DMY_IP=\"$(MY_IP)\" -DMAX_THREADS=$(MAX_THREADS) -ferror-limit=1 -Wall -Werror -Wextra -DNUM_CAUSAL_MASTERS="2" -DNUM_CLIENTS=$(num_clients) -DINCREASE_BY=$(increase_by) -DINCREASE_DELAY=$(increase_delay) -DTEST_STOP_TIME=$(test_stop_time) 
 LDFLAGS= -stdlib=libc++ --std=c++1z -lpq -lm -pthread 
 object_files=ServerSocket.o SerializationSupport.o utils.o Socket.o batched_connection_server.o batched_connection_client.o batched_connection_common.o SQLConstants.o SQLConnection.o LocalSQLConnection.o eventfd.o epoll.o oid_translator.o pgtransaction.o pgexceptions.o pgresult.o pgdeferred.o dual_connection.o dual_connection_superstate.o Ostreams.o
 client_object_files=utils.o Basics.o Tracker.o Ostreams.o SerializationSupport.o SQLConstants.o SQLStore.o GSQLObject.o SQLConnection.o SQLTransaction.o SQL_internal_utils.o SQLLevels.o TransactionContext.o ServerSocket.o Socket.o abiutils.o batched_connection_common.o batched_connection_client.o batched_connection_server.o eventfd.o epoll.o top.o dual_connection.o dual_connection_superstate.o 
@@ -21,10 +20,10 @@ causal: $(object_files)
 	clang++ LocalSQLReceiver.cpp $(object_files) -o causal_receiver -DRCVR_LEVEL=Level::causal $(CPPFLAGS) $(LDFLAGS)
 
 strong_relay: $(client_object_files)
-	clang++ relay.cpp $(client_object_files) -o strong_relay -DSTORE_LEVEL=strong $(CPPFLAGS) $(LDFLAGS)
+	clang++ relay.cpp $(client_object_files) -o strong_relay -DSTORE_LEVEL=pgsql::strong $(CPPFLAGS) $(LDFLAGS)
 
 causal_relay: $(client_object_files)
-	clang++ relay.cpp $(client_object_files) -o causal_relay -DSTORE_LEVEL=causal $(CPPFLAGS) $(LDFLAGS)
+	clang++ relay.cpp $(client_object_files) -o causal_relay -DSTORE_LEVEL=pgsql::causal $(CPPFLAGS) $(LDFLAGS)
 
 test: $(object_files)
 	clang++ test_local_transactions.cpp $(object_files) -o test $(CPPFLAGS) $(LDFLAGS)

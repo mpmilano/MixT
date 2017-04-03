@@ -21,46 +21,25 @@ namespace myria {
 
 	namespace mtl {namespace runnable_transaction {
 			
-			template<typename phase1, typename Ctx, typename S>
-			void run_phase1(Ctx &ctx, S &s, std::enable_if_t<std::is_void<DECT(run_phase<phase1>(ctx, s))>::value >* = nullptr){
-				run_phase<phase1>(ctx, s);
-				if (ctx.s_ctx) ctx.s_ctx->store_commit();
-			}
-			
-			template<typename phase1, typename Ctx, typename S>
-			auto run_phase1(Ctx &ctx, S &s, std::enable_if_t<!std::is_void<DECT(run_phase<phase1>(ctx, s))>::value >* = nullptr){
-				auto ret = run_phase<phase1>(ctx, s);
-				if (ctx.s_ctx) ctx.s_ctx->store_commit();
-				return ret;
-			}
-			
-			template<typename phase1, typename store>
-			auto common_interp(store& s){
-				using label = typename phase1::label;
-				PhaseContext<label> ctx{};
-				do {
-					try {
-						ctx.reset();
-						s.begin_phase();
-						return run_phase1<phase1>(ctx,s);
-					}
-					catch(const SerializationFailure& sf){
-						s.rollback_phase();
-						whendebug(if (!label::can_abort::value) std::cout << "Error: label which cannot abort aborted! " << label{});
-						if (label::can_abort::value) throw sf;
-					}
-				}
-				while(!label::can_abort::value);
-			}
+
 
 		}}
 	
 	namespace server{
 
 		template<txnID_t txnID, typename phase, typename store>
-		struct transaction_listener {
+		struct transaction_listener;
+		
+		template<txnID_t txnID,
+						 typename l, typename AST, typename reqs, typename provides, typename owns, typename passthrough,
+						 typename... holders>
+		struct transaction_listener<txnID,
+																mtl::runnable_transaction::phase<txnID, l,AST,reqs,provides,owns,passthrough>,
+																mtl::runnable_transaction::store<holders...> > {
 
-			using label = typename phase::label;
+			using label = l;
+			using phase = mtl::runnable_transaction::phase<txnID, l,AST,reqs,provides,owns,passthrough>;
+			using store = mtl::runnable_transaction::store<holders...>;
 			
 			static bool run_if_match(txnID_t id, mutils::DeserializationManager& dsm, mutils::connection &c, 
 															 char const * const _data){
@@ -68,8 +47,8 @@ namespace myria {
 				if (id == txnID){
 					std::size_t request_size = ((std::size_t*)_data)[0];
 					auto* data = _data + sizeof(request_size);
-					context_ptr<ClientRequestMessage<store> > msg =
-						ClientRequestMessage<store>::from_bytes(dsm,data);
+					std::unique_ptr<ClientRequestMessage<store> > msg =
+						ClientRequestMessage<store>::from_bytes(&dsm,data);
 					ServerReplyMessage<Name,store> srm{{},std::move(msg->store)};
 					
 					mtl::runnable_transaction::common_interp<phase, store>(*srm.store);
@@ -88,10 +67,7 @@ namespace myria {
 
 		template<typename transaction, typename phase>
 		using listener_for = transaction_listener<
-			phase::txnID,
+			phase::txnID::value,
 			phase,
-			typename transaction::all_store::template restrict_to<
-				DECT(phase::requirements::combine(phase::owned::combine(typename phase::provides{})))
-				>
-			>;
+			typename transaction::all_store::template restrict_to_phase<phase> >;
 	}}

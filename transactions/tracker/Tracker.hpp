@@ -100,6 +100,7 @@ namespace myria {
 
 			bool registered(const GDataStore&) const;
 
+			/*
 			const GDataStore& get_StrongStore() const;
 			const GDataStore& get_CausalStore() const;
 			GDataStore& get_StrongStore();
@@ -116,6 +117,7 @@ namespace myria {
 												 std::unique_ptr<GenericTrackerDS>, std::true_type*);
 			void registerStore(GDataStore &,
 												 std::unique_ptr<GenericTrackerDS>, std::false_type*);
+//*/
 
 			void exemptItem(Name name);
 

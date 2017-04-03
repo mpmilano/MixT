@@ -61,6 +61,8 @@ namespace myria { namespace pgsql {
 			using requires_causal_tracking = std::true_type;
 			using can_abort = std::false_type;
 			using is_label = std::true_type;
+			using run_remotely = std::true_type;
+			using int_id = std::integral_constant<std::size_t, 25>;
 			
 			static constexpr char description[] = "causal";
 		};
@@ -118,6 +120,8 @@ namespace myria { namespace pgsql {
 			using requires_causal_tracking = std::false_type;
 			using can_abort = std::true_type;
 			using is_label = std::true_type;
+			using run_remotely = std::true_type;
+			using int_id = std::integral_constant<std::size_t, 50>;
 
 			static constexpr char description[] = "strong";
 		};

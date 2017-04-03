@@ -92,17 +92,16 @@ namespace synth_test {
 
 #ifndef NDEBUG
 	template<typename Strong, typename Causal>
-	void store_asserts(Strong &strong, Causal& causal, Tracker &trk){
+	void store_asserts(Strong &strong, Causal& causal, Tracker &){
 		assert(!strong.in_transaction());
 		assert(!causal.in_transaction());
-		assert(!trk.get_StrongStore().in_transaction());
 	}
 #endif
 	
 	template<typename Hndl>
 	void perform_increment(unique_ptr<VMObjectLog>& log_messages,
 												 DeserializationManager* dsm, mutils::connection& conn, Tracker &, Hndl hndl){
-		constexpr auto trans = TRANSACTION(1,let remote x = hndl in {x = x + 1})::WITH(hndl);
+		constexpr auto trans = TRANSACTION(Hndl::label::int_id::value,let remote x = hndl in {x = x + 1})::WITH(hndl);
 		trans.run_optimistic(dsm,conn,hndl);
 			log_messages->addField(
 				LogFields::is_write,true);
@@ -111,7 +110,7 @@ namespace synth_test {
 	template<typename Hndl>
 	void perform_read(unique_ptr<VMObjectLog>& log_messages,
 										DeserializationManager* dsm, mutils::connection& conn, Tracker &, Hndl hndl){
-		constexpr auto trans = TRANSACTION(150,let remote x = hndl in {})::WITH(hndl);
+		constexpr auto trans = TRANSACTION(150 + Hndl::label::int_id::value,let remote x = hndl in {})::WITH(hndl);
 		trans.run_optimistic(dsm,conn,hndl);
 
 #ifndef NDEBUG
