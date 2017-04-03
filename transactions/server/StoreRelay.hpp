@@ -52,8 +52,8 @@ namespace myria{
 				}
 				void async_tick(){
 				}
+				mutils::eventfd fd;
 				int underlying_fd(){
-					static mutils::eventfd fd;
 					return fd.underlying_fd();
 				}
 
