@@ -28,6 +28,9 @@ causal_relay: $(client_object_files)
 test: $(object_files)
 	clang++ test_local_transactions.cpp $(object_files) -o test $(CPPFLAGS) $(LDFLAGS)
 
+test_serialization: $(client_object_files)
+	clang++ test_relay_serialization.cpp $(client_object_files) -o test_serialization $(CPPFLAGS) $(LDFLAGS)
+
 oid_translator.o:
 	clang++ -c -O3 oid_translator.cpp $(CPPFLAGS)
 pgexceptions.o:

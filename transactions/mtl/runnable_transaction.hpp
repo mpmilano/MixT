@@ -48,11 +48,12 @@ struct store : public mutils::ByteRepresentable, public holders...
 {
 
   store() = default;
+	store(initialize_store_values):store(){}
   store(const store&) = delete;
 
   template <typename val1, typename... values>
-		store(initialize_store_values, const val1& val, const values&... vals)
-    : store(vals...)
+		store(initialize_store_values i, const val1& val, const values&... vals)
+    : store(i,vals...)
   {
     get(typename val1::name{}).bind(val.t);
   }
@@ -111,11 +112,11 @@ struct store : public mutils::ByteRepresentable, public holders...
 #endif
 
 	std::size_t bytes_size() const {
-		return (0 + ... + bytes_size_reflect(*(holders*)this));
+		return whendebug(mutils::bytes_size(std::string{typeid(store).name()}) + ) (0 + ... + bytes_size_reflect(*(holders*)this));
 	}
 
 	std::size_t to_bytes(char * v) const {
-		return mutils::to_bytes_v(v,*((holders*)this)...);
+		return mutils::to_bytes_v(v,whendebug(std::string{typeid(store).name()}, )*((holders*)this)...);
 	}
 
 	void post_object(const std::function<void (char const * const,std::size_t)>& f) const {
@@ -127,6 +128,12 @@ struct store : public mutils::ByteRepresentable, public holders...
 
 	static std::unique_ptr<store> from_bytes(mutils::DeserializationManager* dsm, const char* v){
 		using namespace mutils;
+#ifndef NDEBUG
+		auto namestr = std::string{typeid(store).name()};
+		auto remotestr = mutils::from_bytes<std::string>(dsm,v);
+		assert(namestr == *remotestr);
+		v+= mutils::bytes_size(*remotestr);
+#endif
 		std::tuple<mutils::DeserializationManager*, const char*,mutils::context_ptr<const holders>... > tpl;
 		std::get<0>(tpl) = dsm;
 		std::get<1>(tpl) = v;
