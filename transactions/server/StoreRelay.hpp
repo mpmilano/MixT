@@ -53,7 +53,7 @@ namespace myria{
 				void async_tick(){
 				}
 				int underlying_fd(){
-					return 0;
+					return mutils::AsyncObject::always_block_code::value;
 				}
 
 				~StoreSession(){
