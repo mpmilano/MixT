@@ -25,31 +25,37 @@ namespace myria{
 				mutils::connection &c;
 				moodycamel::BlockingReaderWriterQueue<std::vector<char> > queue;
 				StoreSession(std::unique_ptr<captive_store> cstore,DECT(c) &c)
-					:cstore(std::move(cstore)),c(c),actions{[this]{this->thread_loop();}}{}
+					:cstore(std::move(cstore)),c(c)/*,actions{[this]{this->thread_loop();}}*/{}
 
 				//events within thread
+
+				void process_everything(std::size_t size, void const * const _data){
+					auto selected_txn = ((txnID_t*) _data)[0];
+					char const * const data = ((char*) _data) + sizeof(txnID_t);
+					bool found_match = 
+						(false || ... || phases::run_if_match(size - sizeof(txnID_t),
+																									selected_txn,dsm,c,data));
+					assert(found_match);
+					struct fail{}; if (!found_match) throw fail{};					
+				}
+				
 				void thread_loop(){
 					while (!done){
 						std::vector<char> msg;
 						if (queue.wait_dequeue_timed(msg,10000)){
-							auto selected_txn = ((txnID_t*) msg.data())[0];
-							char const * const data = ((char*) msg.data()) + sizeof(txnID_t);
-							bool found_match = 
-								(false || ... || phases::run_if_match(msg.size() - sizeof(txnID_t),
-																											selected_txn,dsm,c,data));
-							assert(found_match);
-							struct fail{}; if (!found_match) throw fail{};
+							process_everything(msg.size(),msg.data());
 						}
 					}
 				}
-				bool done{false};
-				std::thread actions;
+				std::atomic_bool done{false};
+				//std::thread actions;
 
 				//events outside of thread
 				
 				void deliver_new_event(std::size_t size, void const * const v){
-					whendebug(bool b = ) queue.enqueue(std::vector<char>{(const char*) v, ((const char*) v) + size});
-					assert(b);
+					//whendebug(bool b = ) queue.enqueue(std::vector<char>{(const char*) v, ((const char*) v) + size});
+					//assert(b);
+					process_everything(size,v);
 				}
 				void async_tick(){
 				}
@@ -59,7 +65,7 @@ namespace myria{
 
 				~StoreSession(){
 					done = true;
-					actions.join();
+					//actions.join();
 				}
 				
 			};
