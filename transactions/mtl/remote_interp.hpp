@@ -18,15 +18,15 @@ namespace myria { namespace mtl { namespace runnable_transaction {
 				using restricted_store
 					= typename FullStore::template restrict_to_phase<phase>;
 				whendebug(logfile << "sending with store " << type_name<restricted_store>() << std::endl);
+				ClientRequestMessage<restricted_store> request whendebug({mutils::int_rand()});
 				whendebug(logfile << "sending id " <<
-									phase::txnID::value << " for phase " <<
-									phase{} << std::endl);
-				ClientRequestMessage<restricted_store> request;
+									phase::txnID::value << " with nonce " << request.txn_nonce << " for phase " << phase{} << std::endl);
 				s.copy_to(*request.store);
 				c.send(phase::txnID::value, request.bytes_size(), request);
 				std::size_t size{0};
 				c.receive(size);
 				auto reply = c.template receive<ServerReplyMessage<Name,restricted_store> >(dsm,size);
+				assert(reply->txn_nonce == request.txn_nonce);
 				s.update_with(*reply->store);
 			}
 			

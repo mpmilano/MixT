@@ -38,7 +38,7 @@ int main(){
 	using store = typename DECT(incr_trans)::all_store;
 
 	for (int i = 0; i < 100; ++i){
-		ClientRequestMessage<store> msg{std::unique_ptr<store>(new store(initialize_store_values{},value_holder<Hndl,'h','n','d','l'>{hndl}))};
+		ClientRequestMessage<store> msg{whendebug(mutils::int_rand() ,) std::unique_ptr<store>(new store(initialize_store_values{},value_holder<Hndl,'h','n','d','l'>{hndl}))};
 		common_interp<typename DECT(incr_trans)::template find_phase<Label<top> > >(*msg.store);
 		auto size = bytes_size(msg);
 		auto buf = std::unique_ptr<vector<char> >(new vector<char>(size,0));
@@ -55,7 +55,7 @@ int main(){
 	}
 
 	for (int i = 0; i < 100; ++i){
-		ServerReplyMessage<Name, store> msg{{}, std::unique_ptr<store>(new store(initialize_store_values{},value_holder<Hndl,'h','n','d','l'>{hndl}))};
+		ServerReplyMessage<Name, store> msg{whendebug(mutils::int_rand() ,){}, std::unique_ptr<store>(new store(initialize_store_values{},value_holder<Hndl,'h','n','d','l'>{hndl}))};
 		common_interp<typename DECT(incr_trans)::template find_phase<Label<top> > >(*msg.store);
 		common_interp<typename DECT(incr_trans)::template find_phase<Label<causal> > >(*msg.store);
 		//common_interp<typename DECT(incr_trans)::template find_phase<Label<bottom> > >(*msg.store);

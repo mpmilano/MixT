@@ -53,7 +53,9 @@ namespace myria {
 					auto* data = _data + sizeof(request_size);
 					std::unique_ptr<ClientRequestMessage<store> > msg =
 						ClientRequestMessage<store>::from_bytes(&dsm,data);
-					ServerReplyMessage<Name,store> srm{{},std::move(msg->store)};
+					ServerReplyMessage<Name,store> srm{whendebug(msg->txn_nonce,) {},std::move(msg->store)};
+					whendebug(logfile << "transaction nonce: " << msg->txn_nonce << std::endl);
+					whendebug(logfile.flush());
 					
 					mtl::runnable_transaction::common_interp<phase, store>(*srm.store);
 					/*
