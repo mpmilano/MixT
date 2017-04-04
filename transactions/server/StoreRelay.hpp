@@ -70,7 +70,9 @@ namespace myria{
 				
 			};
 
+			std::mutex session_start_lock;
 			std::unique_ptr<mutils::rpc::ReceiverFun> start_session(whendebug(std::ostream&,) mutils::connection& c ){
+				std::unique_lock<std::mutex> l{session_start_lock};
 				return std::unique_ptr<mutils::rpc::ReceiverFun>{new StoreSession(new_connection(), c)};
 			}
 			mutils::rpc::new_connection_t start_session_wrapper =
