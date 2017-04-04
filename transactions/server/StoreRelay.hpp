@@ -1,5 +1,5 @@
 #pragma once
-#include "batched_connection.hpp"
+#include "simple_rpc.hpp"
 #include "DataStore.hpp"
 #include "transaction_listener.hpp"
 
@@ -78,7 +78,7 @@ namespace myria{
 			mutils::rpc::new_connection_t start_session_wrapper =
 				std::bind(&StoreRelay::start_session,this,std::placeholders::_1 whendebug(, std::placeholders::_2));
 			
-			mutils::batched_connection::receiver receiver;
+			mutils::simple_rpc::receiver receiver;
 			StoreRelay(int port,DECT(new_connection) new_connection)
 				:new_connection(std::move(new_connection)),receiver(port,start_session_wrapper){}
 		};

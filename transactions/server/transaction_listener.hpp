@@ -10,7 +10,7 @@
 #include "recollapse.hpp"
 #include <memory>
 #include "Basics.hpp"
-#include "batched_connection.hpp"
+#include "simple_rpc.hpp"
 #include "environments.hpp"
 #include "runnable_transaction.hpp"
 #include "run_phase.hpp"

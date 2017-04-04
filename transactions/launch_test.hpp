@@ -47,11 +47,11 @@ namespace {
 			SQLStore<Label<strong> >::SQLInstanceManager ss;
 			SQLStore<Label<causal> >::SQLInstanceManager sc;
 			DeserializationManager dsm;
-			batched_connection::connection strong_connection;
-			batched_connection::connection causal_connection;
+			simple_rpc::connection strong_connection;
+			simple_rpc::connection causal_connection;
 			
 			Continue_build(Mem& , SQLConnectionPool<Label<strong> >& strong_p, SQLConnectionPool<Label<causal> >& causal_p,
-										 batched_connection::connection strong_connection,	batched_connection::connection causal_connection)
+										 simple_rpc::connection strong_connection,	simple_rpc::connection causal_connection)
 				:ss(strong_p),
 				 sc(causal_p),
 				 dsm({&ss,&sc}),
@@ -83,8 +83,8 @@ struct PreparedTest{
 	static std::string exn_handler(std::exception_ptr eptr);
 	SQLConnectionPool<Label<strong> > strong;
 	SQLConnectionPool<Label<causal> > causal;
-	batched_connection::connections strong_connections;
-	batched_connection::connections causal_connections;
+	simple_rpc::connections strong_connections;
+	simple_rpc::connections causal_connections;
 	void pool_mem_init (Mem& m){
 		m.i.reset(new typename Mem::Continue_build(m,strong,causal,strong_connections.spawn(),	causal_connections.spawn()));
 	}
