@@ -29,16 +29,30 @@ struct pre_transaction_str;
 		constexpr transaction_struct() = default;
 		using transaction = split;
 		template<typename label> using find_phase = typename transaction::template find_phase<label>;
-		
-		static auto run_optimistic(mutils::DeserializationManager* dsm, mutils::connection &c, const typename bound_values::type&... v)
-		{
+
+	private:
+		template<typename run_remotely>
+		static auto interp(mutils::DeserializationManager* dsm, mutils::connection *c, const typename bound_values::type&... v){
 			using namespace runnable_transaction;
 			using namespace mutils;
-			return begin_interp<transaction,mutils::array<connection*,1,connection*>,bound_values...>
-				(dsm,mutils::array<connection*,1,connection*>{&c},bound_values{ v }...);
+			return begin_interp<transaction,mutils::array<connection*,1,connection*>,run_remotely,bound_values...>
+				(dsm,mutils::array<connection*,1,connection*>{c},bound_values{ v }...);	
 		}
+	public:
+		
+		static auto run_optimistic(mutils::DeserializationManager* dsm, mutils::connection &c, const typename bound_values::type&... v){
+			return interp<std::true_type>(dsm,&c,v...);
+		}
+		static auto run_local(const typename bound_values::type&... v){
+			return interp<std::false_type>(nullptr,nullptr,v...);
+		}
+
 		using all_store = typename transaction::template all_store<bound_values...>;
 	};
+	template <std::size_t num_remote, typename split, typename... bound_values>
+	std::ostream& operator<<(std::ostream& o, transaction_struct<num_remote,split,bound_values...>){
+		return o << split{};
+	}
 
 	template <txnID_t id, char... Str>
 	struct pre_transaction_str<id,mutils::String<Str...>>

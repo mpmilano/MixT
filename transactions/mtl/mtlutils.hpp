@@ -226,6 +226,7 @@ std::ostream& operator<<(std::ostream& o, typelist<t...>)
   };
   o << "[";
   auto ignore = { nullptr, nullptr, print((t*)nullptr)... };
+	(void)ignore;
   return o << "]";
 }
 
@@ -376,6 +377,7 @@ std::ostream& operator<<(std::ostream& o, typeset<t...>)
   };
   o << "[";
   auto ignore = { nullptr, nullptr, print((t*)nullptr)... };
+	(void)ignore;
   return o << "]";
 }
 

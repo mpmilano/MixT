@@ -139,6 +139,7 @@ print_ast(std::ostream& o, const typename AST<l>::template Statement<typename AS
   };
   o << "{" << endl;
   auto ignore = { nullptr, nullptr, print(Seq{})... };
+	(void)ignore;
   o << _tab << "}";
 }
 

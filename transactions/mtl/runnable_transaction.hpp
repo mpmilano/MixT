@@ -295,6 +295,7 @@ using AST = split_phase::AST<l>;
   };
   o << "Level " << l{} << ": requires ";
   auto ignore1 = { nullptr, nullptr, print(typename reqs::name{})... };
+	(void)ignore1;
   o << std::endl;
   o << "Level " << l{} << ": provides " << provides{} << std::endl;
   o << "Level " << l{} << ": owns " << owns{} << std::endl;
@@ -310,6 +311,7 @@ std::ostream& operator<<(std::ostream& o, transaction<phase...>)
     return nullptr;
   };
   auto ignore = { nullptr, nullptr, print(phase{})... };
+	(void)ignore;
   return o;
 }
 }

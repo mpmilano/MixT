@@ -15,6 +15,7 @@ namespace myria {namespace server {
 		
 		template<typename Name, typename Store>
 		struct ServerReplyMessage  : public mutils::ByteRepresentable {
+			whendebug(const std::string name{typeid(ServerReplyMessage).name()});
 			std::vector<CacheEntry<Name> > cache_updates;
 			std::unique_ptr<Store> store;
 
@@ -22,6 +23,11 @@ namespace myria {namespace server {
 				:cache_updates(cache_updates),store(std::move(store)){}
 			
 			static std::unique_ptr<ServerReplyMessage> from_bytes(mutils::DeserializationManager* p, char const * v){
+#ifndef NDEBUG
+				auto checkname = mutils::from_bytes_noalloc<std::string>(p,v);
+				v += mutils::bytes_size(*checkname);
+				assert(*checkname == std::string{typeid(ServerReplyMessage).name()});
+#endif
 				auto a2 = mutils::from_bytes_noalloc<std::decay_t<decltype(cache_updates)> >(p,v);
 				return std::make_unique<ServerReplyMessage>(
 					std::move(*a2),std::move(mutils::from_bytes<Store>(p,v + mutils::bytes_size(*a2))));
@@ -29,19 +35,29 @@ namespace myria {namespace server {
 
 			std::size_t bytes_size() const {
 				using namespace mutils;
-				return mutils::bytes_size(cache_updates) + store->bytes_size();
+				return mutils::bytes_size(cache_updates) + store->bytes_size() whendebug(+ mutils::bytes_size(name));
 			}
 
 			std::size_t to_bytes(char * v) const {
 				auto* orig = v;
 				using namespace mutils;
+				whendebug(v += mutils::to_bytes(name,v));
+				whendebug(auto* checkpoint = v;);
 				v += mutils::to_bytes(cache_updates,v);
+				assert(v - checkpoint > 0);
+				assert((std::size_t)(v - checkpoint) == mutils::bytes_size(cache_updates));
+				assert(*mutils::from_bytes<std::string>(nullptr,checkpoint) == type_name<DECT(cache_updates)>());
 				v += store->to_bytes(v);
-				return v - orig;
+				assert(*mutils::from_bytes<std::string>(nullptr,checkpoint) == type_name<DECT(cache_updates)>());
+				assert(v > orig);
+				auto ret = (std::size_t) (v - orig);
+				assert(ret == bytes_size());
+				return ret;
 			}
 
 			void post_object(const std::function<void (char const * const,std::size_t)>& f) const {
 				using namespace mutils;
+				whendebug(mutils::post_object(f,name));
 				mutils::post_object(f,cache_updates);
 				store->post_object(f);
 			}
