@@ -293,6 +293,7 @@ using AST = split_phase::AST<l>;
     o << " ";
     return nullptr;
   };
+	o << "Phase number: " << id << std::endl;
   o << "Level " << l{} << ": requires ";
   auto ignore1 = { nullptr, nullptr, print(typename reqs::name{})... };
 	(void)ignore1;

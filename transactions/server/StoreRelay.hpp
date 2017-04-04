@@ -35,7 +35,8 @@ namespace myria{
 							auto selected_txn = ((txnID_t*) msg.data())[0];
 							char const * const data = ((char*) msg.data()) + sizeof(txnID_t);
 							bool found_match = 
-								(false || ... || phases::run_if_match(selected_txn,dsm,c,data));
+								(false || ... || phases::run_if_match(msg.size() - sizeof(txnID_t),
+																											selected_txn,dsm,c,data));
 							assert(found_match);
 							struct fail{}; if (!found_match) throw fail{};
 						}

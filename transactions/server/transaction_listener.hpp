@@ -41,12 +41,14 @@ namespace myria {
 			using phase = mtl::runnable_transaction::phase<txnID, l,AST,reqs,provides,owns,passthrough>;
 			using store = mtl::runnable_transaction::store<holders...>;
 			
-			static bool run_if_match(txnID_t id, mutils::DeserializationManager& dsm, mutils::connection &c, 
+			static bool run_if_match(std::size_t, txnID_t id, mutils::DeserializationManager& dsm, mutils::connection &c, 
 															 char const * const _data){
 				using namespace mutils;
 				if (id == txnID){
 					whendebug(auto &logfile = c.get_log_file(););
 					whendebug(logfile << "receiving with store " << type_name<store>() << std::endl);
+					whendebug(logfile << "receiving id " << id << " for phase " << phase{});
+					whendebug(logfile.flush());
 					std::size_t request_size = ((std::size_t*)_data)[0];
 					auto* data = _data + sizeof(request_size);
 					std::unique_ptr<ClientRequestMessage<store> > msg =
