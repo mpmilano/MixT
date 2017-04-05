@@ -4,6 +4,7 @@
 #include <fstream>
 #include <thread>
 #include "SQLStore.hpp"
+#include "SQLConnection.hpp"
 #include "FinalHeader.hpp"
 #include "Ostreams.hpp"
 #include "tuple_extras.hpp"
@@ -45,13 +46,13 @@ namespace {
 		const int memid;
 		
 		struct Continue_build {
-			SQLStore<Label<strong> >::SQLInstanceManager ss;
-			SQLStore<Label<causal> >::SQLInstanceManager sc;
+			SQLStore<Level::strong>::SQLInstanceManager ss;
+			SQLStore<Level::causal>::SQLInstanceManager sc;
 			DeserializationManager dsm;
 			simple_rpc::connection strong_connection;
 			simple_rpc::connection causal_connection;
 			
-			Continue_build(Mem& , SQLConnectionPool<Label<strong> >& strong_p, SQLConnectionPool<Label<causal> >& causal_p,
+			Continue_build(Mem& , SQLConnectionPool<Level::strong>& strong_p, SQLConnectionPool<Level::causal>& causal_p,
 										 simple_rpc::connection strong_connection,	simple_rpc::connection causal_connection)
 				:ss(strong_p),
 				 sc(causal_p),
@@ -82,8 +83,8 @@ struct PreparedTest{
 
 	//static functions for TaskPool
 	static std::string exn_handler(std::exception_ptr eptr);
-	SQLConnectionPool<Label<strong> > strong;
-	SQLConnectionPool<Label<causal> > causal;
+	SQLConnectionPool<Level::strong> strong;
+	SQLConnectionPool<Level::causal> causal;
 	simple_rpc::connections strong_connections;
 	simple_rpc::connections causal_connections;
 	void pool_mem_init (Mem& m){
@@ -206,11 +207,6 @@ std::string PreparedTest<Mem,Arg>::run_tests(Meta& meta, bool (*stop) (Meta&, Po
 		futures = std::move(new_futures);
 		sleep(1);
 	}
-	auto strong_info = strong.acquire()->collect_machine_stats();
-	auto causal_info = causal.acquire()->collect_machine_stats();
-	std::cout << "memory usage on the remote hosts: " << std::endl;
-	std::cout << "causal: " << causal_info.totalram - causal_info.freeram << std::endl;
-	std::cout << "strong: " << strong_info.totalram - strong_info.freeram << std::endl;
 	return ss.str();
 }
 

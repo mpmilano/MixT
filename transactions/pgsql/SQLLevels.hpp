@@ -7,6 +7,11 @@ namespace myria { namespace pgsql {
 
 		struct causal{};
 		struct strong{};
+
+		enum class Level{
+			causal,strong,MAX
+		};
+		std::ostream& operator<<(std::ostream& o, const Level&);
 		
 	}
 		template<> struct Label<pgsql::causal>{

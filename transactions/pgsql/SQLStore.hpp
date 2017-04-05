@@ -1,35 +1,32 @@
 #pragma once
 #include <iostream>
 #include "SQLStore_impl.hpp"
-#include "SQLTransaction.hpp"
 #include "Operations.hpp"
-#include "SQLConstants.hpp"
+#include "SQLTransaction.hpp"
 
 namespace myria { namespace pgsql {
 
-		template<typename l>
-		class SQLStore;
-
-		template<typename> struct sqlstore_label_str;
-		template<typename l> struct sqlstore_label_str<SQLStore<l> >{
-			using type = l;
-		};
-
-		template<typename t> using sqlstore_label = typename sqlstore_label_str<t>::type;
+		template<Level l>
+		using level_to_label = std::conditional_t<l == Level::causal, Label<causal>, Label<strong> >;
 		
-		template<typename l>
-		class SQLStore : public SQLStore_impl, public DataStore<l> {
+		template<Level l>
+		using choose_strong = std::integral_constant<bool, l == Level::strong>*;
+		template<Level l>
+		using choose_causal = std::integral_constant<bool, l == Level::causal>*;
+		
+		template<Level l>
+		class SQLStore : public SQLStore_impl, public DataStore<level_to_label<l> > {
 		public:
 
-			using label = sqlstore_label<SQLStore>;
-			using level_t = std::integral_constant<Level,(label::is_strong::value ? Level::strong : Level::causal)>;
+			static constexpr Level level = l;
+			using label = level_to_label<l>;
 			
 			virtual ~SQLStore() {}
 
 			struct SQLInstanceManager : public SQLInstanceManager_abs{
 			public:
-				SQLConnectionPool<l> &p;
-				SQLInstanceManager(SQLConnectionPool<l> &p)
+				GeneralSQLConnectionPool &p;
+				SQLInstanceManager(GeneralSQLConnectionPool &p)
 					:SQLInstanceManager_abs(),p(p){
 				}
 				SQLInstanceManager(const SQLInstanceManager&) = delete;
@@ -42,50 +39,58 @@ namespace myria { namespace pgsql {
 			private:
 				std::map<int,std::unique_ptr<SQLStore> > ss;
 				
-				auto& inst(Label<strong>){
-					assert(l::is_strong::value);
+				void inst(Level l2){
+					assert(l == l2);
 					if (ss.count(0) == 0 || (!ss.at(0))){
 						assert(this->this_mgr);
 						ss[0].reset(new SQLStore(*this->this_mgr,p));
 					}
-					assert(ss.at(0));
-					return *ss.at(0);
-				}
-				auto& inst(Label<causal>){
-					assert(l::is_causal::value);
-					if (ss.count(0) == 0 || (!ss.at(0))){
-						assert(this->this_mgr);
-						ss[0].reset(new SQLStore(*this->this_mgr,p));
-					}
-					assert(ss.at(0));
-					return *ss.at(0);
 				}
 
-			public:
-				SQLStore& inst(){
-					return inst(l{});
+				SQLStore<Level::strong>& choose_s(std::true_type*){
+					assert(ss.at(0));
+					return *ss.at(0);
 				}
-				SQLStore& inst(Level _l){
-#ifndef NDEBUG
-					switch(_l){
-					case Level::causal:
-						assert(l::is_causal::value);
-						break;
-					case Level::strong:
-						assert(l::is_strong::value);
-						break;
-					};
-#endif
-					(void)_l;
-					return inst();
+				
+				SQLStore<Level::strong>& choose_s(std::false_type*){
+					assert(false && "Error: This is not a strong instance manager");
+				}
+				
+				SQLStore<Level::causal>& choose_c(std::true_type*){
+					assert(ss.at(0));
+					return *ss.at(0);
+				}
+				
+				SQLStore<Level::causal>& choose_c(std::false_type*){
+					assert(false && "Error: This is not a causal instance manager");
+				}
+				
+			public:
+				
+				SQLStore<Level::strong>& inst_strong(){
+					inst(Level::strong);
+					choose_strong<l> choice{nullptr};
+					return choose_s(choice);
+				}
+				
+				SQLStore<Level::causal>& inst_causal(){
+					inst(Level::causal);
+					choose_causal<l> choice{nullptr};
+					return choose_c(choice);
+				}
+
+				auto& inst(){
+					inst(l);
+					assert(ss.at(0));
+					return *ss.at(0);
 				}
 			};
 
 			mutils::DeserializationManager &this_mgr;
 
 		private:
-			SQLStore(mutils::DeserializationManager &this_mgr,SQLConnectionPool<l> &p)
-				:SQLStore_impl(p,*this),DataStore<l>(),this_mgr(this_mgr) {
+			SQLStore(mutils::DeserializationManager &this_mgr,GeneralSQLConnectionPool &p)
+				:SQLStore_impl(p,*this,l),DataStore<label>(),this_mgr(this_mgr) {
 			}
 		public:
 
@@ -94,7 +99,7 @@ namespace myria { namespace pgsql {
 			using Store = SQLStore;	
 
 			static constexpr int id() {
-				return SQLStore_impl::ds_id_nl() + (int) level_t::value;
+				return SQLStore_impl::ds_id_nl() + (int) l;
 			}
 
 			int ds_id() const {
@@ -105,7 +110,6 @@ namespace myria { namespace pgsql {
 			SQLStore& store() {
 				return *this;
 			}
-
 #ifndef NDEBUG
 			std::string why_in_transaction() const {
 				if (in_transaction()){
@@ -121,7 +125,7 @@ namespace myria { namespace pgsql {
 			}
 
 			template<typename T>
-			struct SQLObject : public RemoteObject<l,T> {
+			struct SQLObject : public RemoteObject<label,T> {
 				using Store = SQLStore;
 				GSQLObject gso;
 				std::shared_ptr<T> t;
@@ -140,7 +144,7 @@ namespace myria { namespace pgsql {
 				int fail_counter = 0;
 
 		
-				std::shared_ptr<const T> get(mtl::StoreContext<l>* _tc) {
+				std::shared_ptr<const T> get(mtl::StoreContext<label>* _tc) {
 					SQLContext *sctx = (SQLContext*) _tc;
 					SQLTransaction *tc = (_tc ? sctx->i.get() : nullptr);
 					auto *res = gso.load(tc);
@@ -153,7 +157,7 @@ namespace myria { namespace pgsql {
 					return gso.timestamp();
 				}
 
-				void put(mtl::StoreContext<l>* _tc, const T& t){
+				void put(mtl::StoreContext<label>* _tc, const T& t){
 					SQLTransaction *tc = (_tc ? ((SQLContext*) _tc)->i.get() : nullptr);
 					this->t = std::make_shared<T>(t);
 					gso.resize_buffer(mutils::bytes_size(t));
@@ -161,7 +165,7 @@ namespace myria { namespace pgsql {
 					gso.save(tc);
 				}
 
-				bool ro_isValid(mtl::StoreContext<l>* _tc) const{
+				bool ro_isValid(mtl::StoreContext<label>* _tc) const{
 					SQLTransaction *tc = (_tc ? ((SQLContext*) _tc)->i.get() : nullptr);
 					return gso.ro_isValid(tc);
 				}
@@ -191,26 +195,21 @@ namespace myria { namespace pgsql {
 			};
 
 			template<typename T>
-			using SQLHandle = 
+			using SQLHandle =
 				std::conditional_t<mutils::is_set<T>::value,
-													 Handle<l,T,SupportedOperation<RegisteredOperations::Insert,void,SelfType,mutils::extract_type_if_set<T> > >,
+													 Handle<label,T,SupportedOperation<RegisteredOperations::Insert,void,SelfType,mutils::extract_type_if_set<T> > >,
 													 std::conditional_t<
 														 std::is_same<T,int>::value,
-														 Handle<l,T,SupportedOperation<RegisteredOperations::Increment,void,SelfType> >,
-														 Handle<l,T> > >;
+														 Handle<label,T,SupportedOperation<RegisteredOperations::Increment,void,SelfType> >,
+														 Handle<label,T> > >;
 
-			using TransactionContext = mtl::PhaseContext<label>;
-			
 			template<typename T>
-			SQLHandle<T> newObject(TransactionContext *tc, Name name, const T& init){
+			SQLHandle<T> newObject(mtl::PhaseContext<label> *tc, Name name, const T& init){
 				static constexpr Table t =
 					(std::is_same<T,int>::value ? Table::IntStore : Table::BlobStore);
 				int size = mutils::bytes_size(init);
 				std::vector<char> v(size);
-#ifndef NDEBUG
-				int tb_size =
-#endif
-					mutils::to_bytes(init,&v[0]);
+				int tb_size = mutils::to_bytes(init,&v[0]);
 				assert(size == tb_size);
 				GSQLObject gso(*this,t,name,v);
 				SQLHandle<T> ret{tc,std::make_shared<SQLObject<T> >(std::move(gso),mutils::heap_copy(init),this_mgr),*this };
@@ -218,7 +217,7 @@ namespace myria { namespace pgsql {
 			}
 
 			template<typename T>
-			auto newObject(TransactionContext *tc, const T& init){
+			auto newObject(mtl::PhaseContext<label> *tc, const T& init){
 				return newObject<T>(tc, mutils::int_rand(),init);
 			}
 
@@ -249,30 +248,21 @@ namespace myria { namespace pgsql {
 				return std::make_unique<SQLHandle<T> >(std::make_shared<SQLObject<T> >(std::move(gsql_obj),nullptr,*mngr),this_ds);
 			}
 
-			struct SQLContext : mtl::StoreContext<l> {
+			struct SQLContext : mtl::StoreContext<label> {
 				std::unique_ptr<SQLTransaction> i;
 				mutils::DeserializationManager & mngr;
 				SQLContext(decltype(i) i, mutils::DeserializationManager& mngr):i(std::move(i)),mngr(mngr){}
-				DataStore<l>& store() {return dynamic_cast<DataStore<l>&>( i->gstore);}
+				DataStore<label>& store() {return dynamic_cast<DataStore<label>&>( i->gstore);}
 				bool store_commit() {return i->store_commit();}
-				bool aborted() const {return i->aborted();}
 				void store_abort() {i->store_abort();}
 			};
 
 			using StoreContext = SQLContext;
 
-			std::unique_ptr<mtl::StoreContext<l> > begin_transaction(
-#ifndef NDEBUG
-				const std::string &why
-#endif
-				)
+			std::unique_ptr<mtl::StoreContext<label> > begin_transaction(whendebug(const std::string &why))
 				{
-					auto ret = SQLStore_impl::begin_transaction(
-#ifndef NDEBUG
-						why
-#endif
-						);
-					return std::unique_ptr<mtl::StoreContext<l> >(new SQLContext{std::move(ret),this_mgr});
+					auto ret = SQLStore_impl::begin_transaction(whendebug(why));
+					return std::unique_ptr<mtl::StoreContext<label> >(new SQLContext{std::move(ret),this_mgr});
 				}
 
 			bool in_transaction() const {
@@ -283,19 +273,19 @@ namespace myria { namespace pgsql {
 				return SQLStore_impl::instance_id();
 			}
 
-			void operation(TransactionContext*, SQLContext& ctx,
+			void operation(mtl::PhaseContext<label>*, SQLContext& ctx,
 						   OperationIdentifier<RegisteredOperations::Increment>, SQLObject<int> &o){
 				o.gso.increment(ctx.i.get());
 			}
 
 			template<typename T>
-			SQLHandle<T> operation(TransactionContext* transaction_context, SQLContext& ctx,
-														 OperationIdentifier<RegisteredOperations::Clone>, SQLObject<T> &o){
+			SQLHandle<T> operation(mtl::PhaseContext<label>* transaction_context, SQLContext& ctx,
+													 OperationIdentifier<RegisteredOperations::Clone>, SQLObject<T> &o){
 				return newObject<T>(transaction_context,*o.get(&ctx));
 			}
 
 			template<typename T>
-			void operation(TransactionContext*, SQLContext& ,
+			void operation(mtl::PhaseContext<label>*, SQLContext& ,
 						   OperationIdentifier<RegisteredOperations::Insert>, SQLObject<std::set<T> > &, T& ){
 				//assert(false && "this is unimplemented.");
 				//o.gso.increment(ctx->i.get());

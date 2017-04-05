@@ -1,187 +1,47 @@
 #pragma once
 #include "SQLConnection.hpp"
 #include "myria_utils.hpp"
-#include <iostream>
-#include <fstream>
+#include <pqxx/pqxx>
 
-namespace myria{
-	
-	namespace pgsql {
+namespace myria{ namespace pgsql {
+
+		
+
+		template<typename E>
+		auto exec_prepared_hlpr(E &e){
+			return e.exec();
+		}
+
+		template<typename E, typename A, typename... B>
+		auto exec_prepared_hlpr(E &e, A&& a, B && ... b){
+			auto fwd = e(std::forward<A>(a));
+			return exec_prepared_hlpr(fwd,std::forward<B>(b)...);
+		}
 
 
 		struct SQLTransaction {
 			
 			GDataStore& gstore;
-			const Level level;
-			const std::string level_string;
 		private:
 			LockedSQLConnection sql_conn;
-			bool remote_aborted{false};
-			
-#ifndef NDEBUG
-			std::ostream &log_file{sql_conn->conn->get_log_file()};
-			
-			void log_receive_start(const std::string&);
-			void log_receive_stop(const std::string&);
-			void log_send(const std::string&);
-#else			
-#define log_receive_start(...) ;
-#define log_receive_stop(...) ;
-#define log_send(...) ;
-#endif
+			std::unique_lock<std::mutex> conn_lock;
+			pqxx::work trans;
 		public:
-#ifndef NDEBUG
 			const std::string why;
-#endif
 			bool commit_on_delete = false;
-			bool _committed{false};
-			bool _aborted{false};
-			bool aborted() const {return _aborted;}
-			SQLTransaction(Level level, GDataStore& store, LockedSQLConnection c whendebug(, std::string why));
+			SQLTransaction(GDataStore& store, LockedSQLConnection c, std::string why);
+
+			bool is_serialize_error(const pqxx::pqxx_exception &r);
 	
 			SQLTransaction(const SQLTransaction&) = delete;
-			
-			template<typename... Args>
-			void prepared(const std::string& whendebug(what), TransactionNames name, Args && ... args){
-				char trans{3};
-				whendebug(log_send(what);)
-				sql_conn->conn->send(trans,name,args...);
-			}
+	
+			template<typename Arg1, typename... Args>
+			auto prepared(TransactionNames name, const std::string &stmt,
+						  Arg1 && a1, Args && ... args);
 
-			void handle_serialization_failure(mutils::ControlChannel& _cc){
-				whendebug(std::cerr << "serialization failure!" << std::endl;)
-				mutils::connection& cc = _cc;
-				mutils::connection& dc = _cc.data_channel;
-				long int failure_nonce{-1};
-				cc.receive(failure_nonce);
-				cc.send(failure_nonce);
-				char failure_bytes[sizeof(failure_nonce)];
-				char const * const falure_bytes_reference = (char*)&failure_nonce;
-				//drain the data socket until we find the failure nonce.
-				for (std::size_t i = 0; i < sizeof(failure_nonce);++i){
-					dc.receive(failure_bytes[i]);
-					if (failure_bytes[i] != falure_bytes_reference[i]) i=0;
-				}
-				mutils::DeserializationManager *dsm{nullptr};
-				std::size_t why_size{0};
-				cc.receive(why_size);
-				remote_aborted = true;
-				throw SerializationFailure(*cc.template receive<std::string>(dsm,why_size));
-			}
-
-			template<typename... T>
-			void receive(const std::string & whendebug(what), T& ... t){
-				whendebug(log_receive_start(what);)
-					try {
-						sql_conn->conn->receive(t...);
-					}
-					catch (mutils::ControlChannel& cc){
-						handle_serialization_failure(cc);
-					}
-				whendebug(log_receive_stop(what);)
-			}
-			
-			template<typename... T>
-			void receive_data(const std::string & whendebug(what), const T& ... t){
-				whendebug(log_receive_start(what);)
-					try {
-						sql_conn->conn->receive_data(t...);
-					}
-					catch (mutils::ControlChannel& cc){
-						handle_serialization_failure(cc);
-					}
-				whendebug(log_receive_stop(what);)
-			}
-
-
-			bool exists(Name n){
-				prepared(level_string + " exists",TransactionNames::exists,n);
-				bool b{false};
-				receive("exists", b);
-				return b;
-			}
-
-			void Del(Name n){
-				prepared("del",TransactionNames::Del,n);
-			}
-			
-			template<typename Vers>
-			void select_version(Table t, Name n, Vers& vers){
-				prepared(level_string + " select version", TransactionNames::select_version, t,n);
-				receive(level_string + " select version",vers);
-			}
-
-			template<typename Vers>
-			std::vector<char> select_version_data(Table t, Name n, Vers& vers){
-				prepared(level_string + " selct_version_data",TransactionNames::select_version_data,t,n);
-				receive(level_string + " select_version_data",vers);
-				std::vector<char> v;
-				if (t == Table::BlobStore) {
-					std::size_t size{0};
-					receive(level_string + " blob_store size",size);
-					v.resize(size);
-				}
-				else {
-					v.resize(sizeof(int));
-					
-				}
-				receive_data(level_string + " receive data", v.size(),v.data());
-				return v;
-			}
-			template<typename Data, typename Vers>
-			void update_data(Table t, Name n, Data &d, Vers& vers){
-				assert(level == Level::strong);
-				prepared("update_data, strong",TransactionNames::update_data, t,n,d);
-				receive("update_data version, strong", vers);
-			}
-
-			template<typename RG, typename Data, typename Vers, typename Clock>
-			void update_data(Table t, const RG& rg, Name n, const Clock& c, Data &d, Vers& vers){
-				assert(level == Level::causal);
-				prepared("update_data, causal",TransactionNames::update_data,t,rg,n,c,d);
-				receive("update_data version, causal", vers);
-			}
-
-			template<typename Blob>
-			void initialize_with_id(Table t, Name id, const Blob &b) {
-				assert(level == Level::strong);
-				prepared("initialize_with_id, strong",TransactionNames::initialize_with_id,t,id,b);
-			}
-			
-			template<typename RG, typename Clock, typename Blob>
-			void initialize_with_id(Table t, const RG& rg, Name id, const Clock& c, const Blob &b){
-				assert(level == Level::causal);
-				prepared("initialize_with_id, causal",TransactionNames::initialize_with_id,t,rg,id,c,b);
-			}
-
-			template<typename Vers>
-			void increment(Name n, Vers& vers){
-				assert(level == Level::strong);
-				prepared("increment, strong",TransactionNames::increment,n);
-				receive("increment, strong", vers);
-			}
-
-			template<typename RG, typename Vers, typename Clock>
-			void increment(const RG& rg, Name n, const Clock& c, Vers& vers){
-				assert(level == Level::causal);
-				prepared("increment, causal",TransactionNames::increment,rg,n,c);
-				receive("increment, causal", vers);
-			}
-
-
-			bool store_commit(){
-				assert(!_committed || _aborted);
-				if (!_committed || _aborted){
-					char trans{0};
-					log_send(level_string + " commit");
-					sql_conn->conn->send(trans);
-					//we actually do need to block until commits happen
-					receive("check committed",trans);
-					_committed = true;
-					return true;
-				}
-				return false;
-			}
+			pqxx::result exec(const std::string &str);
+	
+			bool store_commit();
 
 			void store_abort();
 
@@ -191,5 +51,28 @@ namespace myria{
 			~SQLTransaction();
 		};
 
-	}
-}
+		#define default_sqltransaction_catch									\
+		catch(const pqxx::pqxx_exception &r){							\
+			commit_on_delete = false;									\
+			if (is_serialize_error(r)) throw SerializationFailure{"Serialization Failure"}; \
+			else throw 4/*FatalMyriaError{r.base().what()}*/; \
+		}
+
+		template<typename Arg1, typename... Args>
+		auto SQLTransaction::prepared(TransactionNames name, const std::string &stmt,
+									  Arg1 && a1, Args && ... args){
+			auto nameint = (int) name;
+			auto namestr = std::to_string(nameint);
+			try{
+				if (!sql_conn->prepared.at(nameint)){
+					sql_conn->conn.prepare(namestr,stmt);
+					sql_conn->prepared[nameint] = true;
+				}
+				auto fwd = trans.prepared(namestr)(std::forward<Arg1>(a1));
+				
+				return exec_prepared_hlpr(fwd,std::forward<Args>(args)...);
+			}
+			default_sqltransaction_catch
+		}
+
+	}}

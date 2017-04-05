@@ -16,7 +16,6 @@ namespace myria {
     struct GStoreContext{
       virtual GDataStore& store() = 0;
       virtual bool store_commit() = 0;
-			virtual bool aborted() const = 0;
 			GStoreContext() = default;
 		protected:
 			~GStoreContext() = default;

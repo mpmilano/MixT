@@ -155,7 +155,7 @@ namespace synth_test {
 		auto name = get_name_write();
 		std::unique_ptr<VMObjectLog> log_messages;
 		log_start(mem,log_messages,name,_start_time);
-		SQLStore<Label<strong> > &strong = mem.i->ss.inst();
+		SQLStore<Level::strong> &strong = mem.i->ss.inst();
 		auto &trk = mem.trk;
 #ifndef NDEBUG
 		store_asserts(strong,mem.i->sc.inst(),trk);
@@ -173,7 +173,7 @@ namespace synth_test {
 		std::unique_ptr<VMObjectLog> log_messages;
 		log_start(mem,log_messages,name,_start_time);
 		assert(log_messages);
-		SQLStore<Label<causal> > &causal = mem.i->sc.inst();
+		SQLStore<Level::causal> &causal = mem.i->sc.inst();
 		auto &trk = mem.trk;
 #ifndef NDEBUG
 		store_asserts(mem.i->ss.inst(),causal,trk);
@@ -191,7 +191,7 @@ namespace synth_test {
 		auto name = get_name_read(0.5);
 		std::unique_ptr<VMObjectLog> log_messages;
 		log_start(mem,log_messages,name,_start_time);
-		SQLStore<Label<strong> > &strong = mem.i->ss.inst();
+		SQLStore<Level::strong> &strong = mem.i->ss.inst();
 		auto &trk = mem.trk;
 #ifndef NDEBUG
 		store_asserts(strong,mem.i->sc.inst(),trk);
@@ -208,7 +208,7 @@ namespace synth_test {
 		auto name = get_name_read(0.5);
 		std::unique_ptr<VMObjectLog> log_messages;
 		log_start(mem,log_messages,name,_start_time);
-		SQLStore<Label<causal> > &causal = mem.i->sc.inst();
+		SQLStore<Level::causal> &causal = mem.i->sc.inst();
 		auto &trk = mem.trk;
 #ifndef NDEBUG
 		store_asserts(mem.i->ss.inst(),causal,trk);

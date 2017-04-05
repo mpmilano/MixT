@@ -1,14 +1,15 @@
 //oh look, a source file! We remember those.
+#include <pqxx/pqxx>
 #include <arpa/inet.h>
 #include "SQLStore_impl.hpp"
 #include "SQLTransaction.hpp"
 #include "Tracker_common.hpp"
+#include "SQLCommands.hpp"
 #include "SQLStore.hpp"
 #include "Ends.hpp"
 #include "Ostreams.hpp"
 #include "SafeSet.hpp"
 #include "SQL_internal_utils.hpp"
-#include "Bytes.hpp"
 
 namespace myria{ namespace pgsql {
 
@@ -16,6 +17,7 @@ namespace myria{ namespace pgsql {
 			constexpr int max_ver_check_size = 100;
 		}
 		
+		using namespace pqxx;
 		using namespace std;
 		using namespace mtl;
 		using namespace tracker;
@@ -41,13 +43,10 @@ namespace myria{ namespace pgsql {
 		SQLStore_impl::GSQLObject::GSQLObject(SQLStore_impl::GSQLObject&& gso)
 			:i(gso.i){gso.i = nullptr;}
 
-		SQLStore_impl::GSQLObject::GSQLObject(SQLStore_impl &ss, Table t, Name id, int size)
+				SQLStore_impl::GSQLObject::GSQLObject(SQLStore_impl &ss, Table t, Name id, int size)
 			:i(new Internals{t,id,size,ss,nullptr}){
 			i->buf1 = (char*) malloc(size);
-#ifndef NDEBUG
-			auto b =
-#endif
-				load(nullptr);
+			auto b = load(nullptr);
 			assert(b);
 		}
 
@@ -70,25 +69,19 @@ namespace myria{ namespace pgsql {
 				//assert(!ro_isValid(trans));
 
 				if (t == Table::BlobStore){
-					mutils::Bytes blob{&c.at(0),c.size()};
-					if (ss.level == Level::strong)
-						trans->initialize_with_id(t,id,blob);
-					else
-						trans->initialize_with_id(t,repl_group,id,ss.clock,blob);
+					binarystring blob(&c.at(0),c.size());
+					cmds::initialize_with_id(ss.level,*trans,t,SQLConnection::repl_group,id,ss.clock,blob);
 				}
 				else if (t == Table::IntStore){
-					if (ss.level == Level::strong)
-						trans->initialize_with_id(t,id,((int*)c.data())[0]);
-					else
-						trans->initialize_with_id(t,repl_group,id,ss.clock,((int*)c.data())[0]);
+					cmds::initialize_with_id(ss.level,*trans,t,SQLConnection::repl_group,id,ss.clock,((int*)c.data())[0]);
 				}
-				if (i->_store.level == Level::causal){
-					for (auto& val : i->causal_vers)
-						val = 0;
-				}
-				else if (i->_store.level == Level::strong){
-					i->vers = 0;
-				}
+                                if (i->_store.level == Level::causal){
+                                    for (auto& val : i->causal_vers)
+                                        val = 0;
+                                }
+                                else if (i->_store.level == Level::strong){
+                                    i->vers = 0;
+                                }
 			}
 			memcpy(this->i->buf1, &c.at(0), c.size());
 		}
@@ -122,26 +115,26 @@ namespace myria{ namespace pgsql {
 			char *c = i->buf1;
 			assert(c);
 
-#define upd_23425(x...) (i->_store.level == Level::strong ? \
-						 trans->update_data(i->table,i->key,x) : \
-						 trans->update_data(i->table,repl_group,i->key,i->_store.clock,x))
+#define upd_23425(x...) cmds::update_data(i->_store.level,*trans,i->table,SQLConnection::repl_group,i->key,i->_store.clock,x)
 	
 			if (i->table == Table::BlobStore){
-				mutils::Bytes blob(c,i->size);
-				if (i->_store.level == Level::strong){
-					upd_23425(blob,i->vers);
-				}
-				else if (i->_store.level == Level::causal){
-					upd_23425(blob,i->causal_vers);
-				}
+				binarystring blob(c,i->size);
+                                auto res = upd_23425(blob);
+                                if (i->_store.level == Level::strong){
+                                    process_version_update(res,i->vers);
+                                }
+                                else if (i->_store.level == Level::causal){
+                                    process_version_update(res,i->causal_vers);
+                                }
 			}
 			else if (i->table == Table::IntStore){
-				if (i->_store.level == Level::strong){
-					upd_23425(((int*)c)[0],i->vers);
-				}
-				else if (i->_store.level == Level::causal){
-					upd_23425(((int*)c)[0],i->causal_vers);
-				}
+                                auto res = upd_23425(((int*)c)[0]);
+                                if (i->_store.level == Level::strong){
+                                    process_version_update(res,i->vers);
+                                }
+                                else if (i->_store.level == Level::causal){
+                                    process_version_update(res,i->causal_vers);
+                                }
 			}
 		}
 
@@ -152,7 +145,7 @@ namespace myria{ namespace pgsql {
 				bool store_same = false;
 				if (i->_store.level == Level::causal){
 					auto old = i->causal_vers;
-					trans->select_version(i->table,i->key,i->causal_vers);
+					process_version_update(cmds::select_version(i->_store.level, *trans,i->table,i->key),i->causal_vers);
 					store_same = ends::is_same(old,i->causal_vers);
 					if (!store_same) i->_store.clock = max(i->_store.clock,i->causal_vers);
 					assert(i->_store.clock[2] < 30);
@@ -160,24 +153,33 @@ namespace myria{ namespace pgsql {
 				else if (i->_store.level == Level::strong){
 					auto old = i->vers;
 					int newi = -12;
-					trans->select_version(i->table,i->key,newi);
+                                        process_version_update(cmds::select_version(i->_store.level, *trans,i->table,i->key),newi);
 					store_same = (old == newi);
 					i->vers = newi;
 				}
 				if (store_same) return i->buf1;
 			}
 			{
-				auto data_vec =
-					(i->_store.level == Level::causal ?
-					 trans->select_version_data(i->table,i->key, i->causal_vers)
-					 : trans->select_version_data(i->table,i->key, i->vers));
+				result r = cmds::select_version_data(i->_store.level,*trans,i->table,i->key);
+				int start_offset = 0;
+				if (i->_store.level == Level::causal){
+					start_offset = process_version_update(r,i->causal_vers);
+				}
+				else start_offset = process_version_update(r,i->vers);
 				if (i->table == Table::BlobStore){
-					i->size = data_vec.size();
+					binarystring bs(r[0][start_offset]);
+					i->size = bs.size();
+					assert(i->size >= 1);
 					if (!i->buf1) i->buf1 = (char*) malloc(i->size);
-					memcpy(i->buf1,data_vec.data(),i->size);
+					memcpy(i->buf1,bs.data(),i->size);
 				}
 				else if (i->table == Table::IntStore) {
-					((int*)i->buf1)[0] = ((int*)data_vec.data())[0];
+					int res = -1;
+                                        if (!r[0][start_offset].to(res)){
+						std::cerr << "Attempting to access key "<< i->key << " from IntStore in " <<  i->_store.level << " land" << std::endl;
+						assert(false && "no result!");
+					}
+					((int*)i->buf1)[0] = res;
 				}
 				assert(i->buf1);
 				return i->buf1;
@@ -186,10 +188,16 @@ namespace myria{ namespace pgsql {
 
 		void SQLStore_impl::GSQLObject::increment(SQLTransaction *gso){
 			auto owner = enter_transaction(store(),gso);
-			if (i->_store.level == Level::causal){
-				owner.second->increment(repl_group,i->key,i->_store.clock,i->causal_vers);
-			}
-			else owner.second->increment(i->key,i->vers);
+                        auto r = cmds::increment(i->_store.level,
+							*owner.second,
+							i->table,
+							SQLConnection::repl_group,
+							i->key,
+							i->_store.clock);
+                        if (i->_store.level == Level::causal){
+                            process_version_update(r,i->causal_vers);
+                        }
+                        else process_version_update(r,i->vers);
 		}
 
 		bool SQLStore_impl::GSQLObject::ro_isValid(SQLTransaction *gso) const {
@@ -229,8 +237,8 @@ namespace myria{ namespace pgsql {
 			//TODO: this is not symmetric! That is a bad design! Bad!
 			int* arr = (int*)c;
 			arr[0] = (i->level == Level::strong ?
-								SQLStore<Label<strong> >::id() :
-								SQLStore<Label<causal> >::id());
+					  SQLStore<Level::strong>::id() :
+					  SQLStore<Level::causal>::id());
 			arr[1] = i->key;
 			arr[2] = i->size;
 			arr[3] = i->store_id;

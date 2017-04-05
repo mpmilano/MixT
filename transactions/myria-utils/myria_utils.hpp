@@ -12,6 +12,14 @@ namespace mutils{
 			return ret;
 		}
 	};
+	struct FatalMyriaError : public MyriaException{
+		std::string why;
+		FatalMyriaError(std::string why)
+			:why(why){}
+		const char* what() const noexcept{
+			return why.c_str();
+		}
+	};
 
 	struct NoOverloadFoundError : MyriaException{
 		const std::string mesg;

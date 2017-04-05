@@ -3,6 +3,7 @@
 #include "SQLStore_impl.hpp"
 #include "SQLTransaction.hpp"
 #include "Tracker_common.hpp"
+#include "SQLCommands.hpp"
 #include "SQLStore.hpp"
 #include "Ends.hpp"
 #include "Ostreams.hpp"
@@ -10,67 +11,63 @@
 
 namespace myria{ namespace pgsql {
 		
+		using namespace pqxx;
 		using namespace std;
 		using namespace mtl;
 		using namespace tracker;
 		using namespace mutils;
 		
-		SQLTransaction::SQLTransaction(Level level, GDataStore& store, LockedSQLConnection c whendebug(, std::string why))
-			:gstore(store),level(level),level_string(gstore.level_description),sql_conn(std::move(c))
-			 whendebug(,why(why))
+		SQLTransaction::SQLTransaction(GDataStore& store, LockedSQLConnection c, std::string why)
+			:gstore(store),sql_conn(std::move(c)),conn_lock(
+				[](auto& l) -> auto& {
+					assert(l.try_lock());
+					l.unlock();
+					return l;
+				}(sql_conn->con_guard)),
+			 trans(sql_conn->conn),
+			 why(why)
 		{
 			assert(!sql_conn->in_trans());
 			sql_conn->current_trans = this;
-			char start_trans{4};
-			log_send(level_string + " start");
-			sql_conn->conn->send(start_trans);
 		}
 		
-		std::list<SQLStore_impl::GSQLObject*> objs;
+
+		bool SQLTransaction::is_serialize_error(const pqxx::pqxx_exception &r){
+			auto s = std::string(r.base().what());
+			return s.find("could not serialize access") != std::string::npos;
+		}
+
+	
+		pqxx::result SQLTransaction::exec(const std::string &str){
+				try{
+					return trans.exec(str);
+				}
+				default_sqltransaction_catch
+					}
+		
+	
+		bool SQLTransaction::store_commit() {
+			sql_conn->current_trans = nullptr;
+			trans.commit();
+			return true;
+		}
+
 		void SQLTransaction::add_obj(SQLStore_impl::GSQLObject* gso){
 			objs.push_back(gso);
 		}
 
 		void SQLTransaction::store_abort(){
-			assert(!_committed || _aborted);
-			if(!remote_aborted){
-				char trans{1};
-				log_send(level_string + " abort");
-				sql_conn->conn->send(trans);
-			}
 			commit_on_delete = false;
-			_aborted = true;
 		}
 		
 		SQLTransaction::~SQLTransaction(){
-			auto &sql_conn = this->sql_conn;
+			auto &sql_conn = *this->sql_conn;
 			AtScopeEnd ase{[&sql_conn](){
-					sql_conn->current_trans = nullptr;
+					sql_conn.current_trans = nullptr;
 				}};
-			if (!_committed || _aborted){
-				if (commit_on_delete) {
-					store_commit();
-				}
-				else {
-					store_abort();
-				}
+			if (commit_on_delete) {
+				store_commit();
 			}
 		}
-
-#ifndef NDEBUG
-		void SQLTransaction::log_receive_start(const std::string& event_id){
-			log_file << "starting " << event_id << std::endl;
-			log_file.flush();
-		}
-		void SQLTransaction::log_receive_stop(const std::string& event_id){
-			log_file << "done " << event_id << std::endl;
-			log_file.flush();
-		}
-		
-		void SQLTransaction::log_send(const std::string& event_id){
-			log_file << "sending " << event_id << std::endl;
-			log_file.flush();
-		}
-#endif
 	}
 }

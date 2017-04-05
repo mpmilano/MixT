@@ -2,9 +2,8 @@
 
 #include "DataStore.hpp"
 #include "cexprutils.hpp"
-#include "SQLConnection.hpp"
-#include "SQLConstants.hpp"
 #include "SQLLevels.hpp"
+#include "SQLConnection.hpp"
 #include <memory>
 #include <vector>
 #include <array>
@@ -21,15 +20,33 @@
 
 namespace myria { namespace pgsql {
 
-		template<typename l>
+		template<Level l>
 		class SQLStore;
 
 		struct SQLTransaction;
+
+		enum class Table{
+			BlobStore = 0,IntStore = 1
+				};
+
+		static constexpr int Table_max = 2;
 		
+		constexpr mutils::CexprString table_name(Table t){
+			using namespace mutils;
+			constexpr auto bs = "\"BlobStore\"";
+			constexpr auto is = "\"IntStore\"";
+			switch (t){
+			case Table::BlobStore : return CexprString{} + bs;
+			case Table::IntStore : return CexprString{} + is;
+			};
+		}
+
 		struct SQLStore_impl;
 		
 		struct SQLInstanceManager_abs : public mutils::RemoteDeserializationContext {
-			virtual SQLStore_impl& inst(Level) = 0;
+			virtual SQLStore<Level::strong>& inst_strong() = 0;
+			virtual SQLStore<Level::causal>& inst_causal() = 0;
+			SQLStore_impl& inst(Level l);
 			
 			virtual ~SQLInstanceManager_abs(){}
 			SQLInstanceManager_abs(const SQLInstanceManager_abs&) = delete;
@@ -38,30 +55,24 @@ namespace myria { namespace pgsql {
 		
 		struct SQLStore_impl {
 		private:
-
-			void init_common();
-			SQLStore_impl(SQLConnectionPool<Label<causal> >& pool, GDataStore &store /*int instanceID,*/ );
-			SQLStore_impl(SQLConnectionPool<Label<strong> >& pool, GDataStore &store /*int instanceID,*/ );
+	
+			SQLStore_impl(GeneralSQLConnectionPool& pool, GDataStore &store, /*int instanceID,*/ Level);
 			GDataStore &_store;
 		public:
-			Level level;
 			
 			virtual ~SQLStore_impl();
 
-			template<typename  l>
+			template<Level l>
 			friend class SQLStore;
 
 			std::array<int, NUM_CAUSAL_GROUPS> clock;
 
+			const Level level;
 			WeakSQLConnection default_connection;
 	
 			SQLStore_impl(const SQLStore_impl&) = delete;
 	
-			std::unique_ptr<SQLTransaction> begin_transaction(
-#ifndef NDEBUG
-				const std::string& why
-#endif
-				);
+			std::unique_ptr<SQLTransaction> begin_transaction(whendebug(const std::string& why));
 			
 			bool in_transaction() const;
 	
