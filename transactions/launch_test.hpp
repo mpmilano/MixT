@@ -15,6 +15,7 @@
 #include "Hertz.hpp"
 #include "ObjectBuilder.hpp"
 #include "test_utils.hpp"
+#include "simple_rpc.hpp"
 //*/
 #include "abiutils.hpp"
 
