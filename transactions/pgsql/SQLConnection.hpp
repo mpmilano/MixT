@@ -20,6 +20,16 @@ namespace myria{ namespace pgsql {
 			
 			std::vector<bool> prepared;
 			
+#ifndef NDEBUG
+			void onAcquire(...){
+				assert(!current_trans);
+			}
+
+			void onRelease(){
+				assert(!current_trans);
+			}
+#endif
+			
 			SQLTransaction* current_trans = nullptr;
 			std::mutex con_guard;
 			static const constexpr int repl_group{CAUSAL_GROUP};
