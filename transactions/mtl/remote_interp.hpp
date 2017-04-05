@@ -10,6 +10,19 @@
 
 namespace myria { namespace mtl { namespace runnable_transaction {
 
+
+			template<typename store, char... str>
+			void send_holder_values(mutils::String<str...> holder_name, store &s, mutils::connection &c){
+				using holder = typename store::find_holder_by_name<DECT(holder_name)>;
+				holder& h = s;
+				
+			}
+			
+			template<typename store, typename... requires>
+			void send_store_values(const mutils::typeset<requires...>&, store &s, mutils::connection &c){
+			}
+			
+
 			template<typename phase, typename FullStore>
 			auto remote_interp(mutils::DeserializationManager* dsm, mutils::connection &c, FullStore &s){
 				using namespace mutils;
@@ -21,6 +34,8 @@ namespace myria { namespace mtl { namespace runnable_transaction {
 				ClientRequestMessage<restricted_store> request whendebug({mutils::int_rand()});
 				whendebug(logfile << "sending id " <<
 									phase::txnID::value << " with nonce " << request.txn_nonce << " for phase " << phase{} << std::endl);
+				constexpr typename phase::requirements requires;
+				send_store_values(requires);
 				s.copy_to(*request.store);
 				c.send(phase::txnID::value, request.bytes_size(), request);
 				std::size_t size{0};

@@ -163,6 +163,23 @@ struct store : public mutils::ByteRepresentable, public holders...
   template <typename... T>
   using add = DECT(*add_f(((T*)nullptr)...));
 
+	using holder_count = std::integral_constant<std::size_t,sizeof...(holders)>;
+
+	template<typename Name>
+		using find_holder_by_name = DECT(*mutils::find_match<
+																		 std::conditional_t<
+																		 std::is_same<Name::name, holder::name>::value,
+																		 holder,
+																		 mutils::mismatch
+																		 >... >());
+
+	template<typename... holder_names> using restrict_to_holders =
+		store_from_typeset<
+			intersect_names<
+				mutils::typeset<holders...>,
+				mutils::typeset<holder_names...>
+				> >;
+	
 	template<typename phase> using restrict_to_phase =
 		store_from_typeset<
 			intersect_names<

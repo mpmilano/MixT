@@ -4,8 +4,8 @@
 #include "transaction_macros.hpp"
 #include "split_printer.hpp"
 #include <iostream>
-#define STORE_LEVEL pgsql::causal
-#define STORE_LIST pgsql::SQLStore<Label<STORE_LEVEL> >
+#define STORE_LEVEL causal
+#define STORE_LIST pgsql::SQLStore<pgsql::Level::STORE_LEVEL>
 #include "FinalHeader.hpp"
 
 using namespace myria;
@@ -15,7 +15,7 @@ using namespace mtl;
 using namespace std;
 using namespace mutils;
 using namespace runnable_transaction;
-using SQLInstanceManager = typename SQLStore<Label<STORE_LEVEL> >::SQLInstanceManager;
+using SQLInstanceManager = typename SQLStore<Level::STORE_LEVEL >::SQLInstanceManager;
 using Hndl = Handle<Label<STORE_LEVEL >, int, SupportedOperation<RegisteredOperations::Increment,void,SelfType> >;
 
 void write_debug_file(int i, char* data, std::size_t size){
@@ -26,7 +26,7 @@ void write_debug_file(int i, char* data, std::size_t size){
 
 int main(){
 
-	SQLConnectionPool<Label<STORE_LEVEL > > pool;
+	SQLConnectionPool<Level::STORE_LEVEL > pool;
 	SQLInstanceManager ss{pool};
 	DeserializationManager dsm{{&ss}};
 	constexpr auto name = 478446/2;

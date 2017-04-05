@@ -21,6 +21,7 @@ struct String<>
   static const constexpr std::size_t string_length = 0;
   static constexpr String const* const p{ nullptr };
   static const constexpr as_value<String> v{};
+	using name = String;
 
   constexpr bool operator==(String<>) const;
 
@@ -62,6 +63,7 @@ struct String
   static const constexpr decltype(sizeof...(str)) string_length = sizeof...(str);
   static constexpr String const* const p{ nullptr };
   static const constexpr as_value<String> v{};
+	using name = String;
 
   template <char... str2>
   constexpr bool operator==(String<str2...>) const;
