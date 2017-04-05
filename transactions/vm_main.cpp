@@ -100,18 +100,18 @@ namespace synth_test {
 	
 	template<typename Hndl>
 	void perform_increment(unique_ptr<VMObjectLog>& log_messages,
-												 DeserializationManager* dsm, mutils::connection& conn, Tracker &, Hndl hndl){
+												 DeserializationManager*, mutils::connection&, Tracker &, Hndl hndl){
 		constexpr auto trans = TRANSACTION(Hndl::label::int_id::value,let remote x = hndl in {x = x + 1})::WITH(hndl);
-		trans.run_optimistic(dsm,conn,hndl);
+		trans.run_local(hndl);
 			log_messages->addField(
 				LogFields::is_write,true);
 	}
 
 	template<typename Hndl>
 	void perform_read(unique_ptr<VMObjectLog>& log_messages,
-										DeserializationManager* dsm, mutils::connection& conn, Tracker &, Hndl hndl){
+										DeserializationManager*, mutils::connection&, Tracker &, Hndl hndl){
 		constexpr auto trans = TRANSACTION(150 + Hndl::label::int_id::value,let remote x = hndl in {})::WITH(hndl);
-		trans.run_optimistic(dsm,conn,hndl);
+		trans.run_local(hndl);
 
 #ifndef NDEBUG
 		struct tmptest{ int a;};

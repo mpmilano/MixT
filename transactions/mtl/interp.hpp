@@ -29,14 +29,18 @@ namespace runnable_transaction {
 	//local interp
 	template <typename store,typename phase1, typename connection_pack, typename choice>
 	auto dispatch_to_runner(choice*, mutils::DeserializationManager*, connection_pack, transaction<phase1>*, store& s,
-													std::enable_if_t<!phase1::label::run_remotely::value>* = nullptr)
+													std::enable_if_t<(!phase1::label::run_remotely::value)
+													|| (!choice::value)
+													>* = nullptr)
 	{
 		return common_interp<phase1>(s);
 	}
 	
 	template <typename store, typename phase1, typename phase2, typename connection_pack, typename Choice, typename... phase>
 	auto dispatch_to_runner(Choice* choice, mutils::DeserializationManager* dsm, connection_pack c, transaction<phase1, phase2, phase...>*, store& s,
-													std::enable_if_t<!phase1::label::run_remotely::value>* = nullptr)
+													std::enable_if_t<(!phase1::label::run_remotely::value)
+													|| (!Choice::value)
+													>* = nullptr)
 	{
 		constexpr transaction<phase2, phase...>* remains{ nullptr };
 		common_interp<phase1>(s);
