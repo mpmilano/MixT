@@ -55,7 +55,7 @@ namespace myria{ namespace pgsql {
 		catch(const pqxx::pqxx_exception &r){							\
 			commit_on_delete = false;									\
 			if (is_serialize_error(r)) throw SerializationFailure{"Serialization Failure"}; \
-			else throw r; \
+			else std::rethrow_exception(std::current_exception());						\
 		}
 
 		template<typename Arg1, typename... Args>

@@ -42,7 +42,7 @@ namespace myria{
 					}
 					catch (std::exception &e){
 						std::cout << "ERRORR: exiting with exception " << e.what();
-						throw e;
+						std::rethrow_exception(std::current_exception());
 					}
 				}
 				
