@@ -47,6 +47,10 @@ namespace myria{ namespace pgsql {
 				using namespace mutils;
 				return 4*(NUM_CLIENTS + (INCREASE_BY*(TEST_STOP_TIME/INCREASE_DELAY)));
 			}
+
+#ifndef NOPOOL
+#define whenpool(x...) x
+#define whennopool(x...)
 		
 		template<Level l>
 		struct SQLConnectionPool : public mutils::ResourcePool<SQLConnection>{
@@ -77,5 +81,11 @@ namespace myria{ namespace pgsql {
 		using GeneralSQLConnectionPool = mutils::ResourcePool<SQLConnection>;
 		using WeakSQLConnection = typename GeneralSQLConnectionPool::WeakResource;
 		using LockedSQLConnection = typename GeneralSQLConnectionPool::LockedResource;
+#else
+#define whenpool(x...)
+#define whennopool(x...) x
+		using WeakSQLConnection = std::unique_ptr<SQLConnection>;
+		using LockedSQLConnection = WeakSQLConnection;
+#endif
 
 	} }

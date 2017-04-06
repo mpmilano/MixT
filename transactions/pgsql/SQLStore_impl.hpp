@@ -56,7 +56,7 @@ namespace myria { namespace pgsql {
 		struct SQLStore_impl {
 		private:
 	
-			SQLStore_impl(GeneralSQLConnectionPool& pool, GDataStore &store, /*int instanceID,*/ Level);
+			SQLStore_impl(whenpool(GeneralSQLConnectionPool& pool) whennopool(const std::string &host), GDataStore &store, /*int instanceID,*/ Level);
 			GDataStore &_store;
 		public:
 			
@@ -77,8 +77,8 @@ namespace myria { namespace pgsql {
 			bool in_transaction() const;
 	
 			int instance_id() const;
-			bool exists(Name id);
-			void remove(Name id);
+			bool exists(SQLTransaction*, Name id);
+			void remove(SQLTransaction*, Name id);
 
 			int ds_id() const;
 			static constexpr int ds_id_nl(){ return 2;}

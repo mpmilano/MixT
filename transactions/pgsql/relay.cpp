@@ -35,14 +35,14 @@ int main(int whendebug(argc), char** argv){
 			return _dsm;
 		}
 
-		captive_sqlstore(LocalSQLConnectionPool& pool)
-			:ss{pool}{}
+		captive_sqlstore(whenpool(LocalSQLConnectionPool& pool) whennopool(const std::string &host))
+			:ss{whenpool(pool) whennopool(host)}{}
 	};
 	assert(argc >= 2);
 	
-	Relay relay{atoi(argv[1]), [pool = std::make_shared<LocalSQLConnectionPool >()]() mutable {
+	Relay relay{atoi(argv[1]), [whenpool(pool = std::make_shared<LocalSQLConnectionPool >())]() whenpool(mutable) {
 			return std::unique_ptr<captive_store>{
-				new captive_sqlstore(*pool)}; }};
+				new captive_sqlstore(whenpool(*pool) whennopool("/run/postgresql"))}; }};
 	relay.receiver.acceptor_fun();
 
 	

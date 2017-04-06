@@ -17,23 +17,9 @@ namespace myria{ namespace pgsql {
 		}
 		
 		std::pair<std::unique_ptr<SQLTransaction>, SQLTransaction*>
-		enter_store_transaction(SQLStore_impl& store){
-			unique_ptr<SQLTransaction> t_owner;
-			SQLTransaction *trns = nullptr;
-			if (!(store).in_transaction()){
-				t_owner = small_transaction(store whendebug(,"enter_store_transaction found no active transaction running"));
-				trns = t_owner.get();
-			}
-			else trns = (store).default_connection.lock()->current_trans;
-			return make_pair(move(t_owner),trns);
-		}
-		
-		std::pair<std::unique_ptr<SQLTransaction>, SQLTransaction*>
-		enter_transaction(SQLStore_impl &store, SQLTransaction *trns){
-			if (!trns){
-				return enter_store_transaction(store);
-			}
-			else return make_pair(unique_ptr<SQLTransaction>{nullptr},trns);
+		enter_transaction(SQLStore_impl &, SQLTransaction *trns){
+			assert(trns);
+			return make_pair(unique_ptr<SQLTransaction>{nullptr},trns);
 		}
 		
 		//strong

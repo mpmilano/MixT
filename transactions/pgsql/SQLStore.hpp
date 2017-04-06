@@ -25,8 +25,9 @@ namespace myria { namespace pgsql {
 
 			struct SQLInstanceManager : public SQLInstanceManager_abs{
 			public:
-				GeneralSQLConnectionPool &p;
-				SQLInstanceManager(GeneralSQLConnectionPool &p)
+				whenpool(GeneralSQLConnectionPool &p;)
+				whennopool(std::string p;)
+				SQLInstanceManager(decltype(p) p)
 					:SQLInstanceManager_abs(),p(p){
 				}
 				SQLInstanceManager(const SQLInstanceManager&) = delete;
@@ -89,7 +90,7 @@ namespace myria { namespace pgsql {
 			mutils::DeserializationManager &this_mgr;
 
 		private:
-			SQLStore(mutils::DeserializationManager &this_mgr,GeneralSQLConnectionPool &p)
+			SQLStore(mutils::DeserializationManager &this_mgr,whenpool(GeneralSQLConnectionPool) whennopool(const std::string) &p)
 				:SQLStore_impl(p,*this,l),DataStore<label>(),this_mgr(this_mgr) {
 			}
 		public:
@@ -112,11 +113,15 @@ namespace myria { namespace pgsql {
 			}
 #ifndef NDEBUG
 			std::string why_in_transaction() const {
+#ifndef NOPOOL
 				if (in_transaction()){
 					assert(this->default_connection.acquire_if_locked()->current_trans);
 					return this->default_connection.acquire_if_locked()->current_trans->why;
 				}
 				else return "error: not in transaction";
+#else
+				return "no idea, sorry";
+#endif
 			}
 #endif
 

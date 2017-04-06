@@ -19,8 +19,12 @@ namespace myria{ namespace pgsql {
 		using namespace mutils;
 		using Internals = SQLStore_impl::GSQLObject::Internals;
 
-		SQLStore_impl::SQLStore_impl(GeneralSQLConnectionPool& pool, GDataStore &store, /*int instanceID,*/ Level l)
-			:_store(store),clock{{0,0,0,0}},level(l),default_connection{pool.acquire()} {
+		SQLStore_impl::SQLStore_impl(whenpool(GeneralSQLConnectionPool& pool) whennopool(const std::string &host),
+																 GDataStore &store, /*int instanceID,*/ Level l)
+			:_store(store),clock{{0,0,0,0}},level(l),default_connection{
+				whenpool(pool.acquire())
+					whennopool(new SQLConnection(host))
+					} {
 				auto t = begin_transaction("Setting up this new SQLStore; gotta configure search paths and stuff.");
 				((SQLTransaction*)t.get())
 					->exec(l == Level::strong ?
@@ -36,15 +40,17 @@ namespace myria{ namespace pgsql {
 
 		unique_ptr<SQLTransaction> SQLStore_impl::begin_transaction(whendebug(const std::string &why))
 		{
-			assert(!(default_connection.is_locked() &&
-					 default_connection.lock()->in_trans()) &&
-				   "Concurrency support doesn't exist yet."
+			assert(whenpool(!(default_connection.is_locked() &&
+												default_connection.lock()->in_trans()))
+						 whennopool(default_connection && !default_connection->in_trans())
+						 && "Concurrency support doesn't exist yet."
 				);
 			return unique_ptr<SQLTransaction>(
-				new SQLTransaction(_store,default_connection.lock() whendebug(,why)));
+				new SQLTransaction(*this,_store,whenpool(default_connection.lock()) whennopool(std::move(default_connection)) whendebug(,why)));
 		}
 		
 		bool SQLStore_impl::in_transaction() const {
+#ifndef NOPOOL
 			try {
 				auto conn = this->default_connection.acquire_if_locked();
 				bool it = conn->in_trans();
@@ -56,15 +62,19 @@ namespace myria{ namespace pgsql {
 			catch (const mutils::ResourceInvalidException&) {
 				return false;
 			}
+#else
+			return !this->default_connection;
+#endif
+			
 		}
 
-		bool SQLStore_impl::exists(Name id) {
-			auto owner = enter_store_transaction(*this);
+		bool SQLStore_impl::exists(SQLTransaction* ctx, Name id) {
+			auto owner = enter_transaction(*this, ctx);
 			return obj_exists(id,owner.second);
 		}
 
-		void SQLStore_impl::remove(Name id) {
-			cmds::remove(level,*small_transaction(*this whendebug(,std::string("Trying to remove something of name ") + std::to_string(id))),Table::BlobStore,id);
+		void SQLStore_impl::remove(SQLTransaction* ctx, Name id) {
+			cmds::remove(level,*ctx,Table::BlobStore,id);
 		}
 
 

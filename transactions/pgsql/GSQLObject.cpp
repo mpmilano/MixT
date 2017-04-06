@@ -187,17 +187,18 @@ namespace myria{ namespace pgsql {
 		}
 
 		void SQLStore_impl::GSQLObject::increment(SQLTransaction *gso){
+			assert(gso);
 			auto owner = enter_transaction(store(),gso);
-                        auto r = cmds::increment(i->_store.level,
-							*owner.second,
-							i->table,
-							SQLConnection::repl_group,
-							i->key,
-							i->_store.clock);
-                        if (i->_store.level == Level::causal){
-                            process_version_update(r,i->causal_vers);
-                        }
-                        else process_version_update(r,i->vers);
+			auto r = cmds::increment(i->_store.level,
+															 *owner.second,
+															 i->table,
+															 SQLConnection::repl_group,
+															 i->key,
+															 i->_store.clock);
+			if (i->_store.level == Level::causal){
+				process_version_update(r,i->causal_vers);
+			}
+			else process_version_update(r,i->vers);
 		}
 
 		bool SQLStore_impl::GSQLObject::ro_isValid(SQLTransaction *gso) const {
