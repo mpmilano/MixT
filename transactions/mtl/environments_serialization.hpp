@@ -36,7 +36,7 @@ namespace myria{ namespace mtl{
 		template<typename T, char... str>
 		void serialize_holder(const value_holder<T,str...>& t, mutils::local_connection &c){
 			c.send(whendebug(mutils::bytes_size(mutils::type_name<value_holder<T,str...> >()), mutils::type_name<value_holder<T,str...> >(),)
-						 t.pre_phase_t,t.t
+						 t.t
 				);
 		}
 		
@@ -54,9 +54,6 @@ namespace myria{ namespace mtl{
 			}
 			assert((*remote_name == my_name));
 #endif
-			auto pre_phase = mutils::from_bytes_noalloc<DECT(t.pre_phase_t)>(dsm,c.raw_buf());
-			t.pre_phase_t = *pre_phase;
-			c.mark_used(mutils::bytes_size(*pre_phase));
 			auto t_p = mutils::from_bytes_noalloc<DECT(t.t)>(dsm,c.raw_buf());
 			t.t = *t_p;
 			c.mark_used(mutils::bytes_size(*t_p));
