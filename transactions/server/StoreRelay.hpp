@@ -31,13 +31,19 @@ namespace myria{
 				//events within thread
 
 				void process_everything(std::size_t size, void const * const _data){
-					auto selected_txn = ((txnID_t*) _data)[0];
-					char const * const data = ((char*) _data) + sizeof(txnID_t);
-					bool found_match = 
-						(false || ... || phases::run_if_match(size - sizeof(txnID_t),
-																									selected_txn,dsm,c,data));
-					assert(found_match);
-					struct fail{}; if (!found_match) throw fail{};
+					try {
+						auto selected_txn = ((txnID_t*) _data)[0];
+						char const * const data = ((char*) _data) + sizeof(txnID_t);
+						bool found_match = 
+							(false || ... || phases::run_if_match(size - sizeof(txnID_t),
+																										selected_txn,dsm,c,data));
+						assert(found_match);
+						struct fail{}; if (!found_match) throw fail{};
+					}
+					catch (std::exception &e){
+						std::cout << "ERRORR: exiting with exception " << e.what();
+						throw e;
+					}
 				}
 				
 				void thread_loop(){
