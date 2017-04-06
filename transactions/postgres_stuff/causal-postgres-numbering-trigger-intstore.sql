@@ -10,10 +10,10 @@ DECLARE
 BEGIN
     SELECT c.counter
         INTO cntr
-        FROM counters c
+        FROM causalstore.counters c
         WHERE c.index = NEW.lw
 	FOR UPDATE ;
-    UPDATE counters c
+    UPDATE causalstore.counters c
         SET counter = (cntr + 1)
         WHERE c.index = NEW.lw
         RETURNING c.counter
@@ -27,7 +27,7 @@ BEGIN
         ELSE RAISE EXCEPTION 'unknown last writer: ' ;
     END CASE;
 
-    UPDATE "IntStore"
+    UPDATE causalstore."IntStore"
         SET data = NEW.data,
             vc1 = GREATEST(max.vc1, NEW.vc1),
             vc2 = GREATEST(max.vc2, NEW.vc2),
@@ -37,7 +37,7 @@ BEGIN
                      MAX(b.vc2) AS vc2,
                      MAX(b.vc3) AS vc3,
                      MAX(b.vc4) AS vc4
-              FROM "IntStore" b
+              FROM causalstore."IntStore" b
               WHERE b.id = NEW.id
                   AND b.index <> 0) AS max
         WHERE id = NEW.id
