@@ -18,8 +18,14 @@ namespace myria{ namespace mtl{
 #ifndef NDEBUG
 			DECT(mutils::bytes_size(std::string{})) remote_name_size;
 			c.receive(remote_name_size);
-			using holder = type_holder<T,str...>;
-			assert((*c.receive<std::string>(dsm,remote_name_size) == mutils::type_name<holder>()));
+			auto remote_name = c.receive<std::string>(dsm,remote_name_size);
+			auto my_name = mutils::type_name<type_holder<T,str...> >();
+			if (*remote_name != my_name){
+				std::cout << *remote_name << std::endl;
+				std::cout << std::endl;
+				std::cout << my_name << std::endl;
+			}
+			assert((*remote_name == my_name));
 #endif
 			auto t_p = mutils::from_bytes_noalloc<DECT(t.t)>(dsm,c.raw_buf());
 			t.t = *t_p;
@@ -39,7 +45,14 @@ namespace myria{ namespace mtl{
 #ifndef NDEBUG
 			DECT(mutils::bytes_size(std::string{})) remote_name_size;
 			c.receive(remote_name_size);
-			assert((*c.receive<std::string>(dsm,remote_name_size) == mutils::type_name<type_holder<T,str...> >()));
+			auto remote_name = c.receive<std::string>(dsm,remote_name_size);
+			auto my_name = mutils::type_name<value_holder<T,str...> >();
+			if (*remote_name != my_name){
+				std::cout << *remote_name << std::endl;
+				std::cout << std::endl;
+				std::cout << my_name << std::endl;
+			}
+			assert((*remote_name == my_name));
 #endif
 			auto pre_phase = mutils::from_bytes_noalloc<DECT(t.pre_phase_t)>(dsm,c.raw_buf());
 			t.pre_phase_t = *pre_phase;
@@ -67,7 +80,14 @@ namespace myria{ namespace mtl{
 #ifndef NDEBUG
 			DECT(mutils::bytes_size(std::string{})) remote_name_size;
 			c.receive(remote_name_size);
-			assert((*c.receive<std::string>(dsm,remote_name_size) == mutils::type_name<type_holder<T,str...> >()));
+			auto remote_name = c.receive<std::string>(dsm,remote_name_size);
+			auto my_name = mutils::type_name<remote_holder<T,str...> >();
+			if (*remote_name != my_name){
+				std::cout << *remote_name << std::endl;
+				std::cout << std::endl;
+				std::cout << my_name << std::endl;
+			}
+			assert((*remote_name == my_name));
 #endif			
 			c.receive(t.initialized,t.list_usable,t.handle);
 		}
