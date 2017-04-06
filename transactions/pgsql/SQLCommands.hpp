@@ -43,9 +43,9 @@ namespace{
 		template<typename T>
 		auto select_version_s(T &trans, Table t, Name id){
 			static const std::string bs =
-				"select Version from \"BlobStore\" where ID=$1";
+				"select Version from \"BlobStore\".\"BlobStore\" where ID=$1";
 			static const std::string is =
-				"select Version from \"IntStore\" where ID=$1";
+				"select Version from \"BlobStore\".\"IntStore\" where ID=$1";
 			auto &s = (t == Table::BlobStore ? bs : is );
 			return trans.prepared((t == Table::BlobStore ?
 								   TransactionNames::select_version_s_b :
@@ -60,8 +60,8 @@ namespace{
 			//AtScopeEnd ase{[](){//std::cerr << "out" << std::endl;}};
 			//discard(ase);
 			static const std::string bs =
-				"select version, data  from \"BlobStore\" where index = 0 and ID = $1";
-			static const std::string is = "select version, data from \"IntStore\" where ID = $1 and index = 0";
+				"select version, data  from \"BlobStore\".\"BlobStore\" where index = 0 and ID = $1";
+			static const std::string is = "select version, data from \"BlobStore\".\"IntStore\" where ID = $1 and index = 0";
 			switch(t) {
 			case Table::BlobStore : return trans.prepared(TransactionNames::select1,bs,id); 
 			case Table::IntStore : return trans.prepared(TransactionNames::select2,is,id); 
@@ -72,9 +72,9 @@ namespace{
 		template<typename T, typename Blob>
 		auto update_data_s(T& trans, Table t, Name id, const Blob& b){
 			static const std::string bs =
-				"update \"BlobStore\" set data=$2,Version=Version + 1 where ID=$1 returning version";
+				"update \"BlobStore\".\"BlobStore\" set data=$2,Version=Version + 1 where ID=$1 returning version";
 			static const std::string is =
-				"update \"IntStore\" set data=$2,Version=Version + 1 where ID=$1 returning version";
+				"update \"BlobStore\".\"IntStore\" set data=$2,Version=Version + 1 where ID=$1 returning version";
 			switch(t) {
 			case Table::BlobStore : return trans.prepared(TransactionNames::Updates1,bs,id,b);
 			case Table::IntStore : return trans.prepared(TransactionNames::Updates2,is,id,b);
@@ -87,16 +87,16 @@ namespace{
 			assert(t == Table::IntStore
 				   && "Error: increment currently only defined on integers");
 			const static std::string s =
-				"update \"IntStore\" set data = data + 1 where id = $1 returning version";
+				"update \"BlobStore\".\"IntStore\" set data = data + 1 where id = $1 returning version";
 			return trans.prepared(TransactionNames::Increment,s,id);
 		}
 
 		template<typename T, typename Blob>
 		void initialize_with_id_s(T &trans, Table t, Name id, const Blob& b){
 			const static std::string bs =
-				"INSERT INTO \"BlobStore\" (id,data) VALUES ($1,$2)";
+				"INSERT INTO \"BlobStore\".\"BlobStore\" (id,data) VALUES ($1,$2)";
 			const static std::string is =
-				"INSERT INTO \"IntStore\" (id,data) VALUES ($1,$2)";
+				"INSERT INTO \"BlobStore\".\"IntStore\" (id,data) VALUES ($1,$2)";
 			switch(t) {
 			case Table::BlobStore : trans.prepared(TransactionNames::Insert1,bs,id,b); return;
 			case Table::IntStore : trans.prepared(TransactionNames::Insert2,is,id,b); return;
@@ -190,8 +190,8 @@ namespace{
 			//AtScopeEnd ase{[](){//std::cerr << "out" << std::endl;}};
 			//discard(ase);
 			static const std::string bs =
-				"select vc1,vc2,vc3,vc4, data from \"BlobStore\" where index = 0 and ID = $1";
-			static const std::string is = "select vc1,vc2,vc3,vc4, data from \"IntStore\" where index = 0 and ID = $1";
+				"select vc1,vc2,vc3,vc4, data from causalstore.\"BlobStore\" where index = 0 and ID = $1";
+			static const std::string is = "select vc1,vc2,vc3,vc4, data from causalstore.\"IntStore\" where index = 0 and ID = $1";
 			switch(t) {
 			case Table::BlobStore : return trans.prepared(TransactionNames::select1,bs,id); 
 			case Table::IntStore : return trans.prepared(TransactionNames::select2,is,id); 
@@ -229,8 +229,8 @@ namespace{
 			assert(k > 0);
 
 
-			const static std::string bs = "INSERT INTO \"BlobStore\" (index,id) VALUES (0,$1), (1,$1), (2,$1)";
-			const static std::string is = "INSERT INTO \"IntStore\" (index,id) VALUES (0,$1), (1,$1), (2,$1)";
+			const static std::string bs = "INSERT INTO causalstore.\"BlobStore\" (index,id) VALUES (0,$1), (1,$1), (2,$1)";
+			const static std::string is = "INSERT INTO causalstore.\"IntStore\" (index,id) VALUES (0,$1), (1,$1), (2,$1)";
 			if (t == Table::IntStore){
 				trans.prepared(TransactionNames::initci,is,id);
 			} else trans.prepared(TransactionNames::initcb,bs,id);
