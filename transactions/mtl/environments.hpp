@@ -184,16 +184,18 @@ struct type_holder
 	struct is_type_holder : public std::false_type{};
 
 template <typename T, char... str>
-struct remote_holder : public type_holder<typename T::type, str...>
+struct remote_holder 
 {
 
-  using super = type_holder<typename T::type, str...>;
+	type_holder<typename T::type, str...> super;
 
-  using name = typename super::name;
+  using name = typename DECT(super)::name;
   static_assert(is_handle<T>::value);
   bool initialized = false;
   bool list_usable = false;
-  T handle;
+	std::vector<T> handle;
+	std::size_t rollback_size{0};
+	int curr_pos{-1};
 
   template <typename Other>
   static constexpr mutils::mismatch get_holder(remote_holder*, std::enable_if_t<!std::is_same<Other, name>::value, Other>)
@@ -206,18 +208,46 @@ struct remote_holder : public type_holder<typename T::type, str...>
     return _this;
   }
 
+	bool reset_index(){
+		curr_pos = 0;
+		return super.reset_index();
+	}
+
+	bool begin_phase(){
+		rollback_size = handle.size();
+		return reset_index() && super.begin_phase();
+	}
+
+	bool rollback_phase(){
+		handle.resize(rollback_size);
+		return super.rollback_phase();
+	}
+
+	remote_holder& increment()
+  {
+		super.increment();
+		return *this;
+  }
+	
+	remote_holder& increment_remote()
+  {
+		++curr_pos;
+		return *this;
+  }
+
   remote_holder& bind(T t)
   {
-    handle = t;
+    handle.emplace_back(t);
     initialized = true;
+		++curr_pos;
     return *this;
   }
 
   template <typename TransactionContext, typename... Args>
   remote_holder& push(TransactionContext& tc, Args&&... args)
   {
-    super::push(tc, std::forward<Args>(args)...);
-    handle.put(&tc, this->t.back());
+    super.push(tc, std::forward<Args>(args)...);
+    handle.back().put(&tc, super.t.back());
     list_usable = true;
     return *this;
   }
@@ -227,11 +257,11 @@ struct remote_holder : public type_holder<typename T::type, str...>
   {
     assert(initialized);
     if (list_usable) {
-      return super::get(tc);
+      return super.get(tc);
     } else {
       list_usable = true;
-      super::bind(*handle.get(&tc));
-      return super::get(tc);
+      super.bind(*handle[curr_pos].get(&tc));
+      return super.get(tc);
     }
   }
 

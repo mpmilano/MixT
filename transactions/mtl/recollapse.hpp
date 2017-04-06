@@ -130,6 +130,13 @@ auto _recollapse(typename AST<l>::template Statement<typename AST<l>::template I
   return a;
 }
 
+template <typename l, typename candidates, typename sub_map, char... var>
+auto _recollapse(typename AST<l>::template Statement<typename AST<l>::template IncrementRemoteOccurance<String<var...>>> a)
+{
+  static_assert(!candidates::template contains<String<var...>>());
+  return a;
+}
+
 template <typename l, typename candidates, typename sub_map, typename c, typename t, typename e>
 auto _recollapse(typename AST<l>::template Statement<typename AST<l>::template If<c, t, e>>)
 {

@@ -65,18 +65,14 @@ namespace myria{ namespace mtl{
 
 		template<typename T, char... str>
 		void serialize_holder(const remote_holder<T,str...>& t, mutils::local_connection &c){
-			using super = typename remote_holder<T,str...>::super;
-			super & sup = t;
-			serialize_holder(sup,c);
+			serialize_holder(t.super,c);
 			c.send(whendebug(mutils::bytes_size(mutils::type_name<remote_holder<T,str...> >()), mutils::type_name<remote_holder<T,str...> >(),)
 						 t.initialized,t.list_usable,mutils::bytes_size(t.handle), t.handle);
 		}
 		
 		template<typename T, char... str>
 		void receive_holder(mutils::DeserializationManager *dsm, const remote_holder<T,str...>& t, mutils::local_connection &c){
-			using super = typename remote_holder<T,str...>::super;
-			super & sup = t;
-			receive_holder(sup,c);
+			receive_holder(t.super,c);
 #ifndef NDEBUG
 			DECT(mutils::bytes_size(std::string{})) remote_name_size;
 			c.receive(remote_name_size);

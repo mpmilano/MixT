@@ -159,6 +159,12 @@ auto _run_phase(typename AST<l>::template Statement<typename AST<l>::template In
   s.get(String<var...>{}).increment();
 }
 
+template <typename l, typename TranCtx, typename store, char... var>
+auto _run_phase(typename AST<l>::template Statement<typename AST<l>::template IncrementRemoteOccurance<String<var...>>>*, TranCtx&, store& s)
+{
+  s.get(String<var...>{}).increment_remote();
+}	
+
 template <typename l, typename TranCtx, typename store, typename c, typename t, typename e>
 auto _run_phase(typename AST<l>::template Statement<typename AST<l>::template If<c, t, e>>*, TranCtx& ctx, store& s)
 {

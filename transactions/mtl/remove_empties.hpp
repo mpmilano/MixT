@@ -126,6 +126,18 @@ auto _clear_empty_statements(typename AST<l>::template Statement<typename AST<l>
   return ret{};
 }
 
+template <typename l, char... var>
+auto _clear_empty_statements(typename AST<l>::template Statement<typename AST<l>::template IncrementRemoteOccurance<String<var...>>> a)
+{
+  struct ret
+  {
+    using ast = DECT(a);
+    using remove_from_require = mutils::typeset<>;
+    using still_require = mutils::typeset<>;
+  };
+  return ret{};
+}
+
 template <typename l, typename c, typename t, typename e>
 auto _clear_empty_statements(typename AST<l>::template Statement<typename AST<l>::template If<c, t, e>>)
 {

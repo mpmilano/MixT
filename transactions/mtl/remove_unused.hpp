@@ -38,6 +38,13 @@ constexpr auto _remove_unused(const typename AST<l>::template Statement<typename
     contains_var_of_name(String<var...>{}, ts), typename AST<l>::template IncrementOccurance<String<var...>>, typename AST<l>::template Sequence<>>>{};
 }
 
+template <typename l, typename typeset, char... var>
+constexpr auto _remove_unused(const typename AST<l>::template Statement<typename AST<l>::template IncrementRemoteOccurance<String<var...>>>, typeset ts)
+{
+  return typename AST<l>::template Statement<std::conditional_t<
+    contains_var_of_name(String<var...>{}, ts), typename AST<l>::template IncrementRemoteOccurance<String<var...>>, typename AST<l>::template Sequence<>>>{};
+}
+
 template <typename l, typename typeset, typename c, typename t, typename e>
 constexpr auto _remove_unused(const typename AST<l>::template Statement<typename AST<l>::template If<c, t, e>>, typeset ts)
 {

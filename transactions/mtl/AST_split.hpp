@@ -228,6 +228,19 @@ struct AST<Label<l>>
     using substatement = typename IncrementOccurance<Var>::substatement;
   };
 
+	template <typename Var>
+  struct IncrementRemoteOccurance;
+  template <char... var>
+  struct IncrementRemoteOccurance<mutils::String<var...>>
+  {
+    using substatement = IncrementRemoteOccurance;
+  };
+  template <typename Var>
+  struct Statement<IncrementRemoteOccurance<Var>>
+  {
+    using substatement = typename IncrementRemoteOccurance<Var>::substatement;
+  };
+
   template <typename condition, typename then, typename els>
   struct If;
   template <typename condition, typename then, typename els>
@@ -521,6 +534,13 @@ struct AST<Label<l>>
   {
     return a;
   }
+
+	template <typename name>
+  static constexpr auto collapse1(Statement<IncrementRemoteOccurance<name>> a)
+  {
+    return a;
+  }
+
 
   template <typename... seq>
   static constexpr auto collapse1(Statement<Sequence<seq...>>)
