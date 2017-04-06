@@ -1,160 +1,104 @@
 #pragma once
 #include "SerializationSupport.hpp"
+#include "local_connection.hpp"
+#include "additional_serialization_support.hpp"
 
 namespace myria{ namespace mtl{
 
-#ifndef NDEBUG
-		using value_random_nonce = std::integral_constant<std::size_t, 7895872343L>;
-		using type_random_nonce = std::integral_constant<std::size_t, 789587243L>;
-		using remote_random_nonce = std::integral_constant<std::size_t, 78958721343L>;
-#endif
-
 		
-	template<typename T>
-	mutils::context_ptr<const mutils::type_check<is_type_holder,T> > from_bytes_noalloc(mutils::DeserializationManager* dsm, const char * v, mutils::context_ptr<T> = mutils::context_ptr<T>{} ){
-		using namespace mutils;
-		auto ret = new T;
-		assert(*from_bytes_noalloc<typename type_random_nonce::type>(dsm,v) == type_random_nonce::value);
-		whendebug(v += mutils::bytes_size(type_random_nonce::value));
-		ret->t = *from_bytes_noalloc<DECT(ret->t)>(dsm,v);
-		v += mutils::bytes_size(ret->t);
-		ret->curr_pos = *from_bytes_noalloc<DECT(ret->curr_pos)>(dsm,v);
-		v += mutils::bytes_size(ret->curr_pos);
-		ret->rollback_size = *from_bytes_noalloc<DECT(ret->rollback_size)>(dsm,v);
-		v += mutils::bytes_size(ret->rollback_size);
-		ret->bound = *from_bytes_noalloc<DECT(ret->bound)>(dsm,v);
-		v += mutils::bytes_size(ret->bound);
-		return context_ptr<const T>{ret};
-	}
-
-	template<typename T, char... str>
-	std::size_t to_bytes(const type_holder<T,str...>& t, char * _v){
-		auto *v = _v;
-#ifndef NDEBUG
-		mutils::to_bytes(type_random_nonce::value,v);
-		v += mutils::bytes_size(type_random_nonce::value);
-#endif
-		mutils::to_bytes(t.t,v);
-		v += mutils::bytes_size(t.t);
-		mutils::to_bytes(t.curr_pos,v);
-		v += mutils::bytes_size(t.curr_pos);
-		mutils::to_bytes(t.rollback_size,v);
-		v += mutils::bytes_size(t.rollback_size);
-		mutils::to_bytes(t.bound,v);
-		v += mutils::bytes_size(t.bound);
-		return v - _v;
-	}
-
-	template<typename T, char... str>
-	std::size_t bytes_size(const type_holder<T,str...>& t){
-		return 
-			mutils::bytes_size(t.t)+
-			mutils::bytes_size(t.curr_pos)+
-			mutils::bytes_size(t.rollback_size)+
-			mutils::bytes_size(t.bound)
-			whendebug(+ mutils::bytes_size(type_random_nonce::value));
-	}
-	
-	template<typename T>
-	mutils::context_ptr<const mutils::type_check<is_remote_holder,T> > from_bytes_noalloc(mutils::DeserializationManager* dsm, const char * v, mutils::context_ptr<T> = mutils::context_ptr<T>{}){
-		auto ret = new T;
-		assert(*from_bytes_noalloc<typename remote_random_nonce::type>(dsm,v) == remote_random_nonce::value);
-		whendebug(v += mutils::bytes_size(remote_random_nonce::value));
-		ret->t = *mutils::from_bytes_noalloc<DECT(ret->t)>(dsm,v);
-		v += mutils::bytes_size(ret->t);
-		ret->curr_pos = *mutils::from_bytes_noalloc<DECT(ret->curr_pos)>(dsm,v);
-		v += mutils::bytes_size(ret->curr_pos);
-		ret->rollback_size = *mutils::from_bytes_noalloc<DECT(ret->rollback_size)>(dsm,v);
-		v += mutils::bytes_size(ret->rollback_size);
-		ret->bound = *mutils::from_bytes_noalloc<DECT(ret->bound)>(dsm,v);
-		v += mutils::bytes_size(ret->bound);
-		ret->initialized = *mutils::from_bytes_noalloc<DECT(ret->initialized)>(dsm,v);
-		v += mutils::bytes_size(ret->initialized);
-		ret->list_usable = *mutils::from_bytes_noalloc<DECT(ret->list_usable)>(dsm,v);
-		v += mutils::bytes_size(ret->list_usable);
-		ret->handle = *mutils::from_bytes_noalloc<DECT(ret->handle)>(dsm,v);
-		v += mutils::bytes_size(ret->handle);
-		return mutils::context_ptr<const T>{ret};
-	}
-
-	template<typename T>
-	mutils::context_ptr<const mutils::type_check<is_value_holder,T> > from_bytes_noalloc(mutils::DeserializationManager* dsm, const char * v, mutils::context_ptr<T> = mutils::context_ptr<T>{}){
-		auto ret = new T;
-		assert(*from_bytes_noalloc<typename value_random_nonce::type>(dsm,v) == value_random_nonce::value);
-		whendebug(v += mutils::bytes_size(value_random_nonce::value));
-		ret->t = *mutils::from_bytes_noalloc<DECT(ret->t)>(dsm,v);
-		v += mutils::bytes_size(ret->t);
-		ret->pre_phase_t = *mutils::from_bytes_noalloc<DECT(ret->pre_phase_t)>(dsm,v);
-		v += mutils::bytes_size(ret->pre_phase_t);
-		return mutils::context_ptr<const T>{ret};
-	}
-
-	template<typename T, char... str>
-	std::size_t to_bytes(const value_holder<T,str...>& t, char * _v){
-		auto *v = _v;
-#ifndef NDEBUG
-		mutils::to_bytes(value_random_nonce::value,v);
-		v += mutils::bytes_size(value_random_nonce::value);
-#endif
-		mutils::to_bytes(t.t,v);
-		v += mutils::bytes_size(t.t);
-		mutils::to_bytes(t.pre_phase_t,v);
-		v += mutils::bytes_size(t.pre_phase_t);
-		return v - _v;
-	}
-
-	template<typename T, char... str>
-	std::size_t bytes_size(const value_holder<T,str...>& t){
-		return mutils::bytes_size(t.t) + mutils::bytes_size(t.pre_phase_t) whendebug(+ mutils::bytes_size(value_random_nonce::value));
-	}
-
-	template<typename T, char... str>
-	std::size_t to_bytes(const remote_holder<T,str...>& t, char * _v){
-		auto *v = _v;
-#ifndef NDEBUG
-		mutils::to_bytes(remote_random_nonce::value,v);
-		v += mutils::bytes_size(remote_random_nonce::value);
-#endif
-		mutils::to_bytes(t.t,v);
-		v += mutils::bytes_size(t.t);
-		mutils::to_bytes(t.curr_pos,v);
-		v += mutils::bytes_size(t.curr_pos);
-		mutils::to_bytes(t.rollback_size,v);
-		v += mutils::bytes_size(t.rollback_size);
-		mutils::to_bytes(t.bound,v);
-		v += mutils::bytes_size(t.bound);
-		mutils::to_bytes(t.initialized,v);
-		v += mutils::bytes_size(t.initialized);
-		mutils::to_bytes(t.list_usable,v);
-		v += mutils::bytes_size(t.list_usable);
-		mutils::to_bytes(t.handle,v);
-		v += mutils::bytes_size(t.handle);
-		return v - _v;
-	}
-
-	template<typename T, char... str>
-	std::size_t bytes_size(const remote_holder<T,str...>& t){
-		return mutils::bytes_size(t.t)+
-			mutils::bytes_size(t.curr_pos)+
-			mutils::bytes_size(t.rollback_size)+
-			mutils::bytes_size(t.bound)+
-			mutils::bytes_size(t.initialized)+
-			mutils::bytes_size(t.list_usable)+
-			mutils::bytes_size(t.handle)
-			whendebug(+ mutils::bytes_size(remote_random_nonce::value));
-	}
-
-#ifndef NDEBUG
-	template<typename T, char... str>
-	void ensure_registered(const remote_holder<T,str...>& , mutils::DeserializationManager&){}
-	template<typename T, char... str>
-	void ensure_registered(const value_holder<T,str...>& , mutils::DeserializationManager&){}
 		template<typename T, char... str>
-	void ensure_registered(const type_holder<T,str...>& , mutils::DeserializationManager&){}
-#endif
+		void serialize_holder(const type_holder<T,str...>& t, mutils::local_connection &c){
+			c.send(whendebug(mutils::bytes_size(mutils::type_name<type_holder<T,str...> >()), mutils::type_name<type_holder<T,str...> >(),)
+						 t.t,t.curr_pos,t.rollback_size,t.bound
+				);
+		}
 
-		template<typename T>
-		std::size_t bytes_size_reflect(const T& t){
-			return bytes_size(t);
+		template<typename T, char... str>
+		void receive_holder(mutils::DeserializationManager *dsm, type_holder<T,str...>& t, mutils::local_connection &c){
+#ifndef NDEBUG
+			DECT(mutils::bytes_size(std::string{})) remote_name_size;
+			c.receive(remote_name_size);
+			using holder = type_holder<T,str...>;
+			assert((*c.receive<std::string>(dsm,remote_name_size) == mutils::type_name<holder>()));
+#endif
+			auto t_p = mutils::from_bytes_noalloc<DECT(t.t)>(dsm,c.raw_buf());
+			t.t = *t_p;
+			c.mark_used(mutils::bytes_size(*t_p));
+			c.receive(t.curr_pos,t.rollback_size,t.bound);
+		}
+		
+		template<typename T, char... str>
+		void serialize_holder(const value_holder<T,str...>& t, mutils::local_connection &c){
+			c.send(whendebug(mutils::bytes_size(mutils::type_name<value_holder<T,str...> >()), mutils::type_name<value_holder<T,str...> >(),)
+						 t.pre_phase_t,t.t
+				);
+		}
+		
+		template<typename T, char... str>
+		void receive_holder(mutils::DeserializationManager *dsm, value_holder<T,str...>& t, mutils::local_connection &c){
+#ifndef NDEBUG
+			DECT(mutils::bytes_size(std::string{})) remote_name_size;
+			c.receive(remote_name_size);
+			assert((*c.receive<std::string>(dsm,remote_name_size) == mutils::type_name<type_holder<T,str...> >()));
+#endif
+			auto pre_phase = mutils::from_bytes_noalloc<DECT(t.pre_phase_t)>(dsm,c.raw_buf());
+			t.pre_phase_t = *pre_phase;
+			c.mark_used(mutils::bytes_size(*pre_phase));
+			auto t_p = mutils::from_bytes_noalloc<DECT(t.t)>(dsm,c.raw_buf());
+			t.t = *t_p;
+			c.mark_used(mutils::bytes_size(*t_p));
+		}
+
+
+		template<typename T, char... str>
+		void serialize_holder(const remote_holder<T,str...>& t, mutils::local_connection &c){
+			using super = typename remote_holder<T,str...>::super;
+			super & sup = t;
+			serialize_holder(sup,c);
+			c.send(whendebug(mutils::bytes_size(mutils::type_name<remote_holder<T,str...> >()), mutils::type_name<remote_holder<T,str...> >(),)
+						 t.initialized,t.list_usable,mutils::bytes_size(t.handle), t.handle);
+		}
+		
+		template<typename T, char... str>
+		void receive_holder(mutils::DeserializationManager *dsm, const remote_holder<T,str...>& t, mutils::local_connection &c){
+			using super = typename remote_holder<T,str...>::super;
+			super & sup = t;
+			receive_holder(sup,c);
+#ifndef NDEBUG
+			DECT(mutils::bytes_size(std::string{})) remote_name_size;
+			c.receive(remote_name_size);
+			assert((*c.receive<std::string>(dsm,remote_name_size) == mutils::type_name<type_holder<T,str...> >()));
+#endif			
+			c.receive(t.initialized,t.list_usable,t.handle);
+		}
+
+		template<typename store, char... str>
+		bool send_holder_values(mutils::String<str...> holder_name, store &s, mutils::local_connection &c){
+			using holder = typename store::template find_holder_by_name<DECT(holder_name)>;
+			holder& h = s;
+			serialize_holder(h,c);
+			return true;
+		}
+		
+		template<typename store, typename... requires>
+		void send_store_values(const mutils::typeset<requires...>&, store &s, mutils::local_connection &c){
+			auto worked = (send_holder_values(typename requires::name{}, s, c) && ... && true);
+			assert(worked);
+			(void)worked;
+		}
+		
+		template<typename store, char... str>
+		bool receive_holder_values(mutils::DeserializationManager* dsm, mutils::String<str...> holder_name, store &s, mutils::local_connection &c){
+			using holder = typename store::template find_holder_by_name<DECT(holder_name)>;
+			holder& h = s;
+			receive_holder(dsm,h,c);
+			return true;
+		}
+		
+		template<typename store, typename... provides>
+		void receive_store_values(mutils::DeserializationManager* dsm, const mutils::typeset<provides...>&, store &s, mutils::local_connection &c){
+			auto worked = (receive_holder_values(dsm,typename provides::name{}, s, c) && ... && true);
+			assert(worked);
+			(void)worked;
 		}
 	}}

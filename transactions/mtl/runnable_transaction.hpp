@@ -22,9 +22,6 @@ struct store_from_typeset_str<mutils::typeset<T...>>
 	template <typename T>
 using store_from_typeset = typename store_from_typeset_str<T>::type;
 
-	struct initialize_store_values{constexpr initialize_store_values() = default;};
-	struct initialize_from_holder{constexpr initialize_from_holder() = default;};
-
 	template<typename , typename> struct contains_name;
 	template<typename name, typename... members>
 	struct contains_name<name,mutils::typeset<members...> >
@@ -44,45 +41,18 @@ using store_from_typeset = typename store_from_typeset_str<T>::type;
 	template<typename left, typename right> using intersect_names = typename intersect_names_str<left,right>::type;
 	
 template <typename... holders>
-struct store : public mutils::ByteRepresentable, public holders...
+struct store : public holders...
 {
 
   store() = default;
-	store(initialize_store_values):store(){}
   store(const store&) = delete;
 
   template <typename val1, typename... values>
-		store(initialize_store_values i, const val1& val, const values&... vals)
-    : store(i,vals...)
+		store(const val1& val, const values&... vals)
+    : store(vals...)
   {
     get(typename val1::name{}).bind(val.t);
   }
-
-	store(initialize_from_holder, const holders&... o){
-		std::initializer_list<void*> ignore = {((void*)&holders::operator=(o))...,nullptr,nullptr};
-		(void)ignore;
-	}
-
-	template<typename... otherholders>
-	store& update_with(const store<otherholders...> & o){
-		static_assert((std::is_base_of<otherholders,store>::value && ... && true));
-		std::initializer_list<void*> ignore = {(void*)&otherholders::operator=(o)...,nullptr,nullptr};
-		(void)ignore;
-		return *this;
-	}
-	template<typename... otherholders>
-	store& update_from_larger(const store<otherholders...> & o){
-		static_assert(sizeof...(otherholders) >= sizeof...(holders));
-		static_assert((std::is_base_of<holders,store<otherholders...> >::value && ... && true));
-		std::initializer_list<void*> ignore = {(void*)&holders::operator=(o)...,nullptr,nullptr};
-		(void)ignore;
-		return *this;
-	}
-	
-	template<typename... otherholders>
-		store<otherholders...>& copy_to(store<otherholders...> &ret) const {
-		return ret.update_from_larger(*this);
-	}
 
   template <char... str>
   auto& get(String<str...> name)
@@ -106,48 +76,6 @@ struct store : public mutils::ByteRepresentable, public holders...
     (void)b;
     return *this;
   }
-	
-#ifndef NDEBUG
-	void ensure_registered(mutils::DeserializationManager&){}
-#endif
-
-	std::size_t bytes_size() const {
-		return whendebug(mutils::bytes_size(mutils::type_name<store>()) + ) (0 + ... + bytes_size_reflect(*(holders*)this));
-	}
-
-	std::size_t to_bytes(char * v) const {
-		return mutils::to_bytes_v(v,whendebug(mutils::type_name<store>(), )*((holders*)this)...);
-	}
-
-	void post_object(const std::function<void (char const * const,std::size_t)>& f) const {
-		auto size = bytes_size();
-		char buf[size];
-		to_bytes(buf);
-		f(buf,size);
-	}
-
-	static std::unique_ptr<store> from_bytes(mutils::DeserializationManager* dsm, const char* v){
-		using namespace mutils;
-#ifndef NDEBUG
-		auto namestr = mutils::type_name<store>();
-		auto remotestr = mutils::from_bytes<std::string>(dsm,v);
-		if (!(namestr == *remotestr))
-			std::cout << namestr
-								<< std::endl << std::endl << std::endl
-								<< *remotestr << std::endl;
-		assert(namestr == *remotestr);
-		v+= mutils::bytes_size(*remotestr);
-#endif
-		std::tuple<mutils::DeserializationManager*, const char*,mutils::context_ptr<const holders>... > tpl;
-		std::get<0>(tpl) = dsm;
-		std::get<1>(tpl) = v;
-		struct funstr{
-			static store* from_bytes(mutils::DeserializationManager* dsm, const char* _v, mutils::context_ptr<const holders>&... v){
-				from_bytes_noalloc_v<holders...>(dsm,_v,v...);
-				return new store(initialize_from_holder{},*v...);
-			}};
-		return std::unique_ptr<store>(mutils::callFunc(funstr::from_bytes,tpl));
-	}
 
   static constexpr store* add_f()
   {
@@ -168,8 +96,8 @@ struct store : public mutils::ByteRepresentable, public holders...
 	template<typename Name>
 		using find_holder_by_name = DECT(*mutils::find_match<
 																		 std::conditional_t<
-																		 std::is_same<Name::name, holder::name>::value,
-																		 holder,
+																		 std::is_same<typename Name::name, typename holders::name>::value,
+																		 holders,
 																		 mutils::mismatch
 																		 >... >());
 
@@ -243,7 +171,7 @@ struct transaction<>
   }
 
   template <typename... env>
-  using all_store = typename store<>::template add<env...>;
+  using all_store = store<env...>;
 };
 
 	template <typename p1, typename... phases>

@@ -37,7 +37,7 @@ namespace myria{
 						(false || ... || phases::run_if_match(size - sizeof(txnID_t),
 																									selected_txn,dsm,c,data));
 					assert(found_match);
-					struct fail{}; if (!found_match) throw fail{};					
+					struct fail{}; if (!found_match) throw fail{};
 				}
 				
 				void thread_loop(){

@@ -16,6 +16,7 @@
 #include "run_phase.hpp"
 #include "mtlbasics.hpp"
 #include "myria_utils.hpp"
+#include "local_connection.hpp"
 
 namespace myria {
 
@@ -45,27 +46,31 @@ namespace myria {
 															 char const * const _data){
 				using namespace mutils;
 				if (id == txnID){
-					whendebug(auto &logfile = c.get_log_file(););
-					whendebug(logfile << "receiving with store " << type_name<store>() << std::endl);
-					whendebug(logfile << "receiving id " << id << " for phase " << phase{});
-					whendebug(logfile.flush());
-					std::size_t request_size = ((std::size_t*)_data)[0];
-					auto* data = _data + sizeof(request_size);
-					std::unique_ptr<ClientRequestMessage<store> > msg =
-						ClientRequestMessage<store>::from_bytes(&dsm,data);
-					ServerReplyMessage<Name,store> srm{whendebug(msg->txn_nonce,) {},std::move(msg->store)};
-					whendebug(logfile << "transaction nonce: " << msg->txn_nonce << std::endl);
-					whendebug(logfile.flush());
-					
-					mtl::runnable_transaction::common_interp<phase, store>(*srm.store);
-					/*
-					const bool b = _store_diff->complies(*srm.store);
-					if(!b){
-						assert(false && "populate the cache somehow! Do stuff!");
-						}*/
+					mutils::local_connection _lc;
+					_lc.data = *mutils::from_bytes_noalloc<std::vector<char> >(&dsm,_data);
+					mutils::connection &lc = _lc;
+#ifndef NDEBUG
+					auto &logfile = c.get_log_file();
+					logfile << "receiving with store " << type_name<store>() << std::endl;
+					logfile << "receiving id " << id << " for phase " << phase{};
+					logfile.flush();
+					std::size_t txn_nonce{0};
+					lc.receive(txn_nonce);
+					logfile << "transaction nonce: " << txn_nonce << std::endl;
+					logfile.flush();
+					c.send(txn_nonce);
+#endif
+					store s;
+					constexpr reqs requires{};
+					constexpr provides provided{};
+					receive_store_values(&dsm,requires,s,_lc);
+					mtl::runnable_transaction::common_interp<phase, store>(s);
 					whendebug(logfile << "about to send response to client" << std::endl);
-					c.send(srm.bytes_size());
-					c.send(srm);
+					{
+						mutils::local_connection lc;
+						send_store_values(provided,s,lc);
+						c.send(lc.data);
+					}
 					whendebug(logfile << "response sent to client" << std::endl);
 					return true;
 				}

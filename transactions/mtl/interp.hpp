@@ -68,7 +68,7 @@ namespace runnable_transaction {
 		using store_t = typename split::template all_store<required...>;
 		// required should be struct value<>
 		static_assert(is_store<store_t>::value);
-		store_t store{initialize_store_values{}, vals... };
+		store_t store{vals... };
 		constexpr run_remotely* run_remotely_v{nullptr};
 		using ret_t = DECT(dispatch_to_runner(run_remotely_v,dsm,c, np, store));
 		constexpr ret_t *rt{nullptr};

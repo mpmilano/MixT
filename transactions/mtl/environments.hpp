@@ -43,12 +43,6 @@ struct value_holder
   {
   }
   value_holder() = default;
-
-	value_holder& operator=(const value_holder& o){
-		pre_phase_t = o.pre_phase_t;
-		t = o.t;
-		return *this;
-	}
 	
   using type = T;
   using name = String<str...>;
@@ -127,14 +121,6 @@ struct type_holder
   type_holder(const type_holder&) = delete;
   type_holder(value<T, str...> v) { bind(v.t); }
 
-	type_holder& operator=(const type_holder& o){
-		t = o.t;
-		curr_pos = o.curr_pos;
-		rollback_size = o.rollback_size;
-		bound = o.bound;
-		return *this;
-	}
-
   bool reset_index()
   {
     curr_pos = -1;
@@ -208,14 +194,6 @@ struct remote_holder : public type_holder<typename T::type, str...>
   bool initialized = false;
   bool list_usable = false;
   T handle;
-
-	remote_holder& operator=(const remote_holder& o){
-		super::operator=(o);
-		initialized = o.initialized;
-		list_usable = o.list_usable;
-		handle = o.handle;
-		return *this;
-	}
 
   template <typename Other>
   static constexpr mutils::mismatch get_holder(remote_holder*, std::enable_if_t<!std::is_same<Other, name>::value, Other>)

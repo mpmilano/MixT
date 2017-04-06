@@ -80,7 +80,7 @@ namespace myria{
 
     typedef T stored_type;
 
-    int to_bytes_hndl(char* v) const {
+		std::size_t to_bytes_hndl(char* v) const {
       //for serialization
       if (_ro) {
 	((bool*)v)[0] = true;
@@ -92,7 +92,7 @@ namespace myria{
       }
     }
 
-    int bytes_size_hndl() const {
+		std::size_t bytes_size_hndl() const {
       return sizeof(bool) + (_ro ? _ro->bytes_size() : 0);
     }
 
@@ -184,13 +184,13 @@ namespace myria{
 namespace mutils{
   
   template<typename l, typename T,typename... Ops>
-  int to_bytes(const myria::Handle<l,T,Ops...>& h, char* v){
+  std::size_t to_bytes(const myria::Handle<l,T,Ops...>& h, char* v){
     return h.to_bytes_hndl(v);
   }
   
   
   template<typename l, typename T,typename... Ops>
-  int bytes_size(const myria::Handle<l,T,Ops...> &h){
+  std::size_t bytes_size(const myria::Handle<l,T,Ops...> &h){
     return h.bytes_size_hndl();
   }
   
