@@ -52,7 +52,8 @@ namespace {
 			simple_rpc::connection strong_connection;
 			simple_rpc::connection causal_connection;
 			
-			Continue_build(Mem& , SQLConnectionPool<Level::strong>& strong_p, SQLConnectionPool<Level::causal>& causal_p,
+			Continue_build(Mem& , whenpool(SQLConnectionPool<Level::strong>&) whennopool(const std::string&) strong_p,
+										 whenpool(SQLConnectionPool<Level::causal>&) whennopool(const std::string&) causal_p,
 										 simple_rpc::connection strong_connection,	simple_rpc::connection causal_connection)
 				:ss(strong_p),
 				 sc(causal_p),
@@ -83,8 +84,8 @@ struct PreparedTest{
 
 	//static functions for TaskPool
 	static std::string exn_handler(std::exception_ptr eptr);
-	SQLConnectionPool<Level::strong> strong;
-	SQLConnectionPool<Level::causal> causal;
+	whenpool(SQLConnectionPool<Level::strong>) whennopool(std::string) strong whennopool({get_hostname(Level::strong)});
+	whenpool(SQLConnectionPool<Level::causal>) whennopool(std::string) causal whennopool({get_hostname(Level::causal)});
 	simple_rpc::connections strong_connections;
 	simple_rpc::connections causal_connections;
 	void pool_mem_init (Mem& m){

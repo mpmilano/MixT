@@ -36,7 +36,6 @@ struct value_holder
 {
 
 	using held_type = T;
-	T pre_phase_t;
   T t;
   value_holder(T t)
     : t(t)
@@ -64,13 +63,7 @@ struct value_holder
   }
 	bool reset_index() { return true; }
 	bool begin_phase(){
-		pre_phase_t = t;
 		return reset_index();
-	}
-	
-	bool rollback_phase(){
-		t = pre_phase_t;
-		return true;
 	}
 
   template <typename Other>
@@ -110,15 +103,14 @@ struct type_holder
 {
 
 	using held_type = T;
+	using name = String<str...>;
 	
   std::vector<T> t;
   int curr_pos{ -1 };
-	unsigned int rollback_size{0};
   bool bound = false;
-  using name = String<str...>;
 
   type_holder() = default;
-  type_holder(const type_holder&) = delete;
+	
   type_holder(value<T, str...> v) { bind(v.t); }
 
   bool reset_index()
@@ -127,14 +119,8 @@ struct type_holder
     return true;
   }
 	bool begin_phase(){
-		rollback_size = t.size();
 		return reset_index();
 	}
-	bool rollback_phase(){
-		t.resize(rollback_size);
-		return true;
-	}
-	
 
   template <typename TranCtx, typename... Args>
   type_holder& push(TranCtx&, Args&&... args)
@@ -149,6 +135,7 @@ struct type_holder
     bound = true;
     t.emplace_back(_t);
     ++curr_pos;
+		assert(curr_pos < (int)t.size());
     return *this;
   }
 
@@ -160,6 +147,7 @@ struct type_holder
   template <typename TranCtx>
   T get(TranCtx&)
   {
+		assert(curr_pos < (int)t.size());
     return t[curr_pos];
   }
 
@@ -187,15 +175,17 @@ template <typename T, char... str>
 struct remote_holder 
 {
 
-	type_holder<typename T::type, str...> super;
-
-  using name = typename DECT(super)::name;
   static_assert(is_handle<T>::value);
+
+	type_holder<typename T::type, str...> super;
   bool initialized = false;
   bool list_usable = false;
 	std::vector<T> handle;
-	std::size_t rollback_size{0};
 	int curr_pos{-1};
+
+	using name = typename DECT(super)::name;
+
+	remote_holder() = default;
 
   template <typename Other>
   static constexpr mutils::mismatch get_holder(remote_holder*, std::enable_if_t<!std::is_same<Other, name>::value, Other>)
@@ -214,13 +204,7 @@ struct remote_holder
 	}
 
 	bool begin_phase(){
-		rollback_size = handle.size();
 		return reset_index() && super.begin_phase();
-	}
-
-	bool rollback_phase(){
-		handle.resize(rollback_size);
-		return super.rollback_phase();
 	}
 
 	remote_holder& increment()

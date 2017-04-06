@@ -51,25 +51,9 @@ const auto log_name = [](){
 	return std::string("/tmp/MyriaStore-output-") + std::to_string(pid);
 }();
 
-constexpr int name_max = 478446;
-
 using fake_time = unsigned long long;
 
 namespace synth_test {
-
-	int get_name_read(double alpha){
-		constexpr int max = name_max;
-		auto ret = get_zipfian_value(max,alpha);
-		if (ret > (max + 14)) {
-			std::cerr << "Name out of range! Trying again" << std::endl;
-			return get_name_read(alpha);
-		}
-		else return ret + 14;
-	}
-	
-	int get_name_write(){
-        return 14 + int_rand() % 478446;
-	}
 
 	template<typename Hndl>
 	using oper_f = void (*) (unique_ptr<VMObjectLog>& ,
@@ -100,18 +84,18 @@ namespace synth_test {
 	
 	template<typename Hndl>
 	void perform_increment(unique_ptr<VMObjectLog>& log_messages,
-												 DeserializationManager* dsm, mutils::connection& conn, Tracker &, Hndl hndl){
+												 DeserializationManager* , mutils::connection& , Tracker &, Hndl hndl){
 		constexpr auto trans = TRANSACTION(Hndl::label::int_id::value,let remote x = hndl in {x = x + 1})::WITH(hndl);
-		trans.run_optimistic(dsm,conn,hndl);
+		trans.run_local(hndl);
 			log_messages->addField(
 				LogFields::is_write,true);
 	}
 
 	template<typename Hndl>
 	void perform_read(unique_ptr<VMObjectLog>& log_messages,
-										DeserializationManager* dsm, mutils::connection& conn, Tracker &, Hndl hndl){
+										DeserializationManager* , mutils::connection& , Tracker &, Hndl hndl){
 		constexpr auto trans = TRANSACTION(150 + Hndl::label::int_id::value,let remote x = hndl in {})::WITH(hndl);
-		trans.run_optimistic(dsm,conn,hndl);
+		trans.run_local(hndl);
 
 #ifndef NDEBUG
 		struct tmptest{ int a;};

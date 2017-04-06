@@ -2,6 +2,20 @@
 
 namespace mutils{
 
+	int get_name_read(double alpha){
+			constexpr int max = name_max;
+			auto ret = get_zipfian_value(max,alpha);
+			if (ret > (max + 14)) {
+				std::cerr << "Name out of range! Trying again" << std::endl;
+				return get_name_read(alpha);
+			}
+			else return ret + 14;
+		}
+	
+	int get_name_write(){
+		return 14 + int_rand() % name_max;
+	}
+	
 //I'm guessing miliseconds.  Here's hoping!
 	milliseconds getArrivalInterval(Frequency arrival_rate) {
 		using namespace std;

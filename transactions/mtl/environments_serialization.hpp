@@ -9,7 +9,7 @@ namespace myria{ namespace mtl{
 		template<typename T, char... str>
 		void serialize_holder(const type_holder<T,str...>& t, mutils::local_connection &c){
 			c.send(whendebug(mutils::bytes_size(mutils::type_name<type_holder<T,str...> >()), mutils::type_name<type_holder<T,str...> >(),)
-						 t.t,t.curr_pos,t.rollback_size,t.bound
+						 t.t,t.curr_pos,t.bound
 				);
 		}
 
@@ -30,7 +30,7 @@ namespace myria{ namespace mtl{
 			auto t_p = mutils::from_bytes_noalloc<DECT(t.t)>(dsm,c.raw_buf());
 			t.t = *t_p;
 			c.mark_used(mutils::bytes_size(*t_p));
-			c.receive(t.curr_pos,t.rollback_size,t.bound);
+			c.receive(t.curr_pos,t.bound);
 		}
 		
 		template<typename T, char... str>

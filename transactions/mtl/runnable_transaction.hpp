@@ -45,7 +45,7 @@ struct store : public holders...
 {
 
   store() = default;
-  store(const store&) = delete;
+	store(store&&) = default;
 
   template <typename val1, typename... values>
 		store(const val1& val, const values&... vals)
@@ -53,6 +53,13 @@ struct store : public holders...
   {
     get(typename val1::name{}).bind(val.t);
   }
+
+private:
+  store(const store&) = default;
+	store& operator=(store&&) = default;
+public:
+	store clone(){return *this;}
+	store& take(store s){ return this->operator=(std::move(s));}
 
   template <char... str>
   auto& get(String<str...> name)

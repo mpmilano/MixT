@@ -239,38 +239,47 @@ auto run_phase(TranCtx& ctx, store& s)
 
 template <typename phase1, typename Ctx, typename S>
 void
-run_phase1(Ctx& ctx, S& s, std::enable_if_t<std::is_void<DECT(run_phase<phase1>(ctx, s))>::value>* = nullptr)
+run_phase1(Ctx& ctx, S& old, S& s, std::enable_if_t<std::is_void<DECT(run_phase<phase1>(ctx, s))>::value>* = nullptr)
 {
   run_phase<phase1>(ctx, s);
   if (ctx.s_ctx)
     ctx.s_ctx->store_commit();
+	old.take(std::move(s));
 }
 
 template <typename phase1, typename Ctx, typename S>
-auto run_phase1(Ctx& ctx, S& s, std::enable_if_t<!std::is_void<DECT(run_phase<phase1>(ctx, s))>::value>* = nullptr)
+auto run_phase1(Ctx& ctx, S& old, S& s, std::enable_if_t<!std::is_void<DECT(run_phase<phase1>(ctx, s))>::value>* = nullptr)
 {
   auto ret = run_phase<phase1>(ctx, s);
   if (ctx.s_ctx)
     ctx.s_ctx->store_commit();
+	old.take(std::move(s));
   return ret;
 }
-
+template <typename phase1, typename store>
+auto common_interp_loop(store& old, store s){
+	using label = typename phase1::label;
+	PhaseContext<label> ctx{};
+	s.begin_phase();
+	return run_phase1<phase1>(ctx, old, s);
+}
+	
 template <typename phase1, typename store>
 auto common_interp(store& s)
 {
   using label = typename phase1::label;
-	do {
-    try {
-			PhaseContext<label> ctx{};
-      s.begin_phase();
-      return run_phase1<phase1>(ctx, s);
-    } catch (const SerializationFailure& sf) {
-      s.rollback_phase();
-      whendebug(if (!label::can_abort::value) std::cout << "Error: label which cannot abort aborted! " << label{});
-      if (label::can_abort::value)
-        throw sf;
-    }
-  } while (!label::can_abort::value);
+	try {
+		return common_interp_loop<phase1>(s,s.clone());
+	}
+	catch (const SerializationFailure& sf) {
+		while (!label::can_abort::value) {
+			try {
+				return common_interp_loop<phase1>(s,s.clone());
+			} catch (const SerializationFailure& sf) {
+				whendebug(std::cout << "Error: label which cannot abort aborted! " << label{});
+			}
+		} /*else if can_abort,*/ throw sf;
+	}
 }
 }
 }

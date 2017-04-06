@@ -22,6 +22,14 @@ namespace myria{ namespace pgsql {
 			return current_trans;
 		}
 
+		std::string get_hostname(Level l){
+			return mutils::string_of_ip(
+				l == Level::strong ? 
+				mutils::get_strong_ip() :
+				mutils::get_causal_ip()
+				);
+		}
+		
 		SQLConnection::SQLConnection(std::string host)
 			:prepared(((std::size_t) TransactionNames::MAX),false),conn{std::string("host=") + host}{
 			static_assert(int{CAUSAL_GROUP} > 0, "errorr: did not set CAUSAL_GROUP or failed to 1-index");

@@ -23,7 +23,7 @@ namespace myria{ namespace pgsql {
 			
 			GDataStore& gstore;
 		private:
-			SQLStore_impl &parent;
+			whennopool(SQLStore_impl &parent;)
 			LockedSQLConnection sql_conn;
 			std::unique_lock<std::mutex> conn_lock;
 			pqxx::work trans;

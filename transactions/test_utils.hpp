@@ -45,4 +45,11 @@ namespace mutils{
 		}
 		else return mutils::decode_ip(causal_remote_ip_2);
 	}
+
+	constexpr int name_max = 478446;
+
+	int get_name_read(double alpha);
+	
+	int get_name_write();
+	
 }

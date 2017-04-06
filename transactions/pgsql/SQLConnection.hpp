@@ -48,6 +48,8 @@ namespace myria{ namespace pgsql {
 				return 4*(NUM_CLIENTS + (INCREASE_BY*(TEST_STOP_TIME/INCREASE_DELAY)));
 			}
 
+		std::string get_hostname(Level l);
+		
 #ifndef NOPOOL
 #define whenpool(x...) x
 #define whennopool(x...)
@@ -56,11 +58,7 @@ namespace myria{ namespace pgsql {
 		struct SQLConnectionPool : public mutils::ResourcePool<SQLConnection>{
 
 			static auto* newsqlconn(){
-				return new SQLConnection(mutils::string_of_ip(
-																	 l == Level::strong ? 
-																	 mutils::get_strong_ip() :
-																	 mutils::get_causal_ip()
-																	 ));
+				return new SQLConnection(get_hostname(l));
 			}
 			
 			SQLConnectionPool()
