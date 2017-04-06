@@ -151,7 +151,7 @@ namespace{
 				for (int _k = 1; _k < (NUM_CAUSAL_GROUPS+1); ++_k){
 					auto k = to_cexprstring(_k);
 					CexprString main = CexprString{}
-					+ "update " + t + " set data = " + set
+					+ "update causalstore." + t + " set data = " + set
 						+ ReturnThis::vcs1(1,NUM_CAUSAL_GROUPS,_k)
 						+ ", lw = " + k
 						+ " where id = $1 and index = " + group_mapper(_k)
