@@ -16,12 +16,6 @@ namespace myria{ namespace pgsql {
 			return owner;
 		}
 		
-		std::pair<std::unique_ptr<SQLTransaction>, SQLTransaction*>
-		enter_transaction(SQLStore_impl &, SQLTransaction *trns){
-			assert(trns);
-			return make_pair(unique_ptr<SQLTransaction>{nullptr},trns);
-		}
-		
 		//strong
 		int process_version_update(const result &res, int& where){
 			assert(!res.empty());

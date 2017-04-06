@@ -57,13 +57,11 @@ namespace myria{ namespace pgsql {
 					}} {}
 
 //"named" object
-		SQLStore_impl::GSQLObject::GSQLObject(SQLStore_impl& ss, Table t, Name id, const vector<char> &c)
+		SQLStore_impl::GSQLObject::GSQLObject(SQLTransaction* trans, SQLStore_impl& ss, Table t, Name id, const vector<char> &c)
 			:i{new Internals{t,id,(int)c.size(),ss,
 					(char*) malloc(c.size())}}{
 
 			{
-				auto trans_owner = enter_transaction(ss,nullptr);
-				auto *trans = trans_owner.second;
 				//assert(!ro_isValid(trans));
 
 				if (t == Table::BlobStore){
@@ -107,9 +105,8 @@ namespace myria{ namespace pgsql {
 			return this->i->causal_vers;
 		}
 
-		void SQLStore_impl::GSQLObject::save(SQLTransaction *gso){
-			auto owner = enter_transaction(store(),gso);
-			auto trans = owner.second;
+		void SQLStore_impl::GSQLObject::save(SQLTransaction *trans){
+			assert(trans);
 			char *c = i->buf1;
 			assert(c);
 
@@ -136,9 +133,8 @@ namespace myria{ namespace pgsql {
 			}
 		}
 
-		char* SQLStore_impl::GSQLObject::load(SQLTransaction *gso){
-			auto owner = enter_transaction(store(),gso);
-			auto trans = owner.second;
+		char* SQLStore_impl::GSQLObject::load(SQLTransaction *trans){
+			assert(trans);
 			if (i->size >= max_ver_check_size){
 				bool store_same = false;
 				if (i->_store.level == Level::causal){
@@ -184,11 +180,10 @@ namespace myria{ namespace pgsql {
 			}
 		}
 
-		void SQLStore_impl::GSQLObject::increment(SQLTransaction *gso){
-			assert(gso);
-			auto owner = enter_transaction(store(),gso);
+		void SQLStore_impl::GSQLObject::increment(SQLTransaction *trans){
+			assert(trans);
 			auto r = cmds::increment(i->_store.level,
-															 *owner.second,
+															 *trans,
 															 i->table,
 															 SQLConnection::repl_group,
 															 i->key,
@@ -200,9 +195,8 @@ namespace myria{ namespace pgsql {
 		}
 
 		bool SQLStore_impl::GSQLObject::ro_isValid(SQLTransaction *gso) const {
-			auto& stre = const_cast<GSQLObject&>(*this).store();
-			auto owner = enter_transaction(stre,gso);
-			return obj_exists(i->key,owner.second);
+			assert(gso);
+			return obj_exists(i->key,gso);
 		}
 
 		void SQLStore_impl::GSQLObject::resize_buffer(std::size_t newsize){

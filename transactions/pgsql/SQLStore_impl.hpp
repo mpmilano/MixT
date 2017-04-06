@@ -89,7 +89,7 @@ namespace myria { namespace pgsql {
 				Internals *i;
 				GSQLObject(Name id, int size);
 			public:
-				GSQLObject(SQLStore_impl &ss, Table t, Name name, const std::vector<char> &c);
+				GSQLObject(SQLTransaction* trans, SQLStore_impl &ss, Table t, Name name, const std::vector<char> &c);
 				GSQLObject(SQLStore_impl &ss, Table t, Name name, int size);
 				GSQLObject(SQLStore_impl &ss, Table t, Name name);
 				GSQLObject(const GSQLObject&) = delete;

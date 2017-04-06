@@ -69,8 +69,7 @@ namespace myria{ namespace pgsql {
 		}
 
 		bool SQLStore_impl::exists(SQLTransaction* ctx, Name id) {
-			auto owner = enter_transaction(*this, ctx);
-			return obj_exists(id,owner.second);
+			return obj_exists(id,ctx);
 		}
 
 		void SQLStore_impl::remove(SQLTransaction* ctx, Name id) {
