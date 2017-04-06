@@ -209,7 +209,7 @@ struct remote_holder
   }
 
 	bool reset_index(){
-		curr_pos = 0;
+		curr_pos = -1;
 		return super.reset_index();
 	}
 
@@ -232,6 +232,7 @@ struct remote_holder
 	remote_holder& increment_remote()
   {
 		++curr_pos;
+		assert(curr_pos < ((int)handle.size()));
 		return *this;
   }
 
@@ -240,6 +241,7 @@ struct remote_holder
     handle.emplace_back(t);
     initialized = true;
 		++curr_pos;
+		assert(curr_pos < ((int)handle.size()));
     return *this;
   }
 
