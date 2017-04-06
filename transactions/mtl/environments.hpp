@@ -260,7 +260,7 @@ struct remote_holder
       return super.get(tc);
     } else {
       list_usable = true;
-			assert(handle.size() > curr_pos);
+			assert(((int)handle.size()) > curr_pos);
       super.bind(*handle[curr_pos].get(&tc));
       return super.get(tc);
     }
