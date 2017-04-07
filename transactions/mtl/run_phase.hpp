@@ -272,8 +272,12 @@ auto common_interp(store& s)
 		return common_interp_loop<phase1>(s,s.clone());
 	}
 	catch (const SerializationFailure& sf) {
+		std::size_t backoff_multiplier{0};
 		while (!label::can_abort::value) {
 			try {
+				//try an exponential back-off strategy
+				std::this_thread::sleep_for(std::chrono::microseconds{(std::size_t)mutils::better_rand()*backoff_multiplier});
+				backoff_multiplier*=10;
 				return common_interp_loop<phase1>(s,s.clone());
 			} catch (const SerializationFailure& sf) {
 				whendebug(std::cout << "Error: label which cannot abort aborted! " << label{});

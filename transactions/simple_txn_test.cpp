@@ -36,23 +36,34 @@ void client::txn_write(){
 }
 	
 template<typename U, typename V>
-run_result client::client_action(std::chrono::time_point<U,V> /*action start*/){
+run_result client::client_action(std::chrono::time_point<U,V> action_start){
 	auto& params = t.params;
+	run_result result;
+	result.start_time = action_start;
 	Level l = (mutils::better_rand() > params.percent_causal ? Level::strong : Level::causal);
 	bool write = mutils::better_rand() > params.percent_read;
-	switch(l){
-	case Level::strong:
-		if (write) txn_write<Level::strong>();
-		else txn_read<Level::strong>();
-		break;
-	case Level::causal:
-		if (write) txn_write<Level::causal>();
-		else txn_read<Level::causal>();
-		break;
-	default:
-		assert(false);
-	};
-	return run_result{};
+	result.l = l;
+	result.is_write = write;
+	try {
+		switch(l){
+		case Level::strong:
+			if (write) txn_write<Level::strong>();
+			else txn_read<Level::strong>();
+			break;
+		case Level::causal:
+			if (write) txn_write<Level::causal>();
+			else txn_read<Level::causal>();
+			break;
+		default:
+			assert(false);
+		};
+		result.is_abort = false;
+	}
+	catch(const SerializationFailure&){
+		result.is_abort = true;
+	}
+	result.stop_time = high_resolution_clock::now();
+	return result;
 }
 }
 
@@ -69,6 +80,7 @@ int main(){
 	params.percent_dedicated_connections = .01;
 	params.percent_causal = .95;
 	params.percent_read = .95;
+	params.output_file = "/tmp/MyriaStore-results";
 	test t1{params};
 	t1.run_test();
 }

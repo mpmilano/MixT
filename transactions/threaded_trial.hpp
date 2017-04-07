@@ -59,7 +59,11 @@ struct test{
 		}
 	}
 
-	void print_result(const run_result &){
+	std::ofstream output_file{params.output_file};
+
+	template<typename time>
+	void print_result(const time &start_time, const run_result &r){
+		r.print(start_time, output_file);
 	}
 	
 	void run_test(){
@@ -98,9 +102,10 @@ struct test{
 						if (pending_io.size() > 0){
 							auto result = pending_io.front();
 							pending_io.pop_front();
-							print_result(result);
+							print_result(start_time,result);
 						}
 					}
+					output_file.flush();
 				}
 			}
 			//work done, wait until event launch
@@ -123,7 +128,7 @@ struct test{
 			process_results(results,pending_io,1ms,now()+100s);
 		}
 		for (auto &res : pending_io){
-			print_result(res);
+			print_result(start_time,res);
 		}
 	}
 };

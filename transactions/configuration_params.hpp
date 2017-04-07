@@ -8,7 +8,7 @@ struct configuration_parameters{
 	int strong_ip; int strong_relay_port; int causal_ip; int causal_relay_port;
 	mutils::Frequency client_freq; std::size_t starting_num_clients; mutils::Frequency increase_clients_freq;
 	std::chrono::seconds test_duration; double percent_dedicated_connections;
-	double percent_causal; double percent_read; 
+	double percent_causal; double percent_read; std::string output_file;
 	
 	//derived values
 	std::size_t max_clients() const {
