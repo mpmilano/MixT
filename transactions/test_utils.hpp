@@ -19,12 +19,7 @@ namespace mutils{
 	}
 
 	using time_point = std::decay_t<decltype(std::chrono::high_resolution_clock::now())>;
-	extern const time_point launch_clock;
-	using duration = decltype(launch_clock - launch_clock);
 		
-//was as microseconds
-	duration elapsed_time();
-
 	constexpr unsigned int get_strong_ip(){
 		constexpr char const * const strong_remote_ip{STRONG_REMOTE_IP};
 		//if string is non-zero in length

@@ -22,7 +22,7 @@ namespace myria{ namespace pgsql {
 		SQLStore_impl::SQLStore_impl(whenpool(GeneralSQLConnectionPool& pool) whennopool(const std::string &host),
 																 GDataStore &store, /*int instanceID,*/ Level l)
 			:_store(store),clock{{0,0,0,0}},level(l),default_connection{
-				whenpool(pool.acquire())
+				whenpool(pool.acquire_weak())
 					whennopool(new SQLConnection(host))
 					} {
 				auto t = begin_transaction("Setting up this new SQLStore; gotta configure search paths and stuff.");

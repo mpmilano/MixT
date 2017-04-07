@@ -37,13 +37,6 @@ namespace mutils{
 		return round(x);
 	}
 
-	const time_point launch_clock = std::chrono::high_resolution_clock::now();
-	
-//was as microseconds
-	duration elapsed_time() {
-		return std::chrono::high_resolution_clock::now() - launch_clock;
-	};
-
 	
 	/*inline int get_strong_ip() {
 		static int ip_addr{[](){
