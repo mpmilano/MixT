@@ -33,6 +33,7 @@ struct test{
 
 	test(configuration_parameters params)
 		:params(params){
+		output_file << params;
 		for (std::size_t i = 0; i < params.starting_num_clients; ++i){
 			push_client();
 		}
@@ -77,6 +78,7 @@ struct test{
 		std::list<std::future<run_result> > results;
 		std::list<run_result> pending_io;
 		auto start_time = now();
+		auto last_log_write_time = start_time;
 		auto stop_time = start_time + params.test_duration;
 		
 		//schedule next event
@@ -98,7 +100,7 @@ struct test{
 				//get partial results out of results list
 				process_results(results,pending_io,0s,next_event_time);
 				//rarely, try and print stuff
-				if (event_count % 50 == 0) {
+				if (event_count % 500 == 0) {
 					while(next_event_time > now()){
 						if (pending_io.size() > 0){
 							auto result = pending_io.front();
@@ -107,8 +109,21 @@ struct test{
 						}
 					}
 					output_file.flush();
+					last_log_write_time = now();
 				}
 			}
+			//if it's been forever since our last log write, write the log *now*
+			if (now() > (params.log_delay_tolerance + last_log_write_time)){
+				process_results(results,pending_io,0s,1s + now());
+				while(pending_io.size() > 0){
+					auto result = pending_io.front();
+					pending_io.pop_front();
+					print_result(start_time,result);
+				}
+				output_file.flush();
+				last_log_write_time = now();
+			}
+			
 			//work done, wait until event launch
 			this_thread::sleep_for(next_event_time - now());
 			auto this_event_time = next_event_time;

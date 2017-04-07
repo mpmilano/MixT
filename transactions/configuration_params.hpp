@@ -9,6 +9,7 @@ struct configuration_parameters{
 	mutils::Frequency client_freq; std::size_t starting_num_clients; mutils::Frequency increase_clients_freq;
 	std::chrono::seconds test_duration; double percent_dedicated_connections;
 	double percent_causal; double percent_read; std::string output_file;
+	std::chrono::seconds log_delay_tolerance;
 	
 	//derived values
 	std::size_t max_clients() const {
@@ -39,4 +40,20 @@ struct configuration_parameters{
 	}
 	
 };
+	std::ostream& operator<<(std::ostream& o, const configuration_parameters& p){
+		return o << p.strong_ip << p.strong_relay_port <<
+			p.causal_ip << p.causal_relay_port <<
+			p.client_freq << p.starting_num_clients << p.increase_clients_freq <<
+			p.test_duration.count() << p.percent_dedicated_connections <<
+			p.percent_causal << p.percent_read << p.output_file <<
+			p.log_delay_tolerance.count();
+	}/*
+	std::istream& operator>>(std::istream& i, configuration_parameters& p){
+		return i >> p.strong_ip >> p.strong_relay_port >>
+			p.causal_ip >> p.causal_relay_port >>
+			p.client_freq >> p.starting_num_clients >> p.increase_clients_freq >>
+			p.test_duration >> p.percent_dedicated_connections >>
+			p.percent_causal >> p.percent_read >> p.output_file >>
+			p.log_delay_tolerance;
+	} //*/
 }
