@@ -10,6 +10,7 @@ namespace myria{
 		pgsql::Level l;
 		bool is_abort{false};
 		bool is_protocol_error{false};
+		bool is_fatal_error{false};
 		void print(const time_t &test_start, std::ostream& o) const {
 			using namespace std;
 			using namespace chrono;

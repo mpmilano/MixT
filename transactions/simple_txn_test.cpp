@@ -77,6 +77,7 @@ int main(){
 	params.percent_dedicated_connections = .01;
 	params.percent_causal = .95;
 	params.percent_read = .95;
+	params.log_delay_tolerance = 1min;
 	params.output_file = "/tmp/MyriaStore-results";
 	test t1{params};
 	t1.run_test();

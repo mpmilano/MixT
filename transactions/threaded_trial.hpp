@@ -53,7 +53,14 @@ struct test{
 											 timeout delay, time next_event_time){
 		for (auto iter = results.begin(); iter != results.end() && next_event_time > now(); ++iter){
 			if (iter->wait_for(delay) != std::future_status::timeout){
-				pending_io.emplace_back(iter->get());
+				try {
+					pending_io.emplace_back(iter->get());
+				}
+				catch (...){
+					run_result r;
+					r.is_fatal_error = true;
+					pending_io.push_back(r);
+				}
 				iter = results.erase(iter);
 				--iter; //will increment on next loop execution
 			}
@@ -148,8 +155,9 @@ struct test{
 						return ret;
 					}));
 		}
-		} catch (const ProtocolException&){
+		} catch (...){
 			//Looks like we have failed to initialize our connections.
+			std::cout << "exception thrown: aborting" << std::endl;
 		}
 		for (std::size_t i = 0; i < 20 && results.size() > 0; ++i){
 			this_thread::sleep_for(1s);
