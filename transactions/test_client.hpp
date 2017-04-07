@@ -24,8 +24,7 @@ struct client{
 	client(test &t, s &spool, c &cpool, WeakConnection strong_relay, WeakConnection causal_relay)
 		:sc(cpool),ss(spool),strong_relay(std::move(strong_relay)),causal_relay(std::move(causal_relay)),t(t){}
 
-	template<typename U, typename V>
-	run_result client_action(std::chrono::time_point<U,V> action_start);
+	run_result client_action(run_result&);
 
 	//getters, by level.  true for strong.
 	

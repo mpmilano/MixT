@@ -33,13 +33,10 @@ void client::txn_write(){
 	constexpr auto incr_trans = TRANSACTION(Hndl::label::int_id::value,let remote x = hndl in {x = x + 1})::WITH(hndl);
 	return incr_trans.run_optimistic(&dsm,*get_relay<l>().lock(),hndl);
 	//return incr_trans.run_local(hndl);
-}
-	
-template<typename U, typename V>
-run_result client::client_action(std::chrono::time_point<U,V> action_start){
+}	
+
+run_result client::client_action(run_result &result){
 	auto& params = t.params;
-	run_result result;
-	result.start_time = action_start;
 	Level l = (mutils::better_rand() > params.percent_causal ? Level::strong : Level::causal);
 	bool write = mutils::better_rand() > params.percent_read;
 	result.l = l;
@@ -76,7 +73,7 @@ int main(){
 	params.client_freq = 5_Hz;
 	params.starting_num_clients = 30;
 	params.increase_clients_freq = 2_Hz;
-	params.test_duration = duration_cast<seconds>(2min);
+	params.test_duration = duration_cast<seconds>(100min);
 	params.percent_dedicated_connections = .01;
 	params.percent_causal = .95;
 	params.percent_read = .95;

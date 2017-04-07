@@ -82,6 +82,7 @@ struct test{
 		//schedule next event
 		auto next_event_time = schedule_event(start_time);
 		std::size_t event_count{0};
+		try {
 		for (; now() < stop_time; ++event_count){
 			//always at least enqueue one client if needed
 			if (number_enqueued_clients < params.total_clients_at(now() - start_time)){
@@ -116,13 +117,26 @@ struct test{
 			//try and handle this event (hopefully before it's time for the next one)
 			std::unique_ptr<client> client_p;
 			client_queue.wait_dequeue(client_p);
-			results.emplace_back(tp.push([this_event_time,&client_queue,client_ptr = client_p.release()](int){
-						auto ret = client_ptr->client_action(this_event_time);
-						client_queue.enqueue(std::unique_ptr<client>(client_ptr));
+			results.emplace_back(tp.push([this_event_time,&client_queue,
+																		client_ptr = client_p.release()](int){
+						run_result ret;
+						ret.start_time = this_event_time;
+						try { 
+							client_ptr->client_action(ret);
+							client_queue.enqueue(std::unique_ptr<client>(client_ptr));
+						}catch(const ProtocolException&){
+							//record this here and in simple_txn_test so
+							//overhead of re-enqueueing client is not included.
+							ret.stop_time = high_resolution_clock::now();
+							ret.is_protocol_error = true;
+						}
 						return ret;
 					}));
 		}
-		while (results.size() > 0){
+		} catch (const ProtocolException&){
+			//Looks like we have failed to initialize our connections.
+		}
+		for (std::size_t i = 0; i < 20 && results.size() > 0; ++i){
 			this_thread::sleep_for(1s);
 			std::cout << "waiting for: " << results.size();
 			process_results(results,pending_io,1ms,now()+100s);
@@ -130,6 +144,7 @@ struct test{
 		for (auto &res : pending_io){
 			print_result(start_time,res);
 		}
+		output_file.flush();
 	}
 };
 }

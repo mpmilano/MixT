@@ -8,7 +8,8 @@ namespace myria{
 		time_t stop_time;
 		bool is_write;
 		pgsql::Level l;
-		bool is_abort;
+		bool is_abort{false};
+		bool is_protocol_error{false};
 		void print(const time_t &test_start, std::ostream& o) const {
 			using namespace std;
 			using namespace chrono;
