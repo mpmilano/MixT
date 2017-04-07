@@ -23,8 +23,8 @@ stress3:  $(object_files) stress_test3.o
 simple_txn_test: $(object_files)
 	@clang++  utils.o test_utils.o Basics.o Tracker.o Ostreams.o SerializationSupport.o SQLStore.o GSQLObject.o SQLConnection.o SQLTransaction.o SQL_internal_utils.o SQLLevels.o TransactionContext.o ServerSocket.o Socket.o  eventfd.o epoll.o top.o simple_rpc.o local_connection.o simple_txn_test.cpp -o simple_txn_test $(CPPFLAGS) $(LDFLAGS)
 
-vm: $(object_files) vm_main.o GlobalPool.o
-	@clang++ $(object_files) GlobalPool.o vm_main.o -o vm $(LDFLAGS)
+vm: simple_txn_test
+	ln -s simple_txn_test vm
 groups: $(object_files) groups_test.o
 	@clang++ $(object_files) groups_test.o -o groups $(LDFLAGS)
 

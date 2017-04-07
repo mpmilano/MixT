@@ -109,7 +109,7 @@ struct test{
 				}
 			}
 			//work done, wait until event launch
-			this_thread::sleep_for(now() - next_event_time);
+			this_thread::sleep_for(next_event_time - now());
 			auto this_event_time = next_event_time;
 			//schedule next event
 			next_event_time = schedule_event(start_time);
