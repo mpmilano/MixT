@@ -29,15 +29,15 @@ struct client{
 
 	//getters, by level.  true for strong.
 	
-	auto get_relay(std::true_type*){
-		return strong_relay.lock();
+	auto& get_relay(std::true_type*){
+		return strong_relay;
 	}
 
-	auto get_relay(std::false_type*){
-		return causal_relay.lock();
+	auto& get_relay(std::false_type*){
+		return causal_relay;
 	}
 	
-	template<pgsql::Level l> auto get_relay(){
+	template<pgsql::Level l> auto& get_relay(){
 		constexpr pgsql::choose_strong<l> is_strong{nullptr};
 		return get_relay(is_strong);
 	}

@@ -95,9 +95,11 @@ struct test{
 				//rarely, try and print stuff
 				if (event_count % 50 == 0) {
 					while(next_event_time > now()){
-						auto result = pending_io.front();
-						pending_io.erase(pending_io.begin());
-						print_result(result);
+						if (pending_io.size() > 0){
+							auto result = pending_io.front();
+							pending_io.pop_front();
+							print_result(result);
+						}
 					}
 				}
 			}
@@ -116,6 +118,7 @@ struct test{
 					}));
 		}
 		while (results.size() > 0){
+			this_thread::sleep_for(1s);
 			std::cout << "waiting for: " << results.size();
 			process_results(results,pending_io,1ms,now()+100s);
 		}
