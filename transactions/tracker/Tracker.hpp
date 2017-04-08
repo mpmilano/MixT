@@ -18,6 +18,7 @@
 #include "TransactionContext.hpp"
 #include "TrackingContext.hpp"
 #include "ObjectBuilder.hpp"
+#include "Tombstone.hpp"
 
 namespace myria { 
 
@@ -45,21 +46,9 @@ namespace myria {
 		public:
 			//support structures, metadata.
 			using Nonce = int;
-			struct Tombstone {
-				const Nonce nonce;
-				const int ip_addr;
-				const int portno;
-				Name name() const;
+		  using Tombstone = tracker::Tombstone;
 
-				/*
-				int to_bytes(char* v) const;
-				int bytes_size() const;
-				static std::unique_ptr<Tombstone> from_bytes(DeserializationManager*,char const* v);
-				Tombstone(Nonce n,int ip, int portno):nonce(n),ip_addr(ip),portno(portno){}
-				Tombstone(const Tombstone& t):nonce(t.nonce),ip_addr(t.ip_addr),portno(t.portno){} //*/
-			};
-
-			using Clock = std::array<int,NUM_CAUSAL_GROUPS>;
+		  using Clock = std::array<int,NUM_CAUSAL_GROUPS>;
 		  
 		  struct GenericTrackerDS {
 		    using newTomb_t = std::unique_ptr<LabelFreeHandle<Tombstone> > (*) (void* ctx, GDataStore&, Name, const Tombstone&);
