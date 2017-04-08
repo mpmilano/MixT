@@ -1,5 +1,10 @@
 #pragma once
 #include "Hertz.hpp"
+#include <cassert>
+#include <locale>
+#include <chrono>
+#include "mutils.hpp"
+#include "type_utils.hpp"
 
 namespace myria{
 
@@ -50,21 +55,34 @@ struct configuration_parameters{
 	}
 
 	std::istream& operator>>(std::istream& o, const comma_space&){
-		char cma; char spc;
-		o >> cma >> spc;
-		assert(cma == ',');
-		assert(spc == ' ');
+		if (o.peek() == ',')
+		{
+			char cma;
+			o.get(cma);
+			assert(cma == ',');
+		}
+		if (o.peek() == ' ')
+		{
+			char spc;
+			o.get(spc);
+			assert(spc == ' ');
+		}
 		return o;
+	}
+
+	std::ostream& operator<<(std::ostream& o, const std::chrono::seconds& p){
+		return o << p.count() << "s";
 	}
 	
 	std::ostream& operator<<(std::ostream& o, const configuration_parameters& p){
+		using namespace mutils;
 		constexpr comma_space cs{};
-		return o << p.strong_ip << cs << p.strong_relay_port << cs <<
-			p.causal_ip << cs << p.causal_relay_port << cs <<
+		return o << string_of_ip(p.strong_ip) << cs << p.strong_relay_port << cs <<
+			string_of_ip(p.causal_ip) << cs << p.causal_relay_port << cs <<
 			p.client_freq << cs << p.starting_num_clients << cs << p.increase_clients_freq << cs <<
-			p.test_duration.count() << cs << p.percent_dedicated_connections << cs <<
+			p.test_duration << cs << p.percent_dedicated_connections << cs <<
 			p.percent_causal << cs << p.percent_read << cs << p.output_file << cs <<
-			p.log_delay_tolerance.count();
+			p.log_delay_tolerance;
 	}
 
 	template<typename U, typename V>
@@ -93,14 +111,35 @@ struct configuration_parameters{
 
 		return i;
 	}
+
+	struct comma_is_space : std::ctype<char> {
+		//from http://stackoverflow.com/questions/7302996/changing-the-delimiter-for-cin-c
+		comma_is_space() : std::ctype<char>(get_table()) {}
+		static mask const* get_table()
+			{
+				static mask rc[table_size];
+				rc[(int)','] = std::ctype_base::space;
+				rc[(int)'\n'] = std::ctype_base::space;
+				return &rc[0];
+			}
+	};
 	
 	std::istream& operator>>(std::istream& i, configuration_parameters& p){
+		using namespace mutils;
+		i.imbue(std::locale(i.getloc(), new comma_is_space()));
 		constexpr comma_space cs{};
-	return i >> p.strong_ip >> cs >> p.strong_relay_port >> cs >>
-			p.causal_ip >> cs >> p.causal_relay_port >> cs >>
+		std::string strong_ip;
+		std::string causal_ip;
+		i >> strong_ip >> cs >> p.strong_relay_port >> cs >>
+			causal_ip >> cs >> p.causal_relay_port >> cs >>
 			p.client_freq >> cs >> p.starting_num_clients >> cs >> p.increase_clients_freq >> cs >>
 			p.test_duration >> cs >> p.percent_dedicated_connections >> cs >>
 			p.percent_causal >> cs >> p.percent_read >> cs >> p.output_file >> cs >>
 			p.log_delay_tolerance;
+		std::cout << strong_ip << std::endl
+							<< causal_ip << std::endl;
+		p.strong_ip = decode_ip(strong_ip.c_str());
+		p.causal_ip = decode_ip(causal_ip.c_str());
+		return i;
 	} //*/
 }
