@@ -42,17 +42,17 @@ namespace myria{ namespace pgsql {
 			SQLConnection(const SQLConnection&) = delete;
 		};
 
-		constexpr unsigned long num_sql_connections(){
-			using namespace std::chrono;
-				using namespace mutils;
-				return 4*(NUM_CLIENTS + (INCREASE_BY*(TEST_STOP_TIME/INCREASE_DELAY)));
-			}
-
 		std::string get_hostname(Level l);
 		
 #ifndef NOPOOL
 #define whenpool(x...) x
 #define whennopool(x...)
+
+		constexpr unsigned long num_sql_connections(){
+			using namespace std::chrono;
+			using namespace mutils;
+			return 400;
+		}
 		
 		template<Level l>
 		struct SQLConnectionPool : public mutils::ResourcePool<SQLConnection>{
