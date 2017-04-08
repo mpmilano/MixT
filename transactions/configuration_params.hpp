@@ -65,9 +65,37 @@ struct configuration_parameters{
 			p.test_duration.count() << cs << p.percent_dedicated_connections << cs <<
 			p.percent_causal << cs << p.percent_read << cs << p.output_file << cs <<
 			p.log_delay_tolerance.count();
-	}/*
+	}
+
+	template<typename U, typename V>
+	std::istream& operator>>(std::istream& i, std::chrono::duration<U,V>& p){
+		using namespace std;
+		using namespace chrono;
+		char suffix[] = {0,0,0,0};
+		size_t number;
+		i >> number >> suffix[0];
+		if (suffix[0] == 'm' && suffix[1] == 'i'){
+			i >> suffix[1] >> suffix[2];
+			assert(string{suffix} == "min");
+			p = duration_cast<DECT(p)>(minutes{number});
+		}
+		if (suffix[0] == 'm' && suffix[1] == 's'){
+			i >> suffix[1];
+			p = duration_cast<DECT(p)>(milliseconds{number});
+		}
+		if (suffix[0] == 'u' && suffix[1] == 's'){
+			i >> suffix[1];
+			p = duration_cast<DECT(p)>(microseconds{number});
+		}
+		if (suffix[0] == 's'){
+			p = duration_cast<DECT(p)>(seconds{number});
+		}
+
+		return i;
+	}
+	
 	std::istream& operator>>(std::istream& i, configuration_parameters& p){
-	constexpr comma_space cs;
+		constexpr comma_space cs{};
 	return i >> p.strong_ip >> cs >> p.strong_relay_port >> cs >>
 			p.causal_ip >> cs >> p.causal_relay_port >> cs >>
 			p.client_freq >> cs >> p.starting_num_clients >> cs >> p.increase_clients_freq >> cs >>
