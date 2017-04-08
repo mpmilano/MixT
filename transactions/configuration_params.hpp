@@ -92,23 +92,22 @@ struct configuration_parameters{
 		char suffix[] = {0,0,0,0};
 		size_t number;
 		i >> number >> suffix[0];
-		if (suffix[0] == 'm' && suffix[1] == 'i'){
-			i >> suffix[1] >> suffix[2];
-			assert(string{suffix} == "min");
-			p = duration_cast<DECT(p)>(minutes{number});
-		}
-		if (suffix[0] == 'm' && suffix[1] == 's'){
-			i >> suffix[1];
-			p = duration_cast<DECT(p)>(milliseconds{number});
-		}
-		if (suffix[0] == 'u' && suffix[1] == 's'){
-			i >> suffix[1];
-			p = duration_cast<DECT(p)>(microseconds{number});
-		}
 		if (suffix[0] == 's'){
 			p = duration_cast<DECT(p)>(seconds{number});
+		} else {
+			i >> suffix[1];
+			if (suffix[0] == 'm' && suffix[1] == 'i'){
+				i >> suffix[2];
+				assert(string{suffix} == "min");
+				p = duration_cast<DECT(p)>(minutes{number});
+			}
+			if (suffix[0] == 'm' && suffix[1] == 's'){
+				p = duration_cast<DECT(p)>(milliseconds{number});
+			}
+			if (suffix[0] == 'u' && suffix[1] == 's'){
+				p = duration_cast<DECT(p)>(microseconds{number});
+			}
 		}
-
 		return i;
 	}
 

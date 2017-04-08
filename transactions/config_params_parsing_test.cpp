@@ -23,7 +23,10 @@ int main(){
 	params.log_delay_tolerance = 1min;
 	params.output_file = "/tmp/MyriaStore-results";
 	std::cout << params << std::endl;
-	std::cin >> params;
-	std::cout << params << std::endl;
+	{
+		configuration_parameters params;
+		std::cin >> params;
+		std::cout << params << std::endl;
+	}
 	exit(0);
 }
