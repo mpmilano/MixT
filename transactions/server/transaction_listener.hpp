@@ -65,15 +65,22 @@ namespace myria {
 					constexpr reqs requires{};
 					constexpr provides provided{};
 					receive_store_values(&dsm,requires,s,_lc);
-					mtl::runnable_transaction::common_interp<phase, store>(s);
+					bool transaction_successful{true};
+					try {
+					  mtl::runnable_transaction::common_interp<phase, store>(s);
+					}
+					catch(...){
+					  //right now, *any* failure is just sent to the client as a byte;
+					  transaction_successful = false;
+					}
 					whendebug(logfile << "about to send response to client" << std::endl);
-					{
+					if (transaction_successful){
 						std::vector<Tombstone> encountered_tombstones;
-						c.send(encountered_tombstones);
 						mutils::local_connection lc;
 						send_store_values(provided,s,lc);
-						c.send(lc.data);
+						c.send(transaction_successful,encountered_tombstones,lc.data);
 					}
+					else c.send(false);
 					whendebug(logfile << "response sent to client" << std::endl);
 					return true;
 				}

@@ -33,10 +33,16 @@ namespace myria { namespace mtl { namespace runnable_transaction {
 #endif
 				{
 					mutils::local_connection lc;
-					auto new_tombstones = mutils::receive_from_connection<std::vector<Tombstone> >(dsm,c);
-					lc.data = *mutils::receive_from_connection<std::vector<char> >(dsm,c);
-					receive_store_values(dsm,provides,s,lc);
-					trk.template clear_tombstones_for_phase<phase>();
+					if (*mutils::receive_from_connection<bool>(dsm,c)){
+					  //transaction was successful!
+					  auto new_tombstones = mutils::receive_from_connection<std::vector<Tombstone> >(dsm,c);
+					  lc.data = *mutils::receive_from_connection<std::vector<char> >(dsm,c);
+					  receive_store_values(dsm,provides,s,lc);
+					  trk.template clear_tombstones_for_phase<phase>();
+					} else {
+					  //store aborted, or crashed, or had a bad day
+					  throw SerializationFailure{"maybe some day we'll smuggle a message back from the store"};
+					}
 				}
 			}
 			
