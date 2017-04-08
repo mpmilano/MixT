@@ -46,6 +46,7 @@ namespace myria {
 															 char const * const _data){
 				using namespace mutils;
 				if (id == txnID){
+				  	auto tombstones_to_find = mutils::from_bytes_noalloc<std::vector<Tombstone> >(&dsm,_data);
 					mutils::local_connection _lc;
 					_lc.data = *mutils::from_bytes_noalloc<std::vector<char> >(&dsm,_data);
 					mutils::connection &lc = _lc;
@@ -67,6 +68,8 @@ namespace myria {
 					mtl::runnable_transaction::common_interp<phase, store>(s);
 					whendebug(logfile << "about to send response to client" << std::endl);
 					{
+						std::vector<Tombstone> encountered_tombstones;
+						c.send(encountered_tombstones);
 						mutils::local_connection lc;
 						send_store_values(provided,s,lc);
 						c.send(lc.data);
