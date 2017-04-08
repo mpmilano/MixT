@@ -45,7 +45,6 @@ namespace myria {
 		class Tracker {
 		public:
 			//support structures, metadata.
-			using Nonce = int;
 		  using Tombstone = tracker::Tombstone;
 
 		  using Clock = std::array<int,NUM_CAUSAL_GROUPS>;

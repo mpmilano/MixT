@@ -10,12 +10,20 @@ namespace myria {
 namespace mtl {
 namespace runnable_transaction {
 
+	struct replace_this_tracker {
+		template<typename>
+		std::vector<tracker::Tombstone> tombstones_for_phase(){
+			return std::vector<tracker::Tombstone>{};
+		}
+		template<typename> void clear_tombstones_for_phase(){}
+	};
 
 	//remote interp
 	template <typename store,typename phase1, typename connection_pack>
 	auto dispatch_to_runner(std::true_type*, mutils::DeserializationManager* dsm, connection_pack c, transaction<phase1>*, store& s, std::enable_if_t<phase1::label::run_remotely::value>* = nullptr)
 	{
-		return remote_interp<phase1>(dsm,*c[0], s);
+		replace_this_tracker replace_this;
+		return remote_interp<phase1>(dsm,replace_this,*c[0], s);
 	}
 	
 	template <typename store, typename phase1, typename phase2, typename connection_pack, typename... phase>

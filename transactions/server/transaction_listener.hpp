@@ -46,7 +46,7 @@ namespace myria {
 															 char const * const _data){
 				using namespace mutils;
 				if (id == txnID){
-				  	auto tombstones_to_find = mutils::from_bytes_noalloc<std::vector<Tombstone> >(&dsm,_data);
+					auto tombstones_to_find = mutils::from_bytes_noalloc<std::vector<tracker::Tombstone> >(&dsm,_data);
 					mutils::local_connection _lc;
 					_lc.data = *mutils::from_bytes_noalloc<std::vector<char> >(&dsm,_data);
 #ifndef NDEBUG
@@ -75,7 +75,7 @@ namespace myria {
 					}
 					whendebug(logfile << "about to send response to client" << std::endl);
 					if (transaction_successful){
-						std::vector<Tombstone> encountered_tombstones;
+						std::vector<tracker::Tombstone> encountered_tombstones;
 						mutils::local_connection lc;
 						send_store_values(provided,s,lc);
 						c.send(transaction_successful,encountered_tombstones,lc.data);

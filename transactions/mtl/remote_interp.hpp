@@ -35,7 +35,7 @@ namespace myria { namespace mtl { namespace runnable_transaction {
 					mutils::local_connection lc;
 					if (*mutils::receive_from_connection<bool>(dsm,c)){
 					  //transaction was successful!
-					  auto new_tombstones = mutils::receive_from_connection<std::vector<Tombstone> >(dsm,c);
+					  auto new_tombstones = mutils::receive_from_connection<std::vector<tracker::Tombstone> >(dsm,c);
 					  lc.data = *mutils::receive_from_connection<std::vector<char> >(dsm,c);
 					  receive_store_values(dsm,provides,s,lc);
 					  trk.template clear_tombstones_for_phase<phase>();

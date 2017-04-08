@@ -1,6 +1,9 @@
 #pragma once
 
 namespace myria { namespace tracker {
+
+		using Nonce = int;
+		
     struct Tombstone {
       const Nonce nonce;
       const int ip_addr;
