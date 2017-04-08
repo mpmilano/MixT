@@ -5,15 +5,13 @@ export PGHOST='/run/postgresql';
 export PGDATABASE='DataStore';
 export PGUSER='research';
 export PGPASSWORD='researchVM'
-export extra_macro_defs='-DNORMAL -DWRITE_PERCENT=.05 -DSTRONG_PERCENT=.05'
 export causalGroup=3
 export MY_IP=128.84.217.139
 export STRONG_REMOTE_IP=128.253.3.197
 export CAUSAL_REMOTE_IP_1=128.84.217.139
 export CAUSAL_REMOTE_IP_2=$CAUSAL_REMOTE_IP_1
 export MAX_THREADS=3000
-export increase_by=10
-export increase_delay=5s
+export client_increase_rate=2_Hz
 export test_stop_time=1min
 export num_clients=30
 export client_rate=10_Hz
