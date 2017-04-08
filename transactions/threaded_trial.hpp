@@ -22,7 +22,7 @@ struct test{
 	relay_connections_pool strong_connections{params,params.strong_ip, params.strong_relay_port,(int)params.max_clients()};
 
 	moodycamel::BlockingConcurrentQueue<std::unique_ptr<client> > client_queue;
-	std::size_t number_enqueued_clients{0};
+	std::atomic<std::size_t> number_enqueued_clients{0};
 	void push_client(){
 		client_queue.enqueue(std::make_unique<client>(
 													 *this,spool,cpool,
@@ -60,6 +60,7 @@ struct test{
 					run_result r;
 					r.is_fatal_error = true;
 					pending_io.push_back(r);
+					--number_enqueued_clients;
 				}
 				iter = results.erase(iter);
 				--iter; //will increment on next loop execution
@@ -121,6 +122,7 @@ struct test{
 			}
 			//if it's been forever since our last log write, write the log *now*
 			if (now() > (params.log_delay_tolerance + last_log_write_time)){
+				std::cout << "log writer stalled, flushing now" << std::endl;
 				process_results(results,pending_io,0s,1s + now());
 				while(pending_io.size() > 0){
 					auto result = pending_io.front();
@@ -151,6 +153,7 @@ struct test{
 							//overhead of re-enqueueing client is not included.
 							ret.stop_time = high_resolution_clock::now();
 							ret.is_protocol_error = true;
+							--client_ptr->t.number_enqueued_clients;
 						}
 						return ret;
 					}));

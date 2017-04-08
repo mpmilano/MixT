@@ -54,7 +54,7 @@ namespace{
 		}
 		
 		template<typename T>
-		auto select_version_data_s(Level l, T &trans, Table t, Name id){
+		auto select_version_data_s(Level whendebug(l), T &trans, Table t, Name id){
 			assert(l == Level::strong);
 			//std::cerr << "in select_data" << std::endl;
 			//AtScopeEnd ase{[](){//std::cerr << "out" << std::endl;}};
@@ -83,7 +83,7 @@ namespace{
 		}
 
 		template<typename T>
-		auto increment_s(T &trans, Table t, Name id){
+		auto increment_s(T &trans, Table whendebug(t), Name id){
 			assert(t == Table::IntStore
 				   && "Error: increment currently only defined on integers");
 			const static std::string s =
@@ -184,7 +184,7 @@ namespace{
 		}
 
 		template<typename T>
-		auto select_version_data_c(Level l, T &trans, Table t, Name id){
+		auto select_version_data_c(Level whendebug(l), T &trans, Table t, Name id){
 			assert(l == Level::causal);
 			//std::cerr << "in select_data" << std::endl;
 			//AtScopeEnd ase{[](){//std::cerr << "out" << std::endl;}};
@@ -273,6 +273,7 @@ namespace{
 			else if (l == Level::causal) return update_data_c(tran,t,k,id,ends,b);
 			else assert(false && "there is a third case now?");
 			//std::cerr << "out" << std::endl;
+			struct die{}; throw die{};
 		}
 
 
@@ -288,6 +289,7 @@ namespace{
 			//std::cerr << "in initialize_with_id" << std::endl;
 			if (l == Level::strong) initialize_with_id_s(tran,t,id,b);
 			assert(false && "not enough parameters for causal initialization");
+			struct die{}; throw die{};
 			//std::cerr << "out" << std::endl;
 		}
 

@@ -17,15 +17,15 @@ namespace myria{ namespace pgsql {
 		using namespace tracker;
 		using namespace mutils;
 		
-		SQLTransaction::SQLTransaction(SQLStore_impl &whennopool(parent), GDataStore& store, LockedSQLConnection c, std::string why)
+		SQLTransaction::SQLTransaction(SQLStore_impl &whennopool(parent), GDataStore& store, LockedSQLConnection c whendebug(, std::string why))
 			:gstore(store),whennopool(parent(parent),) sql_conn(std::move(c)),conn_lock(
 				[](auto& l) -> auto& {
 					assert(l.try_lock());
 					l.unlock();
 					return l;
 				}(sql_conn->con_guard)),
-			 trans(sql_conn->conn),
-			 why(why)
+			trans(sql_conn->conn)
+			whendebug(,why(why))
 		{
 			assert(!sql_conn->in_trans());
 			sql_conn->current_trans = this;

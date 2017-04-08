@@ -49,8 +49,8 @@ namespace myria {
 				  	auto tombstones_to_find = mutils::from_bytes_noalloc<std::vector<Tombstone> >(&dsm,_data);
 					mutils::local_connection _lc;
 					_lc.data = *mutils::from_bytes_noalloc<std::vector<char> >(&dsm,_data);
-					mutils::connection &lc = _lc;
 #ifndef NDEBUG
+					mutils::connection &lc = _lc;
 					auto &logfile = c.get_log_file();
 					logfile << "receiving with store " << type_name<store>() << std::endl;
 					logfile << "receiving id " << id << " for phase " << phase{};

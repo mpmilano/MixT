@@ -28,9 +28,9 @@ namespace myria{ namespace pgsql {
 			std::unique_lock<std::mutex> conn_lock;
 			pqxx::work trans;
 		public:
-			const std::string why;
+			whendebug(const std::string why);
 			bool commit_on_delete = false;
-			SQLTransaction(SQLStore_impl &parent, GDataStore& store, LockedSQLConnection c, std::string why);
+			SQLTransaction(SQLStore_impl &parent, GDataStore& store, LockedSQLConnection c whendebug(, std::string why));
 
 			bool is_serialize_error(const pqxx::pqxx_exception &r);
 	

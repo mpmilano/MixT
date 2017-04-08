@@ -19,7 +19,7 @@ namespace myria{ namespace pgsql {
 		//strong
 		int process_version_update(const result &res, int& where){
 			assert(!res.empty());
-			bool worked = res[0][0].to(where);
+			whendebug(bool worked = )res[0][0].to(where);
 			assert(worked);
 			assert(where != -1);
 			return 1;
@@ -28,13 +28,13 @@ namespace myria{ namespace pgsql {
 		//causal
 		int process_version_update(const result &r, std::array<int,NUM_CAUSAL_GROUPS>& vers){
 			assert(!r.empty());
-			auto res1 = r[0][0].to(vers[0]);
+			whendebug(auto res1 = )r[0][0].to(vers[0]);
 			assert(res1);
-			auto res2 = r[0][1].to(vers[1]);
+			whendebug(auto res2 = )r[0][1].to(vers[1]);
 			assert(res2);
-			auto res3 = r[0][2].to(vers[2]);
+			whendebug(auto res3 = )r[0][2].to(vers[2]);
 			assert(res3);
-			auto res4 = r[0][3].to(vers[3]);
+			whendebug(auto res4 = )r[0][3].to(vers[3]);
 			assert(res4);
 			return 4;
 		}

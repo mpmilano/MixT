@@ -25,7 +25,7 @@ namespace myria{ namespace pgsql {
 				whenpool(pool.acquire_weak())
 					whennopool(new SQLConnection(host))
 					} {
-				auto t = begin_transaction("Setting up this new SQLStore; gotta configure search paths and stuff.");
+				auto t = begin_transaction(whendebug("Setting up this new SQLStore; gotta configure search paths and stuff."));
 				((SQLTransaction*)t.get())
 					->exec(l == Level::strong ?
 						   "set search_path to \"BlobStore\",public"
@@ -34,7 +34,7 @@ namespace myria{ namespace pgsql {
 					->exec(l == Level::strong ?
 						   "SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL SERIALIZABLE"
 						   : "SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL REPEATABLE READ");
-				auto cres = t->store_commit();
+				whendebug(auto cres = )t->store_commit();
 				assert(cres);
 			}
 
@@ -95,6 +95,7 @@ namespace myria{ namespace pgsql {
 			if (l == Level::strong) return this->inst_strong();
 			else if (l == Level::causal) return this->inst_causal();
 			else assert(false && "what?");
+			struct die{}; throw die{};
 		}
 
 

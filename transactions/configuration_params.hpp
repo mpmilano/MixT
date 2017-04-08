@@ -40,20 +40,39 @@ struct configuration_parameters{
 	}
 	
 };
+
+	struct comma_space {
+		constexpr comma_space() = default;
+	};
+
+	std::ostream& operator<<(std::ostream& o, const comma_space&){
+		return o << ", ";
+	}
+
+	std::istream& operator>>(std::istream& o, const comma_space&){
+		char cma; char spc;
+		o >> cma >> spc;
+		assert(cma == ',');
+		assert(spc == ' ');
+		return o;
+	}
+	
 	std::ostream& operator<<(std::ostream& o, const configuration_parameters& p){
-		return o << p.strong_ip << p.strong_relay_port <<
-			p.causal_ip << p.causal_relay_port <<
-			p.client_freq << p.starting_num_clients << p.increase_clients_freq <<
-			p.test_duration.count() << p.percent_dedicated_connections <<
-			p.percent_causal << p.percent_read << p.output_file <<
+		constexpr comma_space cs{};
+		return o << p.strong_ip << cs << p.strong_relay_port << cs <<
+			p.causal_ip << cs << p.causal_relay_port << cs <<
+			p.client_freq << cs << p.starting_num_clients << cs << p.increase_clients_freq << cs <<
+			p.test_duration.count() << cs << p.percent_dedicated_connections << cs <<
+			p.percent_causal << cs << p.percent_read << cs << p.output_file << cs <<
 			p.log_delay_tolerance.count();
 	}/*
 	std::istream& operator>>(std::istream& i, configuration_parameters& p){
-		return i >> p.strong_ip >> p.strong_relay_port >>
-			p.causal_ip >> p.causal_relay_port >>
-			p.client_freq >> p.starting_num_clients >> p.increase_clients_freq >>
-			p.test_duration >> p.percent_dedicated_connections >>
-			p.percent_causal >> p.percent_read >> p.output_file >>
+	constexpr comma_space cs;
+	return i >> p.strong_ip >> cs >> p.strong_relay_port >> cs >>
+			p.causal_ip >> cs >> p.causal_relay_port >> cs >>
+			p.client_freq >> cs >> p.starting_num_clients >> cs >> p.increase_clients_freq >> cs >>
+			p.test_duration >> cs >> p.percent_dedicated_connections >> cs >>
+			p.percent_causal >> cs >> p.percent_read >> cs >> p.output_file >> cs >>
 			p.log_delay_tolerance;
 	} //*/
 }
