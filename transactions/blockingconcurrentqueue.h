@@ -752,12 +752,13 @@ public:
 	// dequeues it.
 	// Never allocates. Thread-safe.
 	template<typename U>
-	inline void wait_dequeue(U& item)
+	inline bool wait_dequeue(U& item)
 	{
 		sema->wait();
 		while (!inner.try_dequeue(item)) {
 			continue;
 		}
+		return true;
 	}
 
 	// Blocks the current thread until either there's something to dequeue
