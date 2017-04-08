@@ -28,20 +28,20 @@ then cd mutils-networking;  git checkout master; git pull;  cd ..
 else git clone https://github.com/mpmilano/mutils-networking.git
 fi
 source pg_env.sh
-export extra_macro_defs="-D$2 -DWRITE_PERCENT=$3 -DSTRONG_PERCENT=$4 $6"
 export causalGroup="$1"
-export MY_IP="$5"
-shift 6
+export MY_IP="$2"
+shift 3
 export CAUSAL_REMOTE_IP_1="$2"
 export CAUSAL_REMOTE_IP_2="$3"
 export STRONG_REMOTE_IP="$1"
 shift 3
 export num_clients=$1
 export client_rate=$2
-export increase_by=$3
-export increase_delay=$4
-export test_stop_time=$5
-shift 5
+export client_increase_rate=$3
+export test_stop_time=$4
+export percent_causal=$5
+export percent_read=$6
+shift 6
 export MAX_THREADS=$1
 export first_iter=$2
 killall -9 vm
