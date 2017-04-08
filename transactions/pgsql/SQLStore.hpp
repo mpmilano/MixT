@@ -40,7 +40,7 @@ namespace myria { namespace pgsql {
 			private:
 				std::map<int,std::unique_ptr<SQLStore> > ss;
 				
-				void inst(Level l2){
+				void inst(Level whendebug(l2)){
 					assert(l == l2);
 					if (ss.count(0) == 0 || (!ss.at(0))){
 						assert(this->this_mgr);
@@ -55,6 +55,7 @@ namespace myria { namespace pgsql {
 				
 				SQLStore<Level::strong>& choose_s(std::false_type*){
 					assert(false && "Error: This is not a strong instance manager");
+					struct die{}; throw die{};
 				}
 				
 				SQLStore<Level::causal>& choose_c(std::true_type*){
@@ -64,6 +65,7 @@ namespace myria { namespace pgsql {
 				
 				SQLStore<Level::causal>& choose_c(std::false_type*){
 					assert(false && "Error: This is not a causal instance manager");
+					struct die{}; throw die{};
 				}
 				
 			public:
@@ -214,7 +216,7 @@ namespace myria { namespace pgsql {
 					(std::is_same<T,int>::value ? Table::IntStore : Table::BlobStore);
 				int size = mutils::bytes_size(init);
 				std::vector<char> v(size);
-				int tb_size = mutils::to_bytes(init,&v[0]);
+				whendebug(int tb_size = mutils::to_bytes(init,&v[0]));
 				assert(size == tb_size);
 				GSQLObject gso(*this,t,name,v);
 				SQLHandle<T> ret{tc,std::make_shared<SQLObject<T> >(std::move(gso),mutils::heap_copy(init),this_mgr),*this };

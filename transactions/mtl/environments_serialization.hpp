@@ -68,7 +68,7 @@ namespace myria{ namespace mtl{
 		}
 		
 		template<typename T, char... str>
-		void receive_holder(mutils::DeserializationManager *dsm, const remote_holder<T,str...>& t, mutils::local_connection &c){
+		void receive_holder(mutils::DeserializationManager *whendebug(dsm), const remote_holder<T,str...>& t, mutils::local_connection &c){
 			receive_holder(t.super,c);
 #ifndef NDEBUG
 			DECT(mutils::bytes_size(std::string{})) remote_name_size;
