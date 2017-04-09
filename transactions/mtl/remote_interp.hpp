@@ -23,6 +23,7 @@ namespace myria { namespace mtl { namespace runnable_transaction {
 					phase::txnID::value << " with nonce " << txn_nonce << " for phase " << phase{} << std::endl;
 				mutils::connection &mlc = lc;
 				mlc.send(txn_nonce);
+				assert(lc.data.size() >= sizeof(txn_nonce));
 #endif
 				send_store_values(requires,s,lc);
 				c.send(phase::txnID::value, trk.template tombstones_for_phase<phase>(), lc.data);
