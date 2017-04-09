@@ -39,7 +39,9 @@ struct Label<top>
     return true;
   }
 
-	using requires_causal_tracking = std::false_type;
+	using might_track = std::false_type;
+	template<typename>
+	using tracks_against = std::false_type;
 	using run_remotely = std::false_type;
 	using can_abort = std::false_type;
 };
@@ -212,7 +214,9 @@ struct Label<bottom>
     return (true && ... && Label::flows_to(labels{}));
   }
 
-	using requires_causal_tracking = std::false_type;
+	using might_track = std::false_type;
+	template<typename>
+	using tracks_against = std::false_type;
 	using run_remotely = std::false_type;
 	using can_abort = std::false_type;
 	

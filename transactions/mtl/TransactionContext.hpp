@@ -22,7 +22,7 @@ namespace myria {
     };
     template<typename l>
     struct StoreContext : public GStoreContext {
-      virtual _DataStore<l,l::requires_causal_tracking::value>& store() = 0;
+      virtual _DataStore<l,l::might_track::value>& store() = 0;
 			StoreContext(const StoreContext&) = delete;
 			StoreContext() = default;
 			virtual ~StoreContext() = default;
@@ -32,7 +32,7 @@ namespace myria {
 		struct PhaseContext {
 			std::unique_ptr<StoreContext<label> > s_ctx;
 			template<typename l>
-			using DataStore = _DataStore<l,l::requires_causal_tracking::value>;
+			using DataStore = _DataStore<l,l::might_track::value>;
 			StoreContext<label>& store_context(DataStore<label>& ds whendebug(, const std::string& why)){
 				if(!s_ctx){
 					s_ctx = ds.begin_transaction(whendebug(why));

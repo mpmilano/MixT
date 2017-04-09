@@ -45,5 +45,5 @@ namespace myria{
 	};
 
 	template<typename l>
-	using DataStore = _DataStore<l,l::requires_causal_tracking::value>;
+	using DataStore = _DataStore<l,l::might_track::value>;
 }
