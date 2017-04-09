@@ -153,6 +153,18 @@ struct AST<Label<l>>
     using subexpr = typename BinOp<op, L, R>::subexpr;
   };
 
+	template<std::true_type...>
+	struct GenerateTombstone
+	{
+		using subexpr = GenerateTombstone;
+	};
+	template <std::true_type... useless>
+		struct Expression<tracker::Tombstone, GenerateTombstone<useless...> >
+	{
+		using yield = tracker::Tombstone;
+		using subexpr = typename GenerateTombstone<useless...>::subexpr;
+	};
+	
   template <typename Binding, typename Body>
   struct Let;
   template <typename label, typename Name, typename Expr, typename Body, typename Yields>
@@ -210,6 +222,33 @@ struct AST<Label<l>>
 	{
 		using substatement = typename Return<Expr>::substatement;
 	};
+
+template<std::true_type...>
+struct WriteTombstone
+{
+  using substatement = WriteTombstone;
+};
+
+template <std::true_type... useless>
+struct Statement<WriteTombstone<useless...> >
+{
+  using substatement = typename WriteTombstone<useless...>::substatement;
+};
+
+template <typename>
+struct AccompanyWrite;
+template <typename e, typename y>
+struct AccompanyWrite<Expression<y, e>>
+{
+  using substatement = AccompanyWrite;
+  using subexpr = typename Expression<y, e>::subexpr;
+};
+template <typename T>
+struct Statement<AccompanyWrite<T> >
+{
+  using substatement = typename AccompanyWrite<T>::substatement;
+};
+
 
   template <typename Var>
   struct IncrementOccurance;
@@ -412,6 +451,27 @@ struct AST<Label<l>>
   static constexpr auto _collect_phase(phase_api, typecheck_phase::Statement<label2, typecheck_phase::Assignment<Var, Expr>>,
                                        std::enable_if_t<!are_equivalent(Label<l>{}, label2{})> const* const = nullptr);
 
+	template <typename Expr, typename phase_api>
+  static constexpr auto _collect_phase(phase_api, typecheck_phase::Statement<label, typecheck_phase::Return<Expr>>);
+
+  template <typename Expr, typename label2, typename phase_api>
+  static constexpr auto _collect_phase(phase_api, typecheck_phase::Statement<label2, typecheck_phase::Return<Expr>>,
+                                       std::enable_if_t<!are_equivalent(Label<l>{}, label2{})> const* const = nullptr);
+
+	template <typename phase_api>
+  static constexpr auto _collect_phase(phase_api, typecheck_phase::Statement<label, typecheck_phase::WriteTombstone>);
+
+  template <typename Expr, typename label2, typename phase_api>
+  static constexpr auto _collect_phase(phase_api, typecheck_phase::Statement<label2, typecheck_phase::WriteTombstone>,
+                                       std::enable_if_t<!are_equivalent(Label<l>{}, label2{})> const* const = nullptr);
+	
+	template <typename Expr, typename phase_api>
+  static constexpr auto _collect_phase(phase_api, typecheck_phase::Statement<label, typecheck_phase::AccompanyWrite<Expr>>);
+
+  template <typename Expr, typename label2, typename phase_api>
+  static constexpr auto _collect_phase(phase_api, typecheck_phase::Statement<label2, typecheck_phase::AccompanyWrite<Expr>>,
+                                       std::enable_if_t<!are_equivalent(Label<l>{}, label2{})> const* const = nullptr);
+
   template <typename cond, typename then, typename old_api, char... name>
   static constexpr auto _collect_phase(old_api, typecheck_phase::Statement<Label<l>, typecheck_phase::While<cond, then, name...>>);
 
@@ -431,6 +491,9 @@ struct AST<Label<l>>
 
   template <char op, typename label2, typename Yields, typename L, typename R, typename phase_api>
   static constexpr auto _collect_phase(phase_api, typecheck_phase::Expression<label2, Yields, typecheck_phase::BinOp<op, L, R>>);
+
+  template <typename phase_api>
+	static constexpr auto _collect_phase(phase_api, typecheck_phase::Expression<Label<top>, tracker::Tombstone, typecheck_phase::GenerateTombstone>);	
 
   template <typename cond, typename label2, typename _then, typename _els, typename phase_api>
   static constexpr auto _collect_phase(phase_api, typecheck_phase::Statement<label2, typecheck_phase::If<cond, _then, _els>>,
@@ -509,6 +572,23 @@ struct AST<Label<l>>
 
   template <typename c, typename t>
   static constexpr auto collapse1(Statement<Assignment<c, t>> a)
+  {
+    return a;
+  }
+
+	template<typename T>
+	static constexpr auto collapse1(Statement<Return<T> > a)
+  {
+    return a;
+  }
+
+	static constexpr auto collapse1(Statement<WriteTombstone<> > a)
+  {
+    return a;
+  }
+
+	template<typename T>
+	static constexpr auto collapse1(Statement<AccompanyWrite<T> > a)
   {
     return a;
   }

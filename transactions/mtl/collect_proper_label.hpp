@@ -32,6 +32,12 @@ constexpr auto _collect_labels_helper(Expression<Label<label_min_of<l, r>>, y, B
   return collect_labels_helper(L{}).combine(collect_labels_helper(R{}));
 }
 
+template <typename l, typename r>
+constexpr auto _collect_labels_helper(Expression<Label<label_min_of<l, r>>, tracker::Tombstone, GenerateTombstone>)
+{
+  return mutils::typeset<>{};
+}
+
 template <typename l, typename r, typename v, typename e>
 constexpr auto _collect_labels_helper(Statement<Label<label_min_of<l, r>>, Assignment<v, e>>)
 {
@@ -97,6 +103,11 @@ template <int l, int r, typename y, char op, typename L, typename R>
 constexpr auto _collect_labels_helper(Expression<Label<temp_label<l, r>>, y, BinOp<op, L, R>>)
 {
   return collect_labels_helper(L{}).combine(collect_labels_helper(R{}));
+}
+template <int l, int r>
+constexpr auto _collect_labels_helper(Expression<Label<temp_label<l, r> >, tracker::Tombstone, GenerateTombstone>)
+{
+  return mutils::typeset<>{};
 }
 
 template <int l, int r, typename v, typename e>
@@ -177,6 +188,15 @@ constexpr auto _collect_labels_helper(Expression<l, y, BinOp<op, L, R>>)
   return typeset<l>::combine(collect_labels_helper(L{})).combine(collect_labels_helper(R{}));
 }
 
+	
+template <typename l>
+constexpr auto _collect_labels_helper(Expression<l, tracker::Tombstone, GenerateTombstone>)
+{
+  using namespace mutils;
+  static_assert(l::is_label::value);
+  return typeset<l>{};
+}
+
 template <typename l, typename v, typename e>
 constexpr auto _collect_labels_helper(Statement<l, Assignment<v, e>>)
 {
@@ -187,6 +207,22 @@ constexpr auto _collect_labels_helper(Statement<l, Assignment<v, e>>)
 
 template <typename l, typename e>
 constexpr auto _collect_labels_helper(Statement<l, Return<e>>)
+{
+  using namespace mutils;
+  static_assert(l::is_label::value);
+  return typeset<l>::combine(collect_labels_helper(e{}));
+}
+
+template <typename l>
+constexpr auto _collect_labels_helper(Statement<l, WriteTombstone>)
+{
+  using namespace mutils;
+  static_assert(l::is_label::value);
+  return typeset<l>{};
+}
+
+template <typename l, typename e>
+constexpr auto _collect_labels_helper(Statement<l, AccompanyWrite<e>>)
 {
   using namespace mutils;
   static_assert(l::is_label::value);
