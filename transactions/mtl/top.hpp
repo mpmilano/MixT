@@ -39,11 +39,11 @@ struct Label<top>
     return true;
   }
 
-	using might_track = std::false_type;
-	template<typename>
-	using tracks_against = std::false_type;
-	using run_remotely = std::false_type;
-	using can_abort = std::false_type;
+  using might_track = std::false_type;
+  template <typename>
+  using tracks_against = std::false_type;
+  using run_remotely = std::false_type;
+  using can_abort = std::false_type;
 };
 
 template <int, int>
@@ -197,7 +197,7 @@ struct Label<bottom>
   }
 
   template <typename... T2>
-  constexpr static auto min_with(const T2&... )
+  constexpr static auto min_with(const T2&...)
   {
     return Label{};
   }
@@ -214,12 +214,11 @@ struct Label<bottom>
     return (true && ... && Label::flows_to(labels{}));
   }
 
-	using might_track = std::false_type;
-	template<typename>
-	using tracks_against = std::false_type;
-	using run_remotely = std::false_type;
-	using can_abort = std::false_type;
-	
+  using might_track = std::false_type;
+  template <typename>
+  using tracks_against = std::false_type;
+  using run_remotely = std::false_type;
+  using can_abort = std::false_type;
 };
 
 template <typename l, typename r>
@@ -229,7 +228,7 @@ using resolved_label_min =
 template <typename L1, typename L2>
 using label_lte = std::integral_constant<bool, L2::flows_to(L1{})>;
 
-	std::ostream& operator<<(std::ostream& o, const Label<top>&);
+std::ostream& operator<<(std::ostream& o, const Label<top>&);
 template <typename... labels>
 std::ostream& operator<<(std::ostream& o, const Label<label_min_of<labels...>>&)
 {
@@ -248,5 +247,5 @@ std::ostream& operator<<(std::ostream& o, const Label<temp_label<seq, depth>>&)
   return o << "temp<" << seq << depth << ">";
 }
 
-	std::ostream& operator<<(std::ostream& o, const Label<bottom>&);
+std::ostream& operator<<(std::ostream& o, const Label<bottom>&);
 }

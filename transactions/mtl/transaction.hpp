@@ -13,6 +13,7 @@
 #include "Basics.hpp"
 #include "transaction_listener.hpp"
 #include "mtlbasics.hpp"
+#include "insert_tracking.hpp"
 
 namespace myria {
 namespace mtl {
@@ -74,8 +75,10 @@ struct pre_transaction_str;
           using namespace label_inference;
           using inferred_t = DECT(infer_labels(checked_t{}));
           {
+	    using namespace tracking_phase;
+	    using tracked_t = DECT(insert_tracking_begin(inferred_t{}));
             using namespace split_phase;
-            using split_t = DECT(split_computation<id, inferred_t, bound_values...>());
+            using split_t = DECT(split_computation<id, tracked_t, bound_values...>());
 						//this is where we should introduce the tombstones, I think. if (labels::exists_predicate<requires_tracking>()){}
             using recollapsed_t = DECT(recollapse(split_t{}));
             return recollapsed_t{};

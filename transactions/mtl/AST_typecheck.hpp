@@ -148,6 +148,18 @@ struct Expression<Label<l>, typename BinOp<op, L, R>::yield, BinOp<op, L, R>>
   using subexpr = typename BinOp<op, L, R>::subexpr;
 };
 
+struct GenerateTombstone
+{
+  using subexpr = GenerateTombstone;
+};
+template <typename l>
+struct Expression<Label<l>, tracker::Tombstone, GenerateTombstone>
+{
+  using label = Label<l>;
+  using yield = tracker::Tombstone;
+  using subexpr = typename GenerateTombstone::subexpr;
+};
+
 template <typename Binding, typename Body>
 struct Let;
 template <typename Name, typename Expr, typename Body, typename bl, typename Yields, typename sl>
@@ -199,6 +211,37 @@ struct Statement<Label<l>, Assignment<Var, Expr>>
 {
   using label = Label<l>;
   using substatement = typename Assignment<Var, Expr>::substatement;
+};
+
+using tombstone_str = mutils::String<'t', 'o', 'm', 'b', 's', 't', 'o', 'n', 'e', 0>;
+
+struct WriteTombstone
+{
+  using substatement = WriteTombstone;
+};
+
+template <typename l>
+struct Statement<Label<l>, WriteTombstone>
+{
+  using label = Label<l>;
+  using substatement = typename WriteTombstone::substatement;
+};
+
+template <typename>
+struct AccompanyWrite;
+template <typename e, typename l, typename y>
+struct AccompanyWrite<Expression<l, y, e>>
+{
+  using sublabel = l;
+  using substatement = AccompanyWrite;
+  using subexpr = typename Expression<l, y, e>::subexpr;
+};
+template <typename l, typename T>
+struct Statement<Label<l>, AccompanyWrite<T>>
+{
+  using label = Label<l>;
+  using substatement = typename AccompanyWrite<T>::substatement;
+  static_assert(std::is_same<label,typename substatement::sublabel>::value);
 };
 
 template <typename condition, typename then, typename els>
