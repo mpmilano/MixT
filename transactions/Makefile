@@ -30,6 +30,8 @@ vm: simple_txn_test
 	cp -rfp vm.sh vm
 groups: $(object_files) groups_test.o
 	@clang++ $(object_files) groups_test.o -o groups $(LDFLAGS)
+insert_tracking: $(object_files) 
+	@clang++ $(object_files) test_insert_tracking.cpp -o test_insert_tracking $(LDFLAGS) $(CPPFLAGS)
 
 cache_test: $(object_files) cache_interacter.o
 	@clang++ $(object_files) cache_interacter.o -o cache_test $(LDFLAGS)

@@ -51,7 +51,7 @@ print_ast(std::ostream& o, const Statement<l, Let<b, body>>&, const std::string&
   o << tab << "let@" << l{} << " " << b{} << " in "
     << "{";
   print_ast(o, body{}, tab);
-  o << "}";
+  o << tab << "}";
 }
 
 template <typename l, typename b, typename body>
@@ -61,34 +61,34 @@ print_ast(std::ostream& o, const Statement<l, LetRemote<b, body>>&, const std::s
   o << tab << "let remote@" << l{} << " " << b{} << " in "
     << "{";
   print_ast(o, body{}, tab);
-  o << "}";
+  o << tab << "}";
 }
 
 template <typename l, typename L, typename R>
 void
 print_ast(std::ostream& o, const Statement<l, Assignment<L, R>>&, const std::string& tab)
 {
-  o << L{} << " =@" << l{} << " " << R{};
+  o << tab << L{} << " =@" << l{} << " " << R{};
 }
 
 template <typename l, typename c, typename t, typename e>
 void
 print_ast(std::ostream& o, const Statement<l, If<c, t, e>>&, const std::string& tab)
 {
-  o << "if@" << l{} << " (" << c{} << ") {";
+  o << tab << "if@" << l{} << " (" << c{} << ") {";
   print_ast(o, t{}, tab);
-  o << "} else {";
+  o << tab << "} else {";
   print_ast(o, e{}, tab);
-  o << "}";
+  o << tab << "}";
 }
 
 template <typename l, typename c, typename t, char... name>
 void
 print_ast(std::ostream& o, const Statement<l, While<c, t, name...>>&, const std::string& tab)
 {
-  o << "while@" << l{} << " (" << c{} << ") {";
+  o << tab << "while@" << l{} << " (" << c{} << ") {";
   print_ast(o, t{}, tab);
-  o << "} ";
+  o << tab << "} ";
 }
 
 template <typename l, typename... Seq>

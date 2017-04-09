@@ -237,7 +237,7 @@ std::ostream& operator<<(std::ostream& o, const Label<label_min_of<labels...>>&)
     return nullptr;
   };
   o << "min(";
-  auto ignore = { print(labels{})... };
+  (print(labels{}) , ...);
   return o << ")";
 }
 

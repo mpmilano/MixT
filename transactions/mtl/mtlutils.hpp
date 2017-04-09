@@ -607,4 +607,11 @@ constexpr auto remove_entry()
 {
   return remove_entry_f<Key>(type_association_map<>{}, map{});
 }
+
+
+template<bool b, typename...> constexpr bool useful_static_assert(){
+  static_assert(b);
+  return b;
+}
+
 }
