@@ -21,7 +21,7 @@ stress3:  $(object_files) stress_test3.o
 	@clang++ $(object_files) stress_test.o -o stress3 $(LDFLAGS)
 
 simple_txn_test: $(object_files)
-	@clang++ simple_txn_test.cpp $(object_files) $(CPPFLAGS) $(LDFLAGS)
+	@clang++ simple_txn_test.cpp $(object_files) $(CPPFLAGS) $(LDFLAGS) -o simple_txn_test
 
 config_params_parsing_test: utils.o
 	@clang++ config_params_parsing_test.cpp utils.o -o config_params_parsing_test $(CPPFLAGS) $(LDFLAGS)

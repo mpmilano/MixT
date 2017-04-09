@@ -48,7 +48,8 @@ namespace myria {
 				if (id == txnID){
 					auto tombstones_to_find = mutils::from_bytes_noalloc<std::vector<tracker::Tombstone> >(&dsm,_data);
 					mutils::local_connection _lc;
-					_lc.data = *mutils::from_bytes_noalloc<std::vector<char> >(&dsm,_data);
+					_lc.data = *mutils::from_bytes_noalloc<std::vector<char> >(
+						&dsm,_data + mutils::bytes_size(*tombstones_to_find));
 #ifndef NDEBUG
 					mutils::connection &lc = _lc;
 					auto &logfile = c.get_log_file();
