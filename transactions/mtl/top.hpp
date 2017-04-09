@@ -46,6 +46,10 @@ struct Label<top>
   using can_abort = std::false_type;
 };
 
+  constexpr auto parse_label(mutils::String<'t','o','p'>){
+  return Label<top>{};
+}
+
 template <int, int>
 struct temp_label;
 // temporary labels which have not been inferred yet.
@@ -220,6 +224,10 @@ struct Label<bottom>
   using run_remotely = std::false_type;
   using can_abort = std::false_type;
 };
+
+constexpr auto parse_label(mutils::String<'b','o','t','t','o','m'>){
+  return Label<bottom>{};
+}
 
 template <typename l, typename r>
 using resolved_label_min =

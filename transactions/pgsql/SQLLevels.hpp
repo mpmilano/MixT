@@ -74,6 +74,10 @@ namespace myria { namespace pgsql {
 			static constexpr char description[] = "causal";
 		};
 
+  constexpr auto parse_label(mutils::String<'c','a','u','s','a','l'>){
+    return Label<pgsql::causal>{};
+  }
+
 		template<> struct Label<pgsql::strong>{
 
 			constexpr Label() = default;
@@ -134,6 +138,10 @@ namespace myria { namespace pgsql {
 
 			static constexpr char description[] = "strong";
 		};
+  constexpr auto parse_label(mutils::String<'s','t','r','o','n','g'>){
+    return Label<pgsql::strong>{};
+  }
+  
 
 	std::ostream& operator<<(std::ostream& o, const Label<pgsql::strong>&);
 	std::ostream& operator<<(std::ostream& o, const Label<pgsql::causal>&);

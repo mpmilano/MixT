@@ -177,6 +177,17 @@ struct Statement<LetRemote<Binding, Body>>
 {
 };
 
+template <typename Binding, typename Body, typename label>
+struct LetEndorsed;
+template <typename Name, typename Expr, typename Body, typename label>
+struct LetEndorsed<Binding<Name, Expr>, Statement<Body>, Label<label> >
+{
+};
+template <typename Binding, typename Body, typename label>
+struct Statement<LetEndorsed<Binding, Body,label> >
+{
+};
+
 template <typename Var, typename Expr>
 struct Assignment;
 template <typename Expr, typename Var>
