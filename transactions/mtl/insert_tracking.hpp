@@ -24,9 +24,15 @@ namespace myria { namespace mtl  { namespace typecheck_phase { namespace trackin
 	constexpr auto _insert_tracking(Statement<l, Assignment<Var, Expr>> orig)
 	{
 	  return std::conditional_t<
-	    tracked_labels::strong::contains(l{}) && is_remote_bound(remote_bound{}, Var{}),
+	    tracked_labels::strong::template contains<l>() && is_remote_bound(remote_bound{}, Var{}),
 	    Statement<l,Sequence<DECT(orig), Statement<l,AccompanyWrite<Var> > > >,
 	    DECT(orig) >{};
+	}
+
+	template <typename tracked_labels, typename remote_bound, typename l, typename Expr>
+	constexpr auto _insert_tracking(Statement<l, Return<Expr>> orig)
+	{
+		return orig;
 	}
 	
 	template <typename tracked_labels, typename remote_bound, typename l, typename b, typename e>
@@ -39,7 +45,7 @@ namespace myria { namespace mtl  { namespace typecheck_phase { namespace trackin
 	constexpr auto _insert_tracking(Statement<l, LetRemote<b, e>>)
 	{
 	  return Statement<l,LetRemote<b,DECT(insert_tracking<tracked_labels,
-					      DECT(remote_bound::add(extract_remote_binding(b{})))>(e{})) > >{};
+																				DECT(remote_bound::template add<DECT(extract_remote_binding(b{}))>())>(e{})) > >{};
 	}
 	
 	template <typename tracked_labels, typename remote_bound, typename l, typename c, typename t, typename e>
@@ -93,23 +99,23 @@ namespace myria { namespace mtl  { namespace typecheck_phase { namespace trackin
 	template<typename l1, typename l2>
 	constexpr auto needs_tracking(std::enable_if_t<!l2::template tracks_against<l1>::value && !l1::template tracks_against<l2>::value>* = nullptr){
 	  using namespace mutils;
-	  return typeset<>{};
+	  return tracking_pair<typeset<>,typeset<> >{};
 	}
 
 	template<typename l1, typename... labels>
-	constexpr auto tracked_labels(mutils::typeset<labels...>){
+	constexpr auto tracked_labels(mutils::typelist<l1,labels...>){
 	  constexpr auto strong_labels = mutils::typeset<>::combine(needs_tracking<l1,labels>().strong_partner()...);
 	  constexpr auto weak_labels = mutils::typeset<>::combine(needs_tracking<l1,labels>().weak_partner()...);
 	  return tracking_pair<DECT(strong_labels),DECT(weak_labels)>{};
 	}
 
-	constexpr auto write_tombstones(mutils::typeset<>){
+	constexpr auto write_tombstones(mutils::typelist<>){
 	  return Sequence<>{};
 	}
 	
 	template<typename l1, typename... labels>
-	constexpr auto write_tombstones(mutils::typeset<l1,labels...>){
-	  return Sequence<Statement<l1,WriteTombstone> >::append(write_tombstones(mutils::typeset<labels...>{}));
+	constexpr auto write_tombstones(mutils::typelist<l1,labels...>){
+	  return Sequence<Statement<l1,WriteTombstone> >::append(write_tombstones(mutils::typelist<labels...>{}));
 	}
 
 	template<typename AST, typename labels>

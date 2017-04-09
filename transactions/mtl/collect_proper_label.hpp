@@ -185,6 +185,14 @@ constexpr auto _collect_labels_helper(Statement<l, Assignment<v, e>>)
   return typeset<l>::combine(collect_labels_helper(v{})).combine(collect_labels_helper(e{}));
 }
 
+template <typename l, typename e>
+constexpr auto _collect_labels_helper(Statement<l, Return<e>>)
+{
+  using namespace mutils;
+  static_assert(l::is_label::value);
+  return typeset<l>::combine(collect_labels_helper(e{}));
+}
+
 template <typename l, typename b, typename e>
 constexpr auto _collect_labels_helper(Statement<l, Let<b, e>>)
 {

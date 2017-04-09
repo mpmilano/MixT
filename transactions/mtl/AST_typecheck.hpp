@@ -213,6 +213,22 @@ struct Statement<Label<l>, Assignment<Var, Expr>>
   using substatement = typename Assignment<Var, Expr>::substatement;
 };
 
+template <typename Expr>
+struct Return;
+	template <typename l, typename y, typename Expr>
+	struct Return<Expression<l,y,Expr> >
+{
+	using substatement = Return;
+	using subexpr = typename Expression<l,y,Expr>::subexpr;
+	using label = l;
+};
+	template <typename l, typename Expr>
+	struct Statement<l,Return<Expr>>
+{
+	using label = l;
+	using substatement = typename Return<Expr>::substatement;
+};
+
 using tombstone_str = mutils::String<'t', 'o', 'm', 'b', 's', 't', 'o', 'n', 'e', 0>;
 
 struct WriteTombstone

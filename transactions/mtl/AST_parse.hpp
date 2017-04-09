@@ -188,6 +188,17 @@ struct Statement<Assignment<Var, Expr>>
 {
 };
 
+template <typename Expr>
+struct Return;
+template <typename Expr>
+struct Return<Expression<Expr>>
+{
+};
+template <typename Expr>
+struct Statement<Return<Expr>>
+{
+};
+
 template <typename condition, typename then, typename els>
 struct If;
 template <typename condition, typename then, typename els>

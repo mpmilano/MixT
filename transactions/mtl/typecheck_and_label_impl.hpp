@@ -98,6 +98,14 @@ constexpr auto _typecheck(type_environment<pc_label, Env...>, parse_phase::State
   return Statement<resolved_label_min<resolved_label_min<typename new_expr::label, typename new_var::label>, pc_label>, Assignment<new_var, new_expr>>{};
 }
 
+template <int seqnum, int depth, typename Expr, typename pc_label, typename... Env>
+constexpr auto _typecheck(type_environment<pc_label, Env...>, parse_phase::Statement<parse_phase::Return<Expr>>)
+{
+  using env = type_environment<pc_label, Env...>;
+  using new_expr = DECT(typecheck<seqnum + 1, depth + 1>(env{}, Expr{}));
+  return Statement<Label<bottom>, Return<new_expr>>{};
+}
+
 template <int seqnum, int depth, typename condition, typename body, typename pc_label, typename... Env>
 constexpr auto _typecheck(type_environment<pc_label, Env...>, parse_phase::Statement<parse_phase::While<condition, body>>)
 {

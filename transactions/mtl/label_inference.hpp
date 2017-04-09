@@ -162,6 +162,12 @@ constexpr auto _collect_constraints(Statement<l, Assignment<Expression<lv, yv, v
     .append(collect_constraints(pc_label{}, Expression<le, ye, e>{}));
 }
 
+template <typename pc_label, typename l, typename le, typename ye, typename e>
+constexpr auto _collect_constraints(Statement<l, Return<Expression<le, ye, e>>>)
+{
+  return collect_constraints(pc_label{}, Expression<le, ye, e>{});
+}
+
 template <typename pc_label, typename l, typename b, typename e>
 constexpr auto _collect_constraints(Statement<l, Let<b, e>>)
 {

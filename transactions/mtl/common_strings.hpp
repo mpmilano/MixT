@@ -23,5 +23,6 @@ using lt_s = mutils::String<'<'>;
 using gt_s = mutils::String<'>'>;
 using eq_s = mutils::String<'=', '='>;
 using minus_s = mutils::String<'-'>;
+using return_s = mutils::String<'r','e','t','u','r','n'>;
 }
 }

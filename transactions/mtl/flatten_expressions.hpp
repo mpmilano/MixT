@@ -184,12 +184,28 @@ constexpr auto _flatten_exprs(Statement<Assignment<var, Expression<VarReference<
   return Statement<Assignment<var, Expression<VarReference<expr>>>>{};
 }
 
+template <char seqnum, char depth, typename expr>
+constexpr auto _flatten_exprs(Statement<Return<Expression<VarReference<expr>>>>)
+{
+  // flat, move on
+  return Statement<Return<Expression<VarReference<expr>>>>{};
+}
+
 template <char seqnum, char depth, typename var, typename expr>
 struct flatten_exprs_str<seqnum, depth, Statement<Assignment<var, expr>>>
 {
   static_assert(!is_var_reference<expr>::value);
   template <typename new_expr>
   using SubStatementR = Statement<Assignment<var, new_expr>>;
+  using type = DECT(remove_layer<seqnum, depth, SubStatementR>(expr{}));
+};
+
+template <char seqnum, char depth, typename expr>
+struct flatten_exprs_str<seqnum, depth, Statement<Return<expr>>>
+{
+  static_assert(!is_var_reference<expr>::value);
+  template <typename new_expr>
+  using SubStatementR = Statement<Return<new_expr>>;
   using type = DECT(remove_layer<seqnum, depth, SubStatementR>(expr{}));
 };
 
@@ -324,6 +340,12 @@ constexpr auto _desugar_while(const Statement<LetRemote<b, body>> )
 
 template <char, char, typename L, typename R>
 constexpr auto _desugar_while(const Statement<Assignment<L, R>> a)
+{
+  return a;
+}
+
+template <char, char, typename R>
+constexpr auto _desugar_while(const Statement<Return<R>> a)
 {
   return a;
 }

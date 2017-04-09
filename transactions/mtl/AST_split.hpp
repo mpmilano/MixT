@@ -196,7 +196,20 @@ struct AST<Label<l>>
   struct Statement<Assignment<Var, Expr>>
   {
     using substatement = typename Assignment<Var, Expr>::substatement;
-  };	
+  };
+	template <typename Expr>
+		struct Return;
+	template <typename y, typename Expr>
+		struct Return<Expression<y,Expr> >
+	{
+		using substatement = Return;
+		using subexpr = typename Expression<y,Expr>::subexpr;
+	};
+	template <typename Expr>
+	struct Statement<Return<Expr>>
+	{
+		using substatement = typename Return<Expr>::substatement;
+	};
 
   template <typename Var>
   struct IncrementOccurance;

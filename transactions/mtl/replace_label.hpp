@@ -73,6 +73,12 @@ struct replace_label<Label<temp_label<target1, target2>>, Label<newlabel>>
     return Statement<DECT(label_replace(l{})), Assignment<DECT(replace(b{})), DECT(replace(e{}))>>{};
   }
 
+	template <typename l, typename e>
+  static constexpr auto _replace(Statement<l, Return<e>>)
+  {
+    return Statement<DECT(label_replace(l{})), Return<DECT(replace(e{}))>>{};
+  }
+
   template <typename l, typename b, typename e>
   static constexpr auto _replace(Statement<l, Let<b, e>>)
   {

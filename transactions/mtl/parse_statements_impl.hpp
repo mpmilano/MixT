@@ -43,6 +43,12 @@ constexpr auto parse_if(String<'i', 'f', _str...>)
   return parse_phase::If<std::decay_t<decltype(parse_expression(condition_s))>, std::decay_t<decltype(parse_statement(then_s))>,
                          std::decay_t<decltype(parse_statement(else_s))>>{};
 }
+
+	template<char... str>
+	constexpr auto parse_return(String<'r','e','t','u','r','n',str...>){
+		return parse_phase::Return<DECT(parse_expression(String<str...>{}))>{};
+	}
+	
 template <char... _str>
 constexpr auto parse_while(String<'w', 'h', 'i', 'l', 'e', _str...>)
 {
@@ -145,10 +151,19 @@ constexpr auto _parse_statement(std::enable_if_t<String<_str...>::begins_with(if
   return parse_if(str::trim_ends());
 }
 
+// return
+template <char... _str>
+constexpr auto _parse_statement(std::enable_if_t<String<_str...>::begins_with(return_s{}), String<_str...>>)
+{
+  using str = String<_str...>;
+  return parse_return(str::trim_ends());
+}
+
 // assignment
 template <char... _str>
 constexpr auto _parse_statement(std::enable_if_t<!(String<_str...>::begins_with(String<'{'>{}) || String<_str...>::begins_with(let_s{}) ||
-                                                   String<_str...>::begins_with(while_s{}) || String<_str...>::begins_with(if_s{})) &&
+                                                   String<_str...>::begins_with(while_s{}) || String<_str...>::begins_with(if_s{}) || 
+																									 String<_str...>::begins_with(return_s{})) &&
                                                    String<_str...>::contains_outside_parens(String<'='>{}),
                                                  String<_str...>>)
 {
