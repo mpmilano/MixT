@@ -3,7 +3,7 @@ IP_quad=`ifconfig | sed s/broadcast.*//g | tr " " "\n" | grep 128.84 | rev | sed
 storeList='pgsql::SQLStore<pgsql::Level::strong>, pgsql::SQLStore<pgsql::Level::causal>'
 CPPFLAGS= -I$(PWD) -I$(PWD)/mtl -I$(PWD)/myria-utils -I$(PWD)/mutils-networking -I$(PWD)/mutils -I$(PWD)/mutils-containers -I$(PWD)/mutils-serialization -I$(PWD)/mutils-tasks -I$(PWD)/testing -I$(PWD)/server -I$(PWD)/pgsql -I$(PWD)/tracker -g -stdlib=libc++ --std=c++1z -DNUM_CAUSAL_GROUPS="4" -DSTORE_LIST=$(storeList) -DMY_IP=\"$(MY_IP)\" -DMAX_THREADS=$(MAX_THREADS) -DIP_QUAD=$(IP_quad) -DSTRONG_REMOTE_IP=\"$(STRONG_REMOTE_IP)\" -DCAUSAL_GROUP=$(causalGroup) -DCAUSAL_REMOTE_IP_1=\"$(CAUSAL_REMOTE_IP_1)\" -DCAUSAL_REMOTE_IP_2=\"$(CAUSAL_REMOTE_IP_2)\" -ferror-limit=1 -Wall -Werror -Wextra #-DNDEBUG
 LDFLAGS= -stdlib=libc++ --std=c++1z -lm -pthread -lpqxx
-object_files=Ends.o utils.o test_utils.o Basics.o Tracker.o Ostreams.o SerializationSupport.o SQLStore.o GSQLObject.o SQLConnection.o SQLTransaction.o SQL_internal_utils.o SQLLevels.o TransactionContext.o ServerSocket.o Socket.o abiutils.o eventfd.o epoll.o top.o simple_rpc.o local_connection.o
+object_files=Ends.o utils.o test_utils.o Basics.o Tracker.o Ostreams.o SerializationSupport.o SQLStore.o GSQLObject.o SQLConnection.o SQLTransaction.o SQL_internal_utils.o SQLLevels.o TransactionContext.o ServerSocket.o Socket.o abiutils.o eventfd.o epoll.o top.o simple_rpc.o local_connection.o Tombstone.o
 
 all: $(object_files) 
 	@clang++ $(object_files)  -o test $(LDFLAGS)
@@ -21,7 +21,7 @@ stress3:  $(object_files) stress_test3.o
 	@clang++ $(object_files) stress_test.o -o stress3 $(LDFLAGS)
 
 simple_txn_test: $(object_files)
-	@clang++  utils.o test_utils.o Basics.o Tracker.o Ostreams.o SerializationSupport.o SQLStore.o GSQLObject.o SQLConnection.o SQLTransaction.o SQL_internal_utils.o SQLLevels.o TransactionContext.o ServerSocket.o Socket.o  eventfd.o epoll.o top.o simple_rpc.o local_connection.o simple_txn_test.cpp -o simple_txn_test $(CPPFLAGS) $(LDFLAGS)
+	@clang++ simple_txn_test.cpp $(object_files) $(CPPFLAGS) $(LDFLAGS)
 
 config_params_parsing_test: utils.o
 	@clang++ config_params_parsing_test.cpp utils.o -o config_params_parsing_test $(CPPFLAGS) $(LDFLAGS)
@@ -84,6 +84,8 @@ Ends.o:
 #	@clang++ -c */Tracker.cpp $(CPPFLAGS) #&& ln -s DisabledTracker.o Tracker.o
 Tracker.o:
 	@clang++ -c */DisabledTracker.cpp $(CPPFLAGS) && ln -s DisabledTracker.o Tracker.o
+Tombstone.o:
+	@clang++ -c */Tombstone.cpp $(CPPFLAGS)
 ClockManager.o:
 	@clang++ -c */ClockManager.cpp $(CPPFLAGS)
 TransactionContext.o:
