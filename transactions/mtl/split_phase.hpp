@@ -179,7 +179,7 @@ template <typename Var, typename label2, typename old_api>
 constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Statement<label2, typecheck_phase::AccompanyWrite<Var>>,
                                              std::enable_if_t<!are_equivalent(Label<l>{}, label2{})> const* const)
 {
-  return extracted_phase<label, phase_api<label, requires<>, provides<>, typename old_api::inherits>,Statement<Sequence<>>>{}
+  return extracted_phase<label, phase_api<label, requires<>, provides<>, typename old_api::inherits>,Statement<Sequence<>>>{};
 }
 
 template <typename l>
@@ -195,7 +195,7 @@ template <typename Var, typename label2, typename old_api>
 constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Statement<label2, typecheck_phase::Return<Var>>,
                                              std::enable_if_t<!are_equivalent(Label<l>{}, label2{})> const* const)
 {
-  return extracted_phase<label, phase_api<label, requires<>, provides<>, typename old_api::inherits>,Statement<Sequence<>>>{}
+  return extracted_phase<label, phase_api<label, requires<>, provides<>, typename old_api::inherits>,Statement<Sequence<>>>{};
 }
 
 template <typename l>
@@ -209,7 +209,7 @@ template <typename label2, typename old_api>
 constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Statement<label2, typecheck_phase::WriteTombstone>,
                                              std::enable_if_t<!are_equivalent(Label<l>{}, label2{})> const* const)
 {
-  return extracted_phase<label, phase_api<label, requires<>, provides<>, typename old_api::inherits>,Statement<Sequence<>>>{}
+  return extracted_phase<label, phase_api<label, requires<>, provides<>, typename old_api::inherits>,Statement<Sequence<>>>{};
 }
 
 template <typename l>
@@ -270,11 +270,11 @@ constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Expressio
 }
 
 template <typename l>
-template <typename label2, typename old_api>
-constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Expression<label2, tracker::Tombstone, typecheck_phase::GenerateTombstone>)
+template <typename old_api>
+constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Expression<Label<top>, tracker::Tombstone, typecheck_phase::GenerateTombstone>)
 {
   return extracted_phase<label, phase_api<label,requires<>,provides<>, typename old_api::inherits>,
-                         Expression<tracker::Tombstone, GenerateTombstone<>>>>{};
+                         Expression<tracker::Tombstone, GenerateTombstone<> > >{};
 }
 
 template <typename l>

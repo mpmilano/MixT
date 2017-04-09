@@ -45,6 +45,18 @@ auto _clear_empty_statements(typename AST<l>::template Expression<int, typename 
   return ret{};
 }
 
+template <typename l>
+auto _clear_empty_statements(typename AST<l>::template Expression<tracker::Tombstone, typename AST<l>::template GenerateTombstone<>> a)
+{
+  struct ret
+  {
+    using ast = DECT(a);
+    using remove_from_require = mutils::typeset<>;
+    using still_require = mutils::typeset<>;
+  };
+  return ret{};
+}
+
 template <typename l, typename y, char op, typename L, typename R>
 auto _clear_empty_statements(typename AST<l>::template Expression<y, typename AST<l>::template BinOp<op, L, R>>)
 {
@@ -113,9 +125,47 @@ auto _clear_empty_statements(typename AST<l>::template Statement<typename AST<l>
   };
   return ret{};
 }
+	
+template <typename l, typename R>
+auto _clear_empty_statements(typename AST<l>::template Statement<typename AST<l>::template Return<R>>)
+{
+  using newr = DECT(clear_empty_statements<l>(R{}));
+  struct ret
+  {
+    using ast = typename AST<l>::template Statement<typename AST<l>::template Return<typename newr::ast>>;
+    using remove_from_require = typename newr::remove_from_require;
+    using still_require = typename newr::still_require;
+  };
+  return ret{};
+}
+
+template <typename l, typename R>
+auto _clear_empty_statements(typename AST<l>::template Statement<typename AST<l>::template AccompanyWrite<R>>)
+{
+  using newr = DECT(clear_empty_statements<l>(R{}));
+  struct ret
+  {
+    using ast = typename AST<l>::template Statement<typename AST<l>::template AccompanyWrite<typename newr::ast>>;
+    using remove_from_require = typename newr::remove_from_require;
+    using still_require = typename newr::still_require;
+  };
+  return ret{};
+}
 
 template <typename l, char... var>
 auto _clear_empty_statements(typename AST<l>::template Statement<typename AST<l>::template IncrementOccurance<String<var...>>> a)
+{
+  struct ret
+  {
+    using ast = DECT(a);
+    using remove_from_require = mutils::typeset<>;
+    using still_require = mutils::typeset<>;
+  };
+  return ret{};
+}
+
+template <typename l>
+auto _clear_empty_statements(typename AST<l>::template Statement<typename AST<l>::template WriteTombstone<> > a)
 {
   struct ret
   {

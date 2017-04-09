@@ -153,12 +153,12 @@ struct AST<Label<l>>
     using subexpr = typename BinOp<op, L, R>::subexpr;
   };
 
-	template<std::true_type...>
+	template<void*...>
 	struct GenerateTombstone
 	{
 		using subexpr = GenerateTombstone;
 	};
-	template <std::true_type... useless>
+	template <void*... useless>
 		struct Expression<tracker::Tombstone, GenerateTombstone<useless...> >
 	{
 		using yield = tracker::Tombstone;
@@ -223,13 +223,13 @@ struct AST<Label<l>>
 		using substatement = typename Return<Expr>::substatement;
 	};
 
-template<std::true_type...>
+template<void*...>
 struct WriteTombstone
 {
   using substatement = WriteTombstone;
 };
 
-template <std::true_type... useless>
+template <void*... useless>
 struct Statement<WriteTombstone<useless...> >
 {
   using substatement = typename WriteTombstone<useless...>::substatement;
@@ -461,7 +461,7 @@ struct Statement<AccompanyWrite<T> >
 	template <typename phase_api>
   static constexpr auto _collect_phase(phase_api, typecheck_phase::Statement<label, typecheck_phase::WriteTombstone>);
 
-  template <typename Expr, typename label2, typename phase_api>
+  template <typename label2, typename phase_api>
   static constexpr auto _collect_phase(phase_api, typecheck_phase::Statement<label2, typecheck_phase::WriteTombstone>,
                                        std::enable_if_t<!are_equivalent(Label<l>{}, label2{})> const* const = nullptr);
 	
