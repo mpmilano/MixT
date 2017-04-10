@@ -5,6 +5,14 @@ namespace myria {
 namespace mtl {
 namespace runnable_transaction {
 
+
+	template<typename> struct ReturnedValue;
+	template<> struct ReturnedValue<void>{};
+	template<typename T>
+	struct ReturnedValue{
+		T value;
+	};
+	
 template <typename l, typename AST, typename TranCtx, typename store>
 auto run_phase(AST*, TranCtx&, store& s);
 
@@ -108,7 +116,7 @@ auto _run_phase(typename AST<l>::template Binding<Label<label>, Yield, String<na
   constexpr String<name...> varname{};
   (void)varname;
   auto expr_result = run_phase<l>(expr, ctx, s);
-  s.get(String<name...>{}).bind(expr_result);
+  s.get(String<name...>{}).bind(ctx,expr_result);
 }
 
 template <typename l, typename TranCtx, typename store, typename Binding, typename Body>
@@ -136,6 +144,31 @@ auto _run_phase(typename AST<l>::template Statement<
 {
   constexpr R* r{ nullptr };
   s.get(L{}).push(ctx, run_phase<l>(r, ctx, s));
+}
+
+template <typename l, typename TranCtx, typename store, typename y, typename R>
+y _run_phase(typename AST<l>::template Statement<typename AST<l>::template Return<typename AST<l>::template Expression<y, R> > >*, TranCtx& ctx, store& s, std::enable_if_t<!std::is_void<y>::value>* = nullptr)
+{
+  constexpr typename AST<l>::template Expression<y, R>* r{ nullptr };
+	throw ReturnedValue<y>{run_phase<l>(r, ctx, s)};
+}
+
+template <typename l, typename TranCtx, typename store, typename y, typename R>
+void _run_phase(typename AST<l>::template Statement<typename AST<l>::template AccompanyWrite<typename AST<l>::template Expression<y, R> > >*, TranCtx&, store&)
+{
+	assert(false && "unimplemented");
+}
+
+template <typename l, typename TranCtx, typename store, typename y, typename R>
+void _run_phase(typename AST<l>::template Statement<typename AST<l>::template WriteTombstone<typename AST<l>::template Expression<y, R> > >*, TranCtx&, store&)
+{
+	assert(false && "unimplemented");
+}
+
+template <typename l, typename TranCtx, typename y, typename store>
+y _run_phase(typename AST<l>::template Expression<y,typename AST<l>::template GenerateTombstone<> >*, TranCtx&, store&)
+{
+	assert(false && "unimplemented");
 }
 
 template <typename l, typename TranCtx, typename store, typename y1, typename y2, typename S, typename F, typename R>
@@ -183,7 +216,7 @@ auto _run_phase(typename AST<l>::template Statement<typename AST<l>::template Wh
   constexpr c* condition{ nullptr };
   constexpr t* then{ nullptr };
   int i = 0;
-  s.get(String<name...>{}).bind(i);
+  s.get(String<name...>{}).bind(ctx,i);
   bool condition_val = run_phase<l>(condition, ctx, s);
   while (condition_val) {
     ++i;
@@ -237,25 +270,41 @@ auto run_phase(TranCtx& ctx, store& s)
   return run_phase<typename phase::label>(np, ctx, s);
 }
 
+	template<typename Ctx, typename S>
+	void commit_phase(Ctx& ctx, S& old, S& s){
+		if (ctx.s_ctx)
+			ctx.s_ctx->store_commit();
+		old.take(std::move(s));			
+	}
+
 template <typename phase1, typename Ctx, typename S>
 void
-run_phase1(Ctx& ctx, S& old, S& s, std::enable_if_t<std::is_void<DECT(run_phase<phase1>(ctx, s))>::value>* = nullptr)
+run_phase1(Ctx& ctx, S& old, S& s, std::enable_if_t<std::is_void<typename phase1::returns>::value>* = nullptr)
 {
-  run_phase<phase1>(ctx, s);
-  if (ctx.s_ctx)
-    ctx.s_ctx->store_commit();
-	old.take(std::move(s));
+	try {
+		run_phase<phase1>(ctx, s);
+	} catch(const ReturnedValue<void>&){}
+	commit_phase(ctx,old,s);
 }
 
 template <typename phase1, typename Ctx, typename S>
-auto run_phase1(Ctx& ctx, S& old, S& s, std::enable_if_t<!std::is_void<DECT(run_phase<phase1>(ctx, s))>::value>* = nullptr)
+typename phase1::returns run_phase1(Ctx& ctx, S& old, S& s, std::enable_if_t<!std::is_void<typename phase1::returns>::value>* = nullptr)
 {
-  auto ret = run_phase<phase1>(ctx, s);
-  if (ctx.s_ctx)
-    ctx.s_ctx->store_commit();
-	old.take(std::move(s));
-  return ret;
+	try {
+		run_phase<phase1>(ctx, s);
+		throw mutils::StaticMyriaException<'n','o','n','-','v','o','i','d',' ',
+															 'r','e','t','u','r','n','i','n','g',' ',
+															 't','r','a','n','s','a','c','t','i','o','n',' ',
+															 'f','a','i','l','e','d',' ','t','o',' ',
+															 'r','e','t','u','r','n',' ',
+															 'a','n','y','t','h','i','n','g'>{};
+	}
+	catch(ReturnedValue<typename phase1::returns> &r){
+		commit_phase(ctx,old,s);
+		return std::move(r.value);
+	}
 }
+	
 template <typename phase1, typename store>
 auto common_interp_loop(store& old, store s){
 	using label = typename phase1::label;

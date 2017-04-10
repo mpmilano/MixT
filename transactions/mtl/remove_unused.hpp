@@ -93,10 +93,10 @@ constexpr auto remove_unused(AST a, mutils::typeset<reqs...> ts)
   return _remove_unused<label>(a, ts);
 }
 
-template <typename _label, typename provides, typename inherits, typename _ast, typename... _requires>
-constexpr auto remove_unused(extracted_phase<Label<_label>, phase_api<Label<_label>, requires<_requires...>, provides, inherits>, _ast>)
+	template <typename _label, typename provides, typename inherits, typename _returns, typename _ast, typename... _requires>
+	constexpr auto remove_unused(extracted_phase<Label<_label>, phase_api<Label<_label>, requires<_requires...>, provides, inherits>, _returns, _ast>)
 {
-  return extracted_phase<Label<_label>, phase_api<Label<_label>, requires<_requires...>, provides, inherits>,
+  return extracted_phase<Label<_label>, phase_api<Label<_label>, requires<_requires...>, provides, inherits>,_returns,
                          DECT(remove_unused<Label<_label>>(_ast{}, mutils::typeset<>::template add<_requires...>()))>{};
 }
 }

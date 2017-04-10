@@ -30,20 +30,21 @@ using base_var = typename base_var_str<T>::type;
 
 namespace split_phase {
 
-template <typename _label, typename provides, typename inherits, typename _ast, typename requires>
-struct extracted_phase<Label<_label>, phase_api<Label<_label>, requires, provides, inherits>, _ast>
+template <typename _label, typename provides, typename inherits, typename _returns, typename _ast, typename requires>
+struct extracted_phase<Label<_label>, phase_api<Label<_label>, requires, provides, inherits>, _returns, _ast>
 {
   using label = Label<_label>;
   using api = phase_api<Label<_label>, requires, provides, inherits>;
+	using returns = _returns;
   using ast = _ast;
   static_assert(AST<label>::template is_ast<ast>::value);
 };
 
-template <typename _label, typename provides, typename inherits, typename _ast, typename requires>
-static constexpr auto transaction_prephase(extracted_phase<Label<_label>, phase_api<Label<_label>, requires, provides, inherits>, _ast> a)
+	template <typename _label, typename provides, typename inherits, typename _ast, typename returns, typename requires>
+	static constexpr auto transaction_prephase(extracted_phase<Label<_label>, phase_api<Label<_label>, requires, provides, inherits>, returns, _ast> a)
 {
   using This = DECT(a);
-  return runnable_transaction::prephase<typename This::label, typename This::ast, DECT(binding_to_holder(to_typeset(typename provides::as_typelist{}))),
+  return runnable_transaction::prephase<typename This::label, returns, typename This::ast, DECT(binding_to_holder(to_typeset(typename provides::as_typelist{}))),
                                         DECT(binding_to_holder(to_typeset(typename inherits::as_typelist{}))),
                                         DECT(binding_to_holder(to_typeset(typename requires::as_typelist{})))>{};
 }
@@ -59,7 +60,7 @@ constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Expressio
   static_assert(useful_static_assert<needed_binding_present, needed_binding, old_api>());
   using requires = std::conditional_t<old_api::provides::template contains_subtype<needed_binding>(), requires<>,
                                       requires<typename old_api::inherits::template find_subtype<needed_binding>>>;
-  return extracted_phase<label, phase_api<label, requires, provides<>, typename old_api::inherits>, Expression<Yields, VarReference<Str>>>{};
+  return extracted_phase<label, phase_api<label, requires, provides<>, typename old_api::inherits>, void, Expression<Yields, VarReference<Str>>>{};
 }
 
 template <typename label, typename old_api, typename label2, typename Yields, typename var, typename expr>
@@ -71,7 +72,7 @@ constexpr auto let_binding(old_api, typecheck_phase::Binding<label2, Yields, var
   using new_binding = type_binding<var, Yields, label2, type_location::local>;
   using processed_expr = DECT(AST<label>::collect_phase(old_api{}, expr{}));
   using returned_api = DECT(processed_expr::api::add_provides(new_binding{}));
-  return extracted_phase<label, returned_api, typename AST<label>::template Binding<label2, Yields, var, typename processed_expr::ast>>{};
+  return extracted_phase<label, returned_api, void, typename AST<label>::template Binding<label2, Yields, var, typename processed_expr::ast>>{};
 }
 
 template <typename label, typename label2, typename Yields, typename var, typename exprl, typename handle_t, typename expr, typename phase_api>
@@ -83,7 +84,7 @@ constexpr auto let_remote_binding(phase_api, typecheck_phase::Binding<label2, Yi
   using new_binding = type_binding<var, handle_t, label2, type_location::remote>;
   using processed_expr = DECT(AST<label>::collect_phase(phase_api{}, typecheck_phase::Expression<exprl, handle_t, expr>{}));
   using returned_api = DECT(processed_expr::api::add_provides(new_binding{}));
-  return extracted_phase<label, returned_api, typename AST<label>::template Binding<label2, Yields, var, typename processed_expr::ast>>{};
+  return extracted_phase<label, returned_api, void, typename AST<label>::template Binding<label2, Yields, var, typename processed_expr::ast>>{};
 }
 
 template <typename l>
@@ -95,7 +96,7 @@ constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Statement
   using body = DECT(collect_phase(combined_api<typename binding::api, old_api>{}, Body{}));
   using body_ast = typename body::ast;
   using new_api = combined_api<typename binding::api, typename body::api>;
-  return extracted_phase<label, new_api, Statement<Let<binding_ast, body_ast>>>{};
+  return extracted_phase<label, new_api, typename body::returns, Statement<Let<binding_ast, body_ast>>>{};
 }
 
 template <typename l>
@@ -111,7 +112,7 @@ constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Statement
 
   using stmt = Statement<Sequence<Statement<IncrementOccurance<var>>, body_ast>>;
 
-  return extracted_phase<label, new_api, stmt>{};
+  return extracted_phase<label, new_api, typename new_body::returns, stmt>{};
 }
 /*
 template <typename l>
@@ -143,7 +144,7 @@ constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Statement
 
   using stmt = Statement<Sequence<Statement<IncrementRemoteOccurance<var>>, body_ast>>;
 
-  return extracted_phase<label, new_api, stmt>{};
+  return extracted_phase<label, new_api, typename new_body::returns, stmt>{};
 }
 
 template <typename l>
@@ -153,14 +154,14 @@ constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Statement
   using var = DECT(collect_phase(old_api{}, Var{}));
   using expr = DECT(collect_phase(old_api{}, Expr{}));
   using ast = Statement<Assignment<typename var::ast, typename expr::ast>>;
-  return extracted_phase<label, combined_api<typename var::api, typename expr::api>, ast>{};
+  return extracted_phase<label, combined_api<typename var::api, typename expr::api>, void, ast>{};
 }
 template <typename l>
 template <typename Var, typename Expr, typename label2, typename old_api>
 constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Statement<label2, typecheck_phase::Assignment<Var, Expr>>,
                                              std::enable_if_t<!are_equivalent(Label<l>{}, label2{})> const* const)
 {
-  return extracted_phase<label, phase_api<label, requires<>, provides<>, typename old_api::inherits>,
+  return extracted_phase<label, phase_api<label, requires<>, provides<>, typename old_api::inherits>,void,
                          Statement<std::conditional_t<label2::flows_to(label{}),
                                                       // we might use this
                                                       IncrementOccurance<typecheck_phase::base_var<Var>>,
@@ -174,14 +175,14 @@ constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Statement
 {
   using var = DECT(collect_phase(old_api{}, Var{}));
   using ast = Statement<AccompanyWrite<typename var::ast>>;
-  return extracted_phase<label, typename var::api, ast>{};
+  return extracted_phase<label, typename var::api, void, ast>{};
 }
 template <typename l>
 template <typename Var, typename label2, typename old_api>
 constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Statement<label2, typecheck_phase::AccompanyWrite<Var>>,
                                              std::enable_if_t<!are_equivalent(Label<l>{}, label2{})> const* const)
 {
-  return extracted_phase<label, phase_api<label, requires<>, provides<>, typename old_api::inherits>,Statement<Sequence<>>>{};
+  return extracted_phase<label, phase_api<label, requires<>, provides<>, typename old_api::inherits>,void,Statement<Sequence<>>>{};
 }
 
 template <typename l>
@@ -190,14 +191,14 @@ constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Statement
 {
   using var = DECT(collect_phase(old_api{}, Var{}));
   using ast = Statement<Return<typename var::ast>>;
-  return extracted_phase<label, typename var::api, ast>{};
+  return extracted_phase<label, typename var::api, typename Var::yield, ast>{};
 }
 template <typename l>
 template <typename Var, typename label2, typename old_api>
 constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Statement<label2, typecheck_phase::Return<Var>>,
                                              std::enable_if_t<!are_equivalent(Label<l>{}, label2{})> const* const)
 {
-  return extracted_phase<label, phase_api<label, requires<>, provides<>, typename old_api::inherits>,Statement<Sequence<>>>{};
+  return extracted_phase<label, phase_api<label, requires<>, provides<>, typename old_api::inherits>,void,Statement<Sequence<>>>{};
 }
 
 template <typename l>
@@ -206,14 +207,14 @@ constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Statement
 {
   using var = DECT(collect_phase(old_api{}, Var{}));
   using ast = Statement<WriteTombstone<typename var::ast>>;
-  return extracted_phase<label, typename var::api, ast>{};
+  return extracted_phase<label, typename var::api, void,ast>{};
 }
 template <typename l>
 template <typename label2, typename old_api, typename Var>
 constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Statement<label2, typecheck_phase::WriteTombstone<Var>>,
                                              std::enable_if_t<!are_equivalent(Label<l>{}, label2{})> const* const)
 {
-  return extracted_phase<label, phase_api<label, requires<>, provides<>, typename old_api::inherits>,Statement<Sequence<>>>{};
+  return extracted_phase<label, phase_api<label, requires<>, provides<>, typename old_api::inherits>,void,Statement<Sequence<>>>{};
 }
 
 
@@ -224,6 +225,7 @@ constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Statement
   using condition = DECT(collect_phase(old_api{}, cond{}));
   using body = DECT(collect_phase(old_api{}, then{}));
   return extracted_phase<label, DECT(combined_api<typename condition::api, typename body::api>::add_provides(while_binding<name...>{})),
+												 typename body::returns,
                          Statement<While<typename condition::ast, typename body::ast, name...>>>{};
 }
 
@@ -237,7 +239,7 @@ constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Statement
   // condition.
   using whilevar = while_binding<name...>;
   static_assert(old_api::provides::template contains<whilevar>() || old_api::inherits::template contains<whilevar>());
-  return extracted_phase<label, DECT(body::api::add_requires(whilevar{})), Statement<ForEach<typename body::ast, name...>>>{};
+  return extracted_phase<label, DECT(body::api::add_requires(whilevar{})), typename body::returns, Statement<ForEach<typename body::ast, name...>>>{};
 }
 
 template <typename l>
@@ -246,7 +248,7 @@ constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Statement
                                              std::enable_if_t<!are_equivalent(Label<l>{}, label2{}) && !label2::flows_to(label{})> const* const)
 {
   // the condition is weaker than you; cannot enter
-  return extracted_phase<label, phase_api<label, requires<>, provides<>, typename old_api::inherits>, Statement<Sequence<>>>{};
+  return extracted_phase<label, phase_api<label, requires<>, provides<>, typename old_api::inherits>, void, Statement<Sequence<>>>{};
 }
 
 template <typename l>
@@ -254,14 +256,14 @@ template <typename Yields, typename label2, typename Str, typename Fld, typename
 constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Expression<label2, Yields, typecheck_phase::FieldReference<Str, Fld>>)
 {
   using pre_ast = DECT(collect_phase(old_api{}, Str{}));
-  return extracted_phase<label, typename pre_ast::api, Expression<Yields, FieldReference<typename pre_ast::ast, Fld>>>{};
+  return extracted_phase<label, typename pre_ast::api, void, Expression<Yields, FieldReference<typename pre_ast::ast, Fld>>>{};
 }
 
 template <typename l>
 template <int i, typename old_api>
 constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Expression<Label<top>, int, typecheck_phase::Constant<i>>)
 {
-  return extracted_phase<label, phase_api<label, requires<>, provides<>, typename old_api::inherits>, Expression<int, Constant<i>>>{};
+  return extracted_phase<label, phase_api<label, requires<>, provides<>, typename old_api::inherits>, void, Expression<int, Constant<i>>>{};
 }
 
 template <typename l>
@@ -270,7 +272,7 @@ constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Expressio
 {
   using left = DECT(collect_phase(old_api{}, L{}));
   using right = DECT(collect_phase(old_api{}, R{}));
-  return extracted_phase<label, combined_api<typename left::api, typename right::api>,
+  return extracted_phase<label, combined_api<typename left::api, typename right::api>,void,
                          Expression<Yields, BinOp<op, typename left::ast, typename right::ast>>>{};
 }
 
@@ -278,7 +280,7 @@ template <typename l>
 template <typename old_api>
 constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Expression<Label<top>, tracker::Tombstone, typecheck_phase::GenerateTombstone>)
 {
-  return extracted_phase<label, phase_api<label,requires<>,provides<>, typename old_api::inherits>,
+  return extracted_phase<label, phase_api<label,requires<>,provides<>, typename old_api::inherits>,void,
                          Expression<tracker::Tombstone, GenerateTombstone<> > >{};
 }
 
@@ -291,7 +293,11 @@ constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Statement
   using then = DECT(collect_phase(old_api{}, _then{}));
   using els = DECT(collect_phase(old_api{}, _els{}));
   using stmt = If<typename condition::ast, typename then::ast, typename els::ast>;
-  return extracted_phase<label, combined_api<combined_api<typename condition::api, typename then::api>, typename els::api>, Statement<stmt>>{};
+	using tret = typename then::returns;
+	using eret = typename els::returns;
+	static_assert(std::is_same<tret,eret>::value || std::is_void<tret>::value || std::is_void<eret>::value, "Error: mismatch in inferred return type for if branches");
+	using returns = std::conditional_t<std::is_void<tret>::value,eret,tret>;
+  return extracted_phase<label, combined_api<combined_api<typename condition::api, typename then::api>, typename els::api>, returns, Statement<stmt>>{};
 }
 
 template <typename l>
@@ -300,7 +306,7 @@ constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Statement
                                              std::enable_if_t<!label2::flows_to(label{})> const* const)
 {
   // can't enter, guarding expression is insufficintly trusted.
-  return extracted_phase<label, phase_api<label, requires<>, provides<>, typename old_api::inherits>, Statement<Sequence<>>>{};
+  return extracted_phase<label, phase_api<label, requires<>, provides<>, typename old_api::inherits>, void, Statement<Sequence<>>>{};
 }
 
 template <typename l, typename inherits>
@@ -317,12 +323,28 @@ constexpr auto build_seq2(const seq1&, const processed_seq&... o)
 
 template <typename T>
 using ast_of = typename T::ast;
+
+	template<typename...> struct return_from_str;
+	template<> struct return_from_str<>{
+		using type = void;
+	};
+	template<typename T1, typename... T> struct return_from_str<T1,T...>{
+		using this_type = typename T1::returns;
+		using rest_type = typename return_from_str<T...>::type;
+		static_assert(std::is_void<this_type>::value || std::is_void<rest_type>::value || std::is_same<this_type,rest_type>::value
+									,"Error: sequnce contains conflicting return statements");
+		using type = std::conditional_t<std::is_void<this_type>::value, rest_type, this_type>;
+	};
+
+template<typename... T> using return_from = typename return_from_str<T...>::type;
+	
 template <typename label, typename inherits, typename... seq>
 constexpr auto build_seq1(const seq&... ps)
 {
   using Seq = typename AST<label>::template Sequence<ast_of<seq>...>;
+	using returns = return_from<seq...>;
   using Stmt = DECT(AST<label>::collapse(typename AST<label>::template Statement<Seq>{}));
-  return extracted_phase<label, DECT(build_seq2<label, inherits>(ps...)), Stmt>{};
+  return extracted_phase<label, DECT(build_seq2<label, inherits>(ps...)), returns, Stmt>{};
 }
 
 template <typename l>
@@ -375,6 +397,7 @@ constexpr auto _split_computation(AST a, mutils::typelist<curr_label, Labels...>
     extracted_phase<curr_label,
                     phase_api<curr_label, DECT(to_requires(without_names(no_longer_require{}, to_typeset(typename curr_phase::api::requires::as_typelist{})))),
                               typename curr_phase::api::provides, typename curr_phase::api::inherits>,
+										typename curr_phase::returns,
                     newAST>;
   using final_phase = DECT(remove_unused(edited_phase{}));
   return runnable_transaction::pretransaction<DECT(transaction_prephase(final_phase{}))>::append(

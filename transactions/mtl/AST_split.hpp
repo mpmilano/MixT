@@ -438,7 +438,7 @@ struct AST<Label<l>>
     using body = DECT(collect_phase(combined_api<old_api, typename binding::api>{}, Body{}));
     using body_ast = typename body::ast;
     using new_api = combined_api<typename binding::api, typename body::api>;
-    return extracted_phase<label, new_api, Statement<LetRemote<binding_ast, body_ast>>>{};
+    return extracted_phase<label, new_api, typename body::returns, Statement<LetRemote<binding_ast, body_ast>>>{};
   }
 
   template <typename label2, typename _binding, typename Body, typename phase_api>

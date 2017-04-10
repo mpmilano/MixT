@@ -25,7 +25,7 @@ namespace myria { namespace pgsql {
 
 			struct SQLInstanceManager : public SQLInstanceManager_abs{
 			public:
-				whenpool(GeneralSQLConnectionPool &p;)
+				whenpool(SQLConnectionPool<l> &p;)
 				whennopool(std::string p;)
 				SQLInstanceManager(decltype(p) p)
 					:SQLInstanceManager_abs(),p(p){

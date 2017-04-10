@@ -32,14 +32,14 @@ namespace myria {
 		struct transaction_listener;
 		
 		template<txnID_t txnID,
-						 typename l, typename AST, typename reqs, typename provides, typename owns, typename passthrough,
+						 typename l, typename returns, typename AST, typename reqs, typename provides, typename owns, typename passthrough,
 						 typename... holders>
 		struct transaction_listener<txnID,
-																mtl::runnable_transaction::phase<txnID, l,AST,reqs,provides,owns,passthrough>,
+																mtl::runnable_transaction::phase<txnID, l,returns,AST,reqs,provides,owns,passthrough>,
 																mtl::runnable_transaction::store<holders...> > {
 
 			using label = l;
-			using phase = mtl::runnable_transaction::phase<txnID, l,AST,reqs,provides,owns,passthrough>;
+			using phase = mtl::runnable_transaction::phase<txnID, l,returns,AST,reqs,provides,owns,passthrough>;
 			using store = mtl::runnable_transaction::store<holders...>;
 			
 			static bool run_if_match(std::size_t, txnID_t id, mutils::DeserializationManager& dsm, mutils::connection &c, 

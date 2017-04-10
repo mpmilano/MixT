@@ -9,6 +9,7 @@
 #include "top.hpp"
 #include "Basics.hpp"
 #include "Handle.hpp"
+#include "TransactionContext.hpp"
 
 namespace myria {
 
@@ -56,7 +57,8 @@ struct value_holder
     t = t2;
     return *this;
   }
-  value_holder& bind(const T& t2)
+	template <typename TransactionContext>
+  value_holder& bind(TransactionContext&, const T& t2)
   {
     t = t2;
     return *this;
@@ -130,7 +132,8 @@ struct type_holder
     return *this;
   }
 
-  type_holder& bind(T _t)
+	template <typename TransactionContext>
+  type_holder& bind(TransactionContext&, T _t)
   {
     bound = true;
     t.emplace_back(_t);
@@ -220,17 +223,19 @@ struct remote_holder
 		return *this;
   }
 
-  remote_holder& bind(T t)
+  remote_holder& bind(PhaseContext<typename T::label>& tc, T t)
   {
     handle.emplace_back(t);
     initialized = true;
 		++curr_pos;
 		assert(curr_pos < ((int)handle.size()));
+		list_usable = true;
+		super.bind(tc,*handle[curr_pos].get(&tc));
     return *this;
   }
 
-  template <typename TransactionContext, typename... Args>
-  remote_holder& push(TransactionContext& tc, Args&&... args)
+  template <typename... Args>
+  remote_holder& push(PhaseContext<typename T::label>& tc, Args&&... args)
   {
     super.push(tc, std::forward<Args>(args)...);
     handle.back().put(&tc, super.t.back());
@@ -242,14 +247,8 @@ struct remote_holder
   auto get(TransactionContext& tc)
   {
     assert(initialized);
-    if (list_usable) {
-      return super.get(tc);
-    } else {
-      list_usable = true;
-			assert(((int)handle.size()) > curr_pos);
-      super.bind(*handle[curr_pos].get(&tc));
-      return super.get(tc);
-    }
+		assert(list_usable);
+		return super.get(tc);
   }
 
   using value = remote_holder;

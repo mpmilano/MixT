@@ -64,12 +64,12 @@ namespace myria{ namespace mtl{
 		void serialize_holder(const remote_holder<T,str...>& t, mutils::local_connection &c){
 			serialize_holder(t.super,c);
 			c.send(whendebug(mutils::bytes_size(mutils::type_name<remote_holder<T,str...> >()), mutils::type_name<remote_holder<T,str...> >(),)
-						 t.initialized,t.list_usable,mutils::bytes_size(t.handle), t.handle);
+						 t.initialized,t.list_usable, t.handle);
 		}
 		
 		template<typename T, char... str>
-		void receive_holder(mutils::DeserializationManager *whendebug(dsm), const remote_holder<T,str...>& t, mutils::local_connection &c){
-			receive_holder(t.super,c);
+		void receive_holder(mutils::DeserializationManager *dsm, remote_holder<T,str...>& t, mutils::local_connection &c){
+			receive_holder(dsm,t.super,c);
 #ifndef NDEBUG
 			DECT(mutils::bytes_size(std::string{})) remote_name_size;
 			c.receive(remote_name_size);
@@ -82,7 +82,10 @@ namespace myria{ namespace mtl{
 			}
 			assert((*remote_name == my_name));
 #endif			
-			c.receive(t.initialized,t.list_usable,t.handle);
+			c.receive(t.initialized,t.list_usable);
+			auto hndl = mutils::from_bytes<DECT(t.handle)>(dsm,c.raw_buf());
+			c.mark_used(mutils::bytes_size(*hndl));
+			t.handle = std::move(*hndl);
 		}
 
 		template<typename store, char... str>

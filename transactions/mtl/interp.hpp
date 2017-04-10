@@ -29,8 +29,9 @@ namespace runnable_transaction {
 	template <typename store, typename phase1, typename phase2, typename connection_pack, typename... phase>
 	auto dispatch_to_runner(std::true_type* choice, mutils::DeserializationManager* dsm, connection_pack c, transaction<phase1, phase2, phase...>*, store& s, std::enable_if_t<phase1::label::run_remotely::value>* = nullptr)
 	{
+		replace_this_tracker replace_this;
 		constexpr transaction<phase2, phase...>* remains{ nullptr };
-		remote_interp<phase1>(dsm,*c[0], s);
+		remote_interp<phase1>(dsm,replace_this,*c[0], s);
 		return dispatch_to_runner(choice, dsm,c.rest, remains, s);
 	}
 

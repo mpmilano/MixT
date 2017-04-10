@@ -149,7 +149,7 @@ struct combined_api_str<phase_api<label, req1, prov1, inherits>, phase_api<label
 template <typename a, typename b>
 using combined_api = typename combined_api_str<a, b>::type;
 
-template <typename, typename, typename>
+template <typename, typename, typename, typename>
 struct extracted_phase;
 }
 }

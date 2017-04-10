@@ -31,26 +31,20 @@ using namespace label_inference;
 using Hndl1 = Handle<Label<pgsql::causal >, int, SupportedOperation<RegisteredOperations::Increment,void,SelfType> >;
 using Hndl2 = Handle<Label<pgsql::strong >, int, SupportedOperation<RegisteredOperations::Increment,void,SelfType> >;
 
-#define txn_text let remote y = hndl2 in { let remote x = hndl1 in { x = y, return x } } 
-
 int main(){
-  Hndl1 hndl1;
-  Hndl2 hndl2;
-  using txn_str =
-    MUTILS_STRING(txn_text);
-  constexpr auto typechecked = typecheck<1,1>(type_environment<Label<top>,
-					      type_binding<MUTILS_STRING(hndl1),Hndl1,Label<top>,type_location::local >,
-					      type_binding<MUTILS_STRING(hndl2),Hndl2,Label<top>,type_location::local >
-					      >{},flatten_expressions(parse_statement(txn_str{})));
-  constexpr auto constraints =
-    minimize_constraints(collapse_constraints(collect_constraints(Label<top>{},typechecked)));
-  using namespace tracking_phase;
-  using namespace split_phase;
-  auto tracked = insert_tracking_begin(infer_labels(typechecked));
-  constexpr auto split = split_computation<0,DECT(tracked),type_binding<MUTILS_STRING(hndl1),Hndl1,Label<top>,type_location::local >,
-					   type_binding<MUTILS_STRING(hndl2),Hndl2,Label<top>,type_location::local >>();
-  //constexpr auto txn = TRANSACTION(0,txn_text)::WITH(hndl1,hndl2);
-  
-  std::cout << constraints << std::endl;
-  std::cout << split << std::endl;
+	SQLConnectionPool<Level::strong> sp;
+	SQLConnectionPool<Level::causal> cp;
+	typename SQLStore<Level::causal>::SQLInstanceManager ci{cp};
+	typename SQLStore<Level::strong>::SQLInstanceManager si{sp};
+	DeserializationManager dsm{{&si,&ci}};
+  Hndl1 hndl1 = ci.inst().template existingObject<int>(13476);
+  Hndl2 hndl2 = si.inst().template existingObject<int>(13476);
+	constexpr auto txn = TRANSACTION(
+		0,
+		let remote y = hndl2 in { let remote x = hndl1 in { x = y, return x } } )
+		::WITH(hndl1,hndl2);
+  std::cout << txn << std::endl;
+	using res = DECT(txn.run_optimistic(nullptr, std::declval<mutils::connection&>(), std::declval<mutils::connection&>(),hndl1,hndl2));
+	static_assert(std::is_same<res,int>::value);
+	txn.run_local(hndl1,hndl2);
 }
