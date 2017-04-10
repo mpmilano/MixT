@@ -49,6 +49,18 @@ constexpr auto _name_while(Statement<l, Return<Expr>> a)
   return a;
 }
 
+template <char, char, typename l, typename Expr>
+constexpr auto _name_while(Statement<l, WriteTombstone<Expr>> a)
+{
+  return a;
+}
+
+template <char, char, typename l, typename Expr>
+constexpr auto _name_while(Statement<l, AccompanyWrite<Expr>> a)
+{
+  return a;
+}
+
 template <char seqnum, char depth, typename l, typename cond, typename body>
 constexpr auto _name_while(Statement<l, While<cond, body>>)
 {

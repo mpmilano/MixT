@@ -52,9 +52,11 @@ template <typename l>
 template <typename Yields, typename label2, typename Str, typename old_api>
 constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Expression<label2, Yields, typecheck_phase::VarReference<Str>>)
 {
+	using namespace mutils;
   using needed_binding = type_binding_super<Str, Yields, label2>;
   static_assert(label2::flows_to(label{}), "Error: encountered VarReference before passing definition phase");
-  static_assert(old_api::provides::template contains_subtype<needed_binding>() || old_api::inherits::template contains_subtype<needed_binding>());
+	constexpr bool needed_binding_present = old_api::provides::template contains_subtype<needed_binding>() || old_api::inherits::template contains_subtype<needed_binding>();
+  static_assert(useful_static_assert<needed_binding_present, needed_binding, old_api>());
   using requires = std::conditional_t<old_api::provides::template contains_subtype<needed_binding>(), requires<>,
                                       requires<typename old_api::inherits::template find_subtype<needed_binding>>>;
   return extracted_phase<label, phase_api<label, requires, provides<>, typename old_api::inherits>, Expression<Yields, VarReference<Str>>>{};
