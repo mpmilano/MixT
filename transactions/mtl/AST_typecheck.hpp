@@ -231,16 +231,18 @@ struct Return;
 
 using tombstone_str = mutils::String<'t', 'o', 'm', 'b', 's', 't', 'o', 'n', 'e', 0>;
 
-struct WriteTombstone
+template<typename> struct WriteTombstone;
+  
+template<typename l>  struct WriteTombstone<Expression<l, tracker::Tombstone,VarReference<tombstone_str> > >
 {
   using substatement = WriteTombstone;
 };
 
-template <typename l>
-struct Statement<Label<l>, WriteTombstone>
+template <typename l, typename T>
+struct Statement<Label<l>, WriteTombstone<T> >
 {
   using label = Label<l>;
-  using substatement = typename WriteTombstone::substatement;
+  using substatement = typename WriteTombstone<T>::substatement;
 };
 
 template <typename>

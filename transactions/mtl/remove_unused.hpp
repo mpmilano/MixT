@@ -31,6 +31,24 @@ constexpr auto _remove_unused(const typename AST<l>::template Statement<typename
   return a;
 }
 
+template <typename l, typename typeset, typename R>
+constexpr auto _remove_unused(const typename AST<l>::template Statement<typename AST<l>::template Return<R>> a, typeset)
+{
+  return a;
+}
+
+template <typename l, typename typeset, typename R>
+constexpr auto _remove_unused(const typename AST<l>::template Statement<typename AST<l>::template AccompanyWrite<R>> a, typeset)
+{
+  return a;
+}
+
+  template <typename l, typename typeset, typename R>
+constexpr auto _remove_unused(const typename AST<l>::template Statement<typename AST<l>::template WriteTombstone<R>> a, typeset)
+{
+  return a;
+}
+
 template <typename l, typename typeset, char... var>
 constexpr auto _remove_unused(const typename AST<l>::template Statement<typename AST<l>::template IncrementOccurance<String<var...>>>, typeset ts)
 {

@@ -37,6 +37,14 @@ print_ast(std::ostream& o, const typename AST<l>::template Expression<int, typen
   o << i;
 }
 
+template <typename l>
+void
+print_ast(std::ostream& o, const typename AST<l>::template Expression<tracker::Tombstone, typename AST<l>::template GenerateTombstone<>>&)
+{
+  o << "random_tombstone()";
+}
+
+
 template <typename l, typename y, char op, typename L, typename R>
 void
 print_ast(std::ostream& o, const typename AST<l>::template Expression<y, typename AST<l>::template BinOp<op, L, R>>&)
@@ -81,6 +89,31 @@ print_ast(std::ostream& o, const typename AST<l>::template Statement<typename AS
   print_ast<l>(o, R{});
 }
 
+template <typename l, typename R>
+void
+print_ast(std::ostream& o, const typename AST<l>::template Statement<typename AST<l>::template Return<R>>&, const std::string& tab)
+{
+  o << tab << "return ";
+  print_ast<l>(o, R{});
+}
+  
+template <typename l, typename R>
+void
+print_ast(std::ostream& o, const typename AST<l>::template Statement<typename AST<l>::template AccompanyWrite<R>>&, const std::string& tab)
+{
+  o << tab << "track ";
+  print_ast<l>(o, R{});
+}
+
+  template <typename l, typename e>
+void
+print_ast(std::ostream& o, const typename AST<l>::template Statement<typename AST<l>::template WriteTombstone<e>>&, const std::string& tab)
+{
+  o << tab << "write(";
+  print_ast<l>(o,e{});
+  o << ")";
+}
+
 template <typename l, char... var>
 void
 print_ast(std::ostream& o, const typename AST<l>::template Statement<typename AST<l>::template IncrementOccurance<String<var...>>>&, const std::string& tab)
@@ -89,6 +122,16 @@ print_ast(std::ostream& o, const typename AST<l>::template Statement<typename AS
   print_varname(o, String<var...>{});
   o << ")";
 }
+
+template <typename l, char... var>
+void
+print_ast(std::ostream& o, const typename AST<l>::template Statement<typename AST<l>::template IncrementRemoteOccurance<String<var...>>>&, const std::string& tab)
+{
+  o << tab << "use remote(";
+  print_varname(o, String<var...>{});
+  o << ")";
+}
+
 
 template <typename l, typename c, typename t, typename e>
 void

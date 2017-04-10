@@ -153,18 +153,18 @@ struct AST<Label<l>>
     using subexpr = typename BinOp<op, L, R>::subexpr;
   };
 
-	template<void*...>
-	struct GenerateTombstone
-	{
-		using subexpr = GenerateTombstone;
-	};
-	template <void*... useless>
-		struct Expression<tracker::Tombstone, GenerateTombstone<useless...> >
-	{
-		using yield = tracker::Tombstone;
-		using subexpr = typename GenerateTombstone<useless...>::subexpr;
-	};
-	
+  template <void*...>
+  struct GenerateTombstone
+  {
+    using subexpr = GenerateTombstone;
+  };
+  template <void*... useless>
+  struct Expression<tracker::Tombstone, GenerateTombstone<useless...>>
+  {
+    using yield = tracker::Tombstone;
+    using subexpr = typename GenerateTombstone<useless...>::subexpr;
+  };
+
   template <typename Binding, typename Body>
   struct Let;
   template <typename label, typename Name, typename Expr, typename Body, typename Yields>
@@ -209,46 +209,47 @@ struct AST<Label<l>>
   {
     using substatement = typename Assignment<Var, Expr>::substatement;
   };
-	template <typename Expr>
-		struct Return;
-	template <typename y, typename Expr>
-		struct Return<Expression<y,Expr> >
-	{
-		using substatement = Return;
-		using subexpr = typename Expression<y,Expr>::subexpr;
-	};
-	template <typename Expr>
-	struct Statement<Return<Expr>>
-	{
-		using substatement = typename Return<Expr>::substatement;
-	};
+  template <typename Expr>
+  struct Return;
+  template <typename y, typename Expr>
+  struct Return<Expression<y, Expr>>
+  {
+    using substatement = Return;
+    using subexpr = typename Expression<y, Expr>::subexpr;
+  };
+  template <typename Expr>
+  struct Statement<Return<Expr>>
+  {
+    using substatement = typename Return<Expr>::substatement;
+  };
 
-template<void*...>
-struct WriteTombstone
-{
-  using substatement = WriteTombstone;
-};
+  template <typename>
+  struct WriteTombstone;
+  template <char... str>
+    struct WriteTombstone<Expression<tracker::Tombstone,VarReference<mutils::String<str...> > > >
+  {
+    using substatement = WriteTombstone;
+  };
 
-template <void*... useless>
-struct Statement<WriteTombstone<useless...> >
-{
-  using substatement = typename WriteTombstone<useless...>::substatement;
-};
+  template <typename T>
+  struct Statement<WriteTombstone<T>>
+  {
+    using substatement = typename WriteTombstone<T>::substatement;
+  };
 
-template <typename>
-struct AccompanyWrite;
-template <typename e, typename y>
-struct AccompanyWrite<Expression<y, e>>
-{
-  using substatement = AccompanyWrite;
-  using subexpr = typename Expression<y, e>::subexpr;
-};
-template <typename T>
-struct Statement<AccompanyWrite<T> >
-{
-  using substatement = typename AccompanyWrite<T>::substatement;
-};
-
+  template <typename>
+  struct AccompanyWrite;
+  template <typename e, typename y>
+  struct AccompanyWrite<Expression<y, e>>
+  {
+    using substatement = AccompanyWrite;
+    using subexpr = typename Expression<y, e>::subexpr;
+  };
+  template <typename T>
+  struct Statement<AccompanyWrite<T>>
+  {
+    using substatement = typename AccompanyWrite<T>::substatement;
+  };
 
   template <typename Var>
   struct IncrementOccurance;
@@ -263,7 +264,7 @@ struct Statement<AccompanyWrite<T> >
     using substatement = typename IncrementOccurance<Var>::substatement;
   };
 
-	template <typename Var>
+  template <typename Var>
   struct IncrementRemoteOccurance;
   template <char... var>
   struct IncrementRemoteOccurance<mutils::String<var...>>
@@ -451,21 +452,21 @@ struct Statement<AccompanyWrite<T> >
   static constexpr auto _collect_phase(phase_api, typecheck_phase::Statement<label2, typecheck_phase::Assignment<Var, Expr>>,
                                        std::enable_if_t<!are_equivalent(Label<l>{}, label2{})> const* const = nullptr);
 
-	template <typename Expr, typename phase_api>
+  template <typename Expr, typename phase_api>
   static constexpr auto _collect_phase(phase_api, typecheck_phase::Statement<label, typecheck_phase::Return<Expr>>);
 
   template <typename Expr, typename label2, typename phase_api>
   static constexpr auto _collect_phase(phase_api, typecheck_phase::Statement<label2, typecheck_phase::Return<Expr>>,
                                        std::enable_if_t<!are_equivalent(Label<l>{}, label2{})> const* const = nullptr);
 
-	template <typename phase_api>
-  static constexpr auto _collect_phase(phase_api, typecheck_phase::Statement<label, typecheck_phase::WriteTombstone>);
+  template <typename phase_api, typename T>
+    static constexpr auto _collect_phase(phase_api, typecheck_phase::Statement<label, typecheck_phase::WriteTombstone<T> >);
 
-  template <typename label2, typename phase_api>
-  static constexpr auto _collect_phase(phase_api, typecheck_phase::Statement<label2, typecheck_phase::WriteTombstone>,
+  template <typename label2, typename phase_api, typename T>
+    static constexpr auto _collect_phase(phase_api, typecheck_phase::Statement<label2, typecheck_phase::WriteTombstone<T> >,
                                        std::enable_if_t<!are_equivalent(Label<l>{}, label2{})> const* const = nullptr);
-	
-	template <typename Expr, typename phase_api>
+
+  template <typename Expr, typename phase_api>
   static constexpr auto _collect_phase(phase_api, typecheck_phase::Statement<label, typecheck_phase::AccompanyWrite<Expr>>);
 
   template <typename Expr, typename label2, typename phase_api>
@@ -493,7 +494,7 @@ struct Statement<AccompanyWrite<T> >
   static constexpr auto _collect_phase(phase_api, typecheck_phase::Expression<label2, Yields, typecheck_phase::BinOp<op, L, R>>);
 
   template <typename phase_api>
-	static constexpr auto _collect_phase(phase_api, typecheck_phase::Expression<Label<top>, tracker::Tombstone, typecheck_phase::GenerateTombstone>);	
+  static constexpr auto _collect_phase(phase_api, typecheck_phase::Expression<Label<top>, tracker::Tombstone, typecheck_phase::GenerateTombstone>);
 
   template <typename cond, typename label2, typename _then, typename _els, typename phase_api>
   static constexpr auto _collect_phase(phase_api, typecheck_phase::Statement<label2, typecheck_phase::If<cond, _then, _els>>,
@@ -576,19 +577,17 @@ struct Statement<AccompanyWrite<T> >
     return a;
   }
 
-	template<typename T>
-	static constexpr auto collapse1(Statement<Return<T> > a)
+  template <typename T>
+  static constexpr auto collapse1(Statement<Return<T>> a)
   {
     return a;
   }
 
-	static constexpr auto collapse1(Statement<WriteTombstone<> > a)
-  {
-    return a;
-  }
+  template<typename T>
+  static constexpr auto collapse1(Statement<WriteTombstone<T>> a) { return a; }
 
-	template<typename T>
-	static constexpr auto collapse1(Statement<AccompanyWrite<T> > a)
+  template <typename T>
+  static constexpr auto collapse1(Statement<AccompanyWrite<T>> a)
   {
     return a;
   }
@@ -611,12 +610,11 @@ struct Statement<AccompanyWrite<T> >
     return a;
   }
 
-	template <typename name>
+  template <typename name>
   static constexpr auto collapse1(Statement<IncrementRemoteOccurance<name>> a)
   {
     return a;
   }
-
 
   template <typename... seq>
   static constexpr auto collapse1(Statement<Sequence<seq...>>)

@@ -213,12 +213,12 @@ constexpr auto _collect_labels_helper(Statement<l, Return<e>>)
   return typeset<l>::combine(collect_labels_helper(e{}));
 }
 
-template <typename l>
-constexpr auto _collect_labels_helper(Statement<l, WriteTombstone>)
+template <typename l, typename e>
+constexpr auto _collect_labels_helper(Statement<l, WriteTombstone<e>>)
 {
   using namespace mutils;
   static_assert(l::is_label::value);
-  return typeset<l>{};
+  return typeset<l>::combine(collect_labels_helper(e{}));
 }
 
 template <typename l, typename e>

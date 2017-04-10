@@ -38,13 +38,19 @@ int main(){
   Hndl2 hndl2;
   using txn_str =
     MUTILS_STRING(txn_text);
+  constexpr auto typechecked = typecheck<1,1>(type_environment<Label<top>,
+					      type_binding<MUTILS_STRING(hndl1),Hndl1,Label<top>,type_location::local >,
+					      type_binding<MUTILS_STRING(hndl2),Hndl2,Label<top>,type_location::local >
+					      >{},flatten_expressions(parse_statement(txn_str{})));
   constexpr auto constraints =
-    minimize_constraints(collapse_constraints(collect_constraints(Label<top>{},typecheck<1,1>(type_environment<Label<top>,
-						    type_binding<MUTILS_STRING(hndl1),Hndl1,Label<top>,type_location::local >,
-						    type_binding<MUTILS_STRING(hndl2),Hndl2,Label<top>,type_location::local >
-											      >{},flatten_expressions(parse_statement(txn_str{}))))));
-	constexpr auto txn = TRANSACTION(0,txn_text)::WITH(hndl1,hndl2);
-
+    minimize_constraints(collapse_constraints(collect_constraints(Label<top>{},typechecked)));
+  using namespace tracking_phase;
+  using namespace split_phase;
+  auto tracked = insert_tracking_begin(infer_labels(typechecked));
+  constexpr auto split = split_computation<0,DECT(tracked),type_binding<MUTILS_STRING(hndl1),Hndl1,Label<top>,type_location::local >,
+					   type_binding<MUTILS_STRING(hndl2),Hndl2,Label<top>,type_location::local >>();
+  //constexpr auto txn = TRANSACTION(0,txn_text)::WITH(hndl1,hndl2);
+  
   std::cout << constraints << std::endl;
-	std::cout << txn << std::endl;
+  std::cout << split << std::endl;
 }

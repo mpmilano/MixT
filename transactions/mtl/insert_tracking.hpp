@@ -115,7 +115,7 @@ namespace myria { namespace mtl  { namespace typecheck_phase { namespace trackin
 	
 	template<typename l1, typename... labels>
 	constexpr auto write_tombstones(mutils::typelist<l1,labels...>){
-	  return Sequence<Statement<l1,WriteTombstone> >::append(write_tombstones(mutils::typelist<labels...>{}));
+	  return Sequence<Statement<l1,WriteTombstone<Expression<l1,tracker::Tombstone, VarReference<tombstone_str> > > > >::append(write_tombstones(mutils::typelist<labels...>{}));
 	}
 
 	template<typename AST, typename labels>

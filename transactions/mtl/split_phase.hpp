@@ -199,18 +199,21 @@ constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Statement
 }
 
 template <typename l>
-template <typename old_api>
-constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Statement<label, typecheck_phase::WriteTombstone>)
+template <typename old_api, typename Var>
+constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Statement<label, typecheck_phase::WriteTombstone<Var>>)
 {
-  return extracted_phase<label,phase_api<label, requires<>, provides<>, typename old_api::inherits>, Statement<WriteTombstone<> > >{};
+  using var = DECT(collect_phase(old_api{}, Var{}));
+  using ast = Statement<WriteTombstone<typename var::ast>>;
+  return extracted_phase<label, typename var::api, ast>{};
 }
 template <typename l>
-template <typename label2, typename old_api>
-constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Statement<label2, typecheck_phase::WriteTombstone>,
+template <typename label2, typename old_api, typename Var>
+constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Statement<label2, typecheck_phase::WriteTombstone<Var>>,
                                              std::enable_if_t<!are_equivalent(Label<l>{}, label2{})> const* const)
 {
   return extracted_phase<label, phase_api<label, requires<>, provides<>, typename old_api::inherits>,Statement<Sequence<>>>{};
 }
+
 
 template <typename l>
 template <typename cond, typename then, typename old_api, char... name>

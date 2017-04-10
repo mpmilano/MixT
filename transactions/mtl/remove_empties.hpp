@@ -164,14 +164,15 @@ auto _clear_empty_statements(typename AST<l>::template Statement<typename AST<l>
   return ret{};
 }
 
-template <typename l>
-auto _clear_empty_statements(typename AST<l>::template Statement<typename AST<l>::template WriteTombstone<> > a)
+  template <typename l, typename T>
+auto _clear_empty_statements(typename AST<l>::template Statement<typename AST<l>::template WriteTombstone<T> >)
 {
+  using newr = DECT(clear_empty_statements<l>(T{}));
   struct ret
   {
-    using ast = DECT(a);
-    using remove_from_require = mutils::typeset<>;
-    using still_require = mutils::typeset<>;
+    using ast = typename AST<l>::template Statement<typename AST<l>::template WriteTombstone<typename newr::ast>>;
+    using remove_from_require = typename newr::remove_from_require;
+    using still_require = typename newr::still_require;
   };
   return ret{};
 }

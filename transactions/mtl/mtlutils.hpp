@@ -364,7 +364,7 @@ constexpr T intersect(T)
 template <typename T1, typename T2, typename... rest>
 constexpr auto intersect(T1, T2, rest...)
 {
-  return T1::intersect(T2{}, rest{}...);
+  return T1::intersect(intersect(T2{}, rest{}...));
 }
 }
 

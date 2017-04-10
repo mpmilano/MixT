@@ -32,6 +32,13 @@ _contains_anorm(typename AST<l>::template Expression<int, typename AST<l>::templ
   return false;
 }
 
+template <typename l, typename cand>
+constexpr bool
+_contains_anorm(typename AST<l>::template Expression<tracker::Tombstone, typename AST<l>::template GenerateTombstone<>> )
+{
+  return false;
+}
+
 template <typename l, typename cand, typename y, char op, typename L, typename R>
 constexpr bool _contains_anorm(typename AST<l>::template Expression<y, typename AST<l>::template BinOp<op, L, R>>)
 {
@@ -70,6 +77,12 @@ auto _recollapse(typename AST<l>::template Expression<y, typename AST<l>::templa
 
 template <typename l, typename candidates, typename sub_map, int i>
 auto _recollapse(typename AST<l>::template Expression<int, typename AST<l>::template Constant<i>> a)
+{
+  return a;
+}
+
+template <typename l, typename candidates, typename sub_map>
+auto _recollapse(typename AST<l>::template Expression<tracker::Tombstone, typename AST<l>::template GenerateTombstone<>> a)
 {
   return a;
 }
@@ -121,6 +134,27 @@ auto _recollapse(typename AST<l>::template Statement<typename AST<l>::template A
 {
   return typename AST<l>::template Statement<
     typename AST<l>::template Assignment<DECT(recollapse<l, candidates, sub_map>(L{})), DECT(recollapse<l, candidates, sub_map>(R{}))>>{};
+}
+
+template <typename l, typename candidates, typename sub_map, typename R>
+auto _recollapse(typename AST<l>::template Statement<typename AST<l>::template Return<R>>)
+{
+  return typename AST<l>::template Statement<
+    typename AST<l>::template Return<DECT(recollapse<l, candidates, sub_map>(R{}))>>{};
+}
+
+template <typename l, typename candidates, typename sub_map, typename R>
+auto _recollapse(typename AST<l>::template Statement<typename AST<l>::template AccompanyWrite<R>>)
+{
+  return typename AST<l>::template Statement<
+    typename AST<l>::template AccompanyWrite<DECT(recollapse<l, candidates, sub_map>(R{}))>>{};
+}
+
+template <typename l, typename candidates, typename sub_map, typename R>
+auto _recollapse(typename AST<l>::template Statement<typename AST<l>::template WriteTombstone<R>>)
+{
+  return typename AST<l>::template Statement<
+    typename AST<l>::template WriteTombstone<DECT(recollapse<l, candidates, sub_map>(R{}))>>{};
 }
 
 template <typename l, typename candidates, typename sub_map, char... var>
