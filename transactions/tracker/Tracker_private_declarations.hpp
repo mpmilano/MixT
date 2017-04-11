@@ -42,13 +42,17 @@ namespace myria { namespace tracker {
 			bool commitOnDelete;
 
 			Internals(Tracker::Internals& trk, bool cod)
-				:trk(trk),commitOnDelete(cod){}
+				:trk(trk),commitOnDelete(cod){
+			  updateClock();
+			}
 			
 			std::list<Name> tracking_erase;
 			std::list<std::pair<Name,std::pair<Tracker::Clock,std::vector<char>> > > tracking_add;
-			std::list<std::pair<Name,Bundle> >pending_nonces_add;
+		  //std::list<std::pair<Name,Bundle> >pending_nonces_add;
+		  std::list<Tombstone> pending_nonces_add;
 
 			auto _commitContext(){
+			  updateClock();
 				auto &tracker = trk;
 				for (auto &e : tracking_erase){
 					tracker.tracking.erase(e);
@@ -56,8 +60,9 @@ namespace myria { namespace tracker {
 				for (auto &e : tracking_add){
 					tracker.tracking.emplace(e);
 				}
-				for (auto &e : pending_nonces_add){
-					tracker.pending_nonces.emplace(e);
+				for (auto &tomb : pending_nonces_add){
+				  tracker.pending_nonces.emplace
+				    (tomb.name(),Bundle{i->cache.get(tomb)});
 				}
 			}
 

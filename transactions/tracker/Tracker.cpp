@@ -158,9 +158,8 @@ int get_ip() {
 }
 struct TombNameCollision {};
 
-void Tracker::writeTombstone(tracker::Tracker &trk, mtl::GPhaseContext &ctx,
-                             Tracker::Nonce nonce, Tracker::Internals &i) {
-  const Tracker::Tombstone t{nonce, get_ip(), trk.cache_port};
+void Tracker::writeTombstone(mtl::GPhaseContext &ctx,Tracker::Nonce nonce) {
+  const Tracker::Tombstone t{nonce, get_ip(), cache_port};
   assert(i.cache.contains(nonce));
   assert(ctx.store_context());
   WeakTrackableDataStore &ds =
@@ -171,7 +170,7 @@ void Tracker::writeTombstone(tracker::Tracker &trk, mtl::GPhaseContext &ctx,
     ds.new_tomb(&ctx, t.name(), t);
 }
 
-void Tracker::onStrongWrite(mtl::GPhaseContext &ctx, Name name) {
+  void Tracker::accompanyWrite(mtl::GPhaseContext &ctx, Name name, Nonce nonce) {
   const auto write_lin_metadata = [this](mtl::GPhaseContext &ctx,
                                          StrongTrackableDataStore &ds_real,
                                          Name name, Tracker::Nonce nonce) {
@@ -195,16 +194,9 @@ void Tracker::onStrongWrite(mtl::GPhaseContext &ctx, Name name) {
   auto &ds_real =
       dynamic_cast<StrongTrackableDataStore &>(ctx.store_context()->store());
   auto tracking_copy = i->tracking;
-  for (auto &pair : tracking_copy) {
-    // this will have the side effect of updating the clock,
-    // and removing these items from the tracking set if the clock
-    // is sufficiently recent.
-    tracking_candidate(*this, pair.first, pair.second.first);
-  }
   if (!is_lin_metadata(name) && !i->tracking.empty()) {
 
     auto subroutine = [&]() {
-      auto nonce = long_rand();
       write_lin_metadata(ctx, ds_real, name, nonce);
     };
     bool always_failed = true;
@@ -290,27 +282,24 @@ wait_for_available(TrackingContext::Internals &ctx, Tracker::Internals &i,
   }
 }
 
-void Tracker::afterStrongRead(mtl::GPhaseContext &sctx, Name name) {
-
-  TrackingContext &tctx = sctx.trk_ctx;
-  assert(name != 1);
-  assert(sctx.store_context());
-  StrongTrackableDataStore &ds =
+  void Tracker::checkForTombstones(mtl::GPhaseContext &sctx, Name name){
+    TrackingContext &tctx = sctx.trk_ctx;
+    assert(name != 1);
+    assert(sctx.store_context());
+    StrongTrackableDataStore &ds =
       dynamic_cast<StrongTrackableDataStore &>(sctx.store_context()->store());
-
-  if (!is_lin_metadata(name)) {
-    updateClock();
-    auto ts = make_lin_metaname(name);
-    if (ds.exists(&sctx, ts)) {
-      auto tomb_p = ds.existing_tombstone(&sctx, ts)->get(&sctx);
-      auto &tomb = *tomb_p;
-      // std::cout << "Nonce isn't immediately available, adding to
-      // pending_nonces" << std::endl;
-      tctx.i->pending_nonces_add.emplace_back(tomb.name(),
-                                              Bundle{i->cache.get(tomb)});
+    
+    if (!is_lin_metadata(name)) {
+      auto ts = make_lin_metaname(name);
+      if (ds.exists(&sctx, ts)) {
+	auto tomb_p = ds.existing_tombstone(&sctx, ts)->get(&sctx);
+	auto &tomb = *tomb_p;
+	// std::cout << "Nonce isn't immediately available, adding to
+	// pending_nonces" << std::endl;
+	tctx.i->pending_nonces_add.emplace_back(tomb);
+      }
     }
   }
-}
 
 #define for_each_pending_nonce(ctx, i, f...)                                   \
   {                                                                            \

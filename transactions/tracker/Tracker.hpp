@@ -58,12 +58,11 @@ public:
   std::unique_ptr<TrackingContext> generateContext(mtl::GPhaseContext &ctx,
                                                    bool commitOnDelete = false);
 
-  void writeTombstone(tracker::Tracker &trk, mtl::GPhaseContext &ctx,
-		      Tracker::Nonce nonce, Tracker::Internals &i);
+  void writeTombstone(mtl::GPhaseContext &ctx,Nonce nonce);
   
-  void onStrongWrite(mtl::GPhaseContext &, Name name);
+  void accompanyWrite(mtl::GPhaseContext &, Name name, Nonce tombstone_value);
 
-  void afterStrongRead(mtl::GPhaseContext &, Name name);
+  void checkForTombstones(mtl::GPhaseContext &, Name name);
 
   void onCausalRead(mtl::GPhaseContext &pctx, Name name,
 			     const Clock &version,
