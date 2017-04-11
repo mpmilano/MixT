@@ -35,34 +35,12 @@ namespace myria {
 			full,onlymake,onlyaccept,none
 		};
 
-		namespace TDS{
-			static constexpr int newTomb = 0;
-			static constexpr int exists = 1;
-			static constexpr int existingClock = 2;
-			static constexpr int existingTomb = 3;
-		}
-
 		class Tracker {
 		public:
 			//support structures, metadata.
 		  using Tombstone = tracker::Tombstone;
 
 		  using Clock = std::array<int,NUM_CAUSAL_GROUPS>;
-		  
-		  struct GenericTrackerDS {
-		    using newTomb_t = std::unique_ptr<LabelFreeHandle<Tombstone> > (*) (void* ctx, GDataStore&, Name, const Tombstone&);
-		    newTomb_t newTomb;
-		    using exists_t = bool (*) (GDataStore&, Name);
-		    exists_t exists;
-		    using existingClock_t = std::unique_ptr<TypedRemoteObject<Clock> > (*) (GDataStore&, Name);
-		    existingClock_t existingClock;
-		    using existingTomb_t = std::unique_ptr<TypedRemoteObject<Tombstone> > (*) (GDataStore&, Name);
-		    existingTomb_t existingTomb;
-		    virtual ~GenericTrackerDS() = default;
-		    GenericTrackerDS(newTomb_t newTomb, exists_t exists, existingClock_t existingClock, existingTomb_t existingTomb)
-		      :newTomb(newTomb),exists(exists),existingClock(existingClock),existingTomb(existingTomb){}
-		  };
-
 		  
 		  using StampedObject = mutils::TrivialTriple<Name, Tracker::Clock, std::vector<char> >;
 

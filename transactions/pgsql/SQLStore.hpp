@@ -211,7 +211,7 @@ namespace myria { namespace pgsql {
 														 Handle<label,T> > >;
 
 			template<typename T>
-			SQLHandle<T> newObject(mtl::PhaseContext<label> *tc, Name name, const T& init){
+			SQLHandle<T> newObject(SQLContext *, Name name, const T& init){
 				static constexpr Table t =
 					(std::is_same<T,int>::value ? Table::IntStore : Table::BlobStore);
 				int size = mutils::bytes_size(init);
@@ -219,29 +219,21 @@ namespace myria { namespace pgsql {
 				whendebug(int tb_size = mutils::to_bytes(init,&v[0]));
 				assert(size == tb_size);
 				GSQLObject gso(*this,t,name,v);
-				SQLHandle<T> ret{tc,std::make_shared<SQLObject<T> >(std::move(gso),mutils::heap_copy(init),this_mgr),*this };
+				SQLHandle<T> ret{std::make_shared<SQLObject<T> >(std::move(gso),mutils::heap_copy(init),this_mgr),*this };
 				return ret;
 			}
 
 			template<typename T>
-			auto newObject(mtl::PhaseContext<label> *tc, const T& init){
-				return newObject<T>(tc, mutils::int_rand(),init);
+			auto newObject(SQLContext *, const T& init){
+				return newObject<T>(mutils::int_rand(),init);
 			}
 
 			template<typename T>
-			auto existingObject(Name name){
+			auto existingObject(SQLContext *, Name name){
 				static constexpr Table t =
 					(std::is_same<T,int>::value ? Table::IntStore : Table::BlobStore);
 				GSQLObject gso(*this,t,name);
 				return SQLHandle<T>{std::make_shared<SQLObject<T> >(std::move(gso),nullptr,this_mgr),*this};
-			}
-
-			template<typename T>
-			std::unique_ptr<SQLObject<T> > existingRaw(Name name){
-				static constexpr Table t =
-					(std::is_same<T,int>::value ? Table::IntStore : Table::BlobStore);
-				return std::unique_ptr<SQLObject<T> >
-				{new SQLObject<T>{GSQLObject{*this,t,name},nullptr,this_mgr}};
 			}
 
 			//deserializing this RemoteObject, not its stored thing.
@@ -255,7 +247,7 @@ namespace myria { namespace pgsql {
 				return std::make_unique<SQLHandle<T> >(std::make_shared<SQLObject<T> >(std::move(gsql_obj),nullptr,*mngr),this_ds);
 			}
 
-			struct SQLContext : mtl::StoreContext<label> {
+			struct SQLContext : public mtl::StoreContext<label> {
 				std::unique_ptr<SQLTransaction> i;
 				mutils::DeserializationManager & mngr;
 				SQLContext(decltype(i) i, mutils::DeserializationManager& mngr):i(std::move(i)),mngr(mngr){}

@@ -20,7 +20,14 @@ namespace myria{
   struct GenericHandle<Label<label> > {virtual ~GenericHandle() = default;};
 
   template<typename T>
-  struct LabelFreeHandle {virtual ~LabelFreeHandle() = default;};
+  struct LabelFreeHandle {
+  protected:
+    virtual std::shared_ptr<const T> get(mtl::GPhaseContext *tc) const  = 0;
+    virtual void put(mtl::GPhaseContext *tc, const T& t) = 0;
+  public:
+    virtual ~LabelFreeHandle() = default;
+    friend class Tracker;
+  };
 
   template<typename l2, typename T2, typename... ops2>
   std::unique_ptr<Handle<l2,T2,ops2...> > hndl_from_bytes(mutils::DeserializationManager* dm, char const * __v, Handle<l2,T2,ops2...>* = nullptr);
@@ -45,12 +52,10 @@ namespace myria{
      * use this constructor for *new* objects
      */
     template<typename DataStore, template<typename> class RO>
-      Handle(mtl::PhaseContext<l> *tc, std::shared_ptr<RO<T> > _ro, DataStore& ds):
+      Handle(std::shared_ptr<RO<T> > _ro, DataStore& ds):
       SupportedOperations::template SupportsOn<Handle>(SupportedOperations::template SupportsOn<Handle>::template wrap_operation<RO>(ds))...,
       _ro(_ro){
-				static_assert(std::is_same<typename DataStore::label,label>::value);
-				assert(tc);
-				auto &ctx = *tc;
+	static_assert(std::is_same<typename DataStore::label,label>::value);
       }
 
     /**
@@ -109,6 +114,13 @@ namespace myria{
       auto &store_ctx = ctx.store_context(this->store() whendebug(, "calling get() via handle"));
 			return _ro->get(&store_ctx);
     }
+  protected:
+    std::shared_ptr<const T> get(mtl::GPhaseContext *tc) const {
+      auto *ctx = dynamic_cast<mtl::PhaseContext<l>&>(tc);
+      assert(ctx);
+      return get(ctx);
+    }
+  public:
     
     Handle clone() const {
       return *this;
@@ -124,6 +136,14 @@ namespace myria{
 			assert(_ro);
 			return _ro->put(&ctx.store_context(this->store() whendebug(, "calling put() via handle")),t);
     }
+
+  protected:
+    void put(mtl::GPhaseContext *tc, const T& t){
+      auto *ctx = dynamic_cast<mtl::PhaseContext<l>* >(tc);
+      assert(ctx);
+      return put(ctx,t);
+    }
+  public:
     
     bool isValid(mtl::PhaseContext<l> *ctx) const {
       if (!_ro) return false;
