@@ -15,8 +15,8 @@ struct TrackingContext {
   struct Internals;
   Internals *i{nullptr};
   Tracker &trk;
-  GPhaseContext &ctx;
-  TrackingContext(Tracker &t, GPhaseContext &ctx, bool commitOnDelete = false);
+  mtl::GPhaseContext &ctx;
+  TrackingContext(Tracker &t, mtl::GPhaseContext &ctx, bool commitOnDelete = false);
   void commitContext();
   void abortContext();
   virtual ~TrackingContext();

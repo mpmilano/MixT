@@ -17,6 +17,7 @@ struct GStoreContext
 {
   virtual GDataStore& store() = 0;
   virtual bool store_commit() = 0;
+  virtual bool store_abort() = 0;
   GStoreContext() = default;
 
 protected:
@@ -37,7 +38,7 @@ tracker::TrackingContext& trk_ctx;
 GPhaseContext(tracker::TrackingContext& ctx)
     :trk_ctx(ctx){}
   virtual GStoreContext* store_context() = 0;
-  virtual GPhaseContext() = default;
+  virtual ~GPhaseContext() = default;
   bool store_abort()
   {
     auto *s_ctx = store_context();
@@ -60,7 +61,7 @@ struct PhaseContext : public GPhaseContext
     }
     return *s_ctx;
   }
-  PhaseContext(tracker::Tracker& trk):GPhaseContext(trk.generateContext(*this,false)){}
+  PhaseContext(tracker::Tracker& trk);
   StoreContext<label>* store_context(){ return s_ctx.get(); }
  
 };

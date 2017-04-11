@@ -82,10 +82,8 @@ top.o:
 	@clang++ -c */top.cpp $(CPPFLAGS)
 Ends.o:
 	@clang++ -c */Ends.cpp $(CPPFLAGS)
-#Tracker.o:
-#	@clang++ -c */Tracker.cpp $(CPPFLAGS) #&& ln -s DisabledTracker.o Tracker.o
 Tracker.o:
-	@clang++ -c */DisabledTracker.cpp $(CPPFLAGS) && ln -s DisabledTracker.o Tracker.o
+	@clang++ -c */Tracker.cpp $(CPPFLAGS) #&& ln -s DisabledTracker.o Tracker.o
 Tombstone.o:
 	@clang++ -c */Tombstone.cpp $(CPPFLAGS)
 ClockManager.o:

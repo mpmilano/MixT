@@ -1,5 +1,5 @@
-//What goes here: managed tracking of stores, explicitly for
-//cross-store stuff.
+// What goes here: managed tracking of stores, explicitly for
+// cross-store stuff.
 
 #pragma once
 
@@ -20,170 +20,82 @@
 #include "ObjectBuilder.hpp"
 #include "Tombstone.hpp"
 
-namespace myria { 
+namespace myria {
 
-	template<typename l, typename T,typename... Ops>
-	struct Handle;
+template <typename l, typename T, typename... Ops> struct Handle;
 
-	template<typename T>
-  struct LabelFreeHandle;
-	namespace tracker {
+template <typename T> struct LabelFreeHandle;
+namespace tracker {
 
-		class CooperativeCache;
+class CooperativeCache;
 
-		enum CacheBehaviors{
-			full,onlymake,onlyaccept,none
-		};
+enum CacheBehaviors { full, onlymake, onlyaccept, none };
 
-		class Tracker {
-		public:
-			//support structures, metadata.
-		  using Tombstone = tracker::Tombstone;
+class Tracker {
+public:
+  // support structures, metadata.
+  using Tombstone = tracker::Tombstone;
+  using Clock = tracker::Clock;
+  using Nonce = int;
 
-		  using Clock = std::array<int,NUM_CAUSAL_GROUPS>;
-		  
-		  using StampedObject = mutils::TrivialTriple<Name, Tracker::Clock, std::vector<char> >;
+  using StampedObject =
+      mutils::TrivialTriple<Name, Tracker::Clock, std::vector<char>>;
 
-		  //hiding private members of this class. No implementation available.
-		  struct Internals;
-		  Internals *i;
-		  
-		private:
-		  void onRead(
-			      TrackingContext&,
-			      GDataStore&, Name name, const Clock &version,
-			      const std::function<void (char const *)> &construct_nd_merge, std::true_type* requires_tracking);
-		  void onRead(
-			      TrackingContext&,
-			      GDataStore&, Name name, const Clock &version,
-			      const std::function<void (char const *)> &construct_nd_merge, std::false_type* requires_tracking);
-		  
-		public:
-			static constexpr int clockport = 9999;
-                        void updateClock();
-	
-			//static Tracker& global_tracker(int cache_port = -1);
+  // hiding private members of this class. No implementation available.
+  struct Internals;
+  Internals *i;
 
-			bool registered(const GDataStore&) const;
+  static constexpr int clockport = 9999;
+  void updateClock();
 
-			/*
-			const GDataStore& get_StrongStore() const;
-			const GDataStore& get_CausalStore() const;
-			GDataStore& get_StrongStore();
-			GDataStore& get_CausalStore();
+  void exemptItem(Name name);
 
-			bool strongRegistered() const;
-			bool causalRegistered() const;
+  template <typename T, typename l, typename... Ops>
+  void exemptItem(const Handle<l, T, Ops...> &h) {
+    exemptItem(h.name());
+  }
 
+  std::unique_ptr<TrackingContext> generateContext(mtl::GPhaseContext &ctx,
+                                                   bool commitOnDelete = false);
 
-			template<typename DS>
-			void registerStore(DS &ds);
+  void writeTombstone(tracker::Tracker &trk, mtl::GPhaseContext &ctx,
+		      Tracker::Nonce nonce, Tracker::Internals &i);
+  
+  void onStrongWrite(mtl::GPhaseContext &, Name name);
 
-			void registerStore(GDataStore &,
-												 std::unique_ptr<GenericTrackerDS>, std::true_type*);
-			void registerStore(GDataStore &,
-												 std::unique_ptr<GenericTrackerDS>, std::false_type*);
-//*/
+  void afterStrongRead(mtl::GPhaseContext &, Name name);
 
-			void exemptItem(Name name);
+  void onCausalRead(mtl::GPhaseContext &pctx, Name name,
+			     const Clock &version,
+			     const std::function<void(char const *)> &construct_and_merge);
+    
+  // return is non-null when read value cannot be used.
+  template <typename T>
+  std::unique_ptr<T>
+  onCausalRead(mtl::GPhaseContext &, Name name, const Clock &version,
+         std::unique_ptr<T> candidate, 
+         std::unique_ptr<T> (*merge)(char const *, std::unique_ptr<T>) =
+             [](char const *, std::unique_ptr<T> r) { return r; });
 
-			template<typename T, typename l, typename... Ops>
-			void exemptItem(const Handle<l,T,Ops...>& h){
-				exemptItem(h.name());
-			}
+  // for when merging locally is too hard or expensive
+  bool waitForCausalRead(mtl::GPhaseContext &ctx, Name name,
+                         const Clock &version);
 
-			std::unique_ptr<TrackingContext> generateContext(bool commitOnDelete = false);
+  void afterCausalRead(TrackingContext &, Name name,
+                       const Clock &version, const std::vector<char> &data);
 
-			/**
-			   The primary interface methods here are tripled.  
-			   The purpose of doing this is to special-case the Tracker's own
-			   datastructures; we don't really want to invoke tracking code on the
-			   nonces or tombstones, since those are either guaranteed unique or 
-			   guaranteed up-to-date.
-			 */
+  // for testing
+  void assert_nonempty_tracking() const;
+  const CooperativeCache &getcache() const;
 
-			void onStrongWrite(GDataStore&, Name name, Tombstone*);
-			void onStrongWrite(GDataStore&, Name name, Clock*);
-			void onStrongWrite(GDataStore&, Name name, void*);
-			
+  friend struct TrackingContext;
 
-			void onCausalWrite(GDataStore&, Name name, const Clock &version, Tombstone*);
-			void onCausalWrite(GDataStore&, Name name, const Clock &version, Clock*);
-			void onCausalWrite(GDataStore&, Name name, const Clock &version, void*);
+  Tracker(int cache_port, CacheBehaviors behavior /*= CacheBehaviors::full*/);
+  virtual ~Tracker();
 
-			void onCausalCreate(GDataStore&, Name name,Tombstone*);
-			void onCausalCreate(GDataStore&, Name name,Clock*);
-			void onCausalCreate(GDataStore&, Name name,void*);
-			
-			void onStrongCreate(GDataStore&, Name name, Tombstone*);
-			void onStrongCreate(GDataStore&, Name name, Clock*);
-			void onStrongCreate(GDataStore&, Name name, void*);
+  Tracker(const Tracker &) = delete;
 
-			void afterStrongRead(mtl::GStoreContext&, TrackingContext&, 
-						   GDataStore&, Name name, Tombstone*);
-			void afterStrongRead(mtl::GStoreContext&, TrackingContext&, 
-						   GDataStore&, Name name, Clock*);
-			void afterStrongRead(mtl::GStoreContext&, TrackingContext&, 
-						   GDataStore&, Name name, void*);
-
-			//return is non-null when read value cannot be used.
-			template<typename DS, typename T>
-			std::unique_ptr<T>
-			onRead(TrackingContext&, DS&, Name name,
-				   const Clock& version,
-				   std::unique_ptr<T> candidate,
-				   Tombstone*,
-				   std::unique_ptr<T> (*merge)(char const *,
-							       std::unique_ptr<T>)
-			       = [](char const *,std::unique_ptr<T> r){return r;}
-			       );
-
-			//return is non-null when read value cannot be used.
-			template<typename DS, typename T>
-			std::unique_ptr<T>
-			onRead(TrackingContext&, DS&, Name name,
-				   const Clock& version,
-				   std::unique_ptr<T> candidate,
-				   Clock*,
-				   std::unique_ptr<T> (*merge)(char const *,
-							       std::unique_ptr<T>)
-			       = [](char const *,std::unique_ptr<T> r){return r;}
-			       );
-
-		  //return is non-null when read value cannot be used.
-			template<typename DS, typename T>
-			std::unique_ptr<T>
-			onRead(TrackingContext&, DS&, Name name,
-				   const Clock& version,
-				   std::unique_ptr<T> candidate,
-				   void*,
-				   std::unique_ptr<T> (*merge)(char const*,
-							       std::unique_ptr<T>)
-				   = [](char const*,std::unique_ptr<T> r){return r;}
-				);
-
-			//for when merging locally is too hard or expensive
-			bool waitForCausalRead(TrackingContext&, GDataStore&, Name name, const Clock& version, Tombstone*);
-			bool waitForCausalRead(TrackingContext&, GDataStore&, Name name, const Clock& version, Clock*);
-			bool waitForCausalRead(TrackingContext&, GDataStore&, Name name, const Clock& version, void*);
-
-			void afterCausalRead(TrackingContext&, GDataStore&, Name name, const Clock& version, const std::vector<char> &data, Tombstone*);
-			void afterCausalRead(TrackingContext&, GDataStore&, Name name, const Clock& version, const std::vector<char> &data, Clock*);
-			void afterCausalRead(TrackingContext&, GDataStore&, Name name, const Clock& version, const std::vector<char> &data, void*);
-
-			//for testing
-			void assert_nonempty_tracking() const;
-			const CooperativeCache& getcache() const;
-
-			friend struct TrackingContext;
-
-			Tracker(int cache_port, CacheBehaviors behavior /*= CacheBehaviors::full*/);
-			virtual ~Tracker();
-
-			Tracker(const Tracker&) = delete;
-
-			const int cache_port;
-
-		};		
-
-	}}
+  const int cache_port;
+};
+}
+}

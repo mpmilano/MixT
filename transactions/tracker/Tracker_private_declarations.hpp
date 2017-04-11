@@ -4,6 +4,7 @@
 #include <thread>
 #include <future>
 #include "CooperativeCache.hpp"
+#include "DataStore.hpp"
 
 namespace myria { namespace tracker {
 
@@ -11,23 +12,6 @@ namespace myria { namespace tracker {
 		private:
 			std::shared_ptr<std::future<CooperativeCache::obj_bundle> > f;
 			std::shared_ptr<CooperativeCache::obj_bundle> p;
-			/*
-			  static std::shared_ptr<MonotoneSafeSet<std::future<bool> > >& destroyed_bundles(bool reset = false){
-			  static auto log = make_shared<MonotoneSafeSet<std::future<bool> > >();
-			  static bool run_once = [](){std::thread(Bundle::cleanup_loop).detach();return true;}();
-			  assert(run_once);
-			  if (reset) log = make_shared<MonotoneSafeSet<std::future<bool> > >();
-			  return log;
-			  }
-				static void cleanup_loop(){
-				auto waiting_collection = destroyed_bundles();
-				destroyed_bundles(true);
-				std::this_thread::sleep_for(5ms); //well this is bad practice
-				for (auto &f : waiting_collection->iterable_reference()){
-				if (f.wait_for(1ms) != future_status::timeout) assert(f.get());
-				else destroyed_bundles()->emplace(std::move(f));
-				}
-				}*/
 			
 		public:
 			Bundle(std::future<CooperativeCache::obj_bundle> f);
@@ -41,11 +25,6 @@ namespace myria { namespace tracker {
 		
 		struct Tracker::Internals{
 			Internals(const Internals&) = delete;
-			GDataStore *registeredStrong {nullptr};
-			std::unique_ptr<GenericTrackerDS > strongDS;
-
-			GDataStore *registeredCausal {nullptr};
-			std::unique_ptr<GenericTrackerDS > causalDS;
 
 			Clock global_min{{0,0,0,0}};
 
@@ -92,4 +71,53 @@ namespace myria { namespace tracker {
 			}
 		};
 
-	}}
+	}
+  namespace mtl{
+    template<typename label>
+    PhaseContext<label>::PhaseContext(tracker::Tracker& trk)
+    :GPhaseContext(trk.generateContext(*this,false)){}
+  }
+
+    template<typename DS> 
+    std::unique_ptr<LabelFreeHandle<tracker::Tombstone> > TrackableDataStore_common<DS>::new_tomb (mtl::GPhaseContext *_ctx, Name n, const tracker::Tombstone& val) {
+      using namespace tracker;
+      DS *ds = dynamic_cast<DS*>(this);
+      assert(ds);
+      typename DS::StoreContext *ctx = ((mtl::PhaseContext<label> *)_ctx)->store_context(*ds whendebug(, "tracker wants a new tombstone"));
+      auto ret = ds->newObject(ctx,n,val);
+      //erase operation support, if any
+      Handle<label,Tombstone> h = ret;
+      return std::unique_ptr<LabelFreeHandle<tracker::Tombstone> >{new DECT(h){h}};
+    }
+  template<typename DS> 
+  bool TrackableDataStore_common<DS>::exists (mtl::GPhaseContext *_ctx, Name n){
+    using namespace tracker;
+      DS *ds = dynamic_cast<DS*>(this);
+      assert(ds);
+      typename DS::StoreContext *ctx = ((mtl::PhaseContext<label> *)_ctx)->store_context(*ds whendebug(, "tracker wants to see if something exists"));
+      return ds->exists(ctx,n);
+    }
+
+  template<typename DS> 
+  std::unique_ptr<LabelFreeHandle<tracker::Clock> > TrackableDataStore_common<DS>::existing_clock (mtl::GPhaseContext *_ctx, Name n){
+    using namespace tracker;
+      DS *ds = dynamic_cast<DS*>(this);
+      assert(ds);
+      typename DS::StoreContext *ctx = ((mtl::PhaseContext<label> *)_ctx)->store_context(*ds whendebug(, "tracker wants an existing clock"));
+      auto ret = ds->template existingObject<Clock>(ctx,n);
+      //erase operation support, if any
+      Handle<label,Clock> h = ret;
+      return std::unique_ptr<LabelFreeHandle<Clock> >{new DECT(h){h}};
+    }
+  template<typename DS> 
+  std::unique_ptr<LabelFreeHandle<tracker::Tombstone> > TrackableDataStore_common<DS>::existing_tombstone (mtl::GPhaseContext *_ctx, Name n){
+    using namespace tracker;
+      DS *ds = dynamic_cast<DS*>(this);
+      assert(ds);
+      typename DS::StoreContext *ctx = ((mtl::PhaseContext<label> *)_ctx)->store_context(*ds whendebug(, "tracker wants an existing tombstone"));
+      auto ret = ds->template existingObject<Tombstone>(ctx,n);
+      //erase operation support, if any
+      Handle<label,Tombstone> h = ret;
+      return std::unique_ptr<LabelFreeHandle<Tombstone> >{new DECT(h){h}};
+    }
+}

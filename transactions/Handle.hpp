@@ -10,6 +10,10 @@
 namespace myria{
 
 
+  namespace tracker{
+    class Tracker;
+  }
+  
   template<typename,typename>
   struct Operation;
 
@@ -26,7 +30,7 @@ namespace myria{
     virtual void put(mtl::GPhaseContext *tc, const T& t) = 0;
   public:
     virtual ~LabelFreeHandle() = default;
-    friend class Tracker;
+    friend class tracker::Tracker;
   };
 
   template<typename l2, typename T2, typename... ops2>
@@ -48,19 +52,6 @@ namespace myria{
     using label = l;
 		using type = T;
 
-    /**
-     * use this constructor for *new* objects
-     */
-    template<typename DataStore, template<typename> class RO>
-      Handle(std::shared_ptr<RO<T> > _ro, DataStore& ds):
-      SupportedOperations::template SupportsOn<Handle>(SupportedOperations::template SupportsOn<Handle>::template wrap_operation<RO>(ds))...,
-      _ro(_ro){
-	static_assert(std::is_same<typename DataStore::label,label>::value);
-      }
-
-    /**
-     * use this constructor for *existing* objects
-     */
     template<typename DataStore, template<typename> class RO>
       Handle(std::shared_ptr<RO<T> > _ro, DataStore& ds):
       SupportedOperations::template SupportsOn<Handle>

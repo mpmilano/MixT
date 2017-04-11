@@ -16,10 +16,7 @@
 #include "CooperativeCache.hpp"
 #include "Tracker_common.hpp"
 #include "CompactSet.hpp"
-#include "Tracker_support_structs.hpp"
 #include "Ends.hpp"
-#include "Transaction.hpp"
-#include "TransactionBasics.hpp"
 #include "SafeSet.hpp"
 #include "Ostreams.hpp"
 #include "Tracker_private_declarations.hpp"
@@ -35,7 +32,6 @@ namespace tracker {
 
 using namespace std;
 using namespace chrono;
-using namespace TDS;
 using namespace mutils;
 using namespace mtl;
 using namespace tracker;
@@ -72,7 +68,7 @@ void TrackingContext::commitContext() {
 }
 void TrackingContext::abortContext() { i->_finalize(); }
 
-  TrackingContext::TrackingContext(Tracker &trk, GPhaseContext &ctx, bool cod)
+TrackingContext::TrackingContext(Tracker &trk, GPhaseContext &ctx, bool cod)
     : i(new TrackingContext::Internals{*trk.i, cod}), trk(trk), ctx(ctx) {}
 
 TrackingContext::~TrackingContext() {
@@ -83,14 +79,8 @@ TrackingContext::~TrackingContext() {
 std::unique_ptr<TrackingContext> Tracker::generateContext(GPhaseContext &ctx,
                                                           bool commitOnDelete) {
   return std::unique_ptr<TrackingContext>{
-    (new TrackingContext{*this,ctx, commitOnDelete})};
+      (new TrackingContext{*this, ctx, commitOnDelete})};
 }
-}
-namespace mtl {
-void TransactionContext::commitContext() { trackingContext->commitContext(); }
-void TransactionContext::abortContext() { trackingContext->abortContext(); }
-}
-namespace tracker {
 
 namespace {
 void remove_pending(TrackingContext::Internals &ctx, Tracker::Internals &i,
@@ -161,39 +151,38 @@ int get_ip() {
     std::string static_addr{MY_IP};
     if (static_addr.length() == 0)
       static_addr = "127.0.0.1";
-    return mutils::decode_ip(static_addr);
+    return (int)mutils::decode_ip(static_addr.c_str());
   }()};
   return ip_addr;
 }
 }
-  struct TombNameCollision{};
+struct TombNameCollision {};
 
 void Tracker::writeTombstone(tracker::Tracker &trk, mtl::GPhaseContext &ctx,
-                            Tracker::Nonce nonce, Tracker::Internals &i) {
-  using namespace TDS;
+                             Tracker::Nonce nonce, Tracker::Internals &i) {
   const Tracker::Tombstone t{nonce, get_ip(), trk.cache_port};
   assert(i.cache.contains(nonce));
   assert(ctx.store_context());
-  WeakTrackableDataStore &ds = dynamic_cast<WeakTrackableDataStore&>(ctx.store_context()->store());
-  if (ds.exists(ctx,t.name()))
+  WeakTrackableDataStore &ds =
+      dynamic_cast<WeakTrackableDataStore &>(ctx.store_context()->store());
+  if (ds.exists(&ctx, t.name()))
     throw TombNameCollision{};
   else
-    ds.new_tomb(ctx,t.name(),t);
+    ds.new_tomb(&ctx, t.name(), t);
 }
 
-
-void Tracker::onStrongWrite(mtl::GPhaseContext &ctx,Name name) {
-  const auto write_lin_metadata = [this](
-      mtl::GPhaseContext &ctx, StrongTrackableDataStore &ds_real,
-      Name name, Tracker::Nonce nonce, Tracker::Internals &t) {
+void Tracker::onStrongWrite(mtl::GPhaseContext &ctx, Name name) {
+  const auto write_lin_metadata = [this](mtl::GPhaseContext &ctx,
+                                         StrongTrackableDataStore &ds_real,
+                                         Name name, Tracker::Nonce nonce) {
     assert(ctx.store_context());
-    auto &sctx = *ctx.store_context();
     auto meta_name = make_lin_metaname(name);
-    if (ds_real.exists(ctx,meta_name)) {
-      ds_real.existing_tombstone(ctx,meta_name)
-	->put(ctx, Tracker::Tombstone{nonce, get_ip(), cache_port});
+    if (ds_real.exists(&ctx, meta_name)) {
+      ds_real.existing_tombstone(&ctx, meta_name)
+          ->put(&ctx, Tracker::Tombstone{nonce, get_ip(), cache_port});
     } else {
-      ds_real.new_tomb(&ctx,meta_name, Tracker::Tombstone{nonce, get_ip(), cache_port});
+      ds_real.new_tomb(&ctx, meta_name,
+                       Tracker::Tombstone{nonce, get_ip(), cache_port});
     }
     for (auto &p : i->tracking) {
       assert(p.second.second.data());
@@ -203,7 +192,8 @@ void Tracker::onStrongWrite(mtl::GPhaseContext &ctx,Name name) {
   };
 
   assert(ctx.store_context());
-  auto &ds_real = dynamic_cast<StrongTrackableDataStore&>(ctx.store_context()->store());
+  auto &ds_real =
+      dynamic_cast<StrongTrackableDataStore &>(ctx.store_context()->store());
   auto tracking_copy = i->tracking;
   for (auto &pair : tracking_copy) {
     // this will have the side effect of updating the clock,
@@ -215,7 +205,7 @@ void Tracker::onStrongWrite(mtl::GPhaseContext &ctx,Name name) {
 
     auto subroutine = [&]() {
       auto nonce = long_rand();
-      write_lin_metadata(ctx, ds_real, name, nonce, *i);
+      write_lin_metadata(ctx, ds_real, name, nonce);
     };
     bool always_failed = true;
     auto sleep_time = 2ms;
@@ -236,24 +226,24 @@ void Tracker::onStrongWrite(mtl::GPhaseContext &ctx,Name name) {
       subroutine();
     }
     assert(!always_failed);
-    assert(ds_real.exists(ctx,make_lin_metaname(name)));
+    assert(ds_real.exists(&ctx, make_lin_metaname(name)));
   }
 }
-  
-  namespace{
-    std::ostream & operator<<(std::ostream &os, const Tracker::Clock& c){
-      os << "Clock: [";
-      for (auto &a : c){
-	os << a << ",";
-      }
-      return os << "]";
-    }
 
-    bool sleep_on(TrackingContext::Internals &ctx, Tracker::Internals &i,GPhaseContext& pctx, WeakTrackableDataStore& ds,
-		  const Name &tomb_name, const int how_long = -1) {
+std::ostream &operator<<(std::ostream &os, const Tracker::Clock &c) {
+  os << "Clock: [";
+  for (auto &a : c) {
+    os << a << ",";
+  }
+  return os << "]";
+}
+
+bool sleep_on(TrackingContext::Internals &ctx, Tracker::Internals &i,
+              GPhaseContext &pctx, WeakTrackableDataStore &ds,
+              const Name &tomb_name, const int how_long = -1) {
   bool first_skip = true;
   for (int cntr = 0; (cntr < how_long) || how_long == -1; ++cntr) {
-    if (ds.exists(pctx,tomb_name)) {
+    if (ds.exists(&pctx, tomb_name)) {
       // if (!first_skip) std::cout << "done waiting" << std::endl;
       remove_pending(ctx, i, tomb_name);
       return true;
@@ -270,10 +260,11 @@ void Tracker::onStrongWrite(mtl::GPhaseContext &ctx,Name name) {
 }
 
 template <typename P>
-std::vector<char> const *wait_for_available(TrackingContext::Internals &ctx,Tracker::Internals &i,
-                                            GPhaseContext& pctx, WeakTrackableDataStore& ds, Name name,
-                                            P &p, const Tracker::Clock &v) {
-  if (ds.exists(pctx,p.first)) {
+std::vector<char> const *
+wait_for_available(TrackingContext::Internals &ctx, Tracker::Internals &i,
+                   GPhaseContext &pctx, WeakTrackableDataStore &ds, Name name,
+                   P &p, const Tracker::Clock &v) {
+  if (ds.exists(&pctx, p.first)) {
     remove_pending(ctx, i, p.first);
     return nullptr;
   } else {
@@ -288,8 +279,8 @@ std::vector<char> const *wait_for_available(TrackingContext::Internals &ctx,Trac
       // std::endl;
       // std::cout << "error message: " << e.what() << std::endl;
 
-      sleep_on(ctx, i, pctx,ds,p.first);
-      assert(ds.exists(pctx,p.first));
+      sleep_on(ctx, i, pctx, ds, p.first);
+      assert(ds.exists(&pctx, p.first));
       remove_pending(ctx, i, p.first);
       return nullptr;
     } catch (...) {
@@ -298,28 +289,25 @@ std::vector<char> const *wait_for_available(TrackingContext::Internals &ctx,Trac
     }
   }
 }
-}
-void Tracker::afterStrongRead(mtl::GPhaseContext &sctx,
-			      TrackingContext &tctx, 
-			      Name name) {
 
+void Tracker::afterStrongRead(mtl::GPhaseContext &sctx, Name name) {
+
+  TrackingContext &tctx = sctx.trk_ctx;
   assert(name != 1);
   assert(sctx.store_context());
-  StrongTrackableDataStore &ds = dynamic_cast<StrongTrackableDataStore&>(sctx.store_context()->store());
+  StrongTrackableDataStore &ds =
+      dynamic_cast<StrongTrackableDataStore &>(sctx.store_context()->store());
 
   if (!is_lin_metadata(name)) {
     updateClock();
     auto ts = make_lin_metaname(name);
-    if (ds.exists(sctx,ts)) {
-      auto tomb_p = ds.existing_tombstone(sctx,ts)
-                        ->get(&sctx);
+    if (ds.exists(&sctx, ts)) {
+      auto tomb_p = ds.existing_tombstone(&sctx, ts)->get(&sctx);
       auto &tomb = *tomb_p;
-      if (!sleep_on(*tctx.i, *i, tomb.name(), 2)) {
-        // std::cout << "Nonce isn't immediately available, adding to
-        // pending_nonces" << std::endl;
-        tctx.i->pending_nonces_add.emplace_back(tomb.name(),
-                                                Bundle{i->cache.get(tomb)});
-      }
+      // std::cout << "Nonce isn't immediately available, adding to
+      // pending_nonces" << std::endl;
+      tctx.i->pending_nonces_add.emplace_back(tomb.name(),
+                                              Bundle{i->cache.get(tomb)});
     }
   }
 }
@@ -336,7 +324,8 @@ void Tracker::afterStrongRead(mtl::GPhaseContext &sctx,
 
 // for when merging locally is too hard or expensive.  Returns "true" when
 // candidate version is fine to return, "false" otherwise
-  bool Tracker::waitForCausalRead(mtl::GPhaseContext &ctx,Name name, const Clock &version) {
+bool Tracker::waitForCausalRead(mtl::GPhaseContext &ctx, Name name,
+                                const Clock &version) {
   // TODO: distinctly not thread-safe
   // if the user called onRead manually and did a merge,
   // we don't want to wait here.This has been ongoing for a couple weeks
@@ -352,8 +341,9 @@ void Tracker::afterStrongRead(mtl::GPhaseContext &sctx,
   }
 
   auto &tracking_context = ctx.trk_ctx;
-  assert(ctx.data_store());
-  auto &ds = dynamic_cast<WeakTrackableDataStore&>(ctx.data_store()->store());
+  assert(ctx.store_context());
+  auto &ds =
+      dynamic_cast<WeakTrackableDataStore &>(ctx.store_context()->store());
 
   if (tracking_candidate(*this, name, version)) {
     // std::cout << "break 1: this is a tracking candidate" << std::endl;
@@ -363,7 +353,8 @@ void Tracker::afterStrongRead(mtl::GPhaseContext &sctx,
     {
       for (auto &p : i->pending_nonces) {
         // std::cout << "break 1: checking wait_for_available" << std::endl;
-        if (wait_for_available(*tracking_context.i, *i, ctx,ds,name, p, version)) {
+        if (wait_for_available(*tracking_context.i, *i, ctx, ds, name, p,
+                               version)) {
           // std::cout << "break 1: wait_for_available in if-condition" <<
           // std::endl;
           // I know we've gotten a cached version of the object,
@@ -372,13 +363,14 @@ void Tracker::afterStrongRead(mtl::GPhaseContext &sctx,
           // std::cout << "Cache request succeeded!  But we don't know how to
           // merge.."
           //		  << std::endl;
-          sleep_on(*tracking_context.i, *i, ctx,ds,p.first);
-          assert(ds.exists(&ctx,p.first));
+          sleep_on(*tracking_context.i, *i, ctx, ds, p.first);
+          assert(ds.exists(&ctx, p.first));
         }
       }
-      for (auto &p : ctx.i->pending_nonces_add) {
+      for (auto &p : tracking_context.i->pending_nonces_add) {
         // std::cout << "break 1: checking wait_for_available" << std::endl;
-        if (wait_for_available(*tracking_context.i, *i, ctx,ds,name, p, version)) {
+        if (wait_for_available(*tracking_context.i, *i, ctx, ds, name, p,
+                               version)) {
           // std::cout << "break 1: wait_for_available in if-condition" <<
           // std::endl;
           // I know we've gotten a cached version of the object,
@@ -387,8 +379,8 @@ void Tracker::afterStrongRead(mtl::GPhaseContext &sctx,
           // std::cout << "Cache request succeeded!  But we don't know how to
           // merge.."
           //		  << std::endl;
-          sleep_on(*tracking_context.i, *i, ctx,ds,p.first);
-          assert(ds.exists(ctx,p.first));
+          sleep_on(*tracking_context.i, *i, ctx, ds, p.first);
+          assert(ds.exists(&ctx, p.first));
         }
       }
     }
@@ -397,9 +389,9 @@ void Tracker::afterStrongRead(mtl::GPhaseContext &sctx,
   return true;
 }
 
-void Tracker::afterCausalRead(TrackingContext &tctx, WeakTrackableDataStore &ds,
-                        Name name, const Clock &version,
-                        const std::vector<char> &data, void *) {
+void Tracker::afterCausalRead(TrackingContext &tctx, Name name,
+                              const Clock &version,
+                              const std::vector<char> &data) {
   if (tracking_candidate(*this, name, version)) {
     // need to overwrite, not occlude, the previous element.
     // C++'s map semantics are really stupid.
@@ -418,39 +410,44 @@ void Tracker::afterCausalRead(TrackingContext &tctx, WeakTrackableDataStore &ds,
 }
 
 // for when merging is the order of the day
-void Tracker::onRead(
-    GPhaseContext &pctx, WeakTrackableDataStore &ds, Name name,
-    const Clock &version,
+void Tracker::onCausalRead(
+    GPhaseContext &pctx, Name name, const Clock &version,
     const std::function<void(char const *)> &construct_and_merge) {
-    TrackingContext &ctx = pctx.trk_ctx;
+  TrackingContext &ctx = pctx.trk_ctx;
+  assert(pctx.store_context());
+  auto &ds =
+      dynamic_cast<WeakTrackableDataStore &>(pctx.store_context()->store());
   i->last_onRead_name = heap_copy(name);
   if (tracking_candidate(*this, name, version)) {
     // need to pause here and wait for nonce availability
     // for each nonce in the list
-    for_each_pending_nonce(
-        ctx.i, i,
-        if (auto *remote_vers =
-                wait_for_available(*ctx.i, *i,pctx,ds, name, p, version)) {
-          // build + merge real object
-          assert(remote_vers->data());
-          construct_and_merge(remote_vers->data());
-          return;
+    for_each_pending_nonce(ctx.i, i,
+                           if (auto *remote_vers = wait_for_available(
+                                   *ctx.i, *i, pctx, ds, name, p, version)) {
+                             // build + merge real object
+                             assert(remote_vers->data());
+                             construct_and_merge(remote_vers->data());
+                             return;
 
-          /**
-             There are many pending nonces; any of them could be in our tracking
-             set
-             due to a dependency on this object. Cycle through them until we
-             find one
-             that is (or fail to find any that are); this one will tell us a
-             place to get
-             the object from the cooperative cache. Grab the object from the
-             cache there.
-             If that fails, then too bad; handling that comes later.
-           */
-        } else assert(ds.exists(pctx,p.first)););
+                             /**
+                                There are many pending nonces; any of them could
+                                be in our tracking
+                                set
+                                due to a dependency on this object. Cycle
+                                through them until we
+                                find one
+                                that is (or fail to find any that are); this one
+                                will tell us a
+                                place to get
+                                the object from the cooperative cache. Grab the
+                                object from the
+                                cache there.
+                                If that fails, then too bad; handling that comes
+                                later.
+                              */
+                           } else assert(ds.exists(&pctx, p.first)););
   }
   return;
 }
-
 }
 }
