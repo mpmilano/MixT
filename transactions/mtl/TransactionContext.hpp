@@ -1,5 +1,5 @@
 #pragma once
-#include "TrackingContext.hpp"
+#include "../tracker/TrackingContext.hpp"
 #include "macro_utils.hpp"
 #include <memory>
 
@@ -33,6 +33,9 @@ struct StoreContext : public GStoreContext
 
 struct GPhaseContext
 {
+tracker::TrackingContext& trk_ctx;
+GPhaseContext(tracker::TrackingContext& ctx)
+    :trk_ctx(ctx){}
   virtual GStoreContext* store_context() = 0;
   virtual GPhaseContext() = default;
   bool store_abort()
@@ -57,6 +60,7 @@ struct PhaseContext : public GPhaseContext
     }
     return *s_ctx;
   }
+  PhaseContext(tracker::Tracker& trk):GPhaseContext(trk.generateContext(*this,false)){}
   StoreContext<label>* store_context(){ return s_ctx.get(); }
  
 };

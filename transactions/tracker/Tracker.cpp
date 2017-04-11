@@ -165,10 +165,10 @@ int get_ip() {
   }()};
   return ip_addr;
 }
-
+}
   struct TombNameCollision{};
 
-void write_causal_tombstone(tracker::Tracker &trk, mtl::GPhaseContext &ctx, 
+void Tracker::writeTombstone(tracker::Tracker &trk, mtl::GPhaseContext &ctx,
                             Tracker::Nonce nonce, Tracker::Internals &i) {
   using namespace TDS;
   const Tracker::Tombstone t{nonce, get_ip(), trk.cache_port};
@@ -180,7 +180,7 @@ void write_causal_tombstone(tracker::Tracker &trk, mtl::GPhaseContext &ctx,
   else
     ds.new_tomb(ctx,t.name(),t);
 }
-}
+
 
 void Tracker::onStrongWrite(mtl::GPhaseContext &ctx,Name name) {
   const auto write_lin_metadata = [this](
@@ -351,6 +351,10 @@ void Tracker::afterStrongRead(mtl::GPhaseContext &sctx,
     return true;
   }
 
+  auto &tracking_context = ctx.trk_ctx;
+  assert(ctx.data_store());
+  auto &ds = dynamic_cast<WeakTrackableDataStore&>(ctx.data_store()->store());
+
   if (tracking_candidate(*this, name, version)) {
     // std::cout << "break 1: this is a tracking candidate" << std::endl;
     // need to pause here and wait for nonce availability
@@ -359,7 +363,7 @@ void Tracker::afterStrongRead(mtl::GPhaseContext &sctx,
     {
       for (auto &p : i->pending_nonces) {
         // std::cout << "break 1: checking wait_for_available" << std::endl;
-        if (wait_for_available(*ctx.i, *i, name, p, version)) {
+        if (wait_for_available(*tracking_context.i, *i, ctx,ds,name, p, version)) {
           // std::cout << "break 1: wait_for_available in if-condition" <<
           // std::endl;
           // I know we've gotten a cached version of the object,
@@ -368,14 +372,13 @@ void Tracker::afterStrongRead(mtl::GPhaseContext &sctx,
           // std::cout << "Cache request succeeded!  But we don't know how to
           // merge.."
           //		  << std::endl;
-          sleep_on(*ctx.i, *i, p.first);
-          assert(
-              get<TDS::exists> (*i->causalDS)(*i->registeredCausal, p.first));
+          sleep_on(*tracking_context.i, *i, ctx,ds,p.first);
+          assert(ds.exists(&ctx,p.first));
         }
       }
       for (auto &p : ctx.i->pending_nonces_add) {
         // std::cout << "break 1: checking wait_for_available" << std::endl;
-        if (wait_for_available(*ctx.i, *i, name, p, version)) {
+        if (wait_for_available(*tracking_context.i, *i, ctx,ds,name, p, version)) {
           // std::cout << "break 1: wait_for_available in if-condition" <<
           // std::endl;
           // I know we've gotten a cached version of the object,
@@ -384,9 +387,8 @@ void Tracker::afterStrongRead(mtl::GPhaseContext &sctx,
           // std::cout << "Cache request succeeded!  But we don't know how to
           // merge.."
           //		  << std::endl;
-          sleep_on(*ctx.i, *i, p.first);
-          assert(
-              get<TDS::exists> (*i->causalDS)(*i->registeredCausal, p.first));
+          sleep_on(*tracking_context.i, *i, ctx,ds,p.first);
+          assert(ds.exists(ctx,p.first));
         }
       }
     }
@@ -395,17 +397,10 @@ void Tracker::afterStrongRead(mtl::GPhaseContext &sctx,
   return true;
 }
 
-void Tracker::afterRead(TrackingContext &, DataStore<Level::causal> &, Name,
-                        const Clock &, const std::vector<char> &, Tombstone *) {
-}
-void Tracker::afterRead(TrackingContext &, DataStore<Level::causal> &, Name,
-                        const Clock &, const std::vector<char> &, Clock *) {}
-void Tracker::afterRead(TrackingContext &tctx, DataStore<Level::causal> &,
+void Tracker::afterCausalRead(TrackingContext &tctx, WeakTrackableDataStore &ds,
                         Name name, const Clock &version,
                         const std::vector<char> &data, void *) {
   if (tracking_candidate(*this, name, version)) {
-    tctx.logger->incrementIntField(
-        LogFields::tracker_causal_afterread_candidate);
     // need to overwrite, not occlude, the previous element.
     // C++'s map semantics are really stupid.
     tctx.i->tracking_erase.push_back(name);
@@ -424,9 +419,10 @@ void Tracker::afterRead(TrackingContext &tctx, DataStore<Level::causal> &,
 
 // for when merging is the order of the day
 void Tracker::onRead(
-    TrackingContext &ctx, DataStore<Level::causal> &, Name name,
+    GPhaseContext &pctx, WeakTrackableDataStore &ds, Name name,
     const Clock &version,
     const std::function<void(char const *)> &construct_and_merge) {
+    TrackingContext &ctx = pctx.trk_ctx;
   i->last_onRead_name = heap_copy(name);
   if (tracking_candidate(*this, name, version)) {
     // need to pause here and wait for nonce availability
@@ -434,7 +430,7 @@ void Tracker::onRead(
     for_each_pending_nonce(
         ctx.i, i,
         if (auto *remote_vers =
-                wait_for_available(*ctx.i, *i, name, p, version)) {
+                wait_for_available(*ctx.i, *i,pctx,ds, name, p, version)) {
           // build + merge real object
           assert(remote_vers->data());
           construct_and_merge(remote_vers->data());
@@ -451,14 +447,10 @@ void Tracker::onRead(
              cache there.
              If that fails, then too bad; handling that comes later.
            */
-        } else assert(get<TDS::exists> (*i->causalDS)(*i->registeredCausal,
-                                                      p.first)););
+        } else assert(ds.exists(pctx,p.first)););
   }
   return;
 }
 
-void Tracker::onRead(TrackingContext &, DataStore<Level::strong> &, Name,
-                     const Clock &, const std::function<void(char const *)> &) {
-}
 }
 }

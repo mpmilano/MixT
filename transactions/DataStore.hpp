@@ -24,7 +24,7 @@ public:
     virtual std::unique_ptr<LabelFreeHandle<Tombstone> > new_tomb (GPhaseContext *ctx, Name, const Tombstone&) = 0;
     virtual bool exists (GPhaseContext *_ctx, Name) = 0;
     virtual std::unique_ptr<LabelFreeHandle<Clock> > existing_clock (GPhaseContext *_ctx, Name) = 0;
-    virtual std::unique_ptr<LabelFreeHandle<Tombstone> > existing_tombstone (GPhaseContext *_ctx, Name);
+    virtual std::unique_ptr<LabelFreeHandle<Tombstone> > existing_tombstone (GPhaseContext *_ctx, Name) = 0;
     virtual ~TrackableDataStore_super() == default;
   };
 
