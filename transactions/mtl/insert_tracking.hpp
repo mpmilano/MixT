@@ -130,11 +130,12 @@ namespace myria { namespace mtl  { namespace typecheck_phase { namespace trackin
 	  //tracking is required
 	  constexpr auto collected = tracked_labels(labels{});
 	  using sorted = DECT(collected);
+	  using max_label = typename DECT(sort_labels(typename sorted::strong{}))::last;
 	  return Statement<Label<top>,Let<
 					Binding<Label<top>,tracker::Tombstone,tombstone_str, Expression<Label<top>, tracker::Tombstone, GenerateTombstone> >,
 					Statement<Label<top>,Sequence<
 					   DECT(insert_tracking<sorted,mutils::typeset<> >(a)),
-					   Statement<Label<top>, DECT(write_tombstones(typename sorted::weak{})) >
+					   Statement<Label<top>, DECT(write_tombstones(sorted::weak::add(max_label{}))) >
 							       > > > >{};
 	}
 	

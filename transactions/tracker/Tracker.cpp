@@ -156,14 +156,16 @@ int get_ip() {
   return ip_addr;
 }
 }
-struct TombNameCollision {};
+  struct TombNameCollision : public SerializationFailure {};
+
+  Nonce Tracker::generateTombstone(){ return long_rand(); }
 
 void Tracker::writeTombstone(mtl::GPhaseContext &ctx,Tracker::Nonce nonce) {
   const Tracker::Tombstone t{nonce, get_ip(), cache_port};
   assert(i->cache.contains(nonce));
   assert(ctx.store_context());
-  WeakTrackableDataStore &ds =
-      dynamic_cast<WeakTrackableDataStore &>(ctx.store_context()->store());
+  TrackableDataStore_super &ds =
+    dynamic_cast<TrackableDataStore_super &>(&ctx.store_context()->store());
   if (ds.exists(&ctx, t.name()))
     throw TombNameCollision{};
   else

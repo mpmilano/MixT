@@ -58,6 +58,8 @@ public:
   std::unique_ptr<TrackingContext> generateContext(mtl::GPhaseContext &ctx,
                                                    bool commitOnDelete = false);
 
+  Nonce generateTombstone();
+  
   void writeTombstone(mtl::GPhaseContext &ctx,Nonce nonce);
   
   void accompanyWrite(mtl::GPhaseContext &, Name name, Nonce tombstone_value);

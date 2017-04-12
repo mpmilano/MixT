@@ -44,19 +44,19 @@ struct pre_transaction_str;
 																																				\
 	private:																															\
 		template<typename run_remotely>																			\
-			static auto interp(mutils::DeserializationManager* dsm, CONNECTION_DECL_SEQUENCE ## n(*), const typename bound_values::type&... v){ \
+		  static auto interp(tracker::Tracker &trk, mutils::DeserializationManager* dsm, CONNECTION_DECL_SEQUENCE ## n(*), const typename bound_values::type&... v){ \
 			using namespace runnable_transaction;															\
 			using namespace mutils;																						\
 			return begin_interp<transaction,mutils::array<connection*,n,connection*>,run_remotely,bound_values...> \
-				(dsm,mutils::array<connection*,n,connection*>{CONNECTION_SEQUENCE_USE ## n ()},bound_values{ v }...); \
+			  (trk,dsm,mutils::array<connection*,n,connection*>{CONNECTION_SEQUENCE_USE ## n ()},bound_values{ v }...); \
 		}																																		\
 	public:																																\
 																																				\
-		static auto run_optimistic(mutils::DeserializationManager* dsm,CONNECTION_DECL_SEQUENCE ## n(&), const typename bound_values::type&... v){ \
-			return transaction_struct::template interp<std::true_type>(dsm,CONNECTION_SEQUENCE_USE ## n (&),v...); \
+		static auto run_optimistic(tracker::Tracker &trk, mutils::DeserializationManager* dsm,CONNECTION_DECL_SEQUENCE ## n(&), const typename bound_values::type&... v){ \
+		  return transaction_struct::template interp<std::true_type>(trk,dsm,CONNECTION_SEQUENCE_USE ## n (&),v...); \
 		}																																		\
-		static auto run_local(const typename bound_values::type&... v){			\
-			return transaction_struct::template interp<std::false_type>(nullptr,NULLPTRS ## n,v...);	\
+		static auto run_local(tracker::Tracker &trk, const typename bound_values::type&... v){			\
+		  return transaction_struct::template interp<std::false_type>(trk,nullptr,NULLPTRS ## n,v...); \
 		}																																		\
 																																				\
 		using all_store = typename transaction::template all_store<bound_values...>; \
@@ -68,11 +68,11 @@ struct pre_transaction_str;
 		constexpr transaction_struct() = default;
 		using transaction = split;
 		template<typename label> using find_phase = typename transaction::template find_phase<label>;
-		static auto run_local(const typename bound_values::type&... v){
+		static auto run_local(tracker::Tracker &trk, const typename bound_values::type&... v){
 			using namespace runnable_transaction;
 			using namespace mutils;
 			return begin_interp<transaction,mutils::array<connection*,0,connection*>,std::false_type,bound_values...>
-				(nullptr,mutils::array<connection*,0,connection*>{},bound_values{ v }...);
+			  (trk,nullptr,mutils::array<connection*,0,connection*>{},bound_values{ v }...);
 		}
 		using all_store = typename transaction::template all_store<bound_values...>;
 	};
