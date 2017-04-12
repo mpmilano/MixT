@@ -69,7 +69,7 @@ void TrackingContext::commitContext() {
 void TrackingContext::abortContext() { i->_finalize(); }
 
 TrackingContext::TrackingContext(Tracker &trk, GPhaseContext &ctx, bool cod)
-    : i(new TrackingContext::Internals{*trk.i, cod}), trk(trk), ctx(ctx) {}
+  : i(new TrackingContext::Internals{trk,*trk.i, cod}), trk(trk), ctx(ctx) {}
 
 TrackingContext::~TrackingContext() {
   if (i)
@@ -85,7 +85,7 @@ std::unique_ptr<TrackingContext> Tracker::generateContext(GPhaseContext &ctx,
 namespace {
 void remove_pending(TrackingContext::Internals &ctx, Tracker::Internals &i,
                     const Name &name) {
-  ctx.pending_nonces_add.remove_if([&](auto &e) { return e.first == name; });
+  ctx.pending_nonces_add.remove_if([&](auto &e) { return e.name() == name; });
   i.pending_nonces.erase(name);
 }
 
@@ -160,7 +160,7 @@ struct TombNameCollision {};
 
 void Tracker::writeTombstone(mtl::GPhaseContext &ctx,Tracker::Nonce nonce) {
   const Tracker::Tombstone t{nonce, get_ip(), cache_port};
-  assert(i.cache.contains(nonce));
+  assert(i->cache.contains(nonce));
   assert(ctx.store_context());
   WeakTrackableDataStore &ds =
       dynamic_cast<WeakTrackableDataStore &>(ctx.store_context()->store());
@@ -301,16 +301,6 @@ wait_for_available(TrackingContext::Internals &ctx, Tracker::Internals &i,
     }
   }
 
-#define for_each_pending_nonce(ctx, i, f...)                                   \
-  {                                                                            \
-    for (auto &p : i->pending_nonces) {                                        \
-      f /*(p)*/;                                                               \
-    }                                                                          \
-    for (auto &p : ctx->pending_nonces_add) {                                  \
-      f /*(p)*/;                                                               \
-    }                                                                          \
-  }
-
 // for when merging locally is too hard or expensive.  Returns "true" when
 // candidate version is fine to return, "false" otherwise
 bool Tracker::waitForCausalRead(mtl::GPhaseContext &ctx, Name name,
@@ -356,22 +346,7 @@ bool Tracker::waitForCausalRead(mtl::GPhaseContext &ctx, Name name,
           assert(ds.exists(&ctx, p.first));
         }
       }
-      for (auto &p : tracking_context.i->pending_nonces_add) {
-        // std::cout << "break 1: checking wait_for_available" << std::endl;
-        if (wait_for_available(*tracking_context.i, *i, ctx, ds, name, p,
-                               version)) {
-          // std::cout << "break 1: wait_for_available in if-condition" <<
-          // std::endl;
-          // I know we've gotten a cached version of the object,
-          // but we can't merge it, so we're gonna have to
-          // hang out until we've caught up to the relevant tombstone
-          // std::cout << "Cache request succeeded!  But we don't know how to
-          // merge.."
-          //		  << std::endl;
-          sleep_on(*tracking_context.i, *i, ctx, ds, p.first);
-          assert(ds.exists(&ctx, p.first));
-        }
-      }
+      assert(tracking_context.i->pending_nonces_add.size() == 0);
     }
     return false;
   }
@@ -408,35 +383,46 @@ void Tracker::onCausalRead(
       dynamic_cast<WeakTrackableDataStore &>(pctx.store_context()->store());
   i->last_onRead_name = heap_copy(name);
   if (tracking_candidate(*this, name, version)) {
+    assert(pctx.store_context());
+    assert(dynamic_cast<WeakTrackableDataStore*>(&pctx.store_context()->store()));
+    assert(ctx.i->pending_nonces_add.size() == 0);
+    
     // need to pause here and wait for nonce availability
     // for each nonce in the list
-    for_each_pending_nonce(ctx.i, i,
-                           if (auto *remote_vers = wait_for_available(
-                                   *ctx.i, *i, pctx, ds, name, p, version)) {
-                             // build + merge real object
-                             assert(remote_vers->data());
-                             construct_and_merge(remote_vers->data());
-                             return;
-
-                             /**
-                                There are many pending nonces; any of them could
-                                be in our tracking
-                                set
-                                due to a dependency on this object. Cycle
-                                through them until we
-                                find one
-                                that is (or fail to find any that are); this one
-                                will tell us a
-                                place to get
-                                the object from the cooperative cache. Grab the
-                                object from the
-                                cache there.
-                                If that fails, then too bad; handling that comes
-                                later.
-                              */
-                           } else assert(ds.exists(&pctx, p.first)););
+    {
+      for (auto &p : i->pending_nonces) {
+	if (auto *remote_vers =
+	    wait_for_available(
+			       *ctx.i, *i, pctx, ds, name, p, version)) {
+	  // build + merge real object
+	  assert(remote_vers->data());
+	  construct_and_merge(remote_vers->data());
+	  return;
+	  
+	  /**
+	     There are many pending nonces; any of them could
+	     be in our tracking
+	     set
+	     due to a dependency on this object. Cycle
+	     through them until we
+	     find one
+	     that is (or fail to find any that are); this one
+	     will tell us a
+	     place to get
+	     the object from the cooperative cache. Grab the
+	     object from the
+	     cache there.
+	     If that fails, then too bad; handling that comes
+	     later.
+	  */
+	} else assert(ds.exists(&pctx, p.first));
+      }
+    }
   }
   return;
 }
+
+  
+  
 }
 }
