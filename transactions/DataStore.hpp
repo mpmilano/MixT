@@ -10,7 +10,7 @@ template <typename T> struct LabelFreeHandle;
 namespace tracker {
 struct Tombstone;
 using Clock = std::array<int, NUM_CAUSAL_GROUPS>;
-using Nonce = int;
+using Nonce = long;
 }
 
 template <typename l> class DataStore : public virtual GDataStore {

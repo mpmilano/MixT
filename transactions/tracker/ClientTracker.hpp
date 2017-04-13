@@ -10,6 +10,7 @@ namespace myria{
     struct TombHolder<Label<label> >{
       std::unique_ptr<std::vector<tracker::Tombstone> >
       obligations{new std::vector<tracker::Tombstone>()};
+      std::unique_ptr<std::vector<tracker::Tombstone> > fulfilled;
     protected:
       ~TombHolder() = default;
     };
@@ -21,9 +22,17 @@ namespace myria{
       template<typename phase> std::vector<Tombstone>& tombstones_for_phase(){
 	return *TombHolder<typename phase::label>::obligations;
       }
-      template<typename phase> void clear_tombstones_for_phase(){
-	TombHolder<typename phase::label>::obligations->clear();
+
+      template<typename phase> std::vector<Tombstone>& fulfilled_for_phase(){
+	return *TombHolder<typename phase::label>::fulfilled;
       }
+      
+      template<typename phase> void mark_tombstones_clearable(){
+	using TH = TombHolder<typename phase::label>;
+	TH::fulfilled = std::move(TH::obligations);
+	TH::obligations.reset(new std::vector<tracker::Tombstone>());
+      }
+      
       template<typename phase>
 	void set_phase_after(std::unique_ptr<std::vector<tracker::Tombstone> > ptr){
 	TombHolder<mutils::follows_in_sequence<typename phase::label, labels...> >::

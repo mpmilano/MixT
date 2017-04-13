@@ -36,10 +36,8 @@ using namespace mutils;
 using namespace mtl;
 using namespace tracker;
 
-Bundle::Bundle(std::future<CooperativeCache::obj_bundle> f)
-    : f(new decltype(f)(std::move(f))) {}
-
-Bundle::Bundle() {}
+Bundle::Bundle(int ip_addr, int portno, std::future<CooperativeCache::obj_bundle> f)
+  :f(new decltype(f)(std::move(f))),ip_addr(ip_addr),portno(portno) {}
 
 CooperativeCache::obj_bundle &Bundle::get() {
   if (f->valid()) {
@@ -99,6 +97,12 @@ bool tracking_candidate(Tracker &t, Name name, const Tracker::Clock &version) {
     return t.i->exceptions.count(name) == 0;
 }
 }
+  
+  void Tracker::clear_pending(const std::vector<Tombstone>& t){
+    for (const auto &n : t){
+      i->pending_nonces.erase(n.name());
+    }
+  }
 
 void Tracker::assert_nonempty_tracking() const {
   assert(!(i->tracking.empty()));
@@ -292,6 +296,14 @@ wait_for_available(TrackingContext::Internals &ctx, Tracker::Internals &i,
     if (!ds.exists(&ctx,t.name())) {
       ctx.trk_ctx.i->pending_nonces_add.emplace_back(t);
     }
+  }
+
+  std::vector<Tombstone> Tracker::all_encountered_tombstones(){
+    std::vector<Tombstone> ret;
+    for (const auto &p : i->pending_nonces){
+      ret.emplace_back(Tombstone{p.first,p.second.ip_addr,p.second.portno});
+    }
+    return ret;
   }
 
   void Tracker::checkForTombstones(mtl::TrackedPhaseContext &sctx, Name name){

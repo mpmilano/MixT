@@ -15,9 +15,10 @@ private:
   std::shared_ptr<CooperativeCache::obj_bundle> p;
 
 public:
-  Bundle(std::future<CooperativeCache::obj_bundle> f);
+  const int ip_addr;
+  const int portno;
+  Bundle(int ip_addr, int portno, std::future<CooperativeCache::obj_bundle> f);
 
-  Bundle();
   virtual ~Bundle();
 
   CooperativeCache::obj_bundle &get();
@@ -63,7 +64,7 @@ struct TrackingContext::Internals {
       tracker.tracking.emplace(e);
     }
     for (auto &tomb : pending_nonces_add) {
-      tracker.pending_nonces.emplace(tomb.name(), Bundle{trk.cache.get(tomb)});
+      tracker.pending_nonces.emplace(tomb.name(), Bundle{tomb.ip_addr,tomb.portno,trk.cache.get(tomb)});
     }
   }
 

@@ -54,6 +54,10 @@ struct transaction_listener<
       auto tombstones_to_find =
           mutils::from_bytes_noalloc<std::vector<tracker::Tombstone>>(&dsm,
                                                                       _data);
+      auto fulfilled_tombstones =
+	mutils::from_bytes_noalloc<std::vector<tracker::Tombstone>>(&dsm,
+								    _data);
+      trk.clear_pending(*fulfilled_tombstones);
       mutils::local_connection _lc;
       _lc.data = *mutils::from_bytes_noalloc<std::vector<char>>(
           &dsm, _data + mutils::bytes_size(*tombstones_to_find));
@@ -83,10 +87,9 @@ struct transaction_listener<
       }
       whendebug(logfile << "about to send response to client" << std::endl);
       if (transaction_successful) {
-        std::vector<tracker::Tombstone> encountered_tombstones;
         mutils::local_connection lc;
         send_store_values(provided, s, lc);
-        c.send(transaction_successful, encountered_tombstones, lc.data);
+        c.send(transaction_successful, trk.all_encountered_tombstones(), lc.data);
       } else
         c.send(false);
       whendebug(logfile << "response sent to client" << std::endl);

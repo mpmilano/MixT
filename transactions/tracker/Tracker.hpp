@@ -36,7 +36,7 @@ public:
   // support structures, metadata.
   using Tombstone = tracker::Tombstone;
   using Clock = tracker::Clock;
-  using Nonce = int;
+  using Nonce = tracker::Nonce;
 
   using StampedObject =
       mutils::TrivialTriple<Name, Tracker::Clock, std::vector<char>>;
@@ -67,6 +67,10 @@ public:
   void checkForTombstones(mtl::TrackedPhaseContext &, Name name);
 
   void find_tombstones(mtl::TrackedPhaseContext &, const Tombstone&);
+
+  void clear_pending(const std::vector<Tombstone> &);
+
+  std::vector<Tombstone> all_encountered_tombstones();
 
   void onCausalRead(mtl::TrackedPhaseContext &pctx, Name name,
 			     const Clock &version,
