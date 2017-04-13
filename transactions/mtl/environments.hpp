@@ -231,6 +231,7 @@ struct remote_holder
 		assert(curr_pos < ((int)handle.size()));
 		list_usable = true;
 		super.bind(tc,*handle[curr_pos].get(&tc));
+		tc.trk_ctx.trk.checkForTombstones(tc,get_remote(tc).name());
     return *this;
   }
 
