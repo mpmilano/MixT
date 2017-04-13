@@ -10,7 +10,7 @@ namespace myria{
     struct TombHolder<Label<label> >{
       std::unique_ptr<std::vector<tracker::Tombstone> >
       obligations{new std::vector<tracker::Tombstone>()};
-      std::unique_ptr<std::vector<tracker::Tombstone> > fulfilled;
+      std::unique_ptr<std::vector<tracker::Tombstone> > fulfilled{new std::vector<tracker::Tombstone>()};
     protected:
       ~TombHolder() = default;
     };

@@ -141,4 +141,56 @@ struct configuration_parameters{
 		p.causal_ip = decode_ip(causal_ip.c_str());
 		return i;
 	} //*/
+
+	void read_from_args(configuration_parameters& params, char** args){
+		using namespace std;
+		using namespace mutils;
+    {
+      params.strong_ip = decode_ip(args[0]);
+    }
+    {
+      params.strong_relay_port = atoi(args[1]);
+    }
+    {
+      params.causal_ip = decode_ip(args[2]);
+    }
+    {
+      params.causal_relay_port = atoi(args[3]);
+    }
+    {
+      std::istringstream ss{std::string{args[4]}};
+      ss >> params.client_freq;
+    }
+    {
+      std::istringstream ss{std::string{args[5]}};
+      ss >> params.starting_num_clients;
+    }
+    {
+      std::istringstream ss{std::string{args[6]}};
+      ss >> params.increase_clients_freq;
+    }
+    {
+      std::istringstream ss{std::string{args[7]}};
+      ss >> params.test_duration;
+    }
+    {
+      std::istringstream ss{std::string{args[8]}};
+      ss >> params.percent_dedicated_connections;
+    }
+    {
+      std::istringstream ss{std::string{args[9]}};
+      ss >> params.percent_causal;
+    }
+    {
+      std::istringstream ss{std::string{args[10]}};
+      ss >> params.percent_read;
+    }
+    {
+			params.output_file = args[11];
+    }
+		{
+      std::istringstream ss{std::string{args[12]}};
+      ss >> params.log_delay_tolerance;
+    }
+	}
 }

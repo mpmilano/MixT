@@ -56,11 +56,12 @@ struct transaction_listener<
                                                                       _data);
       auto fulfilled_tombstones =
 	mutils::from_bytes_noalloc<std::vector<tracker::Tombstone>>(&dsm,
-								    _data);
+								    _data + mutils::bytes_size(*tombstones_to_find));
       trk.clear_pending(*fulfilled_tombstones);
       mutils::local_connection _lc;
       _lc.data = *mutils::from_bytes_noalloc<std::vector<char>>(
-          &dsm, _data + mutils::bytes_size(*tombstones_to_find));
+          &dsm, _data + mutils::bytes_size(*tombstones_to_find) +
+					mutils::bytes_size(*fulfilled_tombstones));
 #ifndef NDEBUG
       mutils::connection &lc = _lc;
       auto &logfile = c.get_log_file();
