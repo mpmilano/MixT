@@ -614,4 +614,26 @@ template<bool b, typename...> constexpr bool useful_static_assert(){
   return b;
 }
 
+  template<typename, typename... > struct follows_in_sequence_str;
+  
+  template<typename T>
+  struct follows_in_sequence_str<T>{
+    using type = mismatch;
+  };
+
+  template<typename m1, typename m2>
+  struct follows_in_sequence_str<m1,m2>{
+    using type = mismatch;
+  };
+  
+  template<typename match, typename arg1, typename arg2, typename... args>
+  struct follows_in_sequence_str<match, arg1, arg2, args...>{
+    using type = std::conditional_t<std::is_same<match,arg1>::value, arg2,
+				    typename follows_in_sequence_str<match,arg2,args...>::type
+				    >;
+  };
+  
+  template<typename match, typename... args>
+  using follows_in_sequence = typename follows_in_sequence_str<match,args...>::type;
+
 }

@@ -5,14 +5,18 @@ namespace myria {
 namespace mtl {
 namespace runnable_transaction {
 
+template <typename>
+struct ReturnedValue;
+template <>
+struct ReturnedValue<void>
+{
+};
+template <typename T>
+struct ReturnedValue
+{
+  T value;
+};
 
-	template<typename> struct ReturnedValue;
-	template<> struct ReturnedValue<void>{};
-	template<typename T>
-	struct ReturnedValue{
-		T value;
-	};
-	
 template <typename l, typename AST, typename TranCtx, typename store>
 auto run_phase(AST*, TranCtx&, store& s);
 
@@ -116,7 +120,7 @@ auto _run_phase(typename AST<l>::template Binding<Label<label>, Yield, String<na
   constexpr String<name...> varname{};
   (void)varname;
   auto expr_result = run_phase<l>(expr, ctx, s);
-  s.get(String<name...>{}).bind(ctx,expr_result);
+  s.get(String<name...>{}).bind(ctx, expr_result);
 }
 
 template <typename l, typename TranCtx, typename store, typename Binding, typename Body>
@@ -147,28 +151,33 @@ auto _run_phase(typename AST<l>::template Statement<
 }
 
 template <typename l, typename TranCtx, typename store, typename y, typename R>
-y _run_phase(typename AST<l>::template Statement<typename AST<l>::template Return<typename AST<l>::template Expression<y, R> > >*, TranCtx& ctx, store& s, std::enable_if_t<!std::is_void<y>::value>* = nullptr)
+y
+_run_phase(typename AST<l>::template Statement<typename AST<l>::template Return<typename AST<l>::template Expression<y, R>>>*, TranCtx& ctx, store& s,
+           std::enable_if_t<!std::is_void<y>::value>* = nullptr)
 {
   constexpr typename AST<l>::template Expression<y, R>* r{ nullptr };
-	throw ReturnedValue<y>{run_phase<l>(r, ctx, s)};
+  throw ReturnedValue<y>{ run_phase<l>(r, ctx, s) };
 }
 
 template <typename l, typename TranCtx, typename store, typename y, typename R>
-void _run_phase(typename AST<l>::template Statement<typename AST<l>::template AccompanyWrite<typename AST<l>::template Expression<y, R> > >*, TranCtx&, store&)
+void
+_run_phase(typename AST<l>::template Statement<typename AST<l>::template AccompanyWrite<typename AST<l>::template Expression<y, R>>>*, TranCtx&, store&)
 {
-	assert(false && "unimplemented");
+  assert(false && "unimplemented");
 }
 
 template <typename l, typename TranCtx, typename store, typename y, typename R>
-void _run_phase(typename AST<l>::template Statement<typename AST<l>::template WriteTombstone<typename AST<l>::template Expression<y, R> > >*, TranCtx&, store&)
+void
+_run_phase(typename AST<l>::template Statement<typename AST<l>::template WriteTombstone<typename AST<l>::template Expression<y, R>>>*, TranCtx&, store&)
 {
-	assert(false && "unimplemented");
+  assert(false && "unimplemented");
 }
 
 template <typename l, typename TranCtx, typename y, typename store>
-y _run_phase(typename AST<l>::template Expression<y,typename AST<l>::template GenerateTombstone<> >*, TranCtx&, store&)
+y
+_run_phase(typename AST<l>::template Expression<y, typename AST<l>::template GenerateTombstone<>>*, TranCtx&, store&)
 {
-	assert(false && "unimplemented");
+  assert(false && "unimplemented");
 }
 
 template <typename l, typename TranCtx, typename store, typename y1, typename y2, typename S, typename F, typename R>
@@ -196,7 +205,7 @@ template <typename l, typename TranCtx, typename store, char... var>
 auto _run_phase(typename AST<l>::template Statement<typename AST<l>::template IncrementRemoteOccurance<String<var...>>>*, TranCtx&, store& s)
 {
   s.get(String<var...>{}).increment_remote();
-}	
+}
 
 template <typename l, typename TranCtx, typename store, typename c, typename t, typename e>
 auto _run_phase(typename AST<l>::template Statement<typename AST<l>::template If<c, t, e>>*, TranCtx& ctx, store& s)
@@ -216,7 +225,7 @@ auto _run_phase(typename AST<l>::template Statement<typename AST<l>::template Wh
   constexpr c* condition{ nullptr };
   constexpr t* then{ nullptr };
   int i = 0;
-  s.get(String<name...>{}).bind(ctx,i);
+  s.get(String<name...>{}).bind(ctx, i);
   bool condition_val = run_phase<l>(condition, ctx, s);
   while (condition_val) {
     ++i;
@@ -270,69 +279,70 @@ auto run_phase(TranCtx& ctx, store& s)
   return run_phase<typename phase::label>(np, ctx, s);
 }
 
-	template<typename Ctx, typename S>
-	void commit_phase(Ctx& ctx, S& old, S& s){
-		if (ctx.s_ctx)
-			ctx.s_ctx->store_commit();
-		old.take(std::move(s));			
-	}
+template <typename Ctx, typename S>
+void
+commit_phase(Ctx& ctx, S& old, S& s)
+{
+  if (ctx.s_ctx)
+    ctx.s_ctx->store_commit();
+  old.take(std::move(s));
+}
 
 template <typename phase1, typename Ctx, typename S>
 void
 run_phase1(Ctx& ctx, S& old, S& s, std::enable_if_t<std::is_void<typename phase1::returns>::value>* = nullptr)
 {
-	try {
-		run_phase<phase1>(ctx, s);
-	} catch(const ReturnedValue<void>&){}
-	commit_phase(ctx,old,s);
+  try {
+    run_phase<phase1>(ctx, s);
+  } catch (const ReturnedValue<void>&) {
+  }
+  commit_phase(ctx, old, s);
 }
 
 template <typename phase1, typename Ctx, typename S>
-typename phase1::returns run_phase1(Ctx& ctx, S& old, S& s, std::enable_if_t<!std::is_void<typename phase1::returns>::value>* = nullptr)
+typename phase1::returns
+run_phase1(Ctx& ctx, S& old, S& s, std::enable_if_t<!std::is_void<typename phase1::returns>::value>* = nullptr)
 {
-	try {
-		run_phase<phase1>(ctx, s);
-		throw mutils::StaticMyriaException<'n','o','n','-','v','o','i','d',' ',
-															 'r','e','t','u','r','n','i','n','g',' ',
-															 't','r','a','n','s','a','c','t','i','o','n',' ',
-															 'f','a','i','l','e','d',' ','t','o',' ',
-															 'r','e','t','u','r','n',' ',
-															 'a','n','y','t','h','i','n','g'>{};
-	}
-	catch(ReturnedValue<typename phase1::returns> &r){
-		commit_phase(ctx,old,s);
-		return std::move(r.value);
-	}
+  try {
+    run_phase<phase1>(ctx, s);
+    throw mutils::StaticMyriaException<'n', 'o', 'n', '-', 'v', 'o', 'i', 'd', ' ', 'r', 'e', 't', 'u', 'r', 'n', 'i', 'n', 'g', ' ', 't', 'r', 'a', 'n', 's',
+                                       'a', 'c', 't', 'i', 'o', 'n', ' ', 'f', 'a', 'i', 'l', 'e', 'd', ' ', 't', 'o', ' ', 'r', 'e', 't', 'u', 'r', 'n', ' ',
+                                       'a', 'n', 'y', 't', 'h', 'i', 'n', 'g'>{};
+  } catch (ReturnedValue<typename phase1::returns>& r) {
+    commit_phase(ctx, old, s);
+    return std::move(r.value);
+  }
 }
-	
+
 template <typename phase1, typename store>
-auto common_interp_loop(store& old, store s){
-	using label = typename phase1::label;
-	PhaseContext<label> ctx{};
-	s.begin_phase();
-	return run_phase1<phase1>(ctx, old, s);
-}
-	
-template <typename phase1, typename store>
-auto common_interp(store& s)
+auto common_interp_loop(store& old, store s, tracker::Tracker& trk)
 {
   using label = typename phase1::label;
-	try {
-		return common_interp_loop<phase1>(s,s.clone());
-	}
-	catch (const SerializationFailure& sf) {
-		std::size_t backoff_multiplier{0};
-		while (!label::can_abort::value) {
-			try {
-				//try an exponential back-off strategy
-				std::this_thread::sleep_for(std::chrono::microseconds{(std::size_t)mutils::better_rand()*backoff_multiplier});
-				backoff_multiplier*=10;
-				return common_interp_loop<phase1>(s,s.clone());
-			} catch (const SerializationFailure& sf) {
-				whendebug(std::cout << "Error: label which cannot abort aborted! " << label{});
-			}
-		} /*else if can_abort,*/ throw sf;
-	}
+  PhaseContext<label> ctx{ trk };
+  s.begin_phase();
+  return run_phase1<phase1>(ctx, old, s);
+}
+
+template <typename phase1, typename store>
+auto common_interp(store& s, tracker::Tracker& trk)
+{
+  using label = typename phase1::label;
+  try {
+    return common_interp_loop<phase1>(s, s.clone(), trk);
+  } catch (const SerializationFailure& sf) {
+    std::size_t backoff_multiplier{ 0 };
+    while (!label::can_abort::value) {
+      try {
+        // try an exponential back-off strategy
+        std::this_thread::sleep_for(std::chrono::microseconds{ (std::size_t)mutils::better_rand() * backoff_multiplier });
+        backoff_multiplier *= 10;
+        return common_interp_loop<phase1>(s, s.clone(), trk);
+      } catch (const SerializationFailure& sf) {
+        whendebug(std::cout << "Error: label which cannot abort aborted! " << label{});
+      }
+    } /*else if can_abort,*/
+    throw sf;
+  }
 }
 }
 }

@@ -66,6 +66,8 @@ public:
 
   void checkForTombstones(mtl::GPhaseContext &, Name name);
 
+  void find_tombstones(mtl::GPhaseContext &, const Tombstone&);
+
   void onCausalRead(mtl::GPhaseContext &pctx, Name name,
 			     const Clock &version,
 			     const std::function<void(char const *)> &construct_and_merge);

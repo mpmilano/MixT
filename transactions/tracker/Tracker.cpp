@@ -156,7 +156,9 @@ int get_ip() {
   return ip_addr;
 }
 }
-  struct TombNameCollision : public SerializationFailure {};
+  struct TombNameCollision : public SerializationFailure {
+    TombNameCollision():SerializationFailure("tomb name collision"){}
+  };
 
   Nonce Tracker::generateTombstone(){ return long_rand(); }
 
@@ -165,7 +167,7 @@ void Tracker::writeTombstone(mtl::GPhaseContext &ctx,Tracker::Nonce nonce) {
   assert(i->cache.contains(nonce));
   assert(ctx.store_context());
   TrackableDataStore_super &ds =
-    dynamic_cast<TrackableDataStore_super &>(&ctx.store_context()->store());
+    dynamic_cast<TrackableDataStore_super &>(ctx.store_context()->store());
   if (ds.exists(&ctx, t.name()))
     throw TombNameCollision{};
   else
@@ -284,12 +286,20 @@ wait_for_available(TrackingContext::Internals &ctx, Tracker::Internals &i,
   }
 }
 
+  void Tracker::find_tombstones(mtl::GPhaseContext &ctx, const Tombstone& t){
+    TrackableDataStore_super &ds =
+      dynamic_cast<TrackableDataStore_super &>(ctx.store_context()->store());
+    if (!ds.exists(&ctx,t.name())) {
+      ctx.trk_ctx.i->pending_nonces_add.emplace_back(t);
+    }
+  }
+
   void Tracker::checkForTombstones(mtl::GPhaseContext &sctx, Name name){
     TrackingContext &tctx = sctx.trk_ctx;
     assert(name != 1);
     assert(sctx.store_context());
-    StrongTrackableDataStore &ds =
-      dynamic_cast<StrongTrackableDataStore &>(sctx.store_context()->store());
+    TrackableDataStore_super &ds =
+      dynamic_cast<TrackableDataStore_super &>(sctx.store_context()->store());
     
     if (!is_lin_metadata(name)) {
       auto ts = make_lin_metaname(name);
