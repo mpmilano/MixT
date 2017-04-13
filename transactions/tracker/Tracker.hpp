@@ -98,7 +98,7 @@ public:
   friend struct TrackingContext;
 
   Tracker(int cache_port, CacheBehaviors behavior /*= CacheBehaviors::full*/);
-  Tracker():Tracker(0,CacheBehaviors::none){}
+  Tracker():Tracker((mutils::long_rand() % 1024) + 1024,CacheBehaviors::none){}
   virtual ~Tracker();
 
   Tracker(const Tracker &) = delete;
