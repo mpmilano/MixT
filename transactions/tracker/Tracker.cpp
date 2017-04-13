@@ -68,7 +68,7 @@ void TrackingContext::commitContext() {
 }
 void TrackingContext::abortContext() { i->_finalize(); }
 
-TrackingContext::TrackingContext(Tracker &trk, GPhaseContext &ctx, bool cod)
+TrackingContext::TrackingContext(Tracker &trk, TrackedPhaseContext &ctx, bool cod)
   : i(new TrackingContext::Internals{trk,*trk.i, cod}), trk(trk), ctx(ctx) {}
 
 TrackingContext::~TrackingContext() {
@@ -76,7 +76,7 @@ TrackingContext::~TrackingContext() {
     delete i;
 }
 
-std::unique_ptr<TrackingContext> Tracker::generateContext(GPhaseContext &ctx,
+std::unique_ptr<TrackingContext> Tracker::generateContext(TrackedPhaseContext &ctx,
                                                           bool commitOnDelete) {
   return std::unique_ptr<TrackingContext>{
       (new TrackingContext{*this, ctx, commitOnDelete})};
@@ -162,7 +162,7 @@ int get_ip() {
 
   Nonce Tracker::generateTombstone(){ return long_rand(); }
 
-void Tracker::writeTombstone(mtl::GPhaseContext &ctx,Tracker::Nonce nonce) {
+void Tracker::writeTombstone(mtl::TrackedPhaseContext &ctx,Tracker::Nonce nonce) {
   const Tracker::Tombstone t{nonce, get_ip(), cache_port};
   assert(i->cache.contains(nonce));
   assert(ctx.store_context());
@@ -174,8 +174,8 @@ void Tracker::writeTombstone(mtl::GPhaseContext &ctx,Tracker::Nonce nonce) {
     ds.new_tomb(&ctx, t.name(), t);
 }
 
-  void Tracker::accompanyWrite(mtl::GPhaseContext &ctx, Name name, Nonce nonce) {
-  const auto write_lin_metadata = [this](mtl::GPhaseContext &ctx,
+  void Tracker::accompanyWrite(mtl::TrackedPhaseContext &ctx, Name name, Nonce nonce) {
+  const auto write_lin_metadata = [this](mtl::TrackedPhaseContext &ctx,
                                          StrongTrackableDataStore &ds_real,
                                          Name name, Tracker::Nonce nonce) {
     assert(ctx.store_context());
@@ -235,7 +235,7 @@ std::ostream &operator<<(std::ostream &os, const Tracker::Clock &c) {
 }
 
 bool sleep_on(TrackingContext::Internals &ctx, Tracker::Internals &i,
-              GPhaseContext &pctx, WeakTrackableDataStore &ds,
+              TrackedPhaseContext &pctx, WeakTrackableDataStore &ds,
               const Name &tomb_name, const int how_long = -1) {
   bool first_skip = true;
   for (int cntr = 0; (cntr < how_long) || how_long == -1; ++cntr) {
@@ -258,7 +258,7 @@ bool sleep_on(TrackingContext::Internals &ctx, Tracker::Internals &i,
 template <typename P>
 std::vector<char> const *
 wait_for_available(TrackingContext::Internals &ctx, Tracker::Internals &i,
-                   GPhaseContext &pctx, WeakTrackableDataStore &ds, Name name,
+                   TrackedPhaseContext &pctx, WeakTrackableDataStore &ds, Name name,
                    P &p, const Tracker::Clock &v) {
   if (ds.exists(&pctx, p.first)) {
     remove_pending(ctx, i, p.first);
@@ -286,16 +286,16 @@ wait_for_available(TrackingContext::Internals &ctx, Tracker::Internals &i,
   }
 }
 
-  void Tracker::find_tombstones(mtl::GPhaseContext &ctx, const Tombstone& t){
+  void Tracker::find_tombstones(mtl::TrackedPhaseContext &ctx, const Tombstone& t){
     TrackableDataStore_super &ds =
       dynamic_cast<TrackableDataStore_super &>(ctx.store_context()->store());
     if (!ds.exists(&ctx,t.name())) {
-      ctx.trk_ctx->i->pending_nonces_add.emplace_back(t);
+      ctx.trk_ctx.i->pending_nonces_add.emplace_back(t);
     }
   }
 
-  void Tracker::checkForTombstones(mtl::GPhaseContext &sctx, Name name){
-    TrackingContext &tctx = *sctx.trk_ctx;
+  void Tracker::checkForTombstones(mtl::TrackedPhaseContext &sctx, Name name){
+    TrackingContext &tctx = sctx.trk_ctx;
     assert(name != 1);
     assert(sctx.store_context());
     TrackableDataStore_super &ds =
@@ -315,7 +315,7 @@ wait_for_available(TrackingContext::Internals &ctx, Tracker::Internals &i,
 
 // for when merging locally is too hard or expensive.  Returns "true" when
 // candidate version is fine to return, "false" otherwise
-bool Tracker::waitForCausalRead(mtl::GPhaseContext &ctx, Name name,
+bool Tracker::waitForCausalRead(mtl::TrackedPhaseContext &ctx, Name name,
                                 const Clock &version) {
   // TODO: distinctly not thread-safe
   // if the user called onRead manually and did a merge,
@@ -331,7 +331,7 @@ bool Tracker::waitForCausalRead(mtl::GPhaseContext &ctx, Name name,
     return true;
   }
 
-  auto &tracking_context = *ctx.trk_ctx;
+  auto &tracking_context = ctx.trk_ctx;
   assert(ctx.store_context());
   auto &ds =
       dynamic_cast<WeakTrackableDataStore &>(ctx.store_context()->store());
@@ -387,9 +387,9 @@ void Tracker::afterCausalRead(TrackingContext &tctx, Name name,
 
 // for when merging is the order of the day
 void Tracker::onCausalRead(
-    GPhaseContext &pctx, Name name, const Clock &version,
+    TrackedPhaseContext &pctx, Name name, const Clock &version,
     const std::function<void(char const *)> &construct_and_merge) {
-  TrackingContext &ctx = *pctx.trk_ctx;
+  TrackingContext &ctx = pctx.trk_ctx;
   assert(pctx.store_context());
   auto &ds =
       dynamic_cast<WeakTrackableDataStore &>(pctx.store_context()->store());

@@ -1,5 +1,6 @@
 #pragma once
 #include "../tracker/TrackingContext.hpp"
+#include "top.hpp"
 #include "macro_utils.hpp"
 #include <memory>
 
@@ -34,8 +35,7 @@ struct StoreContext : public GStoreContext
 
 struct GPhaseContext
 {
-  tracker::TrackingContext trk_ctx;
-  GPhaseContext(tracker::Tracker &trk);
+  GPhaseContext() = default;
   virtual GStoreContext* store_context() = 0;
   virtual ~GPhaseContext() = default;
   bool store_abort()
@@ -47,20 +47,55 @@ struct GPhaseContext
       return true;
   }
 };
-template <typename label>
-struct PhaseContext : public GPhaseContext
+
+struct TrackedPhaseContext : public GPhaseContext
 {
-  std::unique_ptr<StoreContext<label>> s_ctx;
-  StoreContext<label>& store_context(DataStore<label>& ds whendebug(, const std::string& why))
+  tracker::TrackingContext trk_ctx;
+  TrackedPhaseContext(tracker::Tracker &trk);
+  virtual GStoreContext* store_context() = 0;
+  virtual ~TrackedPhaseContext() = default;
+  bool store_abort()
   {
-    if (!s_ctx) {
-      s_ctx = ds.begin_transaction(whendebug(why));
-    }
-    return *s_ctx;
+    auto *s_ctx = store_context();
+    if (s_ctx)
+      return s_ctx->store_abort();
+    else
+      return true;
   }
-  PhaseContext(tracker::Tracker& trk);
-  StoreContext<label>* store_context(){ return s_ctx.get(); }
- 
 };
+  template <typename label, bool tracked>
+  struct _PhaseContext;
+  template <typename l>
+  struct _PhaseContext<Label<l>,true> : public TrackedPhaseContext
+  {
+    using label = Label<l>;
+    std::unique_ptr<StoreContext<label>> s_ctx;
+    StoreContext<label>& store_context(DataStore<label>& ds whendebug(, const std::string& why))
+    {
+      if (!s_ctx) {
+	s_ctx = ds.begin_transaction(whendebug(why));
+      }
+      return *s_ctx;
+    }
+    _PhaseContext(tracker::Tracker& trk);
+    StoreContext<label>* store_context(){ return s_ctx.get(); }
+  };
+  template <typename l>
+  struct _PhaseContext<Label<l>,false> : public GPhaseContext
+  {
+    using label = Label<l>;
+    std::unique_ptr<StoreContext<label>> s_ctx;
+    StoreContext<label>& store_context(DataStore<label>& ds whendebug(, const std::string& why))
+    {
+      if (!s_ctx) {
+	s_ctx = ds.begin_transaction(whendebug(why));
+      }
+      return *s_ctx;
+    }
+    StoreContext<label>* store_context(){ return s_ctx.get(); }
+    _PhaseContext() = default;
+    _PhaseContext(const tracker::Tracker&):_PhaseContext(){}
+  };
+  template<typename l> using PhaseContext = _PhaseContext<l,l::run_remotely::value>;
 }
 }

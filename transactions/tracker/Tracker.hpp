@@ -55,33 +55,33 @@ public:
     exemptItem(h.name());
   }
 
-  std::unique_ptr<TrackingContext> generateContext(mtl::GPhaseContext &ctx,
+  std::unique_ptr<TrackingContext> generateContext(mtl::TrackedPhaseContext &ctx,
                                                    bool commitOnDelete = false);
 
   Nonce generateTombstone();
   
-  void writeTombstone(mtl::GPhaseContext &ctx,Nonce nonce);
+  void writeTombstone(mtl::TrackedPhaseContext &ctx,Nonce nonce);
   
-  void accompanyWrite(mtl::GPhaseContext &, Name name, Nonce tombstone_value);
+  void accompanyWrite(mtl::TrackedPhaseContext &, Name name, Nonce tombstone_value);
 
-  void checkForTombstones(mtl::GPhaseContext &, Name name);
+  void checkForTombstones(mtl::TrackedPhaseContext &, Name name);
 
-  void find_tombstones(mtl::GPhaseContext &, const Tombstone&);
+  void find_tombstones(mtl::TrackedPhaseContext &, const Tombstone&);
 
-  void onCausalRead(mtl::GPhaseContext &pctx, Name name,
+  void onCausalRead(mtl::TrackedPhaseContext &pctx, Name name,
 			     const Clock &version,
 			     const std::function<void(char const *)> &construct_and_merge);
     
   // return is non-null when read value cannot be used.
   template <typename T>
   std::unique_ptr<T>
-  onCausalRead(mtl::GPhaseContext &, Name name, const Clock &version,
+  onCausalRead(mtl::TrackedPhaseContext &, Name name, const Clock &version,
          std::unique_ptr<T> candidate, 
          std::unique_ptr<T> (*merge)(char const *, std::unique_ptr<T>) =
              [](char const *, std::unique_ptr<T> r) { return r; });
 
   // for when merging locally is too hard or expensive
-  bool waitForCausalRead(mtl::GPhaseContext &ctx, Name name,
+  bool waitForCausalRead(mtl::TrackedPhaseContext &ctx, Name name,
                          const Clock &version);
 
   void afterCausalRead(TrackingContext &, Name name,

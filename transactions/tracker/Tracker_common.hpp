@@ -7,7 +7,7 @@ namespace tracker {
 
 template <typename T>
 std::unique_ptr<T> Tracker::onCausalRead(
-    mtl::GPhaseContext &ctx, Name name, const Clock &version,
+    mtl::TrackedPhaseContext &ctx, Name name, const Clock &version,
     std::unique_ptr<T> candidate,
     std::unique_ptr<T> (*merge)(char const *, std::unique_ptr<T>)) {
 
