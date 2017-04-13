@@ -1,6 +1,7 @@
 #pragma once
 #include "runnable_transaction.hpp"
 #include "phase_context.hpp"
+#include "AST_typecheck.hpp"
 
 namespace myria {
 namespace mtl {
@@ -164,21 +165,21 @@ template <typename l, typename TranCtx, typename store, typename y, typename R>
 void
 _run_phase(typename AST<l>::template Statement<typename AST<l>::template AccompanyWrite<typename AST<l>::template Expression<y, typename AST<l>::template VarReference<R>>>>*, TranCtx& ctx, store& s)
 {
-  ctx.trk_ctx.trk.AccompanyWrite(ctx,?get name from store?, s.get(tombstone_str{}).name());
+  ctx.trk_ctx.trk.AccompanyWrite(ctx,s.get(R{}).get_remote(ctx).name(),
+				 s.get(typecheck_phase::tombstone_str{}).get(ctx).name());
 }
 
 template <typename l, typename TranCtx, typename store, typename V>
 void
 _run_phase(typename AST<l>::template Statement<typename AST<l>::template WriteTombstone<typename AST<l>::template Expression<tracker::Tombstone, typename AST<l>::template VarReference<V>>>>*, TranCtx& ctx, store& s)
 {
-  ctx.trk_ctx.trk.writeTombstone(ctx, s.get(V{}).name());
+  ctx.trk_ctx.trk.writeTombstone(ctx, s.get(V{}).get(ctx).name());
 }
 
 template <typename l, typename TranCtx, typename store>
-y
-_run_phase(typename AST<l>::template Expression<tracker::Tombstone, typename AST<l>::template GenerateTombstone<>>*, TranCtx& ctx, store&)
+tracker::Tombstone _run_phase(typename AST<l>::template Expression<tracker::Tombstone, typename AST<l>::template GenerateTombstone<>>*, TranCtx& ctx, store&)
 {
-  return ctx.trk_ctx.trk.generateTombstone():
+  return ctx.trk_ctx.trk.generateTombstone();
 }
 
 template <typename l, typename TranCtx, typename store, typename y1, typename y2, typename S, typename F, typename R>

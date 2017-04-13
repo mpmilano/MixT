@@ -85,6 +85,7 @@ void remove_pending(TrackingContext::Internals &ctx, Tracker::Internals &i,
                     const Name &name) {
   ctx.pending_nonces_add.remove_if([&](auto &e) { return e.name() == name; });
   i.pending_nonces.erase(name);
+  i.already_seen_nonces.insert(name);
 }
 
 bool tracking_candidate(Tracker &t, Name name, const Tracker::Clock &version) {
@@ -101,6 +102,7 @@ bool tracking_candidate(Tracker &t, Name name, const Tracker::Clock &version) {
   void Tracker::clear_pending(const std::vector<Tombstone>& t){
     for (const auto &n : t){
       i->pending_nonces.erase(n.name());
+      i->already_seen_nonces.insert(n.name());
     }
   }
 

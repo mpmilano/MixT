@@ -244,6 +244,11 @@ struct remote_holder
   }
 
   template <typename TransactionContext>
+  auto get_remote(TransactionContext&){
+    return handle.at(curr_pos);
+  }
+
+  template <typename TransactionContext>
   auto get(TransactionContext& tc)
   {
     assert(initialized);

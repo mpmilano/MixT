@@ -31,6 +31,7 @@ struct Tracker::Internals {
 
   std::map<Name, std::pair<Clock, std::vector<char>>> tracking;
   std::map<Name, Bundle> pending_nonces;
+  std::set<Name> already_seen_nonces;
   std::set<Name> exceptions;
   CooperativeCache cache;
   std::unique_ptr<Name> last_onRead_name{nullptr};
