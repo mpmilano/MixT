@@ -165,21 +165,36 @@ template <typename l, typename TranCtx, typename store, typename y, typename R>
 void
 _run_phase(typename AST<l>::template Statement<typename AST<l>::template AccompanyWrite<typename AST<l>::template Expression<y, typename AST<l>::template VarReference<R>>>>*, TranCtx& ctx, store& s)
 {
+#ifdef TRACK
   ctx.trk_ctx.trk.AccompanyWrite(ctx,s.get(R{}).get_remote(ctx).name(),
 				 s.get(typecheck_phase::tombstone_str{}).get(ctx).name());
+#else
+	(void) ctx;
+	(void) s;
+#endif
 }
 
 template <typename l, typename TranCtx, typename store, typename V>
 void
 _run_phase(typename AST<l>::template Statement<typename AST<l>::template WriteTombstone<typename AST<l>::template Expression<tracker::Tombstone, typename AST<l>::template VarReference<V>>>>*, TranCtx& ctx, store& s)
 {
+#ifdef TRACK
   ctx.trk_ctx.trk.writeTombstone(ctx, s.get(V{}).get(ctx).name());
+#else
+	(void) ctx;
+	(void) s;
+#endif
 }
 
 template <typename l, typename TranCtx, typename store>
 tracker::Tombstone _run_phase(typename AST<l>::template Expression<tracker::Tombstone, typename AST<l>::template GenerateTombstone<>>*, TranCtx& ctx, store&)
 {
+#ifdef TRACK
   return ctx.trk_ctx.trk.generateTombstone();
+#else
+	(void) ctx;
+	return tracker::Tombstone{0,0,0};
+#endif
 }
 
 template <typename l, typename TranCtx, typename store, typename y1, typename y2, typename S, typename F, typename R>
@@ -332,12 +347,12 @@ auto common_interp(store& s, tracker::Tracker& trk)
   try {
     return common_interp_loop<phase1>(s, s.clone(), trk);
   } catch (const SerializationFailure& sf) {
-    std::size_t backoff_multiplier{ 0 };
+    std::size_t backoff_multiplier{ 1 };
     while (!label::can_abort::value) {
       try {
         // try an exponential back-off strategy
         std::this_thread::sleep_for(std::chrono::microseconds{ (std::size_t)mutils::better_rand() * backoff_multiplier });
-        backoff_multiplier *= 10;
+        backoff_multiplier *= 2;
         return common_interp_loop<phase1>(s, s.clone(), trk);
       } catch (const SerializationFailure& sf) {
         whendebug(std::cout << "Error: label which cannot abort aborted! " << label{});
