@@ -2,7 +2,7 @@ TRANS_DIR= `pwd`/
 IP_quad=`ifconfig | sed s/broadcast.*//g | tr " " "\n" | grep 128.84 | rev | sed s/'\..*'//g | rev`
 CPPFLAGS= -I$(PWD) -I$(PWD)/../ -I$(PWD)/../mtl -I$(PWD)/../server -I$(PWD)/..//myria-utils -I$(PWD)/../mutils-networking -I$(PWD)/../mutils -I$(PWD)/../mutils-containers -I$(PWD)/../mutils-serialization -I$(PWD)/../mutils-tasks -I$(PWD)/../testing -I$(PWD)/pgsql -I$(PWD)/../tracker -g -stdlib=libc++ --std=c++1z -Wall -DNUM_CAUSAL_GROUPS="4" -DCAUSAL_GROUP=$(causalGroup) -DSTRONG_REMOTE_IP=\"$(STRONG_REMOTE_IP)\" -DCAUSAL_REMOTE_IP_1=\"$(CAUSAL_REMOTE_IP_1)\" -DCAUSAL_REMOTE_IP_2=\"$(CAUSAL_REMOTE_IP_2)\" -DMY_IP=\"$(MY_IP)\" -DMAX_THREADS=$(MAX_THREADS) -ferror-limit=1 -Wall -Werror -Wextra -DNUM_CAUSAL_MASTERS="2" -DNOPOOL #-DNDEBUG
 LDFLAGS= -stdlib=libc++ --std=c++1z -lpqxx -lm -pthread 
-client_object_files=utils.o Basics.o Ostreams.o SerializationSupport.o SQLStore.o GSQLObject.o SQLConnection.o SQLTransaction.o SQL_internal_utils.o SQLLevels.o TransactionContext.o ServerSocket.o Socket.o abiutils.o eventfd.o epoll.o top.o simple_rpc.o local_connection.o Tombstone.o
+client_object_files=utils.o Basics.o Ostreams.o SerializationSupport.o SQLStore.o GSQLObject.o SQLConnection.o SQLTransaction.o SQL_internal_utils.o SQLLevels.o TransactionContext.o ServerSocket.o Socket.o abiutils.o eventfd.o epoll.o top.o simple_rpc.o local_connection.o Tombstone.o CooperativeCache.o ClockManager.o Tracker.o
 
 export IP_quad
 export TRANS_DIR
@@ -70,7 +70,10 @@ batched_connection_client.o:
 
 batched_connection_common.o:
 	clang++ -c -O3 ../*/batched_connection_common.cpp $(CPPFLAGS)
-
+CooperativeCache.o:
+	clang++ -c ../*/CooperativeCache.cpp $(CPPFLAGS)
+ClockManager.o:
+	clang++ -c ../*/ClockManager.cpp $(CPPFLAGS)
 ServerSocket.o:
 	clang++ -c ../*/ServerSocket.cpp $(CPPFLAGS)
 SQLConnection.o:
@@ -89,7 +92,7 @@ local_connection.o:
 Basics.o:
 	clang++ -c ../Basics.cpp $(CPPFLAGS)
 Tracker.o:
-	clang++ -c ../*/DisabledTracker.cpp $(CPPFLAGS) && ln -s DisabledTracker.o Tracker.o
+	clang++ -c ../*/Tracker.cpp $(CPPFLAGS) #&& ln -s DisabledTracker.o Tracker.o
 TransactionContext.o:
 	clang++ -c ../*/TransactionContext.cpp $(CPPFLAGS)
 SQLLevels.o:
