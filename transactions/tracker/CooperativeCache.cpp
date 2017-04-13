@@ -135,7 +135,7 @@ namespace myria { namespace tracker {
 				}
 			}
 			if (behavior_make_requests(active_behavior)){
-				return GlobalPool::push([tomb,portno,this](int) -> CooperativeCache::obj_bundle {
+			  return std::async(std::launch::async,[tomb,portno,this]() -> CooperativeCache::obj_bundle {
 						while (true)
 							try {
 								auto tname = tomb.name();
@@ -205,7 +205,7 @@ namespace myria { namespace tracker {
 							
 							while (true) {
 								//fork off a new thread to handle the request.
-								GlobalPool::inst.push([m,cache,newsockfd = server.receive()](int) mutable {
+							  std::async(std::launch::async,[m,cache,newsockfd = server.receive()]() mutable {
 										if (newsockfd.valid())
 											respond_to_request(m,cache,std::move(newsockfd));});
 							}

@@ -76,6 +76,7 @@ struct SupportedOperation {
 
 		template<typename DataStore, template<typename> class RO>
 		struct operation_impl : public operation_super{
+		  static_assert(std::is_base_of<GDataStore, DataStore>::value);
 			DataStore &ds;
 			
 			static constexpr RO<typename Handle::stored_type>& reduce_selfTypes(SelfType*, Handle& h){

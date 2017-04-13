@@ -75,11 +75,6 @@ struct TrackingContext::Internals {
   }
 };
 }
-namespace mtl {
-template <typename label>
-PhaseContext<label>::PhaseContext(tracker::Tracker &trk)
-    : GPhaseContext(trk.generateContext(*this, false)) {}
-}
 
 template <typename DS>
 std::unique_ptr<LabelFreeHandle<tracker::Tombstone>>
@@ -140,3 +135,4 @@ TrackableDataStore_common<DS>::existing_tombstone(mtl::GPhaseContext *_ctx,
   return std::unique_ptr<LabelFreeHandle<Tombstone>>{new DECT(h){h}};
 }
 }
+#include "phase_context.hpp"

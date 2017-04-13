@@ -1,5 +1,6 @@
 #pragma once
 #include "runnable_transaction.hpp"
+#include "phase_context.hpp"
 
 namespace myria {
 namespace mtl {

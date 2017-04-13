@@ -107,7 +107,7 @@ namespace myria{
     }
   protected:
     std::shared_ptr<const T> get(mtl::GPhaseContext *tc) const {
-      auto *ctx = dynamic_cast<mtl::PhaseContext<l>&>(tc);
+      auto *ctx = dynamic_cast<mtl::PhaseContext<l>*>(tc);
       assert(ctx);
       return get(ctx);
     }

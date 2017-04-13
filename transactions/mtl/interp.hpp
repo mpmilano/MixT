@@ -69,7 +69,7 @@ namespace runnable_transaction {
 		static_assert(is_store<store_t>::value);
 		store_t store{vals... };
 		constexpr run_remotely* run_remotely_v{nullptr};
-		using ret_t = DECT(dispatch_to_runner(run_remotely_v,dsm,c, np, store));
+		using ret_t = DECT(dispatch_to_runner(run_remotely_v,dsm,trk,c, np, store));
 		constexpr ret_t *rt{nullptr};
 		return interp3<run_remotely, ret_t>(dsm,trk,c, rt, np, store);
 }
