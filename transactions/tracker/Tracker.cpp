@@ -193,9 +193,11 @@ void Tracker::writeTombstone(mtl::TrackedPhaseContext &ctx,Tracker::Nonce nonce)
       ds_real.new_tomb(&ctx, meta_name,
                        Tracker::Tombstone{nonce, get_ip(), cache_port});
     }
+#ifndef NDEBUG
     for (auto &p : i->tracking) {
       assert(p.second.second.data());
     }
+#endif
     i->cache.insert(nonce, i->tracking);
     assert(i->cache.contains(nonce));
   };
@@ -288,6 +290,7 @@ wait_for_available(TrackingContext::Internals &ctx, Tracker::Internals &i,
     } catch (...) {
       std::cerr << "this is a very bad error" << std::endl;
       assert(false && "whaaat");
+			struct die{}; throw die{};
     }
   }
 }
@@ -389,8 +392,10 @@ void Tracker::afterCausalRead(TrackingContext &tctx, Name name,
     assert(data.data());
     assert(data.size() > 0);
     // std::cout << data << std::endl;
+#ifndef NDEBUG
     for (auto &i : version)
       assert(i != -1);
+#endif
     if (!ends::prec(version, i->global_min)) {
       tctx.i->tracking_add.emplace_back(name, std::make_pair(version, data));
       // std::cout << tctx.i->tracking_add.back().second.second << std::endl;
