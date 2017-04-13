@@ -5,8 +5,8 @@
 
 namespace myria {
 struct GDataStore;
-template <typename, bool>
-class _DataStore;
+template <typename>
+class DataStore;
 
 namespace tracker {
 class Tracker;
@@ -26,7 +26,7 @@ protected:
 template <typename l>
 struct StoreContext : public GStoreContext
 {
-  virtual _DataStore<l, l::might_track::value>& store() = 0;
+  virtual DataStore<l>& store() = 0;
   StoreContext(const StoreContext&) = delete;
   StoreContext() = default;
   virtual ~StoreContext() = default;
@@ -34,9 +34,10 @@ struct StoreContext : public GStoreContext
 
 struct GPhaseContext
 {
-tracker::TrackingContext& trk_ctx;
+  tracker::TrackingContext* trk_ctx{nullptr};
+  GPhaseContext() = default;
 GPhaseContext(tracker::TrackingContext& ctx)
-    :trk_ctx(ctx){}
+    :trk_ctx(&ctx){}
   virtual GStoreContext* store_context() = 0;
   virtual ~GPhaseContext() = default;
   bool store_abort()
@@ -53,7 +54,6 @@ struct PhaseContext : public GPhaseContext
 {
   std::unique_ptr<StoreContext<label>> s_ctx;
   template <typename l>
-  using DataStore = _DataStore<l, l::might_track::value>;
   StoreContext<label>& store_context(DataStore<label>& ds whendebug(, const std::string& why))
   {
     if (!s_ctx) {
@@ -61,6 +61,7 @@ struct PhaseContext : public GPhaseContext
     }
     return *s_ctx;
   }
+  PhaseContext();
   PhaseContext(tracker::Tracker& trk);
   StoreContext<label>* store_context(){ return s_ctx.get(); }
  

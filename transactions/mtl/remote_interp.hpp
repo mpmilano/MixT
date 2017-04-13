@@ -40,7 +40,7 @@ auto remote_interp(mutils::DeserializationManager* dsm, tombstone_tracker& trk, 
     if (*mutils::receive_from_connection<bool>(dsm, c)) {
       // transaction was successful!
       auto new_tombstones = mutils::receive_from_connection<std::vector<tracker::Tombstone>>(dsm, c);
-      trk.set_phase_after<phase>(std::move(new_tombstones));
+      trk.template set_phase_after<phase>(std::move(new_tombstones));
       lc.data = *mutils::receive_from_connection<std::vector<char>>(dsm, c);
       receive_store_values(dsm, provides, s, lc);
       trk.template clear_tombstones_for_phase<phase>();

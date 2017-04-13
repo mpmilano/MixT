@@ -1,5 +1,6 @@
 #pragma once
 #include "SQLStore.hpp"
+#include "ClientTracker.hpp"
 
 namespace myria{
 
@@ -16,6 +17,7 @@ struct client{
 	WeakConnection strong_relay;
 	WeakConnection causal_relay;
 	test &t;
+  tracker::ClientTracker<Label<top>,Label<pgsql::strong>, Label<pgsql::causal>, Label<bottom> > trk;
 
 	template<pgsql::Level> void txn_write();
 	template<pgsql::Level> void txn_read();

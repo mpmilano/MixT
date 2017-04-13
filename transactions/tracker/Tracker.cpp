@@ -290,12 +290,12 @@ wait_for_available(TrackingContext::Internals &ctx, Tracker::Internals &i,
     TrackableDataStore_super &ds =
       dynamic_cast<TrackableDataStore_super &>(ctx.store_context()->store());
     if (!ds.exists(&ctx,t.name())) {
-      ctx.trk_ctx.i->pending_nonces_add.emplace_back(t);
+      ctx.trk_ctx->i->pending_nonces_add.emplace_back(t);
     }
   }
 
   void Tracker::checkForTombstones(mtl::GPhaseContext &sctx, Name name){
-    TrackingContext &tctx = sctx.trk_ctx;
+    TrackingContext &tctx = *sctx.trk_ctx;
     assert(name != 1);
     assert(sctx.store_context());
     TrackableDataStore_super &ds =
@@ -331,7 +331,7 @@ bool Tracker::waitForCausalRead(mtl::GPhaseContext &ctx, Name name,
     return true;
   }
 
-  auto &tracking_context = ctx.trk_ctx;
+  auto &tracking_context = *ctx.trk_ctx;
   assert(ctx.store_context());
   auto &ds =
       dynamic_cast<WeakTrackableDataStore &>(ctx.store_context()->store());
@@ -389,7 +389,7 @@ void Tracker::afterCausalRead(TrackingContext &tctx, Name name,
 void Tracker::onCausalRead(
     GPhaseContext &pctx, Name name, const Clock &version,
     const std::function<void(char const *)> &construct_and_merge) {
-  TrackingContext &ctx = pctx.trk_ctx;
+  TrackingContext &ctx = *pctx.trk_ctx;
   assert(pctx.store_context());
   auto &ds =
       dynamic_cast<WeakTrackableDataStore &>(pctx.store_context()->store());

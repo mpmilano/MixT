@@ -7,6 +7,7 @@
 #include "split_phase.hpp"
 #include "interp.hpp"
 #include "CTString.hpp"
+#include "find_tombstones.hpp"
 #include "recollapse.hpp"
 #include <memory>
 #include "Basics.hpp"

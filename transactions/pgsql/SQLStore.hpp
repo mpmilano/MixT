@@ -93,7 +93,7 @@ namespace myria { namespace pgsql {
 
 		private:
 			SQLStore(mutils::DeserializationManager &this_mgr,whenpool(GeneralSQLConnectionPool) whennopool(const std::string) &p)
-				:SQLStore_impl(p,*this,l),DataStore<label>(),this_mgr(this_mgr) {
+			  :GDataStore(label::description),SQLStore_impl(p,*this,l),DataStore<label>(),this_mgr(this_mgr) {
 			}
 		public:
 
@@ -210,6 +210,7 @@ namespace myria { namespace pgsql {
 														 Handle<label,T,SupportedOperation<RegisteredOperations::Increment,void,SelfType> >,
 														 Handle<label,T> > >;
 
+		  struct SQLContext;
 			template<typename T>
 			SQLHandle<T> newObject(SQLContext *, Name name, const T& init){
 				static constexpr Table t =
@@ -253,7 +254,7 @@ namespace myria { namespace pgsql {
 				SQLContext(decltype(i) i, mutils::DeserializationManager& mngr):i(std::move(i)),mngr(mngr){}
 				DataStore<label>& store() {return dynamic_cast<DataStore<label>&>( i->gstore);}
 				bool store_commit() {return i->store_commit();}
-				void store_abort() {i->store_abort();}
+			  bool store_abort() {i->store_abort(); return true;}
 			};
 
 			using StoreContext = SQLContext;

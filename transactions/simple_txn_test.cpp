@@ -21,7 +21,7 @@ void client::txn_read(){
 	auto hndl = store.template existingObject<int>(get_name_read(0.5));
 	using Hndl = DECT(hndl);
 	constexpr auto read_trans = TRANSACTION(150 + Hndl::label::int_id::value,let remote x = hndl in {})::WITH(hndl);
-	return read_trans.run_optimistic(&dsm,*get_relay<l>().lock(),hndl);
+	return read_trans.run_optimistic(trk,&dsm,*get_relay<l>().lock(),hndl);
 	//return read_trans.run_local(hndl);
 }
 
@@ -31,7 +31,7 @@ void client::txn_write(){
 	auto hndl = store.template existingObject<int>(get_name_write());
 	using Hndl = DECT(hndl);
 	constexpr auto incr_trans = TRANSACTION(Hndl::label::int_id::value,let remote x = hndl in {x = x + 1})::WITH(hndl);
-	return incr_trans.run_optimistic(&dsm,*get_relay<l>().lock(),hndl);
+	return incr_trans.run_optimistic(trk,&dsm,*get_relay<l>().lock(),hndl);
 	//return incr_trans.run_local(hndl);
 }	
 
