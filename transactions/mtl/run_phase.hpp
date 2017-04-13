@@ -162,23 +162,23 @@ _run_phase(typename AST<l>::template Statement<typename AST<l>::template Return<
 
 template <typename l, typename TranCtx, typename store, typename y, typename R>
 void
-_run_phase(typename AST<l>::template Statement<typename AST<l>::template AccompanyWrite<typename AST<l>::template Expression<y, R>>>*, TranCtx&, store&)
+_run_phase(typename AST<l>::template Statement<typename AST<l>::template AccompanyWrite<typename AST<l>::template Expression<y, typename AST<l>::template VarReference<R>>>>*, TranCtx& ctx, store& s)
 {
-  assert(false && "unimplemented");
+  ctx.trk_ctx.trk.AccompanyWrite(ctx,?get name from store?, s.get(tombstone_str{}).name());
 }
 
-template <typename l, typename TranCtx, typename store, typename y, typename R>
+template <typename l, typename TranCtx, typename store, typename V>
 void
-_run_phase(typename AST<l>::template Statement<typename AST<l>::template WriteTombstone<typename AST<l>::template Expression<y, R>>>*, TranCtx&, store&)
+_run_phase(typename AST<l>::template Statement<typename AST<l>::template WriteTombstone<typename AST<l>::template Expression<tracker::Tombstone, typename AST<l>::template VarReference<V>>>>*, TranCtx& ctx, store& s)
 {
-  assert(false && "unimplemented");
+  ctx.trk_ctx.trk.writeTombstone(ctx, s.get(V{}).name());
 }
 
-template <typename l, typename TranCtx, typename y, typename store>
+template <typename l, typename TranCtx, typename store>
 y
-_run_phase(typename AST<l>::template Expression<y, typename AST<l>::template GenerateTombstone<>>*, TranCtx&, store&)
+_run_phase(typename AST<l>::template Expression<tracker::Tombstone, typename AST<l>::template GenerateTombstone<>>*, TranCtx& ctx, store&)
 {
-  assert(false && "unimplemented");
+  return ctx.trk_ctx.trk.generateTombstone():
 }
 
 template <typename l, typename TranCtx, typename store, typename y1, typename y2, typename S, typename F, typename R>
