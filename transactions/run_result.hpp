@@ -28,14 +28,17 @@ namespace myria{
 			std::size_t start_offset;
 			std::size_t stop_offset;
 			std::string level;
+			std::string pre_abort_string;
 			constexpr mutils::comma_space cs{};
 			i.imbue(std::locale(i.getloc(), new mutils::comma_is_space()));
 			i >> start_offset >> cs >> stop_offset >> cs >>
-				is_write >> cs >> level >> cs >> is_abort >> cs >> abort_string >> cs >>
+				is_write >> cs >> level >> cs >> is_abort >> cs >> pre_abort_string >> cs >>
 				is_protocol_error >> cs >> is_fatal_error >> cs;
 			start_time = test_start + microseconds{start_offset};
 			stop_time = test_start + microseconds{stop_offset};
 			l = (level.c_str()[0] == 'c' ? pgsql::Level::causal : pgsql::Level::strong);
+			pre_abort_string[pre_abort_string.size()-1] = 0;
+			abort_string = pre_abort_string.c_str() + 1;
 		}
 	};
 

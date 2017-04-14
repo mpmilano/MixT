@@ -18,6 +18,7 @@ namespace myria{
 			while (file.good()){
 				ret.emplace_back();
 				ret.back().read(now,file);
+				ret.back().print(now,std::cout);
 			}
 			return ret;
 		}
