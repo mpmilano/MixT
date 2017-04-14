@@ -48,8 +48,14 @@ auto remote_interp(mutils::DeserializationManager* dsm, tombstone_tracker& trk, 
       receive_store_values(dsm, provides, s, lc);
       trk.template mark_tombstones_clearable<phase>();
     } else {
+			std::string failure_str = "";
+#ifndef NDEBUG
+			DECT(mutils::bytes_size(std::string{})) size{0};
+			c.receive(size);
+			failure_str = *c.receive<std::string>(dsm,size);
+#endif
       // store aborted, or crashed, or had a bad day
-      throw SerializationFailure{ "maybe some day we'll smuggle a message back from the store" };
+      throw SerializationFailure{failure_str};
     }
   }
 }

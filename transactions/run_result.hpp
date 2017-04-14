@@ -9,6 +9,7 @@ namespace myria{
 		bool is_write;
 		pgsql::Level l;
 		bool is_abort{false};
+		std::string abort_string;
 		bool is_protocol_error{false};
 		bool is_fatal_error{false};
 		void print(const time_t &test_start, std::ostream& o) const {
@@ -16,7 +17,8 @@ namespace myria{
 			using namespace chrono;
 			o << duration_cast<microseconds>(start_time - test_start).count() << ", "
 				<< duration_cast<microseconds>(stop_time - test_start).count() << ", "
-				<< is_write << ", " << l << ", " << is_abort << endl;
+				<< is_write << ", " << l << ", " << is_abort <<", "  << abort_string << ", "
+				<< is_protocol_error << ", " << is_fatal_error<< endl;
 		}
 	};
 

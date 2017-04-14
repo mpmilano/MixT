@@ -62,8 +62,9 @@ run_result client::client_action(run_result &result) {
       assert(false);
     };
     result.is_abort = false;
-  } catch (const SerializationFailure &) {
+  } catch (const SerializationFailure &f) {
     result.is_abort = true;
+		result.abort_string = f.what();
   }
   result.stop_time = high_resolution_clock::now();
   return result;

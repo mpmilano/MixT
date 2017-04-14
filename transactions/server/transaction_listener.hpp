@@ -51,6 +51,7 @@ struct transaction_listener<
                            mutils::connection &c, char const *const _data) {
     using namespace mutils;
     if (id == txnID) {
+			whendebug(std::string exn_text);
       auto tombstones_to_find =
           mutils::from_bytes_noalloc<std::vector<tracker::Tombstone>>(&dsm,
                                                                       _data);
@@ -80,11 +81,12 @@ struct transaction_listener<
       receive_store_values(&dsm, requires, s, _lc);
       bool transaction_successful{true};
       try {
-	tracker::find_tombstones(ds,trk,dsm,*tombstones_to_find);
-        mtl::runnable_transaction::common_interp<phase, store>(s,trk);
-      } catch (...) {
+				tracker::find_tombstones(ds,trk,dsm,*tombstones_to_find);
+				mtl::runnable_transaction::common_interp<phase, store>(s,trk);
+      } catch (std::exception &whendebug(e)) {
         // right now, *any* failure is just sent to the client as a byte;
         transaction_successful = false;
+				whendebug(exn_text = e.what());
       }
       whendebug(logfile << "about to send response to client" << std::endl);
       if (transaction_successful) {
@@ -92,7 +94,7 @@ struct transaction_listener<
         send_store_values(provided, s, lc);
         c.send(transaction_successful, trk.all_encountered_tombstones(), lc.data);
       } else
-        c.send(false);
+        c.send(false whendebug(, mutils::bytes_size(exn_text), exn_text));
       whendebug(logfile << "response sent to client" << std::endl);
       return true;
     } else
