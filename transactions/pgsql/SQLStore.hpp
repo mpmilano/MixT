@@ -15,9 +15,12 @@ namespace myria { namespace pgsql {
 		using choose_causal = std::integral_constant<bool, l == Level::causal>*;
 		
 		template<Level l>
-		class SQLStore : public SQLStore_impl, public DataStore<level_to_label<l> > {
+		class SQLStore : public SQLStore_impl, public TrackableDataStore<SQLStore<l>,  level_to_label<l> > {
 		public:
 
+			using SQLStore_impl::exists;
+			using TrackableDataStore<SQLStore<l>,  level_to_label<l> >::exists;
+			
 			static constexpr Level level = l;
 			using label = level_to_label<l>;
 			
@@ -93,7 +96,7 @@ namespace myria { namespace pgsql {
 
 		private:
 			SQLStore(mutils::DeserializationManager &this_mgr,whenpool(GeneralSQLConnectionPool) whennopool(const std::string) &p)
-			  :GDataStore(label::description),SQLStore_impl(p,*this,l),DataStore<label>(),this_mgr(this_mgr) {
+			  :GDataStore(label::description),SQLStore_impl(p,*this,l),TrackableDataStore<SQLStore,label>(),this_mgr(this_mgr) {
 			}
 		public:
 
@@ -212,14 +215,14 @@ namespace myria { namespace pgsql {
 
 		  struct SQLContext;
 			template<typename T>
-			SQLHandle<T> newObject(SQLContext *, Name name, const T& init){
+			SQLHandle<T> newObject(SQLContext *ctx, Name name, const T& init){
 				static constexpr Table t =
 					(std::is_same<T,int>::value ? Table::IntStore : Table::BlobStore);
 				int size = mutils::bytes_size(init);
 				std::vector<char> v(size);
 				whendebug(int tb_size = mutils::to_bytes(init,&v[0]));
 				assert(size == tb_size);
-				GSQLObject gso(*this,t,name,v);
+				GSQLObject gso(ctx->i.get(),*this,t,name,v);
 				SQLHandle<T> ret{std::make_shared<SQLObject<T> >(std::move(gso),mutils::heap_copy(init),this_mgr),*this };
 				return ret;
 			}
@@ -227,6 +230,10 @@ namespace myria { namespace pgsql {
 			template<typename T>
 			auto newObject(SQLContext *, const T& init){
 				return newObject<T>(mutils::int_rand(),init);
+			}
+
+			bool exists(SQLContext* ctx, Name n){
+				return exists((ctx ? ctx->i.get() : nullptr),n);
 			}
 
 			template<typename T>
@@ -292,3 +299,4 @@ namespace myria { namespace pgsql {
 			}
 		};
 	}}
+#include "trackable_datastore_impl.hpp"

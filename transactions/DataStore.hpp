@@ -50,7 +50,6 @@ struct StrongTrackableDataStore : public virtual TrackableDataStore_super {
 
 template <typename DS>
 struct TrackableDataStore_common : virtual public TrackableDataStore_super {
-  using label = typename DS::label;
   std::unique_ptr<LabelFreeHandle<tracker::Tombstone>>
   new_tomb(mtl::GPhaseContext *_ctx, Name n, const tracker::Tombstone &val);
 
@@ -65,17 +64,17 @@ struct TrackableDataStore_common : virtual public TrackableDataStore_super {
 
 // to support tracking, your datastore needs a few extra
 // methods.  We ensure they are available here.
-template <typename DS, bool weak> struct _TrackableDataStore;
-template <typename DS>
-struct _TrackableDataStore<DS, true> : public WeakTrackableDataStore,
+	template <typename DS, typename label, bool weak> struct _TrackableDataStore;
+template <typename DS, typename label>
+struct _TrackableDataStore<DS, label, true> : public WeakTrackableDataStore,
                                        public TrackableDataStore_common<DS>,
-                                       public DataStore<typename DS::label> {};
+                                       public DataStore<label> {};
 
-template <typename DS>
-struct _TrackableDataStore<DS, false> : public StrongTrackableDataStore,
+	template <typename DS, typename label>
+	struct _TrackableDataStore<DS, label, false> : public StrongTrackableDataStore,
                                         public TrackableDataStore_common<DS>,
-                                        public DataStore<typename DS::label> {};
+                                        public DataStore<label> {};
 
-template <typename DS>
-using TrackableDataStore = _TrackableDataStore<DS, DS::label::might_track>;
+	template <typename DS, typename label>
+	using TrackableDataStore = _TrackableDataStore<DS, label, label::might_track::value>;
 }
