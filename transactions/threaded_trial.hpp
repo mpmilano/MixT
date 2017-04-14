@@ -33,7 +33,7 @@ struct test{
 
 	test(configuration_parameters params)
 		:params(params){
-		output_file << params;
+		output_file << params << std::endl;
 		for (std::size_t i = 0; i < params.starting_num_clients; ++i){
 			push_client();
 		}

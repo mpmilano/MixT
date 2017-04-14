@@ -1,4 +1,6 @@
 #pragma once
+#include "type_utils.hpp"
+#include "SQLLevels.hpp"
 
 namespace myria{
 
@@ -17,9 +19,29 @@ namespace myria{
 			using namespace chrono;
 			o << duration_cast<microseconds>(start_time - test_start).count() << ", "
 				<< duration_cast<microseconds>(stop_time - test_start).count() << ", "
-				<< is_write << ", " << l << ", " << is_abort <<", "  << abort_string << ", "
+				<< is_write << ", " << l << ", " << is_abort <<", \""  << abort_string << "\", "
 				<< is_protocol_error << ", " << is_fatal_error<< endl;
 		}
+		void read(const time_t &test_start, std::istream& i)  {
+			using namespace std;
+			using namespace chrono;
+			std::size_t start_offset;
+			std::size_t stop_offset;
+			std::string level;
+			constexpr mutils::comma_space cs{};
+			i.imbue(std::locale(i.getloc(), new mutils::comma_is_space()));
+			i >> start_offset >> cs >> stop_offset >> cs >>
+				is_write >> cs >> level >> cs >> is_abort >> cs >> abort_string >> cs >>
+				is_protocol_error >> cs >> is_fatal_error >> cs;
+			start_time = test_start + microseconds{start_offset};
+			stop_time = test_start + microseconds{stop_offset};
+			l = (level.c_str()[0] == 'c' ? pgsql::Level::causal : pgsql::Level::strong);
+		}
 	};
+
+	std::istream& operator>>(std::istream& i, run_result& p){
+		p.read(std::chrono::high_resolution_clock::now(),i);
+		return i;
+	}
 
 }

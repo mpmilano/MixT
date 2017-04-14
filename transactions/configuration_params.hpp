@@ -46,29 +46,7 @@ struct configuration_parameters{
 	
 };
 
-	struct comma_space {
-		constexpr comma_space() = default;
-	};
 
-	std::ostream& operator<<(std::ostream& o, const comma_space&){
-		return o << ", ";
-	}
-
-	std::istream& operator>>(std::istream& o, const comma_space&){
-		if (o.peek() == ',')
-		{
-			char cma;
-			o.get(cma);
-			assert(cma == ',');
-		}
-		if (o.peek() == ' ')
-		{
-			char spc;
-			o.get(spc);
-			assert(spc == ' ');
-		}
-		return o;
-	}
 
 	std::ostream& operator<<(std::ostream& o, const std::chrono::seconds& p){
 		return o << p.count() << "s";
@@ -76,7 +54,7 @@ struct configuration_parameters{
 	
 	std::ostream& operator<<(std::ostream& o, const configuration_parameters& p){
 		using namespace mutils;
-		constexpr comma_space cs{};
+		constexpr mutils::comma_space cs{};
 		return o << string_of_ip(p.strong_ip) << cs << p.strong_relay_port << cs <<
 			string_of_ip(p.causal_ip) << cs << p.causal_relay_port << cs <<
 			p.client_freq << cs << p.starting_num_clients << cs << p.increase_clients_freq << cs <<
@@ -110,23 +88,11 @@ struct configuration_parameters{
 		}
 		return i;
 	}
-
-	struct comma_is_space : std::ctype<char> {
-		//from http://stackoverflow.com/questions/7302996/changing-the-delimiter-for-cin-c
-		comma_is_space() : std::ctype<char>(get_table()) {}
-		static mask const* get_table()
-			{
-				static mask rc[table_size];
-				rc[(int)','] = std::ctype_base::space;
-				rc[(int)'\n'] = std::ctype_base::space;
-				return &rc[0];
-			}
-	};
 	
 	std::istream& operator>>(std::istream& i, configuration_parameters& p){
 		using namespace mutils;
-		i.imbue(std::locale(i.getloc(), new comma_is_space()));
-		constexpr comma_space cs{};
+		i.imbue(std::locale(i.getloc(), new mutils::comma_is_space()));
+		constexpr mutils::comma_space cs{};
 		std::string strong_ip;
 		std::string causal_ip;
 		i >> strong_ip >> cs >> p.strong_relay_port >> cs >>
