@@ -45,12 +45,6 @@ struct configuration_parameters{
 	}
 	
 };
-
-
-
-	std::ostream& operator<<(std::ostream& o, const std::chrono::seconds& p){
-		return o << p.count() << "s";
-	}
 	
 	std::ostream& operator<<(std::ostream& o, const configuration_parameters& p){
 		using namespace mutils;
@@ -61,32 +55,6 @@ struct configuration_parameters{
 			p.test_duration << cs << p.percent_dedicated_connections << cs <<
 			p.percent_causal << cs << p.percent_read << cs << p.output_file << cs <<
 			p.log_delay_tolerance;
-	}
-
-	template<typename U, typename V>
-	std::istream& operator>>(std::istream& i, std::chrono::duration<U,V>& p){
-		using namespace std;
-		using namespace chrono;
-		char suffix[] = {0,0,0,0};
-		size_t number;
-		i >> number >> suffix[0];
-		if (suffix[0] == 's'){
-			p = duration_cast<DECT(p)>(seconds{number});
-		} else {
-			i >> suffix[1];
-			if (suffix[0] == 'm' && suffix[1] == 'i'){
-				i >> suffix[2];
-				assert(string{suffix} == "min");
-				p = duration_cast<DECT(p)>(minutes{number});
-			}
-			if (suffix[0] == 'm' && suffix[1] == 's'){
-				p = duration_cast<DECT(p)>(milliseconds{number});
-			}
-			if (suffix[0] == 'u' && suffix[1] == 's'){
-				p = duration_cast<DECT(p)>(microseconds{number});
-			}
-		}
-		return i;
 	}
 	
 	std::istream& operator>>(std::istream& i, configuration_parameters& p){

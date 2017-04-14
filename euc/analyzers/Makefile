@@ -10,4 +10,7 @@ all: $(object_files)
 utils.o:
 	clang++ -c ../../transactions/*/utils.cpp $(CPPFLAGS)
 SQLLevels.o:
-	@clang++ -c ../../transactions/*/SQLLevels.cpp -DNUM_CAUSAL_MASTERS="2" -DCAUSAL_GROUP=$(causalGroup) $(CPPFLAGS)
+	clang++ -c ../../transactions/*/SQLLevels.cpp -DNUM_CAUSAL_MASTERS="2" -DCAUSAL_GROUP=$(causalGroup) $(CPPFLAGS)
+
+clean:
+	rm *.o
