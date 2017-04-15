@@ -134,8 +134,8 @@ namespace myria { namespace mtl  { namespace typecheck_phase { namespace trackin
 	  return Statement<Label<top>,Let<
 					Binding<Label<top>,tracker::Tombstone,tombstone_str, Expression<Label<top>, tracker::Tombstone, GenerateTombstone> >,
 					Statement<Label<top>,Sequence<
-					   DECT(insert_tracking<sorted,mutils::typeset<> >(a)),
-					   Statement<Label<top>, DECT(write_tombstones(sorted::weak::add(max_label{}))) >
+																 Statement<Label<top>, DECT(write_tombstones(sorted::weak::add(max_label{}))) >,
+																 DECT(insert_tracking<sorted,mutils::typeset<> >(a))
 							       > > > >{};
 	}
 	
