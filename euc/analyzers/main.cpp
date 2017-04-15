@@ -6,7 +6,8 @@ using namespace myria;
 using namespace std;
 using namespace chrono;
 
-int main(int, char** argv){
+int main(int argc, char** argv){
+	assert(argc == 4);
 	auto now = std::chrono::high_resolution_clock::now();
 	auto results = read_from_file(now,argv[1]);
 	auto compare_start_times = [](const run_result& a, const run_result &b){
@@ -20,24 +21,35 @@ int main(int, char** argv){
 	using duration_t = DECT(results.back().stop_time - results.back().stop_time);
 	struct throughput_v_latency{
 	  Frequency throughput;
-	  duration_t latency;
+	  milliseconds average_latency;
 	  void print(std::ostream& o){
-	    o << "[" << throughput << "," << duration_cast<microseconds>(latency) << "]" << std::endl;
+	    o << "[" << throughput << "," << average_latency << "]" << std::endl;
 	  }
-	  throughput_v_latency(DECT(throughput) t, DECT(latency) l)
-	    :throughput(t),latency(l){}
+	  throughput_v_latency(DECT(throughput) t, DECT(average_latency) l)
+	    :throughput(t),average_latency(l){}
 	};
 	std::vector<throughput_v_latency> bin_averages;
-	std::size_t increment_fraction = 10;
-	std::size_t bin_size = 1000;
-	for (std::size_t i = 0; i < (results.size()/bin_size)/increment_fraction; ++i)
+	std::size_t increment_fraction = atoi(argv[2]);
+	std::size_t bin_size = atoi(argv[3]);
+	for (std::size_t i = 0; i < (results.size()/bin_size)*increment_fraction; ++i)
 	{
-		auto latency = results[((i*increment_fraction)+1)*bin_size].stop_time
-			- results[(i*increment_fraction)*bin_size].stop_time;
+		auto segment_duration = results[bin_size + (bin_size / increment_fraction)*i].stop_time
+			- results[(bin_size / increment_fraction)*i].stop_time;
+		DECT(segment_duration) total_time{0};
+		assert(total_time.count() == 0);
+		std::size_t j = 0;
+		for (auto it = results.begin() + i*bin_size/increment_fraction; j < bin_size; ++it, ++j){
+			total_time += it->stop_time - it->start_time;
+		}
 		bin_averages.emplace_back(
 					  Frequency{bin_size * duration_cast<duration_t>(1s).count()
-					      /latency.count()},
-					  latency);
+					      /segment_duration.count()},
+						milliseconds{duration_cast<milliseconds>(total_time).count() / bin_size}
+					  );
 	}
+	auto sort_tvl = [](const auto& l, const auto& r){
+		return l.average_latency < r.average_latency;
+	};
+	std::sort(std::begin(bin_averages), std::end(bin_averages), sort_tvl);
 	for (auto & e : bin_averages) e.print(std::cout);
 }
