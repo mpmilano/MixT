@@ -44,37 +44,41 @@ struct test{
 	}
 	
 	template<typename Time>
-	auto schedule_event(const Time& start_time){
-		return now() + getArrivalInterval(params.current_arrival_rate(now() - start_time));
+	auto schedule_event(const Time& start_time, std::size_t parallel_factor){
+		return now() + getArrivalInterval(params.current_arrival_rate(now() - start_time) / parallel_factor);
 	}
 
 	template<typename timeout, typename time>
-	void process_results(std::list<std::future<run_result> > &results, std::list<run_result> &pending_io,
+	void process_results(moodycamel::ConcurrentQueue<std::future<run_result> > &results,
+											 moodycamel::ConcurrentQueue<run_result> &pending_io,
 											 timeout delay, time next_event_time){
-		for (auto iter = results.begin(); iter != results.end() && next_event_time > now(); ++iter){
-			if (iter->wait_for(delay) != std::future_status::timeout){
+		std::future<run_result> it;
+		while (next_event_time > now() && results.try_dequeue(it)){
+			if (it.wait_for(delay) != std::future_status::timeout){
 				try {
-					pending_io.emplace_back(iter->get());
+					pending_io.enqueue(it.get());
 				}
 				catch (...){
 					run_result r;
 					r.is_fatal_error = true;
-					pending_io.push_back(r);
+					pending_io.enqueue(r);
 					--number_enqueued_clients;
 				}
-				iter = results.erase(iter);
-				--iter; //will increment on next loop execution
+			}
+			else {
+				results.enqueue(std::move(it));
 			}
 		}
 	}
 
+	std::mutex output_file_lock;
 	std::ofstream output_file{params.output_file};
 
 	template<typename time>
 	void print_result(const time &start_time, const run_result &r){
+		std::unique_lock<std::mutex> flock{output_file_lock};
 		r.print(start_time, output_file);
 	}
-	
 	void run_test(){
 		using namespace server;
 		using namespace pgsql;
@@ -82,17 +86,58 @@ struct test{
 		using namespace std;
 		using namespace chrono;
 		using namespace mutils;
-		auto &client_queue = this->client_queue;
-		std::list<std::future<run_result> > results;
-		std::list<run_result> pending_io;
+		using namespace moodycamel;
+		std::size_t parallel_factor = 8;
+		ConcurrentQueue<std::future<run_result> > results;
+		ConcurrentQueue<run_result> pending_io;
 		auto start_time = now();
-		auto last_log_write_time = start_time;
-		auto stop_time = start_time + params.test_duration;
-		
-		//schedule next event
-		auto next_event_time = schedule_event(start_time);
-		std::size_t event_count{0};
+		std::atomic<DECT(start_time)> last_log_write_time;
+		last_log_write_time.store(start_time);
+		std::atomic<std::size_t> event_count{0};
 		try {
+			std::vector<std::future<void> > launch_threads;
+			for (std::size_t i =0 ; i < parallel_factor; ++i){
+				launch_threads.emplace_back(std::async(launch::async, [&]{
+							this->launcher_loop(results,pending_io,start_time,last_log_write_time,event_count,parallel_factor);							
+						}));
+			}
+			for (auto &e : launch_threads){
+				e.get();
+			}
+
+		} catch (...){
+			//Looks like we have failed to initialize our connections.
+			std::cout << "exception thrown: aborting" << std::endl;
+		}
+		for (std::size_t i = 0; i < 20 && results.size_approx() > 0; ++i){
+			this_thread::sleep_for(1s);
+			std::cout << "waiting for: " << results.size_approx();
+			process_results(results,pending_io,1ms,now()+100s);
+		}
+		{
+			run_result res;
+			while (pending_io.try_dequeue(res)){
+				print_result(start_time,res);
+			}
+		}
+		output_file.flush();
+	}
+	template<typename time>
+	void launcher_loop(moodycamel::ConcurrentQueue<std::future<run_result> > &results,
+										 moodycamel::ConcurrentQueue<run_result> &pending_io,
+										 time start_time, std::atomic<time> &last_log_write_time,
+										 std::atomic<std::size_t> &event_count,
+										 std::size_t parallel_factor){
+		using namespace server;
+		using namespace pgsql;
+		using namespace mtl;
+		using namespace std;
+		using namespace chrono;
+		using namespace mutils;
+		using namespace moodycamel;
+		auto stop_time = start_time + params.test_duration;
+		auto next_event_time = schedule_event(start_time,parallel_factor);
+		auto &client_queue = this->client_queue;
 		for (; now() < stop_time; ++event_count){
 			//always at least enqueue one client if needed
 			if (number_enqueued_clients < params.total_clients_at(now() - start_time)){
@@ -110,9 +155,8 @@ struct test{
 				//rarely, try and print stuff
 				if (event_count % 500 == 0) {
 					while(next_event_time > now()){
-						if (pending_io.size() > 0){
-							auto result = pending_io.front();
-							pending_io.pop_front();
+						run_result result;
+						if (pending_io.try_dequeue(result)){
 							print_result(start_time,result);
 						}
 					}
@@ -121,29 +165,32 @@ struct test{
 				}
 			}
 			//if it's been forever since our last log write, write the log *now*
-			if (now() > (params.log_delay_tolerance + last_log_write_time)){
+			if (now() > (params.log_delay_tolerance + last_log_write_time.load())){
 				std::cout << "log writer stalled, flushing now" << std::endl;
 				process_results(results,pending_io,0s,1s + now());
-				while(pending_io.size() > 0){
-					auto result = pending_io.front();
-					pending_io.pop_front();
-					print_result(start_time,result);
+				{
+					run_result result;
+					while (pending_io.try_dequeue(result)){
+						print_result(start_time,result);
+					}
 				}
 				output_file.flush();
 				last_log_write_time = now();
 			}
 			
 			//work done, wait until event launch
-			this_thread::sleep_for(next_event_time - now());
+			auto slept_for = next_event_time - now();
+			this_thread::sleep_for(slept_for);
 			auto this_event_time = next_event_time;
 			//schedule next event
-			next_event_time = schedule_event(start_time);
+			next_event_time = schedule_event(start_time,parallel_factor);
 			//try and handle this event (hopefully before it's time for the next one)
 			std::unique_ptr<client> client_p;
 			client_queue.wait_dequeue(client_p);
-			results.emplace_back(tp.push([this_event_time,&client_queue,
+			results.enqueue(tp.push([slept_for,this_event_time,&client_queue,
 																		client_ptr = client_p.release()](int){
 						run_result ret;
+						ret.slept_for = duration_cast<microseconds>(slept_for);
 						ret.start_time = this_event_time;
 						try { 
 							client_ptr->client_action(ret);
@@ -158,19 +205,6 @@ struct test{
 						return ret;
 					}));
 		}
-		} catch (...){
-			//Looks like we have failed to initialize our connections.
-			std::cout << "exception thrown: aborting" << std::endl;
-		}
-		for (std::size_t i = 0; i < 20 && results.size() > 0; ++i){
-			this_thread::sleep_for(1s);
-			std::cout << "waiting for: " << results.size();
-			process_results(results,pending_io,1ms,now()+100s);
-		}
-		for (auto &res : pending_io){
-			print_result(start_time,res);
-		}
-		output_file.flush();
 	}
 };
 }

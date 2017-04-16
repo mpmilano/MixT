@@ -80,4 +80,5 @@ int main(int argc, char **argv) {
   std::cout << params << std::endl;
   test t1{params};
   t1.run_test();
+	exit(0);
 }

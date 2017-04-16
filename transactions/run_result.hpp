@@ -14,13 +14,14 @@ namespace myria{
 		std::string abort_string;
 		bool is_protocol_error{false};
 		bool is_fatal_error{false};
+		std::chrono::microseconds slept_for;
 		void print(const time_t &test_start, std::ostream& o) const {
 			using namespace std;
 			using namespace chrono;
 			o << duration_cast<microseconds>(start_time - test_start).count() << ", "
 				<< duration_cast<microseconds>(stop_time - test_start).count() << ", "
 				<< is_write << ", " << l << ", " << is_abort <<", \""  << abort_string << "\", "
-				<< is_protocol_error << ", " << is_fatal_error<< endl;
+				<< is_protocol_error << ", " << is_fatal_error<< "," << slept_for << endl;
 		}
 		void read(const time_t &test_start, std::istream& i)  {
 			using namespace std;
@@ -33,7 +34,7 @@ namespace myria{
 			i.imbue(std::locale(i.getloc(), new mutils::comma_is_space()));
 			i >> start_offset >> cs >> stop_offset >> cs >>
 				is_write >> cs >> level >> cs >> is_abort >> cs >> pre_abort_string >> cs >>
-				is_protocol_error >> cs >> is_fatal_error >> cs;
+				is_protocol_error >> cs >> is_fatal_error >> cs >> slept_for;
 			start_time = test_start + microseconds{start_offset};
 			stop_time = test_start + microseconds{stop_offset};
 			l = (level.c_str()[0] == 'c' ? pgsql::Level::causal : pgsql::Level::strong);

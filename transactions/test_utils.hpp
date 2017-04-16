@@ -6,9 +6,7 @@
 namespace mutils{
 
 //I'm guessing miliseconds.  Here's hoping!
-	std::chrono::milliseconds getArrivalInterval(Frequency arrival_rate);
-
-	using milliseconds = decltype(getArrivalInterval(5_Hz));
+	std::chrono::microseconds getArrivalInterval(Frequency arrival_rate);
 
 	unsigned int get_zipfian_value(unsigned int max, double alpha);
 

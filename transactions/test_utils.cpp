@@ -17,15 +17,15 @@ namespace mutils{
 	}
 	
 //I'm guessing miliseconds.  Here's hoping!
-	milliseconds getArrivalInterval(Frequency arrival_rate) {
+	std::chrono::microseconds getArrivalInterval(Frequency arrival_rate) {
 		using namespace std;
 		using namespace chrono;
 		// exponential
-		constexpr double thousand = -1000.0;
+		constexpr double thousands = -1000000.0;
 		double U = better_rand();
-		double T = thousand * log(U) / arrival_rate.hertz;
+		double T = thousands * log(U) / arrival_rate.hertz;
 		unsigned long l = round(T);
-		return milliseconds(l);
+		return microseconds(l);
 	}
 
 	unsigned int get_zipfian_value(unsigned int max, double alpha){
