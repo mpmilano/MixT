@@ -227,7 +227,6 @@ namespace myria{ namespace pgsql {
 		}
 
 		int SQLStore_impl::GSQLObject::to_bytes(char* c) const {
-			//TODO: this is not symmetric! That is a bad design! Bad!
 			int* arr = (int*)c;
 			arr[0] = (i->level == Level::strong ?
 					  SQLStore<Level::strong>::id() :
@@ -243,16 +242,16 @@ namespace myria{ namespace pgsql {
 		}
 
 		void SQLStore_impl::GSQLObject::post_object(const std::function<void (char const * const,std::size_t)>&f) const {
-			//TODO: this is not symmetric! That is a bad design! Bad!
 			auto size = bytes_size();
 			char buf[size];
 			to_bytes(buf);
 			f(buf,size);
 		}
 		
-		SQLStore_impl::GSQLObject SQLStore_impl::GSQLObject::from_bytes(SQLInstanceManager_abs& mgr, char const *v){
-			int* arr = (int*)v;
+		SQLStore_impl::GSQLObject SQLStore_impl::GSQLObject::from_bytes(SQLInstanceManager_abs& mgr, char const *_v){
 			//arr[0] has already been used to find this implementation
+			auto *v = _v + sizeof(int);
+			int* arr = (int*)v;
 			Level* arrl = (Level*) (arr + 3);
 			Table* arrt = (Table*) (arrl + 1);
 			//of from_bytes
