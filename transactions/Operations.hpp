@@ -59,6 +59,8 @@ struct convert_SelfType{
 	template<typename Name, typename Ret, typename... Args>
 struct SupportedOperation {
 
+		using Return = Ret;
+		using OperationName = Name;
 	template<typename Handle>
 	struct SupportsOn{
 
