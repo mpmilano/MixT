@@ -23,10 +23,10 @@ namespace myria{
 		//using Handle = Handle<l,ha,T,ops...>;
 		assert(__v);
 		if (((bool*)__v)[0]) {
-			std::size_t expected_size = *((std::size_t*)__v + sizeof(bool)) - sizeof(int);
+			std::size_t expected_size = *((std::size_t*)__v + sizeof(bool));
 			auto *_v = __v + sizeof(bool) + sizeof(expected_size);
 			int read_id = ((int*)_v)[0];
-			auto *v = _v + sizeof(int);
+			auto *v = _v;
 			typedef std::tuple<STORE_LIST> stores;
 			typedef mutils::fold_types<mutils::Pointerize,stores,std::tuple<> > ptr_stores;
 			ptr_stores lst;
@@ -43,9 +43,10 @@ namespace myria{
 						else return acc;
 					},nullptr);
 			if (!ret) {
+				using UnmatchedStore = UnmatchedDataStore<l,T,ops...>;
 				ret = release_delete<l>(new Handle<l,T,ops...>{
-						std::make_shared<UnmatchedRemoteObject<l,T> >(v,expected_size),
-							UnmatchedDataStore<l,T>::inst() });
+						std::make_shared<typename UnmatchedStore::template UnmatchedRemoteObject<T> >(v,expected_size),
+							UnmatchedStore::inst() });
 			}
 			assert(ret);
 			assert(ret.unique());
