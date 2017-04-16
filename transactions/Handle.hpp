@@ -78,17 +78,18 @@ namespace myria{
 		std::size_t to_bytes_hndl(char* v) const {
       //for serialization
       if (_ro) {
-	((bool*)v)[0] = true;
-	return sizeof(bool) + _ro->to_bytes(v + sizeof(bool));
+				((bool*)v)[0] = true;
+				((std::size_t*)(v + sizeof(bool)))[0] = mutils::bytes_size(*_ro);
+				return sizeof(bool) + _ro->to_bytes(v + sizeof(bool) + sizeof(std::size_t));
       }
       else {
-	((bool*)v)[0] = false;
-	return sizeof(bool);
+				((bool*)v)[0] = false;
+				return sizeof(bool);
       }
     }
 
 		std::size_t bytes_size_hndl() const {
-      return sizeof(bool) + (_ro ? _ro->bytes_size() : 0);
+      return sizeof(bool) + (_ro ? _ro->bytes_size() + sizeof(std::size_t) : 0);
     }
 
     static std::unique_ptr<Handle> from_bytes(mutils::DeserializationManager* rdc, char const *v){

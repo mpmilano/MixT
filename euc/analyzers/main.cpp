@@ -22,11 +22,21 @@ int main(int argc, char** argv){
 	struct throughput_v_latency{
 	  Frequency throughput;
 	  milliseconds average_latency;
+		milliseconds elapsed_time;
+		microseconds average_delay;
+		microseconds average_desired_delay;
+		microseconds average_effective_delay;
 	  void print(std::ostream& o){
-	    o << "[" << throughput << "," << average_latency << "]" << std::endl;
+	    o << throughput << ","
+				<< average_latency << ","
+				<< elapsed_time << ","
+				<< average_delay << ","
+				<< average_desired_delay << ","
+				<< average_effective_delay << std::endl;
 	  }
-	  throughput_v_latency(DECT(throughput) t, DECT(average_latency) l)
-	    :throughput(t),average_latency(l){}
+	  throughput_v_latency(DECT(throughput) t, DECT(average_latency) l, DECT(elapsed_time) e,
+												 DECT(average_delay) d, DECT(average_desired_delay) dd, DECT(average_effective_delay) ed)
+	    :throughput(t),average_latency(l),elapsed_time(e),average_delay(d),average_desired_delay(dd), average_effective_delay(ed){}
 	};
 	std::vector<throughput_v_latency> bin_averages;
 	std::size_t increment_fraction = atoi(argv[2]);
@@ -38,13 +48,25 @@ int main(int argc, char** argv){
 		DECT(segment_duration) total_time{0};
 		assert(total_time.count() == 0);
 		std::size_t j = 0;
+		auto finish_time = now;
+		microseconds total_delay = microseconds{0};
+		microseconds total_desired_delay = microseconds{0};
+		microseconds total_effective_delay = microseconds{0};
 		for (auto it = results.begin() + i*bin_size/increment_fraction; j < bin_size; ++it, ++j){
 			total_time += it->stop_time - it->start_time;
+			total_delay += it->slept_for;
+			total_effective_delay += it->effective_delay;
+			total_desired_delay += it->desired_delay;
+			if (it->stop_time > finish_time) finish_time = it->stop_time;
 		}
 		bin_averages.emplace_back(
 					  Frequency{bin_size * duration_cast<duration_t>(1s).count()
 					      /segment_duration.count()},
-						milliseconds{duration_cast<milliseconds>(total_time).count() / bin_size}
+						milliseconds{duration_cast<milliseconds>(total_time).count() / bin_size},
+						duration_cast<milliseconds>(finish_time - now),
+						microseconds{total_delay.count() / ((int)bin_size)},
+						microseconds{total_desired_delay.count() / ((int)bin_size)},
+						microseconds{total_effective_delay.count() / ((int)bin_size)}
 					  );
 	}
 	auto sort_tvl = [](const auto& l, const auto& r){

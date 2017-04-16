@@ -1,6 +1,7 @@
 //for things where it's irritating to put them before other things.
 #pragma once
 #include "Handle.hpp"
+#include "UnmatchedRemoteObject.hpp"
 
 namespace myria{
 
@@ -22,7 +23,8 @@ namespace myria{
 		//using Handle = Handle<l,ha,T,ops...>;
 		assert(__v);
 		if (((bool*)__v)[0]) {
-			auto *_v = __v + sizeof(bool);
+			std::size_t expected_size = *((std::size_t*)__v + sizeof(bool)) - sizeof(int);
+			auto *_v = __v + sizeof(bool) + sizeof(expected_size);
 			int read_id = ((int*)_v)[0];
 			auto *v = _v + sizeof(int);
 			typedef std::tuple<STORE_LIST> stores;
@@ -40,8 +42,11 @@ namespace myria{
 						}
 						else return acc;
 					},nullptr);
-			if (!ret) std::cerr << "Error: deserialized item matches no id: "
-								<< read_id << std::endl;
+			if (!ret) {
+				ret = release_delete<l>(new Handle<l,T,ops...>{
+						std::make_shared<UnmatchedRemoteObject<l,T> >(v,expected_size),
+							UnmatchedDataStore<l,T>::inst() });
+			}
 			assert(ret);
 			assert(ret.unique());
 			std::get_deleter<release_deleter<Handle<l,T,ops...> > >(ret)->release();

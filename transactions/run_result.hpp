@@ -15,28 +15,33 @@ namespace myria{
 		bool is_protocol_error{false};
 		bool is_fatal_error{false};
 		std::chrono::microseconds slept_for;
+		std::chrono::microseconds desired_delay;
+		std::chrono::microseconds effective_delay;
 		void print(const time_t &test_start, std::ostream& o) const {
 			using namespace std;
 			using namespace chrono;
-			o << duration_cast<microseconds>(start_time - test_start).count() << ", "
-				<< duration_cast<microseconds>(stop_time - test_start).count() << ", "
+			std::stringstream ss;
+			ss << duration_cast<microseconds>(start_time - test_start) << ", "
+				<< duration_cast<microseconds>(stop_time - test_start) << ", "
 				<< is_write << ", " << l << ", " << is_abort <<", \""  << abort_string << "\", "
-				<< is_protocol_error << ", " << is_fatal_error<< "," << slept_for << endl;
+				 << is_protocol_error << ", " << is_fatal_error<< ", " << slept_for << ", " << desired_delay << ", "
+				 << effective_delay << endl;
+			o << ss.str();
 		}
 		void read(const time_t &test_start, std::istream& i)  {
 			using namespace std;
 			using namespace chrono;
-			std::size_t start_offset;
-			std::size_t stop_offset;
+			microseconds start_offset;
+			microseconds stop_offset;
 			std::string level;
 			std::string pre_abort_string;
 			constexpr mutils::comma_space cs{};
 			i.imbue(std::locale(i.getloc(), new mutils::comma_is_space()));
 			i >> start_offset >> cs >> stop_offset >> cs >>
 				is_write >> cs >> level >> cs >> is_abort >> cs >> pre_abort_string >> cs >>
-				is_protocol_error >> cs >> is_fatal_error >> cs >> slept_for;
-			start_time = test_start + microseconds{start_offset};
-			stop_time = test_start + microseconds{stop_offset};
+				is_protocol_error >> cs >> is_fatal_error >> cs >> slept_for >> cs >> desired_delay >> cs >> effective_delay >> cs;
+			start_time = test_start + start_offset;
+			stop_time = test_start + stop_offset;
 			l = (level.c_str()[0] == 'c' ? pgsql::Level::causal : pgsql::Level::strong);
 			pre_abort_string[pre_abort_string.size()-1] = 0;
 			abort_string = pre_abort_string.c_str() + 1;
