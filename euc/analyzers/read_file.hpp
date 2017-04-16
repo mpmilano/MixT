@@ -18,6 +18,10 @@ namespace myria{
 			while (file.good()){
 				ret.emplace_back();
 				ret.back().read(now,file);
+				auto cand = ret.back();
+				for (int i = 1; i < ignore.log_every_n; ++i){
+					ret.push_back(cand);
+				}
 			}
 			return ret;
 		}
