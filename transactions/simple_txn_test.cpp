@@ -37,13 +37,15 @@ template <Level l> void client::txn_write() {
   // return incr_trans.run_local(hndl);
 }
 
-run_result client::client_action(run_result &result) {
+	std::unique_ptr<run_result> & client::client_action(std::unique_ptr<run_result> &result) {
   auto &params = t.params;
   Level l = (mutils::better_rand() > params.percent_causal ? Level::strong
                                                            : Level::causal);
   bool write = mutils::better_rand() > params.percent_read;
-  result.l = l;
-  result.is_write = write;
+	if (result){
+		result->l = l;
+		result->is_write = write;
+	}
   try {
     switch (l) {
     case Level::strong:
@@ -61,19 +63,21 @@ run_result client::client_action(run_result &result) {
     default:
       assert(false);
     };
-    result.is_abort = false;
+    if (result) result->is_abort = false;
   } catch (const SerializationFailure &f) {
-    result.is_abort = true;
-		result.abort_string = f.what();
+		if (result){
+			result->is_abort = true;
+			result->abort_string = f.what();
+		}
   }
-  result.stop_time = high_resolution_clock::now();
+  if (result) result->stop_time = high_resolution_clock::now();
   return result;
 }
 }
 
 int main(int argc, char **argv) {
   configuration_parameters params;
-  assert(argc == 1 || argc == 14);
+  assert(argc == 1 || argc == 15);
   if (argc == 1) {
     std::cin >> params;
   } else read_from_args(params,argv + 1);

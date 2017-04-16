@@ -26,7 +26,7 @@ struct client{
 	client(test &t, s &spool, c &cpool, WeakConnection strong_relay, WeakConnection causal_relay)
 		:sc(cpool),ss(spool),strong_relay(std::move(strong_relay)),causal_relay(std::move(causal_relay)),t(t){}
 
-	run_result client_action(run_result&);
+	std::unique_ptr<run_result> & client_action(std::unique_ptr<run_result>&);
 
 	//getters, by level.  true for strong.
 	

@@ -15,6 +15,7 @@ struct configuration_parameters{
 	std::chrono::seconds test_duration; double percent_dedicated_connections;
 	double percent_causal; double percent_read; std::string output_file;
 	std::chrono::seconds log_delay_tolerance;
+	unsigned short log_every_n;
 	
 	//derived values
 	std::size_t max_clients() const {
@@ -54,7 +55,7 @@ struct configuration_parameters{
 			p.client_freq << cs << p.starting_num_clients << cs << p.increase_clients_freq << cs <<
 			p.test_duration << cs << p.percent_dedicated_connections << cs <<
 			p.percent_causal << cs << p.percent_read << cs << p.output_file << cs <<
-			p.log_delay_tolerance;
+			p.log_delay_tolerance << cs << p.log_every_n;
 	}
 	
 	std::istream& operator>>(std::istream& i, configuration_parameters& p){
@@ -68,7 +69,7 @@ struct configuration_parameters{
 			p.client_freq >> cs >> p.starting_num_clients >> cs >> p.increase_clients_freq >> cs >>
 			p.test_duration >> cs >> p.percent_dedicated_connections >> cs >>
 			p.percent_causal >> cs >> p.percent_read >> cs >> p.output_file >> cs >>
-			p.log_delay_tolerance;
+			p.log_delay_tolerance >> cs >> p.log_every_n;
 		std::cout << strong_ip << std::endl
 							<< causal_ip << std::endl;
 		p.strong_ip = decode_ip(strong_ip.c_str());
@@ -125,6 +126,10 @@ struct configuration_parameters{
 		{
       std::istringstream ss{std::string{args[12]}};
       ss >> params.log_delay_tolerance;
+    }
+		{
+      std::istringstream ss{std::string{args[13]}};
+      ss >> params.log_every_n;
     }
 	}
 }
