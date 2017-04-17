@@ -26,7 +26,7 @@ auto init_causal(){
 	return conn_causal;
 }
 
-void select_causal_timestamp(pqxx::connection& conn_causal, std::array<int,4>& tmp) {
+void select_causal_timestamp(pqxx::connection& conn_causal, std::array<unsigned long long,4>& tmp) {
 	pqxx::work trans_causal(conn_causal);
 	trans_causal.exec("set search_path to causalstore,public");
 	auto r = trans_causal.prepared("selectit").exec();
@@ -35,7 +35,7 @@ void select_causal_timestamp(pqxx::connection& conn_causal, std::array<int,4>& t
 	trans_causal.commit();
 }
 
-void update_strong_clock(pqxx::connection& conn_strong, std::array<int,4>& tmp){
+void update_strong_clock(pqxx::connection& conn_strong, std::array<unsigned long long,4>& tmp){
 	pqxx::work trans_strong(conn_strong);
 	trans_strong.exec("set search_path to \"BlobStore\",public");
 	binarystring blob(&tmp[0],tmp.size()*4);
@@ -44,7 +44,7 @@ void update_strong_clock(pqxx::connection& conn_strong, std::array<int,4>& tmp){
 	trans_strong.commit();
 }
 
-void select_strong_clock(pqxx::connection& conn_strong, std::array<int,4>& arr){
+void select_strong_clock(pqxx::connection& conn_strong, std::array<unsigned long long,4>& arr){
 	pqxx::work trans_strong(conn_strong);
 	trans_strong.exec("set search_path to \"BlobStore\",public");
 	auto r = trans_strong.exec
@@ -56,8 +56,8 @@ void select_strong_clock(pqxx::connection& conn_strong, std::array<int,4>& arr){
 	memcpy(&arr[0],bs.data(),arr.size()*4);
 }
 
-void verify_strong_clock(pqxx::connection& conn_strong, std::array<int,4>& tmp){
-	std::array<int,4> arr;
+void verify_strong_clock(pqxx::connection& conn_strong, std::array<unsigned long long,4>& tmp){
+	std::array<unsigned long long,4> arr;
 	select_strong_clock(conn_strong, arr);
 	assert(arr[0] == tmp[0]);
 	assert(arr[1] == tmp[1]);

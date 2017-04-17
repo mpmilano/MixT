@@ -130,7 +130,7 @@ namespace myria { namespace pgsql {
 			}
 #endif
 
-			const std::array<int, NUM_CAUSAL_GROUPS>& local_time() const {
+			const std::array<unsigned long long, NUM_CAUSAL_GROUPS>& local_time() const {
 				return this->clock;
 			}
 
@@ -163,7 +163,7 @@ namespace myria { namespace pgsql {
 					return t;
 				}
 
-				const std::array<int,NUM_CAUSAL_GROUPS>& timestamp() const {
+				const std::array<unsigned long long,NUM_CAUSAL_GROUPS>& timestamp() const {
 					return gso.timestamp();
 				}
 

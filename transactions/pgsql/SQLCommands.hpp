@@ -200,7 +200,7 @@ namespace{
 		}
 		
 		template<typename T, typename Blob>
-		auto update_data_c(T &trans, Table t, int k, Name id, const std::array<int,NUM_CAUSAL_GROUPS> &ends, const Blob &b){
+		auto update_data_c(T &trans, Table t, int k, Name id, const std::array<unsigned long long,NUM_CAUSAL_GROUPS> &ends, const Blob &b){
 			static const constexpr TransactionNames tnames[NUM_CAUSAL_GROUPS * Table_max] = {
 				TransactionNames::udc1,TransactionNames::udc4,TransactionNames::udc7,
 				TransactionNames::udc2,TransactionNames::udc5,TransactionNames::udc8,
@@ -213,7 +213,7 @@ namespace{
 		
 		
 		template<typename T>
-		auto increment_c(T &trans, Table t, int k, Name id, const std::array<int,NUM_CAUSAL_GROUPS> &ends){
+		auto increment_c(T &trans, Table t, int k, Name id, const std::array<unsigned long long,NUM_CAUSAL_GROUPS> &ends){
 			static const constexpr TransactionNames tnames[NUM_CAUSAL_GROUPS * Table_max] = {
 				TransactionNames::ic1,TransactionNames::ic4,TransactionNames::ic7,
 				TransactionNames::ic2,TransactionNames::ic5,TransactionNames::ic8,
@@ -225,7 +225,7 @@ namespace{
 		}
 
 		template<typename T, typename Blob>
-		void initialize_with_id_c(T &trans, Table t, int k, Name id, const std::array<int,NUM_CAUSAL_GROUPS> &ends, const Blob& b){
+		void initialize_with_id_c(T &trans, Table t, int k, Name id, const std::array<unsigned long long,NUM_CAUSAL_GROUPS> &ends, const Blob& b){
 			assert(k > 0);
 
 
@@ -267,7 +267,7 @@ namespace{
 		}
 
 		template<typename T, typename Blob>
-		auto update_data(Level l, T &tran, Table t, int k, Name id, const std::array<int,NUM_CAUSAL_GROUPS> &ends, const Blob& b){
+		auto update_data(Level l, T &tran, Table t, int k, Name id, const std::array<unsigned long long,NUM_CAUSAL_GROUPS> &ends, const Blob& b){
 			//std::cerr << "in update_data" << std::endl;
 			if (l == Level::strong) return update_data_s(tran,t,id,b);
 			else if (l == Level::causal) return update_data_c(tran,t,k,id,ends,b);
@@ -278,7 +278,7 @@ namespace{
 
 
 		template<typename T, typename Blob>
-		void initialize_with_id(Level l, T &tran, Table t, int k, Name id, const std::array<int,NUM_CAUSAL_GROUPS> &ends, const Blob& b){
+		void initialize_with_id(Level l, T &tran, Table t, int k, Name id, const std::array<unsigned long long,NUM_CAUSAL_GROUPS> &ends, const Blob& b){
 			//std::cerr << "in initialize_with_id" << std::endl;
 			if (l == Level::strong) initialize_with_id_s(tran,t,id,b);
 			else initialize_with_id_c(tran,t,k,id,ends,b);
@@ -294,7 +294,7 @@ namespace{
 		}
 
 		template<typename T>
-		auto increment(Level l, T& tran, Table t, int k, Name id, const std::array<int,NUM_CAUSAL_GROUPS> &ends){
+		auto increment(Level l, T& tran, Table t, int k, Name id, const std::array<unsigned long long,NUM_CAUSAL_GROUPS> &ends){
 			//std::cerr << "in increment" << std::endl;
 			assert(t == Table::IntStore
 				   && "Error: increment currently only defined on integers");

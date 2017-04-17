@@ -5,10 +5,10 @@
 namespace myria { namespace tracker { 
 
 		namespace ends{
-			std::array<int,4> max(const std::array<int,4> &a,const std::array<int,4> &b);
+			std::array<unsigned long long,4> max(const std::array<unsigned long long,4> &a,const std::array<unsigned long long,4> &b);
 	
 			template<size_t s>
-			bool is_same(const std::array<int,s> &a,const std::array<int,s> &b){
+			bool is_same(const std::array<unsigned long long,s> &a,const std::array<unsigned long long,s> &b){
                                 for (decltype(s) i = 0; i < s; ++i){
 					if (a[i] != b[i]) return false;
 				}
@@ -16,7 +16,7 @@ namespace myria { namespace tracker {
 			}
 	
 			template<size_t s>
-			bool prec(const std::array<int,s> &a,const std::array<int,s> &b){
+			bool prec(const std::array<unsigned long long,s> &a,const std::array<unsigned long long,s> &b){
                                 for (decltype(s) i = 0; i < s; ++i){
 					assert(a[i] != -1);
 					assert(b[i] != -1);
