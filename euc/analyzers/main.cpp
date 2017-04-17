@@ -9,7 +9,9 @@ using namespace chrono;
 int main(int argc, char **argv) {
   assert(argc == 4);
   auto now = std::chrono::high_resolution_clock::now();
-  auto results = read_from_file(now, argv[1]);
+  auto resultsp = read_from_file(now, argv[1]);
+	auto &results = resultsp.second;
+	auto &params = resultsp.first;
   auto compare_start_times = [](const run_result &a, const run_result &b) {
     return a.start_time < b.start_time;
   };
@@ -48,6 +50,7 @@ int main(int argc, char **argv) {
     auto segment_start_time = results[i].stop_time;
     auto segment_stop_time = segment_start_time + segment_duration_goal;
     std::size_t adjust_window_by{0};
+		assert(&(*(results.begin() + i)) == &results[i]);
     for (auto it = results.begin() + i;
          it != results.end() && it->stop_time < segment_stop_time; ++it) {
       if (it->stop_time <
@@ -55,11 +58,30 @@ int main(int argc, char **argv) {
         ++adjust_window_by;
       ++bin_size;
     }
+		struct at_scope_end{
+			std::size_t &i; std::size_t &adjust_window_by;
+			~at_scope_end(){
+				i += adjust_window_by;
+			}
+		};
+		at_scope_end ase{i,adjust_window_by};
+		(void) ase;
+		if (bin_size)	--bin_size;
+		if (bin_size == 0 && i == results.size()-1) break;
+		else if (bin_size == 0) {
+			std::cout << "outlier: ";
+			results[i].print(now,std::cout);
+			continue;
+		}
 		assert(i < results.size());
+		if (i + bin_size >= results.size()){
+			std::cout << i << " " << bin_size << " " << results.size() << std::endl;
+		}
 		assert(i + bin_size < results.size());
 		assert((results[bin_size + i].stop_time - results[i].stop_time).count() > 0);
     auto segment_duration =
         results[bin_size + i].stop_time - results[i].stop_time;
+		assert(segment_duration < segment_duration_goal);
     DECT(segment_duration) total_time{0};
     assert(total_time.count() == 0);
     std::size_t j = 0;
@@ -76,9 +98,11 @@ int main(int argc, char **argv) {
         finish_time = it->stop_time;
     }
     if (bin_size > 0) {
-			assert(bin_size * duration_cast<duration_t>(1s).count() / segment_duration.count() != 0);
+			if (bin_size * params.log_every_n * duration_cast<duration_t>(1s).count() / segment_duration.count() == 0)
+				std::cout << duration_cast<microseconds>(segment_duration) << std::endl;
+			assert(bin_size * params.log_every_n * duration_cast<duration_t>(1s).count() / segment_duration.count() != 0);
       bin_averages.emplace_back(
-          Frequency{bin_size * duration_cast<duration_t>(1s).count() /
+          Frequency{bin_size * params.log_every_n * duration_cast<duration_t>(1s).count() /
                     segment_duration.count()},
           milliseconds{duration_cast<milliseconds>(total_time).count() /
                        bin_size},
@@ -87,7 +111,6 @@ int main(int argc, char **argv) {
           microseconds{total_desired_delay.count() / ((int)bin_size)},
           microseconds{total_effective_delay.count() / ((int)bin_size)});
     }
-    i += adjust_window_by;
   }
   auto sort_tvl = [](const auto &l, const auto &r) {
     return l.average_latency < r.average_latency;

@@ -6,16 +6,17 @@
 
 namespace myria{
 
-	std::vector<run_result> read_from_file(const typename run_result::time_t &now,
+	std::pair<configuration_parameters, std::vector<run_result> > read_from_file(const typename run_result::time_t &now,
 																				 char const * const fname){
 		std::cout << fname << std::endl;
-		std::vector<run_result> ret;
+		std::pair<configuration_parameters, std::vector<run_result> > retp;
+		std::vector<run_result> &ret = retp.second;
 		std::ifstream file{fname};
 		try {
 			std::string config_line;
 			std::getline(file,config_line);
 			std::istringstream ignore_in{config_line};
-			configuration_parameters ignore;
+			configuration_parameters &ignore = retp.first;
 			ignore_in >> ignore;
 			std::cout << ignore << std::endl;
 			{
@@ -27,13 +28,9 @@ namespace myria{
 					char const * const c_line = line.c_str();
 					(void) c_line;
 					ret.back().read(now,in);
-					auto cand = ret.back();
-					for (int i = 1; i < ignore.log_every_n; ++i){
-						ret.push_back(cand);
-					}
 				}
 			}
-			return ret;
+			return retp;
 		}
 		catch(const std::exception &e){
 			std::cout << e.what() << std::endl;
