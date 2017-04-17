@@ -28,6 +28,7 @@ then cd mutils-networking;  git checkout master; git pull;  cd ..
 else git clone https://github.com/mpmilano/mutils-networking.git
 fi
 source pg_env.sh
+echo $*
 export causalGroup="$1"
 export MY_IP="$2"
 shift 3
@@ -47,7 +48,9 @@ export first_iter=$2
 killall -9 vm
 rm /tmp/Myria*
 if [[ $first_iter ]];
-then make clean
+then
+		echo rebuilding
+		make clean
 else rm vm
 fi
 make -j4 vm
