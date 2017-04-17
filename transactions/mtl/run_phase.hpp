@@ -351,7 +351,7 @@ auto common_interp(store& s, tracker::Tracker& trk)
     while (!label::can_abort::value) {
       try {
 				using namespace std; using namespace chrono;
-				constexpr seconds max_backoff{2s};
+				constexpr seconds max_backoff{5min};
         // try an exponential back-off strategy
 				auto backoff = microseconds{ (size_t)mutils::better_rand() * backoff_multiplier + 1};
         std::this_thread::sleep_for(max_backoff > backoff ? backoff : max_backoff);
