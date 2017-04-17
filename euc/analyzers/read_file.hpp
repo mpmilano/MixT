@@ -38,4 +38,16 @@ namespace myria{
 		}
 	}
 
+	std::pair<configuration_parameters, std::vector<run_result> > read_from_files(const typename run_result::time_t &now,
+																																								std::size_t count, char ** fnames){
+		std::pair<configuration_parameters, std::vector<run_result> > result;
+		for (std::size_t i = 0; i < count; ++i){
+			auto partial = read_from_file(now,fnames[i]);
+			if (i > 0) assert (same_run(result.first,partial.first));
+			result.first = partial.first;
+			result.second.insert(result.second.end(),partial.second.begin(),partial.second.end());
+		}
+		return result;
+	}
+
 }

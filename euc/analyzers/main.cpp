@@ -7,9 +7,9 @@ using namespace std;
 using namespace chrono;
 
 int main(int argc, char **argv) {
-  assert(argc == 4);
+  assert(argc >= 4);
   auto now = std::chrono::high_resolution_clock::now();
-  auto resultsp = read_from_file(now, argv[1]);
+  auto resultsp = read_from_files(now, argc - 3, argv + 3);
 	auto &results = resultsp.second;
 	auto &params = resultsp.first;
   auto compare_start_times = [](const run_result &a, const run_result &b) {
@@ -41,8 +41,8 @@ int main(int argc, char **argv) {
           average_desired_delay(dd), average_effective_delay(ed) {}
   };
   std::vector<throughput_v_latency> bin_averages;
-  std::size_t increment_fraction = atoi(argv[2]);
-  std::istringstream arg3(argv[3]);
+  std::size_t increment_fraction = atoi(argv[1]);
+  std::istringstream arg3(argv[2]);
   milliseconds segment_duration_goal;
   arg3 >> segment_duration_goal;
   for (std::size_t i = 0; i < results.size();) {
