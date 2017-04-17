@@ -81,54 +81,68 @@ struct configuration_parameters{
 		using namespace std;
 		using namespace mutils;
     {
+			std::cout << "strong ip decoding: " << args[0] << std::endl;
       params.strong_ip = decode_ip(args[0]);
     }
     {
+			std::cout << "strong relay decoding: " << args[1] << std::endl;
       params.strong_relay_port = atoi(args[1]);
     }
     {
+			std::cout << "causal ip decoding: " << args[2] << std::endl;
       params.causal_ip = decode_ip(args[2]);
     }
     {
+			std::cout << "causal_relay_port decoding: " << args[3] << std::endl;
       params.causal_relay_port = atoi(args[3]);
     }
     {
       std::istringstream ss{std::string{args[4]}};
+			std::cout << "client_freq decoding: " << args[4] << std::endl;
       ss >> params.client_freq;
     }
     {
       std::istringstream ss{std::string{args[5]}};
+			std::cout << "starting_num_clients decoding: " << args[5] << std::endl;
       ss >> params.starting_num_clients;
     }
     {
       std::istringstream ss{std::string{args[6]}};
+			std::cout << "increase_clients_freq decoding: " << args[6] << std::endl;
       ss >> params.increase_clients_freq;
     }
     {
       std::istringstream ss{std::string{args[7]}};
+			std::cout << "test_duration decoding: " << args[7] << std::endl;
       ss >> params.test_duration;
     }
     {
       std::istringstream ss{std::string{args[8]}};
+			std::cout << "percent_dedicated_connections decoding: " << args[8] << std::endl;
       ss >> params.percent_dedicated_connections;
     }
     {
       std::istringstream ss{std::string{args[9]}};
+			std::cout << "percent_causal decoding: " << args[9] << std::endl;
       ss >> params.percent_causal;
     }
     {
       std::istringstream ss{std::string{args[10]}};
+			std::cout << "percent_read decoding: " << args[10] << std::endl;
       ss >> params.percent_read;
     }
     {
+			std::cout << "output_file decoding: " << args[11] << std::endl;
 			params.output_file = args[11];
     }
 		{
       std::istringstream ss{std::string{args[12]}};
+			std::cout << "log_delay_tolerance decoding: " << args[12] << std::endl;
       ss >> params.log_delay_tolerance;
     }
 		{
       std::istringstream ss{std::string{args[13]}};
+			std::cout << "log_every_n decoding: " << args[13] << std::endl;
       ss >> params.log_every_n;
     }
 	}

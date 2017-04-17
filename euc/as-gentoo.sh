@@ -45,7 +45,7 @@ export percent_read=$6
 shift 6
 export MAX_THREADS=$1
 export first_iter=$2
-killall -9 vm
+killall -9 simple_txn_test
 rm /tmp/Myria*
 if [[ $first_iter ]];
 then
