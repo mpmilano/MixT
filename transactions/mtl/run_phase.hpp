@@ -350,9 +350,11 @@ auto common_interp(store& s, tracker::Tracker& trk)
     std::size_t backoff_multiplier{ 2 };
     while (!label::can_abort::value) {
       try {
+				using namespace std; using namespace chrono;
+				constexpr seconds max_backoff{2s};
         // try an exponential back-off strategy
-				auto backoff = mutils::better_rand() * backoff_multiplier + 1;
-        std::this_thread::sleep_for(std::chrono::microseconds{(std::size_t) backoff});
+				auto backoff = microseconds{ (size_t)mutils::better_rand() * backoff_multiplier + 1};
+        std::this_thread::sleep_for(max_backoff > backoff ? backoff : max_backoff);
         backoff_multiplier *= 2;
         return common_interp_loop<phase1>(s, s.clone(), trk);
       } catch (const SerializationFailure& sf) {
