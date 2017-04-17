@@ -6,19 +6,10 @@ EXECUTE PROCEDURE blobstore_numbering();
 CREATE OR REPLACE FUNCTION blobstore_numbering() RETURNS TRIGGER AS
 $do$
 DECLARE
-    cntr integer;
+    cntr bigint;
 BEGIN
-    SELECT c.counter
-        INTO cntr
-        FROM causalstore.counters c
-        WHERE c.index = NEW.lw
-	FOR UPDATE ;
-    UPDATE causalstore.counters c
-        SET counter = (cntr + 1)
-        WHERE c.index = NEW.lw
-        RETURNING c.counter
+    SELECT (extract(epoch from current_timestamp)*100000)::bigint
         INTO cntr;
-
     CASE NEW.lw
         WHEN 1 THEN NEW.vc1 := cntr;
         WHEN 2 THEN NEW.vc2 := cntr;
