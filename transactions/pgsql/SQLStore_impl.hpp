@@ -65,7 +65,7 @@ namespace myria { namespace pgsql {
 			template<Level l>
 			friend class SQLStore;
 
-			std::array<unsigned long long, NUM_CAUSAL_GROUPS> clock;
+			std::array<long long, NUM_CAUSAL_GROUPS> clock;
 
 			const Level level;
 			WeakSQLConnection default_connection;
@@ -100,7 +100,7 @@ namespace myria { namespace pgsql {
 				char const * obj_buffer() const ;
 				void resize_buffer(std::size_t);
 				int obj_buffer_size() const;
-				const std::array<unsigned long long,NUM_CAUSAL_GROUPS>& timestamp() const ;
+				const std::array<long long,NUM_CAUSAL_GROUPS>& timestamp() const ;
 				SQLStore_impl& store();
 
 				//will crash if stored object is non-integral.

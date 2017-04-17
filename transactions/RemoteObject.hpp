@@ -16,7 +16,7 @@ namespace myria{
     virtual const GDataStore& store() const = 0;
     virtual GDataStore& store() = 0;
     virtual Name name() const = 0;
-    virtual const std::array<unsigned long long,NUM_CAUSAL_GROUPS>& timestamp() const = 0;
+    virtual const std::array<long long,NUM_CAUSAL_GROUPS>& timestamp() const = 0;
     virtual ~GeneralRemoteObject() = default;
   };
 

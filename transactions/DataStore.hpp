@@ -9,7 +9,7 @@ template <typename T> struct LabelFreeHandle;
 
 namespace tracker {
 struct Tombstone;
-using Clock = std::array<unsigned long long, NUM_CAUSAL_GROUPS>;
+using Clock = std::array<long long, NUM_CAUSAL_GROUPS>;
 using Nonce = long;
 }
 
@@ -40,7 +40,7 @@ struct TrackableDataStore_super : public virtual GDataStore {
 };
 
 struct WeakTrackableDataStore : public virtual TrackableDataStore_super {
-  virtual const std::array<unsigned long long, NUM_CAUSAL_GROUPS> &local_time() const = 0;
+  virtual const std::array<long long, NUM_CAUSAL_GROUPS> &local_time() const = 0;
   virtual ~WeakTrackableDataStore() = default;
 };
 

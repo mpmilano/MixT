@@ -58,7 +58,7 @@ namespace myria { namespace tracker {
 					--i;
 					continue;
 				}
-				volatile int &tmpi = inst.clock[i];
+				volatile long long &tmpi = inst.clock[i];
 				newc[i] = tmpi;
 			}
 			assert(ends::prec(i->global_min,newc));

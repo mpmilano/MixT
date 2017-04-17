@@ -67,7 +67,7 @@ namespace myria{
 				throw UnmatchedUseException{};
 			}
 			
-			const std::array<unsigned long long,NUM_CAUSAL_GROUPS>& timestamp() const{
+			const std::array<long long,NUM_CAUSAL_GROUPS>& timestamp() const{
 				assert(false && "Cannot call unmatched things");
 				throw UnmatchedUseException{};
 			}

@@ -32,7 +32,7 @@ namespace myria{ namespace pgsql {
 			SQLStore_impl &_store;
 			char* buf1;
 			int vers;
-			std::array<unsigned long long,4> causal_vers;
+			std::array<long long,4> causal_vers;
 			Internals(Table table, Name key, int size,
 					  SQLStore_impl& store,char* buf)
 				:table(table),key(key),size(size),store_id(store.instance_id()),level(store.level),_store(store),
@@ -101,7 +101,7 @@ namespace myria{ namespace pgsql {
 			return this->i->key;
 		}
 
-		const std::array<unsigned long long,NUM_CAUSAL_GROUPS>& SQLStore_impl::GSQLObject::timestamp() const {
+		const std::array<long long,NUM_CAUSAL_GROUPS>& SQLStore_impl::GSQLObject::timestamp() const {
 			return this->i->causal_vers;
 		}
 

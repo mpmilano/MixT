@@ -39,7 +39,7 @@ make_pair(decode_ip("128.84.105.135"), std::shared_ptr<Socket>())
 
 		std::cout << "beginning loop" << std::endl;
 		while (true){
-			std::array<unsigned long long,4> tmp;
+			std::array<long long,4> tmp;
 			select_causal_timestamp(*conn_causal,tmp);
 			for (auto &ip_addr : ip_addrs){
 				try{

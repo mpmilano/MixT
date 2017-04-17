@@ -17,7 +17,7 @@ namespace myria{ namespace pgsql {
 		int process_version_update(const pqxx::result &res, int& where);
 		
 		//causal
-		int process_version_update(const pqxx::result &r, std::array<unsigned long long,NUM_CAUSAL_GROUPS>& vers);
+		int process_version_update(const pqxx::result &r, std::array<long long,NUM_CAUSAL_GROUPS>& vers);
 		
 		//transaction context needs to be different sometimes
 		template<typename Trans>

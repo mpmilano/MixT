@@ -26,7 +26,7 @@ namespace myria{ namespace pgsql {
 		}
 			
 		//causal
-		int process_version_update(const result &r, std::array<unsigned long long,NUM_CAUSAL_GROUPS>& vers){
+		int process_version_update(const result &r, std::array<long long,NUM_CAUSAL_GROUPS>& vers){
 			assert(!r.empty());
 			whendebug(auto res1 = )r[0][0].to(vers[0]);
 			assert(res1);
