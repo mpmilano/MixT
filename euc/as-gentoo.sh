@@ -48,7 +48,7 @@ killall -9 vm
 rm /tmp/Myria*
 if [[ $first_iter ]];
 then make clean
-else rm vm_main.o; rm vm
+else rm vm
 fi
 make -j4 vm
 ./vm

@@ -51,17 +51,16 @@ fi
 
 for read_percent in $read_percentages; do 
 	for causal_percent in $causal_percentages; do
-		first_iter=true;
 		i=0
+		ssh research@"$strong_target" killall strong_relay
+		ssh research@"$causal_target_1" killall causal_relay
+		ssh research@"$causal_target_2" killall causal_relay
 		for foo in $instance_list
 		do
 				i=$[i%4 + 1]
 				/bin/bash test-things-loop-body.sh $i $foo $ndebug $read_percent $causal_percent $strong_target $causal_target_1 $causal_target_2 $num_clients $client_rate $client_increase_rate $test_stop_time $max_threads $first_iter&
 		done
 		wait
-		ssh research@"$strong_target" killall strong_receiver
-		ssh research@"$causal_target_1" killall causal_receiver
-		ssh research@"$causal_target_2" killall causal_receiver
 		unset first_iter
 		i=0
 		echo "all done"
