@@ -45,6 +45,7 @@ namespace myria{
 			l = (level.c_str()[0] == 'c' ? pgsql::Level::causal : pgsql::Level::strong);
 			pre_abort_string[pre_abort_string.size()-1] = 0;
 			abort_string = pre_abort_string.c_str() + 1;
+			assert(start_offset.count() != 0 && stop_offset.count() != 0 && start_offset != stop_offset);
 		}
 	};
 
