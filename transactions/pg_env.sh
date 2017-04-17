@@ -19,10 +19,6 @@ export client_increase_rate=2_Hz
 export test_stop_time=6min
 export num_clients=510
 export client_rate=10_Hz
-export percent_causal=.95
-export causal_percentages=$percent_causal
-export percent_read=.95
-export read_percentages=$percent_read
 #export instance_list=
 function ssh-euc() {
 	host=$1;
