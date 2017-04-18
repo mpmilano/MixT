@@ -40,4 +40,4 @@ then
 	exit 1
 fi
 
-./simple_txn_test $STRONG_REMOTE_IP 8876 $CAUSAL_REMOTE_IP_2 8877 $client_rate $num_clients $client_increase_rate $test_stop_time 0.01 $percent_causal $percent_read /tmp/MyriaStore-results-2-$file_suffix 60s 100
+./simple_txn_test $STRONG_REMOTE_IP 8876 $CAUSAL_REMOTE_IP_2 8877 $client_rate $num_clients $client_increase_rate $test_stop_time 0.01 $percent_causal $percent_read /tmp/MyriaStore-results-2-$file_suffix 60s 5
