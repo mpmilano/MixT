@@ -175,6 +175,10 @@ std::ostream &operator<<(std::ostream &os, const Tracker::Clock &c) {
     }
   }
 
+	void Tracker::record_timestamp(mtl::TrackedPhaseContext & ctx, const Clock &s){
+		ctx.trk_ctx.i->newer_objects.push_back(s);
+	}
+
   std::vector<Tombstone>& Tracker::all_encountered_tombstones(){
 		assert(i->encountered_tombstones);
 		return *i->encountered_tombstones;

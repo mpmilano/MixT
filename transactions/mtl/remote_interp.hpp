@@ -31,7 +31,6 @@ auto remote_interp(mutils::DeserializationManager* dsm, tombstone_tracker& trk, 
   send_store_values(requires, s, lc);
   c.send(phase::txnID::value,
 	 trk.template tombstones_for_phase<phase>(),
-	 trk.template fulfilled_for_phase<phase>(),
 	 lc.data);
 #ifndef NDEBUG
   std::size_t remote_txn_nonce;
@@ -46,7 +45,7 @@ auto remote_interp(mutils::DeserializationManager* dsm, tombstone_tracker& trk, 
       trk.template set_phase_after<phase>(std::move(new_tombstones));
       lc.data = *mutils::receive_from_connection<std::vector<char>>(dsm, c);
       receive_store_values(dsm, provides, s, lc);
-      trk.template mark_tombstones_clearable<phase>();
+      trk.template clear_tombstones<phase>();
     } else {
 			std::string failure_str = "";
 #ifndef NDEBUG

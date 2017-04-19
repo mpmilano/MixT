@@ -60,6 +60,8 @@ public:
 
   void find_tombstones(mtl::TrackedPhaseContext &, const Tombstone&);
 
+	void record_timestamp(mtl::TrackedPhaseContext &, const Clock& c);
+
   std::vector<Tombstone>& all_encountered_tombstones();
 	void clear_encountered_tombstones();
 

@@ -6,4 +6,8 @@ namespace myria { namespace tracker {
 				a.ip_addr == b.ip_addr &&
 				a.portno == b.portno;
 		}
+		bool operator<(const Tombstone& a, const Tombstone& b){
+			return a.nonce < b.nonce;
+		}
+		
 }}

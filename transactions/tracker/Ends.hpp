@@ -24,5 +24,9 @@ namespace myria { namespace tracker {
 				}
 				return true;
 			}
+			template<size_t s>
+			bool operator<(const std::array<long long,s> &a,const std::array<long long,s> &b){
+				return prec(a,b);
+			}
 		}
 	}}

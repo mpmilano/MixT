@@ -136,6 +136,11 @@ namespace myria{
       return put(ctx,t);
     }
   public:
+
+		auto timestamp() const {
+			assert(_ro);
+			return _ro->timestamp();
+		}
     
     bool isValid(mtl::PhaseContext<l> *ctx) const {
       if (!_ro) return false;

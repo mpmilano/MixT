@@ -14,6 +14,7 @@ struct Tombstone {
 };
 
 bool operator==(const Tombstone &a, const Tombstone &b);
+bool operator<(const Tombstone &a, const Tombstone &b);
 
 static_assert(std::is_pod<Tombstone>::value);
 }

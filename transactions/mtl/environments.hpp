@@ -223,6 +223,20 @@ struct remote_holder
 		return *this;
   }
 
+private:
+	void read_tracking_actions(_PhaseContext<typename T::label, true>& tc){
+#ifdef TRACK
+		tc.trk_ctx.trk.checkForTombstones(tc,get_remote(tc).name());
+		tc.trk_ctx.trk.record_timestamp(get_remote(tc).timestamp());
+#else
+		(void) tc;
+#endif
+	}
+
+	void read_tracking_actions(_PhaseContext<typename T::label, false>&){}
+	
+public:
+
   remote_holder& bind(PhaseContext<typename T::label>& tc, T t)
   {
     handle.emplace_back(t);
@@ -231,9 +245,7 @@ struct remote_holder
 		assert(curr_pos < ((int)handle.size()));
 		list_usable = true;
 		super.bind(tc,*handle[curr_pos].get(&tc));
-#ifdef TRACK
-		tc.trk_ctx.trk.checkForTombstones(tc,get_remote(tc).name());
-#endif
+		read_tracking_actions(tc);
     return *this;
   }
 
