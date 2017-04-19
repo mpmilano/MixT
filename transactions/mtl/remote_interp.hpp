@@ -41,6 +41,8 @@ auto remote_interp(mutils::DeserializationManager* dsm, tombstone_tracker& trk, 
     mutils::local_connection lc;
     if (*mutils::receive_from_connection<bool>(dsm, c)) {
       // transaction was successful!
+			auto new_min_clock = mutils::receive_from_connection<tracker::Clock>(dsm,c);
+			auto new_recent_clocks = mutils::receive_from_connection<std::vector<tracker::Clock> >(dsm,c);
       auto new_tombstones = mutils::receive_from_connection<std::vector<tracker::Tombstone>>(dsm, c);
       trk.template set_phase_after<phase>(std::move(new_tombstones));
       lc.data = *mutils::receive_from_connection<std::vector<char>>(dsm, c);
