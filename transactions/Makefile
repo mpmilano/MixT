@@ -11,6 +11,9 @@ all: $(object_files)
 sample_arrival_intervals: utils.o test_utils.o
 	clang++ $(CPPFLAGS) $(LDFLAGS) utils.o test_utils.o sample_arrival_intervals.cpp -o sample
 
+test_parsing: utils.o
+	clang++ $(CPPFLAGS) $(LDFLAGS) utils.o test_parsing.cpp -o /tmp/test_parsing
+
 test_causal: $(object_files) 
 	@clang++ test_causal.cpp DisabledTracker.o SQLStore.o Ends.o utils.o Basics.o Ostreams.o SerializationSupport.o GSQLObject.o SQLConnection.o SQLTransaction.o SQL_internal_utils.o ServerSocket.o Socket.o batched_connection_client.o batched_connection_common.o  -o test_causal $(CPPFLAGS) $(LDFLAGS)
 
