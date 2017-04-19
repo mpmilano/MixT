@@ -88,7 +88,7 @@ struct transaction_listener<
         mutils::local_connection lc;
         send_store_values(provided, s, lc);
 				trk.updateClock();
-        c.send(transaction_successful, trk.min_clock(), trk.recent_clocks(), trk.all_encountered_tombstones(), lc.data);
+        c.send(transaction_successful, trk.min_clock(), trk.recent_clock(), trk.all_encountered_tombstones(), lc.data);
       } else
         c.send(false whendebug(, mutils::bytes_size(exn_text), exn_text));
       whendebug(logfile << "response sent to client" << std::endl);

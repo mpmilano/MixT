@@ -227,7 +227,7 @@ private:
 	void read_tracking_actions(_PhaseContext<typename T::label, true>& tc){
 #ifdef TRACK
 		tc.trk_ctx.trk.checkForTombstones(tc,get_remote(tc).name());
-		tc.trk_ctx.trk.record_timestamp(get_remote(tc).timestamp());
+		tc.trk_ctx.trk.record_timestamp(tc,get_remote(tc).timestamp());
 #else
 		(void) tc;
 #endif

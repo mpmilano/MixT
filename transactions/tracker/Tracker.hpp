@@ -62,9 +62,9 @@ public:
 
 	void record_timestamp(mtl::TrackedPhaseContext &, const Clock& c);
 
-	Clock min_clock();
+	const Clock& min_clock() const;
 
-	std::vector<Clock> recent_clocks();
+	const Clock& recent_clock() const;
 
   std::vector<Tombstone>& all_encountered_tombstones();
 	void clear_encountered_tombstones();

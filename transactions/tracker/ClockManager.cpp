@@ -63,11 +63,15 @@ void Tracker::updateClock() {
   }
   assert(ends::prec(i->global_min, newc));
   i->global_min = newc;
-	std::vector<Clock> newest_objects;
-	for (const auto& c : i->newest_objects){
-		if (!ends::prec(c,newc)) newest_objects.push_back(c);
-	}
-	i->newest_objects = std::move(newest_objects);
 }
+
+	const Clock& Tracker::min_clock() const {
+		return i->global_min;
+	}
+
+	const Clock& Tracker::recent_clock() const {
+		return i->new_objects_max;
+	}
+	
 }
 }
