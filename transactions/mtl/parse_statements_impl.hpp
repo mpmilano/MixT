@@ -16,7 +16,6 @@ constexpr auto parse_let(String<'v', 'a', 'r', ' ', _str...>)
 {
   constexpr auto binding = String<_str...>::split(zero{}, comma_s{}).trim_ends();
   constexpr auto body_str = String<_str...>::after_fst(String<','>{}).trim_ends();
-	static_assert(body_str.string[0] != '{');
   return parse_phase::Let<std::decay_t<decltype(parse_binding(binding))>, std::decay_t<decltype(parse_statement(body_str))>>{};
 }
 
@@ -25,7 +24,6 @@ constexpr auto parse_let_remote(String<'r', 'e', 'm', 'o', 't', 'e', ' ', _str..
 {
   constexpr auto binding = String<_str...>::split(zero{}, comma_s{}).trim_ends();
   constexpr auto body_str = String<_str...>::after_fst(String<','>{}).trim_ends();
-	static_assert(body_str.string[0] != '{');
   return parse_phase::LetRemote<std::decay_t<decltype(parse_binding(binding))>, std::decay_t<decltype(parse_statement(body_str))>>{};
 }
 
