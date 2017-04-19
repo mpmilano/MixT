@@ -2,6 +2,7 @@
 #include "CTString.hpp"
 #include <type_traits>
 #include "mtlutils.hpp"
+#include "top.hpp"
 
 namespace myria {
 namespace mtl {

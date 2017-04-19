@@ -2,6 +2,7 @@
 #include "parse_statements_decl.hpp"
 #include "parse_expressions_decl.hpp"
 #include "parse_bindings.hpp"
+#include "common_strings.hpp"
 
 namespace myria {
 namespace mtl {
@@ -11,19 +12,21 @@ namespace parse_statements {
 using namespace mutils;
 
 template <char... _str>
-constexpr auto parse_let(String<'l', 'e', 't', ' ', _str...>)
+constexpr auto parse_let(String<'v', 'a', 'r', ' ', _str...>)
 {
-  constexpr auto binding = String<_str...>::split(zero{}, in_s{}).trim_ends();
-  constexpr auto body = String<_str...>::split(one{}, in_s{}).trim_ends().template strip_paren_group<'{', '}'>(zero{}).trim_ends();
-  return parse_phase::Let<std::decay_t<decltype(parse_binding(binding))>, std::decay_t<decltype(parse_statement(body))>>{};
+  constexpr auto binding = String<_str...>::split(zero{}, comma_s{}).trim_ends();
+  constexpr auto body_str = String<_str...>::after_fst(String<','>{}).trim_ends();
+	static_assert(body_str.string[0] != '{');
+  return parse_phase::Let<std::decay_t<decltype(parse_binding(binding))>, std::decay_t<decltype(parse_statement(body_str))>>{};
 }
 
 template <char... _str>
-constexpr auto parse_let_remote(String<'l', 'e', 't', ' ', 'r', 'e', 'm', 'o', 't', 'e', ' ', _str...>)
+constexpr auto parse_let_remote(String<'r', 'e', 'm', 'o', 't', 'e', ' ', _str...>)
 {
-  constexpr auto binding = String<_str...>::split(zero{}, in_s{}).trim_ends();
-  constexpr auto body = String<_str...>::split(one{}, in_s{}).trim_ends().template strip_paren_group<'{', '}'>(zero{}).trim_ends();
-  return parse_phase::LetRemote<std::decay_t<decltype(parse_binding(binding))>, std::decay_t<decltype(parse_statement(body))>>{};
+  constexpr auto binding = String<_str...>::split(zero{}, comma_s{}).trim_ends();
+  constexpr auto body_str = String<_str...>::after_fst(String<','>{}).trim_ends();
+	static_assert(body_str.string[0] != '{');
+  return parse_phase::LetRemote<std::decay_t<decltype(parse_binding(binding))>, std::decay_t<decltype(parse_statement(body_str))>>{};
 }
 
 template <char... _str>
@@ -32,7 +35,7 @@ constexpr auto parse_if(String<'i', 'f', _str...>)
   static_assert(String<_str...>::trim_ends().string[0] == '(');
   constexpr auto condition_s = String<_str...>::trim_ends().template strip_paren_group<'(', ')'>(zero{}).trim_ends();
   constexpr auto remainder_s = String<_str...>::trim_ends().template strip_paren_group<'(', ')'>(one{}).trim_ends();
-  constexpr auto then_s = remainder_s.trim_ends().template strip_paren_group<'{', '}'>(zero{}).trim_ends();
+  constexpr auto then_s = remainder_s.trim_ends().template strip_paren_group<'{', '}'>(zero{}).trim_ends().without_prefix(String<'{'>{} ).without_suffix(String<'}'>{}).trim_ends();
   constexpr auto else_s = remainder_s.trim_ends()
                             .template strip_paren_group<'{', '}'>(one{})
                             .trim_ends()
@@ -56,7 +59,7 @@ constexpr auto parse_while(String<'w', 'h', 'i', 'l', 'e', _str...>)
   static_assert(str::trim_ends().string[0] == '(');
   constexpr auto condition_s = str::template strip_paren_group<'(', ')'>(zero{}).trim_ends();
   constexpr auto remainder_s = str::template strip_paren_group<'(', ')'>(one{}).trim_ends();
-  constexpr auto body_s = remainder_s.template strip_paren_group<'{', '}'>(zero{}).trim_ends();
+  constexpr auto body_s = remainder_s.template strip_paren_group<'{', '}'>(zero{}).trim_ends().without_prefix(String<'{'>{} ).without_suffix(String<'}'>{}).trim_ends();
   return parse_phase::While<std::decay_t<decltype(parse_expression(condition_s))>, std::decay_t<decltype(parse_statement(body_s))>>{};
 }
 // strip whitespace
@@ -121,7 +124,7 @@ constexpr auto _parse_statement(
 
 // let
 template <char... _str>
-constexpr auto _parse_statement(std::enable_if_t<String<_str...>::begins_with(let_s{}) && !String<_str...>::begins_with(let_remote_s{}), String<_str...>>)
+constexpr auto _parse_statement(std::enable_if_t<String<_str...>::begins_with(var_s{}), String<_str...>>)
 {
   using str = String<_str...>;
   return parse_let(str::trim_ends());
@@ -129,7 +132,7 @@ constexpr auto _parse_statement(std::enable_if_t<String<_str...>::begins_with(le
 
 // let_remote
 template <char... _str>
-constexpr auto _parse_statement(std::enable_if_t<String<_str...>::begins_with(let_remote_s{}), String<_str...>>)
+constexpr auto _parse_statement(std::enable_if_t<String<_str...>::begins_with(remote_s{}), String<_str...>>)
 {
   using str = String<_str...>;
   return parse_let_remote(str::trim_ends());
@@ -161,9 +164,12 @@ constexpr auto _parse_statement(std::enable_if_t<String<_str...>::begins_with(re
 
 // assignment
 template <char... _str>
-constexpr auto _parse_statement(std::enable_if_t<!(String<_str...>::begins_with(String<'{'>{}) || String<_str...>::begins_with(let_s{}) ||
-                                                   String<_str...>::begins_with(while_s{}) || String<_str...>::begins_with(if_s{}) || 
-																									 String<_str...>::begins_with(return_s{})) &&
+constexpr auto _parse_statement(std::enable_if_t<!(String<_str...>::begins_with(String<'{'>{})
+																									 || String<_str...>::begins_with(remote_s{})
+																									 || String<_str...>::begins_with(var_s{})
+																									 || String<_str...>::begins_with(while_s{})
+																									 || String<_str...>::begins_with(if_s{})
+																									 || String<_str...>::begins_with(return_s{})) &&
                                                    String<_str...>::contains_outside_parens(String<'='>{}),
                                                  String<_str...>>)
 {
