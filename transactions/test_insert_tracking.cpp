@@ -37,11 +37,11 @@ int main(){
 	typename SQLStore<Level::causal>::SQLInstanceManager ci{cp};
 	typename SQLStore<Level::strong>::SQLInstanceManager si{sp};
 	DeserializationManager dsm{{&si,&ci}};
-  Hndl1 hndl1 = ci.inst().template existingObject<int>(13476);
-  Hndl2 hndl2 = si.inst().template existingObject<int>(13476);
+  Hndl1 hndl1 = ci.inst().template existingObject<int>(nullptr, 13476);
+  Hndl2 hndl2 = si.inst().template existingObject<int>(nullptr, 13476);
 	constexpr auto txn = TRANSACTION(
 		0,
-		let remote y = hndl2 in { let remote x = hndl1 in { x = y, return x } } )
+		remote y = hndl2, remote x = hndl1, x = y, return x)
 		::WITH(hndl1,hndl2);
   std::cout << txn << std::endl;
 	using res = DECT(txn.run_optimistic(nullptr, std::declval<mutils::connection&>(), std::declval<mutils::connection&>(),hndl1,hndl2));

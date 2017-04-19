@@ -8,7 +8,7 @@ namespace myria { namespace tracker {
       PhaseContext<typename DataStore::label> ctx{trk};
       ctx.store_context(ds whendebug(, "hunting tombstones"));
       for (const auto& tomb : tombstones_to_find){
-				trk.checkForTombstones(ctx,tomb.name());
+				trk.find_tombstones(ctx,tomb);
       }
     }
   }}

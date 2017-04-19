@@ -48,15 +48,7 @@ public:
   static constexpr int clockport = 9999;
   void updateClock();
 
-  void exemptItem(Name name);
-
-  template <typename T, typename l, typename... Ops>
-  void exemptItem(const Handle<l, T, Ops...> &h) {
-    exemptItem(h.name());
-  }
-
-  std::unique_ptr<TrackingContext> generateContext(mtl::TrackedPhaseContext &ctx,
-                                                   bool commitOnDelete = false);
+  std::unique_ptr<TrackingContext> generateContext(mtl::TrackedPhaseContext &ctx);
 
   Nonce generateTombstone();
   
@@ -68,42 +60,15 @@ public:
 
   void find_tombstones(mtl::TrackedPhaseContext &, const Tombstone&);
 
-  void clear_pending(const std::vector<Tombstone> &);
-
-  std::vector<Tombstone> all_encountered_tombstones();
-
-  void onCausalRead(mtl::TrackedPhaseContext &pctx, Name name,
-			     const Clock &version,
-			     const std::function<void(char const *)> &construct_and_merge);
-    
-  // return is non-null when read value cannot be used.
-  template <typename T>
-  std::unique_ptr<T>
-  onCausalRead(mtl::TrackedPhaseContext &, Name name, const Clock &version,
-         std::unique_ptr<T> candidate, 
-         std::unique_ptr<T> (*merge)(char const *, std::unique_ptr<T>) =
-             [](char const *, std::unique_ptr<T> r) { return r; });
-
-  // for when merging locally is too hard or expensive
-  bool waitForCausalRead(mtl::TrackedPhaseContext &ctx, Name name,
-                         const Clock &version);
-
-  void afterCausalRead(TrackingContext &, Name name,
-                       const Clock &version, const std::vector<char> &data);
-
-  // for testing
-  void assert_nonempty_tracking() const;
-  const CooperativeCache &getcache() const;
+  std::vector<Tombstone>& all_encountered_tombstones();
+	void clear_encountered_tombstones();
 
   friend struct TrackingContext;
 
-  Tracker(int cache_port, CacheBehaviors behavior /*= CacheBehaviors::full*/);
-  Tracker():Tracker((mutils::long_rand() % 1024) + 1024,CacheBehaviors::none){}
+  Tracker();
   virtual ~Tracker();
 
   Tracker(const Tracker &) = delete;
-
-  const int cache_port;
 };
 }
 }

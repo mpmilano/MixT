@@ -13,8 +13,6 @@
 #include <thread>
 #include <unistd.h>
 
-#include "CooperativeCache.hpp"
-#include "Tracker_common.hpp"
 #include "CompactSet.hpp"
 #include "Ends.hpp"
 #include "SafeSet.hpp"
@@ -36,95 +34,28 @@ using namespace mutils;
 using namespace mtl;
 using namespace tracker;
 
-Bundle::Bundle(int ip_addr, int portno, std::future<CooperativeCache::obj_bundle> f)
-  :f(new decltype(f)(std::move(f))),ip_addr(ip_addr),portno(portno) {}
-
-CooperativeCache::obj_bundle &Bundle::get() {
-  if (f->valid()) {
-    p = heap_copy(f->get());
-  }
-  assert(!f->valid());
-  return *p;
-}
-
-Bundle::~Bundle() {
-  // TODO: there's a memory error here somewhere.  Just leak for now.
-  /*
-    if (f->valid()){
-    assert(f.use_count() > 0);
-    destroyed_bundles()->emplace(std::async(std::launch::async,[f = this->f]()
-    -> bool {
-    while (f->wait_for(1ms) == future_status::timeout) {}
-    return true;
-    }));
-    }//*/
-}
-
 void TrackingContext::commitContext() {
   i->_commitContext();
-  i->_finalize();
 }
-void TrackingContext::abortContext() { i->_finalize(); }
-
-TrackingContext::TrackingContext(Tracker &trk, TrackedPhaseContext &ctx, bool cod)
-  : i(new TrackingContext::Internals{trk,*trk.i, cod}), trk(trk), ctx(ctx) {}
+	
+TrackingContext::TrackingContext(Tracker &trk, TrackedPhaseContext &ctx)
+  : i(new TrackingContext::Internals{trk,*trk.i}), trk(trk), ctx(ctx) {}
 
 TrackingContext::~TrackingContext() {
   if (i)
     delete i;
 }
 
-std::unique_ptr<TrackingContext> Tracker::generateContext(TrackedPhaseContext &ctx,
-                                                          bool commitOnDelete) {
+std::unique_ptr<TrackingContext> Tracker::generateContext(TrackedPhaseContext &ctx) {
   return std::unique_ptr<TrackingContext>{
-      (new TrackingContext{*this, ctx, commitOnDelete})};
+      (new TrackingContext{*this, ctx})};
 }
 
-namespace {
-void remove_pending(TrackingContext::Internals &ctx, Tracker::Internals &i,
-                    const Name &name) {
-  ctx.pending_nonces_add.remove_if([&](auto &e) { return e.name() == name; });
-  i.pending_nonces.erase(name);
-  i.already_seen_nonces.insert(name);
-}
-
-bool tracking_candidate(Tracker &t, Name name, const Tracker::Clock &version) {
-  t.updateClock();
-  if (!ends::is_same(version, {{-1, -1, -1, -1}}) &&
-      ends::prec(version, t.i->global_min)) {
-    t.i->tracking.erase(name);
-    return false;
-  } else
-    return t.i->exceptions.count(name) == 0;
-}
-}
-  
-  void Tracker::clear_pending(const std::vector<Tombstone>& t){
-    for (const auto &n : t){
-      i->pending_nonces.erase(n.name());
-      i->already_seen_nonces.insert(n.name());
-    }
-  }
-
-void Tracker::assert_nonempty_tracking() const {
-  assert(!(i->tracking.empty()));
-}
-
-const CooperativeCache &Tracker::getcache() const { return i->cache; }
-
-Tracker::Tracker(int cache_port, CacheBehaviors beh)
-    : i{new Internals{beh}}, cache_port(cache_port) {
-  assert(cache_port > 0 &&
-         "error: must specify non-zero cache port for first tracker call");
-  i->cache.listen_on(cache_port);
-  // std::cout << "tracker built" << std::endl;
-}
+Tracker::Tracker(): i{new Internals{}} {}
 
 Tracker::~Tracker() { delete i; }
 
 Name Tracker::Tombstone::name() const { return nonce; }
-
-void Tracker::exemptItem(Name name) { i->exceptions.insert(name); }
 
 namespace {
 
@@ -169,8 +100,7 @@ int get_ip() {
   Nonce Tracker::generateTombstone(){ return long_rand(); }
 
 void Tracker::writeTombstone(mtl::TrackedPhaseContext &ctx,Tracker::Nonce nonce) {
-  const Tracker::Tombstone t{nonce, get_ip(), cache_port};
-  assert(i->cache.contains(nonce));
+  const Tracker::Tombstone t{nonce, get_ip(), 0};
   assert(ctx.store_context());
   TrackableDataStore_super &ds =
     dynamic_cast<TrackableDataStore_super &>(ctx.store_context()->store());
@@ -188,25 +118,17 @@ void Tracker::writeTombstone(mtl::TrackedPhaseContext &ctx,Tracker::Nonce nonce)
     auto meta_name = make_lin_metaname(name);
     if (ds_real.exists(&ctx, meta_name)) {
       ds_real.existing_tombstone(&ctx, meta_name)
-          ->put(&ctx, Tracker::Tombstone{nonce, get_ip(), cache_port});
+          ->put(&ctx, Tracker::Tombstone{nonce, get_ip(), 0});
     } else {
       ds_real.new_tomb(&ctx, meta_name,
-                       Tracker::Tombstone{nonce, get_ip(), cache_port});
+                       Tracker::Tombstone{nonce, get_ip(), 0});
     }
-#ifndef NDEBUG
-    for (auto &p : i->tracking) {
-      assert(p.second.second.data());
-    }
-#endif
-    i->cache.insert(nonce, i->tracking);
-    assert(i->cache.contains(nonce));
   };
 
   assert(ctx.store_context());
   auto &ds_real =
       dynamic_cast<StrongTrackableDataStore &>(ctx.store_context()->store());
-  auto tracking_copy = i->tracking;
-  if (!is_lin_metadata(name) && !i->tracking.empty()) {
+  if (!is_lin_metadata(name)) {
 
     auto subroutine = [&]() {
       write_lin_metadata(ctx, ds_real, name, nonce);
@@ -242,74 +164,25 @@ std::ostream &operator<<(std::ostream &os, const Tracker::Clock &c) {
   return os << "]";
 }
 
-bool sleep_on(TrackingContext::Internals &ctx, Tracker::Internals &i,
-              TrackedPhaseContext &pctx, WeakTrackableDataStore &ds,
-              const Name &tomb_name, const int how_long = -1) {
-  bool first_skip = true;
-  for (int cntr = 0; (cntr < how_long) || how_long == -1; ++cntr) {
-    if (ds.exists(&pctx, tomb_name)) {
-      // if (!first_skip) std::cout << "done waiting" << std::endl;
-      remove_pending(ctx, i, tomb_name);
-      return true;
-    } else {
-      if (first_skip) {
-        // std::cout << "waiting for " << tomb_name << " to appear..." <<
-        // std::endl;
-        first_skip = false;
-      }
-      std::this_thread::sleep_for(10ms);
-    }
-  }
-  return false;
-}
-
-template <typename P>
-std::vector<char> const *
-wait_for_available(TrackingContext::Internals &ctx, Tracker::Internals &i,
-                   TrackedPhaseContext &pctx, WeakTrackableDataStore &ds, Name name,
-                   P &p, const Tracker::Clock &v) {
-  if (ds.exists(&pctx, p.first)) {
-    remove_pending(ctx, i, p.first);
-    return nullptr;
-  } else {
-    try {
-      auto &remote = p.second.get();
-      auto ret = CooperativeCache::find(remote, name, v);
-      assert(ret->data());
-      return ret;
-    } catch (const std::exception &e) {
-      // something went wrong with the cooperative caching
-      // std::cout << "Cache request failed! Waiting for tombstone" <<
-      // std::endl;
-      // std::cout << "error message: " << e.what() << std::endl;
-
-      sleep_on(ctx, i, pctx, ds, p.first);
-      assert(ds.exists(&pctx, p.first));
-      remove_pending(ctx, i, p.first);
-      return nullptr;
-    } catch (...) {
-      std::cerr << "this is a very bad error" << std::endl;
-      assert(false && "whaaat");
-			struct die{}; throw die{};
-    }
-  }
-}
-
   void Tracker::find_tombstones(mtl::TrackedPhaseContext &ctx, const Tombstone& t){
     TrackableDataStore_super &ds =
       dynamic_cast<TrackableDataStore_super &>(ctx.store_context()->store());
-    if (!ds.exists(&ctx,t.name())) {
-      ctx.trk_ctx.i->pending_nonces_add.emplace_back(t);
+		auto sleep_for = 1ms;
+		constexpr auto max_sleep_for = 1min;
+    while (!ds.exists(&ctx,t.name())) {
+			this_thread::sleep_for(max_sleep_for > sleep_for ? sleep_for : max_sleep_for);
+			sleep_for *= 2;
     }
   }
 
-  std::vector<Tombstone> Tracker::all_encountered_tombstones(){
-    std::vector<Tombstone> ret;
-    for (const auto &p : i->pending_nonces){
-      ret.emplace_back(Tombstone{p.first,p.second.ip_addr,p.second.portno});
-    }
-    return ret;
+  std::vector<Tombstone>& Tracker::all_encountered_tombstones(){
+		assert(i->encountered_tombstones);
+		return *i->encountered_tombstones;
   }
+
+	void Tracker::clear_encountered_tombstones(){
+		i->encountered_tombstones.reset(new std::vector<Tombstone>{});
+	}
 
   void Tracker::checkForTombstones(mtl::TrackedPhaseContext &sctx, Name name){
     TrackingContext &tctx = sctx.trk_ctx;
@@ -325,135 +198,9 @@ wait_for_available(TrackingContext::Internals &ctx, Tracker::Internals &i,
 	auto &tomb = *tomb_p;
 	// std::cout << "Nonce isn't immediately available, adding to
 	// pending_nonces" << std::endl;
-	tctx.i->pending_nonces_add.emplace_back(tomb);
+	tctx.i->pending_nonces->emplace_back(tomb);
       }
     }
   }
-
-// for when merging locally is too hard or expensive.  Returns "true" when
-// candidate version is fine to return, "false" otherwise
-bool Tracker::waitForCausalRead(mtl::TrackedPhaseContext &ctx, Name name,
-                                const Clock &version) {
-  // TODO: distinctly not thread-safe
-  // if the user called onRead manually and did a merge,
-  // we don't want to wait here.This has been ongoing for a couple weeks
-  // since this is always called directly after
-  // the user had the chance to use onRead,
-  // we can use this trivial state tracking mechanism
-  // std::cout << "break 1!" << std::endl;
-  if (i->last_onRead_name && *i->last_onRead_name == name) {
-    // std::cout << "break 1: we used onRead, so we're skipping this" <<
-    // std::endl;
-    i->last_onRead_name.reset(nullptr);
-    return true;
-  }
-
-  auto &tracking_context = ctx.trk_ctx;
-  assert(ctx.store_context());
-  auto &ds =
-      dynamic_cast<WeakTrackableDataStore &>(ctx.store_context()->store());
-
-  if (tracking_candidate(*this, name, version)) {
-    // std::cout << "break 1: this is a tracking candidate" << std::endl;
-    // need to pause here and wait for nonce availability
-    // for each nonce in the list
-
-    {
-      for (auto &p : i->pending_nonces) {
-        // std::cout << "break 1: checking wait_for_available" << std::endl;
-        if (wait_for_available(*tracking_context.i, *i, ctx, ds, name, p,
-                               version)) {
-          // std::cout << "break 1: wait_for_available in if-condition" <<
-          // std::endl;
-          // I know we've gotten a cached version of the object,
-          // but we can't merge it, so we're gonna have to
-          // hang out until we've caught up to the relevant tombstone
-          // std::cout << "Cache request succeeded!  But we don't know how to
-          // merge.."
-          //		  << std::endl;
-          sleep_on(*tracking_context.i, *i, ctx, ds, p.first);
-          assert(ds.exists(&ctx, p.first));
-        }
-      }
-      assert(tracking_context.i->pending_nonces_add.size() == 0);
-    }
-    return false;
-  }
-  return true;
-}
-
-void Tracker::afterCausalRead(TrackingContext &tctx, Name name,
-                              const Clock &version,
-                              const std::vector<char> &data) {
-  if (tracking_candidate(*this, name, version)) {
-    // need to overwrite, not occlude, the previous element.
-    // C++'s map semantics are really stupid.
-    tctx.i->tracking_erase.push_back(name);
-    assert(data.data());
-    assert(data.size() > 0);
-    // std::cout << data << std::endl;
-#ifndef NDEBUG
-    for (auto &i : version)
-      assert(i != -1);
-#endif
-    if (!ends::prec(version, i->global_min)) {
-      tctx.i->tracking_add.emplace_back(name, std::make_pair(version, data));
-      // std::cout << tctx.i->tracking_add.back().second.second << std::endl;
-      assert(tctx.i->tracking_add.back().second.second.data());
-    }
-  }
-}
-
-// for when merging is the order of the day
-void Tracker::onCausalRead(
-    TrackedPhaseContext &pctx, Name name, const Clock &version,
-    const std::function<void(char const *)> &construct_and_merge) {
-  TrackingContext &ctx = pctx.trk_ctx;
-  assert(pctx.store_context());
-  auto &ds =
-      dynamic_cast<WeakTrackableDataStore &>(pctx.store_context()->store());
-  i->last_onRead_name = heap_copy(name);
-  if (tracking_candidate(*this, name, version)) {
-    assert(pctx.store_context());
-    assert(dynamic_cast<WeakTrackableDataStore*>(&pctx.store_context()->store()));
-    assert(ctx.i->pending_nonces_add.size() == 0);
-    
-    // need to pause here and wait for nonce availability
-    // for each nonce in the list
-    {
-      for (auto &p : i->pending_nonces) {
-	if (auto *remote_vers =
-	    wait_for_available(
-			       *ctx.i, *i, pctx, ds, name, p, version)) {
-	  // build + merge real object
-	  assert(remote_vers->data());
-	  construct_and_merge(remote_vers->data());
-	  return;
-	  
-	  /**
-	     There are many pending nonces; any of them could
-	     be in our tracking
-	     set
-	     due to a dependency on this object. Cycle
-	     through them until we
-	     find one
-	     that is (or fail to find any that are); this one
-	     will tell us a
-	     place to get
-	     the object from the cooperative cache. Grab the
-	     object from the
-	     cache there.
-	     If that fails, then too bad; handling that comes
-	     later.
-	  */
-	} else assert(ds.exists(&pctx, p.first));
-      }
-    }
-  }
-  return;
-}
-
-  
-  
 }
 }

@@ -4,6 +4,6 @@ namespace myria {
   namespace mtl {
     
     TrackedPhaseContext::TrackedPhaseContext(tracker::Tracker &trk)
-      :trk_ctx(trk,*this,false){}
+      :trk_ctx(trk,*this){}
 }
 }

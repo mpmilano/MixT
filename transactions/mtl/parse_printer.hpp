@@ -92,7 +92,7 @@ print_ast(std::ostream& o, Statement<Sequence<Seq...>>)
     return nullptr;
   };
   o << "{" << endl;
-  auto ignore = { nullptr, nullptr, print(Seq{})... };
+	(print(Seq{}), ...);
   o << "}";
 }
 

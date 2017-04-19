@@ -15,7 +15,7 @@ template <char... _str>
 constexpr auto parse_let(String<'v', 'a', 'r', ' ', _str...>)
 {
   constexpr auto binding = String<_str...>::split(zero{}, comma_s{}).trim_ends();
-  constexpr auto body_str = String<_str...>::after_fst(String<','>{}).trim_ends();
+  constexpr auto body_str = String<'{'>::append(String<_str...>::after_fst(String<','>{}).trim_ends()).append(String<'}'>{});;
   return parse_phase::Let<std::decay_t<decltype(parse_binding(binding))>, std::decay_t<decltype(parse_statement(body_str))>>{};
 }
 
@@ -23,7 +23,7 @@ template <char... _str>
 constexpr auto parse_let_remote(String<'r', 'e', 'm', 'o', 't', 'e', ' ', _str...>)
 {
   constexpr auto binding = String<_str...>::split(zero{}, comma_s{}).trim_ends();
-  constexpr auto body_str = String<_str...>::after_fst(String<','>{}).trim_ends();
+  constexpr auto body_str = String<'{'>::append(String<_str...>::after_fst(String<','>{}).trim_ends()).append(String<'}'>{});
   return parse_phase::LetRemote<std::decay_t<decltype(parse_binding(binding))>, std::decay_t<decltype(parse_statement(body_str))>>{};
 }
 
@@ -33,7 +33,7 @@ constexpr auto parse_if(String<'i', 'f', _str...>)
   static_assert(String<_str...>::trim_ends().string[0] == '(');
   constexpr auto condition_s = String<_str...>::trim_ends().template strip_paren_group<'(', ')'>(zero{}).trim_ends();
   constexpr auto remainder_s = String<_str...>::trim_ends().template strip_paren_group<'(', ')'>(one{}).trim_ends();
-  constexpr auto then_s = remainder_s.trim_ends().template strip_paren_group<'{', '}'>(zero{}).trim_ends().without_prefix(String<'{'>{} ).without_suffix(String<'}'>{}).trim_ends();
+  constexpr auto then_s = remainder_s.trim_ends().template strip_paren_group<'{', '}'>(zero{}).trim_ends();
   constexpr auto else_s = remainder_s.trim_ends()
                             .template strip_paren_group<'{', '}'>(one{})
                             .trim_ends()
@@ -57,7 +57,7 @@ constexpr auto parse_while(String<'w', 'h', 'i', 'l', 'e', _str...>)
   static_assert(str::trim_ends().string[0] == '(');
   constexpr auto condition_s = str::template strip_paren_group<'(', ')'>(zero{}).trim_ends();
   constexpr auto remainder_s = str::template strip_paren_group<'(', ')'>(one{}).trim_ends();
-  constexpr auto body_s = remainder_s.template strip_paren_group<'{', '}'>(zero{}).trim_ends().without_prefix(String<'{'>{} ).without_suffix(String<'}'>{}).trim_ends();
+  constexpr auto body_s = remainder_s.template strip_paren_group<'{', '}'>(zero{}).trim_ends();
   return parse_phase::While<std::decay_t<decltype(parse_expression(condition_s))>, std::decay_t<decltype(parse_statement(body_s))>>{};
 }
 // strip whitespace
@@ -90,7 +90,11 @@ constexpr auto append_sequences(parse_phase::Statement<Seq1>, parse_phase::State
 
 template <char... _str>
 constexpr auto _parse_statement(
-  std::enable_if_t<String<_str...>::begins_with(String<'{'>{}) && String<_str...>::remove_first_char().contains_outside_parens(String<','>{}), String<_str...>>)
+  std::enable_if_t<String<_str...>::begins_with(String<'{'>{})
+	&& String<_str...>::remove_first_char().contains_outside_parens(String<','>{})
+	&& !(String<_str...>::remove_first_char().trim_ends().begins_with(var_s{})
+			 || String<_str...>::remove_first_char().trim_ends().begins_with(remote_s{}))
+	, String<_str...>>)
 {
   static_assert(String<_str...>::ends_with(String<'}'>{}), "Error: bracket mismatch!");
   using str = std::decay_t<decltype(String<_str...>::remove_first_char().trim_ends())>;
@@ -136,6 +140,24 @@ constexpr auto _parse_statement(std::enable_if_t<String<_str...>::begins_with(re
   return parse_let_remote(str::trim_ends());
 }
 
+//bindings in curlies
+
+	template<typename T>
+	auto remove_statement(parse_phase::Statement<T>){
+		return T{};
+	}
+	
+template <char... _str>
+constexpr auto _parse_statement(
+  std::enable_if_t<String<_str...>::begins_with(String<'{'>{})
+	&& (String<_str...>::remove_first_char().trim_ends().begins_with(var_s{})
+			|| String<_str...>::remove_first_char().trim_ends().begins_with(remote_s{}))
+	, String<_str...>>)
+{
+	static_assert(String<_str...>::ends_with(String<'}'>{}), "Error: bracket mismatch!");
+	return remove_statement(parse_statement(String<_str...>::remove_last_char().remove_first_char().trim_ends()));
+}
+
 // while
 template <char... _str>
 constexpr auto _parse_statement(std::enable_if_t<String<_str...>::begins_with(while_s{}), String<_str...>>)
@@ -167,10 +189,12 @@ constexpr auto _parse_statement(std::enable_if_t<!(String<_str...>::begins_with(
 																									 || String<_str...>::begins_with(var_s{})
 																									 || String<_str...>::begins_with(while_s{})
 																									 || String<_str...>::begins_with(if_s{})
+																									 || String<_str...>::contains_outside_parens(comma_s{})
 																									 || String<_str...>::begins_with(return_s{})) &&
                                                    String<_str...>::contains_outside_parens(String<'='>{}),
                                                  String<_str...>>)
 {
+	static_assert(!String<_str...>::contains_outside_parens(comma_s{}));
   using str = String<_str...>;
   auto var = parse_expression(str::split(zero{}, String<'='>{}).trim_ends());
   auto expr = parse_expression(str::split(one{}, String<'='>{}).trim_ends());

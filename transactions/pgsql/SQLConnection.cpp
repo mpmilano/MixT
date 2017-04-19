@@ -3,7 +3,6 @@
 #include <arpa/inet.h>
 #include "SQLStore_impl.hpp"
 #include "SQLTransaction.hpp"
-#include "Tracker_common.hpp"
 #include "SQLCommands.hpp"
 #include "SQLStore.hpp"
 #include "Ends.hpp"

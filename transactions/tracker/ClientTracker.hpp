@@ -9,8 +9,11 @@ template <typename label> struct TombHolder;
 template <typename label> struct TombHolder<Label<label>> {
   std::unique_ptr<std::vector<tracker::Tombstone>> obligations{
       new std::vector<tracker::Tombstone>()};
-  std::unique_ptr<std::vector<tracker::Tombstone>> fulfilled{
-      new std::vector<tracker::Tombstone>()};
+	std::set<tracker::Tombstone> observed_tombstones;
+	template<typename TH>
+	void reset_obligations(){
+		TH::obligations.reset(new std::vector<tracker::Tombstone>());
+	}
 
 protected:
   ~TombHolder() = default;
@@ -24,21 +27,23 @@ struct ClientTracker : public TombHolder<labels>... {
     return *TombHolder<typename phase::label>::obligations;
   }
 
-  template <typename phase> std::vector<Tombstone> &fulfilled_for_phase() {
-    return *TombHolder<typename phase::label>::fulfilled;
-  }
-
-  template <typename phase> void mark_tombstones_clearable() {
+  template <typename phase> void clear_tombstones() {
     using TH = TombHolder<typename phase::label>;
-    TH::fulfilled = std::move(TH::obligations);
-    TH::obligations.reset(new std::vector<tracker::Tombstone>());
+    reset_obligations<TH>();
   }
 
   template <typename phase>
   void set_phase_after(std::unique_ptr<std::vector<tracker::Tombstone>> ptr) {
-    TombHolder<mutils::follows_in_sequence<typename phase::label,
-                                           labels...>>::obligations =
-        std::move(ptr);
+		using NextHolder =
+			TombHolder<mutils::follows_in_sequence<typename phase::label,labels...>>;
+		NextHolder::reset_obligations();
+		for (const auto &tomb : *ptr){
+			if (!NextHolder::observed_tombstones.contains(tomb)){
+				NextHolder::obligations.push_back()
+			}
+		}
+    NextHolder::obligations = std::move(ptr);
+		();
   }
 };
 }

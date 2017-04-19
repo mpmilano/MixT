@@ -16,9 +16,8 @@ struct TrackingContext {
   Internals *i{nullptr};
   Tracker &trk;
   mtl::TrackedPhaseContext &ctx;
-  TrackingContext(Tracker &t, mtl::TrackedPhaseContext &ctx, bool commitOnDelete = false);
+  TrackingContext(Tracker &t, mtl::TrackedPhaseContext &ctx);
   void commitContext();
-  void abortContext();
   virtual ~TrackingContext();
   TrackingContext(const TrackingContext &) = delete;
   TrackingContext(TrackingContext &&) = delete;

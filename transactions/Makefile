@@ -118,12 +118,6 @@ SQL_internal_utils.o:
 	@clang++ -c */SQL_internal_utils.cpp -DNUM_CAUSAL_MASTERS="2" -DCAUSAL_GROUP=$(causalGroup) $(CPPFLAGS)
 SQLLevels.o:
 	@clang++ -c */SQLLevels.cpp -DNUM_CAUSAL_MASTERS="2" -DCAUSAL_GROUP=$(causalGroup) $(CPPFLAGS)
-CooperativeCache.o:
-	@clang++ -c */CooperativeCache.cpp $(CPPFLAGS)
-FutureFreePool.o:
-	@clang++ -c */FutureFreePool.cpp $(CPPFLAGS)
-GlobalPool.o:
-	@clang++ -c */GlobalPool.cpp $(CPPFLAGS)
 abiutils.o:
 	@clang++ -c */abiutils.cpp $(CPPFLAGS)
 batched_connection_server.o:

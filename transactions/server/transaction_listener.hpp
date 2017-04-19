@@ -58,7 +58,6 @@ struct transaction_listener<
       auto fulfilled_tombstones =
 	mutils::from_bytes_noalloc<std::vector<tracker::Tombstone>>(&dsm,
 								    _data + mutils::bytes_size(*tombstones_to_find));
-      trk.clear_pending(*fulfilled_tombstones);
       mutils::local_connection _lc;
       _lc.data = *mutils::from_bytes_noalloc<std::vector<char>>(
           &dsm, _data + mutils::bytes_size(*tombstones_to_find) +
