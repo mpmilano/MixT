@@ -1,7 +1,7 @@
 i=$1
 foo="$2"
-read_percent="$3"
-causal_percent="$4"
+percent_read="$3"
+percent_causal="$4"
 strong_target=$5
 causal_target_1=$6
 causal_target_2=$7
@@ -18,4 +18,4 @@ first_iter=$9
 
 scp  -o "UserKnownHostsFile /dev/null" -o strictHostKeyChecking=no -i MyriaInstances.pem vm-actions.sh ubuntu@"$foo":vm-actions.sh
 scp  -o "UserKnownHostsFile /dev/null" -o strictHostKeyChecking=no -i MyriaInstances.pem as-gentoo.sh ubuntu@"$foo":as-gentoo.sh
-ssh  -o "UserKnownHostsFile /dev/null"  -o strictHostKeyChecking=no -i MyriaInstances.pem ubuntu@"$foo" sudo /bin/bash vm-actions.sh $i "$foo" $ndebug $strong_target $causal_target_1 $causal_target_2 $num_clients $client_rate $client_increase_rate $test_stop_time $percent_causal, $percent_read, $max_threads $first_iter
+ssh  -o "UserKnownHostsFile /dev/null"  -o strictHostKeyChecking=no -i MyriaInstances.pem ubuntu@"$foo" sudo /bin/bash vm-actions.sh $i "$foo" $ndebug $strong_target $causal_target_1 $causal_target_2 $num_clients $client_rate $client_increase_rate $test_stop_time $percent_causal $percent_read $max_threads $first_iter

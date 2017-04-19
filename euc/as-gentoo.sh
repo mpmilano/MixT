@@ -31,7 +31,7 @@ source pg_env.sh
 echo $*
 export causalGroup="$1"
 export MY_IP="$2"
-shift 3
+shift 2
 export CAUSAL_REMOTE_IP_1="$2"
 export CAUSAL_REMOTE_IP_2="$3"
 export STRONG_REMOTE_IP="$1"
