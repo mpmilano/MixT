@@ -46,6 +46,14 @@ struct configuration_parameters{
 	}
 	
 };
+
+	bool same_run(const configuration_parameters& p1, const configuration_parameters& p2){
+		return p1.strong_ip == p2.strong_ip && p1.strong_relay_port == p2.strong_relay_port && p1.causal_relay_port == p2.causal_relay_port
+			&& p1.client_freq == p2.client_freq && p1.starting_num_clients == p2.starting_num_clients
+			&& p1.increase_clients_freq == p2.increase_clients_freq && p1.test_duration == p2.test_duration
+			&& p1.percent_dedicated_connections == p2.percent_dedicated_connections && p1.percent_read == p2.percent_read
+			&& p1.percent_causal == p2.percent_causal && p1.log_every_n == p2.log_every_n;
+	}
 	
 	std::ostream& operator<<(std::ostream& o, const configuration_parameters& p){
 		using namespace mutils;
