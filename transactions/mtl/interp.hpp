@@ -78,9 +78,11 @@ namespace runnable_transaction {
   auto begin_interp(mutils::DeserializationManager* dsm, ClientTracker& trk, connection_pack c, required... vals)
 	{
 		using with_tracking = typename ClientTracker::template alternative_tracked_txn<previous_transaction_phases>;
+		static_assert(std::is_same<with_tracking,with_tracking>::value);
 		using without_tracking = split;
 		if (trk.must_track()){
-			return begin_interp2<with_tracking,connection_pack,run_remotely,ClientTracker,required...>(dsm,trk,c,vals...);
+			//return begin_interp2<with_tracking,connection_pack,run_remotely,ClientTracker,required...>(dsm,trk,c,vals...);
+			assert(false);
 		}
 		else {
 			return begin_interp2<without_tracking,connection_pack,run_remotely,ClientTracker,required...>(dsm,trk,c,vals...);

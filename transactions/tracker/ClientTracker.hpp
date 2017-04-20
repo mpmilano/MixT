@@ -14,12 +14,16 @@ template <typename label> struct TombHolder<Label<label>> {
 	std::set<Tombstone> observed_tombstones;
 	Clock global_min_clock;
 	Clock max_recent_clock;
+	using connection = mutils::connection;
+	connection& store_connection;
+	TombHolder(connection& c):store_connection(c){}
+	
 	void reset_obligations(){
 		obligations.reset(new std::vector<Tombstone>());
 	}
 
 	bool must_track() const {
-		!(max_recent_clock < global_min_clock || max_recent_clock == global_min_clock);
+		return !(max_recent_clock < global_min_clock || max_recent_clock == global_min_clock);
 	}
 
 protected:
@@ -29,6 +33,9 @@ protected:
 template <typename... labels>
 struct ClientTracker : public TombHolder<labels>... {
   Tracker local_tracker;
+
+	ClientTracker(typename TombHolder<labels>::connection & ... connections)
+		:TombHolder<labels>(connections)...{}
 	
   template <typename phase> std::vector<Tombstone> &tombstones_for_phase() {
     return *TombHolder<typename phase::label>::obligations;
