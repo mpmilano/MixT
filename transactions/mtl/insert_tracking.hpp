@@ -85,6 +85,7 @@ struct tracking_pair<_strong_partner, mutils::typeset<weak_elems...>>
   using weak = mutils::typeset<weak_elems...>;
   static constexpr strong strong_partner() { return strong{}; }
   static constexpr weak weak_partner() { return weak{}; }
+	static constexpr auto combined() { return strong::combine(weak{});}
   constexpr tracking_pair() = default;
 };
 
@@ -136,20 +137,21 @@ constexpr auto write_tombstones(mutils::typeset<l1, labels...>)
     write_tombstones(mutils::typeset<labels...>{}));
 }
 
-template <typename AST, typename labels>
-constexpr auto make_tracking_choice(AST a, std::true_type*, labels)
+	template <typename AST, typename labels, typename extra_strong_labels, typename extra_weak_labels>
+	constexpr auto make_tracking_choice(AST a, std::true_type*, labels, extra_strong_labels, extra_weak_labels)
 {
   // tracking is required
   constexpr auto collected = tracked_labels(labels{});
-  using sorted = DECT(collected);
-  using max_label = typename DECT(sort_labels(typename sorted::strong{}).reverse())::first;
+	using extended_collected = tracking_pair<DECT(collected.strong_partner().combine(extra_strong_labels{})),
+																					 DECT(collected.weak_partner().combine(extra_weak_labels{}))>;
+  using sorted = extended_collected;
   return Statement<Label<top>, Let<Binding<Label<top>, tracker::Tombstone, tombstone_str, Expression<Label<top>, tracker::Tombstone, GenerateTombstone>>,
-                                   Statement<Label<top>, Sequence<Statement<Label<top>, DECT(write_tombstones(sorted::weak::template add<max_label>()))>,
+                                   Statement<Label<top>, Sequence<Statement<Label<top>, DECT(write_tombstones(sorted::weak::combine(sorted::strong_partner())))>,
                                                                   DECT(insert_tracking<sorted, mutils::typeset<>>(a))>>>>{};
 }
 
-template <typename AST, typename labels>
-constexpr auto make_tracking_choice(AST a, std::false_type*, labels)
+	template <typename AST, typename labels>
+	constexpr auto make_tracking_choice(AST a, std::false_type*, labels, mutils::typeset<>, mutils::typeset<>)
 {
   // no tracking is required on this transaction.
   return a;
@@ -173,7 +175,9 @@ constexpr auto insert_tracking_begin(AST a)
   constexpr auto labels = collect_proper_labels(a).append(mutils::typelist<extra_labels...>{});
   constexpr bool needs_tracking = any_pair_tracks(labels) || any_pair_tracks(labels.reverse()) || (sizeof...(extra_labels) > 0);
   std::integral_constant<bool, needs_tracking>* choice{ nullptr };
-  return make_tracking_choice(a, choice, labels);
+  return make_tracking_choice(a, choice, labels,
+															mutils::typeset<>::combine(std::conditional_t<!extra_labels::might_track::value, mutils::typeset<extra_labels>, mutils::typeset<> >{}...),
+															mutils::typeset<>::combine(std::conditional_t<extra_labels::might_track::value, mutils::typeset<extra_labels>, mutils::typeset<> >{}...));
 }
 }
 }

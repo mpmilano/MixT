@@ -97,7 +97,7 @@ int get_ip() {
     TombNameCollision():SerializationFailure("tomb name collision"){}
   };
 
-  Nonce Tracker::generateTombstone(){ return long_rand(); }
+  Tombstone Tracker::generateTombstone(){ return Tombstone{long_rand(),get_ip(),0}; }
 
 void Tracker::writeTombstone(mtl::TrackedPhaseContext &ctx,Tracker::Nonce nonce) {
   const Tracker::Tombstone t{nonce, get_ip(), 0};

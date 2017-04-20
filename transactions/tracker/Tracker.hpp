@@ -50,7 +50,7 @@ public:
 
   std::unique_ptr<TrackingContext> generateContext(mtl::TrackedPhaseContext &ctx);
 
-  Nonce generateTombstone();
+  static Tombstone generateTombstone();
   
   void writeTombstone(mtl::TrackedPhaseContext &ctx,Nonce nonce);
   

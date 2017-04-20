@@ -22,7 +22,8 @@ template <Level l> void client::txn_read() {
   using Hndl = DECT(hndl);
   constexpr auto read_trans = TRANSACTION(150 + Hndl::label::int_id::value,
                                           remote x = hndl, {})::WITH(hndl);
-  return read_trans.run_optimistic(trk, &dsm, *get_relay<l>().lock(), hndl);
+	using connections = typename DECT(trk)::connection_references;
+  return read_trans.run_optimistic (trk, &dsm, connections{*get_relay<Level::strong>().lock(), *get_relay<Level::causal>().lock()}, hndl);
   // return read_trans.run_local(hndl);
 }
 
@@ -33,7 +34,8 @@ template <Level l> void client::txn_write() {
   constexpr auto incr_trans =
       TRANSACTION(Hndl::label::int_id::value,
                   remote x = hndl, x = x + 1)::WITH(hndl);
-  return incr_trans.run_optimistic(trk, &dsm, *get_relay<l>().lock(), hndl);
+	using connections = typename DECT(trk)::connection_references;
+  return incr_trans.run_optimistic(trk, &dsm, connections{*get_relay<Level::strong>().lock(), *get_relay<Level::causal>().lock()}, hndl);
   // return incr_trans.run_local(hndl);
 }
 

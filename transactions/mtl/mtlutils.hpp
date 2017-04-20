@@ -645,4 +645,7 @@ template<bool b, typename...> constexpr bool useful_static_assert(){
   template<typename match, typename... args>
   using follows_in_sequence = typename follows_in_sequence_str<match,args...>::type;
 
+	template<typename match, typename... args>
+	using is_sequence_end = std::is_same<follows_in_sequence<match,args...>, mismatch >;
+
 }

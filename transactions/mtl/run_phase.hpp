@@ -187,10 +187,10 @@ _run_phase(typename AST<l>::template Statement<typename AST<l>::template WriteTo
 }
 
 template <typename l, typename TranCtx, typename store>
-tracker::Tombstone _run_phase(typename AST<l>::template Expression<tracker::Tombstone, typename AST<l>::template GenerateTombstone<>>*, TranCtx& ctx, store&)
+tracker::Tombstone _run_phase(typename AST<l>::template Expression<tracker::Tombstone, typename AST<l>::template GenerateTombstone<>>*, TranCtx& , store&)
 {
 #ifdef TRACK
-  return ctx.trk_ctx.trk.generateTombstone();
+  return tracker::Tracker::generateTombstone();
 #else
 	(void) ctx;
 	return tracker::Tombstone{0,0,0};

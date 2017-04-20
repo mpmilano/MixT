@@ -18,6 +18,7 @@
 #include "mtlbasics.hpp"
 #include "myria_utils.hpp"
 #include "local_connection.hpp"
+#include "insert_tracking.hpp"
 
 namespace myria {
 
@@ -27,20 +28,25 @@ namespace runnable_transaction {}
 
 namespace server {
 
-template <txnID_t txnID, typename phase, typename store>
+	template <txnID_t txnID, typename phase, typename tracked_phase, typename store>
 struct transaction_listener;
 
-template <txnID_t txnID, typename l, typename returns, typename AST,
-          typename reqs, typename provides, typename owns, typename passthrough,
-          typename... holders>
+	template <txnID_t txnID, typename l, typename returns, 
+						typename AST, typename reqs, typename provides, typename owns, typename passthrough,
+						txnID_t tracked_txnID, typename tracked_AST, typename tracked_reqs, typename tracked_provides, typename tracked_owns, typename tracked_passthrough,
+						typename... holders>
 struct transaction_listener<
     txnID, mtl::runnable_transaction::phase<txnID, l, returns, AST, reqs,
                                             provides, owns, passthrough>,
+	mtl::runnable_transaction::phase<tracked_txnID, l, returns, tracked_AST, tracked_reqs,
+																	 tracked_provides, tracked_owns, tracked_passthrough>,
     mtl::runnable_transaction::store<holders...>> {
 
   using label = l;
   using phase = mtl::runnable_transaction::phase<txnID, l, returns, AST, reqs,
                                                  provides, owns, passthrough>;
+	using tracked_phase =	mtl::runnable_transaction::phase<tracked_txnID, l, returns, tracked_AST, tracked_reqs,
+																												 tracked_provides, tracked_owns, tracked_passthrough>;
   using store = mtl::runnable_transaction::store<holders...>;
 
   template<typename DataStore>
@@ -100,7 +106,8 @@ struct transaction_listener<
 
 template <typename transaction, typename phase>
 using listener_for = transaction_listener<
-    phase::txnID::value, phase,
-    typename transaction::all_store::template restrict_to_phase<phase>>;
+	phase::txnID::value, phase,
+	typename tombstone_enhanced_txn<typename transaction::previous_transaction_phases, typename phase::label>::template find_phase<typename phase::label>,
+	typename transaction::all_store::template restrict_to_phase<phase>>;
 }
 }

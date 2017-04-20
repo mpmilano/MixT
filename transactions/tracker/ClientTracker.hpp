@@ -2,6 +2,7 @@
 #include "Ends.hpp"
 #include "Tracker.hpp"
 #include "Tombstone.hpp"
+#include "insert_tracking.hpp"
 
 namespace myria {
 namespace tracker {
@@ -14,10 +15,6 @@ template <typename label> struct TombHolder<Label<label>> {
 	std::set<Tombstone> observed_tombstones;
 	Clock global_min_clock;
 	Clock max_recent_clock;
-	using connection = mutils::connection;
-	connection& store_connection;
-	TombHolder(connection& c):store_connection(c){}
-	
 	void reset_obligations(){
 		obligations.reset(new std::vector<Tombstone>());
 	}
@@ -30,12 +27,28 @@ protected:
   ~TombHolder() = default;
 };
 
+	template<typename label> struct ConnectionReference{
+		using connection = mutils::connection;
+		mutils::connection & c;
+		ConnectionReference(DECT(c) & c):c(c){}
+	};
+
+	template<typename... label> struct ConnectionReferences : public ConnectionReference<label>...{
+		ConnectionReferences(typename ConnectionReference<label>::connection&... c)
+			:ConnectionReference<label>(c)...{}
+
+		template<typename phase> auto& connection(){
+			using CR = ConnectionReference<typename phase::label>;
+			return CR::c;
+		}
+	};
+	
+
 template <typename... labels>
-struct ClientTracker : public TombHolder<labels>... {
+struct _ClientTracker : public TombHolder<labels>... {
   Tracker local_tracker;
 
-	ClientTracker(typename TombHolder<labels>::connection & ... connections)
-		:TombHolder<labels>(connections)...{}
+	using connection_references = ConnectionReferences<labels...>;
 	
   template <typename phase> std::vector<Tombstone> &tombstones_for_phase() {
     return *TombHolder<typename phase::label>::obligations;
@@ -57,7 +70,8 @@ struct ClientTracker : public TombHolder<labels>... {
 	}
 
   template <typename phase>
-  void set_phase_after(std::unique_ptr<std::vector<Tombstone>> ptr) {
+		void set_phase_after(std::unique_ptr<std::vector<Tombstone>> ptr,
+												 std::enable_if_t<!mutils::is_sequence_end<typename phase::label,labels...>::value>* = nullptr) {
 		using NextHolder =
 			TombHolder<mutils::follows_in_sequence<typename phase::label,labels...>>;
 		NextHolder::reset_obligations();
@@ -69,9 +83,22 @@ struct ClientTracker : public TombHolder<labels>... {
 		}
   }
 
+	template <typename phase>
+	void set_phase_after(std::unique_ptr<std::vector<Tombstone>> ,
+											 std::enable_if_t<mutils::is_sequence_end<typename phase::label,labels...>::value>* = nullptr) {}
+
 	template<typename previous_transaction_phases>
 		using alternative_tracked_txn = tombstone_enhanced_txn<previous_transaction_phases, labels...>;
 	
 };
+
+	template<typename> struct ClientTracker_from_typeset;
+	template<typename... labels> struct ClientTracker_from_typeset<mutils::typeset<labels...> >{
+		using type = _ClientTracker<labels...>;
+	};
+	
+	template<typename... labels> using ClientTracker =
+		typename ClientTracker_from_typeset<DECT(
+		mtl::typecheck_phase::tracking_phase::tracked_labels(mutils::typelist<labels...>{}).combined()) >::type;
 }
 }
