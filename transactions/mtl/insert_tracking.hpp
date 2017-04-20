@@ -142,9 +142,9 @@ constexpr auto make_tracking_choice(AST a, std::true_type*, labels)
   // tracking is required
   constexpr auto collected = tracked_labels(labels{});
   using sorted = DECT(collected);
-  using max_label = typename DECT(sort_labels(typename sorted::strong{}))::last;
+  using max_label = typename DECT(sort_labels(typename sorted::strong{}).reverse())::first;
   return Statement<Label<top>, Let<Binding<Label<top>, tracker::Tombstone, tombstone_str, Expression<Label<top>, tracker::Tombstone, GenerateTombstone>>,
-                                   Statement<Label<top>, Sequence<Statement<Label<top>, DECT(write_tombstones(sorted::weak::add(max_label{})))>,
+                                   Statement<Label<top>, Sequence<Statement<Label<top>, DECT(write_tombstones(sorted::weak::template add<max_label>()))>,
                                                                   DECT(insert_tracking<sorted, mutils::typeset<>>(a))>>>>{};
 }
 
@@ -170,7 +170,7 @@ constexpr bool any_pair_tracks(mutils::typelist<l1, labels...>)
 template <typename AST, typename... extra_labels>
 constexpr auto insert_tracking_begin(AST a)
 {
-  constexpr auto labels = collect_proper_labels(a)::add(extra_labels{}...);
+  constexpr auto labels = collect_proper_labels(a).append(mutils::typelist<extra_labels...>{});
   constexpr bool needs_tracking = any_pair_tracks(labels) || any_pair_tracks(labels.reverse()) || (sizeof...(extra_labels) > 0);
   std::integral_constant<bool, needs_tracking>* choice{ nullptr };
   return make_tracking_choice(a, choice, labels);
@@ -180,18 +180,20 @@ constexpr auto insert_tracking_begin(AST a)
 }
 
 // take this transaction and add tombstone tracking for the relevant level as an extra thing.
-template <typename txn, typename... label>
+template <typename previous_transaction_phases, typename... label>
 constexpr auto tombstone_enhanced_txn_f(Label<label>...)
 {
+	using namespace mtl;
   using namespace typecheck_phase;
-  using transaction_rebuilder = typename txn::previous_transaction_phases;
+	using namespace tracking_phase;
+  using transaction_rebuilder = previous_transaction_phases;
 	using inferred = typename transaction_rebuilder::inferred;
-	using old_it = typename transaction_rebuilder::old_id;
+	using old_id = typename transaction_rebuilder::old_id;
 	return typename transaction_rebuilder::template resume_compilation_inferred<
 		old_id::value + 10,
 		DECT(insert_tracking_begin<inferred, Label<label>...>(inferred{}))>{};
 }
 
-template <typename txn, typename... l>
-using tombstone_enhanced_txn = DECT(tombstone_enhanced_txn<txn>(l... {}));
+template <typename previous_transaction_phases, typename... l>
+using tombstone_enhanced_txn = DECT(tombstone_enhanced_txn_f<previous_transaction_phases>(l{}...));
 }

@@ -58,9 +58,9 @@ namespace runnable_transaction {
 		auto ret = dispatch_to_runner(choice,dsm,trk,c, np, s);
 		return ret;
 	}
-
-  template <typename split, typename connection_pack, typename run_remotely, typename ClientTracker, typename... required>
-  auto begin_interp(mutils::DeserializationManager* dsm, ClientTracker& trk, connection_pack c, required... vals)
+	
+	template <typename split, typename connection_pack, typename run_remotely, typename ClientTracker, typename... required>
+  auto begin_interp2(mutils::DeserializationManager* dsm, ClientTracker& trk, connection_pack c, required... vals)
 	{
 		static_assert(std::is_same<run_remotely, std::true_type>::value || std::is_same<run_remotely, std::false_type>::value);
 		constexpr split* np{ nullptr };
@@ -72,7 +72,20 @@ namespace runnable_transaction {
 		using ret_t = DECT(dispatch_to_runner(run_remotely_v,dsm,trk,c, np, store));
 		constexpr ret_t *rt{nullptr};
 		return interp3<run_remotely, ret_t>(dsm,trk,c, rt, np, store);
-}
+	}
+
+  template <typename previous_transaction_phases, typename split, typename connection_pack, typename run_remotely, typename ClientTracker, typename... required>
+  auto begin_interp(mutils::DeserializationManager* dsm, ClientTracker& trk, connection_pack c, required... vals)
+	{
+		using with_tracking = typename ClientTracker::template alternative_tracked_txn<previous_transaction_phases>;
+		using without_tracking = split;
+		if (trk.must_track()){
+			return begin_interp2<with_tracking,connection_pack,run_remotely,ClientTracker,required...>(dsm,trk,c,vals...);
+		}
+		else {
+			return begin_interp2<without_tracking,connection_pack,run_remotely,ClientTracker,required...>(dsm,trk,c,vals...);
+		}
+	}
 }
 }
 }

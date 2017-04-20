@@ -18,6 +18,10 @@ template <typename label> struct TombHolder<Label<label>> {
 		obligations.reset(new std::vector<Tombstone>());
 	}
 
+	bool must_track() const {
+		!(max_recent_clock < global_min_clock || max_recent_clock == global_min_clock);
+	}
+
 protected:
   ~TombHolder() = default;
 };
@@ -34,6 +38,10 @@ struct ClientTracker : public TombHolder<labels>... {
     using TH = TombHolder<typename phase::label>;
 		TH::reset_obligations();
   }
+	
+	bool must_track() const {
+		return (false || ... || TombHolder<labels>::must_track());
+	}
 
 	template<typename phase> void update_clocks(const Clock& global_min_clock, const Clock &recent_clock){
 		using TH = TombHolder<typename phase::label>;
@@ -53,6 +61,10 @@ struct ClientTracker : public TombHolder<labels>... {
 			}
 		}
   }
+
+	template<typename previous_transaction_phases>
+		using alternative_tracked_txn = tombstone_enhanced_txn<previous_transaction_phases, labels...>;
+	
 };
 }
 }

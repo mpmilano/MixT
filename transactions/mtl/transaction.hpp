@@ -34,7 +34,7 @@ struct transaction_struct;
 #define NULLPTRS2 nullptr, nullptr
 #define NULLPTRS3 nullptr, nullptr, nullptr
 
-template <txnID_t _old_id, typename _inferred, typename value...>
+template <txnID_t _old_id, typename _inferred, typename... value>
 struct previous_transaction_phases
 {
   using inferred = _inferred;
@@ -44,16 +44,15 @@ struct previous_transaction_phases
   struct resume_compilation_inferred_str
   {
     using recollapsed =
-      DECT(recollapse(split_computation<id, tracked, type_binding<typename value::name, typename value::type, Label<top>, type_location::local>...>()));
-    using transaction = transaction_struct<recollapsed::number_remote_phases::value, recollapsed, value...>;
+      DECT(recollapse(split_phase::split_computation<id, tracked, type_binding<typename value::name, typename value::type, Label<top>, type_location::local>...>()));
   };
 
   template <txnID_t id, typename tracked>
-  using resume_compilation_inferred = typename resume_compilation_inferred_str<id, tracked>::transaction;
+  using resume_compilation_inferred = typename resume_compilation_inferred_str<id, tracked>::recollapsed;
 };
 
 #define GENERATE_TXN_STRUCT(n)                                                                                                                                 \
-  template <typename split, typename _previous_transaction_phases typename... bound_values>                                                                    \
+  template <typename _previous_transaction_phases, typename split, typename... bound_values> \
   struct transaction_struct<n, _previous_transaction_phases, split, bound_values...>                                                                           \
   {                                                                                                                                                            \
     constexpr transaction_struct() = default;                                                                                                                  \
@@ -68,7 +67,7 @@ struct previous_transaction_phases
     {                                                                                                                                                          \
       using namespace runnable_transaction;                                                                                                                    \
       using namespace mutils;                                                                                                                                  \
-      return begin_interp<transaction, mutils::array<connection*, n, connection*>, run_remotely, ClientTracker, bound_values...>(                              \
+      return begin_interp<previous_transaction_phases, transaction, mutils::array<connection*, n, connection*>, run_remotely, ClientTracker, bound_values...>( \
         dsm, trk, mutils::array<connection*, n, connection*>{ CONNECTION_SEQUENCE_USE##n() }, bound_values{ v }...);                                           \
     }                                                                                                                                                          \
                                                                                                                                                                \

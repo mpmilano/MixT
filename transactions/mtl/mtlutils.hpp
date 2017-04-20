@@ -138,11 +138,20 @@ constexpr auto append(T, U... u)
 {
   return T::append(u...);
 }
+
+	template<typename T1, typename...>
+	struct first_struct {
+		using type = T1;
+	};
+
 }
 
 template <typename... t1>
 struct typelist
 {
+
+	using first = typename typelist_ns::first_struct<t1...>::type;
+	
   constexpr typelist() = default;
   template <typename... t2>
   static constexpr auto append(typelist<t2...>)
