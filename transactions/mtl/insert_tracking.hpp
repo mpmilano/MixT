@@ -1,4 +1,5 @@
 #pragma once
+#include "writes_remote.hpp"
 
 namespace myria {
 namespace mtl {
@@ -150,8 +151,8 @@ constexpr auto write_tombstones(mutils::typeset<l1, labels...>)
                                                                   DECT(insert_tracking<sorted, mutils::typeset<>>(a))>>>>{};
 }
 
-	template <typename AST, typename labels>
-	constexpr auto make_tracking_choice(AST a, std::false_type*, labels, mutils::typeset<>, mutils::typeset<>)
+	template <typename AST, typename labels, typename ts1, typename ts2>
+	constexpr auto make_tracking_choice(AST a, std::false_type*, labels, ts1, ts2)
 {
   // no tracking is required on this transaction.
   return a;
@@ -173,7 +174,8 @@ template <typename AST, typename... extra_labels>
 constexpr auto insert_tracking_begin(AST a)
 {
   constexpr auto labels = collect_proper_labels(a).append(mutils::typelist<extra_labels...>{});
-  constexpr bool needs_tracking = any_pair_tracks(labels) || any_pair_tracks(labels.reverse()) || (sizeof...(extra_labels) > 0);
+	constexpr bool writes_remote = begin_writes_remote(a);
+  constexpr bool needs_tracking = writes_remote && (any_pair_tracks(labels) || any_pair_tracks(labels.reverse()) || (sizeof...(extra_labels) > 0));
   std::integral_constant<bool, needs_tracking>* choice{ nullptr };
   return make_tracking_choice(a, choice, labels,
 															mutils::typeset<>::combine(std::conditional_t<!extra_labels::might_track::value, mutils::typeset<extra_labels>, mutils::typeset<> >{}...),
