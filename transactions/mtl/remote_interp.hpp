@@ -19,6 +19,8 @@ auto remote_interp(mutils::DeserializationManager* dsm, tombstone_tracker& trk, 
   constexpr typename phase::requirements requires{};
   constexpr typename phase::provides provides{};
   mutils::local_connection lc;
+	//NOTE TO SELF: USE THE TOMBSTONE TRACKER TO FIND ALL THE LEVELS WE CARE ABOUT.
+	//CALL THE JUST-WRITE-A-TOMBSTONE TRANSACTION FROM THERE TOO.
 #ifndef NDEBUG
   auto& logfile = c.get_log_file();
   ;

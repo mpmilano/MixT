@@ -161,4 +161,15 @@ namespace myria { namespace mtl  { namespace typecheck_phase { namespace trackin
 	  return make_tracking_choice(a,choice,labels);
 	}
 
-       }}}}
+       }}}
+
+	//take this transaction and add tombstone tracking for the relevant level as an extra thing. 
+	template<typename txn, typename... level> constexpr auto tombstone_enhanced_txn_f(Level<level>...){
+		using namespace typecheck_phase;
+		using old_txn_id = typename txn::txn_id;
+		using typecheck_phase_of_txn = txn::transaction::
+	}
+
+	template<typename txn, typename... l> using tombstone_enhanced_txn = DECT(tombstone_enhanced_txn<txn>(l...{}));
+	
+}
