@@ -35,6 +35,7 @@ struct previous_transaction_phases
   {
     using recollapsed =
       DECT(recollapse(split_phase::split_computation<id, tracked, type_binding<typename value::name, typename value::type, Label<top>, type_location::local>...>()));
+		using all_store = typename recollapsed::template all_store<value...>;
   };
 
   template <txnID_t id, typename tracked>

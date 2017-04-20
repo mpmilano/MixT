@@ -166,7 +166,7 @@ void
 _run_phase(typename AST<l>::template Statement<typename AST<l>::template AccompanyWrite<typename AST<l>::template Expression<y, typename AST<l>::template VarReference<R>>>>*, TranCtx& ctx, store& s)
 {
 #ifdef TRACK
-  ctx.trk_ctx.trk.AccompanyWrite(ctx,s.get(R{}).get_remote(ctx).name(),
+  ctx.trk_ctx.trk.accompanyWrite(ctx,s.get(R{}).get_remote(ctx).name(),
 				 s.get(typecheck_phase::tombstone_str{}).get(ctx).name());
 #else
 	(void) ctx;

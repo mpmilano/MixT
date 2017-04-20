@@ -94,10 +94,12 @@ template <typename Store, typename... phases> struct StoreRelay {
   StoreRelay(int port, DECT(new_connection) new_connection)
       : new_connection(std::move(new_connection)),
         receiver(port, start_session_wrapper) {
+#ifndef NDEBUG
 		std::cout << "Registered transactions (nontrack) " << std::endl;
 		(std::cout << typename phases::phase{}, ...);
 		std::cout << "Registered transactions (track) " << std::endl;
 		(std::cout << typename phases::tracked_phase{}, ...);
+#endif
 	}
 };
 

@@ -90,6 +90,9 @@ struct _ClientTracker : public TombHolder<labels>... {
 	template<typename previous_transaction_phases>
 		using alternative_tracked_txn = tombstone_enhanced_txn<previous_transaction_phases, labels...>;
 	
+	template<typename previous_transaction_phases>
+		using alternative_tracked_store = tombstone_enhanced_store<previous_transaction_phases, labels...>;
+	
 };
 
 	template<typename> struct ClientTracker_from_typeset;

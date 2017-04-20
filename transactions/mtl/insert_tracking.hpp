@@ -195,11 +195,13 @@ constexpr auto tombstone_enhanced_txn_f(Label<label>...)
   using transaction_rebuilder = previous_transaction_phases;
 	using inferred = typename transaction_rebuilder::inferred;
 	using old_id = typename transaction_rebuilder::old_id;
-	return typename transaction_rebuilder::template resume_compilation_inferred<
+	return typename transaction_rebuilder::template resume_compilation_inferred_str<
 		old_id::value + 10,
 		DECT(insert_tracking_begin<inferred, Label<label>...>(inferred{}))>{};
 }
 
 template <typename previous_transaction_phases, typename... l>
-using tombstone_enhanced_txn = DECT(tombstone_enhanced_txn_f<previous_transaction_phases>(l{}...));
+using tombstone_enhanced_txn = typename DECT(tombstone_enhanced_txn_f<previous_transaction_phases>(l{}...))::recollapsed;
+template <typename previous_transaction_phases, typename... l>
+using tombstone_enhanced_store = typename DECT(tombstone_enhanced_txn_f<previous_transaction_phases>(l{}...))::all_store;
 }
