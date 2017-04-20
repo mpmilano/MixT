@@ -21,7 +21,7 @@ namespace mtl {
 template <txnID_t, typename>
 struct pre_transaction_str;
 
-template <std::size_t num_remote, typename split, typename... bound_values>
+template <std::size_t num_remote, typename previous_transaction_phases, typename split, typename... bound_values>
 struct transaction_struct;
 
 #define CONNECTION_SEQUENCE_USE3(annot...) annot c1, annot c2, annot c3
@@ -34,29 +34,31 @@ struct transaction_struct;
 #define NULLPTRS2 nullptr, nullptr
 #define NULLPTRS3 nullptr, nullptr, nullptr
 
-	template<txnID_t _old_id, typename _inferred, typename value...>
-	struct previous_transaction_phases {
-		using inferred = _inferred;
-		using old_id = std::integral_constant<txnID_t,_old_id>;
-		
-		template<txnID_t id, typename tracked>
-		struct resume_compilation_inferred_str{
-			using recollapsed = DECT(recollapse(split_computation<id,tracked,
-																					type_binding<typename value::name, typename value::type, Label<top>,
-																					type_location::local>...>()));
-			using transaction = transaction_struct<recollapsed::number_remote_phases::value, recollapsed, value...>;
-		};
-		
-		template<txnID_t id, typename tracked> using resume_compilation_inferred
-		= typename resume_compilation_inferred_str<id,tracked>::transaction ;
-	};
-	
+template <txnID_t _old_id, typename _inferred, typename value...>
+struct previous_transaction_phases
+{
+  using inferred = _inferred;
+  using old_id = std::integral_constant<txnID_t, _old_id>;
+
+  template <txnID_t id, typename tracked>
+  struct resume_compilation_inferred_str
+  {
+    using recollapsed =
+      DECT(recollapse(split_computation<id, tracked, type_binding<typename value::name, typename value::type, Label<top>, type_location::local>...>()));
+    using transaction = transaction_struct<recollapsed::number_remote_phases::value, recollapsed, value...>;
+  };
+
+  template <txnID_t id, typename tracked>
+  using resume_compilation_inferred = typename resume_compilation_inferred_str<id, tracked>::transaction;
+};
+
 #define GENERATE_TXN_STRUCT(n)                                                                                                                                 \
-  template <typename split, typename... bound_values>                                                                                                          \
-  struct transaction_struct<n, split, bound_values...>                                                                                                         \
+  template <typename split, typename _previous_transaction_phases typename... bound_values>                                                                    \
+  struct transaction_struct<n, _previous_transaction_phases, split, bound_values...>                                                                           \
   {                                                                                                                                                            \
     constexpr transaction_struct() = default;                                                                                                                  \
-		using transaction = split;																					\
+    using transaction = split;                                                                                                                                 \
+    using previous_transaction_phases = _previous_transaction_phases;                                                                                          \
     template <typename label>                                                                                                                                  \
     using find_phase = typename transaction::template find_phase<label>;                                                                                       \
                                                                                                                                                                \
@@ -86,11 +88,12 @@ struct transaction_struct;
     using all_store = typename transaction::template all_store<bound_values...>;                                                                               \
   };
 
-template <typename split, typename... bound_values>
-struct transaction_struct<0, split, bound_values...>
+template <typename _previous_transaction_phases, typename split, typename... bound_values>
+struct transaction_struct<0, _previous_transaction_phases, split, bound_values...>
 {
   constexpr transaction_struct() = default;
   using transaction = split;
+  using previous_transaction_phases = _previous_transaction_phases;
   template <typename label>
   using find_phase = typename transaction::template find_phase<label>;
   template <typename ClientTracker>
@@ -113,8 +116,6 @@ std::ostream& operator<<(std::ostream& o, transaction_struct<num_remote, split, 
 {
   return o << split{};
 }
-
-
 
 template <txnID_t id, char... Str>
 struct pre_transaction_str<id, mutils::String<Str...>>
@@ -141,13 +142,13 @@ struct pre_transaction_str<id, mutils::String<Str...>>
             using tracked_t = DECT(insert_tracking_begin(inferred_t{}));
             using namespace split_phase;
             using split_t = DECT(split_computation<id, tracked_t, bound_values...>());
-            // this is where we should introduce the tombstones, I think. if (labels::exists_predicate<requires_tracking>()){}
             using recollapsed_t = DECT(recollapse(split_t{}));
-						struct inferred_and_recollapsed{
-							constexpr inferred_and_recollapsed() = default;
-							using inferred = inferred_t;
-							using recollapsed = recollapsed_t;
-						};
+            struct inferred_and_recollapsed
+            {
+              constexpr inferred_and_recollapsed() = default;
+              using inferred = inferred_t;
+              using recollapsed = recollapsed_t;
+            };
             return inferred_and_recollapsed{};
           }
         }
@@ -158,12 +159,11 @@ struct pre_transaction_str<id, mutils::String<Str...>>
   template <typename... value>
   static constexpr auto with()
   {
-    constexpr auto inferred_and_recollapsed
-			= compile<type_binding<typename value::name, typename value::type, Label<top>, type_location::local>...>();
-		using recollapsed = typename DECT(inferred_and_recollapsed)::recollapsed;
-		using inferred = typename DECT(inferred_and_recollapsed)::inferred;
-		using previous_phases = previous_transaction_phases<id,inferred,value...>;
-    return transaction_struct<recollapsed::number_remote_phases::value, recollapsed, value...>{};
+    constexpr auto inferred_and_recollapsed = compile<type_binding<typename value::name, typename value::type, Label<top>, type_location::local>...>();
+    using recollapsed = typename DECT(inferred_and_recollapsed)::recollapsed;
+    using inferred = typename DECT(inferred_and_recollapsed)::inferred;
+    using previous_phases = previous_transaction_phases<id, inferred, value...>;
+    return transaction_struct<recollapsed::number_remote_phases::value, previous_phases, recollapsed, value...>{};
   }
 };
 }
