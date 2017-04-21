@@ -246,14 +246,13 @@ using AST = split_phase::AST<l>;
 template <typename l, typename returns, typename AST, typename provides, typename owns, typename passthrough, typename... reqs>
 std::ostream& operator<<(std::ostream& o, phase<l, returns, AST, mutils::typeset<reqs...>, provides, owns, passthrough>)
 {
-	using _phase = phase<l, returns, AST, mutils::typeset<reqs...>, provides, owns, passthrough>;
   using namespace mutils;
   auto print = [&](const auto& e) {
     print_varname(o, e);
     o << " ";
     return nullptr;
   };
-  o << "Phase number: " << _phase::txnID() << " returning " << type_name<returns>() << std::endl;
+  o << "Phase returning " << type_name<returns>() << std::endl;
   o << "Level " << l{} << ": requires ";
   auto ignore1 = { nullptr, nullptr, print(typename reqs::name{})... };
   (void)ignore1;
