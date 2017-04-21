@@ -39,6 +39,7 @@ template <typename Store, typename... phases> struct StoreRelay {
 				if (selected_txn == 0){
 					std::string description = Store::label::description;
 					c.send(mutils::bytes_size(description), description);
+					return;
 				}
 				#endif
         char const *const data = ((char *)_data) + sizeof(txnID_t);
