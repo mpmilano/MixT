@@ -156,7 +156,15 @@ struct phase<l, _returns, AST, reqs, mutils::typeset<_provides...>, owns, passth
   using returns = _returns;
   using provides = mutils::typeset<_provides...>;
   using owned = owns;
-	static txnID_t txnID();
+	static txnID_t txnID(){
+		static txnID_t ret = []{
+			std::stringstream ss;
+			ss << phase{};
+			std::string hash_str = ss.str();
+			return std::hash<std::string>{}(hash_str);
+		}();
+		return ret;
+	}
 
   template <typename label>
   using has_label = std::conditional_t<std::is_same<l, label>::value, phase, mutils::mismatch>;
