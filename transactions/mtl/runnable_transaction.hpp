@@ -274,6 +274,28 @@ std::ostream& operator<<(std::ostream& o, transaction<phase...>)
   (void)ignore;
   return o;
 }
+
+	template<typename l> using tombstone_only_phase = phase <l, void,
+					 typename AST<l>::template Statement<
+						 typename AST<l>::template Sequence<
+							 typename AST<l>::template Statement<typename AST<l>::template IncrementOccurance<mutils::String<TOMBSTONE_CHAR_SEQUENCE> > >,
+							 typename AST<l>::template Statement<
+								 typename AST<l>::template WriteTombstone<
+									 typename AST<l>::template Expression<
+										 tracker::Tombstone,
+										 typename AST<l>::template VarReference<mutils::String<TOMBSTONE_CHAR_SEQUENCE> > > > >
+							 > >,
+					 mutils::typeset<type_holder<tracker::Tombstone, TOMBSTONE_CHAR_SEQUENCE> >,
+					 mutils::typeset<> ,
+					 mutils::typeset<>,
+					mutils::typeset<> >;
+	template<typename l> using tombstone_only_txn =
+		transaction<tombstone_only_phase<l> >;
+	template<typename l> using tombstone_only_store = typename tombstone_only_txn<l>::template all_store<>;
+
+	template<typename l> using empty_phase = phase<l,void,typename AST<l>::template Statement<typename AST<l>::template Sequence<> >, mutils::typeset<>,mutils::typeset<>,mutils::typeset<>,mutils::typeset<> >;
+	template<typename l> using empty_txn = transaction<empty_phase<l> >;
+	template<typename> using empty_store = store<>;
 }
 }
 }

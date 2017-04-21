@@ -54,7 +54,6 @@ protected:
 			return _this;
 		}
 	};
-	
 
 template <typename... labels>
 struct _ClientTracker : public TombHolder<labels>... {

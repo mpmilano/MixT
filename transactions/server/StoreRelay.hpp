@@ -116,9 +116,9 @@ template <typename Store, typename... phases> struct StoreRelay {
 };
 
 template <typename Store, typename... transactions>
-using RelayForTransactions =
-    StoreRelay<Store, listener_for<transactions,
-                                   typename transactions::template find_phase<
-                                       typename Store::label>>...>;
+using RelayForTransactions =  StoreRelay<Store, transaction_listener<mtl::runnable_transaction::tombstone_only_phase<typename Store::label>, mtl::runnable_transaction::tombstone_only_store<typename Store::label>,mtl::runnable_transaction::tombstone_only_phase<typename Store::label>, mtl::runnable_transaction::tombstone_only_store<typename Store::label> >,
+																				 listener_for<transactions,
+																											typename transactions::template find_phase<
+																												typename Store::label>>...>;
 }
 }

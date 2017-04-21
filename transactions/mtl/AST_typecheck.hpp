@@ -229,7 +229,8 @@ struct Return;
 	using substatement = typename Return<Expr>::substatement;
 };
 
-using tombstone_str = mutils::String<'t', 'o', 'm', 'b', 's', 't', 'o', 'n', 'e', 0>;
+#define TOMBSTONE_CHAR_SEQUENCE	't', 'o', 'm', 'b', 's', 't', 'o', 'n', 'e', 0
+using tombstone_str = mutils::String<TOMBSTONE_CHAR_SEQUENCE>;
 
 template<typename> struct WriteTombstone;
   
