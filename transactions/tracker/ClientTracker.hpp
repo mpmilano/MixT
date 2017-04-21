@@ -30,16 +30,28 @@ protected:
 	template<typename label> struct ConnectionReference{
 		using connection = mutils::connection;
 		mutils::connection & c;
-		ConnectionReference(DECT(c) & c):c(c){}
+		ConnectionReference(DECT(c) & c):c(c){
+#ifndef NDEBUG
+			constexpr txnID_t debug_txn{0};
+			c.send(debug_txn);
+			DECT(mutils::bytes_size(std::string{})) rcv_size{0};
+			c.receive(rcv_size);
+			assert(*c.template receive<std::string>(nullptr,rcv_size) == std::string{label::description});
+#endif
+		}
 	};
 
 	template<typename... label> struct ConnectionReferences : public ConnectionReference<label>...{
 		ConnectionReferences(typename ConnectionReference<label>::connection&... c)
 			:ConnectionReference<label>(c)...{}
 
+		ConnectionReferences(const ConnectionReference<label>&... c)
+			:ConnectionReference<label>(c.c)...{}
+
 		template<typename phase> auto& connection(){
 			using CR = ConnectionReference<typename phase::label>;
-			return CR::c;
+			CR& _this = *this;
+			return _this;
 		}
 	};
 	

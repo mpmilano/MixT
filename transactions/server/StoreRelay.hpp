@@ -35,6 +35,12 @@ template <typename Store, typename... phases> struct StoreRelay {
     void process_everything(std::size_t size, void const *const _data) {
       try {
         auto selected_txn = ((txnID_t *)_data)[0];
+				#ifndef NDEBUG
+				if (selected_txn == 0){
+					std::string description = Store::label::description;
+					c.send(mutils::bytes_size(description), description);
+				}
+				#endif
         char const *const data = ((char *)_data) + sizeof(txnID_t);
         bool found_match =
             (false || ... || phases::run_if_match(size - sizeof(txnID_t),

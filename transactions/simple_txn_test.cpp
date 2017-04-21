@@ -17,17 +17,23 @@ using namespace mutils;
 namespace myria {
 
 template <Level l> void client::txn_read() {
+	using namespace tracker;
   auto &store = get_store<l>();
   auto hndl = store.template existingObject<int>(nullptr, get_name_read(0.5));
   using Hndl = DECT(hndl);
   constexpr auto read_trans = TRANSACTION(150 + Hndl::label::int_id::value,
                                           remote x = hndl, {})::WITH(hndl);
 	using connections = typename DECT(trk)::connection_references;
-  return read_trans.run_optimistic (trk, &dsm, connections{*get_relay<Level::strong>().lock(), *get_relay<Level::causal>().lock()}, hndl);
+	auto strong_connection = get_relay<Level::strong>().lock();
+	auto causal_connection = get_relay<Level::causal>().lock();
+	return read_trans.run_optimistic (trk, &dsm,
+																		connections{ConnectionReference<Label<strong> >{*strong_connection},
+																				ConnectionReference<Label<causal> >{*causal_connection}}, hndl);
   // return read_trans.run_local(hndl);
 }
 
 template <Level l> void client::txn_write() {
+	using namespace tracker;
   auto &store = get_store<l>();
   auto hndl = store.template existingObject<int>(nullptr, get_name_write());
   using Hndl = DECT(hndl);
@@ -35,7 +41,10 @@ template <Level l> void client::txn_write() {
       TRANSACTION(Hndl::label::int_id::value,
                   remote x = hndl, x = x + 1)::WITH(hndl);
 	using connections = typename DECT(trk)::connection_references;
-  return incr_trans.run_optimistic(trk, &dsm, connections{*get_relay<Level::strong>().lock(), *get_relay<Level::causal>().lock()}, hndl);
+	auto strong_connection = get_relay<Level::strong>().lock();
+	auto causal_connection = get_relay<Level::causal>().lock();
+  return incr_trans.run_optimistic(trk, &dsm,connections{ConnectionReference<Label<strong> >{*strong_connection},
+																				ConnectionReference<Label<causal> >{*causal_connection}} , hndl);
   // return incr_trans.run_local(hndl);
 }
 
