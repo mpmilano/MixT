@@ -60,6 +60,8 @@ public:
 
   void find_tombstones(mtl::TrackedPhaseContext &, const Tombstone&);
 
+	void set_persistent_store(TrackableDataStore_super& ds);
+
 	void record_timestamp(mtl::TrackedPhaseContext &, const Clock& c);
 
 	const Clock& min_clock() const;

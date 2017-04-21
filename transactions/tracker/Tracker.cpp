@@ -99,11 +99,17 @@ int get_ip() {
 
   Tombstone Tracker::generateTombstone(){ return Tombstone{long_rand(),get_ip(),0}; }
 
+	void Tracker::set_persistent_store(TrackableDataStore_super& ds){
+		i->persistent_datastore = &ds;
+	}
+
 void Tracker::writeTombstone(mtl::TrackedPhaseContext &ctx,Tracker::Nonce nonce) {
   const Tracker::Tombstone t{nonce, get_ip(), 0};
-  assert(ctx.store_context());
+  assert(ctx.store_context() || i->persistent_datastore);
   TrackableDataStore_super &ds =
-    dynamic_cast<TrackableDataStore_super &>(ctx.store_context()->store());
+		(ctx.store_context() ? 
+		 dynamic_cast<TrackableDataStore_super &>(ctx.store_context()->store()) :
+		 *i->persistent_datastore);
   if (ds.exists(&ctx, t.name()))
     throw TombNameCollision{};
   else

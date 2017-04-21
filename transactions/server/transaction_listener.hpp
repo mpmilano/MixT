@@ -86,6 +86,7 @@ struct transaction_listener<
 		bool transaction_successful{true};
 		try {
 			tracker::find_tombstones(ds,trk,dsm,*tombstones_to_find);
+			trk.set_persistent_store(ds);
 			mtl::runnable_transaction::common_interp<phase_to_run, store>(s,trk);
 		} catch (std::exception &whendebug(e)) {
 			// right now, *any* failure is just sent to the client as a byte;

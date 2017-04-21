@@ -13,6 +13,7 @@ struct Tracker::Internals {
 	std::unique_ptr<std::vector<Tombstone> > encountered_tombstones{new std::vector<Tombstone>{}};
   Clock global_min{{0, 0, 0, 0}};
 	Clock new_objects_max{{0,0,0,0}};
+	TrackableDataStore_super *persistent_datastore{nullptr};
   Internals() = default;
 };
 
