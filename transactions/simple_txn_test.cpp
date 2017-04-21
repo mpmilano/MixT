@@ -20,9 +20,7 @@ template <Level l> void client::txn_read() {
 	using namespace tracker;
   auto &store = get_store<l>();
   auto hndl = store.template existingObject<int>(nullptr, get_name_read(0.5));
-  using Hndl = DECT(hndl);
-  constexpr auto read_trans = TRANSACTION(150 + Hndl::label::int_id::value,
-                                          remote x = hndl, {})::WITH(hndl);
+  constexpr auto read_trans = TRANSACTION(remote x = hndl, {})::WITH(hndl);
 	using connections = typename DECT(trk)::connection_references;
 	auto strong_connection = get_relay<Level::strong>().lock();
 	auto causal_connection = get_relay<Level::causal>().lock();
@@ -36,10 +34,8 @@ template <Level l> void client::txn_write() {
 	using namespace tracker;
   auto &store = get_store<l>();
   auto hndl = store.template existingObject<int>(nullptr, get_name_write());
-  using Hndl = DECT(hndl);
   constexpr auto incr_trans =
-      TRANSACTION(Hndl::label::int_id::value,
-                  remote x = hndl, x = x + 1)::WITH(hndl);
+      TRANSACTION(remote x = hndl, x = x + 1)::WITH(hndl);
 	using connections = typename DECT(trk)::connection_references;
 	auto strong_connection = get_relay<Level::strong>().lock();
 	auto causal_connection = get_relay<Level::causal>().lock();

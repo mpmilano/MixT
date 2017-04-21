@@ -4,7 +4,7 @@
 namespace myria {
 template <typename>
 struct Label;
-struct top;
+	using top = mutils::String<'t','o','p'>;
 template <>
 struct Label<top>
 {
@@ -47,8 +47,8 @@ struct Label<top>
 };
 
   constexpr auto parse_label(mutils::String<'t','o','p'>){
-  return Label<top>{};
-}
+		return Label<top>{};
+	}
 
 template <int, int>
 struct temp_label;
@@ -185,7 +185,7 @@ struct Label<label_min_of<Label<l>, Label<r>>>
   static constexpr auto resolve() { return Label<l>::min_with(Label<r>{}); }
 };
 
-struct bottom;
+	using bottom = mutils::String<'b','o','t','t','o','m'>;
 template <>
 struct Label<bottom>
 {

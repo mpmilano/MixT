@@ -194,9 +194,7 @@ constexpr auto tombstone_enhanced_txn_f(Label<label>...)
 	using namespace tracking_phase;
   using transaction_rebuilder = previous_transaction_phases;
 	using inferred = typename transaction_rebuilder::inferred;
-	using old_id = typename transaction_rebuilder::old_id;
 	return typename transaction_rebuilder::template resume_compilation_inferred_str<
-		old_id::value + 10,
 		DECT(insert_tracking_begin<inferred, Label<label>...>(inferred{}))>{};
 }
 

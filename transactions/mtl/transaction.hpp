@@ -18,31 +18,30 @@
 namespace myria {
 namespace mtl {
 
-template <txnID_t, typename>
+template <typename>
 struct pre_transaction_str;
 
 template <std::size_t num_remote, typename previous_transaction_phases, typename split, typename... bound_values>
 struct transaction_struct;
 
-template <txnID_t _old_id, typename _inferred, typename... value>
+template <typename _inferred, typename... value>
 struct previous_transaction_phases
 {
   using inferred = _inferred;
-  using old_id = std::integral_constant<txnID_t, _old_id>;
 
-  template <txnID_t id, typename tracked>
+  template <typename tracked>
   struct resume_compilation_inferred_str
   {
     using recollapsed =
-      DECT(recollapse(split_phase::split_computation<id, tracked, type_binding<typename value::name, typename value::type, Label<top>, type_location::local>...>()));
+      DECT(recollapse(split_phase::split_computation<tracked, type_binding<typename value::name, typename value::type, Label<top>, type_location::local>...>()));
 		using all_store = typename recollapsed::template all_store<value...>;
   };
 
-  template <txnID_t id, typename tracked>
-  using resume_compilation_inferred = typename resume_compilation_inferred_str<id, tracked>::recollapsed;
+  template <typename tracked>
+  using resume_compilation_inferred = typename resume_compilation_inferred_str<tracked>::recollapsed;
 };
 
-  template <std::size_t n, typename _previous_transaction_phases, typename split, typename... bound_values>
+  template <std::size_t n,  typename _previous_transaction_phases, typename split, typename... bound_values>
   struct transaction_struct
   {
     constexpr transaction_struct() = default;
@@ -99,8 +98,8 @@ std::ostream& operator<<(std::ostream& o, transaction_struct<num_remote, split, 
   return o << split{};
 }
 
-template <txnID_t id, char... Str>
-struct pre_transaction_str<id, mutils::String<Str...>>
+template <char... Str>
+struct pre_transaction_str<mutils::String<Str...>>
 {
   using transaction_text = mutils::String<Str...>;
   template <typename label>
@@ -123,7 +122,7 @@ struct pre_transaction_str<id, mutils::String<Str...>>
             using namespace tracking_phase;
             using tracked_t = DECT(insert_tracking_begin(inferred_t{}));
             using namespace split_phase;
-            using split_t = DECT(split_computation<id, tracked_t, bound_values...>());
+            using split_t = DECT(split_computation<tracked_t, bound_values...>());
             using recollapsed_t = DECT(recollapse(split_t{}));
             struct inferred_and_recollapsed
             {
@@ -144,7 +143,7 @@ struct pre_transaction_str<id, mutils::String<Str...>>
     constexpr auto inferred_and_recollapsed = compile<type_binding<typename value::name, typename value::type, Label<top>, type_location::local>...>();
     using recollapsed = typename DECT(inferred_and_recollapsed)::recollapsed;
     using inferred = typename DECT(inferred_and_recollapsed)::inferred;
-    using previous_phases = previous_transaction_phases<id, inferred, value...>;
+    using previous_phases = previous_transaction_phases<inferred, value...>;
     return transaction_struct<recollapsed::number_remote_phases::value, previous_phases, recollapsed, value...>{};
   }
 };

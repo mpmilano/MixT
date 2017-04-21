@@ -143,11 +143,11 @@ struct prephase
   using inherits = _inherits;
 };
 
-template <txnID_t id, typename l, typename _returns, typename AST, typename reqs, typename provides, typename owns, typename passthrough>
+template <typename l, typename _returns, typename AST, typename reqs, typename provides, typename owns, typename passthrough>
 struct phase;
 
-template <txnID_t id, typename l, typename _returns, typename AST, typename reqs, typename passthrough, typename owns, typename... _provides>
-struct phase<id, l, _returns, AST, reqs, mutils::typeset<_provides...>, owns, passthrough>
+template <typename l, typename _returns, typename AST, typename reqs, typename passthrough, typename owns, typename... _provides>
+struct phase<l, _returns, AST, reqs, mutils::typeset<_provides...>, owns, passthrough>
 {
   constexpr phase() = default;
   using ast = AST;
@@ -156,11 +156,13 @@ struct phase<id, l, _returns, AST, reqs, mutils::typeset<_provides...>, owns, pa
   using returns = _returns;
   using provides = mutils::typeset<_provides...>;
   using owned = owns;
-  using txnID = std::integral_constant<txnID_t, id>;
+	static txnID_t txnID();
 
   template <typename label>
   using has_label = std::conditional_t<std::is_same<l, label>::value, phase, mutils::mismatch>;
+	
 };
+	
 template <typename... phases>
 struct transaction;
 
@@ -206,7 +208,6 @@ struct pretransaction;
 template <>
 struct pretransaction<>
 {
-  template <txnID_t>
   using processed = transaction<>;
 };
 
@@ -222,29 +223,29 @@ struct pretransaction<p1, prephases...>
 
   using next_requires = DECT(p1::requirements::combine(typename prephases::requirements{}...));
 
-  template <txnID_t id>
-  using next_transactions = typename pretransaction<prephases...>::template processed<id + 1>;
 
-  template <txnID_t id>
+  using next_transactions = typename pretransaction<prephases...>::processed;
+
   using processed =
-    DECT(transaction<phase<id, typename p1::level, typename p1::returns, typename p1::ast, DECT(p1::requirements::subtract(typename p1::provides{})),
+    DECT(transaction<phase<typename p1::level, typename p1::returns, typename p1::ast, DECT(p1::requirements::subtract(typename p1::provides{})),
                            DECT(p1::provides::intersect(next_requires{})), DECT(p1::provides::subtract(next_requires{})),
-                           DECT(p1::inherits::intersect(next_requires{}))>>::append(next_transactions<id>{}));
+                           DECT(p1::inherits::intersect(next_requires{}))>>::append(next_transactions{}));
 };
 
 template <typename l>
 using AST = split_phase::AST<l>;
 
-template <txnID_t id, typename l, typename returns, typename AST, typename provides, typename owns, typename passthrough, typename... reqs>
-std::ostream& operator<<(std::ostream& o, phase<id, l, returns, AST, mutils::typeset<reqs...>, provides, owns, passthrough>)
+template <typename l, typename returns, typename AST, typename provides, typename owns, typename passthrough, typename... reqs>
+std::ostream& operator<<(std::ostream& o, phase<l, returns, AST, mutils::typeset<reqs...>, provides, owns, passthrough>)
 {
+	using _phase = phase<l, returns, AST, mutils::typeset<reqs...>, provides, owns, passthrough>;
   using namespace mutils;
   auto print = [&](const auto& e) {
     print_varname(o, e);
     o << " ";
     return nullptr;
   };
-  o << "Phase number: " << id << " returning " << type_name<returns>() << std::endl;
+  o << "Phase number: " << _phase::txnID() << " returning " << type_name<returns>() << std::endl;
   o << "Level " << l{} << ": requires ";
   auto ignore1 = { nullptr, nullptr, print(typename reqs::name{})... };
   (void)ignore1;

@@ -233,14 +233,14 @@ constexpr auto anorm_names(mutils::typeset<vars...>)
   return anorm_names2(typelist<>{}, typeset<typename vars::name...>{});
 }
 
-	template <txnID_t id, typename l, typename returns, typename AST, typename reqs, typename provides, typename owns, typename passthrough>
-	constexpr auto recollapse_phase(runnable_transaction::phase<id,l, returns, AST, reqs, provides, owns, passthrough>)
+	template <typename l, typename returns, typename AST, typename reqs, typename provides, typename owns, typename passthrough>
+	constexpr auto recollapse_phase(runnable_transaction::phase<l, returns, AST, reqs, provides, owns, passthrough>)
 {
   using namespace runnable_transaction;
   using namespace mutils;
   using names = DECT(anorm_names(owns{}));
   using new_ast = DECT(recollapse<l, names, type_association_map<>>(AST{}));
-  return phase<id,l, returns, new_ast, reqs, provides, DECT(without_names(names{}, owns{})), passthrough>{};
+  return phase<l, returns, new_ast, reqs, provides, DECT(without_names(names{}, owns{})), passthrough>{};
 }
 }
 

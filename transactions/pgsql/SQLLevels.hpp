@@ -6,8 +6,8 @@
 namespace myria {
 namespace pgsql {
 
-struct causal {};
-struct strong {};
+	using causal = mutils::String<'c', 'a', 'u', 's', 'a', 'l'>;
+	using strong = mutils::String<'s', 't', 'r', 'o', 'n', 'g'>;
 
 enum class Level { causal, strong, MAX };
 std::ostream &operator<<(std::ostream &o, const Level &);
@@ -61,7 +61,7 @@ template <> struct Label<pgsql::causal> {
   static constexpr char description[] = "causal";
 };
 
-constexpr auto parse_label(mutils::String<'c', 'a', 'u', 's', 'a', 'l'>) {
+constexpr auto parse_label(pgsql::causal) {
   return Label<pgsql::causal>{};
 }
 
@@ -115,7 +115,7 @@ template <> struct Label<pgsql::strong> {
 
   static constexpr char description[] = "strong";
 };
-constexpr auto parse_label(mutils::String<'s', 't', 'r', 'o', 'n', 'g'>) {
+constexpr auto parse_label(pgsql::strong) {
   return Label<pgsql::strong>{};
 }
 

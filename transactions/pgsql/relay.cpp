@@ -18,8 +18,8 @@ using Hndl = Handle<Label<STORE_LEVEL >, int, SupportedOperation<RegisteredOpera
 int main(int whendebug(argc), char** argv){
 
 	Hndl hndl;
-	constexpr auto incr_trans = TRANSACTION(Hndl::label::int_id::value,remote x = hndl, x = x + 1)::WITH(hndl);
-	constexpr auto read_trans = TRANSACTION(150 + Hndl::label::int_id::value,remote x = hndl, {})::WITH(hndl);
+	constexpr auto incr_trans = TRANSACTION(remote x = hndl, x = x + 1)::WITH(hndl);
+	constexpr auto read_trans = TRANSACTION(remote x = hndl, {})::WITH(hndl);
 	
 	using Relay = RelayForTransactions<SQLStore<Level::STORE_LEVEL>, DECT(incr_trans), DECT(read_trans) >;
 	using captive_store = typename Relay::captive_store;
