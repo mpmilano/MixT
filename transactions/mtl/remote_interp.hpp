@@ -60,6 +60,10 @@ auto remote_interp(mutils::DeserializationManager* dsm, tombstone_tracker& trk, 
 			DECT(mutils::bytes_size(std::string{})) size{0};
 			c.c.receive(size);
 			failure_str = *c.c.template receive<std::string>(dsm,size);
+			if (failure_str.size() > 24 && failure_str[24] == 'S'){
+				std::cout << failure_str << std::endl;
+				assert(false);
+			}
 #endif
       // store aborted, or crashed, or had a bad day
       throw SerializationFailure{failure_str};

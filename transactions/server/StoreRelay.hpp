@@ -46,10 +46,15 @@ template <typename Store, typename... phases> struct StoreRelay {
         bool found_match =
             (false || ... || phases::run_if_match(size - sizeof(txnID_t),
                                                   selected_txn, store, trk, dsm, c, data));
-        assert(found_match);
-        struct fail {};
-        if (!found_match)
-          throw fail{};
+				
+        if (!found_match){
+					std::string failure_str = std::string{"Error: no match found.  Selected txn id was "}
+					+ std::to_string(selected_txn);
+					c.send(false,mutils::bytes_size(failure_str),failure_str);
+					assert(false);
+					struct fatal{}; throw fatal{};
+				}
+
       } catch (std::exception &e) {
         std::cout << "ERRORR: exiting with exception " << e.what();
         std::rethrow_exception(std::current_exception());
