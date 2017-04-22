@@ -39,7 +39,13 @@ auto remote_interp(mutils::DeserializationManager* dsm, tombstone_tracker& trk, 
   std::size_t txn_nonce{ mutils::int_rand() };
   logfile << "sending id " << phase::txnID() << " with nonce " << txn_nonce << " for phase " << phase{} << std::endl;
   mutils::connection& mlc = lc;
-  mlc.send(txn_nonce);
+	std::string phase_str;
+	{
+		std::stringstream ss;
+		ss << phase{};
+		phase_str = ss.str();
+	}
+  mlc.send(txn_nonce,mutils::bytes_size(phase_str),phase_str);
   assert(lc.data.size() >= sizeof(txn_nonce));
 #endif
   send_store_values(requires, s, lc);

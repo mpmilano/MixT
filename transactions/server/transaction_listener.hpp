@@ -75,6 +75,19 @@ struct transaction_listener<
 		logfile.flush();
 		std::size_t txn_nonce{0};
 		lc.receive(txn_nonce);
+		DECT(mutils::bytes_size(std::string{})) phase_str_size;
+		lc.receive(phase_str_size);
+		auto remote_phase_str = *lc.template receive<std::string>(nullptr,phase_str_size);
+		{
+			std::stringstream ss;
+			ss << phase{};
+			auto phase_str = ss.str();
+			if (remote_phase_str != phase_str){
+				std::cout << remote_phase_str << std::endl;
+				std::cout << phase_str << std::endl;
+			}
+			assert(remote_phase_str == phase_str);
+		}
 		logfile << "transaction nonce: " << txn_nonce << std::endl;
 		logfile.flush();
 		c.send(txn_nonce);
