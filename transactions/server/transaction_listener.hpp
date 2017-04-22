@@ -31,34 +31,13 @@ namespace server {
 	template <typename phase, typename normal_store, typename tracked_phase, typename tracked_store>
 struct transaction_listener;
 
-	template <typename l, typename returns, 
-						typename AST, typename reqs, typename provides, typename owns, typename passthrough,
-						typename tracked_AST, typename tracked_reqs, typename tracked_provides, typename tracked_owns, typename tracked_passthrough,
-						typename _tracked_store,
-						typename... normal_holders>
-struct transaction_listener<
-    mtl::runnable_transaction::phase<l, returns, AST, reqs,
-                                            provides, owns, passthrough>,
-		mtl::runnable_transaction::store<normal_holders...>,
-		mtl::runnable_transaction::phase<l, returns, tracked_AST, tracked_reqs,
-																	 tracked_provides, tracked_owns, tracked_passthrough>,
-		_tracked_store
-    > {
-
-  using label = l;
-  using normal_phase = mtl::runnable_transaction::phase<l, returns, AST, reqs,
-                                                 provides, owns, passthrough>;
-		using normal_store = mtl::runnable_transaction::store<normal_holders...>;
-	using tracked_phase =	mtl::runnable_transaction::phase<l, returns, tracked_AST, tracked_reqs,
-																												 tracked_provides, tracked_owns, tracked_passthrough>;
-		
-		using tracked_store = _tracked_store;
-
-		template<typename phase,typename store, typename DataStore>
-		static bool run_phase(txnID_t id, DataStore &ds,
-													tracker::Tracker &trk,
-													mutils::DeserializationManager &dsm,
-													mutils::connection &c, char const *const _data){
+	template<typename phase,typename store, typename DataStore>
+	static bool run_phase(txnID_t id, DataStore &ds,
+												tracker::Tracker &trk,
+												mutils::DeserializationManager &dsm,
+												mutils::connection &c, char const *const _data){
+		using reqs = typename phase::requirements;
+		using provides = typename phase::provides;
 		using namespace mutils;
 		whendebug(std::string exn_text);
 		auto tombstones_to_find =
@@ -95,6 +74,8 @@ struct transaction_listener<
 		store s;
 		constexpr reqs requires{};
 		constexpr provides provided{};
+		whendebug(s.get(requires));
+		whendebug(s.get(provided));
 		receive_store_values(&dsm, requires, s, _lc);
 		bool transaction_successful{true};
 		try {
@@ -117,6 +98,29 @@ struct transaction_listener<
 		whendebug(logfile << "response sent to client" << std::endl);
 		return true;
 	}
+
+	template <typename l, typename returns, 
+						typename AST, typename reqs, typename provides, typename owns, typename passthrough,
+						typename tracked_AST, typename tracked_reqs, typename tracked_provides, typename tracked_owns, typename tracked_passthrough,
+						typename _tracked_store,
+						typename... normal_holders>
+struct transaction_listener<
+    mtl::runnable_transaction::phase<l, returns, AST, reqs,
+                                            provides, owns, passthrough>,
+		mtl::runnable_transaction::store<normal_holders...>,
+		mtl::runnable_transaction::phase<l, returns, tracked_AST, tracked_reqs,
+																	 tracked_provides, tracked_owns, tracked_passthrough>,
+		_tracked_store
+    > {
+
+  using label = l;
+  using normal_phase = mtl::runnable_transaction::phase<l, returns, AST, reqs,
+                                                 provides, owns, passthrough>;
+		using normal_store = mtl::runnable_transaction::store<normal_holders...>;
+	using tracked_phase =	mtl::runnable_transaction::phase<l, returns, tracked_AST, tracked_reqs,
+																												 tracked_provides, tracked_owns, tracked_passthrough>;
+		
+		using tracked_store = _tracked_store;
 	
   template<typename DataStore>
   static bool run_if_match(std::size_t, txnID_t id,
@@ -125,8 +129,8 @@ struct transaction_listener<
                            mutils::DeserializationManager &dsm,
                            mutils::connection &c, char const *const _data) {
     using namespace mutils;
-    if (id == normal_phase::txnID()) return transaction_listener::template run_phase<normal_phase, normal_store>(id,ds,trk,dsm,c,_data);
-		else if (id == tracked_phase::txnID()) return transaction_listener::template run_phase<tracked_phase, tracked_store>(id,ds,trk,dsm,c,_data);
+    if (id == normal_phase::txnID()) return run_phase<normal_phase, normal_store>(id,ds,trk,dsm,c,_data);
+		else if (id == tracked_phase::txnID()) return run_phase<tracked_phase, tracked_store>(id,ds,trk,dsm,c,_data);
 		else return false;
   }
 };

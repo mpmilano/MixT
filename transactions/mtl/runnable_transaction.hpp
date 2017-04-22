@@ -78,6 +78,11 @@ public:
     return *ret;
   }
 
+	template <typename... args>
+		auto get(mutils::typeset<args...>){
+		return std::make_tuple(&get(typename args::name{})...);
+	}
+
   store& begin_phase()
   {
     bool b = (true && ... && holders::begin_phase());
