@@ -157,13 +157,17 @@ struct phase<l, _returns, AST, reqs, mutils::typeset<_provides...>, owns, passth
   using provides = mutils::typeset<_provides...>;
   using owned = owns;
 	static txnID_t txnID(){
+#ifdef NDEBUG
 		static txnID_t ret = []{
+#endif
 			std::stringstream ss;
 			ss << phase{};
 			std::string hash_str = ss.str();
 			return std::hash<std::string>{}(hash_str);
+#ifdef NDEBUG
 		}();
 		return ret;
+#endif
 	}
 
   template <typename label>
