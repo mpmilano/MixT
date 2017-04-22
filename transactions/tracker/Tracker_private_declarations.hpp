@@ -26,7 +26,6 @@ struct TrackingContext::Internals {
     trk_sup.updateClock();
   }
 
-  // std::list<std::pair<Name,Bundle> >pending_nonces_add;
 	std::unique_ptr<std::vector<Tombstone> > pending_nonces{new std::vector<Tombstone>{}};
 	std::vector<Clock> newer_objects;
 	void _commitContext(){

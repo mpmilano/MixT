@@ -208,8 +208,6 @@ auto _run_phase(typename AST<l>::template Statement<typename AST<l>::template As
   constexpr R* rval{ nullptr };
   strct.field(S{}) = run_phase<l>(rval, ctx, s);
   s.get(F{}).push(ctx, strct);
-  // std::cout << "note: maybe we should treat each individual struct field we access more like a variable? We'd need some logic for overwriting substructs
-  // (foo.bar.a) when parents are assigned (foo.bar = newbar) but current hack can't support nested structs anyway.";
 }
 
 template <typename l, typename TranCtx, typename store, char... var>
@@ -358,7 +356,7 @@ auto common_interp(store& s, tracker::Tracker& trk)
         backoff_multiplier *= 2;
         return common_interp_loop<phase1>(s, s.clone(), trk);
       } catch (const SerializationFailure& sf) {
-        whendebug(std::cout << "Error: label which cannot abort aborted! " << label{});
+				
       }
     } /*else if can_abort,*/
     throw sf;

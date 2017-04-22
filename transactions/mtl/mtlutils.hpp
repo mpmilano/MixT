@@ -229,12 +229,12 @@ struct string_of
 template <typename... t>
 std::ostream& operator<<(std::ostream& o, typelist<t...>)
 {
-  static const auto print = [&](const auto& e) {
+  static const auto print = [](auto& o, const auto& e) {
     o << string_of<DECT(*e)>{}.value << ", ";
     return nullptr;
   };
   o << "[";
-  auto ignore = { nullptr, nullptr, print((t*)nullptr)... };
+  auto ignore = { nullptr, nullptr, print(o,(t*)nullptr)... };
 	(void)ignore;
   return o << "]";
 }
@@ -380,12 +380,12 @@ constexpr auto intersect(T1, T2, rest...)
 template <typename... t>
 std::ostream& operator<<(std::ostream& o, typeset<t...>)
 {
-  static const auto print = [&](const auto& e) {
+  static const auto print = [](std::ostream& o, const auto& e) {
     o << string_of<DECT(*e)>{}.value << ", ";
     return nullptr;
   };
   o << "[";
-  auto ignore = { nullptr, nullptr, print((t*)nullptr)... };
+  auto ignore = { nullptr, nullptr, print(o,(t*)nullptr)... };
 	(void)ignore;
   return o << "]";
 }

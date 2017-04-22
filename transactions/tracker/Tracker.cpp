@@ -206,8 +206,6 @@ std::ostream &operator<<(std::ostream &os, const Tracker::Clock &c) {
       if (ds.exists(&sctx, ts)) {
 	auto tomb_p = ds.existing_tombstone(&sctx, ts)->get(&sctx);
 	auto &tomb = *tomb_p;
-	// std::cout << "Nonce isn't immediately available, adding to
-	// pending_nonces" << std::endl;
 	tctx.i->pending_nonces->emplace_back(tomb);
       }
     }

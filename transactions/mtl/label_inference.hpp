@@ -114,11 +114,11 @@ template <typename... A>
 std::ostream& operator<<(std::ostream& o, constraints<A...>)
 {
   o << "constraints: " << std::endl;
-  static const auto print = [&](const auto& e) {
+  static const auto print = [](auto& o, const auto& e) {
     o << e << std::endl;
     return nullptr;
   };
-  (print(A{}), ... );
+  (print(o,A{}), ... );
   return o;
 }
 

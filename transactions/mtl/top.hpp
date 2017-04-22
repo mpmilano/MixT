@@ -240,7 +240,7 @@ std::ostream& operator<<(std::ostream& o, const Label<top>&);
 template <typename... labels>
 std::ostream& operator<<(std::ostream& o, const Label<label_min_of<labels...>>&)
 {
-  static const auto print = [&](const auto& e) {
+  static const auto print = [](auto& o, const auto& e) {
     o << e << ",";
     return nullptr;
   };
