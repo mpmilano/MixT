@@ -1,0 +1,1 @@
+for foo in MyriaStore-*; do cat $foo/throughput_v_latency.csv | grep -v Myria | sed -e s/_Hz//g -e s/us//g -e s/ms//g | tr ',' ' ' | awk '{print $1, $3}' | gnuplot -p -e "set title '$foo'" -e "plot '<cat using 2:1'"; done
