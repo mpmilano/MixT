@@ -32,7 +32,7 @@ namespace server {
 struct transaction_listener;
 
 	template<typename phase,typename store, typename DataStore>
-	static bool run_phase(txnID_t id, DataStore &ds,
+	static bool run_phase(txnID_t whendebug(id), DataStore &ds,
 												tracker::Tracker &trk,
 												mutils::DeserializationManager &dsm,
 												mutils::connection &c, char const *const _data){
