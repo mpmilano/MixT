@@ -46,7 +46,7 @@ struct transaction_listener<
     > {
 
   using label = l;
-  using phase = mtl::runnable_transaction::phase<l, returns, AST, reqs,
+  using normal_phase = mtl::runnable_transaction::phase<l, returns, AST, reqs,
                                                  provides, owns, passthrough>;
 		using normal_store = mtl::runnable_transaction::store<normal_holders...>;
 	using tracked_phase =	mtl::runnable_transaction::phase<l, returns, tracked_AST, tracked_reqs,
@@ -54,7 +54,7 @@ struct transaction_listener<
 		
 		using tracked_store = _tracked_store;
 
-		template<typename phase_to_run,typename store, typename DataStore>
+		template<typename phase,typename store, typename DataStore>
 		static bool run_phase(txnID_t id, DataStore &ds,
 													tracker::Tracker &trk,
 													mutils::DeserializationManager &dsm,
@@ -71,7 +71,7 @@ struct transaction_listener<
 		mutils::connection &lc = _lc;
 		auto &logfile = c.get_log_file();
 		logfile << "receiving with store " << type_name<store>() << std::endl;
-		logfile << "receiving id " << id << " for phase_to_run " << phase_to_run{};
+		logfile << "receiving id " << id << " for phase " << phase{};
 		logfile.flush();
 		std::size_t txn_nonce{0};
 		lc.receive(txn_nonce);
@@ -100,7 +100,7 @@ struct transaction_listener<
 		try {
 			tracker::find_tombstones(ds,trk,dsm,*tombstones_to_find);
 			trk.set_persistent_store(ds);
-			mtl::runnable_transaction::common_interp<phase_to_run, store>(s,trk);
+			mtl::runnable_transaction::common_interp<phase, store>(s,trk);
 		} catch (std::exception &whendebug(e)) {
 			// right now, *any* failure is just sent to the client as a byte;
 			transaction_successful = false;
@@ -125,7 +125,7 @@ struct transaction_listener<
                            mutils::DeserializationManager &dsm,
                            mutils::connection &c, char const *const _data) {
     using namespace mutils;
-    if (id == phase::txnID()) return transaction_listener::template run_phase<phase, normal_store>(id,ds,trk,dsm,c,_data);
+    if (id == normal_phase::txnID()) return transaction_listener::template run_phase<normal_phase, normal_store>(id,ds,trk,dsm,c,_data);
 		else if (id == tracked_phase::txnID()) return transaction_listener::template run_phase<tracked_phase, tracked_store>(id,ds,trk,dsm,c,_data);
 		else return false;
   }
