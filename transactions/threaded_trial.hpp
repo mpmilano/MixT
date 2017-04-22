@@ -186,10 +186,13 @@ struct test {
           client_ptr->client_action(ret);
           client_queue.enqueue(std::unique_ptr<client>(client_ptr));
         } catch (const ProtocolException &) {
-          // record this here and in simple_txn_test so
-          // overhead of re-enqueueing client is not included.
-          ret->stop_time = high_resolution_clock::now();
-          ret->is_protocol_error = true;
+					if (!ret && log_this) ret.reset(new run_result());
+					if (ret){
+						// record this here and in simple_txn_test so
+						// overhead of re-enqueueing client is not included.
+						ret->stop_time = high_resolution_clock::now();
+						ret->is_protocol_error = true;
+					}
           --client_ptr->t.number_enqueued_clients;
         }
         return ret;
