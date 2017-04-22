@@ -98,6 +98,10 @@ namespace myria{ namespace mtl{
 		
 		template<typename store, typename... requires>
 		void send_store_values(const mutils::typeset<requires...>&, store &s, mutils::local_connection &c){
+#ifndef NDEBUG
+			std::string nonce = mutils::type_name<mutils::typeset<requires...> >();
+			c.send(mutils::bytes_size(nonce),nonce);
+#endif
 			auto worked = (send_holder_values(typename requires::name{}, s, c) && ... && true);
 			assert(worked);
 			(void)worked;
@@ -113,6 +117,13 @@ namespace myria{ namespace mtl{
 		
 		template<typename store, typename... provides>
 		void receive_store_values(mutils::DeserializationManager* dsm, const mutils::typeset<provides...>&, store &s, mutils::local_connection &c){
+#ifndef NDEBUG
+			std::string nonce = mutils::type_name<mutils::typeset<provides...> >();
+			auto nonce_size = mutils::bytes_size(nonce);
+			c.receive(nonce_size);
+			auto remote = *c. template receive<std::string>(nullptr,nonce_size);
+			assert(nonce == remote);
+#endif
 			auto worked = (receive_holder_values(dsm,typename provides::name{}, s, c) && ... && true);
 			assert(worked);
 			(void)worked;
