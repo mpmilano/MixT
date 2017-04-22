@@ -122,6 +122,10 @@ namespace myria{ namespace mtl{
 			auto nonce_size = mutils::bytes_size(nonce);
 			c.receive(nonce_size);
 			auto remote = *c. template receive<std::string>(nullptr,nonce_size);
+			if (nonce != remote){
+				std::cout << nonce << std::endl << std::endl << std::endl << std::endl;
+				std::cout << remote << std::endl;
+			}
 			assert(nonce == remote);
 #endif
 			auto worked = (receive_holder_values(dsm,typename provides::name{}, s, c) && ... && true);
