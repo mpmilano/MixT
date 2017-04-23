@@ -50,6 +50,10 @@ private:
 }
 ;
 
+	namespace {
+		auto *global_manager_init = &ClockManager::inst();
+	}
+
 void Tracker::updateClock() {
   Tracker::Clock newc;
   for (std::decay_t<decltype(newc.size())> i = 0; i < newc.size(); ++i) {
