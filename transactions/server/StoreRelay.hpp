@@ -37,7 +37,7 @@ template <typename Store, typename... phases> struct StoreRelay {
         auto selected_txn = ((txnID_t *)_data)[0];
 				#ifndef NDEBUG
 				if (selected_txn == 0){
-					std::string description = Store::label::description;
+				  std::string description = typename Store::label::description{}.string;
 					c.send(mutils::bytes_size(description), description);
 					return;
 				}

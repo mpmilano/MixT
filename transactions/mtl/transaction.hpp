@@ -92,8 +92,8 @@ struct transaction_struct<0, _previous_transaction_phases, split, bound_values..
   using all_store = typename transaction::template all_store<bound_values...>;
 };
 
-template <std::size_t num_remote, typename split, typename... bound_values>
-std::ostream& operator<<(std::ostream& o, transaction_struct<num_remote, split, bound_values...>)
+  template <std::size_t num_remote, typename previous_phases, typename split, typename... bound_values>
+  std::ostream& operator<<(std::ostream& o, transaction_struct<num_remote, previous_phases, split, bound_values...>)
 {
   return o << split{};
 }

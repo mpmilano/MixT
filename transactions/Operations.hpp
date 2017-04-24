@@ -100,7 +100,7 @@ struct SupportedOperation {
 			}
 
 			std::nullptr_t act(std::false_type*, TransactionContext* _ctx,typename convert_SelfType<Handle&>::template act<Args>... a){
-				auto *ctx = dynamic_cast<typename DataStore::StoreContext*>(&_ctx->store_context(ds whendebug(, OperationIdentifier<Name>::name::string)));
+			  auto *ctx = dynamic_cast<typename DataStore::StoreContext*>(&_ctx->store_context(ds whendebug(, typename OperationIdentifier<Name>::name{}.string)));
 				ds.operation(_ctx,*ctx,OperationIdentifier<Name>{},
 									this->template reduce_selfTypes(((Args*)nullptr), a)...);
 				return nullptr;

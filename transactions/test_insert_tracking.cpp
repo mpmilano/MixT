@@ -24,6 +24,7 @@ using namespace myria;
 using namespace server;
 using namespace pgsql;
 using namespace mtl;
+using namespace tracker;
 using namespace std;
 using namespace mutils;
 using namespace typecheck_phase;
@@ -40,11 +41,12 @@ int main(){
   Hndl1 hndl1 = ci.inst().template existingObject<int>(nullptr, 13476);
   Hndl2 hndl2 = si.inst().template existingObject<int>(nullptr, 13476);
 	constexpr auto txn = TRANSACTION(
-		0,
 		remote y = hndl2, remote x = hndl1, x = y, return x)
 		::WITH(hndl1,hndl2);
   std::cout << txn << std::endl;
-	using res = DECT(txn.run_optimistic(nullptr, std::declval<mutils::connection&>(), std::declval<mutils::connection&>(),hndl1,hndl2));
+  using ClientTrk = ClientTracker<Label<strong>, Label<causal> >;
+  ClientTrk ctrk;
+  using res = DECT(txn.run_optimistic<ClientTrk>(ctrk, nullptr, std::declval<typename ClientTrk::connection_references>(),hndl1,hndl2));
 	static_assert(std::is_same<res,int>::value);
-	txn.run_local(hndl1,hndl2);
+	txn.run_local(ctrk, hndl1,hndl2);
 }
