@@ -4,14 +4,11 @@ namespace myria {
 
 using namespace pgsql;
 
-constexpr char Label<strong>::description[];
-constexpr char Label<causal>::description[];
-
 std::ostream &operator<<(std::ostream &o, const Label<strong> &) {
-  return o << Label<strong>::description;
+  return o << Label<strong>::description{};
 }
 std::ostream &operator<<(std::ostream &o, const Label<causal> &) {
-  return o << Label<causal>::description;
+  return o << Label<causal>::description{};
 }
 namespace pgsql {
 std::ostream &operator<<(std::ostream &o, const Level &l) {

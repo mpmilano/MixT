@@ -17,7 +17,7 @@ template <>
 struct String<>
 {
   constexpr String() = default;
-  static const constexpr char string[] = { 0 };
+  const char string[1] = { 0 };
   static const constexpr std::size_t string_length = 0;
   static constexpr String const* const p{ nullptr };
   static const constexpr as_value<String> v{};
@@ -27,6 +27,11 @@ struct String<>
 
   template <char c, char... str>
   constexpr bool operator==(String<c, str...>) const;
+
+  template <char... str2>
+  constexpr bool operator!=(String<str2...>) const{
+    return !(String{} == String<str2...>{});
+  }
 
   template <char... str2>
   static constexpr bool begins_with(String<str2...>);
@@ -59,7 +64,7 @@ template <char... str>
 struct String
 {
   constexpr String() = default;
-  static const constexpr char string[] = { str..., 0 };
+  const char string[sizeof...(str) + 1] = { str..., 0 };
   static const constexpr decltype(sizeof...(str)) string_length = sizeof...(str);
   static constexpr String const* const p{ nullptr };
   static const constexpr as_value<String> v{};
@@ -67,6 +72,11 @@ struct String
 
   template <char... str2>
   constexpr bool operator==(String<str2...>) const;
+
+  template <char... str2>
+  constexpr bool operator!=(String<str2...>) const{
+    return !(String{} == String<str2...>{});
+  }
 
   template <char... str2>
   static constexpr bool begins_with(String<str2...>);

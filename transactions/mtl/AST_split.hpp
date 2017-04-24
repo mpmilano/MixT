@@ -3,6 +3,7 @@
 #include <type_traits>
 #include "mtlutils.hpp"
 #include "split_phase_utils.hpp"
+#include "label_utilities.hpp"
 
 namespace myria {
 
@@ -16,7 +17,8 @@ namespace split_phase {
 template <typename l1, typename l2>
 constexpr bool are_equivalent(Label<l1>, Label<l2>)
 {
-  return Label<l1>::is_min_of(Label<l2>{}) && Label<l2>::is_min_of(Label<l1>{});
+  return (Label<l1>{} == labels::min_of(Label<l1>{}, Label<l2>{}))
+    && (Label<l2>{} == labels::min_of(Label<l2>{}, Label<l1>{}));
 }
 
 // label is now per entire AST, rather than per node.

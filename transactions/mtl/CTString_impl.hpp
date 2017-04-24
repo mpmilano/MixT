@@ -124,7 +124,7 @@ template <char... str>
 template <char... str2>
 constexpr bool String<str...>::begins_with(String<str2...>)
 {
-  return CTString::begins_with(String<str...>::string, String<str2...>::string);
+  return CTString::begins_with(String<str...>{}.string, String<str2...>{}.string);
 }
 
 namespace CTString {
@@ -182,13 +182,14 @@ template <char... str>
 template <char... str2>
 constexpr bool String<str...>::ends_with(String<str2...>)
 {
+  constexpr String<str...> _this;
   constexpr int limit = sizeof...(str2);
   if (limit == 0)
     return true;
   else {
     int j = 0;
     for (unsigned int i = string_length - limit; i < string_length; (++i, ++j))
-      if (String<str2...>::string[j] != string[i])
+      if (String<str2...>{}.string[j] != _this.string[i])
         return false;
   }
   return true;
@@ -198,8 +199,10 @@ template <char... str>
 template <char... str2>
 constexpr bool String<str...>::contains(String<str2...>)
 {
-  constexpr auto* my_str = String<str...>::string;
-  constexpr auto* other_str = String<str2...>::string;
+  constexpr String<str...> _this;
+  constexpr String<str2...> other;
+  auto* my_str = _this.string;
+  auto* other_str = other.string;
   for (unsigned int index = 0; index < sizeof...(str); ++index) {
     if (my_str[index] == other_str[0] && CTString::begins_with(my_str + index, other_str))
       return true;
@@ -213,9 +216,12 @@ constexpr bool String<str...>::contains_outside_parens(String<str2...>)
 {
   int paren_count = 0;
   int bracket_count = 0;
-  static_assert(String<str2...>::string[0] != '(' && String<str2...>::string[0] != '{');
-  constexpr auto* my_str = String<str...>::string;
-  constexpr auto* other_str = String<str2...>::string;
+  static_assert(!std::is_same<DECT(String<str2...>::first_char()), String<'('> >::value
+		&& !std::is_same<DECT(String<str2...>::first_char()), String<'{'> >::value);
+  constexpr String<str...> _this;
+  constexpr String<str2...> other;
+  auto* my_str = _this.string;
+  auto* other_str = other.string;
   for (unsigned int index = 0; index < sizeof...(str); ++index) {
     if (my_str[index] == '(')
       ++paren_count;
@@ -331,7 +337,7 @@ constexpr bool
 String<str...>::is_number()
 {
   for (unsigned int i = 0; i < string_length; ++i) {
-    if (!isDigit(string[i]))
+    if (!isDigit(String{}.string[i]))
       return false;
   }
   return true;
@@ -344,14 +350,12 @@ String<str...>::parseInt()
   int multiplier = exp(10, string_length - 1);
   int accum = 0;
   for (unsigned int i = 0; i < string_length; ++i) {
-    accum += toInt(string[i]) * multiplier;
+    accum += toInt(String{}.string[i]) * multiplier;
     multiplier /= 10;
   }
   return accum;
 }
 
-template <char... str>
-constexpr const char String<str...>::string[];
 template <char... str>
 constexpr const decltype(sizeof...(str)) String<str...>::string_length;
 template <char... str>
@@ -362,7 +366,7 @@ constexpr const as_value<String<str...>> String<str...>::v;
 template <char... str>
 std::ostream& operator<<(std::ostream& o, const String<str...>&)
 {
-  return o << String<str...>::string;
+  return o << String<str...>{}.string;
 }
 
 template <char... str>

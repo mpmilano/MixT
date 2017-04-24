@@ -24,29 +24,6 @@ template <> struct Label<pgsql::causal> {
 
   constexpr static bool flows_to(const Label &) { return true; }
 
-  template <typename... lbls> constexpr static auto min_with(const lbls &...) {
-    return std::conditional_t<
-        mutils::exists<std::is_same<lbls, Label<bottom>>::value...>(),
-        Label<bottom>, Label>{};
-  }
-
-  template <typename... lbls> constexpr static bool is_min_of(const lbls &...) {
-    constexpr bool res2 = (lbls::flows_to(Label{}) && ... && true);
-    constexpr bool res =
-        !mutils::exists<std::is_same<lbls, Label<bottom>>::value...>();
-    static_assert(res == res2);
-    return res;
-  }
-
-  template <typename... lbls> constexpr static bool is_max_of(const lbls &...) {
-    constexpr bool res2 = (Label::flows_to(lbls{}) && ... && true);
-    constexpr bool res =
-        !(mutils::exists<std::is_same<lbls, Label<top>>::value...>() ||
-          mutils::exists<std::is_same<lbls, Label<pgsql::strong>>::value...>());
-    static_assert(res == res2);
-    return res;
-  }
-
   using is_strong = std::false_type;
   using is_causal = std::true_type;
 
@@ -58,7 +35,7 @@ template <> struct Label<pgsql::causal> {
   using run_remotely = std::true_type;
   using int_id = std::integral_constant<std::size_t, 25>;
 
-  static constexpr char description[] = "causal";
+  using description = pgsql::causal;
 };
 
 constexpr auto parse_label(pgsql::causal) {
@@ -77,32 +54,6 @@ template <> struct Label<pgsql::strong> {
 
   constexpr static bool flows_to(const Label &) { return true; }
 
-  template <typename... lbls> constexpr static auto min_with(const lbls &...) {
-    return std::conditional_t<
-        mutils::exists<std::is_same<lbls, Label<bottom>>::value...>(),
-        Label<bottom>,
-        std::conditional_t<mutils::exists<std::is_same<
-                               lbls, Label<pgsql::causal>>::value...>(),
-                           Label<pgsql::causal>, Label>>{};
-  }
-
-  template <typename... lbls> constexpr static bool is_min_of(const lbls &...) {
-    constexpr bool res2 = (lbls::flows_to(Label{}) && ... && true);
-    constexpr bool res =
-        !(mutils::exists<std::is_same<lbls, Label<bottom>>::value...>() ||
-          mutils::exists<std::is_same<lbls, Label<pgsql::causal>>::value...>());
-    static_assert(res == res2);
-    return res;
-  }
-
-  template <typename... lbls> constexpr static bool is_max_of(const lbls &...) {
-    constexpr bool res2 = (Label::flows_to(lbls{}) && ... && true);
-    constexpr bool res =
-        !mutils::exists<std::is_same<lbls, Label<top>>::value...>();
-    static_assert(res == res2);
-    return res;
-  }
-
   using is_strong = std::true_type;
   using is_causal = std::false_type;
 
@@ -113,7 +64,7 @@ template <> struct Label<pgsql::strong> {
   using run_remotely = std::true_type;
   using int_id = std::integral_constant<std::size_t, 50>;
 
-  static constexpr char description[] = "strong";
+  using description = pgsql::strong;
 };
 constexpr auto parse_label(pgsql::strong) {
   return Label<pgsql::strong>{};

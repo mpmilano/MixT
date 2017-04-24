@@ -96,7 +96,7 @@ namespace myria { namespace pgsql {
 
 		private:
 			SQLStore(mutils::DeserializationManager &this_mgr,whenpool(GeneralSQLConnectionPool) whennopool(const std::string) &p)
-			  :GDataStore(label::description),SQLStore_impl(p,*this,l),TrackableDataStore<SQLStore,label>(),this_mgr(this_mgr) {
+			  :GDataStore(typename label::description{}.string),SQLStore_impl(p,*this,l),TrackableDataStore<SQLStore,label>(),this_mgr(this_mgr) {
 			}
 		public:
 

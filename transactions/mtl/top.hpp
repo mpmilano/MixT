@@ -1,5 +1,6 @@
 #pragma once
 #include "mtlutils.hpp"
+#include "label_utilities.hpp"
 
 namespace myria {
 template <typename>
@@ -19,36 +20,12 @@ struct Label<top>
     return true;
   }
 
-  template <typename T1, typename... T2>
-  constexpr static auto min_with(const Label<T1>&, const T2&... t2)
-  {
-    return Label<T1>::min_with(t2...);
-  }
-
-  constexpr static Label<top> min_with() { return Label<top>{}; }
-
-  template <typename... labels>
-  constexpr static bool is_min_of(const labels&...)
-  {
-    return (true && ... && labels::flows_to(Label{}));
-  }
-
-  template <typename... labels>
-  constexpr static bool is_max_of(const labels&...)
-  {
-    return true;
-  }
-
   using might_track = std::false_type;
   template <typename>
   using tracks_against = std::false_type;
   using run_remotely = std::false_type;
   using can_abort = std::false_type;
 };
-
-  constexpr auto parse_label(mutils::String<'t','o','p'>){
-		return Label<top>{};
-	}
 
 template <int, int>
 struct temp_label;
@@ -182,7 +159,8 @@ struct Label<label_min_of<Label<label_min_of<l1, l2>>, Label<label_min_of<r1, r2
 template <typename l, typename r>
 struct Label<label_min_of<Label<l>, Label<r>>>
 {
-  static constexpr auto resolve() { return Label<l>::min_with(Label<r>{}); }
+  static constexpr auto resolve() {
+    return labels::min_of(Label<l>{}, Label<r>{}); }
 };
 
 	using bottom = mutils::String<'b','o','t','t','o','m'>;
@@ -200,34 +178,12 @@ struct Label<bottom>
     return std::is_same<Label, Label<T>>::value;
   }
 
-  template <typename... T2>
-  constexpr static auto min_with(const T2&...)
-  {
-    return Label{};
-  }
-
-  template <typename... labels>
-  constexpr static bool is_min_of(const labels&...)
-  {
-    return true;
-  }
-
-  template <typename... labels>
-  constexpr static bool is_max_of(const labels&...)
-  {
-    return (true && ... && Label::flows_to(labels{}));
-  }
-
   using might_track = std::false_type;
   template <typename>
   using tracks_against = std::false_type;
   using run_remotely = std::false_type;
   using can_abort = std::false_type;
 };
-
-constexpr auto parse_label(mutils::String<'b','o','t','t','o','m'>){
-  return Label<bottom>{};
-}
 
 template <typename l, typename r>
 using resolved_label_min =
@@ -236,7 +192,6 @@ using resolved_label_min =
 template <typename L1, typename L2>
 using label_lte = std::integral_constant<bool, L2::flows_to(L1{})>;
 
-std::ostream& operator<<(std::ostream& o, const Label<top>&);
 template <typename... labels>
 std::ostream& operator<<(std::ostream& o, const Label<label_min_of<labels...>>&)
 {
@@ -255,5 +210,4 @@ std::ostream& operator<<(std::ostream& o, const Label<temp_label<seq, depth>>&)
   return o << "temp<" << seq << depth << ">";
 }
 
-std::ostream& operator<<(std::ostream& o, const Label<bottom>&);
 }

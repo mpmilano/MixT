@@ -373,7 +373,7 @@ template <typename lbl1, typename... Labels>
 constexpr bool
 labels_in_descending_order(Label<lbl1>, const Labels&... l)
 {
-  return Label<lbl1>::is_max_of(l...) && labels_in_descending_order(l...);
+  return Label<lbl1>{} == labels::max_of(Label<lbl1>{}, l...) && labels_in_descending_order(l...);
 }
 
 template <typename AST, typename oldinherit>

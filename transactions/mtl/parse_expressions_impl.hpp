@@ -43,14 +43,14 @@ auto strip_expression(parse_phase::Expression<T>)
 
 // parens
 template <char... str>
-constexpr auto _parse_expression(std::enable_if_t<String<str...>::string[0] == '(', String<str...>>)
+constexpr auto _parse_expression(std::enable_if_t<String<str...>{}.string[0] == '(', String<str...>>)
 {
   return strip_expression(parse_expression(String<str...>::remove_first_char().remove_last_char()));
 }
 
 // variable reference
 template <char... str>
-constexpr auto _parse_expression(std::enable_if_t<!contains_operator<str...>() && !contains_fieldref<str...>() && !(String<str...>::string[0] == '(') &&
+constexpr auto _parse_expression(std::enable_if_t<!contains_operator<str...>() && !contains_fieldref<str...>() && !(String<str...>{}.string[0] == '(') &&
                                                     !String<str...>::trim_ends().contains(String<' '>{}) && !String<str...>::trim_ends().is_number(),
                                                   String<str...>>)
 {
@@ -59,14 +59,15 @@ constexpr auto _parse_expression(std::enable_if_t<!contains_operator<str...>() &
 
 // plain value
 template <char... str>
-constexpr auto _parse_expression(std::enable_if_t<!contains_operator<str...>() && !contains_fieldref<str...>() && !(String<str...>::string[0] == '(') &&
+constexpr auto _parse_expression(std::enable_if_t<!contains_operator<str...>() && !contains_fieldref<str...>() && !(String<str...>{}.string[0] == '(') &&
                                                     !String<str...>::trim_ends().contains(String<' '>{}) && String<str...>::trim_ends().is_number(),
                                                   String<str...>>)
 {
   return parse_phase::Constant<String<str...>::trim_ends().parseInt()>{};
 }
 
-static_assert(contains_operator<'a', '.', 'b', ' ', '<', 'e'>());
+  constexpr bool static_assert_test = contains_operator<'a', '.', 'b', ' ', '<', 'e'>();
+static_assert(static_assert_test);
 // field reference
 template <char... str>
 constexpr auto _parse_expression(std::enable_if_t<!contains_operator<str...>() && contains_fieldref<str...>(), String<str...>>)

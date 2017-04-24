@@ -24,7 +24,7 @@ public:
       const std::string &why
 #endif
       ) = 0;
-  DataStore() : GDataStore(l::description) {}
+  DataStore() : GDataStore(typename l::description{}.string) {}
   virtual ~DataStore() = default;
 };
 

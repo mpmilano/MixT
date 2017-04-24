@@ -55,8 +55,8 @@ static constexpr auto split(String<'{', str2...>)
 template <typename SoFar, typename SplitOn, typename Remains>
 static constexpr auto split(Remains)
 {
-  static_assert(SoFar::string[(SoFar::string_length == 0 ? 0 : SoFar::string_length - 1)] != '(' &&
-                SoFar::string[(SoFar::string_length == 0 ? 0 : SoFar::string_length - 1)] != '{');
+  static_assert(SoFar{}.string[(SoFar::string_length == 0 ? 0 : SoFar::string_length - 1)] != '(' &&
+                SoFar{}.string[(SoFar::string_length == 0 ? 0 : SoFar::string_length - 1)] != '{');
 	using then_case = then_case_str<SoFar,Remains>;
   using split_case_sofar = std::decay_t<decltype(SoFar::append(Remains::first_char()))>;
   return std::conditional_t<

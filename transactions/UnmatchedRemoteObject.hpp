@@ -37,7 +37,7 @@ namespace myria{
 			return ret;
 		}
 
-		UnmatchedDataStore():GDataStore(l::description){}
+	  UnmatchedDataStore():GDataStore(typename l::description{}.string){}
 		using label = l;
 		using StoreContext = mtl::StoreContext<l>;
 
