@@ -318,6 +318,20 @@ constexpr auto String<str...>::after_fst(String<str2...>)
 }
 
 template <char... str>
+template <char... str2>
+constexpr auto String<str...>::before_lst(String<str2...> s2)
+{
+  return String::reverse().after_fst(s2).reverse();
+}
+
+template <char... str>
+template <char... str2>
+constexpr auto String<str...>::after_lst(String<str2...> s2)
+{
+  return String::reverse().split(zero{},s2).reverse();
+}
+
+template <char... str>
 template <typename n, char... str2>
 constexpr auto String<str...>::split(succ<n>, String<str2...>)
 {

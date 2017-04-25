@@ -272,20 +272,21 @@ constexpr auto minimize_constraints(constraints<t...>)
   return remove_reflexive_constraints(constraints_from_typeset(typeset<>::add<t...>()));
 }
 
+  template<typename _ast, typename _constraints, typename _substitutions>
+  struct replace_all_less_than_ret{
+    constexpr replace_all_less_than_ret() = default;
+    using ast = _ast;
+    using constraints = _constraints;
+    using substitutions = _substitutions;
+  };
+
 template <typename _ast, typename label>
 constexpr auto replace_all_less_than(constraints<>)
 {
   using _constraints = constraints<>;
   {
     using namespace mutils;
-    struct ret
-    {
-      constexpr ret() = default;
-      using ast = _ast;
-      using constraints = _constraints;
-      using substitutions = typelist<>;
-    };
-    return ret{};
+    return replace_all_less_than_ret<_ast,_constraints,typelist<> >{};
   }
 }
 
@@ -315,7 +316,8 @@ std::ostream& operator<<(std::ostream& o, substitution<newl, oldl>)
     using substitutions = DECT(intermediate::substitutions::append(mutils::typelist<substitution<label, Label<temp_label<to1, to2>>>>{}));
     using constraints = DECT(minimize_constraints(constraints<must_flow_to<label, label, MUTILS_STRING(this seems wrong)>>::append(typename intermediate::constraints{})));
   };
-  return ret{};
+  return replace_all_less_than_ret<typename ret::ast, typename ret::constraints, typename ret::substitutions>{};
+
 }
 
   template <typename _ast, typename label, typename to, typename why, typename... constraint>
@@ -332,7 +334,8 @@ std::ostream& operator<<(std::ostream& o, substitution<newl, oldl>)
     using substitutions = typename intermediate::substitutions;
     using constraints = DECT(minimize_constraints(constraints<must_flow_to<label, to, why>>::append(typename intermediate::constraints{})));
   };
-  return ret{};
+  return replace_all_less_than_ret<typename ret::ast, typename ret::constraints, typename ret::substitutions>{};
+
 }
 
   template <typename _ast, typename label, typename from, typename to, typename why, typename... constraint>
@@ -349,19 +352,20 @@ constexpr auto replace_all_less_than(constraints<must_flow_to<from, to, why>, co
     // that higher label gets a turn.
     using constraints = DECT(minimize_constraints(constraints<must_flow_to<from, to, why >>::append(typename intermediate::constraints{})));
   };
-  return ret{};
+  return replace_all_less_than_ret<typename ret::ast, typename ret::constraints, typename ret::substitutions>{};
 }
 
-template <typename _ast, typename _constraints>
-constexpr auto infer_labels_helper1(mutils::typelist<>)
-{
-  struct ret
-  {
-    constexpr ret() = default;
+
+  template<typename _ast, typename _constraints> struct infer_labels_helper1_ret {
+    constexpr infer_labels_helper1_ret() = default;
     using ast = _ast;
     using constraints = _constraints;
   };
-  return ret{};
+  
+template <typename _ast, typename _constraints>
+constexpr auto infer_labels_helper1(mutils::typelist<>)
+{
+  return infer_labels_helper1_ret<_ast,_constraints>{};
 }
 
 template <typename ast, typename constraints, typename label1, typename... labels>

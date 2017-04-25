@@ -95,6 +95,15 @@ auto _recollapse(typename AST<l>::template Expression<y, typename AST<l>::templa
   return typename AST<l>::template Expression<y, typename AST<l>::template BinOp<op, newl, newr>>{};
 }
 
+  template<typename _new_e, typename _new_map, typename _remove_this_binding, typename _binding>
+  struct recollapse_pack
+  {
+    using new_e = _new_e;
+    using new_map = _new_map;
+    using remove_this_binding = _remove_this_binding;
+    using binding = _binding;
+  };
+  
 template <typename l, typename candidates, typename sub_map, typename l2, typename y, typename v, typename e>
 auto _recollapse(typename AST<l>::template Binding<l2, y, v, e>)
 {
@@ -106,7 +115,7 @@ auto _recollapse(typename AST<l>::template Binding<l2, y, v, e>)
     using remove_this_binding = std::integral_constant<bool, candidates::template contains<v>()>;
     using binding = typename AST<l>::template Binding<l2, y, v, new_e>;
   };
-  return pack{};
+  return recollapse_pack<typename pack::new_e, typename pack::new_map, typename pack::remove_this_binding, typename pack::binding>{};
 }
 
 template <typename l, typename candidates, typename sub_map, typename b, typename body>

@@ -81,6 +81,36 @@ using string_from_macro = std::decay_t<decltype(*string_from_macro_f<str...>())>
 #define MUTILS_STRING10(str1, str2, str3, s4, s5, s6, s7, s8, s9, s10)                                                                                         \
   std::decay_t<decltype(::mutils::CTString::string_from_macro<MACRO_GET_STR(#str1)>::append(::mutils::String<','>{})                                           \
                           .append(MUTILS_STRING9(str2, str3, s4, s5, s6, s7, s8, s9, s10){}))>
+#define MUTILS_STRING11(str1, str2, str3, s4, s5, s6, s7, s8, s9, s10,s11)	\
+  std::decay_t<decltype(::mutils::CTString::string_from_macro<MACRO_GET_STR(#str1)>::append(::mutils::String<','>{})                                           \
+			.append(MUTILS_STRING10(str2, str3, s4, s5, s6, s7, s8, s9, s10,s11){}))>
+#define MUTILS_STRING12(str1, str2, str3, s4, s5, s6, s7, s8, s9, s10,s11,s12) \
+  std::decay_t<decltype(::mutils::CTString::string_from_macro<MACRO_GET_STR(#str1)>::append(::mutils::String<','>{})                                           \
+			.append(MUTILS_STRING11(str2, str3, s4, s5, s6, s7, s8, s9, s10,s11,s12){}))>
+#define MUTILS_STRING13(str1, str2, str3, s4, s5, s6, s7, s8, s9, s10,s11,s12,s13) \
+  std::decay_t<decltype(::mutils::CTString::string_from_macro<MACRO_GET_STR(#str1)>::append(::mutils::String<','>{}) \
+			.append(MUTILS_STRING12(str2, str3, s4, s5, s6, s7, s8, s9, s10,s11,s12,s13){}))>
+#define MUTILS_STRING14(str1, str2, str3, s4, s5, s6, s7, s8, s9, s10,s11,s12,s13,s14) \
+  std::decay_t<decltype(::mutils::CTString::string_from_macro<MACRO_GET_STR(#str1)>::append(::mutils::String<','>{}) \
+			.append(MUTILS_STRING13(str2, str3, s4, s5, s6, s7, s8, s9, s10,s11,s12,s13,s14){}))>
+#define MUTILS_STRING15(str1, str2, str3, s4, s5, s6, s7, s8, s9, s10,s11,s12,s13,s14,s15) \
+  std::decay_t<decltype(::mutils::CTString::string_from_macro<MACRO_GET_STR(#str1)>::append(::mutils::String<','>{}) \
+			.append(MUTILS_STRING14(str2, str3, s4, s5, s6, s7, s8, s9, s10,s11,s12,s13,s14,s15){}))>
+#define MUTILS_STRING16(str1, str2, str3, s4, s5, s6, s7, s8, s9, s10,s11,s12,s13,s14,s15,s16) \
+  std::decay_t<decltype(::mutils::CTString::string_from_macro<MACRO_GET_STR(#str1)>::append(::mutils::String<','>{}) \
+			.append(MUTILS_STRING15(str2, str3, s4, s5, s6, s7, s8, s9, s10,s11,s12,s13,s14,s15,s16){}))>
+#define MUTILS_STRING17(str1, str2, str3, s4, s5, s6, s7, s8, s9, s10,s11,s12,s13,s14,s15,s16,s17) \
+  std::decay_t<decltype(::mutils::CTString::string_from_macro<MACRO_GET_STR(#str1)>::append(::mutils::String<','>{}) \
+			.append(MUTILS_STRING16(str2, str3, s4, s5, s6, s7, s8, s9, s10,s11,s12,s13,s14,s15,s16,s17){}))>
+#define MUTILS_STRING18(str1, str2, str3, s4, s5, s6, s7, s8, s9, s10,s11,s12,s13,s14,s15,s16,s17,s18) \
+  std::decay_t<decltype(::mutils::CTString::string_from_macro<MACRO_GET_STR(#str1)>::append(::mutils::String<','>{}) \
+			.append(MUTILS_STRING17(str2, str3, s4, s5, s6, s7, s8, s9, s10,s11,s12,s13,s14,s15,s16,s17,s18){}))>
+#define MUTILS_STRING19(str1, str2, str3, s4, s5, s6, s7, s8, s9, s10,s11,s12,s13,s14,s15,s16,s17,s18,s19) \
+  std::decay_t<decltype(::mutils::CTString::string_from_macro<MACRO_GET_STR(#str1)>::append(::mutils::String<','>{}) \
+			.append(MUTILS_STRING18(str2, str3, s4, s5, s6, s7, s8, s9, s10,s11,s12,s13,s14,s15,s16,s17,s18,s19){}))>
+#define MUTILS_STRING20(str1, str2, str3, s4, s5, s6, s7, s8, s9, s10,s11,s12,s13,s14,s15,s16,s17,s18,s19,s20) \
+  std::decay_t<decltype(::mutils::CTString::string_from_macro<MACRO_GET_STR(#str1)>::append(::mutils::String<','>{}) \
+			.append(MUTILS_STRING19(str2, str3, s4, s5, s6, s7, s8, s9, s10,s11,s12,s13,s14,s15,s16,s17,s18,s19,s20){}))>
 
 #define MUTILS_STRING_IMPL2(count, ...) MUTILS_STRING##count(__VA_ARGS__)
 #define MUTILS_STRING_IMPL(count, ...) MUTILS_STRING_IMPL2(count, __VA_ARGS__)

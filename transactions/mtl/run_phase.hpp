@@ -2,6 +2,7 @@
 #include "runnable_transaction.hpp"
 #include "phase_context.hpp"
 #include "AST_typecheck.hpp"
+#include <thread>
 
 namespace myria {
 namespace mtl {

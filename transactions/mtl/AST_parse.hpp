@@ -30,6 +30,32 @@ struct Expression<FieldReference<Struct, Field>>
   using subexpr = typename FieldReference<Struct, Field>::subexpr;
 };
 
+  template <typename Struct, typename Field>
+struct FieldPointerReference;
+template <typename Struct, char... Field>
+struct FieldPointerReference<Expression<Struct>, mutils::String<Field...>>
+{
+  using subexpr = FieldPointerReference;
+};
+template <typename Struct, typename Field>
+struct Expression<FieldPointerReference<Struct, Field>>
+{
+  using subexpr = typename FieldPointerReference<Struct, Field>::subexpr;
+};
+
+  template <typename Struct>
+struct Dereference;
+template <typename Struct>
+struct Dereference<Expression<Struct>>
+{
+  using subexpr = Dereference;
+};
+template <typename Struct>
+struct Expression<Dereference<Struct>>
+{
+  using subexpr = typename Dereference<Struct>::subexpr;
+};
+
 template <typename Var>
 struct VarReference;
 template <char... var>

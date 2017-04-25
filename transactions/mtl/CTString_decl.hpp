@@ -120,6 +120,12 @@ struct String
   template <char... str2>
   static constexpr auto after_fst(String<str2...>);
 
+  template <char... str2>
+  static constexpr auto before_lst(String<str2...>);
+  
+  template <char... str2>
+  static constexpr auto after_lst(String<str2...>);
+
   template <char lparen, char rparen, typename n>
   static constexpr auto strip_paren_group(n);
 

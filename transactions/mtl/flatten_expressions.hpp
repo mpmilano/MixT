@@ -28,6 +28,13 @@ constexpr auto remove_layer(Expression<FieldReference<Expression<VarReference<Ob
   return Statement<Let<Binding<new_name, Expression<FieldReference<Expression<VarReference<Obj>>, F>>>, SubStatement<Expression<VarReference<new_name>>>>>{};
 }
 
+  template <char seqnum, char depth, template <typename> class SubStatement, typename Obj>
+constexpr auto remove_layer(Expression<Dereference<Expression<VarReference<Obj>>>>)
+{
+  using new_name = generate_name<seqnum, depth>;
+  return Statement<LetRemote<Binding<new_name, Expression<VarReference<Obj>>>, SubStatement<Expression<VarReference<new_name>>>>>{};
+}
+
 template <char seqnum, char depth, template <typename> class SubStatement, typename Var>
 constexpr auto remove_layer(Expression<VarReference<Var>>)
 {
@@ -50,6 +57,15 @@ struct remove_layer_str<seqnum, depth, SubStatement, Expression<FieldReference<S
   static_assert(!is_var_reference<S>::value);
   template <typename newS>
   using NewStatement = SubStatement<Expression<FieldReference<newS, F>>>;
+  using type = DECT(remove_layer<seqnum, depth, NewStatement>(S{}));
+};
+
+  template <char seqnum, char depth, template <typename> class SubStatement, typename S>
+struct remove_layer_str<seqnum, depth, SubStatement, Expression<Dereference<S>>>
+{
+  static_assert(!is_var_reference<S>::value);
+  template <typename newS>
+  using NewStatement = SubStatement<Expression<Dereference<newS>>>;
   using type = DECT(remove_layer<seqnum, depth, NewStatement>(S{}));
 };
 
@@ -141,6 +157,20 @@ constexpr auto _flatten_exprs(Statement<Let<Binding<name, Expression<FieldRefere
 {
   // already flat, moving on
   return Statement<Let<Binding<name, Expression<FieldReference<Expression<VarReference<var>>, Field>>>, DECT(flatten_exprs<seqnum, depth + 1>(body{}))>>{};
+}
+
+  template <char seqnum, char depth, typename name, typename var, typename body>
+constexpr auto _flatten_exprs(Statement<Let<Binding<name, Expression<Dereference<Expression<VarReference<var>>>>>, body>>)
+{
+  // already flat, moving on
+  return Statement<Let<Binding<name, Expression<Dereference<Expression<VarReference<var>>>>>, DECT(flatten_exprs<seqnum, depth + 1>(body{}))>>{};
+}
+
+  template <char seqnum, char depth, typename name, typename E, typename Field, typename body>
+constexpr auto _flatten_exprs(Statement<Let<Binding<name, Expression<FieldPointerReference<E, Field>>>, body>>)
+{
+  // desugar into dereference and field reference
+  return flatten_exprs<seqnum,depth>(Statement<Let<Binding<name, Expression<FieldReference<Dereference<E>, Field>>>, body>>{});
 }
 
 template <char seqnum, char depth, typename name, int var, typename Field, typename body>
@@ -264,6 +294,18 @@ constexpr auto _flatten_exprs_helper(Statement<stmt>)
 }
 
 template <char seqnum, char depth, typename name, typename expr, typename body>
+constexpr auto _flatten_exprs(Statement<Let<Binding<name, Expression<Dereference<expr> > > , body>>)
+{
+  using new_name = mutils::String<'d','e','r','e','f',0,seqnum,depth>;
+  return flatten_exprs<seqnum,depth+1>
+    (
+     Statement<
+     LetRemote<Binding<new_name,expr>,
+     Let<Binding<name,Expression<VarReference<new_name> > >, body>
+     > >{});
+}
+
+template <char seqnum, char depth, typename name, typename expr, typename body>
 constexpr auto _flatten_exprs(Statement<Let<Binding<name, expr>, body>>)
 {
   static_assert(!is_var_reference<expr>::value);
@@ -297,6 +339,13 @@ constexpr auto _flatten_exprs(Statement<If<cond, then, els>>)
 {
   static_assert(!is_var_reference<cond>::value);
   return _flatten_exprs_helper<seqnum, depth>(Statement<If<cond, then, els>>{});
+}
+
+  template <char seqnum, char depth, typename cond>
+constexpr auto _flatten_exprs(Statement<Return<cond>>)
+{
+  static_assert(!is_var_reference<cond>::value);
+  return _flatten_exprs_helper<seqnum, depth>(Statement<Return<cond>>{});
 }
 
 template <char seqnum, char depth, typename AST>
