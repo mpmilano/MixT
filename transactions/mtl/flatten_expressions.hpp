@@ -21,18 +21,23 @@ template <char seqnum, char depth>
 using generate_name = mutils::String<'a', 'n', 'o', 'r', 'm', seqnum, depth>;
 
 // expressions
+template <char seqnum, char depth, template <typename> class SubStatement, typename Expr>
+constexpr auto remove_layer(Expression<Expr>);
+  
+template <char seqnum, char depth, template <typename> class SubStatement, typename S, typename F>
+constexpr auto remove_layer(Expression<FieldPointerReference<S,F> >);
+
+template <char seqnum, char depth, template <typename> class SubStatement, typename V>
+constexpr auto remove_layer(Expression<Dereference<Expression<VarReference<V>>>>);
+
+template <char seqnum, char depth, template <typename> class SubStatement, char op, typename L, typename R>
+constexpr auto remove_layer(Expression<BinOp<op, Expression<VarReference<L>>, Expression<VarReference<R>>>>);
+
 template <char seqnum, char depth, template <typename> class SubStatement, typename Obj, typename F>
 constexpr auto remove_layer(Expression<FieldReference<Expression<VarReference<Obj>>, F>>)
 {
   using new_name = generate_name<seqnum, depth>;
   return Statement<Let<Binding<new_name, Expression<FieldReference<Expression<VarReference<Obj>>, F>>>, SubStatement<Expression<VarReference<new_name>>>>>{};
-}
-
-  template <char seqnum, char depth, template <typename> class SubStatement, typename Obj>
-constexpr auto remove_layer(Expression<Dereference<Expression<VarReference<Obj>>>>)
-{
-  using new_name = generate_name<seqnum, depth>;
-  return Statement<LetRemote<Binding<new_name, Expression<VarReference<Obj>>>, SubStatement<Expression<VarReference<new_name>>>>>{};
 }
 
 template <char seqnum, char depth, template <typename> class SubStatement, typename Var>
@@ -57,15 +62,6 @@ struct remove_layer_str<seqnum, depth, SubStatement, Expression<FieldReference<S
   static_assert(!is_var_reference<S>::value);
   template <typename newS>
   using NewStatement = SubStatement<Expression<FieldReference<newS, F>>>;
-  using type = DECT(remove_layer<seqnum, depth, NewStatement>(S{}));
-};
-
-  template <char seqnum, char depth, template <typename> class SubStatement, typename S>
-struct remove_layer_str<seqnum, depth, SubStatement, Expression<Dereference<S>>>
-{
-  static_assert(!is_var_reference<S>::value);
-  template <typename newS>
-  using NewStatement = SubStatement<Expression<Dereference<newS>>>;
   using type = DECT(remove_layer<seqnum, depth, NewStatement>(S{}));
 };
 
@@ -94,6 +90,24 @@ struct remove_layer_str<seqnum, depth, SubStatement, Expression<BinOp<op, L, R>>
   using type = DECT(remove_layer<seqnum, depth, NewStatement>(L{}));
 };
 
+template <char seqnum, char depth, template <typename> class SubStatement, typename E>
+struct remove_layer_str<seqnum, depth, SubStatement, Expression<Dereference<E>>>
+{
+  static_assert(!is_var_reference<E>::value);
+  template <typename newE>
+  using NewStatement = SubStatement<Expression<Dereference<newE>>>;
+  using type = DECT(remove_layer<seqnum, depth, NewStatement>(E{}));
+};
+
+template <char seqnum, char depth, template <typename> class SubStatement, typename V>
+constexpr auto remove_layer(Expression<Dereference<Expression<VarReference<V>>>>)
+{
+  using new_name =
+    mutils::String<'r','e','m','o','t','e','_','b','o','u','n','d','_','t','m','p',0,seqnum,depth>;
+  return Statement<LetRemote<Binding<new_name, Expression<VarReference<V> > >,
+                       SubStatement<Expression<VarReference<new_name>>>>>{};
+}
+
 template <char seqnum, char depth, template <typename> class SubStatement, typename Expr>
 constexpr auto remove_layer(Expression<Expr>)
 {
@@ -107,6 +121,13 @@ constexpr auto remove_layer(Expression<BinOp<op, Expression<VarReference<L>>, Ex
   using new_name = generate_name<seqnum, depth>;
   return Statement<Let<Binding<new_name, Expression<BinOp<op, Expression<VarReference<L>>, Expression<VarReference<R>>>>>,
                        SubStatement<Expression<VarReference<new_name>>>>>{};
+}
+
+template <char seqnum, char depth, template <typename> class SubStatement, typename S, typename F>
+constexpr auto remove_layer(Expression<FieldPointerReference<S,F> >)
+{
+  return remove_layer<seqnum,depth,SubStatement>
+    (Expression<FieldReference<Expression<Dereference<S> >,F> >{});
 }
 
 template <char, char, typename>
@@ -157,20 +178,6 @@ constexpr auto _flatten_exprs(Statement<Let<Binding<name, Expression<FieldRefere
 {
   // already flat, moving on
   return Statement<Let<Binding<name, Expression<FieldReference<Expression<VarReference<var>>, Field>>>, DECT(flatten_exprs<seqnum, depth + 1>(body{}))>>{};
-}
-
-  template <char seqnum, char depth, typename name, typename var, typename body>
-constexpr auto _flatten_exprs(Statement<Let<Binding<name, Expression<Dereference<Expression<VarReference<var>>>>>, body>>)
-{
-  // already flat, moving on
-  return Statement<Let<Binding<name, Expression<Dereference<Expression<VarReference<var>>>>>, DECT(flatten_exprs<seqnum, depth + 1>(body{}))>>{};
-}
-
-  template <char seqnum, char depth, typename name, typename E, typename Field, typename body>
-constexpr auto _flatten_exprs(Statement<Let<Binding<name, Expression<FieldPointerReference<E, Field>>>, body>>)
-{
-  // desugar into dereference and field reference
-  return flatten_exprs<seqnum,depth>(Statement<Let<Binding<name, Expression<FieldReference<Dereference<E>, Field>>>, body>>{});
 }
 
 template <char seqnum, char depth, typename name, int var, typename Field, typename body>
@@ -291,18 +298,6 @@ constexpr auto _flatten_exprs_helper(Statement<stmt>)
 {
   using partial = typename flatten_exprs_str<seqnum, depth, Statement<stmt>>::type;
   return DECT(flatten_exprs<seqnum, depth + 1>(partial{})){};
-}
-
-template <char seqnum, char depth, typename name, typename expr, typename body>
-constexpr auto _flatten_exprs(Statement<Let<Binding<name, Expression<Dereference<expr> > > , body>>)
-{
-  using new_name = mutils::String<'d','e','r','e','f',0,seqnum,depth>;
-  return flatten_exprs<seqnum,depth+1>
-    (
-     Statement<
-     LetRemote<Binding<new_name,expr>,
-     Let<Binding<name,Expression<VarReference<new_name> > >, body>
-     > >{});
 }
 
 template <char seqnum, char depth, typename name, typename expr, typename body>
@@ -446,9 +441,9 @@ template <typename AST>
 constexpr auto flatten_expressions(AST a)
 {
   using namespace mutils;
-  using zeroname = String<'z', 'e', 'r', 'o', 1>;
+  using zeroname = String<'z', 'e', 'r', 'o', 0,1>;
   using zeroval = Expression<Constant<0>>;
-  using onename = String<'o', 'n', 'e', 1>;
+  using onename = String<'o', 'n', 'e', 0,1>;
   using oneval = Expression<Constant<1>>;
   using truename = String<'t', 'r', 'u', 'e'>;
   using falsename = String<'f', 'a', 'l', 's', 'e'>;

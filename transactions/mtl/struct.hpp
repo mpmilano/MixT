@@ -35,6 +35,14 @@ public:
     auto& field(MUTILS_STRING(field3)) { return field3; }                                                                                                      \
   }
 
+#define STRUCT2(type1, field1)                                                                                                                                 \
+  struct                                                                                                                                                       \
+  {                                                                                                                                                            \
+    bool is_struct{ true };                                                                                                                                    \
+    type1 field1;                                                                                                                                              \
+    auto& field(MUTILS_STRING(field1)) { return field1; }                                                                                                      \
+  }
+
 #define STRUCT_IMPL2(count, ...) STRUCT##count(__VA_ARGS__)
 #define STRUCT_IMPL(count, ...) STRUCT_IMPL2(count, __VA_ARGS__)
 #define STRUCT(...) STRUCT_IMPL(VA_NARGS(__VA_ARGS__), __VA_ARGS__)

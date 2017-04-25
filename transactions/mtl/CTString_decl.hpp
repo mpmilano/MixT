@@ -87,6 +87,8 @@ struct String
 
   static constexpr auto first_char();
 
+  static constexpr auto last_char();
+
   static constexpr String without_prefix(String<>);
 
   template <char c1, char... str2>

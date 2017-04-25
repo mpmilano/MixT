@@ -48,16 +48,23 @@ auto strip_expression(parse_phase::Expression<T>)
   return T{};
 }
 
-// parens
-template <char... str>
-constexpr auto _parse_expression(std::enable_if_t<String<str...>::trim_ends().string[0] == '(', String<str...>>)
+// whitespace
+  template <char, char... str>
+constexpr auto _parse_expression(String<' ',str...>)
 {
-  return strip_expression(parse_expression(String<str...>::trim_ends().remove_first_char().remove_last_char()));
+  return strip_expression(parse_expression(String<str...>::trim_ends()));
+}
+  
+// parens
+  template <char, char... str>
+  constexpr auto _parse_expression(String<'(',str...>, std::enable_if_t<String<str...>::last_char() == String<')'>{}>* = nullptr)
+{
+  return strip_expression(parse_expression(String<str...>::trim_ends().remove_last_char()));
 }
 
 // variable reference
 template <char... str>
-constexpr auto _parse_expression(std::enable_if_t<!is_deref<str...>() && !contains_arrow<str...>() && !contains_operator<str...>() && !contains_fieldref<str...>() && !(String<str...>{}.string[0] == '(') &&
+constexpr auto _parse_expression(std::enable_if_t<!is_deref<str...>() && !contains_arrow<str...>() && !contains_operator<str...>() && !contains_fieldref<str...>() && !(String<str...>{}.string[0] == '(') && !(String<str...>{}.string[0] == ' ') &&
                                                     !String<str...>::trim_ends().contains(String<' '>{}) && !String<str...>::trim_ends().is_number(),
                                                   String<str...>>)
 {
@@ -66,7 +73,7 @@ constexpr auto _parse_expression(std::enable_if_t<!is_deref<str...>() && !contai
 
 // plain value
 template <char... str>
-constexpr auto _parse_expression(std::enable_if_t<!is_deref<str...>() && !contains_arrow<str...>() && !contains_operator<str...>() && !contains_fieldref<str...>() && !(String<str...>{}.string[0] == '(') &&
+constexpr auto _parse_expression(std::enable_if_t<!is_deref<str...>() && !contains_arrow<str...>() && !contains_operator<str...>() && !contains_fieldref<str...>() && !(String<str...>{}.string[0] == '(') && !(String<str...>{}.string[0] == ' ') &&
                                                     !String<str...>::trim_ends().contains(String<' '>{}) && String<str...>::trim_ends().is_number(),
                                                   String<str...>>)
 {
@@ -76,7 +83,7 @@ constexpr auto _parse_expression(std::enable_if_t<!is_deref<str...>() && !contai
   static_assert(contains_operator<'a', '.', 'b', ' ', '<', ' ', 'e'>());
 // field reference
 template <char... str>
-constexpr auto _parse_expression(std::enable_if_t<!is_deref<str...>() && !contains_arrow<str...>() && !contains_operator<str...>() && contains_fieldref<str...>(), String<str...>>)
+constexpr auto _parse_expression(std::enable_if_t<!is_deref<str...>() && !contains_arrow<str...>() && !contains_operator<str...>() && contains_fieldref<str...>() && !(String<str...>{}.string[0] == ' '), String<str...>>)
 {
   constexpr auto name_str = String<str...>::before_lst(String<'.'>{}).trim_ends();
   constexpr auto field_str = String<str...>::after_lst(String<'.'>{}).trim_ends();
@@ -87,7 +94,7 @@ constexpr auto _parse_expression(std::enable_if_t<!is_deref<str...>() && !contai
 
 // ptr field reference
 template <char... str>
-constexpr auto _parse_expression(std::enable_if_t<!is_deref<str...>() && contains_arrow<str...>() && !contains_operator<str...>(), String<str...>>)
+constexpr auto _parse_expression(std::enable_if_t<!is_deref<str...>() && contains_arrow<str...>() && !contains_operator<str...>() && !(String<str...>{}.string[0] == ' '), String<str...>>)
 {
   constexpr auto name_str = String<str...>::before_lst(arrow_s{}).trim_ends();
   constexpr auto field_str = String<str...>::after_lst(arrow_s{}).trim_ends();
@@ -108,57 +115,57 @@ constexpr auto _parse_expression(std::enable_if_t<is_deref<str...>(), String<str
 
 //&& operator case
 template <char... str>
-constexpr auto _parse_expression(std::enable_if_t<!is_deref<str...>() && String<str...>::contains_outside_parens(and_s{}), String<str...>>)
+constexpr auto _parse_expression(std::enable_if_t<!is_deref<str...>() && String<str...>::contains_outside_parens(and_s{}) && !(String<str...>{}.string[0] == ' '), String<str...>>)
 {
   return parse_binop<'&', str...>(String<str...>{});
 }
 //|| operator case
 template <char... str>
-constexpr auto _parse_expression(std::enable_if_t<!is_deref<str...>() && String<str...>::contains_outside_parens(or_s{}), String<str...>>)
+constexpr auto _parse_expression(std::enable_if_t<!is_deref<str...>() && String<str...>::contains_outside_parens(or_s{}) && !(String<str...>{}.string[0] == ' '), String<str...>>)
 {
   return parse_binop<'|', str...>(String<str...>{});
 }
 
 //< operator case
 template <char... str>
-constexpr auto _parse_expression(std::enable_if_t<!is_deref<str...>() && String<str...>::contains_outside_parens(lt_s{}), String<str...>>)
+constexpr auto _parse_expression(std::enable_if_t<!is_deref<str...>() && String<str...>::contains_outside_parens(lt_s{}) && !(String<str...>{}.string[0] == ' '), String<str...>>)
 {
   return parse_binop<'<', str...>(String<str...>{});
 }
 //> operator case
 template <char... str>
-constexpr auto _parse_expression(std::enable_if_t<!is_deref<str...>() && String<str...>::contains_outside_parens(gt_s{}), String<str...>>)
+constexpr auto _parse_expression(std::enable_if_t<!is_deref<str...>() && String<str...>::contains_outside_parens(gt_s{}) && !(String<str...>{}.string[0] == ' '), String<str...>>)
 {
   return parse_binop<'>', str...>(String<str...>{});
 }
 //== operator case
 template <char... str>
-constexpr auto _parse_expression(std::enable_if_t<!is_deref<str...>() && String<str...>::contains_outside_parens(eq_s{}), String<str...>>)
+constexpr auto _parse_expression(std::enable_if_t<!is_deref<str...>() && String<str...>::contains_outside_parens(eq_s{}) && !(String<str...>{}.string[0] == ' '), String<str...>>)
 {
   return parse_binop<'=', str...>(String<str...>{});
 }
 
 //+ operator case
 template <char... str>
-constexpr auto _parse_expression(std::enable_if_t<!is_deref<str...>() && String<str...>::contains_outside_parens(plus_s{}), String<str...>>)
+constexpr auto _parse_expression(std::enable_if_t<!is_deref<str...>() && String<str...>::contains_outside_parens(plus_s{}) && !(String<str...>{}.string[0] == ' '), String<str...>>)
 {
   return parse_binop<'+', str...>(String<str...>{});
 }
 //* operator case
 template <char... str>
-constexpr auto _parse_expression(std::enable_if_t<!is_deref<str...>() && String<str...>::contains_outside_parens(times_s{}), String<str...>>)
+constexpr auto _parse_expression(std::enable_if_t<!is_deref<str...>() && String<str...>::contains_outside_parens(times_s{}) && !(String<str...>{}.string[0] == ' '), String<str...>>)
 {
   return parse_binop<'*', str...>(String<str...>{});
 }
 // / operator case
 template <char... str>
-constexpr auto _parse_expression(std::enable_if_t<!is_deref<str...>() && String<str...>::contains_outside_parens(div_s{}), String<str...>>)
+constexpr auto _parse_expression(std::enable_if_t<!is_deref<str...>() && String<str...>::contains_outside_parens(div_s{}) && !(String<str...>{}.string[0] == ' '), String<str...>>)
 {
   return parse_binop<'/', str...>(String<str...>{});
 }
 //- operator case
 template <char... str>
-constexpr auto _parse_expression(std::enable_if_t<!is_deref<str...>() && String<str...>::contains_outside_parens(minus_s{}), String<str...>>)
+constexpr auto _parse_expression(std::enable_if_t<!is_deref<str...>() && String<str...>::contains_outside_parens(minus_s{}) && !(String<str...>{}.string[0] == ' '), String<str...>>)
 {
   return parse_binop<'-', str...>(String<str...>{});
 }

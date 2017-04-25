@@ -49,7 +49,7 @@ template <typename l, typename y, char op, typename L, typename R>
 void
 print_ast(std::ostream& o, const typename AST<l>::template Expression<y, typename AST<l>::template BinOp<op, L, R>>&)
 {
-  static const std::string opstr{ 1, op };
+  static const std::string opstr{{ op, 0 }};
   print_ast<l>(o, L{});
   o << " " << opstr << " ";
   print_ast<l>(o, R{});

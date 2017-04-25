@@ -162,6 +162,12 @@ constexpr auto String<str...>::first_char()
 }
 
 template <char... str>
+constexpr auto String<str...>::last_char()
+{
+  return String::reverse().first_char();
+}
+
+template <char... str>
 constexpr String<str...> String<str...>::without_prefix(String<>)
 {
   return String{};
@@ -321,14 +327,14 @@ template <char... str>
 template <char... str2>
 constexpr auto String<str...>::before_lst(String<str2...> s2)
 {
-  return String::reverse().after_fst(s2).reverse();
+  return String::reverse().after_fst(s2.reverse()).reverse();
 }
 
 template <char... str>
 template <char... str2>
 constexpr auto String<str...>::after_lst(String<str2...> s2)
 {
-  return String::reverse().split(zero{},s2).reverse();
+  return String::reverse().split(zero{},s2.reverse()).reverse();
 }
 
 template <char... str>
