@@ -30,6 +30,9 @@ constexpr auto remove_layer(Expression<FieldPointerReference<S,F> >);
 template <char seqnum, char depth, template <typename> class SubStatement, typename V>
 constexpr auto remove_layer(Expression<Dereference<Expression<VarReference<V>>>>);
 
+template <char seqnum, char depth, template <typename> class SubStatement, typename V>
+constexpr auto remove_layer(Expression<IsValid<Expression<VarReference<V>>>>);
+
 template <char seqnum, char depth, template <typename> class SubStatement, char op, typename L, typename R>
 constexpr auto remove_layer(Expression<BinOp<op, Expression<VarReference<L>>, Expression<VarReference<R>>>>);
 
@@ -99,12 +102,30 @@ struct remove_layer_str<seqnum, depth, SubStatement, Expression<Dereference<E>>>
   using type = DECT(remove_layer<seqnum, depth, NewStatement>(E{}));
 };
 
+	template <char seqnum, char depth, template <typename> class SubStatement, typename E>
+struct remove_layer_str<seqnum, depth, SubStatement, Expression<IsValid<E>>>
+{
+  static_assert(!is_var_reference<E>::value);
+  template <typename newE>
+  using NewStatement = SubStatement<Expression<IsValid<newE>>>;
+  using type = DECT(remove_layer<seqnum, depth, NewStatement>(E{}));
+};
+
 template <char seqnum, char depth, template <typename> class SubStatement, typename V>
 constexpr auto remove_layer(Expression<Dereference<Expression<VarReference<V>>>>)
 {
   using new_name =
     mutils::String<'r','e','m','o','t','e','_','b','o','u','n','d','_','t','m','p',0,seqnum,depth>;
   return Statement<LetRemote<Binding<new_name, Expression<VarReference<V> > >,
+                       SubStatement<Expression<VarReference<new_name>>>>>{};
+}
+
+	template <char seqnum, char depth, template <typename> class SubStatement, typename V>
+constexpr auto remove_layer(Expression<IsValid<Expression<VarReference<V>>>>)
+{
+  using new_name =
+    mutils::String<'i','s','V','a','l','i','d','_','t','m','p',0,seqnum,depth>;
+  return Statement<LetIsValid<new_name, Expression<VarReference<V> >,
                        SubStatement<Expression<VarReference<new_name>>>>>{};
 }
 
@@ -214,6 +235,22 @@ struct flatten_exprs_str<seqnum, depth, Statement<LetRemote<Binding<name, expr>,
   using type = DECT(remove_layer<seqnum, depth, SubStatementRemote>(expr{}));
 };
 
+	template <char seqnum, char depth, typename name, typename var, typename body>
+constexpr auto _flatten_exprs(Statement<LetIsValid<name, Expression<VarReference<var>>, body>>)
+{
+  // already flat, moving on
+  return Statement<LetIsValid<name, Expression<VarReference<var>>, DECT(flatten_exprs<seqnum, depth + 1>(body{}))>>{};
+}
+
+template <char seqnum, char depth, typename name, typename expr, typename body>
+struct flatten_exprs_str<seqnum, depth, Statement<LetIsValid<name, expr, body>>>
+{
+  static_assert(!is_var_reference<expr>::value);
+  template <typename new_expr>
+  using SubStatementRemote = Statement<LetIsValid<name, new_expr, body>>;
+  using type = DECT(remove_layer<seqnum, depth, SubStatementRemote>(expr{}));
+};
+
 template <char seqnum, char depth, typename var, typename expr>
 constexpr auto _flatten_exprs(Statement<Assignment<var, Expression<VarReference<expr>>>>)
 {
@@ -313,6 +350,13 @@ constexpr auto _flatten_exprs(Statement<LetRemote<Binding<name, expr>, body>>)
 {
   static_assert(!is_var_reference<expr>::value);
   return _flatten_exprs_helper<seqnum, depth>(Statement<LetRemote<Binding<name, expr>, body>>{});
+}
+
+	template <char seqnum, char depth, typename name, typename expr, typename body>
+constexpr auto _flatten_exprs(Statement<LetIsValid<name, expr, body>>)
+{
+  static_assert(!is_var_reference<expr>::value);
+  return _flatten_exprs_helper<seqnum, depth>(Statement<LetIsValid<name, expr, body>>{});
 }
 
 template <char seqnum, char depth, typename var, typename expr>
