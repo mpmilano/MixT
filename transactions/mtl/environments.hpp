@@ -175,21 +175,51 @@ struct type_holder
 	template <typename T>
 	struct is_type_holder : public std::false_type{};
 
+	template<typename T>
+	struct remote_map_holder {
+		std::map<Name,type_holder<typename T::type> > super;
+		bool reset_index(){
+			for (auto& holder : super){
+				holder.second.reset_index();
+			}
+			return true;
+		}
+
+		bool begin_phase(){
+			for (auto& holder : super){
+				holder.second.begin_phase();
+			}
+			return true;
+		}
+	};
+	
 template <typename T, char... str>
-struct remote_holder 
+struct remote_holder : public virtual remote_map_holder<T>
 {
 
   static_assert(is_handle<T>::value);
 
-	type_holder<typename T::type, str...> super;
-  bool initialized = false;
-  bool list_usable = false;
+	//The idea is to protect against aliasing; we want
+	//every binding site of the same handle to use the same type_holder.
+	using super_t = type_holder<typename T::type>;
+	std::map<Name,super_t > &super = remote_map_holder<T>::super;
 	std::vector<T> handle;
 	int curr_pos{-1};
 
-	using name = typename DECT(super)::name;
+	using name = typename super_t::name;
 
 	remote_holder() = default;
+	remote_holder& operator=(const remote_holder& rh){
+		handle = rh.handle;
+		curr_pos = rh.curr_pos;
+		if (rh.super.size() > 0)
+			remote_map_holder<T>::operator=(rh);
+		return *this;
+	}
+	remote_holder(const remote_holder& rh)
+		:handle(rh.handle),curr_pos(rh.curr_pos){
+		super = rh.super;
+	}
 
   template <typename Other>
   static constexpr mutils::mismatch get_holder(remote_holder*, std::enable_if_t<!std::is_same<Other, name>::value, Other>)
@@ -202,18 +232,22 @@ struct remote_holder
     return _this;
   }
 
+	//reset index + begin_phase are universal
 	bool reset_index(){
 		curr_pos = -1;
-		return super.reset_index();
+		return remote_map_holder<T>::reset_index();
 	}
 
 	bool begin_phase(){
-		return reset_index() && super.begin_phase();
+		return reset_index() && remote_map_holder<T>::begin_phase();
 	}
 
 	remote_holder& increment()
   {
-		super.increment();
+		if (curr_pos >= 0) {
+			assert((int)handle.size() > curr_pos);
+			super[handle[curr_pos].name()].increment();
+		}
 		return *this;
   }
 	
@@ -241,11 +275,9 @@ public:
   remote_holder& bind(PhaseContext<typename T::label>& tc, T t)
   {
     handle.emplace_back(t);
-    initialized = true;
 		++curr_pos;
 		assert(curr_pos < ((int)handle.size()));
-		list_usable = true;
-		super.bind(tc,*handle[curr_pos].get(&tc));
+		super[handle[curr_pos].name()].bind(tc,*handle[curr_pos].get(&tc));
 		read_tracking_actions(tc);
     return *this;
   }
@@ -253,9 +285,8 @@ public:
   template <typename... Args>
   remote_holder& push(PhaseContext<typename T::label>& tc, Args&&... args)
   {
-    super.push(tc, std::forward<Args>(args)...);
+    super[handle.back().name()].push(tc, std::forward<Args>(args)...);
     handle.back().put(&tc, super.t.back());
-    list_usable = true;
     return *this;
   }
 
@@ -267,9 +298,8 @@ public:
   template <typename TransactionContext>
   auto get(TransactionContext& tc)
   {
-    assert(initialized);
-		assert(list_usable);
-		return super.get(tc);
+		assert(super.count(handle.at(curr_pos)));
+		return super[handle[curr_pos].name()].get(tc);
   }
 
   using value = remote_holder;

@@ -62,8 +62,12 @@ struct store : public holders...
   }
 
 private:
-  store(const store&) = default;
-  store& operator=(store&&) = default;
+  store(const store& s)
+		:holders(s)...{}
+  store& operator=(store&& s) {
+		(holders::operator=(s),...);
+		return *this;
+	}
 
 public:
   store clone() { return *this; }
