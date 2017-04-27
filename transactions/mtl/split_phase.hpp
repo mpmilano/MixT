@@ -87,6 +87,17 @@ constexpr auto let_remote_binding(phase_api, typecheck_phase::Binding<label2, Yi
   return extracted_phase<label, returned_api, void, typename AST<label>::template Binding<label2, Yields, var, typename processed_expr::ast>>{};
 }
 
+	template <typename label, typename var, typename exprl, typename handle_t, typename expr, typename phase_api>
+constexpr auto let_isValid_binding(phase_api, var, typecheck_phase::Expression<exprl, handle_t, expr>)
+{
+  // we can descend into a mismatched binding, but only when that binding is
+  // used *later* than us.
+  using new_binding = type_binding<var, handle_t, label, type_location::remote_isValid>;
+  using processed_expr = DECT(AST<label>::collect_phase(phase_api{}, typecheck_phase::Expression<exprl, handle_t, expr>{}));
+  using returned_api = DECT(processed_expr::api::add_provides(new_binding{}));
+  return extracted_phase<label, returned_api, void, typename processed_expr::ast>{};
+}
+
 template <typename l>
 template <typename _binding, typename Body, typename old_api>
 constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Statement<label, typecheck_phase::Let<_binding, Body>>)

@@ -27,7 +27,8 @@ namespace mtl {
 enum class type_location
 {
   local,
-  remote
+		remote,
+		remote_isValid
 };
 template <typename, typename, typename, type_location>
 struct type_binding;
@@ -389,6 +390,37 @@ struct type_binding<String<str...>, T, Label<l>, type_location::remote> : public
 
   using holder = remote_holder<T, str...>;
   using type = typename T::type;
+
+  template <typename Other>
+  static constexpr mutils::mismatch get_binding(std::enable_if_t<!std::is_same<Other, name>::value, Other>)
+  {
+    return mutils::mismatch{};
+  }
+  template <typename>
+  static constexpr type_binding get_binding(name)
+  {
+    return type_binding{};
+  }
+  template <typename T2>
+  static constexpr auto get_binding2(const T2& t)
+  {
+    return get_binding<T2>(t);
+  }
+};
+
+	template <typename T, typename l, char... str>
+struct type_binding<String<str...>, T, Label<l>, type_location::remote_isValid> : public type_binding_super<String<str...>, bool, Label<l>>
+{
+  static_assert(is_handle<T>::value);
+	static_assert(!std::is_same<T,bool>::value);
+
+  constexpr type_binding() = default;
+	using super = type_binding_super<String<str...>, bool, Label<l> >;
+  using name = typename super::name;
+  using label = typename super::label;
+
+  using holder = remote_holder<T, str...>;
+  using type = bool;
 
   template <typename Other>
   static constexpr mutils::mismatch get_binding(std::enable_if_t<!std::is_same<Other, name>::value, Other>)

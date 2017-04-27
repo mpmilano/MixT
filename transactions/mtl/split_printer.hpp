@@ -85,7 +85,7 @@ void
 {
   o << tab << "let isValid" << " [" << n{} << " = " << h{} << "] in "
     << "{";
-  print_ast(o, body{}, tab);
+  print_ast<l>(o, body{}, tab);
   o << tab << "}";
 }
 

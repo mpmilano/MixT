@@ -28,6 +28,9 @@ struct AST;
 
 template <typename l, typename label2, typename Yields, typename var, typename expr, typename phase_api>
 constexpr auto let_remote_binding(phase_api, typecheck_phase::Binding<label2, Yields, var, expr>);
+	
+template <typename label, typename var, typename exprl, typename handle_t, typename expr, typename phase_api>
+constexpr auto let_isValid_binding(phase_api, var, typecheck_phase::Expression<exprl, handle_t, expr>);
 
 template <typename l>
 struct AST<Label<l>>
@@ -466,11 +469,11 @@ struct AST<Label<l>>
 	template <typename name, typename hndl, typename Body, typename old_api>
 		static constexpr auto _collect_phase(old_api, typecheck_phase::Statement<label, typecheck_phase::LetIsValid<name,hndl, Body>>)
   {
-    using binding = DECT(let_remote_binding<label>(old_api{}, Binding<label,bool,name,hndl>{}));
-    using hndl_ast = typename binding::ast::expr;
-    using body = DECT(collect_phase(combined_api<old_api, typename binding::api>{}, Body{}));
+    using hndl_post = DECT(let_isValid_binding<label>(old_api{}, name{},hndl{}));
+    using hndl_ast = typename hndl_post::ast;
+    using body = DECT(collect_phase(combined_api<old_api, typename hndl_post::api>{}, Body{}));
     using body_ast = typename body::ast;
-    using new_api = combined_api<typename binding::api, typename body::api>;
+    using new_api = combined_api<typename hndl_post::api, typename body::api>;
     return extracted_phase<label, new_api, typename body::returns, Statement<LetIsValid<name,hndl_ast, body_ast>>>{};
   }
 

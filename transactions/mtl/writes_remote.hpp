@@ -31,7 +31,7 @@ constexpr bool _writes_remote(Statement<l,LetRemote<Binding<bl,by,bv,be>,s> >){
 }
 
 template<typename remote_name_set, typename l, typename bv, typename be, typename s>
-constexpr bool _writes_remote(Statement<l,LetIsValid<Binding<bv,be>,s> >){
+constexpr bool _writes_remote(Statement<l,LetIsValid<bv,be,s> >){
 	//you can't write remote with this remote binding, isValid is read-only
 	return writes_remote<remote_name_set>(s{});
 }

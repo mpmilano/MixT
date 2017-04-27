@@ -90,7 +90,7 @@ constexpr auto _typecheck(type_environment<label_env, Env...>, parse_phase::Stat
   // we dereference the pointer, which is an influencing action.  Reduce the label
   // of the environment if needed.
   using new_env = type_environment<resolved_label_min<label_env, ptr_label>, Env...,
-                                   type_binding<Name, handle, resolved_label_min<ptr_label, typename handle::label>, type_location::remote>>;
+                                   type_binding<Name, handle, resolved_label_min<ptr_label, typename handle::label>, type_location::remote_isValid>>;
   using next_body = DECT(typecheck<seqnum + 1, depth + 1>(new_env{}, Body{}));
   using next_binding_expr = binding_expr;
   return Statement<resolved_label_min<label_env, typename handle::label>, LetIsValid<Name,next_binding_expr, next_body>>{};
