@@ -131,6 +131,9 @@ struct String
   template <char lparen, char rparen, typename n>
   static constexpr auto strip_paren_group(n);
 
+	template <char lparen, char rparen>
+  static constexpr auto next_paren_group();
+
   static constexpr bool is_number();
 
   static constexpr int parseInt();

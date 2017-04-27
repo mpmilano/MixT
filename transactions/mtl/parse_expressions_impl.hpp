@@ -28,6 +28,32 @@ contains_operator()
          String<str...>::contains_outside_parens(plus_s{});
 }
 
+	template<char c>
+	constexpr bool is_method_char(){
+		return (c >= 'A' && c <= 'Z')
+			|| (c >= 'a' && c <= 'z')
+			|| (c == '_' || c == ')')
+			|| (c >= '0' && c <= '9');
+	}
+
+template <char... str>
+constexpr bool
+contains_invocation(String<str...> = String<str...>{},
+										std::enable_if_t<!String<str...>::contains(String<'('>{})>* = nullptr)
+{
+	return false;
+}
+	
+template <char... str>
+constexpr bool
+contains_invocation(String<str...> = String<str...>{},
+										std::enable_if_t<String<str...>::contains(String<'('>{})>* = nullptr)
+{
+	constexpr auto paren_group = String<str...>::template next_paren_group<'(',')'>();
+	constexpr char c = DECT(paren_group)::pre::reverse().trim_ends().string[0];
+	return is_method_char<c>();
+}
+
 template <char... str>
 constexpr bool
 contains_fieldref()
@@ -101,6 +127,65 @@ constexpr auto _parse_expression(std::enable_if_t<!is_deref<str...>() && contain
   using name = DECT(parse_expression(name_str));
   using field = DECT(field_str);
   return parse_phase::FieldPointerReference<name, field>{};
+}
+
+	template<typename... args>
+	struct add_operations_struct{
+
+		//this is just isValid
+		template<typename hndl>
+		static constexpr auto add_operation_args(parse_phase::Operation<hndl,parse_phase::isValid_str>,
+																						 String<>){
+			return parse_phase::IsValid<hndl>{};
+		}
+
+		//no (further) arguments possible
+		template<typename hndl,typename operations_str>
+		static constexpr auto add_operation_args(parse_phase::Operation<hndl,operations_str,args...> a,
+																						 String<>){
+			return a;
+		}
+
+		//last argument
+		template<typename hndl,typename operations_str,char c, char... str>
+		static constexpr auto add_operation_args(parse_phase::Operation<hndl,operations_str,args...>,
+																						 String<c,str...> arg,
+																						 std::enable_if_t<!String<c,str...>::contains_outside_parens(String<','>{})>*
+																						 = nullptr){
+			return parse_phase::Operation<hndl,operations_str,args..., DECT(parse_expression(arg))>{};
+		}
+
+		//at least two arguments remain
+		template<typename hndl,typename operations_str,char... str>
+		static constexpr auto add_operation_args(parse_phase::Operation<hndl,operations_str,args...>,
+																						 String<str...>,
+																						 std::enable_if_t<String<str...>::contains_outside_parens(String<','>{})>*
+																						 = nullptr){
+
+			constexpr auto rest = String<str...>::after_fst(String<','>{});
+			constexpr auto arg = parse_expression(String<str...>::split(zero{}, String<','>{}));
+			return add_operations_struct<args...,DECT(arg)>::
+				add_operation_args(parse_phase::Operation<hndl,operations_str,args...,DECT(arg)>{},rest);
+		}
+	};
+
+// operation (including isValid)
+template <char... str>
+constexpr auto _parse_expression(std::enable_if_t<!contains_operator<str...>() && contains_invocation<str...>() && !(String<str...>{}.string[0] == '(')
+																 && !(String<str...>{}.string[0] == ' '), String<str...>>)
+{
+	using method_group = DECT(String<str...>::template next_paren_group<'(',')'>());
+  using invocation_str = typename method_group::pre;
+	constexpr auto hndl_str = invocation_str::before_lst(String<'.'>{}).trim_ends();
+  constexpr auto operation_str = invocation_str::after_lst(String<'.'>{}).trim_ends();
+  using hndl = DECT(parse_expression(hndl_str));
+  return add_operations_struct<>::
+		add_operation_args(parse_phase::Operation<hndl, DECT(operation_str)>{},
+											 method_group::paren::
+											 trim_ends().
+											 remove_last_char().
+											 remove_first_char().
+											 trim_ends());
 }
 
 // deref

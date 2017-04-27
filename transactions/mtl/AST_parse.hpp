@@ -56,6 +56,32 @@ struct Expression<Dereference<Struct>>
   using subexpr = typename Dereference<Struct>::subexpr;
 };
 
+using isValid_str = mutils::String<'i','s','V','a','l','i','d'>;
+	
+template <typename Hndl>
+struct IsValid;
+template <typename Hndl>
+struct IsValid<Expression<Hndl>>
+{
+  using subexpr = IsValid;
+};
+template <typename Struct>
+struct Expression<IsValid<Struct>>
+{
+  using subexpr = typename IsValid<Struct>::subexpr;
+};
+
+template <typename Name, typename Hndl, typename... args>
+struct Operation
+{
+  using subexpr = Operation;
+};
+template <typename Name, typename Hndl, typename... args>
+struct Expression<Operation<Name,Hndl,args...>>
+{
+  using subexpr = typename Operation<Name,Hndl,args...>::subexpr;
+};
+
 template <typename Var>
 struct VarReference;
 template <char... var>
@@ -201,6 +227,28 @@ struct LetRemote<Binding<Name, Expr>, Statement<Body>>
 };
 template <typename Binding, typename Body>
 struct Statement<LetRemote<Binding, Body>>
+{
+};
+	
+template <typename bound_name, typename oper_name, typename Expr, typename Body>
+struct LetOperation;
+template <typename bound_name, typename oper_name, typename Expr, typename Body>
+struct LetOperation<bound_name, oper_name, Expression<Expr>, Statement<Body> >
+{
+};
+template <typename bound_name, typename oper_name, typename Expr, typename Body>
+struct Statement<LetOperation<bound_name, oper_name, Expr, Body> >
+{
+};
+	
+template <typename bound_name, typename Expr, typename Body>
+struct LetIsValid;
+template <typename bound_name, typename Expr, typename Body>
+struct LetIsValid<bound_name, Expression<Expr>, Statement<Body> >
+{
+};
+template <typename bound_name, typename Expr, typename Body>
+struct Statement<LetIsValid<bound_name, Expr, Body> >
 {
 };
 

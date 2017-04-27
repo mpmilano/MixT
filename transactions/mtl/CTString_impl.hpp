@@ -188,7 +188,7 @@ template <char... str>
 template <char... str2>
 constexpr bool String<str...>::ends_with(String<str2...>)
 {
-  constexpr String<str...> _this;
+  constexpr String<str...> _this{};
   constexpr int limit = sizeof...(str2);
   if (limit == 0)
     return true;
@@ -205,8 +205,8 @@ template <char... str>
 template <char... str2>
 constexpr bool String<str...>::contains(String<str2...>)
 {
-  constexpr String<str...> _this;
-  constexpr String<str2...> other;
+  constexpr String<str...> _this{};
+  constexpr String<str2...> other{};
   auto* my_str = _this.string;
   auto* other_str = other.string;
   for (unsigned int index = 0; index < sizeof...(str); ++index) {
@@ -224,8 +224,8 @@ constexpr bool String<str...>::contains_outside_parens(String<str2...>)
   int bracket_count = 0;
   static_assert(!std::is_same<DECT(String<str2...>::first_char()), String<'('> >::value
 		&& !std::is_same<DECT(String<str2...>::first_char()), String<'{'> >::value);
-  constexpr String<str...> _this;
-  constexpr String<str2...> other;
+  constexpr String<str...> _this{};
+  constexpr String<str2...> other{};
   auto* my_str = _this.string;
   auto* other_str = other.string;
   for (unsigned int index = 0; index < sizeof...(str); ++index) {
@@ -350,6 +350,40 @@ constexpr auto String<str...>::strip_paren_group(n)
 {
   using namespace CTString;
   return strip_paren_group_struct<lparen, rparen>::strip_paren_group_start(n{}, String{});
+}
+	namespace CTString{
+	
+		template<typename _pre, typename _paren, typename _post>
+	struct return_next_paren_group {
+		using pre = _pre;
+		using paren = _paren;
+			using post = _post;
+	};
+
+	template <char lparen, char rparen, char... str>
+	constexpr auto next_paren_group(String<lparen,str...>){
+		return return_next_paren_group<
+			String<>,
+			DECT(String<lparen,str...>::template strip_paren_group<lparen,rparen>(zero{})),
+			DECT(String<lparen,str...>::template strip_paren_group<lparen,rparen>(one{}))>{};
+	}
+
+		template <char lparen, char rparen, char c1, char... str>
+	constexpr auto next_paren_group(String<c1,str...>, std::enable_if_t<c1 != lparen>* = nullptr){
+		using partial = DECT(next_paren_group(String<str...>{}));
+		return return_next_paren_group<
+			DECT(partial::pre::prepend(String<c1>{})),
+			typename partial::paren,
+			typename partial::post >{};
+	}
+	}
+	
+template <char... str>
+template <char lparen, char rparen>
+constexpr auto String<str...>::next_paren_group()
+{
+  using namespace CTString;
+	return CTString::next_paren_group<lparen,rparen>(String{});
 }
 
 template <char... str>
