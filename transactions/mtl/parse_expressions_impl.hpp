@@ -12,8 +12,8 @@ using namespace mutils;
 template <char op, char... str>
 constexpr auto parse_binop(String<str...>)
 {
-  constexpr auto l = parse_expression(String<str...>::split(zero{}, String<op>{}).trim_ends());
-  constexpr auto r = parse_expression(String<str...>::split(one{}, String<op>{}).trim_ends());
+  constexpr auto l = parse_expression(String<str...>::split(zero{}, String<op,' '>{}).trim_ends());
+  constexpr auto r = parse_expression(String<str...>::split(one{}, String<op,' '>{}).trim_ends());
   return parse_phase::BinOp<op, std::decay_t<decltype(l)>, std::decay_t<decltype(r)>>{};
 }
 
@@ -91,8 +91,8 @@ constexpr auto _parse_expression(String<' ',str...>)
 // variable reference
 template <char... str>
 constexpr auto _parse_expression(std::enable_if_t<!is_deref<str...>() && !contains_arrow<str...>() && !contains_operator<str...>() && !contains_fieldref<str...>() && !(String<str...>{}.string[0] == '(') && !(String<str...>{}.string[0] == ' ') &&
-                                                    !String<str...>::trim_ends().contains(String<' '>{}) && !String<str...>::trim_ends().is_number(),
-                                                  String<str...>>)
+																 !String<str...>::trim_ends().contains(String<' '>{}) && !String<str...>::trim_ends().is_number() && is_method_char<String<str...>{}.string[0]>(),
+																 String<str...>>)
 {
   return parse_phase::VarReference<std::decay_t<decltype(String<str...>::trim_ends())>>{};
 }
@@ -171,7 +171,7 @@ constexpr auto _parse_expression(std::enable_if_t<!is_deref<str...>() && contain
 
 // operation (including isValid)
 template <char... str>
-constexpr auto _parse_expression(std::enable_if_t<!contains_operator<str...>() && contains_invocation<str...>() && !(String<str...>{}.string[0] == '(')
+constexpr auto _parse_expression(std::enable_if_t<!contains_operator<str...>() && !is_deref<str...>() && contains_invocation<str...>() && !(String<str...>{}.string[0] == '(')
 																 && !(String<str...>{}.string[0] == ' '), String<str...>>)
 {
 	using method_group = DECT(String<str...>::template next_paren_group<'(',')'>());
@@ -186,7 +186,7 @@ constexpr auto _parse_expression(std::enable_if_t<!contains_operator<str...>() &
 											 remove_last_char().
 											 remove_first_char().
 											 trim_ends());
-}
+}//*/
 
 // deref
 template <char... str>
