@@ -37,7 +37,7 @@ int main(){
 			  if (45 > y) {
 			    y = tstruct.a,
 			    tstruct.b = x
-			  } else {}
+			  } else {if (hndl.isValid()){return 7} else {}}
 				   )::WITH(tstruct,tstruct2,hndl,hndl2);
   std::cout << txn << std::endl;
 }

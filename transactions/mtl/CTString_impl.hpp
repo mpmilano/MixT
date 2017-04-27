@@ -370,9 +370,9 @@ constexpr auto String<str...>::strip_paren_group(n)
 
 		template <char lparen, char rparen, char c1, char... str>
 	constexpr auto next_paren_group(String<c1,str...>, std::enable_if_t<c1 != lparen>* = nullptr){
-		using partial = DECT(next_paren_group(String<str...>{}));
+			using partial = DECT(next_paren_group<lparen,rparen>(String<str...>{}));
 		return return_next_paren_group<
-			DECT(partial::pre::prepend(String<c1>{})),
+			DECT(String<c1>::append(typename partial::pre{})),
 			typename partial::paren,
 			typename partial::post >{};
 	}

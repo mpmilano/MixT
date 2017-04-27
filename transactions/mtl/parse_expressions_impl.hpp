@@ -54,6 +54,8 @@ contains_invocation(String<str...> = String<str...>{},
 	return is_method_char<c>();
 }
 
+	static_assert(!contains_invocation<'3'>());
+
 template <char... str>
 constexpr bool
 contains_fieldref()
@@ -90,7 +92,7 @@ constexpr auto _parse_expression(String<' ',str...>)
 
 // variable reference
 template <char... str>
-constexpr auto _parse_expression(std::enable_if_t<!is_deref<str...>() && !contains_arrow<str...>() && !contains_operator<str...>() && !contains_fieldref<str...>() && !(String<str...>{}.string[0] == '(') && !(String<str...>{}.string[0] == ' ') &&
+constexpr auto _parse_expression(std::enable_if_t<!contains_invocation<str...>() && !is_deref<str...>() && !contains_arrow<str...>() && !contains_operator<str...>() && !contains_fieldref<str...>() && !(String<str...>{}.string[0] == '(') && !(String<str...>{}.string[0] == ' ') &&
 																 !String<str...>::trim_ends().contains(String<' '>{}) && !String<str...>::trim_ends().is_number() && is_method_char<String<str...>{}.string[0]>(),
 																 String<str...>>)
 {
@@ -99,7 +101,7 @@ constexpr auto _parse_expression(std::enable_if_t<!is_deref<str...>() && !contai
 
 // plain value
 template <char... str>
-constexpr auto _parse_expression(std::enable_if_t<!is_deref<str...>() && !contains_arrow<str...>() && !contains_operator<str...>() && !contains_fieldref<str...>() && !(String<str...>{}.string[0] == '(') && !(String<str...>{}.string[0] == ' ') &&
+constexpr auto _parse_expression(std::enable_if_t<!contains_invocation<str...>() && !is_deref<str...>() && !contains_arrow<str...>() && !contains_operator<str...>() && !contains_fieldref<str...>() && !(String<str...>{}.string[0] == '(') && !(String<str...>{}.string[0] == ' ') &&
                                                     !String<str...>::trim_ends().contains(String<' '>{}) && String<str...>::trim_ends().is_number(),
                                                   String<str...>>)
 {
@@ -109,7 +111,7 @@ constexpr auto _parse_expression(std::enable_if_t<!is_deref<str...>() && !contai
   static_assert(contains_operator<'a', '.', 'b', ' ', '<', ' ', 'e'>());
 // field reference
 template <char... str>
-constexpr auto _parse_expression(std::enable_if_t<!is_deref<str...>() && !contains_arrow<str...>() && !contains_operator<str...>() && contains_fieldref<str...>() && !(String<str...>{}.string[0] == ' '), String<str...>>)
+constexpr auto _parse_expression(std::enable_if_t<!contains_invocation<str...>() && !is_deref<str...>() && !contains_arrow<str...>() && !contains_operator<str...>() && contains_fieldref<str...>() && !(String<str...>{}.string[0] == ' '), String<str...>>)
 {
   constexpr auto name_str = String<str...>::before_lst(String<'.'>{}).trim_ends();
   constexpr auto field_str = String<str...>::after_lst(String<'.'>{}).trim_ends();
@@ -120,7 +122,7 @@ constexpr auto _parse_expression(std::enable_if_t<!is_deref<str...>() && !contai
 
 // ptr field reference
 template <char... str>
-constexpr auto _parse_expression(std::enable_if_t<!is_deref<str...>() && contains_arrow<str...>() && !contains_operator<str...>() && !(String<str...>{}.string[0] == ' '), String<str...>>)
+constexpr auto _parse_expression(std::enable_if_t<!contains_invocation<str...>() && !is_deref<str...>() && contains_arrow<str...>() && !contains_operator<str...>() && !(String<str...>{}.string[0] == ' '), String<str...>>)
 {
   constexpr auto name_str = String<str...>::before_lst(arrow_s{}).trim_ends();
   constexpr auto field_str = String<str...>::after_lst(arrow_s{}).trim_ends();
