@@ -63,6 +63,11 @@ constexpr auto _split_endorse(Statement<l, LetRemote<b, e>>)
 {
 }
 
+	template <typename l, typename n, typename h, typename e>
+	constexpr auto _split_endorse(Statement<l, LetIsValid<n,h, e>>)
+{
+}
+
 template <typename l, typename c, typename t, typename e>
 constexpr auto _split_endorse(Statement<l, If<c, t, e>>)
 {

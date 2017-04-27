@@ -147,6 +147,22 @@ constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Statement
   return extracted_phase<label, new_api, typename new_body::returns, stmt>{};
 }
 
+	template <typename l>
+	template <typename label2, typename name, typename hndl, typename Body, typename old_api>
+	constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Statement<label2, typecheck_phase::LetIsValid<name,hndl, Body>>,
+                                             std::enable_if_t<!are_equivalent(Label<l>{}, label2{})> const* const)
+{
+  // binding runs at a different phase, skip it.
+	using new_body = DECT(collect_phase(old_api{}, Body{}));
+  using body_ast = typename new_body::ast;
+  using var = name;
+  using new_api = typename new_body::api;
+
+  using stmt = Statement<Sequence<Statement<IncrementRemoteOccurance<var>>, body_ast>>;
+
+  return extracted_phase<label, new_api, typename new_body::returns, stmt>{};
+}
+
 template <typename l>
 template <typename Var, typename Expr, typename old_api>
 constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Statement<label, typecheck_phase::Assignment<Var, Expr>>)

@@ -184,6 +184,17 @@ constexpr auto _collect_constraints(Statement<l, LetRemote<b, e>> a)
     .append(constraints<must_flow_to<typename This::expr_label, typename This::handle_label,MUTILS_STRING(let_remote, expr -> hndl)>>{});
 }
 
+	template <typename pc_label, typename l, typename n, typename h, typename e>
+	constexpr auto _collect_constraints(Statement<l, LetIsValid<n, h, e>> a)
+{
+  using This = DECT(a);
+  using new_pc = Label<label_min_of<Label<label_min_of<pc_label, typename This::expr_label>>, typename This::handle_label>>;
+	using b = Binding<l, bool, n, h>;
+  return collect_constraints(new_pc{}, b{})
+    .append(collect_constraints(new_pc{}, e{}))
+    .append(constraints<must_flow_to<typename This::expr_label, typename This::handle_label,MUTILS_STRING(let_remote, expr -> hndl)>>{});
+}
+
 template <typename pc_label, typename l, typename c, typename t, typename e>
 constexpr auto _collect_constraints(Statement<l, If<c, t, e>>)
 {

@@ -197,6 +197,26 @@ struct Statement<Label<l>, LetRemote<Binding<bl, y, var, Expression<exprl, expry
   using substatement = typename LetRemote<Binding<bl, y, var, Expression<exprl, expry, expr>>, Body>::substatement;
 };
 
+	template <typename name, typename hndl, typename Body>
+struct LetIsValid;
+template <typename Name, typename Exprl, typename Expry, typename ExprN, typename bodyl, typename Body>
+struct LetIsValid<Name, Expression<Exprl, Expry, VarReference<ExprN> >, Statement<bodyl, Body>>
+{
+  using substatement = LetIsValid;
+  using subbody = typename Body::substatement;
+  using subexpr = typename Expression<Exprl, Expry, VarReference<ExprN>>::subexpr;
+};
+
+template <typename l, typename var, typename exprl, typename expry, typename expr, typename Body>
+struct Statement<Label<l>, LetIsValid<var, Expression<exprl, expry, expr>, Body>>
+{
+  using label = Label<l>;
+  // expry should be a handle.  Could maybe enforce that.
+  using handle_label = typename expry::label;
+  using expr_label = exprl;
+  using substatement = typename LetIsValid<var, Expression<exprl, expry, expr>, Body>::substatement;
+};
+
 template <typename Var, typename Expr>
 struct Assignment;
 template <typename Expr, typename l, typename yield, typename varl, typename var>

@@ -91,6 +91,12 @@ struct replace_label<Label<temp_label<target1, target2>>, Label<newlabel>>
     return Statement<DECT(label_replace(l{})), LetRemote<DECT(replace(b{})), DECT(replace(e{}))>>{};
   }
 
+	template <typename l, typename n, typename h, typename e>
+		static constexpr auto _replace(Statement<l, LetIsValid<n,h, e>>)
+  {
+    return Statement<DECT(label_replace(l{})), LetIsValid<n,DECT(replace(h{})), DECT(replace(e{}))>>{};
+  }
+
   template <typename l, typename c, typename t, typename e>
   static constexpr auto _replace(Statement<l, If<c, t, e>>)
   {

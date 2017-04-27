@@ -30,6 +30,12 @@ constexpr bool _writes_remote(Statement<l,LetRemote<Binding<bl,by,bv,be>,s> >){
 	return writes_remote<DECT(remote_name_set::template add<bv>()) >(s{});
 }
 
+template<typename remote_name_set, typename l, typename bv, typename be, typename s>
+constexpr bool _writes_remote(Statement<l,LetIsValid<Binding<bv,be>,s> >){
+	//you can't write remote with this remote binding, isValid is read-only
+	return writes_remote<remote_name_set>(s{});
+}
+
 template<typename remote_name_set, typename l, typename c, typename t, typename e>
 constexpr bool _writes_remote(Statement<l,If<c,t,e> >){
 	return writes_remote<remote_name_set>(t{}) || writes_remote<remote_name_set>(e{});

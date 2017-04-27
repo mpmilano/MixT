@@ -56,6 +56,12 @@ constexpr auto _collect_labels_helper(Statement<Label<label_min_of<l, r>>, LetRe
   return collect_labels_helper(b{}).combine(collect_labels_helper(e{}));
 }
 
+	template <typename l, typename r, typename n, typename h, typename e>
+	constexpr auto _collect_labels_helper(Statement<Label<label_min_of<l, r>>, LetIsValid<n, h, e>>)
+{
+  return collect_labels_helper(h{}).combine(collect_labels_helper(e{}));
+}
+
 template <typename l, typename r, typename c, typename t, typename e>
 constexpr auto _collect_labels_helper(Statement<Label<label_min_of<l, r>>, If<c, t, e>>)
 {
@@ -126,6 +132,12 @@ template <int l, int r, typename b, typename e>
 constexpr auto _collect_labels_helper(Statement<Label<temp_label<l, r>>, LetRemote<b, e>>)
 {
   return collect_labels_helper(b{}).combine(collect_labels_helper(e{}));
+}
+
+	template <int l, int r, typename n, typename h, typename e>
+	constexpr auto _collect_labels_helper(Statement<Label<temp_label<l, r>>, LetIsValid<n,h, e>>)
+{
+  return collect_labels_helper(h{}).combine(collect_labels_helper(e{}));
 }
 
 template <int l, int r, typename c, typename t, typename e>
@@ -243,6 +255,14 @@ constexpr auto _collect_labels_helper(Statement<l, LetRemote<b, e>>)
   using namespace mutils;
   static_assert(l::is_label::value);
   return typeset<l>::combine(collect_labels_helper(b{})).combine(collect_labels_helper(e{}));
+}
+
+	template <typename l, typename n, typename h, typename e>
+	constexpr auto _collect_labels_helper(Statement<l, LetIsValid<n,h, e>>)
+{
+  using namespace mutils;
+  static_assert(l::is_label::value);
+  return typeset<l>::combine(collect_labels_helper(h{})).combine(collect_labels_helper(e{}));
 }
 
 template <typename l, typename c, typename t, typename e>

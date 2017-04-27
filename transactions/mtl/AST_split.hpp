@@ -197,6 +197,21 @@ struct AST<Label<l>>
     using substatement = typename LetRemote<Binding, Body>::substatement;
   };
 
+	template <typename Name, typename Hndl, typename Body>
+  struct LetIsValid;
+  template <typename Name, typename Hndl, typename Body>
+  struct LetIsValid<Name, Hndl, Statement<Body>>
+  {
+    using subcond = typename Hndl::subexpr;
+    using subbod = typename Statement<Body>::substatement;
+    using substatement = LetIsValid;
+  };
+  template <typename Name, typename Hndl, typename Body>
+		struct Statement<LetIsValid<Name,Hndl, Body>>
+  {
+    using substatement = typename LetIsValid<Name,Hndl, Body>::substatement;
+  };
+
   template <typename Var, typename Expr>
   struct Assignment;
   template <typename Expr, typename yield, typename var>
@@ -366,6 +381,7 @@ struct AST<Label<l>>
   {
     using subexpr = Binding;
     using subsubexpr = typename Expr::subexpr;
+		using expr = Expr;
   };
 
   template <typename>
@@ -446,6 +462,21 @@ struct AST<Label<l>>
   template <typename label2, typename _binding, typename Body, typename phase_api>
   static constexpr auto _collect_phase(phase_api, typecheck_phase::Statement<label2, typecheck_phase::LetRemote<_binding, Body>>,
                                        std::enable_if_t<!are_equivalent(Label<l>{}, label2{})> const* const = nullptr);
+
+	template <typename name, typename hndl, typename Body, typename old_api>
+		static constexpr auto _collect_phase(old_api, typecheck_phase::Statement<label, typecheck_phase::LetIsValid<name,hndl, Body>>)
+  {
+    using binding = DECT(let_remote_binding<label>(old_api{}, Binding<label,bool,name,hndl>{}));
+    using hndl_ast = typename binding::ast::expr;
+    using body = DECT(collect_phase(combined_api<old_api, typename binding::api>{}, Body{}));
+    using body_ast = typename body::ast;
+    using new_api = combined_api<typename binding::api, typename body::api>;
+    return extracted_phase<label, new_api, typename body::returns, Statement<LetIsValid<name,hndl_ast, body_ast>>>{};
+  }
+
+  template <typename label2, typename name, typename hndl, typename Body, typename phase_api>
+		static constexpr auto _collect_phase(phase_api, typecheck_phase::Statement<label2, typecheck_phase::LetIsValid<name,hndl, Body>>,
+																				 std::enable_if_t<!are_equivalent(Label<l>{}, label2{})> const* const = nullptr);
 
   template <typename Var, typename Expr, typename phase_api>
   static constexpr auto _collect_phase(phase_api, typecheck_phase::Statement<label, typecheck_phase::Assignment<Var, Expr>>);
@@ -563,6 +594,12 @@ struct AST<Label<l>>
 
   template <typename b, typename e>
   static constexpr auto collapse1(Statement<LetRemote<b, e>> a)
+  {
+    return a;
+  }
+
+	template <typename b, typename h, typename e>
+		static constexpr auto collapse1(Statement<LetIsValid<b, h, e>> a)
   {
     return a;
   }

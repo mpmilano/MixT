@@ -79,6 +79,16 @@ print_ast(std::ostream& o, const typename AST<l>::template Statement<typename AS
   o << "}";
 }
 
+	template <typename l, typename n, typename h, typename body>
+void
+	print_ast(std::ostream& o, const typename AST<l>::template Statement<typename AST<l>::template LetIsValid<n,h, body>>&, const std::string& tab)
+{
+  o << tab << "let isValid" << " [" << n{} << " = " << h{} << "] in "
+    << "{";
+  print_ast(o, body{}, tab);
+  o << tab << "}";
+}
+
 template <typename l, typename L, typename R>
 void
 print_ast(std::ostream& o, const typename AST<l>::template Statement<typename AST<l>::template Assignment<L, R>>&, const std::string& tab)

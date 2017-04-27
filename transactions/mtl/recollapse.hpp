@@ -138,6 +138,13 @@ auto _recollapse(typename AST<l>::template Statement<typename AST<l>::template L
   return typename AST<l>::template Statement<typename AST<l>::template LetRemote<newb, new_body>>{};
 }
 
+	template <typename l, typename candidates, typename sub_map, typename b, typename h, typename body>
+	auto _recollapse(typename AST<l>::template Statement<typename AST<l>::template LetIsValid<b,h, body>>)
+{
+  using new_body = DECT(recollapse<l, candidates, sub_map>(body{}));
+  return typename AST<l>::template Statement<typename AST<l>::template LetIsValid<b,h, new_body>>{};
+}
+
 template <typename l, typename candidates, typename sub_map, typename L, typename R>
 auto _recollapse(typename AST<l>::template Statement<typename AST<l>::template Assignment<L, R>>)
 {

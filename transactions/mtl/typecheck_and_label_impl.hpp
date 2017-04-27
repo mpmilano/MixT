@@ -80,6 +80,22 @@ constexpr auto _typecheck(type_environment<label_env, Env...>, parse_phase::Stat
   return Statement<resolved_label_min<label_env, typename handle::label>, LetRemote<next_binding, next_body>>{};
 }
 
+	template <int seqnum, int depth, typename Name, typename Expr, typename Body, typename label_env, typename... Env>
+constexpr auto _typecheck(type_environment<label_env, Env...>, parse_phase::Statement<parse_phase::LetIsValid<Name, Expr, Body>>)
+{
+  using old_env = type_environment<label_env, Env...>;
+  using binding_expr = DECT(typecheck<seqnum, depth + 1>(old_env{}, Expr{}));
+  using ptr_label = typename binding_expr::label;
+  using handle = typename binding_expr::yield;
+  // we dereference the pointer, which is an influencing action.  Reduce the label
+  // of the environment if needed.
+  using new_env = type_environment<resolved_label_min<label_env, ptr_label>, Env...,
+                                   type_binding<Name, handle, resolved_label_min<ptr_label, typename handle::label>, type_location::remote>>;
+  using next_body = DECT(typecheck<seqnum + 1, depth + 1>(new_env{}, Body{}));
+  using next_binding_expr = binding_expr;
+  return Statement<resolved_label_min<label_env, typename handle::label>, LetIsValid<Name,next_binding_expr, next_body>>{};
+}
+
 	template<typename U, typename V>
 	constexpr bool check_type_mismatch(){
 		constexpr bool ret = std::is_assignable<U,V>::value || std::is_same<U,V>::value ||

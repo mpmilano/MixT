@@ -144,6 +144,14 @@ auto _run_phase(typename AST<l>::template Statement<typename AST<l>::template Le
   return run_phase<l>(body, ctx, s);
 }
 
+	template <typename l, typename TranCtx, typename store, typename name, typename expr, typename Body>
+	auto _run_phase(typename AST<l>::template Statement<typename AST<l>::template LetIsValid<name, expr, Body>>*, TranCtx& ctx, store& s)
+{
+  constexpr Body* body{ nullptr };
+	assert(false && "need to run this binding");
+  return run_phase<l>(body, ctx, s);
+}
+
 template <typename l, typename TranCtx, typename store, typename L, typename y, typename R>
 auto _run_phase(typename AST<l>::template Statement<
                   typename AST<l>::template Assignment<typename AST<l>::template Expression<y, typename AST<l>::template VarReference<L>>, R>>*,
