@@ -431,6 +431,20 @@ struct string_of<myria::mtl::value_holder<t, str...>>
   }
 };
 
+	template <typename t, char... str>
+	struct string_of<myria::mtl::remote_isValid_holder<t, str...>>
+	{
+		std::string value;
+		string_of()
+    : value([] {
+				std::stringstream o;
+				print_varname(o, String<str...>{});
+				return o.str();
+			}())
+		{
+		}
+	};
+
 template <char s1, char s2>
 struct string_of<String<'a', 'n', 'o', 'r', 'm', s1, s2>>
 {
