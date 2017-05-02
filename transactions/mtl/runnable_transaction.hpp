@@ -76,7 +76,15 @@ public:
   template <char... str>
   auto& get(String<str...> name)
   {
-    static_assert(mutils::contains_single_match<DECT(holders::template get_holder<String<str...>>(this, name))...>());
+    mutils::useful_static_assert<!std::is_same<DECT(myria::mtl::remote_holder<myria::Handle<myria::Label<bottom>, int>, int, 'z'>::template get_holder<String<'z'> >(nullptr,String<'z'>{})),
+					       mutils::mismatch
+					       >::value,
+				 DECT(myria::mtl::remote_holder<myria::Handle<myria::Label<bottom>, int>, int, 'z'>::template get_holder<String<'z'> >(nullptr,String<'z'>{}))
+				 >();
+    mutils::useful_static_assert<mutils::contains_single_match<DECT(holders::template get_holder<String<str...>>(this, name))...>(),
+				 String<str...>,
+				 holders...,
+				 DECT(holders::template get_holder<String<str...>>(this, name))...>();
     using type_p = DECT(*mutils::find_match<DECT(holders::template get_holder<String<str...>>(this, name))...>());
     type_p ret = this;
     return *ret;

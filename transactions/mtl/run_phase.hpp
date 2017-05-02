@@ -264,8 +264,8 @@ auto _run_phase(typename AST<l>::template Statement<typename AST<l>::template Fo
 {
   constexpr t* then{ nullptr };
   constexpr String<name...> bound_name{};
-  auto bound = s.get(String<name...>{}).get(ctx);
-  for (int i = 0; i < bound; ++i) {
+  auto bound = s.get(bound_name).get(ctx);
+  for (auto i = 0u; i < bound; ++i) {
     run_phase<l>(then, ctx, s);
   }
 }
