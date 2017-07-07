@@ -43,6 +43,22 @@ print_ast(std::ostream& o, const Expression<BinOp<op, L, R>>&)
   o << L{} << " " << opstr << " " << R{};
 }
 
+template <typename Name, typename Hndl>
+void
+print_ast(std::ostream& o, const Expression<Operation<Name, Hndl>>&)
+{
+  o << Hndl{} << "." << Name{} << "()";
+}
+
+  template <typename Name, typename Hndl, typename a1, typename... args>
+void
+  print_ast(std::ostream& o, const Expression<Operation<Name, Hndl, a1, args...>>&)
+{
+  o << Hndl{} << "." << Name{} << "(" << a1{};
+  ((o <<  "," << args{} ), ...);
+  o << ")";
+}
+
 template <typename b, typename body>
 void
 print_ast(std::ostream& o, const Statement<Let<b, body>>&)
@@ -59,9 +75,9 @@ print_ast(std::ostream& o, const Statement<LetRemote<b, body>>&)
     << "{" << body{} << "}";
 }
 
-	template <typename b, typename h, typename body>
+template <typename b, typename h, typename body>
 void
-	print_ast(std::ostream& o, const Statement<LetIsValid<b, h, body>>&)
+print_ast(std::ostream& o, const Statement<LetIsValid<b, h, body>>&)
 {
   o << "let isValid " << b{} << " in "
     << "{" << body{} << "}";
@@ -100,12 +116,13 @@ print_ast(std::ostream& o, Statement<Sequence<Seq...>>)
     return nullptr;
   };
   o << "{" << endl;
-	(print(Seq{}), ...);
+  (print(Seq{}), ...);
   o << "}";
 }
 
 template <typename AST>
-auto& operator<<(std::ostream& o, const AST& ast)
+auto&
+operator<<(std::ostream& o, const AST& ast)
 {
   print_ast(o, ast);
   return o;

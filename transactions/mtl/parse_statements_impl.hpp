@@ -3,6 +3,7 @@
 #include "parse_bindings.hpp"
 #include "parse_expressions_decl.hpp"
 #include "parse_statements_decl.hpp"
+#include "parse_utilities.hpp"
 
 namespace myria {
 namespace mtl {
@@ -62,6 +63,13 @@ constexpr auto parse_while(String<'w', 'h', 'i', 'l', 'e', _str...>)
   constexpr auto body_s = remainder_s.template strip_paren_group<'{', '}'>(zero{}).trim_ends();
   return parse_phase::While<std::decay_t<decltype(parse_expression(condition_s))>, std::decay_t<decltype(parse_statement(body_s))>>{};
 }
+
+
+  template <typename Name, typename Hndl, typename... args>
+  constexpr auto operation_as_statement(parse_phase::Expression<parse_phase::Operation<Name,Hndl,args...>>){
+    return parse_phase::LetOperation<String<0>,Name,Hndl,parse_utilities::skip, args...>{};
+  }
+  
 // strip whitespace
 template <char... _str>
 constexpr auto
@@ -86,23 +94,24 @@ constexpr auto _parse_statement(
 // sequence case;
 
 template <typename Seq1, typename... Seq2>
-constexpr auto append_sequences(parse_phase::Statement<Seq1>, parse_phase::Statement<parse_phase::Sequence<Seq2...> >)
+constexpr auto
+append_sequences(parse_phase::Statement<Seq1>, parse_phase::Statement<parse_phase::Sequence<Seq2...>>)
 {
   return Seq1::append(parse_phase::Sequence<Seq2...>{});
 }
 
-  template <typename Seq1, typename binding, typename body>
-  constexpr auto append_sequences(parse_phase::Statement<Seq1>, parse_phase::Statement<parse_phase::Let<binding, body> >)
+template <typename Seq1, typename binding, typename body>
+constexpr auto append_sequences(parse_phase::Statement<Seq1>, parse_phase::Statement<parse_phase::Let<binding, body>>)
 {
   using namespace parse_phase;
-  return Seq1::append(Sequence<Statement<Let<binding, body> > >{});
+  return Seq1::append(Sequence<Statement<Let<binding, body>>>{});
 }
 
-  template <typename Seq1, typename binding, typename body>
-  constexpr auto append_sequences(parse_phase::Statement<Seq1>, parse_phase::Statement<parse_phase::LetRemote<binding, body> >)
-  {
-    using namespace parse_phase;
-    return Seq1::append(Sequence<Statement<LetRemote<binding, body> > >{});
+template <typename Seq1, typename binding, typename body>
+constexpr auto append_sequences(parse_phase::Statement<Seq1>, parse_phase::Statement<parse_phase::LetRemote<binding, body>>)
+{
+  using namespace parse_phase;
+  return Seq1::append(Sequence<Statement<LetRemote<binding, body>>>{});
 }
 
 template <char... _str>
@@ -218,6 +227,20 @@ _parse_statement(std::enable_if_t<!(String<_str...>::begins_with(String<'{'>{}) 
   auto var = parse_expression(str::split(zero{}, String<'='>{}).trim_ends());
   auto expr = parse_expression(str::split(one{}, String<'='>{}).trim_ends());
   return parse_phase::Assignment<std::decay_t<decltype(var)>, std::decay_t<decltype(expr)>>{};
+}
+
+// top-level operation
+template <char... _str>
+constexpr auto
+_parse_statement(
+  std::enable_if_t<!(String<_str...>::begins_with(String<'{'>{}) || String<_str...>::begins_with(remote_s{}) || String<_str...>::begins_with(var_s{}) ||
+                     String<_str...>::begins_with(while_s{}) || String<_str...>::begins_with(if_s{}) || String<_str...>::contains_outside_parens(comma_s{}) ||
+                     String<_str...>::begins_with(return_s{}) || String<_str...>::contains_outside_parens(String<'='>{})) &&
+  parse_utilities::contains_invocation<_str...>(),
+                   String<_str...>>)
+{
+  static_assert(!String<_str...>::contains_outside_parens(String<'.'>{}));
+  return operation_as_statement(parse_expression(String<_str...>::trim_ends()));
 }
 
 template <char... str>

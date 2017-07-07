@@ -77,7 +77,7 @@ struct Operation
   using subexpr = Operation;
 };
 template <typename Name, typename Hndl, typename... args>
-struct Expression<Operation<Name,Hndl,args...>>
+struct Expression<Operation<Name,Expression<Hndl>,args...>>
 {
   using subexpr = typename Operation<Name,Hndl,args...>::subexpr;
 };
@@ -230,14 +230,14 @@ struct Statement<LetRemote<Binding, Body>>
 {
 };
 	
-template <typename bound_name, typename oper_name, typename Expr, typename Body>
+template <typename bound_name, typename oper_name, typename Hndl, typename Body, typename... oper_args>
 struct LetOperation;
-template <typename bound_name, typename oper_name, typename Expr, typename Body>
-struct LetOperation<bound_name, oper_name, Expression<Expr>, Statement<Body> >
+template <typename bound_name, typename oper_name, typename Hndl, typename Body, typename... oper_args>
+struct LetOperation<bound_name, oper_name, Expression<Hndl>, Statement<Body>, oper_args...>
 {
 };
-template <typename bound_name, typename oper_name, typename Expr, typename Body>
-struct Statement<LetOperation<bound_name, oper_name, Expr, Body> >
+template <typename bound_name, typename oper_name, typename Hndl, typename Body, typename... oper_args>
+struct Statement<LetOperation<bound_name, oper_name, Hndl, Body,oper_args...> >
 {
 };
 	

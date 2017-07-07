@@ -17,6 +17,8 @@ test_deref: utils.o
 	clang++ $(CPPFLAGS) $(LDFLAGS) utils.o deref_test.cpp -o /tmp/test
 test_mtl: utils.o
 	clang++ $(CPPFLAGS) $(LDFLAGS) $(object_files) test_complex_transaction.cpp -o /tmp/test
+test_operation: utils.o
+	clang++ $(CPPFLAGS) $(LDFLAGS) $(object_files) test_operation.cpp -o /tmp/test
 
 test_causal: $(object_files) 
 	@clang++ test_causal.cpp DisabledTracker.o SQLStore.o Ends.o utils.o Basics.o Ostreams.o SerializationSupport.o GSQLObject.o SQLConnection.o SQLTransaction.o SQL_internal_utils.o ServerSocket.o Socket.o batched_connection_client.o batched_connection_common.o  -o test_causal $(CPPFLAGS) $(LDFLAGS)
