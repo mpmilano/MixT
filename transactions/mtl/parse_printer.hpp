@@ -59,6 +59,27 @@ void
   o << ")";
 }
 
+
+  template<typename... args>
+  void print_ast(std::ostream& o, const operation_args_exprs<args...>){
+    o << "exprs: ";
+    ((o << args{} << ","),...);
+  }
+
+  template<typename... args>
+  void print_ast(std::ostream& o, const operation_args_varrefs<args...>){
+    o << "vars: ";
+    ((o << args{} << ","),...);
+  }
+  
+  template <typename bound_name, typename oper_name, typename Hndl, typename Body, typename expr_args, typename var_args>
+void
+  print_ast(std::ostream& o, const Statement<LetOperation<bound_name, oper_name, Hndl, Body, expr_args, var_args> >&)
+{
+  o << "let " << bound_name{} << " = " << Hndl{} << "." << oper_name{} << "(" << expr_args{} << "," << var_args{} << ") in " <<  Body{};
+  
+}
+
 template <typename b, typename body>
 void
 print_ast(std::ostream& o, const Statement<Let<b, body>>&)

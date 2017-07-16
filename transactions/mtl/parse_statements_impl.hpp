@@ -67,7 +67,8 @@ constexpr auto parse_while(String<'w', 'h', 'i', 'l', 'e', _str...>)
 
   template <typename Name, typename Hndl, typename... args>
   constexpr auto operation_as_statement(parse_phase::Expression<parse_phase::Operation<Name,Hndl,args...>>){
-    return parse_phase::LetOperation<String<0>,Name,Hndl,parse_utilities::skip, args...>{};
+    using namespace parse_phase;
+    return LetOperation<String<'_',0>,Name,Hndl,parse_utilities::skip, operation_args_exprs<args...>, operation_args_varrefs<> >{};
   }
   
 // strip whitespace
@@ -239,7 +240,7 @@ _parse_statement(
   parse_utilities::contains_invocation<_str...>(),
                    String<_str...>>)
 {
-  static_assert(!String<_str...>::contains_outside_parens(String<'.'>{}));
+  static_assert(String<_str...>::contains_outside_parens(String<'.'>{}));
   return operation_as_statement(parse_expression(String<_str...>::trim_ends()));
 }
 

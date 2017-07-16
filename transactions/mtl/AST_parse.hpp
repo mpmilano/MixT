@@ -229,16 +229,35 @@ template <typename Binding, typename Body>
 struct Statement<LetRemote<Binding, Body>>
 {
 };
-	
-template <typename bound_name, typename oper_name, typename Hndl, typename Body, typename... oper_args>
-struct LetOperation;
-template <typename bound_name, typename oper_name, typename Hndl, typename Body, typename... oper_args>
-struct LetOperation<bound_name, oper_name, Expression<Hndl>, Statement<Body>, oper_args...>
-{
+
+template<typename... exprs>
+struct operation_args_exprs{
+  using subexpr = operation_args_exprs;
 };
-template <typename bound_name, typename oper_name, typename Hndl, typename Body, typename... oper_args>
-struct Statement<LetOperation<bound_name, oper_name, Hndl, Body,oper_args...> >
+  
+template<typename... vars>
+struct operation_args_varrefs{
+  static_assert((is_var_reference<vars>::value && ... && true),"");
+  using subexpr = operation_args_varrefs;
+  template<typename v>
+  static constexpr auto append(Expression<VarReference<v> >){
+    return operation_args_varrefs<vars...,Expression<VarReference<v> > >{};
+  }
+};
+	
+template <typename bound_name, typename oper_name, typename Hndl, typename Body, typename expr_args, typename var_args >
+struct LetOperation;
+template <typename bound_name, typename oper_name, typename Hndl, typename Body, typename expr_args, typename... var_args>
+struct LetOperation<bound_name, oper_name, Expression<Hndl>, Statement<Body>, expr_args,operation_args_varrefs<var_args...>>
 {
+  using exprs_subexpr = typename expr_args::subexpr;
+  using vars_subexpr = typename operation_args_varrefs<var_args...>::subexpr;
+  using substatement = LetOperation;
+};
+template <typename bound_name, typename oper_name, typename Hndl, typename Body, typename expr_args, typename var_args>
+struct Statement<LetOperation<bound_name, oper_name, Hndl, Body, expr_args, var_args> >
+{
+  using substatement = typename LetOperation<bound_name, oper_name, Hndl, Body, expr_args, var_args>::substatement;
 };
 	
 template <typename bound_name, typename Expr, typename Body>
