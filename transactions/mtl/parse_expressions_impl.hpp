@@ -1,6 +1,7 @@
 #pragma once
 #include "common_strings.hpp"
 #include "parse_expressions_decl.hpp"
+#include "parse_utilities.hpp"
 
 namespace myria {
 namespace mtl {
@@ -80,6 +81,7 @@ _parse_expression(std::enable_if_t<!parse_utilities::contains_invocation<str...>
                                      is_method_char<String<str...>{}.string[0]>(),
                                    String<str...>>)
 {
+  static_assert(!contains_operator<str...>(),"");
   return parse_phase::VarReference<std::decay_t<decltype(String<str...>::trim_ends())>>{};
 }
 
@@ -129,35 +131,36 @@ struct add_operations_struct
 
   // this is just isValid
   template <typename hndl>
-  static constexpr auto add_operation_args(parse_phase::Operation<hndl, parse_phase::isValid_str>, String<>)
+  static constexpr auto add_operation_args(parse_phase::Operation<parse_phase::isValid_str, hndl>, String<>)
   {
     return parse_phase::IsValid<hndl>{};
   }
 
   // no (further) arguments possible
   template <typename hndl, typename operations_str>
-  static constexpr auto add_operation_args(parse_phase::Operation<hndl, operations_str, args...> a, String<>)
+  static constexpr auto add_operation_args(parse_phase::Operation<operations_str, hndl, args...> a, String<>)
   {
+    static_assert((sizeof...(args) > 0) || !operations_str::contains(parse_phase::isValid_str{}));
     return a;
   }
 
   // last argument
   template <typename hndl, typename operations_str, char c, char... str>
-  static constexpr auto add_operation_args(parse_phase::Operation<hndl, operations_str, args...>, String<c, str...> arg,
+  static constexpr auto add_operation_args(parse_phase::Operation<operations_str, hndl, args...>, String<c, str...> arg,
                                            std::enable_if_t<!String<c, str...>::contains_outside_parens(String<','>{})>* = nullptr)
   {
-    return parse_phase::Operation<hndl, operations_str, args..., DECT(parse_expression(arg))>{};
+    return parse_phase::Operation<operations_str, hndl, args..., DECT(parse_expression(arg))>{};
   }
 
   // at least two arguments remain
   template <typename hndl, typename operations_str, char... str>
-  static constexpr auto add_operation_args(parse_phase::Operation<hndl, operations_str, args...>, String<str...>,
+  static constexpr auto add_operation_args(parse_phase::Operation<operations_str, hndl, args...>, String<str...>,
                                            std::enable_if_t<String<str...>::contains_outside_parens(String<','>{})>* = nullptr)
   {
 
     constexpr auto rest = String<str...>::after_fst(String<','>{});
     constexpr auto arg = parse_expression(String<str...>::split(zero{}, String<','>{}));
-    return add_operations_struct<args..., DECT(arg)>::add_operation_args(parse_phase::Operation<hndl, operations_str, args..., DECT(arg)>{}, rest);
+    return add_operations_struct<args..., DECT(arg)>::add_operation_args(parse_phase::Operation<operations_str, hndl, args..., DECT(arg)>{}, rest);
   }
 };
 
@@ -168,13 +171,13 @@ _parse_expression(std::enable_if_t<!contains_operator<str...>() && !is_deref<str
                                      !(String<str...>{}.string[0] == '(') && !(String<str...>{}.string[0] == ' '),
                                    String<str...>>)
 {
-  using method_group = DECT(String<str...>::template next_paren_group<'(', ')'>());
-  using invocation_str = typename method_group::pre;
+  using method_group = DECT(String<str...>::reverse().template next_paren_group<')', '('>());
+  using invocation_str = DECT(method_group::post::reverse());
+  using arguments = DECT(method_group::paren::trim_ends().reverse().remove_last_char().remove_first_char().trim_ends());
   constexpr auto hndl_str = invocation_str::before_lst(String<'.'>{}).trim_ends();
   constexpr auto operation_str = invocation_str::after_lst(String<'.'>{}).trim_ends();
   using hndl = DECT(parse_expression(hndl_str));
-  return add_operations_struct<>::add_operation_args(parse_phase::Operation<DECT(operation_str),hndl>{},
-                                                     method_group::paren::trim_ends().remove_last_char().remove_first_char().trim_ends());
+  return add_operations_struct<>::add_operation_args(parse_phase::Operation<DECT(operation_str),hndl>{},arguments{});
 } //*/
 
 // deref

@@ -79,6 +79,7 @@ struct Operation
 template <typename Name, typename Hndl, typename... args>
 struct Expression<Operation<Name,Expression<Hndl>,args...>>
 {
+  static_assert(!Name::is_number());
   using subexpr = typename Operation<Name,Hndl,args...>::subexpr;
 };
 
@@ -257,6 +258,7 @@ struct LetOperation<bound_name, oper_name, Expression<Hndl>, Statement<Body>, ex
 template <typename bound_name, typename oper_name, typename Hndl, typename Body, typename expr_args, typename var_args>
 struct Statement<LetOperation<bound_name, oper_name, Hndl, Body, expr_args, var_args> >
 {
+  using is_valid = std::true_type;
   using substatement = typename LetOperation<bound_name, oper_name, Hndl, Body, expr_args, var_args>::substatement;
 };
 	
