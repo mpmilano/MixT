@@ -189,6 +189,20 @@ template <typename l, typename r>
 using resolved_label_min =
   std::conditional_t<std::is_same<l, Label<bottom>>::value || std::is_same<r, Label<bottom>>::value, Label<bottom>, DECT(Label<label_min_of<l, r>>::resolve())>;
 
+template<typename L1, typename L2>
+constexpr auto* resolved_label_min_vararg_f(L1*, L2*){
+  constexpr resolved_label_min<L1,L2> *np{nullptr};
+  return np;
+}
+
+template<typename L1, typename L2, typename L3, typename... Lr>
+constexpr auto* resolved_label_min_vararg_f(L1* a, L2* b, L3* c, Lr*... d){
+  return resolved_label_min_vararg_f(resolved_label_min_vararg_f(a,b),c,d...);
+}
+    
+template<typename... l>
+using resolved_label_min_vararg = DECT(*resolved_label_min_vararg_f(std::declval<l*>()));
+
 template <typename L1, typename L2>
 using label_lte = std::integral_constant<bool, L2::flows_to(L1{})>;
 

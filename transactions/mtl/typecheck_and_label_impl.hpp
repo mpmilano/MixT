@@ -80,7 +80,7 @@ constexpr auto _typecheck(type_environment<label_env, Env...>, parse_phase::Stat
   return Statement<resolved_label_min<label_env, typename handle::label>, LetRemote<next_binding, next_body>>{};
 }
 
-	template <int seqnum, int depth, typename Name, typename Expr, typename Body, typename label_env, typename... Env>
+template <int seqnum, int depth, typename Name, typename Expr, typename Body, typename label_env, typename... Env>
 constexpr auto _typecheck(type_environment<label_env, Env...>, parse_phase::Statement<parse_phase::LetIsValid<Name, Expr, Body>>)
 {
   using old_env = type_environment<label_env, Env...>;
@@ -90,11 +90,31 @@ constexpr auto _typecheck(type_environment<label_env, Env...>, parse_phase::Stat
   // we dereference the pointer, which is an influencing action.  Reduce the label
   // of the environment if needed.
   using new_env = type_environment<resolved_label_min<label_env, ptr_label>, Env...,
-                                   type_binding<Name, handle, resolved_label_min<ptr_label, typename handle::label>, type_location::remote_isValid>>;
+                                   type_binding<Name, handle, bool, resolved_label_min<ptr_label, typename handle::label>, type_location::remote_isValid, isValid_str> >;
   using next_body = DECT(typecheck<seqnum + 1, depth + 1>(new_env{}, Body{}));
   using next_binding_expr = binding_expr;
   return Statement<resolved_label_min<label_env, typename handle::label>, LetIsValid<Name,next_binding_expr, next_body>>{};
 }
+  
+
+template <int seqnum, int depth, typename bound_name, typename oper_name, typename Hndl, typename Body, typename... var_args>
+constexpr auto _typecheck(old_env, parse_phase::Statement<parse_phase::LetOperation<bound_name, oper_name, Hndl, Body, operation_args_exprs<>,operation_args_varrefs<var_args...> >)
+{
+  using binding_expr = DECT(typecheck<seqnum, depth + 1>(old_env{}, Hndl{}));
+  using ptr_label = typename binding_expr::label;
+  using handle = typename binding_expr::yield;
+  // we dereference the pointer, which is an influencing action.  Reduce the label
+  // of the environment if needed.
+  using arguments_label_min = resolved_label_min_vararg<typename handle::label, typename handle::label, typename DECT(typecheck(old_env{},var_args{}))::label...>;
+  using operation_execution_label = resolved_label_min<ptr_label, arguments_label_min>;
+  using new_env = type_environment<resolved_label_min<label_env, ptr_label>, Env...,
+                                   type_binding<bound_name, handle, ?,
+						operation_execution_label,
+						type_location::remote_operation, oper_name, DECT(typecheck(old_env{},var_args{}))...> >;
+  using next_body = DECT(typecheck<seqnum + 1, depth + 1>(new_env{}, Body{}));
+  using next_binding_expr = binding_expr;
+  return Statement<resolved_label_min<label_env, arguments_label_min>, LetOperation<bound_name,oper_name,next_binding_expr, next_body, DECT(typecheck(old_env{},var_args{}))...>>{};
+}//*/
 
 	template<typename U, typename V>
 	constexpr bool check_type_mismatch(){

@@ -1,11 +1,11 @@
 #pragma once
 
 #include "CTString.hpp"
-#include <type_traits>
-#include <vector>
+#include "environments.hpp"
 #include "mtlutils.hpp"
 #include "top.hpp"
-#include "environments.hpp"
+#include <type_traits>
+#include <vector>
 
 namespace myria {
 namespace mtl {
@@ -194,13 +194,14 @@ struct Statement<Label<l>, LetRemote<Binding<bl, y, var, Expression<exprl, expry
   // expry should be a handle.  Could maybe enforce that.
   using handle_label = typename expry::label;
   using expr_label = exprl;
-  using substatement = typename LetRemote<Binding<bl, y, var, Expression<exprl, expry, expr>>, Body>::substatement;
+  using substatement =
+    typename LetRemote<Binding<bl, y, var, Expression<exprl, expry, expr>>, Body>::substatement;
 };
 
-	template <typename name, typename hndl, typename Body>
+template <typename name, typename hndl, typename Body>
 struct LetIsValid;
 template <typename Name, typename Exprl, typename Expry, typename ExprN, typename bodyl, typename Body>
-struct LetIsValid<Name, Expression<Exprl, Expry, VarReference<ExprN> >, Statement<bodyl, Body>>
+struct LetIsValid<Name, Expression<Exprl, Expry, VarReference<ExprN>>, Statement<bodyl, Body>>
 {
   using substatement = LetIsValid;
   using subbody = typename Body::substatement;
@@ -215,6 +216,23 @@ struct Statement<Label<l>, LetIsValid<var, Expression<exprl, expry, expr>, Body>
   using handle_label = typename expry::label;
   using expr_label = exprl;
   using substatement = typename LetIsValid<var, Expression<exprl, expry, expr>, Body>::substatement;
+};
+  
+template <typename bound_name, typename operation_yields, typename oper_name, typename Hndl, typename Body, typename... args>
+struct LetOperation;
+  template <typename bound_name, typename operation_yields, typename oper_name, typename Hndl_l, typename Hndl_t, typename Hndl_e, typename Body_l, typename Body, typename... args>
+  struct LetOperation<bound_name, operation_yields, oper_name, Expression<Hndl_l,Hndl_t,Hndl_e>, Statement<Body_l,Body>, args...>
+{
+  using substatement = LetOperation;
+};
+
+template <typename l, typename operation_yields, typename bound_name, typename oper_name, typename Hndl_l, typename Hndl_t, typename Hndl_e, typename Body, typename... args>
+struct Statement<Label<l>, LetOperation<bound_name, operation_yields, oper_name, Expression<Hndl_l, Hndl_t, Hndl_e>, Body, args...> >
+{
+  using label = Label<l>;
+  using handle_label = typename Hndl_t::label;
+  using expr_label = Hndl_l;
+  using substatement = typename LetOperation<bound_name, oper_name, Expression<Hndl_l, Hndl_t, Hndl_e>, Body, args...>::substatement;
 };
 
 template <typename Var, typename Expr>
@@ -235,32 +253,34 @@ struct Statement<Label<l>, Assignment<Var, Expr>>
 
 template <typename Expr>
 struct Return;
-	template <typename l, typename y, typename Expr>
-	struct Return<Expression<l,y,Expr> >
+template <typename l, typename y, typename Expr>
+struct Return<Expression<l, y, Expr>>
 {
-	using substatement = Return;
-	using subexpr = typename Expression<l,y,Expr>::subexpr;
-	using label = l;
+  using substatement = Return;
+  using subexpr = typename Expression<l, y, Expr>::subexpr;
+  using label = l;
 };
-	template <typename l, typename Expr>
-	struct Statement<l,Return<Expr>>
+template <typename l, typename Expr>
+struct Statement<l, Return<Expr>>
 {
-	using label = l;
-	using substatement = typename Return<Expr>::substatement;
+  using label = l;
+  using substatement = typename Return<Expr>::substatement;
 };
 
-#define TOMBSTONE_CHAR_SEQUENCE	't', 'o', 'm', 'b', 's', 't', 'o', 'n', 'e', 0
+#define TOMBSTONE_CHAR_SEQUENCE 't', 'o', 'm', 'b', 's', 't', 'o', 'n', 'e', 0
 using tombstone_str = mutils::String<TOMBSTONE_CHAR_SEQUENCE>;
 
-template<typename> struct WriteTombstone;
-  
-template<typename l>  struct WriteTombstone<Expression<l, tracker::Tombstone,VarReference<tombstone_str> > >
+template <typename>
+struct WriteTombstone;
+
+template <typename l>
+struct WriteTombstone<Expression<l, tracker::Tombstone, VarReference<tombstone_str>>>
 {
   using substatement = WriteTombstone;
 };
 
 template <typename l, typename T>
-struct Statement<Label<l>, WriteTombstone<T> >
+struct Statement<Label<l>, WriteTombstone<T>>
 {
   using label = Label<l>;
   using substatement = typename WriteTombstone<T>::substatement;
@@ -280,7 +300,7 @@ struct Statement<Label<l>, AccompanyWrite<T>>
 {
   using label = Label<l>;
   using substatement = typename AccompanyWrite<T>::substatement;
-  static_assert(std::is_same<label,typename substatement::sublabel>::value);
+  static_assert(std::is_same<label, typename substatement::sublabel>::value);
 };
 
 template <typename condition, typename then, typename els>

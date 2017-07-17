@@ -55,8 +55,6 @@ struct Expression<Dereference<Struct>>
 {
   using subexpr = typename Dereference<Struct>::subexpr;
 };
-
-using isValid_str = mutils::String<'i','s','V','a','l','i','d'>;
 	
 template <typename Hndl>
 struct IsValid;

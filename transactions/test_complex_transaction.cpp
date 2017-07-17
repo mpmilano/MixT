@@ -43,9 +43,10 @@ int main(){
 			  } else {if (hndl.isValid()){return 7} else {}}
 				   )::WITH(tstruct,tstruct2,hndl,hndl2);//*/
   //txn.just_print_it();
+
   constexpr 
 #include "test_complex_transaction_precompiled.incl"
-    txn{};
+    txn{};    //*/
 
   std::cout << txn << std::endl;
 	

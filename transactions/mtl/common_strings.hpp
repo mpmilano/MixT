@@ -26,5 +26,7 @@ using arrow_s = mutils::String<'-','>'>;
 using deref_s = mutils::String<'*'>;
 using minus_s = mutils::String<'-',' '>;
 using return_s = mutils::String<'r','e','t','u','r','n'>;
+using isValid_str = mutils::String<'i','s','V','a','l','i','d'>;
+  
 }
 }

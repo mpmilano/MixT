@@ -1,6 +1,7 @@
 #pragma once
 #include "AST_split.hpp"
 #include <iostream>
+#include <sstream>
 
 namespace myria {
 namespace mtl {
@@ -11,7 +12,7 @@ void
 print_ast(std::ostream& o, const typename AST<l>::template Binding<l2, y, v, e>&)
 {
   print_varname(o, v{});
-  o << " = ";
+  o << " : " << mutils::type_name<y>() << " = ";
   print_ast<l>(o, e{});
 }
 
@@ -23,11 +24,42 @@ print_ast(std::ostream& o, const typename AST<l>::template Expression<y, typenam
   o << "." << f{};
 }
 
+  template<typename> struct print_split_type_str;
+  template<typename T>
+  const std::string& print_split_type();
+  
+  template<typename l, typename y, typename... ops> struct print_split_type_str<Handle<l,y,ops...> >{
+    static const auto& print(){
+      using namespace std;
+      static const std::string s{
+	[](){
+	  stringstream ss;
+	  ss << "Handle<" << l{} << "," << print_split_type<y>() << ">";
+	  return ss.str();
+	}()};
+      return s;
+    }
+  };
+
+  template<typename T> struct print_split_type_str{
+    static const auto& print(){
+      static const auto ret = mutils::type_name<T>();
+      return ret;
+    }
+  };
+  
+  template<typename T>
+  const std::string& print_split_type(){
+    return print_split_type_str<T>::print();
+  };
+  
 template <typename l, typename y, typename v>
 void
 print_ast(std::ostream& o, const typename AST<l>::template Expression<y, typename AST<l>::template VarReference<v>>&)
 {
+  o << "(";
   print_varname(o, v{});
+  o << " : " << print_split_type<y>() << ")";
 }
 
 template <typename l, int i>
@@ -49,7 +81,7 @@ template <typename l, typename y, char op, typename L, typename R>
 void
 print_ast(std::ostream& o, const typename AST<l>::template Expression<y, typename AST<l>::template BinOp<op, L, R>>&)
 {
-  static const std::string opstr{{ op, 0 }};
+  static const std::string opstr{{ op, (op == '=' ? '=' : 0) , 0 }};
   print_ast<l>(o, L{});
   o << " " << opstr << " ";
   print_ast<l>(o, R{});
