@@ -28,9 +28,9 @@ enum class type_location
 {
   local,
   remote,
-  operation
+  immutable
 };
-template <typename Name, typename in_type, typename out_type, typename Label, type_location, typename... specialized_arguments>
+template <typename Name, typename type, typename Label, type_location>
 struct type_binding;
 
 template <typename T, char... str>
@@ -488,7 +488,7 @@ struct type_binding_super<String<str...>, T, Label<l>>
 };
 
 template <typename T, typename l, char... str>
-struct type_binding<String<str...>, T, T, Label<l>, type_location::local> : public type_binding_super<String<str...>, T, Label<l>>
+struct type_binding<String<str...>, T, Label<l>, type_location::local> : public type_binding_super<String<str...>, T, Label<l>>
 {
   using holder = type_holder<T, str...>;
 
@@ -516,7 +516,7 @@ struct type_binding<String<str...>, T, T, Label<l>, type_location::local> : publ
 };
 
 template <typename T, typename l, char... str>
-struct type_binding<String<str...>, T, typename T::type, Label<l>, type_location::remote> : public type_binding_super<String<str...>, typename T::type, Label<l>>
+struct type_binding<String<str...>, T, Label<l>, type_location::remote> : public type_binding_super<String<str...>, typename T::type, Label<l>>
 {
   static_assert(is_handle<T>::value);
   static_assert(!std::is_same<T, typename T::type>::value);
@@ -547,48 +547,18 @@ struct type_binding<String<str...>, T, typename T::type, Label<l>, type_location
 };
 
 template <typename T, typename l, char... str>
-struct type_binding<String<str...>, T, bool, Label<l>, type_location::remote_operation, isValid_str> : public type_binding_super<String<str...>, bool, Label<l>>
+struct type_binding<String<str...>, T, Label<l>, type_location::immutable> : public type_binding_super<String<str...>, T, Label<l>>
 {
   static_assert(is_handle<T>::value);
   static_assert(!std::is_same<T, bool>::value);
 
   constexpr type_binding() = default;
-  using super = type_binding_super<String<str...>, bool, Label<l>>;
+  using super = type_binding_super<String<str...>, U, Label<l>>;
   using name = typename super::name;
   using label = typename super::label;
 
-  using holder = remote_isValid_holder<T, str...>;
-  using type = bool;
-
-  template <typename Other>
-  static constexpr mutils::mismatch get_binding(std::enable_if_t<!std::is_same<Other, name>::value, Other>)
-  {
-    return mutils::mismatch{};
-  }
-  template <typename>
-  static constexpr type_binding get_binding(name)
-  {
-    return type_binding{};
-  }
-  template <typename T2>
-  static constexpr auto get_binding2(const T2& t)
-  {
-    return get_binding<T2>(t);
-  }
-};
-
-template <typename T, typename R, typename l, typename opname, char varname, typename... args>
-struct type_binding<varname, T, R, Label<l>, type_location::remote_operation, opname, args...> : public type_binding_super<varname, R, Label<l> >
-{
-  static_assert(is_handle<T>::value);
-
-  constexpr type_binding() = default;
-  using super = type_binding_super<varname, R, Label<l>>;
-  using name = typename super::name;
-  using label = typename super::label;
-
-  using holder = remote_operation_holder<T, varname, R, opname, args...>;
-  using type = R;
+  using holder = immutable_holder<U,str...>;
+  using type = U;
 
   template <typename Other>
   static constexpr mutils::mismatch get_binding(std::enable_if_t<!std::is_same<Other, name>::value, Other>)
