@@ -42,6 +42,10 @@ struct type_environment<Label<l>, Bindings...>
     using name = mutils::String<str...>;
     return DECT(*mutils::find_match<DECT(Bindings::template get_binding<name>(name{}))...>()){};
   }
+  template<typename new_label, typename... more_bindings>
+  static constexpr auto extend(){
+    return type_environment<new_label, Bindings..., more_bindings...>{};
+  }
 };
 
 template <typename T, typename... Bindings>

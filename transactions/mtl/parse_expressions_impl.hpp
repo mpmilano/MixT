@@ -131,7 +131,7 @@ struct add_operations_struct
 
   // this is just isValid
   template <typename hndl>
-  static constexpr auto add_operation_args(parse_phase::Operation<parse_phase::isValid_str, hndl>, String<>)
+  static constexpr auto add_operation_args(parse_phase::Operation<isValid_str, hndl>, String<>)
   {
     return parse_phase::IsValid<hndl>{};
   }
@@ -140,7 +140,7 @@ struct add_operations_struct
   template <typename hndl, typename operations_str>
   static constexpr auto add_operation_args(parse_phase::Operation<operations_str, hndl, args...> a, String<>)
   {
-    static_assert((sizeof...(args) > 0) || !operations_str::contains(parse_phase::isValid_str{}));
+    static_assert((sizeof...(args) > 0) || !operations_str::contains(isValid_str{}));
     return a;
   }
 

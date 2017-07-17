@@ -201,7 +201,7 @@ constexpr auto* resolved_label_min_vararg_f(L1* a, L2* b, L3* c, Lr*... d){
 }
     
 template<typename... l>
-using resolved_label_min_vararg = DECT(*resolved_label_min_vararg_f(std::declval<l*>()));
+using resolved_label_min_vararg = DECT(*resolved_label_min_vararg_f(std::declval<l*>()... ));
 
 template <typename L1, typename L2>
 using label_lte = std::integral_constant<bool, L2::flows_to(L1{})>;
