@@ -2,6 +2,7 @@
 
 #include "typecheck_and_label_decl.hpp"
 #include "struct.hpp"
+#include "Operations.hpp"
 
 namespace myria {
 namespace mtl {
@@ -107,10 +108,13 @@ constexpr auto _typecheck(old_env, parse_phase::Statement<parse_phase::LetOperat
   using handle = typename binding_expr::yield;
   // we dereference the pointer, which is an influencing action.  Reduce the label
   // of the environment if needed.
-  using arguments_label_min = resolved_label_min_vararg<typename handle::label, typename handle::label, typename DECT(typecheck(old_env{},var_args{}))::label...>;
+  using arguments_label_min = resolved_label_min_vararg<typename handle::label, /*the duplication is on purpose*/ typename handle::label, typename DECT(typecheck(old_env{},var_args{}))::label...>;
   using operation_execution_label = resolved_label_min<ptr_label, arguments_label_min>;
+  constexpr OperationIdentifier<oper_name> op{nullptr};
+  using ret_t = typename DECT(std::declval<handle>().upCast(op))::Return;
+  static_assert(handle_supports<handle,oper_name,ret_t, typename DECT(typecheck(old_env{},var_args{}))::yield...>::value, "Error: Invalid arguments for handle operation");
   using new_env = DECT(old_env::template extend<resolved_label_min<label_env, ptr_label>,
-		       type_binding<bound_name, /*? not sure?*/ void*,operation_execution_label,type_location::local> >());
+		       type_binding<bound_name, ret_t,operation_execution_label,type_location::local> >());
   using next_body = DECT(typecheck<seqnum + 1, depth + 1>(new_env{}, Body{}));
   using next_binding_expr = binding_expr;
   return Statement<resolved_label_min<label_env, arguments_label_min>, LetOperation<bound_name,oper_name,next_binding_expr, next_body, DECT(typecheck(old_env{},var_args{}))...>>{};

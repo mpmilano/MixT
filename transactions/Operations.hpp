@@ -4,6 +4,20 @@
 #include "Handle.hpp"
 #include "CTString.hpp"
 
+/*
+  So you deleted half of this framework in the great MTL purge, which includes useful things like how to use this file.
+  The directory drafts/ has an early version of this framework and a demo, which is useful for figuring out what the design was supposed to do.
+  Check git history for the file mtl/Operate.hpp if you'd to see how this file was once integrated in (old) MTL. 
+
+  As far as I can recall, the basic idea here is taht the Handles all extend the struct SupportsOn, which provides the functions upCast and downCast. 
+  UpCast transforms an arbitrary handle into a SupportsOn, which should allow you to access important information like all of the arguments + return type for this operation.
+  Most importantly, SupportsOn contains a field `op`, which encapsulates the actual operation behavior (it's literally proxying the call directly to a registered data store).
+  That field `op` contains the function act(), which is the thing that *actually does* the operation in question directly at the underlying data store. 
+
+  To review; if you have an operation Name you want to do on a Handle h, call h.upCast(OperationIdentifier<Name>{}).op->act(args...).
+  If you are just curious about what operation h has for Name, DECT(h.upCast(OperationIdentifier<Name>{})) has a bunch of useful typedefs in it.
+ */
+
 namespace myria{
   
 struct SelfType{

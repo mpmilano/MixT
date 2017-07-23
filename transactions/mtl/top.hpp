@@ -214,7 +214,7 @@ std::ostream& operator<<(std::ostream& o, const Label<label_min_of<labels...>>&)
     return nullptr;
   };
   o << "min(";
-  (print(labels{}) , ...);
+  (print(o,labels{}) , ...);
   return o << ")";
 }
 

@@ -81,6 +81,15 @@ print_ast(std::ostream& o, const Statement<l, Assignment<L, R>>&, const std::str
   o << tab << L{} << " =@" << l{} << " " << R{};
 }
 
+template <typename l, typename R>
+void
+print_ast(std::ostream& o, const Statement<l, Return<R> >&, const std::string& tab)
+{
+  o << tab << "return ";
+  print_ast(o, R{});
+}
+
+
 template <typename l, typename c, typename t, typename e>
 void
 print_ast(std::ostream& o, const Statement<l, If<c, t, e>>&, const std::string& tab)
@@ -107,14 +116,14 @@ print_ast(std::ostream& o, const Statement<l, Sequence<Seq...>>&, const std::str
 {
   auto tab = _tab + std::string{ "  " };
   using namespace std;
-  auto print = [&](const auto& e) {
+  const auto print = [tab](auto& o, const auto& e) {
     o << tab;
     print_ast(o, e, tab);
     o << ";" << endl;
     return nullptr;
   };
   o << "{ label::" << l{} << ";" << endl;
-  auto ignore = { nullptr, nullptr, print(Seq{})... };
+  (print(o,Seq{}),...);
   o << _tab << "}";
 }
 

@@ -15,7 +15,7 @@ test_parsing: utils.o
 	clang++ $(CPPFLAGS) $(LDFLAGS) utils.o test_parsing.cpp -o /tmp/test_parsing
 test_deref: utils.o
 	clang++ $(CPPFLAGS) $(LDFLAGS) utils.o deref_test.cpp -o /tmp/test
-test_mtl: utils.o
+test_mtl: $(object_files)
 	clang++ $(CPPFLAGS) $(LDFLAGS) $(object_files) test_complex_transaction.cpp -o /tmp/test
 test_operation: utils.o
 	clang++ $(CPPFLAGS) $(LDFLAGS)  test_operation.cpp -o /tmp/test
