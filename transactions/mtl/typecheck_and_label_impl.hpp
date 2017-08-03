@@ -106,7 +106,7 @@ struct handle_operations{
 		using old_env = DECT(a);
 		using new_env = type_environment<resolved_label_min<label_env, ptr_label>, Env... >;
 		using next_body = DECT(typecheck<seqnum + 1, depth + 1>(new_env{}, Body{}));
-		return Statement<resolved_label_min<label_env, arguments_label_min>, StatementOperation<oper_name,next_binding_expr, next_body, DECT(typecheck(old_env{},var_args{}))...>>{};	
+		return Statement<resolved_label_min<label_env, arguments_label_min>, StatementOperation<oper_name,next_binding_expr, next_body, DECT(typecheck<seqnum,depth+1>(old_env{},var_args{}))...>>{};	
 	}
 
 	//non-void-returning
@@ -118,7 +118,7 @@ struct handle_operations{
 										 Env...,
 										 type_binding<bound_name, ret_t,operation_execution_label,type_location::local> >;
 		using next_body = DECT(typecheck<seqnum + 1, depth + 1>(new_env{}, Body{}));
-		return Statement<resolved_label_min<label_env, arguments_label_min>, LetOperation<bound_name,oper_name,next_binding_expr, next_body, DECT(typecheck(old_env{},var_args{}))...>>{};	
+		return Statement<resolved_label_min<label_env, arguments_label_min>, LetOperation<bound_name,oper_name,next_binding_expr, next_body, DECT(typecheck<seqnum,depth+1>(old_env{},var_args{}))...>>{};	
 	}
 	
 };
@@ -131,10 +131,10 @@ constexpr auto _typecheck(old_env, parse_phase::Statement<parse_phase::LetOperat
   using handle = typename binding_expr::yield;
   // we dereference the pointer, which is an influencing action.  Reduce the label
   // of the environment if needed.
-  using arguments_label_min = resolved_label_min_vararg<typename handle::label, /*the duplication is on purpose*/ typename handle::label, typename DECT(typecheck(old_env{},var_args{}))::label...>;
-  constexpr OperationIdentifier<oper_name> op{nullptr};
+  using arguments_label_min = resolved_label_min_vararg<typename handle::label, /*the duplication is on purpose*/ typename handle::label, typename DECT(typecheck<seqnum,depth+1>(old_env{},var_args{}))::label...>;
+  constexpr OperationIdentifier<oper_name> op;
   using ret_t = typename DECT(std::declval<handle>().upCast(op))::Return;
-  static_assert(handle_supports<handle,oper_name,ret_t, typename DECT(typecheck(old_env{},var_args{}))::yield...>::value, "Error: Invalid arguments for handle operation");
+  static_assert(handle_supports<handle,oper_name,ret_t, SelfType, typename DECT(typecheck<seqnum,depth+1>(old_env{},var_args{}))::yield...>::value, "Error: Invalid arguments for handle operation");
   constexpr std::integral_constant<bool, std::is_void<ret_t>::value || std::is_same<bound_name,mutils::String<'_',0> >::value >* conditional{nullptr};
   return handle_operations<seqnum,depth,bound_name,oper_name,Body,ptr_label,arguments_label_min,binding_expr,ret_t, var_args...>::handle_operation(conditional,old_env{});
 

@@ -64,7 +64,7 @@ print_ast(std::ostream& o, const Statement<l, LetRemote<b, body>>&, const std::s
   o << tab << "}";
 }
 
-	template <typename l, typename n, typename h, typename body>
+template <typename l, typename n, typename h, typename body>
 void
 	print_ast(std::ostream& o, const Statement<l, LetIsValid<n,h, body>>&, const std::string& tab)
 {
@@ -74,6 +74,19 @@ void
   o << tab << "}";
 }
 
+template <typename l, typename oper_name, typename Hndl, typename Body, typename... args>
+void
+print_ast(std::ostream& o, const Statement<l, StatementOperation<oper_name,Hndl,Body,args...>>&, const std::string& tab)
+{
+	o << tab;
+	print_ast(o,Hndl{});
+	o << ". @" << l{} << " " << oper_name{} << "(";
+	(print_ast(o,args{}),...);
+	o << ")" << std::endl;
+	print_ast(o,Body{},tab);
+}
+
+	
 template <typename l, typename L, typename R>
 void
 print_ast(std::ostream& o, const Statement<l, Assignment<L, R>>&, const std::string& tab)

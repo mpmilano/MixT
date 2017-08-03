@@ -9,6 +9,7 @@ using namespace myria;
 using namespace mtl;
 using namespace parse_phase;
 using namespace typecheck_phase;
+using namespace testing_store;
 
 int main(){
 	using Store = TestingStore<Label<top> >;
@@ -16,6 +17,7 @@ int main(){
 	int_handle a;
 	using str = MUTILS_STRING({a.noop()});
 	constexpr auto parsed = flatten_expressions(parse_statement(str{}));
-	//constexpr auto tmp = typecheck<1,1>(type_environment<Label<top>, type_binding<MUTILS_STRING(a),DECT(a),Label<top> > >{},parsed);
-	//std::cout << tmp << std::endl;
+	constexpr auto tmp = typecheck<1,1>(type_environment<Label<top>,
+										type_binding<MUTILS_STRING(a),DECT(a),Label<top>, type_location::local > >{},parsed);
+	std::cout << tmp << std::endl;
 }
