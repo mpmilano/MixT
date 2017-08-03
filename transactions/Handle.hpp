@@ -146,7 +146,7 @@ namespace myria{
       if (!_ro) return false;
       assert(ctx);
       auto *ptr = &ctx->store_context(this->store() whendebug(, "calling isValid via handle"));
-      return _ro->ro_isValid(ptr);
+      return _ro->isValid(ptr);
     }
     
     DataStore<l>& store() const {

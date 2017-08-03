@@ -61,7 +61,7 @@ namespace myria{ namespace pgsql {
 					(char*) malloc(c.size())}}{
 
 			{
-				//assert(!ro_isValid(trans));
+				//assert(!isValid(trans));
 
 				if (t == Table::BlobStore){
 					binarystring blob(&c.at(0),c.size());
@@ -193,7 +193,7 @@ namespace myria{ namespace pgsql {
 			else process_version_update(r,i->vers);
 		}
 
-		bool SQLStore_impl::GSQLObject::ro_isValid(SQLTransaction *gso) const {
+		bool SQLStore_impl::GSQLObject::isValid(SQLTransaction *gso) const {
 			assert(gso);
 			return obj_exists(i->key,gso);
 		}

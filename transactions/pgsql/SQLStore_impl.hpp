@@ -107,7 +107,7 @@ namespace myria { namespace pgsql {
 				void increment(SQLTransaction*);
 
 				//required by GeneralRemoteObject
-				bool ro_isValid(SQLTransaction*) const;
+				bool isValid(SQLTransaction*) const;
 				int store_instance_id() const;
 				Name name() const;
 

@@ -72,7 +72,7 @@ namespace myria{
 				throw UnmatchedUseException{};
 			}
 			
-			bool ro_isValid(mtl::StoreContext<l>*) const {
+			bool isValid(mtl::StoreContext<l>*) const {
 				assert(false && "Cannot call unmatched things");
 				throw UnmatchedUseException{};
 			}

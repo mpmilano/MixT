@@ -175,9 +175,9 @@ namespace myria { namespace pgsql {
 					gso.save(tc);
 				}
 
-				bool ro_isValid(mtl::StoreContext<label>* _tc) const{
+				bool isValid(mtl::StoreContext<label>* _tc) const{
 					SQLTransaction *tc = (_tc ? ((SQLContext*) _tc)->i.get() : nullptr);
-					return gso.ro_isValid(tc);
+					return gso.isValid(tc);
 				}
 				const SQLStore& store() const{
 					return tds.template mgr<SQLInstanceManager>().inst();

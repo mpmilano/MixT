@@ -63,7 +63,7 @@ namespace myria {
 					assert(*parent.object_store.template mut<stored >(_name));
 				}
 
-				bool ro_isValid(mtl::StoreContext<label>*) const{
+				bool isValid(mtl::StoreContext<label>*) const{
 					return parent.object_store.contains(_name);
 				}
 				const Store& store() const{

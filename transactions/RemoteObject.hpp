@@ -33,7 +33,7 @@ namespace myria{
     //extend this plz!
 		using level = l;
     
-    virtual bool ro_isValid(mtl::StoreContext<l>*) const = 0;
+    virtual bool isValid(mtl::StoreContext<l>*) const = 0;
     virtual std::shared_ptr<const T> get(mtl::StoreContext<l>*) = 0;
     virtual void put(mtl::StoreContext<l>*,const T&) = 0;
     

@@ -110,10 +110,10 @@ void Tracker::writeTombstone(mtl::TrackedPhaseContext &ctx,Tracker::Nonce nonce)
 		(ctx.store_context() ? 
 		 dynamic_cast<TrackableDataStore_super &>(ctx.store_context()->store()) :
 		 *i->persistent_datastore);
-  if (ds.exists(&ctx, t.name()))
+  if (ds.exists_trk(&ctx, t.name()))
     throw TombNameCollision{};
   else
-    ds.new_tomb(&ctx, t.name(), t);
+    ds.new_tomb_trk(&ctx, t.name(), t);
 }
 
   void Tracker::accompanyWrite(mtl::TrackedPhaseContext &ctx, Name name, Nonce nonce) {
@@ -122,11 +122,11 @@ void Tracker::writeTombstone(mtl::TrackedPhaseContext &ctx,Tracker::Nonce nonce)
                                          Name name, Tracker::Nonce nonce) {
     assert(ctx.store_context());
     auto meta_name = make_lin_metaname(name);
-    if (ds_real.exists(&ctx, meta_name)) {
-      ds_real.existing_tombstone(&ctx, meta_name)
+    if (ds_real.exists_trk(&ctx, meta_name)) {
+      ds_real.existing_tombstone_trk(&ctx, meta_name)
           ->put(&ctx, Tracker::Tombstone{nonce, get_ip(), 0});
     } else {
-      ds_real.new_tomb(&ctx, meta_name,
+      ds_real.new_tomb_trk(&ctx, meta_name,
                        Tracker::Tombstone{nonce, get_ip(), 0});
     }
   };
@@ -175,7 +175,7 @@ std::ostream &operator<<(std::ostream &os, const Tracker::Clock &c) {
       dynamic_cast<TrackableDataStore_super &>(ctx.store_context()->store());
 		auto sleep_for = 1ms;
 		constexpr auto max_sleep_for = 1min;
-    while (!ds.exists(&ctx,t.name())) {
+    while (!ds.exists_trk(&ctx,t.name())) {
 			this_thread::sleep_for(max_sleep_for > sleep_for ? sleep_for : max_sleep_for);
 			sleep_for *= 2;
     }
@@ -203,8 +203,8 @@ std::ostream &operator<<(std::ostream &os, const Tracker::Clock &c) {
     
     if (!is_lin_metadata(name)) {
       auto ts = make_lin_metaname(name);
-      if (ds.exists(&sctx, ts)) {
-	auto tomb_p = ds.existing_tombstone(&sctx, ts)->get(&sctx);
+      if (ds.exists_trk(&sctx, ts)) {
+	auto tomb_p = ds.existing_tombstone_trk(&sctx, ts)->get(&sctx);
 	auto &tomb = *tomb_p;
 	tctx.i->pending_nonces->emplace_back(tomb);
       }
