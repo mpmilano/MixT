@@ -10,7 +10,8 @@ all: $(object_files)
 
 sample_arrival_intervals: utils.o test_utils.o
 	clang++ $(CPPFLAGS) $(LDFLAGS) utils.o test_utils.o sample_arrival_intervals.cpp -o sample
-
+test_parse_utilities: $(object_files)
+	clang++ $(CPPFLAGS) $(LDFLAGS) $(object_files) mtl/test_parse_utilities.cpp -o test_parse_utils
 test_testing_store: $(object_files)
 	clang++ $(CPPFLAGS) $(LDFLAGS) $(object_files) test_testing_store.cpp -o test_store
 test_parsing: utils.o

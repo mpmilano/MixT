@@ -44,6 +44,11 @@ struct String<>
   template <char... str2>
   static constexpr bool ends_with(String<str2...>);
 
+	static constexpr bool contains(String<>){return true;}
+	
+	template<char c1, char... str2>
+	static constexpr bool contains(String<c1,str2...>){return false;}
+
   template <char... str2>
   static constexpr String<str2...> append(String<str2...>);
 

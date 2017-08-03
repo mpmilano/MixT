@@ -415,6 +415,13 @@ constexpr auto
   return _flatten_exprs_helper<seqnum, depth>(a);
 }
 
+template <char seqnum, char depth, typename bound_name, typename oper_name, typename Hndl, typename Body>
+constexpr auto
+_flatten_exprs(Statement<LetOperation<bound_name, oper_name, Hndl, Body, operation_args_exprs<>, operation_args_varrefs<> > > a, std::enable_if_t<!is_var_reference<Hndl>::value>* = nullptr )
+{
+  return _flatten_exprs_helper<seqnum, depth>(a);
+}
+
 template <char seqnum, char depth, typename var, typename expr>
 constexpr auto _flatten_exprs(Statement<Assignment<var, expr>>)
 {

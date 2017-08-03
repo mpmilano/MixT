@@ -14,8 +14,9 @@ using namespace testing_store;
 int main(){
 	using Store = TestingStore<Label<top> >;
 	using int_handle = typename Store::template TestingHandle<int>;
-	int_handle a;
-	using str = MUTILS_STRING({a.noop()});
+	using int_handle_handle = typename Store::template TestingHandle<int_handle>;
+	int_handle_handle a;
+	using str = MUTILS_STRING({(*a).noop()});
 	constexpr auto parsed = flatten_expressions(parse_statement(str{}));
 	constexpr auto tmp = typecheck<1,1>(type_environment<Label<top>,
 										type_binding<MUTILS_STRING(a),DECT(a),Label<top>, type_location::local > >{},parsed);

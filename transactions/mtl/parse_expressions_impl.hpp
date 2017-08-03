@@ -67,16 +67,16 @@ constexpr auto _parse_expression(String<' ', str...>)
 
 // parens
 template <char, char... str>
-constexpr auto _parse_expression(String<'(', str...>, std::enable_if_t<String<str...>::last_char() == String<')'>{}>* = nullptr)
+constexpr auto _parse_expression(String<'(', str...>, std::enable_if_t<is_paren_group<'(',')','(',str...>() >* = nullptr)
 {
-  return strip_expression(parse_expression(String<str...>::trim_ends().remove_last_char()));
+	return strip_expression(parse_expression(String<str...>::trim_ends().remove_last_char()));
 }
 
 // variable reference
 template <char... str>
 constexpr auto
 _parse_expression(std::enable_if_t<!parse_utilities::contains_invocation<str...>() && !is_deref<str...>() && !contains_arrow<str...>() && !contains_operator<str...>() &&
-                                     !contains_fieldref<str...>() && !(String<str...>{}.string[0] == '(') && !(String<str...>{}.string[0] == ' ') &&
+				  !contains_fieldref<str...>() && !(is_paren_group<'(',')',str...>()) && !(String<str...>{}.string[0] == ' ') &&
                                      !String<str...>::trim_ends().contains(String<' '>{}) && !String<str...>::trim_ends().is_number() &&
                                      is_method_char<String<str...>{}.string[0]>(),
                                    String<str...>>)
@@ -89,7 +89,7 @@ _parse_expression(std::enable_if_t<!parse_utilities::contains_invocation<str...>
 template <char... str>
 constexpr auto
 _parse_expression(std::enable_if_t<!parse_utilities::contains_invocation<str...>() && !is_deref<str...>() && !contains_arrow<str...>() && !contains_operator<str...>() &&
-                                     !contains_fieldref<str...>() && !(String<str...>{}.string[0] == '(') && !(String<str...>{}.string[0] == ' ') &&
+                                     !contains_fieldref<str...>() && !(is_paren_group<'(',')',str...>()) && !(String<str...>{}.string[0] == ' ') &&
                                      !String<str...>::trim_ends().contains(String<' '>{}) && String<str...>::trim_ends().is_number(),
                                    String<str...>>)
 {
@@ -168,7 +168,7 @@ struct add_operations_struct
 template <char... str>
 constexpr auto
 _parse_expression(std::enable_if_t<!contains_operator<str...>() && !is_deref<str...>() && parse_utilities::contains_invocation<str...>() &&
-                                     !(String<str...>{}.string[0] == '(') && !(String<str...>{}.string[0] == ' '),
+                                     !(is_paren_group<'(',')',str...>()) && !(String<str...>{}.string[0] == ' '),
                                    String<str...>>)
 {
   using method_group = DECT(String<str...>::reverse().template next_paren_group<')', '('>());
