@@ -97,27 +97,47 @@ constexpr auto _typecheck(type_environment<label_env, Env...>, parse_phase::Stat
   using next_binding_expr = binding_expr;
   return Statement<resolved_label_min<label_env, typename handle::label>, LetIsValid<Name,next_binding_expr, next_body>>{};
 }
-  
+
+template <int seqnum, int depth, typename bound_name, typename oper_name, typename Body, typename ptr_label, typename arguments_label_min, typename next_binding_expr, typename ret_t, typename... var_args>
+struct handle_operations{
+	//void-returning or result unused
+	template<typename label_env, typename... Env>
+	constexpr static auto handle_operation(std::true_type* /*won't use result*/, type_environment<label_env, Env...> a){
+		using old_env = DECT(a);
+		using new_env = type_environment<resolved_label_min<label_env, ptr_label>, Env... >;
+		using next_body = DECT(typecheck<seqnum + 1, depth + 1>(new_env{}, Body{}));
+		return Statement<resolved_label_min<label_env, arguments_label_min>, StatementOperation<oper_name,next_binding_expr, next_body, DECT(typecheck(old_env{},var_args{}))...>>{};	
+	}
+
+	//non-void-returning
+	template<typename label_env, typename... Env>
+	constexpr static auto handle_operation(std::false_type* /*might use result*/, type_environment<label_env, Env...> a){
+		using old_env = DECT(a);
+		using operation_execution_label = resolved_label_min<ptr_label, arguments_label_min>;
+		using new_env = type_environment<resolved_label_min<label_env, ptr_label>,
+										 Env...,
+										 type_binding<bound_name, ret_t,operation_execution_label,type_location::local> >;
+		using next_body = DECT(typecheck<seqnum + 1, depth + 1>(new_env{}, Body{}));
+		return Statement<resolved_label_min<label_env, arguments_label_min>, LetOperation<bound_name,oper_name,next_binding_expr, next_body, DECT(typecheck(old_env{},var_args{}))...>>{};	
+	}
+	
+};
 
 template <int seqnum, int depth, typename old_env, typename bound_name, typename oper_name, typename Hndl, typename Body, typename... var_args>
 constexpr auto _typecheck(old_env, parse_phase::Statement<parse_phase::LetOperation<bound_name, oper_name, Hndl, Body, parse_phase::operation_args_exprs<>,parse_phase::operation_args_varrefs<var_args...> > >)
 {
-  using label_env = typename old_env::pc_label;
   using binding_expr = DECT(typecheck<seqnum, depth + 1>(old_env{}, Hndl{}));
   using ptr_label = typename binding_expr::label;
   using handle = typename binding_expr::yield;
   // we dereference the pointer, which is an influencing action.  Reduce the label
   // of the environment if needed.
   using arguments_label_min = resolved_label_min_vararg<typename handle::label, /*the duplication is on purpose*/ typename handle::label, typename DECT(typecheck(old_env{},var_args{}))::label...>;
-  using operation_execution_label = resolved_label_min<ptr_label, arguments_label_min>;
   constexpr OperationIdentifier<oper_name> op{nullptr};
   using ret_t = typename DECT(std::declval<handle>().upCast(op))::Return;
   static_assert(handle_supports<handle,oper_name,ret_t, typename DECT(typecheck(old_env{},var_args{}))::yield...>::value, "Error: Invalid arguments for handle operation");
-  using new_env = DECT(old_env::template extend<resolved_label_min<label_env, ptr_label>,
-		       type_binding<bound_name, ret_t,operation_execution_label,type_location::local> >());
-  using next_body = DECT(typecheck<seqnum + 1, depth + 1>(new_env{}, Body{}));
-  using next_binding_expr = binding_expr;
-  return Statement<resolved_label_min<label_env, arguments_label_min>, LetOperation<bound_name,oper_name,next_binding_expr, next_body, DECT(typecheck(old_env{},var_args{}))...>>{};
+  constexpr std::integral_constant<bool, std::is_void<ret_t>::value || std::is_same<bound_name,mutils::String<'_',0> >::value >* conditional{nullptr};
+  return handle_operations<seqnum,depth,bound_name,oper_name,Body,ptr_label,arguments_label_min,binding_expr,ret_t, var_args...>::handle_operation(conditional,old_env{});
+
 }//*/
 
 	template<typename U, typename V>

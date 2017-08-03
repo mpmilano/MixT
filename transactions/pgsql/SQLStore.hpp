@@ -19,7 +19,7 @@ namespace myria { namespace pgsql {
 		public:
 
 			using SQLStore_impl::exists;
-			using TrackableDataStore<SQLStore<l>,  level_to_label<l> >::exists;
+			//using TrackableDataStore<SQLStore<l>,  level_to_label<l> >::exists;
 			
 			static constexpr Level level = l;
 			using label = level_to_label<l>;
@@ -96,7 +96,7 @@ namespace myria { namespace pgsql {
 
 		private:
 			SQLStore(mutils::DeserializationManager &this_mgr,whenpool(GeneralSQLConnectionPool) whennopool(const std::string) &p)
-			  :GDataStore(typename label::description{}.string),SQLStore_impl(p,*this,l),TrackableDataStore<SQLStore,label>(),this_mgr(this_mgr) {
+			  :SQLStore_impl(p,*this,l),this_mgr(this_mgr) {
 			}
 		public:
 

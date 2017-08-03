@@ -410,35 +410,9 @@ constexpr auto _flatten_exprs(Statement<LetIsValid<name, expr, body>>)
 
   template <char seqnum, char depth, typename bound_name, typename oper_name, typename Hndl, typename Body, typename first_expr_arg, typename var_args, typename... rest_expr_args>
 constexpr auto
-  _flatten_exprs(Statement<LetOperation<bound_name, oper_name, Hndl, Body, operation_args_exprs<first_expr_arg,rest_expr_args...>, var_args> > a,
-		 std::enable_if_t<(bound_name::string_length > 2)>* = nullptr )
+  _flatten_exprs(Statement<LetOperation<bound_name, oper_name, Hndl, Body, operation_args_exprs<first_expr_arg,rest_expr_args...>, var_args> > a )
 {
   return _flatten_exprs_helper<seqnum, depth>(a);
-}
-
-template <typename expr>
-constexpr auto var_name_or_passthrough_f(expr)
-{
-  static_assert(!is_var_reference<expr>::value);
-  return expr{};
-}
-
-template <typename var>
-constexpr auto var_name_or_passthrough_f(Expression<VarReference<var>>)
-{
-  return var{};
-}
-
-template <typename T>
-using var_name_or_passthrough = DECT(var_name_or_passthrough_f(T{}));
-
-  template <char seqnum, char depth, typename bound_name, typename oper_name, typename Hndl, typename Body, typename expr_args, typename var_args>
-constexpr auto
-  _flatten_exprs(Statement<LetOperation<bound_name, oper_name, Hndl, Body, expr_args, var_args>>)
-{
-  using namespace mutils;
-  using new_bound_name = std::conditional_t<std::is_same<bound_name, String<'_', 0>>::value, String<'_', 0, seqnum, depth>, bound_name>;
-  return _flatten_exprs<seqnum, depth>(Statement<LetOperation<new_bound_name, oper_name, Hndl, Body, expr_args, var_args> >{});
 }
 
 template <char seqnum, char depth, typename var, typename expr>

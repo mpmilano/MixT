@@ -218,21 +218,38 @@ struct Statement<Label<l>, LetIsValid<var, Expression<exprl, expry, expr>, Body>
   using substatement = typename LetIsValid<var, Expression<exprl, expry, expr>, Body>::substatement;
 };
   
-template <typename bound_name, typename operation_yields, typename oper_name, typename Hndl, typename Body, typename... args>
+template <typename bound_name, typename oper_name, typename Hndl, typename Body, typename... args>
 struct LetOperation;
-  template <typename bound_name, typename operation_yields, typename oper_name, typename Hndl_l, typename Hndl_t, typename Hndl_e, typename Body_l, typename Body, typename... args>
-  struct LetOperation<bound_name, operation_yields, oper_name, Expression<Hndl_l,Hndl_t,Hndl_e>, Statement<Body_l,Body>, args...>
+  template <typename bound_name, typename oper_name, typename Hndl_l, typename Hndl_t, typename Hndl_e, typename Body_l, typename Body, typename... args>
+  struct LetOperation<bound_name, oper_name, Expression<Hndl_l,Hndl_t,Hndl_e>, Statement<Body_l,Body>, args...>
 {
   using substatement = LetOperation;
 };
 
-template <typename l, typename operation_yields, typename bound_name, typename oper_name, typename Hndl_l, typename Hndl_t, typename Hndl_e, typename Body, typename... args>
-struct Statement<Label<l>, LetOperation<bound_name, operation_yields, oper_name, Expression<Hndl_l, Hndl_t, Hndl_e>, Body, args...> >
+template <typename l, typename bound_name, typename oper_name, typename Hndl_l, typename Hndl_t, typename Hndl_e, typename Body, typename... args>
+struct Statement<Label<l>, LetOperation<bound_name, oper_name, Expression<Hndl_l, Hndl_t, Hndl_e>, Body, args...> >
 {
   using label = Label<l>;
   using handle_label = typename Hndl_t::label;
   using expr_label = Hndl_l;
   using substatement = typename LetOperation<bound_name, oper_name, Expression<Hndl_l, Hndl_t, Hndl_e>, Body, args...>::substatement;
+};
+
+template <typename oper_name, typename Hndl, typename Body, typename... args>
+struct StatementOperation;
+  template <typename oper_name, typename Hndl_l, typename Hndl_t, typename Hndl_e, typename Body_l, typename Body, typename... args>
+  struct StatementOperation<oper_name, Expression<Hndl_l,Hndl_t,Hndl_e>, Statement<Body_l,Body>, args...>
+{
+  using substatement = StatementOperation;
+};
+
+template <typename l, typename oper_name, typename Hndl_l, typename Hndl_t, typename Hndl_e, typename Body, typename... args>
+struct Statement<Label<l>, StatementOperation<oper_name, Expression<Hndl_l, Hndl_t, Hndl_e>, Body, args...> >
+{
+  using label = Label<l>;
+  using handle_label = typename Hndl_t::label;
+  using expr_label = Hndl_l;
+  using substatement = typename StatementOperation<oper_name, Expression<Hndl_l, Hndl_t, Hndl_e>, Body, args...>::substatement;
 };
 
 template <typename Var, typename Expr>

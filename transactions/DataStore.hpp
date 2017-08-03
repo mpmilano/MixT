@@ -24,18 +24,17 @@ public:
       const std::string &why
 #endif
       ) = 0;
-  DataStore() : GDataStore(typename l::description{}.string) {}
   virtual ~DataStore() = default;
 };
 
 struct TrackableDataStore_super : public virtual GDataStore {
   virtual std::unique_ptr<LabelFreeHandle<tracker::Tombstone>>
-  new_tomb(mtl::GPhaseContext *ctx, Name, const tracker::Tombstone &) = 0;
-  virtual bool exists(mtl::GPhaseContext *_ctx, Name) = 0;
+  new_tomb_trk(mtl::GPhaseContext *ctx, Name, const tracker::Tombstone &) = 0;
+  virtual bool exists_trk(mtl::GPhaseContext *_ctx, Name) = 0;
   virtual std::unique_ptr<LabelFreeHandle<tracker::Clock>>
-  existing_clock(mtl::GPhaseContext *_ctx, Name) = 0;
+  existing_clock_trk(mtl::GPhaseContext *_ctx, Name) = 0;
   virtual std::unique_ptr<LabelFreeHandle<tracker::Tombstone>>
-  existing_tombstone(mtl::GPhaseContext *_ctx, Name) = 0;
+  existing_tombstone_trk(mtl::GPhaseContext *_ctx, Name) = 0;
   virtual ~TrackableDataStore_super() = default;
 };
 
@@ -51,14 +50,14 @@ struct StrongTrackableDataStore : public virtual TrackableDataStore_super {
 template <typename DS>
 struct TrackableDataStore_common : virtual public TrackableDataStore_super {
   std::unique_ptr<LabelFreeHandle<tracker::Tombstone>>
-  new_tomb(mtl::GPhaseContext *_ctx, Name n, const tracker::Tombstone &val);
+  new_tomb_trk(mtl::GPhaseContext *_ctx, Name n, const tracker::Tombstone &val);
 
-  bool exists(mtl::GPhaseContext *_ctx, Name n);
+  bool exists_trk(mtl::GPhaseContext *_ctx, Name n);
 
   std::unique_ptr<LabelFreeHandle<tracker::Clock>>
-  existing_clock(mtl::GPhaseContext *_ctx, Name n);
+  existing_clock_trk(mtl::GPhaseContext *_ctx, Name n);
   std::unique_ptr<LabelFreeHandle<tracker::Tombstone>>
-  existing_tombstone(mtl::GPhaseContext *_ctx, Name);
+  existing_tombstone_trk(mtl::GPhaseContext *_ctx, Name);
   virtual ~TrackableDataStore_common() = default;
 };
 

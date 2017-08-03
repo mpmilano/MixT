@@ -6,7 +6,7 @@ namespace myria{
 
 template <typename DS>
 std::unique_ptr<LabelFreeHandle<tracker::Tombstone>>
-TrackableDataStore_common<DS>::new_tomb(mtl::GPhaseContext *_ctx, Name n,
+TrackableDataStore_common<DS>::new_tomb_trk(mtl::GPhaseContext *_ctx, Name n,
                                         const tracker::Tombstone &val) {
   using namespace tracker;
 	using label = typename DS::label;
@@ -21,7 +21,7 @@ TrackableDataStore_common<DS>::new_tomb(mtl::GPhaseContext *_ctx, Name n,
   return std::unique_ptr<LabelFreeHandle<tracker::Tombstone>>{new DECT(h){h}};
 }
 template <typename DS>
-bool TrackableDataStore_common<DS>::exists(mtl::GPhaseContext *_ctx, Name n) {
+bool TrackableDataStore_common<DS>::exists_trk(mtl::GPhaseContext *_ctx, Name n) {
   using namespace tracker;
 	using label = typename DS::label;
   DS *ds = dynamic_cast<DS *>(this);
@@ -35,7 +35,7 @@ bool TrackableDataStore_common<DS>::exists(mtl::GPhaseContext *_ctx, Name n) {
 
 template <typename DS>
 std::unique_ptr<LabelFreeHandle<tracker::Clock>>
-TrackableDataStore_common<DS>::existing_clock(mtl::GPhaseContext *_ctx,
+TrackableDataStore_common<DS>::existing_clock_trk(mtl::GPhaseContext *_ctx,
                                               Name n) {
   using namespace tracker;
 	using label = typename DS::label;
@@ -51,7 +51,7 @@ TrackableDataStore_common<DS>::existing_clock(mtl::GPhaseContext *_ctx,
 }
 template <typename DS>
 std::unique_ptr<LabelFreeHandle<tracker::Tombstone>>
-TrackableDataStore_common<DS>::existing_tombstone(mtl::GPhaseContext *_ctx,
+TrackableDataStore_common<DS>::existing_tombstone_trk(mtl::GPhaseContext *_ctx,
                                                   Name n) {
   using namespace tracker;
 	using label = typename DS::label;
