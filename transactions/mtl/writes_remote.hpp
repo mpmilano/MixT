@@ -36,6 +36,11 @@ constexpr bool _writes_remote(Statement<l,LetIsValid<bv,be,s> >){
 	return writes_remote<remote_name_set>(s{});
 }
 
+template<typename remote_name_set, typename l, typename oper_name, typename Hndl, typename Body, typename... args>
+constexpr bool _writes_remote(Statement<l,StatementOperation<oper_name, Hndl, Body, args...> >){
+	return writes_remote<remote_name_set>(Body{});
+}
+
 template<typename remote_name_set, typename l, typename c, typename t, typename e>
 constexpr bool _writes_remote(Statement<l,If<c,t,e> >){
 	return writes_remote<remote_name_set>(t{}) || writes_remote<remote_name_set>(e{});

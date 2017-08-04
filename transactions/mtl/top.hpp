@@ -159,11 +159,12 @@ struct Label<label_min_of<Label<label_min_of<l1, l2>>, Label<label_min_of<r1, r2
 template <typename l, typename r>
 struct Label<label_min_of<Label<l>, Label<r>>>
 {
+	
   static constexpr auto resolve() {
     return labels::min_of(Label<l>{}, Label<r>{}); }
 };
 
-	using bottom = mutils::String<'b','o','t','t','o','m'>;
+using bottom = mutils::String<'b','o','t','t','o','m'>;
 template <>
 struct Label<bottom>
 {
@@ -202,6 +203,20 @@ constexpr auto* resolved_label_min_vararg_f(L1* a, L2* b, L3* c, Lr*... d){
     
 template<typename... l>
 using resolved_label_min_vararg = DECT(*resolved_label_min_vararg_f(std::declval<l*>()... ));
+	
+template<typename L1, typename L2>
+constexpr auto* label_min_vararg_f(L1*, L2*){
+	constexpr Label<label_min_of<L1,L2> > *np{nullptr};
+	return np;
+}
+
+template<typename L1, typename L2, typename L3, typename... Lr>
+constexpr auto* label_min_vararg_f(L1* a, L2* b, L3* c, Lr*... d){
+  return label_min_vararg_f(label_min_vararg_f(a,b),c,d...);
+}
+	
+template<typename... l>
+using label_min_vararg = DECT(*label_min_vararg_f(std::declval<l*>()... ));
 
 template <typename L1, typename L2>
 using label_lte = std::integral_constant<bool, L2::flows_to(L1{})>;

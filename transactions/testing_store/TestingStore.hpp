@@ -29,7 +29,7 @@ namespace myria {
 			using label = Label<l>;
 			template<typename T>
 				using TestingHandle =
-				Handle<label,T,SupportedOperation<noop,void,SelfType> >;
+				Handle<label,T,SupportedOperation<noop,void,SelfType,int,int,int,int> >;
 
 			struct TestingContext;
 
@@ -136,7 +136,7 @@ namespace myria {
 			}
 
 			template<typename T>
-			void operation(mtl::PhaseContext<label>*, StoreContext&, OperationIdentifier<noop>,TestingObject<T>&){
+			void operation(mtl::PhaseContext<label>*, StoreContext&, OperationIdentifier<noop>,TestingObject<T>&,int,int,int,int){
 			}
 
 #ifndef NDEBUG

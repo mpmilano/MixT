@@ -195,6 +195,16 @@ constexpr auto _collect_constraints(Statement<l, LetRemote<b, e>> a)
     .append(constraints<must_flow_to<typename This::expr_label, typename This::handle_label,MUTILS_STRING(let_remote, expr -> hndl)>>{});
 }
 
+template <typename pc_label, typename l, typename oper_name, typename Hndl, typename Body, typename... args>
+constexpr auto _collect_constraints(Statement<l, StatementOperation<oper_name,Hndl,Body,args...> > a)
+{
+  using This = DECT(a);
+  using new_pc = label_min_vararg<pc_label, typename This::expr_label, typename This::handle_label, typename args::label...>;
+  return collect_constraints(new_pc{}, Body{})
+	  .append(constraints<must_flow_to<typename This::expr_label, typename This::handle_label,MUTILS_STRING(statement_operation, expr -> hndl)>,
+			  must_flow_to<typename args::label, typename This::handle_label, MUTILS_STRING(statement_operation, args -> hndl)>...>{});
+}
+
 template <typename pc_label, typename l, typename c, typename t, typename e>
 constexpr auto _collect_constraints(Statement<l, If<c, t, e>>)
 {
