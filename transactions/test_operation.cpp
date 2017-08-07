@@ -7,6 +7,8 @@
 #include "mtl/label_inference.hpp"
 #include "mtl/insert_tracking.hpp"
 #include "mtl/split_phase.hpp"
+#include "mtl/transaction.hpp"
+#include "mtl/transaction_macros.hpp"
 
 using namespace myria;
 using namespace mtl;
@@ -16,6 +18,7 @@ using namespace testing_store;
 using namespace label_inference;
 using namespace tracking_phase;
 using namespace split_phase;
+using namespace tracker;
 
 int main(){
 	using Store = TestingStore<Label<top> >;
@@ -32,4 +35,7 @@ int main(){
 	using tracked_t = DECT(insert_tracking_begin(inferred_t{}));
 	auto split = split_computation<tracked_t, type_binding<MUTILS_STRING(a),DECT(a),Label<top>, type_location::local > >();
 	std::cout << split << std::endl;
+	using ClientTrk = ClientTracker<>;
+	ClientTrk ct;
+	TRANSACTION((*a).noop(1,2,3,4))::WITH(a).run_local(ct,a);
 }
