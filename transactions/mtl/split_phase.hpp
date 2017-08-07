@@ -125,37 +125,51 @@ constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Statement
 
   return extracted_phase<label, new_api, typename new_body::returns, stmt>{};
 }
-/*
-template <typename l>
-template <typename _binding, typename Body, typename old_api>
-constexpr auto AST<Label<l>>::_collect_phase(
-    old_api,
-    typecheck_phase::Statement<label,
-                               typecheck_phase::LetRemote<_binding, Body>>) {
-  using binding = DECT(collect_phase(old_api{}, _binding{}));
-  using binding_ast = typename binding::ast;
-  using body = DECT(collect_phase(typename binding::api{}, Body{}));
-  using body_ast = typename body::ast;
-  using new_api =
-      combined_api<typename binding::api, typename body::api>;
-  return extracted_phase<label, new_api,
-                         Statement<LetRemote<binding_ast, body_ast>>>{};
-}
-//*/
-template <typename l>
-template <typename label2, typename _binding, typename Body, typename old_api>
-constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Statement<label2, typecheck_phase::LetRemote<_binding, Body>>,
-                                             std::enable_if_t<!are_equivalent(Label<l>{}, label2{})> const* const)
+	
+	template <typename l>
+	template <typename _binding, typename Body, typename old_api>
+	constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Statement<label, typecheck_phase::LetRemote<_binding, Body>>)
+  {
+    using binding = DECT(let_remote_binding<label>(old_api{}, _binding{}));
+    using binding_ast = typename binding::ast;
+    using body = DECT(collect_phase(combined_api<old_api, typename binding::api>{}, Body{}));
+    using body_ast = typename body::ast;
+    using new_api = combined_api<typename binding::api, typename body::api>;
+    return extracted_phase<label, new_api, typename body::returns, Statement<LetRemote<binding_ast, body_ast>>>{};
+  }
+	
+	template <typename l>
+	template <typename label2, typename _binding, typename Body, typename old_api>
+	constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Statement<label2, typecheck_phase::LetRemote<_binding, Body>>,
+												 std::enable_if_t<!are_equivalent(Label<l>{}, label2{})> const* const)
 {
   // binding runs at a different phase, skip it.
 	using new_body = DECT(collect_phase(old_api{}, Body{}));
-  using body_ast = typename new_body::ast;
-  using var = typename _binding::var;
-  using new_api = typename new_body::api;
+	using body_ast = typename new_body::ast;
+	using var = typename _binding::var;
+	using new_api = typename new_body::api;
+	
+	using stmt = Statement<Sequence<Statement<IncrementRemoteOccurance<var>>, body_ast>>;
+	
+	return extracted_phase<label,new_api, typename new_body::returns, stmt>{};
+}
 
-  using stmt = Statement<Sequence<Statement<IncrementRemoteOccurance<var>>, body_ast>>;
-
-  return extracted_phase<label, new_api, typename new_body::returns, stmt>{};
+template <typename l>
+template <typename oper_name, typename hndl, typename old_api, typename... args>
+constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Statement<label, typecheck_phase::StatementOperation<oper_name,hndl, args...>>)
+{
+  using new_hndl = DECT(collect_phase(old_api{}, hndl{}));
+  using new_api = combined_api<typename new_hndl::api, typename DECT(collect_phase(old_api{}, args{}))::api...>;
+  using new_ast = Statement<StatementOperation<oper_name,typename new_hndl::ast, typename DECT(collect_phase(old_api{}, args{}))::ast...> >;
+  return extracted_phase<label, new_api, void, new_ast>{};
+}
+template <typename l>
+template <typename label2, typename oper_name, typename hndl, typename old_api, typename... args>
+constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Statement<label2, typecheck_phase::StatementOperation<oper_name,hndl, args...>>,
+                                             std::enable_if_t<!are_equivalent(Label<l>{}, label2{})> const* const)
+{
+	//operation is in different phase.
+	return extracted_phase<label,phase_api<label, requires<>, provides<>, typename old_api::inherits>, void, Statement<Sequence <> > >{};
 }
 
 	template <typename l>

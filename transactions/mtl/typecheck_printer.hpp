@@ -74,16 +74,15 @@ void
   o << tab << "}";
 }
 
-template <typename l, typename oper_name, typename Hndl, typename Body, typename... args>
+template <typename l, typename oper_name, typename Hndl, typename... args>
 void
-print_ast(std::ostream& o, const Statement<l, StatementOperation<oper_name,Hndl,Body,args...>>&, const std::string& tab)
+print_ast(std::ostream& o, const Statement<l, StatementOperation<oper_name,Hndl,args...>>&, const std::string& tab)
 {
 	o << tab;
 	print_ast(o,Hndl{});
 	o << ". @" << l{} << " " << oper_name{} << "(";
 	(print_ast(o,args{}),...);
-	o << ")" << std::endl;
-	print_ast(o,Body{},tab);
+	o << ")";
 }
 
 	

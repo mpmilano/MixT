@@ -121,6 +121,18 @@ void
   o << tab << "}";
 }
 
+template <typename l, typename oper_name, typename Hndl, typename... args>
+void
+print_ast(std::ostream& o, const typename AST<l>::template Statement<typename AST<l>::template StatementOperation<oper_name,Hndl,args...>>&, const std::string& tab)
+{
+	o << tab;
+	print_ast<l>(o,Hndl{});
+	o << "." << oper_name{} << "(";
+	((print_ast<l>(o,args{}),o << ","),...);
+	o << ")";
+}
+
+	
 template <typename l, typename L, typename R>
 void
 print_ast(std::ostream& o, const typename AST<l>::template Statement<typename AST<l>::template Assignment<L, R>>&, const std::string& tab)

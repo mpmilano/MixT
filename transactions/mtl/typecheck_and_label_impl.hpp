@@ -106,7 +106,9 @@ struct handle_operations{
 		using old_env = DECT(a);
 		using new_env = type_environment<resolved_label_min<label_env, ptr_label>, Env... >;
 		using next_body = DECT(typecheck<seqnum + 1, depth + 1>(new_env{}, Body{}));
-		return Statement<resolved_label_min<label_env, arguments_label_min>, StatementOperation<oper_name,next_binding_expr, next_body, DECT(typecheck<seqnum,depth+1>(old_env{},var_args{}))...>>{};	
+		using oper_label = resolved_label_min<label_env, arguments_label_min>;
+		using seq_label = Label<top>;
+		return Statement<seq_label, Sequence<next_body, Statement<oper_label, StatementOperation<oper_name,next_binding_expr, DECT(typecheck<seqnum,depth+1>(old_env{},var_args{}))...> > > >{};
 	}
 
 	//non-void-returning

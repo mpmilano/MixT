@@ -125,6 +125,19 @@ auto _clear_empty_statements(typename AST<l>::template Statement<typename AST<l>
   };
   return ret{};
 }
+
+	template <typename l, typename n, typename h, typename... a>
+	auto _clear_empty_statements(typename AST<l>::template Statement<typename AST<l>::template StatementOperation<n,h, a...>>)
+{
+  using newh = DECT(clear_empty_statements<l>(h{}));
+  struct ret
+  {
+	  using ast = typename AST<l>::template Statement<typename AST<l>::template StatementOperation<n, typename newh::ast, typename DECT(clear_empty_statements<l>(a{}))::ast...> >;
+	  using remove_from_require = DECT(newh::remove_from_require::combine(typename DECT(clear_empty_statements<l>(a{}))::remove_from_require{}...));
+	  using still_require = DECT(newh::still_require::combine(typename DECT(clear_empty_statements<l>(a{}))::still_require{}...));
+  };
+  return ret{};
+}
 	
 template <typename l, typename L, typename R>
 auto _clear_empty_statements(typename AST<l>::template Statement<typename AST<l>::template Assignment<L, R>>)

@@ -146,8 +146,19 @@ struct combined_api_str<phase_api<label, req1, prov1, inherits>, phase_api<label
   using type = phase_api<label, combined_requires<req1, req2>, combined_provides<prov1, prov2>, inherits>;
 };
 
-template <typename a, typename b>
-using combined_api = typename combined_api_str<a, b>::type;
+	template<typename a>
+	auto combined_api_f(a* _a){
+		return _a;
+	}
+	
+	template<typename a, typename b, typename... c>
+	auto combined_api_f(a*,b*,c*... _c){
+		constexpr typename combined_api_str<a,b>::type *recur{nullptr};
+		return combined_api_f(recur,_c...);
+	}
+
+	template <typename... a>
+	using combined_api = DECT(*combined_api_f( ((a*)nullptr)...));
 
 template <typename, typename, typename, typename>
 struct extracted_phase;

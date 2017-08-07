@@ -97,10 +97,10 @@ struct replace_label<Label<temp_label<target1, target2>>, Label<newlabel>>
     return Statement<DECT(label_replace(l{})), LetIsValid<n,DECT(replace(h{})), DECT(replace(e{}))>>{};
   }
 
-	template <typename l, typename oper_name, typename Hndl, typename Body, typename... args>
-		static constexpr auto _replace(Statement<l, StatementOperation<oper_name, Hndl, Body, args...>>)
+	template <typename l, typename oper_name, typename Hndl, typename... args>
+		static constexpr auto _replace(Statement<l, StatementOperation<oper_name, Hndl, args...>>)
   {
-	  return Statement<DECT(label_replace(l{})), StatementOperation<oper_name,DECT(replace(Hndl{})), DECT(replace(Body{})),DECT(replace(args{}))...>>{};
+	  return Statement<DECT(label_replace(l{})), StatementOperation<oper_name,DECT(replace(Hndl{})), DECT(replace(args{}))...>>{};
   }
 
   template <typename l, typename c, typename t, typename e>
