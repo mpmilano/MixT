@@ -158,7 +158,7 @@ void Tracker::writeTombstone(mtl::TrackedPhaseContext &ctx,Tracker::Nonce nonce)
       subroutine();
     }
     assert(!always_failed);
-    assert(ds_real.exists(&ctx, make_lin_metaname(name)));
+    assert(ds_real.exists_trk(&ctx, make_lin_metaname(name)));
   }
 }
 

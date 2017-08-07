@@ -33,7 +33,8 @@ auto _run_phase(typename AST<l>::template Expression<y, typename AST<l>::templat
 template <typename l, typename TranCtx, typename store, typename y, typename v>
 auto _run_phase(typename AST<l>::template Expression<y, typename AST<l>::template VarReference<v>>*, TranCtx& ctx, store& s)
 {
-  return s.get(v{}).get(ctx);
+	constexpr auto explicit_v = v{};
+  return s.get(explicit_v).get(ctx);
 }
 
 template <typename l, typename TranCtx, typename store, int i>
@@ -150,6 +151,20 @@ auto _run_phase(typename AST<l>::template Statement<typename AST<l>::template Le
   constexpr Body* body{ nullptr };
 	assert(false && "need to run this binding");
   return run_phase<l>(body, ctx, s);
+}
+	
+	template <typename l, typename TranCtx, typename store, typename name, typename expr, typename... args>
+	auto _run_phase(typename AST<l>::template Statement<typename AST<l>::template StatementOperation<name, expr, args...>>*, TranCtx& ctx, store& s)
+{
+	//returns void; this is the *non-expression* variant.
+	constexpr OperationIdentifier<name> opname;
+	constexpr expr* _expr{nullptr};
+	auto hndl = run_phase<l>(_expr,ctx,s);
+	auto& upCast = hndl.upCast(opname);
+	auto &op = upCast.op;
+	assert(op);
+	auto &dop = *op;
+	dop.act(&ctx,hndl,run_phase<l>((args*)nullptr,ctx,s)...);
 }
 
 template <typename l, typename TranCtx, typename store, typename L, typename y, typename R>

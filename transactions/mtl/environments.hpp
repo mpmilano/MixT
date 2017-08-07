@@ -139,7 +139,7 @@ struct type_holder
     bound = true;
     t.emplace_back(_t);
     ++curr_pos;
-    assert(curr_pos < (int)t.size());
+    assert(curr_pos < (int)t.size() && curr_pos >= 0);
     return *this;
   }
 
@@ -151,7 +151,7 @@ struct type_holder
   template <typename TranCtx>
   T get(TranCtx&)
   {
-    assert(curr_pos < (int)t.size());
+    assert(curr_pos < (int)t.size() && curr_pos >= 0);
     return t[curr_pos];
   }
 
@@ -255,7 +255,7 @@ struct remote_holder : public virtual remote_map_holder<T, stored>
   void increment()
   {
     if (curr_pos >= 0) {
-      assert((int)handle.size() > curr_pos);
+      assert((int)handle.size() > curr_pos && curr_pos >= 0);
       this_super().increment();
     }
   }
@@ -263,7 +263,7 @@ struct remote_holder : public virtual remote_map_holder<T, stored>
   void increment_remote()
   {
     ++curr_pos;
-    assert(curr_pos < ((int)handle.size()));
+    assert(curr_pos < ((int)handle.size()) && curr_pos >= 0);
   }
 
 protected:
@@ -283,7 +283,7 @@ protected:
   {
     handle.emplace_back(t);
     ++curr_pos;
-    assert(curr_pos < ((int)handle.size()));
+    assert(curr_pos < ((int)handle.size()) && curr_pos >= 0);
   }
 
   auto& this_super() { return super[handle[curr_pos].name()]; }
@@ -308,13 +308,15 @@ public:
   template <typename TransactionContext>
   auto get_remote(TransactionContext&)
   {
+	  assert(curr_pos < handle.size() && curr_pos >= 0);
     return handle.at(curr_pos);
   }
 
   template <typename TransactionContext>
   auto get(TransactionContext& tc)
   {
-    assert(super.count(handle.at(curr_pos)));
+	  assert(curr_pos < (int)handle.size() && curr_pos >= 0);
+	  //assert(super.count(handle.at(curr_pos)));
     return this_super().get(tc);
   }
 

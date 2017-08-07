@@ -15,12 +15,14 @@
 
 namespace myria {
 
+	using noop = MUTILS_STRING(noop);
+	
 	template<>
-	struct OperationIdentifier<MUTILS_STRING(noop)>{};
+	struct OperationIdentifier<noop>{
+		using name = noop;
+	};
 	
 	namespace testing_store{
-
-		using noop = MUTILS_STRING(noop);
 		
 		template<typename label>
 		struct TestingStore;
@@ -131,7 +133,7 @@ namespace myria {
 				return object_store.contains(n);
 			}
 			
-			std::unique_ptr<mtl::StoreContext<label> > begin_transaction(){
+			std::unique_ptr<mtl::StoreContext<label> > begin_transaction(whendebug(const std::string&)){
 				return std::make_unique<TestingContext>(*this);
 			}
 

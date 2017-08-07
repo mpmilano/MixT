@@ -47,7 +47,9 @@ namespace myria{
     //in the case where we really are ditching operations.  I'd like to disable it statically,
     //but enable_if doesn't play nicely with constructors and specializing this class wastes a ton
     //of space
-    Handle(std::integral_constant<std::size_t, sizeof...(SupportedOperations)>*,decltype(_ro) _ro):_ro(_ro){}
+    Handle(std::integral_constant<std::size_t, sizeof...(SupportedOperations)>*,decltype(_ro) _ro):_ro(_ro){
+		assert(_ro.get() == nullptr || _ro->isValid(nullptr));
+	}
   public:
     using label = l;
 		using type = T;
@@ -57,6 +59,7 @@ namespace myria{
       SupportedOperations::template SupportsOn<Handle>
       (SupportedOperations::template SupportsOn<Handle>::template wrap_operation<RO>(ds))...,
       _ro(_ro){
+		  assert(_ro.get() == nullptr || _ro->isValid(nullptr));
 	static_assert(std::is_same<typename DataStore::label,label>::value);
       }
 
@@ -69,9 +72,15 @@ namespace myria{
       return *_ro;
     }
 
-    Handle() {}
-    Handle(const Handle& h) = default;
-		Handle& operator=(const Handle& o) = default;
+    Handle() {assert(_ro.get() == nullptr || _ro->isValid(nullptr));}
+    Handle(const Handle& h):_ro(h._ro) {
+		assert(_ro.get() == nullptr || _ro->isValid(nullptr));
+	}
+	Handle& operator=(const Handle& o) {
+		_ro = o._ro;
+		assert(_ro.get() == nullptr || _ro->isValid(nullptr));
+		return *this;
+	}
 
     typedef T stored_type;
 
@@ -155,6 +164,8 @@ namespace myria{
     }
     
     auto name() const {
+		assert(_ro);
+		assert(((std::size_t)_ro.get()) > 10);
       return _ro->name();
     }
     

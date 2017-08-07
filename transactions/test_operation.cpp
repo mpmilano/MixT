@@ -24,7 +24,10 @@ int main(){
 	using Store = TestingStore<Label<top> >;
 	using int_handle = typename Store::template TestingHandle<int>;
 	using int_handle_handle = typename Store::template TestingHandle<int_handle>;
-	int_handle_handle a;
+	Store store;
+	constexpr int a_name = 43;
+	constexpr int int_name = 23;
+	int_handle_handle a = store.template newObject<int_handle>(nullptr,a_name,store.template newObject<int>(nullptr,int_name,23));
 	using str = MUTILS_STRING({(*a).noop(1,2,3,4)});
 	constexpr auto parsed = flatten_expressions(parse_statement(str{}));
 	constexpr auto tmp = typecheck<1,1>(type_environment<Label<top>,

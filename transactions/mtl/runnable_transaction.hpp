@@ -123,6 +123,36 @@ public:
   template <typename... T>
   using add = DECT(*add_f(((T*)nullptr)...));
 
+  template<typename Name>
+	  static constexpr auto remove_f(){
+	  constexpr mutils::typeset<> ret;
+	  return ret;
+  }
+
+  template<typename Name, typename Fst, typename... Rst>
+	  static constexpr auto remove_f(Fst*, Rst*... r){
+	  constexpr std::conditional_t<typename Fst::name{} == Name{}, mutils::typeset<Rst...>, DECT(remove_f<Name>(r...).template add<Fst>()) > ret;
+	  return ret;
+  }
+  
+  template <typename Name>
+	  using remove = store_from_typeset<DECT(remove_f<Name>((holders*)nullptr...))>;
+
+
+  static constexpr store* replace_f()
+  {
+    constexpr store* ret{ nullptr };
+    return ret;
+  }
+  template <typename T, typename... U>
+  static constexpr auto* replace_f(T*, U*...)
+  {
+	  return std::conditional_t<mutils::contained<typename T::name, typename holders::name...>(), typename remove<typename T::name>::template add<T>, store<holders..., T>>::replace_f(((U*)nullptr)...);
+  }
+
+  template <typename... T>
+  using replace = DECT(*replace_f(((T*)nullptr)...));
+
   using holder_count = std::integral_constant<std::size_t, sizeof...(holders)>;
 
   template <typename Name>
@@ -225,7 +255,7 @@ struct transaction<p1, phases...>
   using all_store = typename store_from_typeset<DECT(
     mutils::typelist_ns::combine(typename p1::provides{}, typename phases::provides{}...)
       .combine(mutils::typelist_ns::intersect(typename p1::requirements{}, typename phases::requirements{}...))
-      .combine(holder_to_value(mutils::typelist_ns::combine(typename p1::owned{}, typename phases::owned{}...))))>::template add<env...>;
+      .combine(holder_to_value(mutils::typelist_ns::combine(typename p1::owned{}, typename phases::owned{}...))))>::template replace<env...>;
 
   template <typename label>
   using find_phase = DECT(*mutils::find_match<typename p1::template has_label<label>, typename phases::template has_label<label>...>());
