@@ -139,6 +139,7 @@ namespace myria {
 
 			template<typename T>
 			void operation(mtl::PhaseContext<label>*, StoreContext&, OperationIdentifier<noop>,TestingObject<T>&,int,int,int,int){
+				std::cout << "operation executed" << std::endl;
 			}
 
 #ifndef NDEBUG

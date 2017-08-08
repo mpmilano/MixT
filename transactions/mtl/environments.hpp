@@ -37,12 +37,42 @@ struct value_holder
 {
 
   using held_type = T;
-  T t;
-  value_holder(T t)
-    : t(t)
+  static constexpr int t_mem_length()
   {
+    constexpr int div = (sizeof(unsigned long long) / sizeof(char));
+    constexpr int adjusted_size = sizeof(T) / div;
+    constexpr int ret = (adjusted_size * div < sizeof(T) ? 1 + adjusted_size : adjusted_size);
+    return ret;
   }
+  static constexpr int adjusted_T_size() { return t_mem_length() * sizeof(unsigned long long); }
+	unsigned long long t_mem[t_mem_length()];
+  T* zeroed_t()
+  {
+    bzero(t_mem, adjusted_T_size());
+    return (T*)t_mem;
+  }
+  T& t{ *zeroed_t() };
+
+  bool mem_uninitialized() const
+  {
+    for (const auto& word : t_mem)
+      if (word != 0)
+        return false;
+    return true;
+  }
+
+  value_holder(T _t) { new (&t) T{ _t }; }
   value_holder() = default;
+  value_holder(const value_holder& o) { new (&t) T{ o.t }; }
+  value_holder& operator=(const value_holder& o)
+  {
+    if (mem_uninitialized())
+      new (&t) T{ o.t };
+    else
+      t = o.t;
+    return *this;
+  }
+  ~value_holder() { t.~T(); }
 
   using type = T;
   using name = String<str...>;
@@ -60,7 +90,8 @@ struct value_holder
   template <typename TransactionContext>
   value_holder& bind(TransactionContext&, const T& t2)
   {
-    t = t2;
+    assert(mem_uninitialized());
+    new (&t) T{ t2 };
     return *this;
   }
   bool reset_index() { return true; }
@@ -308,15 +339,15 @@ public:
   template <typename TransactionContext>
   auto get_remote(TransactionContext&)
   {
-	  assert(curr_pos < handle.size() && curr_pos >= 0);
+    assert(curr_pos < handle.size() && curr_pos >= 0);
     return handle.at(curr_pos);
   }
 
   template <typename TransactionContext>
   auto get(TransactionContext& tc)
   {
-	  assert(curr_pos < (int)handle.size() && curr_pos >= 0);
-	  //assert(super.count(handle.at(curr_pos)));
+    assert(curr_pos < (int)handle.size() && curr_pos >= 0);
+    // assert(super.count(handle.at(curr_pos)));
     return this_super().get(tc);
   }
 

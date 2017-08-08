@@ -131,10 +131,9 @@ struct SupportedOperation {
 		
 		operation op;
 
-		SupportsOn(operation op):op(op){}
-
-		//constructor for use with null handles
-		SupportsOn(){}
+		SupportsOn(operation op):op(op){assert(op);}
+		SupportsOn(const SupportsOn&) = default;
+		SupportsOn& operator=(const SupportsOn&) = default;
 		
 		template<template<typename> class RemoteObject, typename DataStore>
 		static operation wrap_operation(DataStore& ds){

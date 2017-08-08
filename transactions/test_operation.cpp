@@ -40,5 +40,6 @@ int main(){
 	std::cout << split << std::endl;
 	using ClientTrk = ClientTracker<>;
 	ClientTrk ct;
+	TRANSACTION(a.noop(1,2,3,4))::WITH(a).run_local(ct,a);
 	TRANSACTION((*a).noop(1,2,3,4))::WITH(a).run_local(ct,a);
 }

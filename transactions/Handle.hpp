@@ -39,7 +39,9 @@ namespace myria{
   template<typename l, typename T, typename... SupportedOperations>
   struct Handle : public GenericHandle<l>, public LabelFreeHandle<T>, public SupportedOperations::template SupportsOn<Handle<l,T,SupportedOperations...> >... {
 
-
+	  template<typename SO>
+		  using OperationSuperclass = typename SO::template SupportsOn<Handle>;
+	  
     std::shared_ptr<RemoteObject<l,T> > _ro;
   private:
     //for dropping operation support
@@ -72,11 +74,15 @@ namespace myria{
       return *_ro;
     }
 
-    Handle() {assert(_ro.get() == nullptr || _ro->isValid(nullptr));}
-    Handle(const Handle& h):_ro(h._ro) {
+	template<template<typename> class RO, typename DataStore>
+		Handle(DataStore &ds):OperationSuperclass<SupportedOperations>(OperationSuperclass<SupportedOperations>::template wrap_operation<RO>(ds))... {
+		assert(_ro.get() == nullptr || _ro->isValid(nullptr));
+	}
+    Handle(const Handle& h):OperationSuperclass<SupportedOperations>(h)...,_ro(h._ro) {
 		assert(_ro.get() == nullptr || _ro->isValid(nullptr));
 	}
 	Handle& operator=(const Handle& o) {
+		(OperationSuperclass<SupportedOperations>::operator=(o),...);
 		_ro = o._ro;
 		assert(_ro.get() == nullptr || _ro->isValid(nullptr));
 		return *this;
