@@ -77,19 +77,22 @@ struct value_holder
   using type = T;
   using name = String<str...>;
   template <typename TransactionContext>
-  T& get(TransactionContext&)
+  T& get(value_holder& _this, TransactionContext&)
   {
+	  assert(_this == *this);
     return t;
   }
   template <typename TransactionContext>
-  value_holder& push(TransactionContext&, const T& t2)
+  value_holder& push(value_holder& _this, TransactionContext&, const T& t2)
   {
+	  assert(_this == *this);
     t = t2;
     return *this;
   }
   template <typename TransactionContext>
-  value_holder& bind(TransactionContext&, const T& t2)
+  value_holder& bind(value_holder& _this, TransactionContext&, const T& t2)
   {
+	  assert(_this == *this);
     assert(mem_uninitialized());
     new (&t) T{ t2 };
     return *this;
@@ -147,7 +150,7 @@ struct type_holder
 
   type_holder() = default;
 
-  type_holder(value<T, str...> v) { bind(v.t); }
+	type_holder(value<T, str...> v) { bind(*this,v.t); }
 
   bool reset_index()
   {
@@ -157,16 +160,18 @@ struct type_holder
   bool begin_phase() { return reset_index(); }
 
   template <typename TranCtx, typename... Args>
-  type_holder& push(TranCtx&, Args&&... args)
+  type_holder& push(type_holder& _this, TranCtx&, Args&&... args)
   {
+	  assert(_this == *this);
     t.emplace_back(std::forward<Args>(args)...);
     ++curr_pos;
     return *this;
   }
 
   template <typename TransactionContext>
-  type_holder& bind(TransactionContext&, T _t)
+  type_holder& bind(type_holder& _this, TransactionContext&, T _t)
   {
+	  assert(_this == *this);
     bound = true;
     t.emplace_back(_t);
     ++curr_pos;
@@ -174,14 +179,16 @@ struct type_holder
     return *this;
   }
 
-  type_holder& increment()
+  type_holder& increment(type_holder& _this)
   {
-    ++curr_pos;
+	  assert(_this == *this);
+    _this.++curr_pos;
     return *this;
   }
   template <typename TranCtx>
-  T get(TranCtx&)
+  T get(type_holder& _this, TranCtx&)
   {
+	  assert(_this == *this);
     assert(curr_pos < (int)t.size() && curr_pos >= 0);
     return t[curr_pos];
   }
@@ -211,9 +218,10 @@ struct is_type_holder : public std::false_type
 {
 };
 
-template <typename, typename stored>
+template <typename T>
 struct remote_map_holder
 {
+	using stored = typename T::type;
 #ifndef NDEBUG
   bool is_initialized{ false };
   void initialize() { is_initialized = true; }
@@ -240,10 +248,14 @@ struct remote_map_holder
     }
     return true;
   }
+	void increment_matching(T hndl){
+		auto _this = super[hndl.name()];
+		_this.increment(_this);
+	}
 };
 
 	template<typename T> struct is_remote_map_holder;
-	template<typename T, typename Stored> struct is_remote_map_holder<remote_map_holder<T,Stored> > : public std::true_type{};
+	template<typename T> struct is_remote_map_holder<remote_map_holder<T> > : public std::true_type{};
 	
 	template<typename... T>
 	struct remote_map_aggregator : public virtual T... {
@@ -260,15 +272,15 @@ struct remote_map_holder
 		
 	};
 
-template <typename T, typename stored, char... str>
-struct remote_holder : public virtual remote_map_holder<T, stored>
+template <typename T, char... str>
+struct remote_holder : public virtual remote_map_holder<T>
 {
 
   static_assert(is_handle<T>::value);
 
   // The idea is to protect against aliasing; we want
   // every binding site of the same handle to use the same type_holder.
-  using super_t = type_holder<stored, str...>;
+	using stored = typename remote_map_holder<T>::stored;
   using remote_map_holder<T, stored>::super;
   // we can re-bind this remote_holder, so
   // we really should be sure to keep a vector<handle>
@@ -276,7 +288,7 @@ struct remote_holder : public virtual remote_map_holder<T, stored>
   std::vector<T> handle;
   int curr_pos{ -1 };
 
-  using name = typename super_t::name;
+  using name = typename type_holder<stored, str...>::name;
 
   remote_holder() = default;
   remote_holder& operator=(const remote_holder& rh)
@@ -315,11 +327,13 @@ struct remote_holder : public virtual remote_map_holder<T, stored>
 
   bool begin_phase() { return reset_index() && remote_map_holder<T, stored>::begin_phase(); }
 
-  void increment()
+	template<typename Store>
+  static void increment(Store &s)
   {
-    if (curr_pos >= 0) {
-      assert((int)handle.size() > curr_pos && curr_pos >= 0);
-      this_super().increment();
+	  remote_holder &_this;
+    if (_this.curr_pos >= 0) {
+      assert((int)_this.handle.size() > _this.curr_pos && _this.curr_pos >= 0);
+      this_super(s).increment(s);
     }
   }
 
@@ -349,27 +363,32 @@ protected:
     assert(curr_pos < ((int)handle.size()) && curr_pos >= 0);
   }
 
-  auto& this_super()
+	template<typename Store>
+  static auto& this_super(Store &s)
   {
-	  assert((remote_map_holder<T, stored>::is_initialized));
-    return super[handle[curr_pos].name()];
+	  remote_map_holder<T> &_this = s;
+	  assert(_this.is_initialized);
+    return _this.super[handle[curr_pos].name()];
   }
 
 public:
-  auto& bind(PhaseContext<typename T::label>& tc, T t)
+	template<typename Store>
+	static auto& bind(Store &s, PhaseContext<typename T::label>& tc, T t)
   {
-    bind_common(t);
-    this_super().bind(tc, *handle[curr_pos].get(&tc));
-    read_tracking_actions(tc);
+	  remote_holder& _this = s;
+    _this.bind_common(t);
+    this_super(s).bind(s,tc, *_this.handle[_this.curr_pos].get(s,&tc));
+    _this.read_tracking_actions(tc);
     return *this;
   }
 
-  template <typename... Args>
-  remote_holder& push(PhaseContext<typename T::label>& tc, Args&&... args)
+	template <typename Store, typename... Args>
+	static remote_holder& push(Store &s, PhaseContext<typename T::label>& tc, Args&&... args)
   {
-    this_super().push(tc, std::forward<Args>(args)...);
-    handle.back().put(&tc, this_super().t.back());
-    return *this;
+	  remote_holder &_this = s;
+	  this_super(s).push(s,tc, std::forward<Args>(args)...);
+    _this.handle.back().put(&tc, this_super(s).t.back());
+    return _this;
   }
 
   template <typename TransactionContext>
@@ -379,98 +398,22 @@ public:
     return handle.at(curr_pos);
   }
 
-  template <typename TransactionContext>
-  auto get(TransactionContext& tc)
+	template <typename Store, typename TransactionContext>
+	static auto get(Store &s, TransactionContext& tc)
   {
-    assert(curr_pos < (int)handle.size() && curr_pos >= 0);
+	  remote_holder &_this = s;
+    assert(_this.curr_pos < (int)_this.handle.size() && _this.curr_pos >= 0);
     // assert(super.count(handle.at(curr_pos)));
-    return this_super().get(tc);
+    return this_super(s).get(s,tc);
   }
 
   using value = remote_holder;
 };
 
-template <typename T, char... str>
-struct remote_isValid_holder : public remote_holder<T, bool, str...>
-{
-
-  static_assert(is_handle<T>::value);
-
-  // The idea is to protect against aliasing; we want
-  // every binding site of the same handle to use the same type_holder.
-  using super_t = remote_holder<T, bool, str...>;
-
-  using name = typename super_t::name;
-
-  remote_isValid_holder() = default;
-  remote_isValid_holder& operator=(const remote_isValid_holder& rh)
-  {
-    super_t::operator=(rh);
-    return *this;
-  }
-
-  remote_isValid_holder(const remote_isValid_holder& rh)
-    : super_t(rh)
-  {
-  }
-
-  template <typename Other>
-  static constexpr mutils::mismatch get_holder(remote_isValid_holder*, std::enable_if_t<!std::is_same<Other, name>::value, Other>)
-  {
-    return mutils::mismatch{};
-  };
-  template <typename>
-  static constexpr remote_isValid_holder* get_holder(remote_isValid_holder* _this, name)
-  {
-    return _this;
-  }
-
-  // reset index + begin_phase are universal
-  using super_t::reset_index;
-  using super_t::begin_phase;
-  using super_t::increment;
-  using super_t::increment_remote;
-  using super_t::this_super;
-
-  auto& bind(PhaseContext<typename T::label>& tc, T t)
-  {
-    this->bind_common(t);
-    bool is_valid = this->handle[this->curr_pos].isValid(&tc);
-    this_super().bind(tc, is_valid);
-    if (is_valid)
-      this->read_tracking_actions(tc);
-    return *this;
-  }
-
-  template <typename... Args>
-  void push(PhaseContext<typename T::label>&, Args&&...)
-  {
-    static_assert((std::is_same<Args, void>::value && ... && true), "Error isValid is not assignable");
-  }
-
-  template <typename TransactionContext>
-  auto get_remote(TransactionContext& tc)
-  {
-    return super_t::template get_remote<TransactionContext>(tc);
-  }
-
-  template <typename TransactionContext>
-  auto get(TransactionContext& tc)
-  {
-    return super_t::template get<TransactionContext>(tc);
-  }
-
-  using value = remote_isValid_holder;
-};
-
 template <typename>
 struct is_remote_holder;
-template <typename T, typename v, char... str>
-struct is_remote_holder<remote_holder<T, v, str...>> : public std::true_type
-{
-};
 template <typename T, char... str>
-struct is_remote_holder<remote_isValid_holder<T, str...>> : public std::true_type
+struct is_remote_holder<remote_holder<T, str...>> : public std::true_type
 {
 };
 template <typename T>
@@ -479,12 +422,9 @@ struct is_remote_holder : public std::false_type
 };
 template<typename T>
 struct get_virtual_holders_str;
-template<typename T, char... str> struct get_virtual_holders_str<remote_isValid_holder<T, str...> >{
-	using type = remote_map_holder<T, bool>;
-};
 
-template<typename T, typename stored, char... str> struct get_virtual_holders_str<remote_holder<T, stored, str...> >{
-	using type = remote_map_holder<T,stored>;
+template<typename T, char... str> struct get_virtual_holders_str<remote_holder<T, str...> >{
+	using type = remote_map_holder<T>;
 };
 
 template<typename T> using get_virtual_holders = typename get_virtual_holders_str<T>::type;
@@ -521,22 +461,8 @@ struct string_of<myria::mtl::value_holder<t, str...>>
   }
 };
 
-template <typename t, typename v, char... str>
-struct string_of<myria::mtl::remote_holder<t, v, str...>>
-{
-  std::string value;
-  string_of()
-    : value([] {
-      std::stringstream o;
-      print_varname(o, String<str...>{});
-      return o.str();
-    }())
-  {
-  }
-};
-
 template <typename t, char... str>
-struct string_of<myria::mtl::remote_isValid_holder<t, str...>>
+struct string_of<myria::mtl::remote_holder<t, str...>>
 {
   std::string value;
   string_of()
@@ -610,7 +536,7 @@ struct type_binding<String<str...>, T, Label<l>, type_location::remote> : public
   using name = typename super::name;
   using label = typename super::label;
 
-  using holder = remote_holder<T, typename T::type, str...>;
+  using holder = remote_holder<T, str...>;
   using type = typename T::type;
 
   template <typename Other>

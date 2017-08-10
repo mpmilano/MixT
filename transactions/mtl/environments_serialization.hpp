@@ -60,21 +60,21 @@ namespace myria{ namespace mtl{
 		}
 
 
-		template<typename T, typename v, char... str>
-		void serialize_holder(const remote_holder<T,v,str...>& t, mutils::local_connection &c){
+		template<typename T, char... str>
+		void serialize_holder(const remote_holder<T,str...>& t, mutils::local_connection &c){
 			serialize_holder(t.super,c);
-			c.send(whendebug(mutils::bytes_size(mutils::type_name<remote_holder<T,v,str...> >()), mutils::type_name<remote_holder<T,v,str...> >(),)
+			c.send(whendebug(mutils::bytes_size(mutils::type_name<remote_holder<T,str...> >()), mutils::type_name<remote_holder<T,str...> >(),)
 						 t.initialized,t.list_usable, t.handle);
 		}
 		
-		template<typename T, typename v, char... str>
-		void receive_holder(mutils::DeserializationManager *dsm, remote_holder<T,v,str...>& t, mutils::local_connection &c){
+		template<typename T, char... str>
+		void receive_holder(mutils::DeserializationManager *dsm, remote_holder<T,str...>& t, mutils::local_connection &c){
 			receive_holder(dsm,t.super,c);
 #ifndef NDEBUG
 			DECT(mutils::bytes_size(std::string{})) remote_name_size;
 			c.receive(remote_name_size);
 			auto remote_name = c.receive<std::string>(dsm,remote_name_size);
-			auto my_name = mutils::type_name<remote_holder<T,v,str...> >();
+			auto my_name = mutils::type_name<remote_holder<T,str...> >();
 			if (*remote_name != my_name){
 				std::cout << *remote_name << std::endl;
 				std::cout << std::endl;

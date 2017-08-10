@@ -34,7 +34,7 @@ template <typename l, typename TranCtx, typename store, typename y, typename v>
 auto _run_phase(typename AST<l>::template Expression<y, typename AST<l>::template VarReference<v>>*, TranCtx& ctx, store& s)
 {
 	constexpr auto explicit_v = v{};
-  return s.get(explicit_v).get(ctx);
+	return s.get(explicit_v).get(s,ctx);
 }
 
 template <typename l, typename TranCtx, typename store, int i>
@@ -124,7 +124,7 @@ auto _run_phase(typename AST<l>::template Binding<Label<label>, Yield, String<na
   constexpr String<name...> varname{};
   (void)varname;
   auto expr_result = run_phase<l>(expr, ctx, s);
-  s.get(String<name...>{}).bind(ctx, expr_result);
+  s.get(String<name...>{}).bind(s,ctx, expr_result);
 }
 
 template <typename l, typename TranCtx, typename store, typename Binding, typename Body>
@@ -173,7 +173,7 @@ auto _run_phase(typename AST<l>::template Statement<
                 TranCtx& ctx, store& s)
 {
   constexpr R* r{ nullptr };
-  s.get(L{}).push(ctx, run_phase<l>(r, ctx, s));
+  s.get(L{}).push(s,ctx, run_phase<l>(r, ctx, s));
 }
 
 template <typename l, typename TranCtx, typename store, typename y, typename R>
@@ -191,7 +191,7 @@ _run_phase(typename AST<l>::template Statement<typename AST<l>::template Accompa
 {
 #ifdef TRACK
   ctx.trk_ctx.trk.accompanyWrite(ctx,s.get(R{}).get_remote(ctx).name(),
-				 s.get(typecheck_phase::tombstone_str{}).get(ctx).name());
+								 s.get(typecheck_phase::tombstone_str{}).get(s,ctx).name());
 #else
 	(void) ctx;
 	(void) s;
@@ -203,7 +203,7 @@ void
 _run_phase(typename AST<l>::template Statement<typename AST<l>::template WriteTombstone<typename AST<l>::template Expression<tracker::Tombstone, typename AST<l>::template VarReference<V>>>>*, TranCtx& ctx, store& s)
 {
 #ifdef TRACK
-  ctx.trk_ctx.trk.writeTombstone(ctx, s.get(V{}).get(ctx).name());
+	ctx.trk_ctx.trk.writeTombstone(ctx, s.get(V{}).get(s,ctx).name());
 #else
 	(void) ctx;
 	(void) s;
@@ -228,16 +228,16 @@ auto _run_phase(typename AST<l>::template Statement<typename AST<l>::template As
                   R>>*,
                 TranCtx& ctx, store& s)
 {
-  auto strct = s.get(F{}).get(ctx);
+	auto strct = s.get(F{}).get(s,ctx);
   constexpr R* rval{ nullptr };
   strct.field(S{}) = run_phase<l>(rval, ctx, s);
-  s.get(F{}).push(ctx, strct);
+  s.get(F{}).push(s,ctx, strct);
 }
 
 template <typename l, typename TranCtx, typename store, char... var>
 auto _run_phase(typename AST<l>::template Statement<typename AST<l>::template IncrementOccurance<String<var...>>>*, TranCtx&, store& s)
 {
-  s.get(String<var...>{}).increment();
+  s.get(String<var...>{}).increment(s);
 }
 
 template <typename l, typename TranCtx, typename store, char... var>
@@ -250,11 +250,9 @@ template <typename l, typename TranCtx, typename store, typename hndl_t, typenam
 auto _run_phase(typename AST<l>::template Statement<typename AST<l>::template IncrementRemoteOccurance<Expression<hndl_t,VarReference<var> > > > e*, TranCtx& ctx, store& s)
 {
 	//this is the version that runs on explicit handles
-	auto hdnl = run_phase<l>(Expression<hndl_t,VarReference<var> >{},ctx,s);
 	//this superclass represents every remote handle of this type we have.
-	all_remote_holders<hndl_t> &super = s;
-	super.increment_matching();
-  s.get(String<var...>{}).increment_remote();
+	remote_map_holder<hndl_t> &super = s;
+	super.increment_matching(run_phase<l>(Expression<hndl_t,VarReference<var> >{},ctx,s));
 }
 
 template <typename l, typename TranCtx, typename store, typename c, typename t, typename e>
@@ -275,11 +273,11 @@ auto _run_phase(typename AST<l>::template Statement<typename AST<l>::template Wh
   constexpr c* condition{ nullptr };
   constexpr t* then{ nullptr };
   int i = 0;
-  s.get(String<name...>{}).bind(ctx, i);
+  s.get(String<name...>{}).bind(s,ctx, i);
   bool condition_val = run_phase<l>(condition, ctx, s);
   while (condition_val) {
     ++i;
-    s.get(String<name...>{}).push(ctx, i);
+    s.get(String<name...>{}).push(s,ctx, i);
     run_phase<l>(then, ctx, s);
     condition_val = run_phase<l>(condition, ctx, s);
   }
@@ -290,7 +288,7 @@ auto _run_phase(typename AST<l>::template Statement<typename AST<l>::template Fo
 {
   constexpr t* then{ nullptr };
   constexpr String<name...> bound_name{};
-  auto bound = s.get(bound_name).get(ctx);
+  auto bound = s.get(bound_name).get(s,ctx);
   for (auto i = 0u; i < bound; ++i) {
     run_phase<l>(then, ctx, s);
   }
