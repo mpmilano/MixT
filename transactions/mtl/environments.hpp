@@ -79,20 +79,20 @@ struct value_holder
   template <typename TransactionContext>
   T& get(value_holder& _this, TransactionContext&)
   {
-	  assert(_this == *this);
+	  assert(&_this == this);
     return t;
   }
   template <typename TransactionContext>
   value_holder& push(value_holder& _this, TransactionContext&, const T& t2)
   {
-	  assert(_this == *this);
+	  assert(&_this == this);
     t = t2;
     return *this;
   }
   template <typename TransactionContext>
   value_holder& bind(value_holder& _this, TransactionContext&, const T& t2)
   {
-	  assert(_this == *this);
+	  assert(&_this == this);
     assert(mem_uninitialized());
     new (&t) T{ t2 };
     return *this;
@@ -162,7 +162,7 @@ struct type_holder
   template <typename TranCtx, typename... Args>
   type_holder& push(type_holder& _this, TranCtx&, Args&&... args)
   {
-	  assert(_this == *this);
+	  assert(&_this == this);
     t.emplace_back(std::forward<Args>(args)...);
     ++curr_pos;
     return *this;
@@ -171,7 +171,7 @@ struct type_holder
   template <typename TransactionContext>
   type_holder& bind(type_holder& _this, TransactionContext&, T _t)
   {
-	  assert(_this == *this);
+	  assert(&_this == this);
     bound = true;
     t.emplace_back(_t);
     ++curr_pos;
@@ -181,14 +181,14 @@ struct type_holder
 
   type_holder& increment(type_holder& _this)
   {
-	  assert(_this == *this);
-    _this.++curr_pos;
+	  assert(&_this == this);
+    ++_this.curr_pos;
     return *this;
   }
   template <typename TranCtx>
   T get(type_holder& _this, TranCtx&)
   {
-	  assert(_this == *this);
+	  assert(&_this == this);
     assert(curr_pos < (int)t.size() && curr_pos >= 0);
     return t[curr_pos];
   }
@@ -225,6 +225,10 @@ struct remote_map_holder
 #ifndef NDEBUG
   bool is_initialized{ false };
   void initialize() { is_initialized = true; }
+	remote_map_holder(const remote_map_holder&) = default;
+	remote_map_holder(remote_map_holder&&) = default;
+	remote_map_holder& operator=(const remote_map_holder&) = default;
+	remote_map_holder(bool):is_initialized(true){}
 #endif
 
 	template<typename U>
@@ -258,22 +262,39 @@ struct remote_map_holder
 	template<typename T> struct is_remote_map_holder<remote_map_holder<T> > : public std::true_type{};
 	
 	template<typename... T>
-	struct remote_map_aggregator : public virtual T... {
+	struct remote_map_aggregator : public T... {
 		static_assert((is_remote_map_holder<T>::value && ... && true),"Error: arguments must be remote_map_holders");
 #ifndef NDEBUG
 		void initialize(){
 			((T::is_initialized = true), ...);
 		}
+		remote_map_aggregator(bool b):T(b)...{}
+		remote_map_aggregator(const remote_map_aggregator&) = default;
+		remote_map_aggregator(remote_map_aggregator&&) = default;
+		remote_map_aggregator& operator=(const remote_map_aggregator&) = default;
+		remote_map_aggregator& operator=(remote_map_aggregator&&) = default;
 #endif
 		template<typename U>
 		void assign_to(U&& u){
 			(T::assign_to(std::forward<U>(u)),...);
 		}
+
+		auto begin_phase(){
+			return (T::begin_phase() && ... && true);
+		}
+
+		auto rollback_phase(){
+			return (T::rollback_phase() && ... && true);
+		}
+
+		remote_map_aggregator& as_virtual_holder(){
+			return *this;
+		}
 		
 	};
 
 template <typename T, char... str>
-struct remote_holder : public virtual remote_map_holder<T>
+struct remote_holder 
 {
 
   static_assert(is_handle<T>::value);
@@ -281,7 +302,6 @@ struct remote_holder : public virtual remote_map_holder<T>
   // The idea is to protect against aliasing; we want
   // every binding site of the same handle to use the same type_holder.
 	using stored = typename remote_map_holder<T>::stored;
-  using remote_map_holder<T, stored>::super;
   // we can re-bind this remote_holder, so
   // we really should be sure to keep a vector<handle>
   // around!
@@ -291,21 +311,8 @@ struct remote_holder : public virtual remote_map_holder<T>
   using name = typename type_holder<stored, str...>::name;
 
   remote_holder() = default;
-  remote_holder& operator=(const remote_holder& rh)
-  {
-    handle = rh.handle;
-    curr_pos = rh.curr_pos;
-    if (rh.super.size() > 0)
-      remote_map_holder<T, stored>::operator=(rh);
-    return *this;
-  }
-  remote_holder(const remote_holder& rh)
-	  : remote_map_holder<T, stored>(rh)
-    , handle(rh.handle)
-    , curr_pos(rh.curr_pos)
-  {
-    super = rh.super;
-  }
+	remote_holder& operator=(const remote_holder& rh) = default;
+	remote_holder(const remote_holder& rh) = default;
 
   template <typename Other>
   static constexpr mutils::mismatch get_holder(remote_holder*, std::enable_if_t<!std::is_same<Other, name>::value, Other>)
@@ -318,22 +325,19 @@ struct remote_holder : public virtual remote_map_holder<T>
     return _this;
   }
 
-  // reset index + begin_phase are universal
-  bool reset_index()
-  {
-    curr_pos = -1;
-    return remote_map_holder<T, stored>::reset_index();
+  bool begin_phase() {
+	  curr_pos = -1;
+	  return true;
   }
-
-  bool begin_phase() { return reset_index() && remote_map_holder<T, stored>::begin_phase(); }
 
 	template<typename Store>
   static void increment(Store &s)
   {
-	  remote_holder &_this;
+	  remote_holder &_this = s;
     if (_this.curr_pos >= 0) {
       assert((int)_this.handle.size() > _this.curr_pos && _this.curr_pos >= 0);
-      this_super(s).increment(s);
+      auto &_this_super = this_super(s);
+    _this_super.increment(s);
     }
   }
 
@@ -364,11 +368,12 @@ protected:
   }
 
 	template<typename Store>
-  static auto& this_super(Store &s)
+  static type_holder<stored>& this_super(Store &s)
   {
-	  remote_map_holder<T> &_this = s;
-	  assert(_this.is_initialized);
-    return _this.super[handle[curr_pos].name()];
+	  remote_map_holder<T> &_super = s.as_virtual_holder();
+	  remote_holder &_this = s;
+	  assert(_super.is_initialized);
+    return _super.super[_this.handle[_this.curr_pos].name()];
   }
 
 public:
@@ -377,17 +382,19 @@ public:
   {
 	  remote_holder& _this = s;
     _this.bind_common(t);
-    this_super(s).bind(s,tc, *_this.handle[_this.curr_pos].get(s,&tc));
+	auto &_this_super = this_super(s);
+    _this_super.bind(_this_super,tc, *_this.handle[_this.curr_pos].get(&tc));
     _this.read_tracking_actions(tc);
-    return *this;
+    return _this;
   }
 
 	template <typename Store, typename... Args>
 	static remote_holder& push(Store &s, PhaseContext<typename T::label>& tc, Args&&... args)
   {
 	  remote_holder &_this = s;
-	  this_super(s).push(s,tc, std::forward<Args>(args)...);
-    _this.handle.back().put(&tc, this_super(s).t.back());
+	  auto &_this_super = this_super(s);
+    _this_super.push(_this_super,tc, std::forward<Args>(args)...);
+    _this.handle.back().put(&tc,_this_super.t.back());
     return _this;
   }
 
@@ -404,7 +411,8 @@ public:
 	  remote_holder &_this = s;
     assert(_this.curr_pos < (int)_this.handle.size() && _this.curr_pos >= 0);
     // assert(super.count(handle.at(curr_pos)));
-    return this_super(s).get(s,tc);
+    auto &_this_super = this_super(s);
+    return _this_super.get(_this_super,tc);
   }
 
   using value = remote_holder;
@@ -416,8 +424,12 @@ template <typename T, char... str>
 struct is_remote_holder<remote_holder<T, str...>> : public std::true_type
 {
 };
-template <typename T>
-struct is_remote_holder : public std::false_type
+	template <typename T, char... str>
+	struct is_remote_holder<value_holder<T,str...> > : public std::false_type
+{
+};
+	template <typename T, char... str>
+	struct is_remote_holder<type_holder<T,str...> > : public std::false_type
 {
 };
 template<typename T>

@@ -75,6 +75,17 @@ constexpr auto _remove_unused(const typename AST<l>::template Statement<typename
     contains_var_of_name(String<var...>{}, ts), typename AST<l>::template IncrementRemoteOccurance<String<var...>>, typename AST<l>::template Sequence<>>>{};
 }
 
+template <typename l, typename typeset, typename hndl_t, char... var>
+constexpr auto _remove_unused(const typename AST<l>::template Statement<typename AST<l>::template IncrementRemoteOccurance<typename AST<l>::template Expression<hndl_t,typename AST<l>::template VarReference<String<var...> > > > > a, typeset ts)
+{
+	return std::conditional_t<contains_var_of_name(String<var...>{}, ts), DECT(a), typename AST<l>::template Statement< typename AST<l>::template Sequence<> > >{};
+}
+template <typename l, typename typeset, typename hndl_t, char... var>
+constexpr auto _remove_unused(const typename AST<l>::template Statement<typename AST<l>::template RefreshRemoteOccurance<typename AST<l>::template Expression<hndl_t,typename AST<l>::template VarReference<String<var...> > > > > a, typeset ts)
+{
+	return std::conditional_t<contains_var_of_name(String<var...>{}, ts), DECT(a), typename AST<l>::template Statement< typename AST<l>::template Sequence<>>>{};
+}
+
 template <typename l, typename typeset, typename c, typename t, typename e>
 constexpr auto _remove_unused(const typename AST<l>::template Statement<typename AST<l>::template If<c, t, e>>, typeset ts)
 {

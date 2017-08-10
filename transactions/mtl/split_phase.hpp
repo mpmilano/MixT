@@ -161,7 +161,7 @@ constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Statement
   using new_hndl = DECT(collect_phase(old_api{}, hndl{}));
   using new_api = combined_api<typename new_hndl::api, typename DECT(collect_phase(old_api{}, args{}))::api...>;
   using new_ast = Statement<Sequence<Statement<StatementOperation<oper_name,typename new_hndl::ast, typename DECT(collect_phase(old_api{}, args{}))::ast...> >,
-									 Statement<RefreshRemoteOccurance<hndl> > > >;
+									 Statement<RefreshRemoteOccurance<typename DECT(collect_phase(old_api{},hndl{}))::ast> > > >;
   return extracted_phase<label, new_api, void, new_ast>{};
 }
 	
@@ -171,7 +171,7 @@ constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Statement
                                              std::enable_if_t<!are_equivalent(Label<l>{}, label2{})> const* const)
 {
 	//operation is in different phase.
-	return extracted_phase<label,phase_api<label, requires<>, provides<>, typename old_api::inherits>, void, Statement<IncrementRemoteOccurance<hndl> > >{};
+	return extracted_phase<label,phase_api<label, requires<>, provides<>, typename old_api::inherits>, void, Statement<IncrementRemoteOccurance<typename DECT(collect_phase(old_api{},hndl{}))::ast> > >{};
 }
 
 	template <typename l>

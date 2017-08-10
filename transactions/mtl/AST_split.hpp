@@ -317,11 +317,13 @@ struct AST<Label<l>>
     using substatement = typename IncrementRemoteOccurance<Var>::substatement;
   };
 
-  template <typename Var>
-  struct RefreshRemoteOccurance;
-  template <char... var>
-  struct RefreshRemoteOccurance<mutils::String<var...>>
+  template <typename Var> struct RefreshRemoteOccurance;
+  
+  template <typename label, typename type, typename var, typename... ops>
+  struct RefreshRemoteOccurance<Expression<Handle<label,type,ops...>, VarReference<var> > >
   {
+	  using subhandle = Handle<label,type,ops...>;
+	  using handle_type = typename subhandle::type;
     using substatement = RefreshRemoteOccurance;
   };
   template <typename Var>

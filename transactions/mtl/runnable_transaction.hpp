@@ -53,7 +53,7 @@ struct implicitly_extended_remotes<mutils::typeset<T...>>
 {
   using type = remote_map_aggregator<T...>;
 };
-
+	
 template <typename... T>
 using virtual_holders = typename implicitly_extended_remotes<DECT(mutils::to_typeset(mutils::typelist<T...>::template filter<is_remote_holder>().template map<get_virtual_holders>()))>::type;
 
@@ -62,8 +62,13 @@ struct store : public holders..., public virtual_holders<holders...>
 {
 
   using virtual_holders = runnable_transaction::virtual_holders<holders...>;
+  using virtual_holders::as_virtual_holder;
 
+#ifndef NDEBUG
+  store():virtual_holders(true){} 
+#else
   store() = default;
+#endif
   store(store&&) = default;
 
   template <typename val1, typename... values>
@@ -72,7 +77,7 @@ struct store : public holders..., public virtual_holders<holders...>
   {
     whendebug(virtual_holders::initialize());
     PhaseContext<Label<top>> ctx;
-    get(typename val1::name{}).bind(ctx, val.t);
+    get(typename val1::name{}).bind(*this,ctx, val.t);
   }
 
 private:
@@ -111,14 +116,14 @@ public:
 
   store& begin_phase()
   {
-    bool b = (true && ... && holders::begin_phase());
+	  bool b = (virtual_holders::begin_phase() && ... && holders::begin_phase());
     (void)b;
     return *this;
   }
 
   store& rollback_phase()
   {
-    bool b = (true && ... && holders::rollback_phase());
+	  bool b = (virtual_holders::rollback_phase() && ... && holders::rollback_phase());
     (void)b;
     return *this;
   }

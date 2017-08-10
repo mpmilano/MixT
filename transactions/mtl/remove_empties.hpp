@@ -216,6 +216,38 @@ auto _clear_empty_statements(typename AST<l>::template Statement<typename AST<l>
   return ret{};
 }
 
+	template <typename l, typename hndl_t, char... var>
+auto _clear_empty_statements(typename AST<l>::template Statement<typename AST<l>::template IncrementRemoteOccurance<typename AST<l>::template Expression<hndl_t,typename AST<l>::template VarReference<String<var...> > > > > a)
+{
+  struct ret
+  {
+    using ast = DECT(a);
+    using remove_from_require = mutils::typeset<>;
+	  //because we don't know what this variable is aliasing,
+	  //we have to consider it still required;
+	  //even if its only appearance in this phase is here, some
+	  //other used + aliased variable might exist.
+	  using still_require = mutils::typeset<String<var...> >;
+  };
+  return ret{};
+}
+
+	template <typename l, typename hndl_t, char... var>
+auto _clear_empty_statements(typename AST<l>::template Statement<typename AST<l>::template RefreshRemoteOccurance<typename AST<l>::template Expression<hndl_t,typename AST<l>::template VarReference<String<var...> > > > > a)
+{
+  struct ret
+  {
+    using ast = DECT(a);
+    using remove_from_require = mutils::typeset<>;
+	  //because we don't know what this variable is aliasing,
+	  //we have to consider it still required;
+	  //even if its only appearance in this phase is here, some
+	  //other used + aliased variable might exist.
+	  using still_require = mutils::typeset<String<var...> >;
+  };
+  return ret{};
+}
+
 template <typename l, typename c, typename t, typename e>
 auto _clear_empty_statements(typename AST<l>::template Statement<typename AST<l>::template If<c, t, e>>)
 {

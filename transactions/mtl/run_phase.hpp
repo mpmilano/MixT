@@ -247,12 +247,38 @@ auto _run_phase(typename AST<l>::template Statement<typename AST<l>::template In
 }
 
 template <typename l, typename TranCtx, typename store, typename hndl_t, typename var>
-auto _run_phase(typename AST<l>::template Statement<typename AST<l>::template IncrementRemoteOccurance<Expression<hndl_t,VarReference<var> > > > e*, TranCtx& ctx, store& s)
+auto _run_phase(typename AST<l>::template Statement<typename AST<l>::template IncrementRemoteOccurance<typename AST<l>::template Expression<hndl_t,typename AST<l>::template VarReference<var> > > >*,
+				TranCtx& ctx, store& s, std::enable_if_t<std::is_base_of<remote_map_holder<hndl_t>, store>::value >* = nullptr)
 {
 	//this is the version that runs on explicit handles
 	//this superclass represents every remote handle of this type we have.
 	remote_map_holder<hndl_t> &super = s;
-	super.increment_matching(run_phase<l>(Expression<hndl_t,VarReference<var> >{},ctx,s));
+	super.increment_matching(run_phase<l>(typename AST<l>::template Expression<hndl_t,typename AST<l>::template VarReference<var> >{},ctx,s));
+}
+
+template <typename l, typename TranCtx, typename store, typename hndl_t, typename var>
+auto _run_phase(typename AST<l>::template Statement<typename AST<l>::template IncrementRemoteOccurance<typename AST<l>::template Expression<hndl_t,typename AST<l>::template VarReference<var> > > >*,
+				TranCtx& , store& , std::enable_if_t<!std::is_base_of<remote_map_holder<hndl_t>, store>::value >* = nullptr)
+{
+	//noop; no alias possible.
+}
+
+//TODO: we might want to find a way to only emit RefreshRemoteOccurance when there is the possibility of alias.
+template <typename l, typename TranCtx, typename store, typename hndl_t, typename var>
+auto _run_phase(typename AST<l>::template Statement<typename AST<l>::template RefreshRemoteOccurance<typename AST<l>::template Expression<hndl_t,typename AST<l>::template VarReference<var> > > > *,
+				TranCtx& ctx, store& s, std::enable_if_t<std::is_base_of<remote_map_holder<hndl_t>, store>::value >* = nullptr)
+{
+	remote_map_holder<hndl_t> &super = s;
+	auto hndl = run_phase<l>(typename AST<l>::template Expression<hndl_t,typename AST<l>::template VarReference<var> >{},ctx,s);
+	auto &_this_super = super.super[hndl.name()];
+	_this_super.push(_this_super,ctx,*hndl.get(&ctx));
+}
+
+template <typename l, typename TranCtx, typename store, typename hndl_t, typename var>
+auto _run_phase(typename AST<l>::template Statement<typename AST<l>::template RefreshRemoteOccurance<typename AST<l>::template Expression<hndl_t,typename AST<l>::template VarReference<var> > > > *,
+				TranCtx& , store& , std::enable_if_t<!std::is_base_of<remote_map_holder<hndl_t>, store>::value >* = nullptr)
+{
+	//noop; no alias possible.
 }
 
 template <typename l, typename TranCtx, typename store, typename c, typename t, typename e>

@@ -220,16 +220,22 @@ public:
 	template<template<typename> class C>
 	struct high_order_helper{
 		template<typename fst, typename... rst>
-		static constexpr auto filter(fst*,rst*... r,std::enable_if_t<C<fst>::value>* = nullptr){
+		static constexpr auto filter(fst* f,rst*... r){
+			constexpr std::integral_constant<bool, C<fst>::value> *choice{nullptr};
+			return high_order_helper::_filter<fst,rst...>(f,r...,choice);
+		}
+		template<typename...> static constexpr auto filter(){
+			return typelist<>{};
+		}
+		
+		template<typename fst, typename... rst>
+		static constexpr auto _filter(fst*,rst*... r,std::true_type*){
 			return typelist<fst>::append(filter<rst...>(r...));
 		}
 
 		template<typename fst, typename... rst>
-		static constexpr auto filter(fst*,rst*... r,std::enable_if_t<!C<fst>::value>* = nullptr){
+		static constexpr auto _filter(fst*,rst*... r,std::false_type*){
 			return filter<rst...>(r...);
-		}
-		template<typename...> static constexpr auto filter(){
-			return typelist<>{};
 		}
 	};
 
