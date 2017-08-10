@@ -45,7 +45,7 @@ struct value_holder
     return ret;
   }
   static constexpr int adjusted_T_size() { return t_mem_length() * sizeof(unsigned long long); }
-	unsigned long long t_mem[t_mem_length()];
+  unsigned long long t_mem[t_mem_length()];
   T* zeroed_t()
   {
     bzero(t_mem, adjusted_T_size());
@@ -214,9 +214,18 @@ struct is_type_holder : public std::false_type
 template <typename, typename stored>
 struct remote_map_holder
 {
+#ifndef NDEBUG
+  bool is_initialized{ false };
+  void initialize() { is_initialized = true; }
+#endif
+
+	template<typename U>
+	void assign_to(U&& o) { this->operator=(std::forward<U>(o)); }
+
   std::map<Name, type_holder<stored>> super;
   bool reset_index()
   {
+    assert(is_initialized);
     for (auto& holder : super) {
       holder.second.reset_index();
     }
@@ -225,12 +234,31 @@ struct remote_map_holder
 
   bool begin_phase()
   {
+    assert(is_initialized);
     for (auto& holder : super) {
       holder.second.begin_phase();
     }
     return true;
   }
 };
+
+	template<typename T> struct is_remote_map_holder;
+	template<typename T, typename Stored> struct is_remote_map_holder<remote_map_holder<T,Stored> > : public std::true_type{};
+	
+	template<typename... T>
+	struct remote_map_aggregator : public virtual T... {
+		static_assert((is_remote_map_holder<T>::value && ... && true),"Error: arguments must be remote_map_holders");
+#ifndef NDEBUG
+		void initialize(){
+			((T::is_initialized = true), ...);
+		}
+#endif
+		template<typename U>
+		void assign_to(U&& u){
+			(T::assign_to(std::forward<U>(u)),...);
+		}
+		
+	};
 
 template <typename T, typename stored, char... str>
 struct remote_holder : public virtual remote_map_holder<T, stored>
@@ -242,6 +270,9 @@ struct remote_holder : public virtual remote_map_holder<T, stored>
   // every binding site of the same handle to use the same type_holder.
   using super_t = type_holder<stored, str...>;
   using remote_map_holder<T, stored>::super;
+  // we can re-bind this remote_holder, so
+  // we really should be sure to keep a vector<handle>
+  // around!
   std::vector<T> handle;
   int curr_pos{ -1 };
 
@@ -257,7 +288,8 @@ struct remote_holder : public virtual remote_map_holder<T, stored>
     return *this;
   }
   remote_holder(const remote_holder& rh)
-    : handle(rh.handle)
+	  : remote_map_holder<T, stored>(rh)
+    , handle(rh.handle)
     , curr_pos(rh.curr_pos)
   {
     super = rh.super;
@@ -317,7 +349,11 @@ protected:
     assert(curr_pos < ((int)handle.size()) && curr_pos >= 0);
   }
 
-  auto& this_super() { return super[handle[curr_pos].name()]; }
+  auto& this_super()
+  {
+	  assert((remote_map_holder<T, stored>::is_initialized));
+    return super[handle[curr_pos].name()];
+  }
 
 public:
   auto& bind(PhaseContext<typename T::label>& tc, T t)
@@ -433,12 +469,28 @@ template <typename T, typename v, char... str>
 struct is_remote_holder<remote_holder<T, v, str...>> : public std::true_type
 {
 };
+template <typename T, char... str>
+struct is_remote_holder<remote_isValid_holder<T, str...>> : public std::true_type
+{
+};
 template <typename T>
 struct is_remote_holder : public std::false_type
 {
 };
+template<typename T>
+struct get_virtual_holders_str;
+template<typename T, char... str> struct get_virtual_holders_str<remote_isValid_holder<T, str...> >{
+	using type = remote_map_holder<T, bool>;
+};
+
+template<typename T, typename stored, char... str> struct get_virtual_holders_str<remote_holder<T, stored, str...> >{
+	using type = remote_map_holder<T,stored>;
+};
+
+template<typename T> using get_virtual_holders = typename get_virtual_holders_str<T>::type;
 }
 }
+
 namespace mutils {
 
 template <typename t, char... str>

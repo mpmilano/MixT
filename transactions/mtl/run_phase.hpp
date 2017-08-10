@@ -246,6 +246,17 @@ auto _run_phase(typename AST<l>::template Statement<typename AST<l>::template In
   s.get(String<var...>{}).increment_remote();
 }
 
+template <typename l, typename TranCtx, typename store, typename hndl_t, typename var>
+auto _run_phase(typename AST<l>::template Statement<typename AST<l>::template IncrementRemoteOccurance<Expression<hndl_t,VarReference<var> > > > e*, TranCtx& ctx, store& s)
+{
+	//this is the version that runs on explicit handles
+	auto hdnl = run_phase<l>(Expression<hndl_t,VarReference<var> >{},ctx,s);
+	//this superclass represents every remote handle of this type we have.
+	all_remote_holders<hndl_t> &super = s;
+	super.increment_matching();
+  s.get(String<var...>{}).increment_remote();
+}
+
 template <typename l, typename TranCtx, typename store, typename c, typename t, typename e>
 auto _run_phase(typename AST<l>::template Statement<typename AST<l>::template If<c, t, e>>*, TranCtx& ctx, store& s)
 {

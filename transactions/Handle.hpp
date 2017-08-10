@@ -54,7 +54,7 @@ namespace myria{
 	}
   public:
     using label = l;
-		using type = T;
+	using type = T;
 
     template<typename DataStore, template<typename> class RO>
       Handle(std::shared_ptr<RO<T> > _ro, DataStore& ds):

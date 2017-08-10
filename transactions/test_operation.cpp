@@ -42,4 +42,5 @@ int main(){
 	ClientTrk ct;
 	TRANSACTION(a.noop(1,2,3,4))::WITH(a).run_local(ct,a);
 	TRANSACTION((*a).noop(1,2,3,4))::WITH(a).run_local(ct,a);
+	TRANSACTION(remote b = a, remote c = b, remote d = b, c = 4, return d)::WITH(a).run_local(ct,a);
 }

@@ -303,10 +303,31 @@ struct AST<Label<l>>
   {
     using substatement = IncrementRemoteOccurance;
   };
+
+  template <typename label, typename type, typename var, typename... ops>
+  struct IncrementRemoteOccurance<Expression<Handle<label,type,ops...>, VarReference<var> > >
+  {
+	  using subhandle = Handle<label,type,ops...>;
+	  using handle_type = typename subhandle::type;
+    using substatement = IncrementRemoteOccurance;
+  };
   template <typename Var>
   struct Statement<IncrementRemoteOccurance<Var>>
   {
     using substatement = typename IncrementRemoteOccurance<Var>::substatement;
+  };
+
+  template <typename Var>
+  struct RefreshRemoteOccurance;
+  template <char... var>
+  struct RefreshRemoteOccurance<mutils::String<var...>>
+  {
+    using substatement = RefreshRemoteOccurance;
+  };
+  template <typename Var>
+  struct Statement<RefreshRemoteOccurance<Var>>
+  {
+    using substatement = typename RefreshRemoteOccurance<Var>::substatement;
   };
 
   template <typename condition, typename then, typename els>
@@ -671,6 +692,13 @@ struct AST<Label<l>>
 
   template <typename name>
   static constexpr auto collapse1(Statement<IncrementRemoteOccurance<name>> a)
+  {
+    return a;
+  }
+
+
+  template <typename name>
+  static constexpr auto collapse1(Statement<RefreshRemoteOccurance<name>> a)
   {
     return a;
   }

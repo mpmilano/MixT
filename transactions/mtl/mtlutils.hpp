@@ -112,6 +112,12 @@ struct typelist<>
 
   static constexpr auto reverse() { return typelist{}; }
 
+	template<template<typename> class>
+	static constexpr auto filter() {return typelist{};}
+	
+	template<template<typename> class>
+	static constexpr auto map() {return typelist{};}
+
   template <typename... T>
   static constexpr auto intersect(T...)
   {
@@ -210,6 +216,33 @@ public:
   {
     return ::mutils::contains_subtype<S, t1...>();
   }
+
+	template<template<typename> class C>
+	struct high_order_helper{
+		template<typename fst, typename... rst>
+		static constexpr auto filter(fst*,rst*... r,std::enable_if_t<C<fst>::value>* = nullptr){
+			return typelist<fst>::append(filter<rst...>(r...));
+		}
+
+		template<typename fst, typename... rst>
+		static constexpr auto filter(fst*,rst*... r,std::enable_if_t<!C<fst>::value>* = nullptr){
+			return filter<rst...>(r...);
+		}
+		template<typename...> static constexpr auto filter(){
+			return typelist<>{};
+		}
+	};
+
+	template<template<typename> class C>
+	static constexpr auto filter() {
+		return high_order_helper<C>::template filter<t1...>((t1*)nullptr...);
+	}
+	
+	template<template<typename> class C>
+	static constexpr auto map() {
+		return typelist<C<t1>...>{};
+	}
+	
 };
 
 template <typename T>
