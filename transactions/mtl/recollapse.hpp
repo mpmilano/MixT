@@ -194,7 +194,7 @@ auto _recollapse(typename AST<l>::template Statement<typename AST<l>::template I
 }
 
 template <typename l, typename candidates, typename sub_map, typename hndl_t, char... var>
-auto _recollapse(typename AST<l>::template Statement<typename AST<l>::template IncrementRemoteOccurance<typename AST<l>::template Expression<hndl_t,typename AST<l>::template VarReference<String<var...> > > > > a)
+auto _recollapse(typename AST<l>::template Statement<typename AST<l>::template IncrementOccurance<typename AST<l>::template Expression<hndl_t,typename AST<l>::template VarReference<String<var...> > > > > a)
 {
 	static_assert(!candidates::template contains<String<var...>>());
 	return a;

@@ -290,11 +290,6 @@ struct AST<Label<l>>
   {
     using substatement = IncrementOccurance;
   };
-  template <typename Var>
-  struct Statement<IncrementOccurance<Var>>
-  {
-    using substatement = typename IncrementOccurance<Var>::substatement;
-  };
 
   template <typename Var>
   struct IncrementRemoteOccurance;
@@ -305,11 +300,16 @@ struct AST<Label<l>>
   };
 
   template <typename label, typename type, typename var, typename... ops>
-  struct IncrementRemoteOccurance<Expression<Handle<label,type,ops...>, VarReference<var> > >
+  struct IncrementOccurance<Expression<Handle<label,type,ops...>, VarReference<var> > >
   {
 	  using subhandle = Handle<label,type,ops...>;
 	  using handle_type = typename subhandle::type;
-    using substatement = IncrementRemoteOccurance;
+    using substatement = IncrementOccurance;
+  };
+  template <typename Var>
+  struct Statement<IncrementOccurance<Var>>
+  {
+    using substatement = typename IncrementOccurance<Var>::substatement;
   };
   template <typename Var>
   struct Statement<IncrementRemoteOccurance<Var>>

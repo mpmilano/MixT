@@ -185,7 +185,7 @@ constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Statement
 {
 	//operation is in different phase.
 	using new_hndl = DECT(collect_phase(old_api{},hndl{}));
-	return extracted_phase<label,typename new_hndl::api, void, Statement<IncrementRemoteOccurance<typename new_hndl::ast> > >{};
+	return extracted_phase<label,typename new_hndl::api, void, Statement<IncrementOccurance<typename new_hndl::ast> > >{};
 }
 
 	/*

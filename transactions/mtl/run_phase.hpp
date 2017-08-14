@@ -249,7 +249,7 @@ auto _run_phase(typename AST<l>::template Statement<typename AST<l>::template In
 }
 
 template <typename l, typename TranCtx, typename store, typename hndl_t, typename var>
-auto _run_phase(typename AST<l>::template Statement<typename AST<l>::template IncrementRemoteOccurance<typename AST<l>::template Expression<hndl_t,typename AST<l>::template VarReference<var> > > >*,
+auto _run_phase(typename AST<l>::template Statement<typename AST<l>::template IncrementOccurance<typename AST<l>::template Expression<hndl_t,typename AST<l>::template VarReference<var> > > >*,
 				TranCtx& ctx, store& s, std::enable_if_t<std::is_base_of<remote_map_holder<hndl_t>, store>::value >* = nullptr)
 {
 	//this is the version that runs on explicit handles
@@ -259,7 +259,7 @@ auto _run_phase(typename AST<l>::template Statement<typename AST<l>::template In
 }
 
 template <typename l, typename TranCtx, typename store, typename hndl_t, typename var>
-auto _run_phase(typename AST<l>::template Statement<typename AST<l>::template IncrementRemoteOccurance<typename AST<l>::template Expression<hndl_t,typename AST<l>::template VarReference<var> > > >*,
+auto _run_phase(typename AST<l>::template Statement<typename AST<l>::template IncrementOccurance<typename AST<l>::template Expression<hndl_t,typename AST<l>::template VarReference<var> > > >*,
 				TranCtx& , store& , std::enable_if_t<!std::is_base_of<remote_map_holder<hndl_t>, store>::value >* = nullptr)
 {
 	//noop; no alias possible.

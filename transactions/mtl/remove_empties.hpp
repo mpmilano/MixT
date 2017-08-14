@@ -221,7 +221,7 @@ auto _clear_empty_statements(typename AST<l>::template Statement<typename AST<l>
 }
 
 	template <typename l, typename hndl_t, char... var>
-auto _clear_empty_statements(typename AST<l>::template Statement<typename AST<l>::template IncrementRemoteOccurance<typename AST<l>::template Expression<hndl_t,typename AST<l>::template VarReference<String<var...> > > > > a)
+auto _clear_empty_statements(typename AST<l>::template Statement<typename AST<l>::template IncrementOccurance<typename AST<l>::template Expression<hndl_t,typename AST<l>::template VarReference<String<var...> > > > > a)
 {
   struct ret
   {

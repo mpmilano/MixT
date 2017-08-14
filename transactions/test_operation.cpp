@@ -26,7 +26,7 @@ int main(){
 	using int_handle_handle = typename Store::template TestingHandle<int_handle>;
 	Store store;
 	constexpr int a_name = 43;
-	constexpr int int_name = 23;/*
+	constexpr int int_name = 23;
 	int_handle_handle a = store.template newObject<int_handle>(nullptr,a_name,store.template newObject<int>(nullptr,int_name,23));
 	using str = MUTILS_STRING({(*a).noop(1,2,3,4)});
 	constexpr auto parsed = flatten_expressions(parse_statement(str{}));
@@ -40,8 +40,8 @@ int main(){
 	std::cout << split << std::endl;//*/
 	using ClientTrk = ClientTracker<>;
 	ClientTrk ct;
-	//TRANSACTION(a.noop(1,2,3,4))::WITH(a).run_local(ct,a);
-	//TRANSACTION((*a).noop(1,2,3,4))::WITH(a).run_local(ct,a);
+	TRANSACTION(a.noop(1,2,3,4))::WITH(a).run_local(ct,a);
+	TRANSACTION((*a).noop(1,2,3,4))::WITH(a).run_local(ct,a);
 	{
 		int_handle_handle a = store.template newObject<int_handle>(nullptr,a_name,store.template newObject<int>(nullptr,int_name,23));
 		constexpr auto remote_bind_txn = TRANSACTION(remote b = a, remote c = b, remote d = b, c = 4, return d)::WITH(a);

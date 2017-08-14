@@ -76,7 +76,7 @@ constexpr auto _remove_unused(const typename AST<l>::template Statement<typename
 }
 
 template <typename l, typename typeset, typename hndl_t, char... var>
-constexpr auto _remove_unused(const typename AST<l>::template Statement<typename AST<l>::template IncrementRemoteOccurance<typename AST<l>::template Expression<hndl_t,typename AST<l>::template VarReference<String<var...> > > > > a, typeset ts)
+constexpr auto _remove_unused(const typename AST<l>::template Statement<typename AST<l>::template IncrementOccurance<typename AST<l>::template Expression<hndl_t,typename AST<l>::template VarReference<String<var...> > > > > a, typeset ts)
 {
 	return std::conditional_t<contains_var_of_name(String<var...>{}, ts), DECT(a), typename AST<l>::template Statement< typename AST<l>::template Sequence<> > >{};
 }
