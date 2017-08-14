@@ -69,18 +69,6 @@ struct Expression<IsValid<Struct>>
   using subexpr = typename IsValid<Struct>::subexpr;
 };
 
-template <typename Name, typename Hndl, typename... args>
-struct Operation
-{
-  using subexpr = Operation;
-};
-template <typename Name, typename Hndl, typename... args>
-struct Expression<Operation<Name,Expression<Hndl>,args...>>
-{
-  static_assert(!Name::is_number());
-  using subexpr = typename Operation<Name,Hndl,args...>::subexpr;
-};
-
 template <typename Var>
 struct VarReference;
 template <char... var>
@@ -244,33 +232,29 @@ struct operation_args_varrefs{
   }
 };
 	
-template <typename bound_name, typename oper_name, typename Hndl, typename Body, typename expr_args, typename var_args >
-struct LetOperation;
-template <typename bound_name, typename oper_name, typename Hndl, typename Body, typename expr_args, typename... var_args>
-struct LetOperation<bound_name, oper_name, Expression<Hndl>, Statement<Body>, expr_args,operation_args_varrefs<var_args...>>
+template <typename oper_name, typename Hndl, typename expr_args, typename var_args >
+struct Operation;
+template <typename oper_name, typename Hndl, typename expr_args, typename... var_args>
+struct Operation<oper_name, Expression<Hndl>, expr_args,operation_args_varrefs<var_args...>>
 {
   using exprs_subexpr = typename expr_args::subexpr;
   using vars_subexpr = typename operation_args_varrefs<var_args...>::subexpr;
-  using substatement = LetOperation;
+  using substatement = Operation;
 };
-template <typename bound_name, typename oper_name, typename Hndl, typename Body, typename expr_args, typename var_args>
-struct Statement<LetOperation<bound_name, oper_name, Hndl, Body, expr_args, var_args> >
+template <typename oper_name, typename Hndl, typename expr_args, typename var_args>
+struct Statement<Operation<oper_name, Hndl, expr_args, var_args> >
 {
   using is_valid = std::true_type;
-  using substatement = typename LetOperation<bound_name, oper_name, Hndl, Body, expr_args, var_args>::substatement;
+  using substatement = typename Operation<oper_name, Hndl, expr_args, var_args>::substatement;
+};
+template <typename oper_name, typename Hndl, typename expr_args, typename var_args>
+struct Expression<Operation<oper_name, Hndl, expr_args, var_args> >
+{
+  using is_valid = std::true_type;
+  using substatement = typename Operation<oper_name, Hndl, expr_args, var_args>::substatement;
+	using subexpr = substatement;
 };
 	
-template <typename bound_name, typename Expr, typename Body>
-struct LetIsValid;
-template <typename bound_name, typename Expr, typename Body>
-struct LetIsValid<bound_name, Expression<Expr>, Statement<Body> >
-{
-};
-template <typename bound_name, typename Expr, typename Body>
-struct Statement<LetIsValid<bound_name, Expr, Body> >
-{
-};
-
 template <typename Binding, typename Body, typename label>
 struct LetEndorsed;
 template <typename Name, typename Expr, typename Body, typename label>

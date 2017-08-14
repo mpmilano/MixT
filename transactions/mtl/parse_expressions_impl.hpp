@@ -124,21 +124,26 @@ _parse_expression(std::enable_if_t<!parse_utilities::contains_invocation<str...>
   using field = DECT(field_str);
   return parse_phase::FieldPointerReference<name, field>{};
 }
+}
+	namespace parse_phase{
 
+		template<char... c>
+		using String = mutils::String<c...>;
+		
 template <typename... args>
 struct add_operations_struct
 {
 
   // this is just isValid
   template <typename hndl>
-  static constexpr auto add_operation_args(parse_phase::Operation<isValid_str, hndl>, String<>)
+  static constexpr auto add_operation_args(Operation<isValid_str, hndl,operation_args_exprs<>, operation_args_varrefs<> >, String<>)
   {
-    return parse_phase::IsValid<hndl>{};
+    return IsValid<hndl>{};
   }
 
   // no (further) arguments possible
   template <typename hndl, typename operations_str>
-  static constexpr auto add_operation_args(parse_phase::Operation<operations_str, hndl, args...> a, String<>)
+  static constexpr auto add_operation_args(Operation<operations_str, hndl, operation_args_exprs<args...>, operation_args_varrefs<> > a, String<>)
   {
     static_assert((sizeof...(args) > 0) || !operations_str::contains(isValid_str{}));
     return a;
@@ -146,23 +151,24 @@ struct add_operations_struct
 
   // last argument
   template <typename hndl, typename operations_str, char c, char... str>
-  static constexpr auto add_operation_args(parse_phase::Operation<operations_str, hndl, args...>, String<c, str...> arg,
+  static constexpr auto add_operation_args(Operation<operations_str, hndl, operation_args_exprs<args...>, operation_args_varrefs<> >, String<c, str...> arg,
                                            std::enable_if_t<!String<c, str...>::contains_outside_parens(String<','>{})>* = nullptr)
   {
-    return parse_phase::Operation<operations_str, hndl, args..., DECT(parse_expression(arg))>{};
+	  return Operation<operations_str, hndl, operation_args_exprs<args..., DECT(parse_expression(arg))>, operation_args_varrefs<> >{};
   }
 
   // at least two arguments remain
   template <typename hndl, typename operations_str, char... str>
-  static constexpr auto add_operation_args(parse_phase::Operation<operations_str, hndl, args...>, String<str...>,
+  static constexpr auto add_operation_args(Operation<operations_str, hndl, operation_args_exprs<args...>, operation_args_varrefs<> >, String<str...>,
                                            std::enable_if_t<String<str...>::contains_outside_parens(String<','>{})>* = nullptr)
   {
 
     constexpr auto rest = String<str...>::after_fst(String<','>{});
-    constexpr auto arg = parse_expression(String<str...>::split(zero{}, String<','>{}));
-    return add_operations_struct<args..., DECT(arg)>::add_operation_args(parse_phase::Operation<operations_str, hndl, args..., DECT(arg)>{}, rest);
+    constexpr auto arg = parse_expression(String<str...>::split(mutils::zero{}, String<','>{}));
+    return add_operations_struct<args..., DECT(arg)>::add_operation_args(Operation<operations_str, hndl, operation_args_exprs<args..., DECT(arg)>, operation_args_varrefs<>>{}, rest);
   }
 };
+	} namespace parse_expressions {
 
 // operation (including isValid)
 template <char... str>
@@ -177,7 +183,8 @@ _parse_expression(std::enable_if_t<!contains_operator<str...>() && !is_deref<str
   constexpr auto hndl_str = invocation_str::before_lst(String<'.'>{}).trim_ends();
   constexpr auto operation_str = invocation_str::after_lst(String<'.'>{}).trim_ends();
   using hndl = DECT(parse_expression(hndl_str));
-  return add_operations_struct<>::add_operation_args(parse_phase::Operation<DECT(operation_str),hndl>{},arguments{});
+  using namespace parse_phase;
+  return add_operations_struct<>::add_operation_args(Operation<DECT(operation_str),hndl,operation_args_exprs<>, operation_args_varrefs<>>{},arguments{});
 } //*/
 
 // deref

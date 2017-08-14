@@ -66,9 +66,9 @@ constexpr auto parse_while(String<'w', 'h', 'i', 'l', 'e', _str...>)
 
 
   template <typename Name, typename Hndl, typename... args>
-  constexpr auto operation_as_statement(parse_phase::Expression<parse_phase::Operation<Name,Hndl,args...>>){
+  constexpr auto operation_as_statement(parse_phase::Expression<parse_phase::Operation<Name,Hndl,parse_phase::operation_args_exprs<args...>, parse_phase::operation_args_varrefs<> > >){
     using namespace parse_phase;
-    return LetOperation<String<'_',0>,Name,Hndl,parse_utilities::skip, operation_args_exprs<args...>, operation_args_varrefs<> >{};
+    return Operation<Name,Hndl,operation_args_exprs<args...>, operation_args_varrefs<> >{};
   }
   
 // strip whitespace
