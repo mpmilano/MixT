@@ -273,6 +273,41 @@ struct remote_map_holder
 		remote_map_aggregator(remote_map_aggregator&&) = default;
 		remote_map_aggregator& operator=(const remote_map_aggregator&) = default;
 		remote_map_aggregator& operator=(remote_map_aggregator&&) = default;
+
+		template<typename K> struct get_specific_holder_str {
+			template<typename> struct handle_type_str;
+			template<typename l, typename U, typename... ops> struct handle_type_str<remote_map_holder<Handle<l,U,ops...> > >{
+				using type = U;
+			};
+			template<typename U> using handle_type = typename handle_type_str<U>::type;
+			template<typename U> using matches = std::is_same<K,handle_type<U> >;
+			using type_list = DECT(mutils::typelist<T...>::template filter<matches>());
+
+			template<typename fst, typename... rst>
+			static auto run(const mutils::typelist<fst,rst...>&){
+				struct inner{
+					static auto& run(fst& _this){ return _this;}
+				};
+				return inner{};
+			}			
+
+			static auto run(const mutils::typelist<>&){
+				struct inner{
+					static auto& run(...){ return nullptr;}
+				};
+				return inner{};
+			}
+			
+			template<typename U>
+			static auto& run(U& _this){
+				return get_specific_holder_str::run(type_list{}).run(_this);
+			}
+		};
+
+		template<typename K>
+		auto& get_specific_holder(){
+			return get_specific_holder_str<K>::run(*this);
+		}
 #endif
 		template<typename U>
 		void assign_to(U&& u){
@@ -337,14 +372,17 @@ struct remote_holder
     if (_this.curr_pos >= 0) {
       assert((int)_this.handle.size() > _this.curr_pos && _this.curr_pos >= 0);
       auto &_this_super = this_super(s);
-    _this_super.increment(s);
+    _this_super.increment(_this_super);
     }
   }
 
-  void increment_remote()
+	template<typename Store>
+  static void increment_remote(Store &s)
   {
-    ++curr_pos;
-    assert(curr_pos < ((int)handle.size()) && curr_pos >= 0);
+	  remote_holder &_this = s;
+    ++_this.curr_pos;
+    assert(_this.curr_pos < ((int)_this.handle.size()) && _this.curr_pos >= 0);
+	increment(s);
   }
 
 protected:
@@ -380,10 +418,13 @@ public:
 	template<typename Store>
 	static auto& bind(Store &s, PhaseContext<typename T::label>& tc, T t)
   {
+	  constexpr String<str...> name;
+	  (void)name;
 	  remote_holder& _this = s;
     _this.bind_common(t);
 	auto &_this_super = this_super(s);
-    _this_super.bind(_this_super,tc, *_this.handle[_this.curr_pos].get(&tc));
+	auto &bind_target = *_this.handle[_this.curr_pos].get(&tc);
+    _this_super.bind(_this_super,tc, bind_target);
     _this.read_tracking_actions(tc);
     return _this;
   }

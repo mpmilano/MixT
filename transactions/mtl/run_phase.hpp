@@ -182,6 +182,8 @@ _run_phase(typename AST<l>::template Statement<typename AST<l>::template Return<
            std::enable_if_t<!std::is_void<y>::value>* = nullptr)
 {
   constexpr typename AST<l>::template Expression<y, R>* r{ nullptr };
+  whendebug(auto &s2 = s.as_virtual_holder().template get_specific_holder<int>());
+  whendebug((void)s2);
   throw ReturnedValue<y>{ run_phase<l>(r, ctx, s) };
 }
 
@@ -243,7 +245,7 @@ auto _run_phase(typename AST<l>::template Statement<typename AST<l>::template In
 template <typename l, typename TranCtx, typename store, char... var>
 auto _run_phase(typename AST<l>::template Statement<typename AST<l>::template IncrementRemoteOccurance<String<var...>>>*, TranCtx&, store& s)
 {
-  s.get(String<var...>{}).increment_remote();
+  s.get(String<var...>{}).increment_remote(s);
 }
 
 template <typename l, typename TranCtx, typename store, typename hndl_t, typename var>

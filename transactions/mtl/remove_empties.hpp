@@ -211,7 +211,11 @@ auto _clear_empty_statements(typename AST<l>::template Statement<typename AST<l>
   {
     using ast = DECT(a);
     using remove_from_require = mutils::typeset<>;
-    using still_require = mutils::typeset<>;
+	  //because we don't know what this variable is aliasing,
+	  //we have to consider it still required;
+	  //even if its only appearance in this phase is here, some
+	  //other used + aliased variable might exist.
+	  using still_require = mutils::typeset<String<var...>>;
   };
   return ret{};
 }

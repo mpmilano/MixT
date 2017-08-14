@@ -383,6 +383,7 @@ struct Binding<Label<l>, Yield, mutils::String<name...>, Expression<Exprl, EYiel
 {
   using label = Label<l>;
   using subexpr = typename Expression<Exprl, EYield, ExprN>::subexpr;
+  using e_yield = EYield;
   using var = mutils::String<name...>;
 };
 

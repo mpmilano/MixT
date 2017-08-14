@@ -147,7 +147,20 @@ constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Statement
 	using new_body = DECT(collect_phase(old_api{}, Body{}));
 	using body_ast = typename new_body::ast;
 	using var = typename _binding::var;
-	using new_api = typename new_body::api;
+	//keep in mind, the binding search works weirdly for remote-bound.
+	//need target of handle.
+	using yield = typename _binding::e_yield::type;
+	using needed_binding = type_binding_super<var, yield, label2>;
+	static_assert(mutils::useful_static_assert<
+		(old_api::provides::template contains_subtype<needed_binding>()
+		 || !std::is_same<typename old_api::inherits::template find_subtype<needed_binding>, mutils::mismatch >::value),
+				  needed_binding,typename old_api::inherits
+		>(),
+		 "Error: cannot find binding for this variable.");
+	using reqs = std::conditional_t<old_api::provides::template contains_subtype<needed_binding>(), requires<>,
+									requires<typename old_api::inherits::template find_subtype<needed_binding>>>;
+	using var_api = phase_api<label,reqs,provides<>,typename old_api::inherits>;
+	using new_api = combined_api<typename new_body::api, var_api>;
 	
 	using stmt = Statement<Sequence<Statement<IncrementRemoteOccurance<var>>, body_ast>>;
 	
@@ -171,9 +184,11 @@ constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Statement
                                              std::enable_if_t<!are_equivalent(Label<l>{}, label2{})> const* const)
 {
 	//operation is in different phase.
-	return extracted_phase<label,phase_api<label, requires<>, provides<>, typename old_api::inherits>, void, Statement<IncrementRemoteOccurance<typename DECT(collect_phase(old_api{},hndl{}))::ast> > >{};
+	using new_hndl = DECT(collect_phase(old_api{},hndl{}));
+	return extracted_phase<label,typename new_hndl::api, void, Statement<IncrementRemoteOccurance<typename new_hndl::ast> > >{};
 }
 
+	/*
 	template <typename l>
 	template <typename label2, typename name, typename hndl, typename Body, typename old_api>
 	constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Statement<label2, typecheck_phase::LetIsValid<name,hndl, Body>>,
@@ -184,11 +199,12 @@ constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Statement
   using body_ast = typename new_body::ast;
   using var = name;
   using new_api = typename new_body::api;
-
+  //TODO: this is being replaced by something. 
   using stmt = Statement<Sequence<Statement<IncrementRemoteOccurance<var>>, body_ast>>;
 
   return extracted_phase<label, new_api, typename new_body::returns, stmt>{};
 }
+	//*/
 
 template <typename l>
 template <typename Var, typename Expr, typename old_api>
