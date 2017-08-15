@@ -44,6 +44,13 @@ print_ast(std::ostream& o, const Expression<l, y, BinOp<op, L, R>>&)
   o << L{} << " " << opstr << "@" << l{} << " " << R{};
 }
 
+template <typename l, typename y, typename h>
+void print_ast(std::ostream& o, const Expression<l, y, IsValid<h>>&)
+{
+	o << h{} << ".isValid@" << l{} << "()";
+}
+
+
 template <typename l, typename b, typename body>
 void
 print_ast(std::ostream& o, const Statement<l, Let<b, body>>&, const std::string& tab)
@@ -64,19 +71,20 @@ print_ast(std::ostream& o, const Statement<l, LetRemote<b, body>>&, const std::s
   o << tab << "}";
 }
 
-template <typename l, typename n, typename h, typename body>
-void
-	print_ast(std::ostream& o, const Statement<l, LetIsValid<n,h, body>>&, const std::string& tab)
-{
-  o << tab << "let isValid@" << l{} << " [" << n{} << " = " << h{} << "] in "
-    << "{";
-  print_ast(o, body{}, tab);
-  o << tab << "}";
-}
 
-template <typename l, typename oper_name, typename Hndl, typename... args>
+	template <typename l, typename y, typename oper_name, typename Hndl, typename... args>
 void
-print_ast(std::ostream& o, const Statement<l, StatementOperation<oper_name,Hndl,args...>>&, const std::string& tab)
+	print_ast(std::ostream& o, const Expression<l, y, Operation<oper_name,Hndl,args...>>&, const std::string& tab)
+{
+	o << tab;
+	print_ast(o,Hndl{});
+	o << ". @" << l{} << " " << oper_name{} << "(";
+	(print_ast(o,args{}),...);
+	o << ")";
+}
+	template <typename l, typename oper_name, typename Hndl, typename... args>
+void
+	print_ast(std::ostream& o, const Statement<l, Operation<oper_name,Hndl,args...>>&, const std::string& tab)
 {
 	o << tab;
 	print_ast(o,Hndl{});

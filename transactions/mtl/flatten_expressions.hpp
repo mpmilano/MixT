@@ -239,6 +239,13 @@ constexpr auto _flatten_exprs(Statement<Let<Binding<name, Expression<FieldRefere
   return Statement<Let<Binding<name, Expression<FieldReference<Expression<Constant<var>>, Field>>>, DECT(flatten_exprs<seqnum, depth + 1>(body{}))>>{};
 }
 
+template <char seqnum, char depth, typename oper_name, typename Hndl, typename var_args>
+constexpr auto _flatten_exprs(Statement<Operation<oper_name, Expression<VarReference<Hndl> >, operation_args_exprs<>, var_args> > a)
+{
+	//flat; we're done!
+	return a;
+}
+
 // other statements need to have only var references
 template <char seqnum, char depth, typename name, typename expr, typename body>
 struct flatten_exprs_str<seqnum, depth, Statement<Let<Binding<name, expr>, body>>>
@@ -264,22 +271,6 @@ struct flatten_exprs_str<seqnum, depth, Statement<LetRemote<Binding<name, expr>,
   template <typename new_expr>
   using SubStatementRemote = Statement<LetRemote<Binding<name, new_expr>, body>>;
   using type = DECT(remove_layer<seqnum, depth, SubStatementRemote>(expr{}));
-};
-
-template <char seqnum, char depth, typename name, typename var, typename body>
-constexpr auto _flatten_exprs(Statement<LetIsValid<name, Expression<VarReference<var>>, body>>)
-{
-  // already flat, moving on
-  return Statement<LetIsValid<name, Expression<VarReference<var>>, DECT(flatten_exprs<seqnum, depth + 1>(body{}))>>{};
-}
-
-template <char seqnum, char depth, typename name, typename expr, typename body>
-struct flatten_exprs_str<seqnum, depth, Statement<LetIsValid<name, expr, body>>>
-{
-  static_assert(!is_var_reference<expr>::value);
-  template <typename new_expr>
-  using SubStatement = Statement<LetIsValid<name, new_expr, body>>;
-  using type = DECT(remove_layer<seqnum, depth, SubStatement>(expr{}));
 };
 
 template <char seqnum, char depth, typename var, typename expr>
@@ -385,11 +376,20 @@ constexpr auto _flatten_exprs(Statement<LetRemote<Binding<name, expr>, body>>)
   return _flatten_exprs_helper<seqnum, depth>(Statement<LetRemote<Binding<name, expr>, body>>{});
 }
 
-template <char seqnum, char depth, typename name, typename expr, typename body>
-constexpr auto _flatten_exprs(Statement<LetIsValid<name, expr, body>>)
+template<typename T> using operation_to_statement = Statement<typename T::substatement>;
+	
+template <char seqnum, char depth, typename oper_name, typename Hndl, typename var_args, typename e1, typename... exprs>
+constexpr auto _flatten_exprs(Statement<Operation<oper_name, Hndl, operation_args_exprs<e1,exprs...>, var_args> >)
 {
-  static_assert(!is_var_reference<expr>::value);
-  return _flatten_exprs_helper<seqnum, depth>(Statement<LetIsValid<name, expr, body>>{});
+	using operation = Operation<oper_name, Hndl, operation_args_exprs<e1,exprs...>, var_args>;
+	return flatten_exprs<seqnum+1,depth>(remove_layer<seqnum,depth,operation_to_statement>(Expression<operation>{}));
+}
+
+template <char seqnum, char depth, typename oper_name, typename Hndl, typename var_args>
+constexpr auto _flatten_exprs(Statement<Operation<oper_name, Hndl, operation_args_exprs<>, var_args> >, std::enable_if_t<!is_var_reference<Hndl>::value >* = nullptr)
+{
+	using operation = Operation<oper_name, Hndl, operation_args_exprs<>, var_args>;
+	return flatten_exprs<seqnum+1,depth>(remove_layer<seqnum,depth,operation_to_statement>(Expression<operation>{}));
 }
 
 template <char seqnum, char depth, typename var, typename expr>
