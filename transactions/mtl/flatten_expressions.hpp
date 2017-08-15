@@ -34,7 +34,7 @@ template <char seqnum, char depth, template <typename> class SubStatement, typen
 constexpr auto remove_layer(Expression<IsValid<Expression<VarReference<V>>>>);
   
 template <char seqnum, char depth, template <typename> class SubStatement, typename Name, typename Hndl, typename... args>
-constexpr auto remove_layer(Expression<Operation<Name, Expression<VarReference<Hndl> >, args...> >);
+constexpr auto remove_layer(Expression<Operation<Name, Expression<VarReference<Hndl> >, operation_args_exprs<>, operation_args_varrefs<args...> > > a);
 
 template <char seqnum, char depth, template <typename> class SubStatement, char op, typename L, typename R>
 constexpr auto remove_layer(Expression<BinOp<op, Expression<VarReference<L>>, Expression<VarReference<R>>>>);
@@ -43,7 +43,13 @@ template <char seqnum, char depth, template <typename> class SubStatement, typen
 constexpr auto remove_layer(Expression<FieldReference<Expression<VarReference<Obj>>, F>>)
 {
   using new_name = generate_name<seqnum, depth>;
-  return Statement<Let<Binding<new_name, Expression<FieldReference<Expression<VarReference<Obj>>, F>>>, SubStatement<Expression<VarReference<new_name>>>>>{};
+  return Statement<Let<Binding<new_name, Expression<FieldReference<Expression<VarReference<Obj> >, F> > >, SubStatement<Expression<VarReference<new_name> > > >  >{};
+}
+
+template <char seqnum, char depth, template <typename> class SubStatement, typename Name, typename Hndl, typename... args>
+constexpr auto remove_layer(Expression<Operation<Name, Expression<VarReference<Hndl> >, operation_args_exprs<>, operation_args_varrefs<args...> > > a){
+	using new_name = generate_name<seqnum, depth>;
+	return Statement<Let<Binding<new_name, DECT(a)>,  SubStatement<Expression<VarReference<new_name> > > > >{};
 }
 
 template <char seqnum, char depth, template <typename> class SubStatement, typename Var>
@@ -114,6 +120,33 @@ struct remove_layer_str<seqnum, depth, SubStatement, Expression<IsValid<E>>>
   using type = DECT(remove_layer<seqnum, depth, NewStatement>(E{}));
 };
 
+template <char seqnum, char depth, template <typename> class SubStatement, typename oper_name, typename var, typename expr_arg1, typename var_args, typename... rest_expr_args>
+struct remove_layer_str<seqnum, depth, SubStatement, Expression<Operation<oper_name,Expression<VarReference<var> >,operation_args_exprs<Expression<VarReference<expr_arg1> >,rest_expr_args...>,var_args> > >
+{
+	//there is already a variable reference in the expr arguments list; move it over and try again
+  static_assert(Expression<Operation<oper_name,Expression<VarReference<var> >,operation_args_exprs<Expression<VarReference<expr_arg1> >,rest_expr_args...>,var_args> >::is_valid::value,"");
+	using type = DECT(remove_layer<seqnum,depth,SubStatement>(Expression<Operation<oper_name,Expression<VarReference<var> >,operation_args_exprs<rest_expr_args...>,DECT(var_args::append(Expression<VarReference<expr_arg1> >{}))> >{}));
+};
+  
+  template <char seqnum, char depth, template <typename> class SubStatement, typename oper_name, typename var, typename expr_arg1, typename var_args, typename... rest_expr_args>
+  struct remove_layer_str<seqnum, depth, SubStatement, Expression<Operation<oper_name,Expression<VarReference<var> >,operation_args_exprs<expr_arg1,rest_expr_args...>,var_args> > >
+{
+  static_assert(Expression<Operation<oper_name,Expression<VarReference<var> >,operation_args_exprs<expr_arg1,rest_expr_args...>,var_args> >::is_valid::value,"");
+  template <typename new_expr>
+  using NewStatement = SubStatement<Expression<Operation<oper_name, Expression<VarReference<var> >, operation_args_exprs<new_expr, rest_expr_args...>, var_args> > >;
+	using type = DECT(remove_layer<seqnum,depth,NewStatement>(expr_arg1{}));
+};
+  
+  template <char seqnum, char depth, template <typename> class SubStatement, typename oper_name, typename expr, typename expr_args, typename var_args>
+  struct remove_layer_str<seqnum, depth, SubStatement, Expression<Operation<oper_name,expr,expr_args,var_args> > >
+{
+  static_assert(Expression<Operation<oper_name,expr,expr_args,var_args> >::is_valid::value,"");
+  static_assert(!is_var_reference<expr>::value);
+  template <typename new_expr>
+  using NewStatement = SubStatement<Expression<Operation<oper_name, new_expr, expr_args,var_args> > >;
+  using type = DECT(remove_layer<seqnum, depth, SubStatement>(expr{}));
+};
+
 template <char seqnum, char depth, template <typename> class SubStatement, typename V>
 constexpr auto remove_layer(Expression<Dereference<Expression<VarReference<V>>>>)
 {
@@ -122,23 +155,10 @@ constexpr auto remove_layer(Expression<Dereference<Expression<VarReference<V>>>>
 }
 
 template <char seqnum, char depth, template <typename> class SubStatement, typename V>
-constexpr auto remove_layer(Expression<IsValid<Expression<VarReference<V>>>>)
+constexpr auto remove_layer(Expression<IsValid<Expression<VarReference<V>>>> a)
 {
-  using new_name = mutils::String<'i', 's', 'V', 'a', 'l', 'i', 'd', '_', 't', 'm', 'p', 0, seqnum, depth>;
-  return Statement<LetIsValid<new_name, Expression<VarReference<V>>, SubStatement<Expression<VarReference<new_name>>>>>{};
-}
-
-template <char seqnum, char depth, template <typename> class SubStatement, typename Name, typename Hndl, typename... args>
-constexpr auto remove_layer(Expression<Operation<Name, Expression<VarReference<Hndl> >, args...> >){
-  using new_name = DECT(Name::append(mutils::String<'_',0,seqnum,depth>{}));
-  return flatten_exprs<seqnum,depth+1>(Statement<
-				       LetOperation<
-				       new_name,
-				       Name,
-				       Expression<VarReference<Hndl> >,
-				       SubStatement<Expression<VarReference<new_name > > >,
-				       operation_args_exprs<args...>,
-				       operation_args_varrefs<> > >{});
+	using new_name = generate_name<seqnum,depth>;
+	return Statement<Let<Binding<new_name, DECT(a)>, SubStatement<Expression<VarReference<new_name>>>>>{};
 }
 
 template <char seqnum, char depth, template <typename> class SubStatement, typename Expr>
@@ -262,42 +282,6 @@ struct flatten_exprs_str<seqnum, depth, Statement<LetIsValid<name, expr, body>>>
   using type = DECT(remove_layer<seqnum, depth, SubStatement>(expr{}));
 };
 
-template <char seqnum, char depth, typename bound_name, typename oper_name, typename var, typename body, typename var_args>
-constexpr auto
-_flatten_exprs(Statement<LetOperation<bound_name, oper_name, Expression<VarReference<var> >, body, operation_args_exprs<>, var_args> > a)
-{
-  static_assert(DECT(a)::is_valid::value,"");
-  // already flat, moving on
-  return Statement<LetOperation<bound_name, oper_name, Expression<VarReference<var> >, DECT(flatten_exprs<seqnum, depth + 1>(body{})), operation_args_exprs<>, var_args> >{};
-}
-
-  template <char seqnum, char depth, typename bound_name, typename oper_name, typename var, typename body, typename expr_arg1, typename var_args, typename... rest_expr_args>
-  struct flatten_exprs_str<seqnum, depth, Statement<LetOperation<bound_name,oper_name,Expression<VarReference<var> >,body,operation_args_exprs<Expression<VarReference<expr_arg1> >,rest_expr_args...>,var_args> > >
-{
-  static_assert(Statement<LetOperation<bound_name,oper_name,Expression<VarReference<var> >,body,operation_args_exprs<Expression<VarReference<expr_arg1> >,rest_expr_args...>,var_args> >::is_valid::value,"");
-  using type = 
-    DECT(flatten_exprs<seqnum,depth>(Statement<LetOperation<bound_name, oper_name, Expression<VarReference<var> >, body, operation_args_exprs<rest_expr_args...>, DECT(var_args::append(Expression<VarReference<expr_arg1> >{}))> >{} ));
-};
-  
-  template <char seqnum, char depth, typename bound_name, typename oper_name, typename var, typename body, typename expr_arg1, typename var_args, typename... rest_expr_args>
-  struct flatten_exprs_str<seqnum, depth, Statement<LetOperation<bound_name,oper_name,Expression<VarReference<var> >,body,operation_args_exprs<expr_arg1,rest_expr_args...>,var_args> > >
-{
-  static_assert(Statement<LetOperation<bound_name,oper_name,Expression<VarReference<var> >,body,operation_args_exprs<expr_arg1,rest_expr_args...>,var_args> >::is_valid::value,"");
-  template <typename new_expr>
-  using SubStatement = Statement<LetOperation<bound_name, oper_name, Expression<VarReference<var> >, body, operation_args_exprs<new_expr, rest_expr_args...>, var_args> >;
-  using type = DECT(flatten_exprs<seqnum,depth+1>(remove_layer<seqnum, depth, SubStatement>(expr_arg1{})));
-};
-  
-  template <char seqnum, char depth, typename bound_name, typename oper_name, typename expr, typename body, typename expr_args, typename var_args>
-  struct flatten_exprs_str<seqnum, depth, Statement<LetOperation<bound_name,oper_name,expr,body,expr_args,var_args> > >
-{
-  static_assert(Statement<LetOperation<bound_name,oper_name,expr,body,expr_args,var_args> >::is_valid::value,"");
-  static_assert(!is_var_reference<expr>::value);
-  template <typename new_expr>
-  using SubStatement = Statement<LetOperation<bound_name, oper_name, new_expr, body, expr_args,var_args> >;
-  using type = DECT(remove_layer<seqnum, depth, SubStatement>(expr{}));
-};
-
 template <char seqnum, char depth, typename var, typename expr>
 constexpr auto _flatten_exprs(Statement<Assignment<var, Expression<VarReference<expr>>>>)
 {
@@ -408,20 +392,6 @@ constexpr auto _flatten_exprs(Statement<LetIsValid<name, expr, body>>)
   return _flatten_exprs_helper<seqnum, depth>(Statement<LetIsValid<name, expr, body>>{});
 }
 
-  template <char seqnum, char depth, typename bound_name, typename oper_name, typename Hndl, typename Body, typename first_expr_arg, typename var_args, typename... rest_expr_args>
-constexpr auto
-  _flatten_exprs(Statement<LetOperation<bound_name, oper_name, Hndl, Body, operation_args_exprs<first_expr_arg,rest_expr_args...>, var_args> > a )
-{
-  return _flatten_exprs_helper<seqnum, depth>(a);
-}
-
-template <char seqnum, char depth, typename bound_name, typename oper_name, typename Hndl, typename Body>
-constexpr auto
-_flatten_exprs(Statement<LetOperation<bound_name, oper_name, Hndl, Body, operation_args_exprs<>, operation_args_varrefs<> > > a, std::enable_if_t<!is_var_reference<Hndl>::value>* = nullptr )
-{
-  return _flatten_exprs_helper<seqnum, depth>(a);
-}
-
 template <char seqnum, char depth, typename var, typename expr>
 constexpr auto _flatten_exprs(Statement<Assignment<var, expr>>)
 {
@@ -493,13 +463,6 @@ constexpr auto
 _desugar_while(const Statement<LetRemote<b, body>>)
 {
   return Statement<LetRemote<b, DECT(desugar_while<seqnum, depth + 1>(body{}))>>{};
-}
-
-template <char seqnum, char depth, typename bound_name, typename oper_name, typename Hndl, typename Body, typename expr_args, typename var_args >
-constexpr auto
-_desugar_while(const Statement<LetOperation< bound_name, oper_name, Hndl, Body, expr_args, var_args > >)
-{
-  return Statement<LetOperation< bound_name, oper_name, Hndl, DECT(desugar_while<seqnum,depth+1>(Body{})), expr_args, var_args > >{};
 }
 
 template <char, char, typename L, typename R>
