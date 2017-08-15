@@ -67,6 +67,24 @@ struct replace_label<Label<temp_label<target1, target2>>, Label<newlabel>>
     return Expression<DECT(label_replace(l{})), y, BinOp<op, DECT(replace(L{})), DECT(replace(R{}))>>{};
   }
 
+  template <typename l, typename y, typename h>
+	  static constexpr auto _replace(Expression<l, y, IsValid<h> >)
+  {
+	  return Expression<DECT(label_replace(l{})), y, IsValid<DECT(replace(h{}))> >{};
+  }
+  
+  template <typename l, typename y, typename oper_name, typename Hndl, typename... args>
+	  static constexpr auto _replace(Expression<l, y, Operation<oper_name, Hndl, args...>>)
+  {
+	  return Expression<DECT(label_replace(l{})), y, Operation<oper_name,DECT(replace(Hndl{})), DECT(replace(args{}))...>>{};
+  }
+
+  template <typename l, typename oper_name, typename Hndl, typename... args>
+	  static constexpr auto _replace(Statement<l, Operation<oper_name, Hndl, args...>>)
+  {
+	  return Statement<DECT(label_replace(l{})), Operation<oper_name,DECT(replace(Hndl{})), DECT(replace(args{}))...>>{};
+  }
+
   template <typename l, typename b, typename e>
   static constexpr auto _replace(Statement<l, Assignment<b, e>>)
   {
@@ -89,18 +107,6 @@ struct replace_label<Label<temp_label<target1, target2>>, Label<newlabel>>
   static constexpr auto _replace(Statement<l, LetRemote<b, e>>)
   {
     return Statement<DECT(label_replace(l{})), LetRemote<DECT(replace(b{})), DECT(replace(e{}))>>{};
-  }
-
-	template <typename l, typename n, typename h, typename e>
-		static constexpr auto _replace(Statement<l, LetIsValid<n,h, e>>)
-  {
-    return Statement<DECT(label_replace(l{})), LetIsValid<n,DECT(replace(h{})), DECT(replace(e{}))>>{};
-  }
-
-	template <typename l, typename oper_name, typename Hndl, typename... args>
-		static constexpr auto _replace(Statement<l, StatementOperation<oper_name, Hndl, args...>>)
-  {
-	  return Statement<DECT(label_replace(l{})), StatementOperation<oper_name,DECT(replace(Hndl{})), DECT(replace(args{}))...>>{};
   }
 
   template <typename l, typename c, typename t, typename e>
