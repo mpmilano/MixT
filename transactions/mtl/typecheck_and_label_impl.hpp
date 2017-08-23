@@ -129,16 +129,20 @@ constexpr auto _typecheck(old_env, parse_phase::Operation<oper_name, Hndl, parse
 
 }//*/
 template <int seqnum, int depth, typename old_env, typename oper_name, typename Hndl, typename... var_args>
-constexpr auto _typecheck(old_env a, parse_phase::Statement<parse_phase::Operation<oper_name, Hndl, parse_phase::operation_args_exprs<>,parse_phase::operation_args_varrefs<var_args...> > > b)
+constexpr auto _typecheck(old_env a, parse_phase::Statement<parse_phase::Operation<oper_name, Hndl, parse_phase::operation_args_exprs<>,parse_phase::operation_args_varrefs<var_args...> > >)
 {
-	return _typecheck<seqnum, depth, old_env, std::true_type, oper_name, Hndl, var_args...>(a,b);
+	return _typecheck<seqnum, depth, old_env, std::true_type*, oper_name, Hndl, var_args...>(
+		a,
+		parse_phase::Operation<oper_name, Hndl, parse_phase::operation_args_exprs<>,parse_phase::operation_args_varrefs<var_args...> >{});
 
 }
 
 template <int seqnum, int depth, typename old_env, typename oper_name, typename Hndl, typename... var_args>
-constexpr auto _typecheck(old_env a, parse_phase::Expression<parse_phase::Operation<oper_name, Hndl, parse_phase::operation_args_exprs<>,parse_phase::operation_args_varrefs<var_args...> > > b)
+constexpr auto _typecheck(old_env a, parse_phase::Expression<parse_phase::Operation<oper_name, Hndl, parse_phase::operation_args_exprs<>,parse_phase::operation_args_varrefs<var_args...> > >)
 {
-	return _typecheck<seqnum, depth, old_env, std::false_type, oper_name, Hndl, var_args...>(a,b);
+	return _typecheck<seqnum, depth, old_env, std::false_type*, oper_name, Hndl, var_args...>(
+		a,
+		parse_phase::Operation<oper_name, Hndl, parse_phase::operation_args_exprs<>,parse_phase::operation_args_varrefs<var_args...> >{});
 
 }
 

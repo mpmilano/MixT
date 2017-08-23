@@ -286,21 +286,21 @@ struct remote_map_holder
 			template<typename fst, typename... rst>
 			static auto run(const mutils::typelist<fst,rst...>&){
 				struct inner{
-					static auto& run(fst& _this){ return _this;}
+					static auto* run(fst* _this){ return _this;}
 				};
 				return inner{};
 			}			
 
 			static auto run(const mutils::typelist<>&){
 				struct inner{
-					static auto& run(...){ static const std::nullptr_t np{nullptr}; return np;}
+					static std::nullptr_t run(...){ return nullptr;}
 				};
 				return inner{};
 			}
 			
 			template<typename U>
 			static auto& run(U& _this){
-				return get_specific_holder_str::run(type_list{}).run(_this);
+				return *get_specific_holder_str::run(type_list{}).run(&_this);
 			}
 		};
 

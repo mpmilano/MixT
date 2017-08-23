@@ -394,18 +394,28 @@ constexpr auto _flatten_exprs(Statement<LetRemote<Binding<name, expr>, body>>)
 }
 
 	template<typename n, typename name, typename hndl, typename v, typename... args>
-	auto operation_to_statement_f(Statement<Let<Binding<n,Operation<name,hndl,args...> >, Statement<Return<Expression<VarReference<v> > > > > >){
+	auto operation_to_statement_f(Statement<Let<Binding<n,Expression<Operation<name,hndl,args...> > >, Statement<Return<Expression<VarReference<v> > > > > >){
 		return Statement<Operation<name,hndl,args...> >{};
 	}
 
-	template<typename n,typename e,typename body>
-	auto operation_to_statement_f(Statement<Let<Binding<n,e>, body> >){
-		return Statement<Let<Binding<n,e>, DECT(operation_to_statement_f(body{}))> >{};
+	template<typename n,typename e,typename binding, typename body>
+	auto operation_to_statement_f(Statement<Let<Binding<n,e>, Statement<Let<binding, body> > > >){
+		return Statement<Let<Binding<n,e>, DECT(operation_to_statement_f(Statement<Let<binding, body> >{}))> >{};
 	}
 
-	template<typename n,typename e,typename body>
-	auto operation_to_statement_f(Statement<LetRemote<Binding<n,e>, body> >){
-		return Statement<LetRemote<Binding<n,e>, DECT(operation_to_statement_f(body{}))> >{};
+	template<typename n,typename e, typename binding, typename body>
+	auto operation_to_statement_f(Statement<LetRemote<Binding<n,e>, Statement<Let<binding, body> > > >){
+		return Statement<LetRemote<Binding<n,e>, DECT(operation_to_statement_f(Statement<Let<binding, body> >{}))> >{};
+	}
+
+	template<typename n,typename e,typename binding, typename body>
+	auto operation_to_statement_f(Statement<Let<Binding<n,e>, Statement<LetRemote<binding, body> > > >){
+		return Statement<Let<Binding<n,e>, DECT(operation_to_statement_f(Statement<LetRemote<binding, body> >{}))> >{};
+	}
+
+	template<typename n,typename e, typename binding, typename body>
+	auto operation_to_statement_f(Statement<LetRemote<Binding<n,e>, Statement<LetRemote<binding, body> > > >){
+		return Statement<LetRemote<Binding<n,e>, DECT(operation_to_statement_f(Statement<LetRemote<binding, body> >{}))> >{};
 	}
 
 	template<typename T>
@@ -418,7 +428,7 @@ constexpr auto _flatten_exprs(Statement<Operation<oper_name, Hndl, operation_arg
 {
 	using operation = Operation<oper_name, Hndl, operation_args_exprs<e1,exprs...>, var_args>;
 	constexpr auto ret_partial = flatten_exprs<seqnum+1,depth>(remove_layer<seqnum,depth,ret_stmt>(Expression<operation>{}));
-	return ret_partial;//operation_to_statement_f(ret_partial);
+	return operation_to_statement_f(ret_partial);
 }
 
 template <char seqnum, char depth, typename oper_name, typename Hndl, typename var_args>
@@ -426,7 +436,7 @@ constexpr auto _flatten_exprs(Statement<Operation<oper_name, Hndl, operation_arg
 {
 	using operation = Operation<oper_name, Hndl, operation_args_exprs<>, var_args>;
 	constexpr auto ret_parital = flatten_exprs<seqnum+1,depth>(remove_layer<seqnum,depth,ret_stmt>(Expression<operation>{}));
-	return ret_parital;//operation_to_statement_f(ret_parital);
+	return operation_to_statement_f(ret_parital);
 }
 
 template <char seqnum, char depth, typename var, typename expr>

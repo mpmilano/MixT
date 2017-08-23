@@ -195,8 +195,6 @@ _run_phase(typename AST<l>::template Statement<typename AST<l>::template Return<
            std::enable_if_t<!std::is_void<y>::value>* = nullptr)
 {
   constexpr typename AST<l>::template Expression<y, R>* r{ nullptr };
-  whendebug(auto &s2 = s.as_virtual_holder().template get_specific_holder<int>());
-  whendebug((void)s2);
   throw ReturnedValue<y>{ run_phase<l>(r, ctx, s) };
 }
 

@@ -109,13 +109,13 @@ auto _recollapse(typename AST<l>::template Expression<y, typename AST<l>::templa
 	template <typename l, typename candidates, typename sub_map, typename n, typename h, typename... a>
 	auto _recollapse(typename AST<l>::template Statement<typename AST<l>::template Operation<n,h,a...>>)
 {
-	return typename AST<l>::template Statement<_recollapse<l,candidates,sub_map> >{typename AST<l>::template Operation<n,h,a...>{}};
+	return typename AST<l>::template Statement<DECT(_recollapse<l,candidates,sub_map>(typename AST<l>::template Operation<n,h,a...>{})) >{};
 }
 
-	template <typename l, typename y, typename candidates, typename sub_map, typename n, typename h, typename... a>
+	template <typename l, typename candidates, typename sub_map, typename y, typename n, typename h, typename... a>
 	auto _recollapse(typename AST<l>::template Expression<y,typename AST<l>::template Operation<n,h,a...>>)
 {
-	return typename AST<l>::template Expression<y,_recollapse<l,candidates,sub_map> >{typename AST<l>::template Operation<n,h,a...>{}};
+	return typename AST<l>::template Expression<y,DECT(_recollapse<l,candidates,sub_map>(typename AST<l>::template Operation<n,h,a...>{})) >{};
 }
 
 

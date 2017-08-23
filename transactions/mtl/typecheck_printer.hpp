@@ -74,9 +74,8 @@ print_ast(std::ostream& o, const Statement<l, LetRemote<b, body>>&, const std::s
 
 	template <typename l, typename y, typename oper_name, typename Hndl, typename... args>
 void
-	print_ast(std::ostream& o, const Expression<l, y, Operation<oper_name,Hndl,args...>>&, const std::string& tab)
+	print_ast(std::ostream& o, const Expression<l, y, Operation<oper_name,Hndl,args...>>&)
 {
-	o << tab;
 	print_ast(o,Hndl{});
 	o << ". @" << l{} << " " << oper_name{} << "(";
 	(print_ast(o,args{}),...);

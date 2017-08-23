@@ -25,14 +25,8 @@ constexpr auto _remove_unused(const typename AST<l>::template Statement<typename
   return typename AST<l>::template Statement<typename AST<l>::template LetRemote<b, DECT(remove_unused<l>(body{}, typeset{}))>>{};
 }
 
-	template <typename l, typename typeset, typename b, typename h, typename body>
-	constexpr auto _remove_unused(const typename AST<l>::template Statement<typename AST<l>::template LetIsValid<b, h, body>>, typeset)
-{
-  return typename AST<l>::template Statement<typename AST<l>::template LetIsValid<b, h, DECT(remove_unused<l>(body{}, typeset{}))>>{};
-}
-
 	template <typename l, typename typeset, typename n, typename h, typename... a>
-	constexpr auto _remove_unused(const typename AST<l>::template Statement<typename AST<l>::template StatementOperation<n, h, a...>> _a, typeset)
+	constexpr auto _remove_unused(const typename AST<l>::template Statement<typename AST<l>::template Operation<n, h, a...>> _a, typeset)
 {
 	return _a;
 }

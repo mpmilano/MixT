@@ -99,7 +99,7 @@ constexpr auto let_remote_binding(phase_api, typecheck_phase::Binding<label2, Yi
 				basic_ast,
 				typename AST<label>::template Statement<
 					typename AST<label>::template RefreshRemoteOccurance<
-						typename DECT(collect_phase(old_api{},hndl{}))::ast> > > >{};
+						typename DECT(AST<label>::collect_phase(old_api{},hndl{}))::ast> > > >{};
 	}
 	
 template <typename l>

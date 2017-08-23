@@ -77,6 +77,16 @@ struct constraints
     return constraints<A..., T...>{};
   }
 
+	static constexpr auto append(){
+		return constraints{};
+	}
+
+	template <typename arg1, typename... args>
+	static constexpr auto append(arg1, args...)
+  {
+	  return append(arg1{}).append(args{}...);
+  }
+
   template <typename L, typename R>
   using lte = std::integral_constant<bool, L::lte(R{})>;
   static constexpr auto sort()
@@ -193,27 +203,28 @@ constexpr auto _collect_constraints(Statement<l, LetRemote<b, e>> a)
     .append(constraints<must_flow_to<typename This::expr_label, typename This::handle_label,MUTILS_STRING(let_remote, expr -> hndl)>>{});
 }
 
-template <typename pc_label, typename oper_name, typename Hndl, typename... args>
-constexpr auto _collect_constraints(Operation<oper_name,Hndl,args...> a)
+	template <typename pc_label, typename expr_label, typename handle_label, typename oper_name, typename Hndl, typename... args>
+constexpr auto _collect_constraints(Operation<oper_name,Hndl,args...> )
 {
-  using This = DECT(a);
-  using new_pc = label_min_vararg<pc_label, typename This::expr_label, typename This::handle_label, typename args::label...>;
+  using new_pc = label_min_vararg<pc_label, expr_label, handle_label, typename args::label...>;
   return collect_constraints(new_pc{}, Hndl{})
-	  .append(constraints<must_flow_to<typename This::expr_label, typename This::handle_label,MUTILS_STRING(statement_operation, expr -> hndl)>,
-			  must_flow_to<typename args::label, typename This::handle_label, MUTILS_STRING(statement_operation, args -> hndl)>...>{})
+	  .append(constraints<must_flow_to<expr_label, handle_label,MUTILS_STRING(statement_operation, expr -> hndl)>,
+			  must_flow_to<typename args::label, handle_label, MUTILS_STRING(statement_operation, args -> hndl)>...>{})
 	  .append(collect_constraints(new_pc{},args{})...);
 }
 	
 template <typename pc_label, typename l, typename oper_name, typename Hndl, typename... args>
-constexpr auto _collect_constraints(Statement<l, Operation<oper_name,Hndl,args...> >)
+constexpr auto _collect_constraints(Statement<l, Operation<oper_name,Hndl,args...> > a)
 {
-	return _collect_constraints(Operation<oper_name,Hndl,args...>{});
+	using This = DECT(a);
+	return _collect_constraints<pc_label,typename This::expr_label, typename This::handle_label, oper_name,Hndl,args...>(Operation<oper_name,Hndl,args...>{});
 }
 
 template <typename pc_label, typename l, typename y, typename oper_name, typename Hndl, typename... args>
-constexpr auto _collect_constraints(Expression<l, y, Operation<oper_name,Hndl,args...> >)
+constexpr auto _collect_constraints(Expression<l, y, Operation<oper_name,Hndl,args...> > a)
 {
-	return _collect_constraints(Operation<oper_name,Hndl,args...>{});
+	using This = DECT(a);
+	return _collect_constraints<pc_label,typename This::expr_label, typename This::handle_label, oper_name,Hndl,args...>(Operation<oper_name,Hndl,args...>{});
 }
 
 template <typename pc_label, typename l, typename c, typename t, typename e>

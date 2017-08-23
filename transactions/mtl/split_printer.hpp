@@ -111,21 +111,29 @@ print_ast(std::ostream& o, const typename AST<l>::template Statement<typename AS
   o << "}";
 }
 
-	template <typename l, typename n, typename h, typename body>
+	template <typename l, typename y, typename h>
 void
-	print_ast(std::ostream& o, const typename AST<l>::template Statement<typename AST<l>::template LetIsValid<n,h, body>>&, const std::string& tab)
+	print_ast(std::ostream& o, const typename AST<l>::template Expression<y,typename AST<l>::template IsValid<h>>&)
 {
-  o << tab << "let isValid" << " [" << n{} << " = " << h{} << "] in "
-    << "{";
-  print_ast<l>(o, body{}, tab);
-  o << tab << "}";
+	print_ast<l>(o,h{});
+	o << ".isValid()";
 }
 
 template <typename l, typename oper_name, typename Hndl, typename... args>
 void
-print_ast(std::ostream& o, const typename AST<l>::template Statement<typename AST<l>::template StatementOperation<oper_name,Hndl,args...>>&, const std::string& tab)
+print_ast(std::ostream& o, const typename AST<l>::template Statement<typename AST<l>::template Operation<oper_name,Hndl,args...>>&, const std::string& tab)
 {
 	o << tab;
+	print_ast<l>(o,Hndl{});
+	o << "." << oper_name{} << "(";
+	((print_ast<l>(o,args{}),o << ","),...);
+	o << ")";
+}
+
+template <typename l, typename y, typename oper_name, typename Hndl, typename... args>
+void
+print_ast(std::ostream& o, const typename AST<l>::template Expression<y,typename AST<l>::template Operation<oper_name,Hndl,args...>>&)
+{
 	print_ast<l>(o,Hndl{});
 	o << "." << oper_name{} << "(";
 	((print_ast<l>(o,args{}),o << ","),...);
