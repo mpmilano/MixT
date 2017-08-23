@@ -155,6 +155,15 @@ constexpr auto _collect_constraints(Expression<l, y, BinOp<op, L, R>>)
   return collect_constraints(pc_label{}, L{}).append(collect_constraints(pc_label{}, R{}));
 }
 
+template <typename pc_label, typename l, typename y, typename h>
+constexpr auto _collect_constraints(Expression<l, y, IsValid<h>> a)
+{
+  using This = DECT(a);
+  using new_pc = Label<label_min_of<Label<label_min_of<pc_label, typename This::expr_label>>, typename This::handle_label>>;
+  return collect_constraints(new_pc{}, h{})
+	  .append(constraints<must_flow_to<typename This::expr_label, typename This::handle_label,MUTILS_STRING(isvalid, expr -> hndl)>>{});
+}
+
 template <typename pc_label, typename l, typename lv, typename yv, typename v, typename le, typename ye, typename e>
 constexpr auto _collect_constraints(Statement<l, Assignment<Expression<lv, yv, v>, Expression<le, ye, e>>>)
 {
@@ -184,25 +193,27 @@ constexpr auto _collect_constraints(Statement<l, LetRemote<b, e>> a)
     .append(constraints<must_flow_to<typename This::expr_label, typename This::handle_label,MUTILS_STRING(let_remote, expr -> hndl)>>{});
 }
 
-	template <typename pc_label, typename l, typename n, typename h, typename e>
-	constexpr auto _collect_constraints(Statement<l, LetIsValid<n, h, e>> a)
-{
-  using This = DECT(a);
-  using new_pc = Label<label_min_of<Label<label_min_of<pc_label, typename This::expr_label>>, typename This::handle_label>>;
-	using b = Binding<l, bool, n, h>;
-  return collect_constraints(new_pc{}, b{})
-    .append(collect_constraints(new_pc{}, e{}))
-    .append(constraints<must_flow_to<typename This::expr_label, typename This::handle_label,MUTILS_STRING(let_remote, expr -> hndl)>>{});
-}
-
-template <typename pc_label, typename l, typename oper_name, typename Hndl, typename Body, typename... args>
-constexpr auto _collect_constraints(Statement<l, StatementOperation<oper_name,Hndl,Body,args...> > a)
+template <typename pc_label, typename oper_name, typename Hndl, typename... args>
+constexpr auto _collect_constraints(Operation<oper_name,Hndl,args...> a)
 {
   using This = DECT(a);
   using new_pc = label_min_vararg<pc_label, typename This::expr_label, typename This::handle_label, typename args::label...>;
-  return collect_constraints(new_pc{}, Body{})
+  return collect_constraints(new_pc{}, Hndl{})
 	  .append(constraints<must_flow_to<typename This::expr_label, typename This::handle_label,MUTILS_STRING(statement_operation, expr -> hndl)>,
-			  must_flow_to<typename args::label, typename This::handle_label, MUTILS_STRING(statement_operation, args -> hndl)>...>{});
+			  must_flow_to<typename args::label, typename This::handle_label, MUTILS_STRING(statement_operation, args -> hndl)>...>{})
+	  .append(collect_constraints(new_pc{},args{})...);
+}
+	
+template <typename pc_label, typename l, typename oper_name, typename Hndl, typename... args>
+constexpr auto _collect_constraints(Statement<l, Operation<oper_name,Hndl,args...> >)
+{
+	return _collect_constraints(Operation<oper_name,Hndl,args...>{});
+}
+
+template <typename pc_label, typename l, typename y, typename oper_name, typename Hndl, typename... args>
+constexpr auto _collect_constraints(Expression<l, y, Operation<oper_name,Hndl,args...> >)
+{
+	return _collect_constraints(Operation<oper_name,Hndl,args...>{});
 }
 
 template <typename pc_label, typename l, typename c, typename t, typename e>

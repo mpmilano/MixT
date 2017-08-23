@@ -30,16 +30,22 @@ constexpr bool _writes_remote(Statement<l,LetRemote<Binding<bl,by,bv,be>,s> >){
 	return writes_remote<DECT(remote_name_set::template add<bv>()) >(s{});
 }
 
-template<typename remote_name_set, typename l, typename bv, typename be, typename s>
-constexpr bool _writes_remote(Statement<l,LetIsValid<bv,be,s> >){
+template<typename remote_name_set, typename l, typename y, typename be>
+constexpr bool _writes_remote(Expression<l,y,IsValid<be> >){
 	//you can't write remote with this remote binding, isValid is read-only
-	return writes_remote<remote_name_set>(s{});
+	return writes_remote<remote_name_set>(be{});
 }
 
 template<typename remote_name_set, typename l, typename oper_name, typename Hndl, typename... args>
-constexpr bool _writes_remote(Statement<l,StatementOperation<oper_name, Hndl, args...> >){
+constexpr bool _writes_remote(Statement<l,Operation<oper_name, Hndl, args...> >){
 	//TODO: should operations count as a remote write? 
-	return false;
+	return (writes_remote<remote_name_set>(Hndl{}) || ... || writes_remote<remote_name_set>(args{}));
+}
+
+template<typename remote_name_set, typename l, typename y, typename oper_name, typename Hndl, typename... args>
+constexpr bool _writes_remote(Expression<l,y,Operation<oper_name, Hndl, args...> >){
+	//TODO: should operations count as a remote write?
+	return (writes_remote<remote_name_set>(Hndl{}) || ... || writes_remote<remote_name_set>(args{}));
 }
 
 template<typename remote_name_set, typename l, typename c, typename t, typename e>

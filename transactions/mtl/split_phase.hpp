@@ -87,17 +87,21 @@ constexpr auto let_remote_binding(phase_api, typecheck_phase::Binding<label2, Yi
   return extracted_phase<label, returned_api, void, typename AST<label>::template Binding<label2, Yields, var, typename processed_expr::ast>>{};
 }
 
-	template <typename label, typename var, typename exprl, typename handle_t, typename expr, typename phase_api>
-constexpr auto let_isValid_binding(phase_api, var, typecheck_phase::Expression<exprl, handle_t, expr>)
-{
-  // we can descend into a mismatched binding, but only when that binding is
-  // used *later* than us.
-  using new_binding = type_binding<var, bool, label, type_location::local>;
-  using processed_expr = DECT(AST<label>::collect_phase(phase_api{}, typecheck_phase::Expression<exprl, handle_t, expr>{}));
-  using returned_api = DECT(processed_expr::api::add_provides(new_binding{}));
-  return extracted_phase<label, returned_api, void, typename processed_expr::ast>{};
-}
-
+	template<typename basic_ast, typename old_api, typename label, typename l, typename y, typename e>
+	auto let_ast_if_operation(typecheck_phase::Expression<l,y,e>){
+		return basic_ast{};
+	}
+	
+	template<typename basic_ast, typename old_api, typename label, typename l, typename y, typename oper_name, typename hndl, typename... args>
+	auto let_ast_if_operation(typecheck_phase::Expression<l,y,typecheck_phase::Operation<oper_name,hndl,args...> >){
+		return typename AST<label>::template Statement<
+			typename AST<label>::template Sequence<
+				basic_ast,
+				typename AST<label>::template Statement<
+					typename AST<label>::template RefreshRemoteOccurance<
+						typename DECT(collect_phase(old_api{},hndl{}))::ast> > > >{};
+	}
+	
 template <typename l>
 template <typename _binding, typename Body, typename old_api>
 constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Statement<label, typecheck_phase::Let<_binding, Body>>)
@@ -107,7 +111,9 @@ constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Statement
   using body = DECT(collect_phase(combined_api<typename binding::api, old_api>{}, Body{}));
   using body_ast = typename body::ast;
   using new_api = combined_api<typename binding::api, typename body::api>;
-  return extracted_phase<label, new_api, typename body::returns, Statement<Let<binding_ast, body_ast>>>{};
+  using basic_ast = Statement<Let<binding_ast, body_ast> >;
+  using new_ast = DECT(let_ast_if_operation<basic_ast,old_api,label>(typename _binding::expr{}));
+  return extracted_phase<label, new_api, typename body::returns,new_ast>{};
 }
 
 template <typename l>
@@ -169,42 +175,44 @@ constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Statement
 
 template <typename l>
 template <typename oper_name, typename hndl, typename old_api, typename... args>
-constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Statement<label, typecheck_phase::StatementOperation<oper_name,hndl, args...>>)
+constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Statement<label, typecheck_phase::Operation<oper_name,hndl, args...>>)
 {
   using new_hndl = DECT(collect_phase(old_api{}, hndl{}));
   using new_api = combined_api<typename new_hndl::api, typename DECT(collect_phase(old_api{}, args{}))::api...>;
-  using new_ast = Statement<Sequence<Statement<StatementOperation<oper_name,typename new_hndl::ast, typename DECT(collect_phase(old_api{}, args{}))::ast...> >,
+  using new_ast = Statement<Sequence<Statement<Operation<oper_name,typename new_hndl::ast, typename DECT(collect_phase(old_api{}, args{}))::ast...> >,
 									 Statement<RefreshRemoteOccurance<typename DECT(collect_phase(old_api{},hndl{}))::ast> > > >;
   return extracted_phase<label, new_api, void, new_ast>{};
 }
+
 	
 template <typename l>
 template <typename label2, typename oper_name, typename hndl, typename old_api, typename... args>
-constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Statement<label2, typecheck_phase::StatementOperation<oper_name,hndl, args...>>,
+constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Statement<label2, typecheck_phase::Operation<oper_name,hndl, args...>>,
                                              std::enable_if_t<!are_equivalent(Label<l>{}, label2{})> const* const)
 {
 	//operation is in different phase.
-	using new_hndl = DECT(collect_phase(old_api{},hndl{}));
-	return extracted_phase<label,typename new_hndl::api, void, Statement<IncrementOccurance<typename new_hndl::ast> > >{};
+	return extracted_phase<label, phase_api<label, requires<>, provides<>, typename old_api::inherits>,void,Statement<Sequence<>>>{};
 }
-
-	/*
-	template <typename l>
-	template <typename label2, typename name, typename hndl, typename Body, typename old_api>
-	constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Statement<label2, typecheck_phase::LetIsValid<name,hndl, Body>>,
-                                             std::enable_if_t<!are_equivalent(Label<l>{}, label2{})> const* const)
+	
+template <typename l>
+template <typename y, typename oper_name, typename hndl, typename old_api, typename... args>
+constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Expression<label, y,typecheck_phase::Operation<oper_name,hndl, args...> >)
 {
-  // binding runs at a different phase, skip it.
-	using new_body = DECT(collect_phase(old_api{}, Body{}));
-  using body_ast = typename new_body::ast;
-  using var = name;
-  using new_api = typename new_body::api;
-  //TODO: this is being replaced by something. 
-  using stmt = Statement<Sequence<Statement<IncrementRemoteOccurance<var>>, body_ast>>;
-
-  return extracted_phase<label, new_api, typename new_body::returns, stmt>{};
+  using new_hndl = DECT(collect_phase(old_api{}, hndl{}));
+  using new_api = combined_api<typename new_hndl::api, typename DECT(collect_phase(old_api{}, args{}))::api...>;
+  using new_ast = Expression<y,Operation<oper_name,typename new_hndl::ast, typename DECT(collect_phase(old_api{}, args{}))::ast...> >;
+  return extracted_phase<label, new_api, void, new_ast>{};
 }
-	//*/
+	
+	template <typename l>
+	template <typename y, typename hndl, typename old_api>
+	constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Expression<label,y, typecheck_phase::IsValid<hndl>>)
+	{
+		using hndl_post = DECT(AST<label>::collect_phase(old_api{}, hndl{}));
+		using hndl_ast = typename hndl_post::ast;
+		using new_api = typename hndl_post::api;
+		return extracted_phase<label, new_api, void, Expression<y,IsValid<hndl_ast> > >{};
+	}
 
 template <typename l>
 template <typename Var, typename Expr, typename old_api>

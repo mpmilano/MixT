@@ -56,14 +56,20 @@ constexpr auto _collect_labels_helper(Statement<Label<label_min_of<l, r>>, LetRe
   return collect_labels_helper(b{}).combine(collect_labels_helper(e{}));
 }
 
-template <typename l, typename r, typename n, typename h, typename e>
-constexpr auto _collect_labels_helper(Statement<Label<label_min_of<l, r>>, LetIsValid<n, h, e>>)
+	template <typename l, typename r, typename y, typename h>
+constexpr auto _collect_labels_helper(Expression<Label<label_min_of<l, r>>, y, IsValid<h>>)
 {
-  return collect_labels_helper(h{}).combine(collect_labels_helper(e{}));
+	return collect_labels_helper(h{});
 }
 
+	template <typename l, typename r, typename y, typename oper_name, typename Hndl, typename... args>
+	constexpr auto _collect_labels_helper(Expression<Label<label_min_of<l, r>>, y, Operation<oper_name, Hndl, args...>>)
+{
+	return collect_labels_helper(Hndl{}).combine(collect_labels_helper(args{})...);
+}
+	
 template <typename l, typename r, typename oper_name, typename Hndl, typename... args>
-constexpr auto _collect_labels_helper(Statement<Label<label_min_of<l, r>>, StatementOperation<oper_name, Hndl, args...>>)
+constexpr auto _collect_labels_helper(Statement<Label<label_min_of<l, r>>, Operation<oper_name, Hndl, args...>>)
 {
 	return collect_labels_helper(Hndl{}).combine(collect_labels_helper(args{})...);
 }
@@ -140,14 +146,20 @@ constexpr auto _collect_labels_helper(Statement<Label<temp_label<l, r>>, LetRemo
   return collect_labels_helper(b{}).combine(collect_labels_helper(e{}));
 }
 
-	template <int l, int r, typename n, typename h, typename e>
-	constexpr auto _collect_labels_helper(Statement<Label<temp_label<l, r>>, LetIsValid<n,h, e>>)
+	template <int l, int r, typename y, typename h>
+	constexpr auto _collect_labels_helper(Expression<Label<temp_label<l, r>>, y, IsValid<h>>)
 {
-  return collect_labels_helper(h{}).combine(collect_labels_helper(e{}));
+	return collect_labels_helper(h{});
 }
 
+template <int l, int r, typename y, typename oper_name, typename Hndl, typename... args>
+constexpr auto _collect_labels_helper(Expression<Label<temp_label<l, r>>, y, Operation< oper_name,  Hndl,  args...>>)
+{
+	return collect_labels_helper(Hndl{}).combine(collect_labels_helper(args{})...);
+}
+	
 template <int l, int r, typename oper_name, typename Hndl, typename... args>
-constexpr auto _collect_labels_helper(Statement<Label<temp_label<l, r>>, StatementOperation< oper_name,  Hndl,  args...>>)
+constexpr auto _collect_labels_helper(Statement<Label<temp_label<l, r>>, Operation< oper_name,  Hndl,  args...>>)
 {
 	return collect_labels_helper(Hndl{}).combine(collect_labels_helper(args{})...);
 }
@@ -269,16 +281,24 @@ constexpr auto _collect_labels_helper(Statement<l, LetRemote<b, e>>)
   return typeset<l>::combine(collect_labels_helper(b{})).combine(collect_labels_helper(e{}));
 }
 
-template <typename l, typename n, typename h, typename e>
-constexpr auto _collect_labels_helper(Statement<l, LetIsValid<n,h, e>>)
+	template <typename l, typename y, typename h>
+	constexpr auto _collect_labels_helper(Expression<l, y, IsValid<h>>)
 {
   using namespace mutils;
   static_assert(l::is_label::value);
-  return typeset<l>::combine(collect_labels_helper(h{})).combine(collect_labels_helper(e{}));
+  return typeset<l>::combine(collect_labels_helper(h{}));
 }
 
+template <typename l, typename y, typename oper_name, typename Hndl, typename... args>
+constexpr auto _collect_labels_helper(Expression<l, y, Operation< oper_name,  Hndl,  args...>>)
+{
+  using namespace mutils;
+  static_assert(l::is_label::value);
+  return typeset<l>::combine(collect_labels_helper(Hndl{})).combine(collect_labels_helper(args{})...);
+}
+	
 template <typename l, typename oper_name, typename Hndl, typename... args>
-constexpr auto _collect_labels_helper(Statement<l, StatementOperation< oper_name,  Hndl,  args...>>)
+constexpr auto _collect_labels_helper(Statement<l, Operation< oper_name,  Hndl,  args...>>)
 {
   using namespace mutils;
   static_assert(l::is_label::value);

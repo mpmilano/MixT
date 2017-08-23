@@ -293,7 +293,7 @@ struct remote_map_holder
 
 			static auto run(const mutils::typelist<>&){
 				struct inner{
-					static auto& run(...){ return nullptr;}
+					static auto& run(...){ static const std::nullptr_t np{nullptr}; return np;}
 				};
 				return inner{};
 			}

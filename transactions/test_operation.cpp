@@ -23,10 +23,17 @@ using namespace tracker;
 int main(){
 	using Store = TestingStore<Label<top> >;
 	using int_handle = typename Store::template TestingHandle<int>;
-	using int_handle_handle = typename Store::template TestingHandle<int_handle>;
 	Store store;
-	constexpr int a_name = 43;
 	constexpr int int_name = 23;
+	int_handle ih = store.template newObject<int>(nullptr,int_name,int_name);
+	using ClientTrk = ClientTracker<>;
+	ClientTrk ct;
+	TRANSACTION(return 3 + 4)::WITH(ih).run_local(ct,ih);
+	TRANSACTION(return ih.isValid())::WITH(ih).run_local(ct,ih);
+	
+#if 0
+	using int_handle_handle = typename Store::template TestingHandle<int_handle>;
+	constexpr int a_name = 43;
 	int_handle_handle a = store.template newObject<int_handle>(nullptr,a_name,store.template newObject<int>(nullptr,int_name,23));
 	using str = MUTILS_STRING({(*a).noop(1,2,3,4)});
 	constexpr auto parsed = flatten_expressions(parse_statement(str{}));
@@ -38,8 +45,6 @@ int main(){
 	using tracked_t = DECT(insert_tracking_begin(inferred_t{}));
 	auto split = split_computation<tracked_t, type_binding<MUTILS_STRING(a),DECT(a),Label<top>, type_location::local > >();
 	std::cout << split << std::endl;//*/
-	using ClientTrk = ClientTracker<>;
-	ClientTrk ct;
 	TRANSACTION(a.noop(1,2,3,4))::WITH(a).run_local(ct,a);
 	TRANSACTION((*a).noop(1,2,3,4))::WITH(a).run_local(ct,a);
 	{
@@ -48,4 +53,5 @@ int main(){
 		std::cout << remote_bind_txn << std::endl;
 		assert(remote_bind_txn.run_local(ct,a) == 4);
 	}
+#endif
 }

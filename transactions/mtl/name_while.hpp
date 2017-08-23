@@ -37,16 +37,10 @@ constexpr auto _name_while(Statement<l, LetRemote<binding, body>>)
   return Statement<l, LetRemote<binding, DECT(name_while<seqnum, depth>(body{}))>>{};
 }
 
-template <char seqnum, char depth, typename l, typename n, typename h, typename body>
-constexpr auto _name_while(Statement<l, LetIsValid<n, h,body>>)
+template <char seqnum, char depth, typename l, typename oper_name, typename Hndl, typename... args>
+constexpr auto _name_while(Statement<l, Operation<oper_name, Hndl, args...>> a)
 {
-  return Statement<l, LetIsValid<n,h, DECT(name_while<seqnum, depth>(body{}))> >{};
-}
-
-template <char seqnum, char depth, typename l, typename oper_name, typename Hndl, typename Body, typename... args>
-constexpr auto _name_while(Statement<l, StatementOperation<oper_name, Hndl, Body, args...>>)
-{
-	return Statement<l, StatementOperation<oper_name,Hndl, DECT(name_while<seqnum, depth>(Body{})), args...> >{};
+	return a;
 }
 
 template <char, char, typename l, typename Var, typename Expr>

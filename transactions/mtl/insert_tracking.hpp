@@ -53,14 +53,8 @@ constexpr auto _insert_tracking(Statement<l, LetRemote<b, e>>)
   return Statement<l, LetRemote<b, DECT(insert_tracking<tracked_labels, DECT(remote_bound::template add<DECT(extract_remote_binding(b{}))>())>(e{}))>>{};
 }
 
-template <typename tracked_labels, typename remote_bound, typename l, typename n, typename h, typename e>
-constexpr auto _insert_tracking(Statement<l, LetIsValid<n,h, e>>)
-{
-  return Statement<l, LetIsValid<n,h, DECT(insert_tracking<tracked_labels, DECT(remote_bound::template add<n>())>(e{}))>>{};
-}
-
 template <typename tracked_labels, typename remote_bound, typename l, typename oper_name, typename Hndl, typename... args>
-constexpr auto _insert_tracking(Statement<l, StatementOperation<oper_name, Hndl, args...>> a)
+constexpr auto _insert_tracking(Statement<l, Operation<oper_name, Hndl, args...>> a)
 {
 	return a;
 }

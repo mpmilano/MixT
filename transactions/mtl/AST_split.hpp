@@ -28,9 +28,6 @@ struct AST;
 
 template <typename l, typename label2, typename Yields, typename var, typename expr, typename phase_api>
 constexpr auto let_remote_binding(phase_api, typecheck_phase::Binding<label2, Yields, var, expr>);
-	
-template <typename label, typename var, typename exprl, typename handle_t, typename expr, typename phase_api>
-constexpr auto let_isValid_binding(phase_api, var, typecheck_phase::Expression<exprl, handle_t, expr>);
 
 template <typename l>
 struct AST<Label<l>>
@@ -200,31 +197,41 @@ struct AST<Label<l>>
     using substatement = typename LetRemote<Binding, Body>::substatement;
   };
 
-	template <typename Name, typename Hndl, typename Body>
-  struct LetIsValid;
-  template <typename Name, typename Hndl, typename Body>
-  struct LetIsValid<Name, Hndl, Statement<Body>>
+	template <typename Hndl>
+  struct IsValid;
+	template <typename Hndl_y, typename Hndl_e>
+		struct IsValid<Expression<Hndl_y, Hndl_e> >
   {
-    using subcond = typename Hndl::subexpr;
-    using subbod = typename Statement<Body>::substatement;
-    using substatement = LetIsValid;
+	  using subcond = Hndl_e;
+	  using subexpr = IsValid;
+	  using yield = bool;
   };
-  template <typename Name, typename Hndl, typename Body>
-		struct Statement<LetIsValid<Name,Hndl, Body>>
+  template <typename Hndl>
+	  struct Expression<bool, IsValid<Hndl>>
   {
-    using substatement = typename LetIsValid<Name,Hndl, Body>::substatement;
+	  using subexpr = typename IsValid<Hndl>::subexpr;
+	  using yield = bool;
   };  
 
   template <typename oper_name, typename Hndl, typename... args>
-	struct StatementOperation
+	struct Operation
   {
     using subcond = typename Hndl::subexpr;
-    using substatement = StatementOperation;
+    using substatement = Operation;
+	  using subexpr = Operation;
   };
   template <typename oper_name, typename Hndl, typename... args>
-	  struct Statement<StatementOperation<oper_name,Hndl,args...> >
+	  struct Statement<Operation<oper_name,Hndl,args...> >
   {
-	  using substatement = typename StatementOperation<oper_name,Hndl, args...>::substatement;
+	  using substatement = typename Operation<oper_name,Hndl, args...>::substatement;
+	  using subexpr = substatement;
+  };
+  template <typename y, typename oper_name, typename Hndl, typename... args>
+	  struct Expression<y,Operation<oper_name,Hndl,args...> >
+  {
+	  using substatement = typename Operation<oper_name,Hndl, args...>::substatement;
+	  using subexpr = substatement;
+	  using yield = y;
   };
 
   template <typename Var, typename Expr>
@@ -493,27 +500,22 @@ struct AST<Label<l>>
   static constexpr auto _collect_phase(phase_api, typecheck_phase::Statement<label2, typecheck_phase::LetRemote<_binding, Body>>,
                                        std::enable_if_t<!are_equivalent(Label<l>{}, label2{})> const* const = nullptr);
 
-	template <typename name, typename hndl, typename Body, typename old_api>
-		static constexpr auto _collect_phase(old_api, typecheck_phase::Statement<label, typecheck_phase::LetIsValid<name,hndl, Body>>)
-  {
-    using hndl_post = DECT(let_isValid_binding<label>(old_api{}, name{},hndl{}));
-    using hndl_ast = typename hndl_post::ast;
-    using body = DECT(collect_phase(combined_api<old_api, typename hndl_post::api>{}, Body{}));
-    using body_ast = typename body::ast;
-    using new_api = combined_api<typename hndl_post::api, typename body::api>;
-    return extracted_phase<label, new_api, typename body::returns, Statement<LetIsValid<name,hndl_ast, body_ast>>>{};
-  }
+  template <typename y, typename hndl, typename old_api>
+	  static constexpr auto _collect_phase(old_api, typecheck_phase::Expression<label,y, typecheck_phase::IsValid<hndl>>);
 
-  template <typename label2, typename name, typename hndl, typename Body, typename phase_api>
-		static constexpr auto _collect_phase(phase_api, typecheck_phase::Statement<label2, typecheck_phase::LetIsValid<name,hndl, Body>>,
-											 std::enable_if_t<!are_equivalent(Label<l>{}, label2{})> const* const = nullptr);
+  template <typename label2, typename y, typename hndl, typename phase_api>
+	  static constexpr auto _collect_phase(phase_api, typecheck_phase::Expression<label2, y, typecheck_phase::IsValid<hndl>>,
+										   std::enable_if_t<!are_equivalent(Label<l>{}, label2{})> const* const = nullptr);
   
   template <typename oper_name, typename hndl, typename old_api, typename... args>
-	  static constexpr auto _collect_phase(old_api, typecheck_phase::Statement<label, typecheck_phase::StatementOperation<oper_name,hndl, args...>>);
+	  static constexpr auto _collect_phase(old_api, typecheck_phase::Statement<label, typecheck_phase::Operation<oper_name,hndl, args...>>);
   
   template <typename label2, typename oper_name, typename hndl, typename phase_api, typename... args>
-	  static constexpr auto _collect_phase(phase_api, typecheck_phase::Statement<label2, typecheck_phase::StatementOperation<oper_name,hndl, args...>>,
+	  static constexpr auto _collect_phase(phase_api, typecheck_phase::Statement<label2, typecheck_phase::Operation<oper_name,hndl, args...>>,
 																				 std::enable_if_t<!are_equivalent(Label<l>{}, label2{})> const* const = nullptr);
+
+  template <typename y, typename oper_name, typename hndl, typename old_api, typename... args>
+	  static constexpr auto _collect_phase(old_api, typecheck_phase::Expression<label, y,typecheck_phase::Operation<oper_name,hndl, args...> >);
 
   template <typename Var, typename Expr, typename phase_api>
   static constexpr auto _collect_phase(phase_api, typecheck_phase::Statement<label, typecheck_phase::Assignment<Var, Expr>>);
@@ -635,14 +637,20 @@ struct AST<Label<l>>
     return a;
   }
 
-	template <typename b, typename h, typename e>
-		static constexpr auto collapse1(Statement<LetIsValid<b, h, e>> a)
+  template <typename y, typename h>
+  static constexpr auto collapse1(Expression<y,IsValid<h>> a)
   {
     return a;
   }
 
-	template <typename n, typename h, typename... a>
-		static constexpr auto collapse1(Statement<StatementOperation<n, h, a...>> _a)
+  template <typename n, typename h, typename... a>
+  static constexpr auto collapse1(Statement<Operation<n, h, a...>> _a)
+  {
+    return _a;
+  }
+
+  template <typename y, typename n, typename h, typename... a>
+  static constexpr auto collapse1(Expression<y,Operation<n, h, a...>> _a)
   {
     return _a;
   }

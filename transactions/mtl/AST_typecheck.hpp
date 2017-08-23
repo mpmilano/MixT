@@ -398,6 +398,7 @@ struct Binding<Label<l>, Yield, mutils::String<name...>, Expression<Exprl, EYiel
   using subexpr = typename Expression<Exprl, EYield, ExprN>::subexpr;
   using e_yield = EYield;
   using var = mutils::String<name...>;
+  using expr = Expression<Exprl, EYield, ExprN>;
 };
 
 template <typename label, typename Stmt>
