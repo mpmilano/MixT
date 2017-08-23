@@ -28,8 +28,8 @@ int main(){
 	int_handle ih = store.template newObject<int>(nullptr,int_name,int_name);
 	using ClientTrk = ClientTracker<>;
 	ClientTrk ct;
-	TRANSACTION(return 3 + 4)::WITH(ih).run_local(ct,ih);
-	TRANSACTION(return ih.isValid())::WITH(ih).run_local(ct,ih);
+	assert(7 == TRANSACTION(return 3 + 4)::WITH(ih).run_local(ct,ih));
+	assert(true == TRANSACTION(return ih.isValid())::WITH(ih).run_local(ct,ih));
 	using int_handle_handle = typename Store::template TestingHandle<int_handle>;
 	constexpr int a_name = 43;
 	int_handle_handle a = store.template newObject<int_handle>(nullptr,a_name,store.template newObject<int>(nullptr,int_name,23));
