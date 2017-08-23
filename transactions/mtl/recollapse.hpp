@@ -94,6 +94,30 @@ auto _recollapse(typename AST<l>::template Expression<y, typename AST<l>::templa
   using newr = DECT(recollapse<l, candidates, sub_map>(R{}));
   return typename AST<l>::template Expression<y, typename AST<l>::template BinOp<op, newl, newr>>{};
 }
+	template <typename l, typename candidates, typename sub_map, typename y, typename h>
+	auto _recollapse(typename AST<l>::template Expression<y,typename AST<l>::template IsValid<h>>)
+{
+	return typename AST<l>::template Expression<y,typename AST<l>::template IsValid<DECT(recollapse<l,candidates,sub_map>(h{}))>>{};
+}
+
+	template <typename l, typename candidates, typename sub_map, typename n, typename h, typename... a>
+	auto _recollapse(typename AST<l>::template Operation<n,h,a...>)
+{
+	return typename AST<l>::template Operation<n,DECT(recollapse<l,candidates,sub_map>(h{})),DECT(recollapse<l,candidates,sub_map>(a{}))...>{};
+}
+
+	template <typename l, typename candidates, typename sub_map, typename n, typename h, typename... a>
+	auto _recollapse(typename AST<l>::template Statement<typename AST<l>::template Operation<n,h,a...>>)
+{
+	return typename AST<l>::template Statement<_recollapse<l,candidates,sub_map> >{typename AST<l>::template Operation<n,h,a...>{}};
+}
+
+	template <typename l, typename y, typename candidates, typename sub_map, typename n, typename h, typename... a>
+	auto _recollapse(typename AST<l>::template Expression<y,typename AST<l>::template Operation<n,h,a...>>)
+{
+	return typename AST<l>::template Expression<y,_recollapse<l,candidates,sub_map> >{typename AST<l>::template Operation<n,h,a...>{}};
+}
+
 
   template<typename _new_e, typename _new_map, typename _remove_this_binding, typename _binding>
   struct recollapse_pack
@@ -136,13 +160,6 @@ auto _recollapse(typename AST<l>::template Statement<typename AST<l>::template L
   using newb = typename DECT(recollapse<l, candidates, sub_map>(b{}))::binding;
   using new_body = DECT(recollapse<l, candidates, sub_map>(body{}));
   return typename AST<l>::template Statement<typename AST<l>::template LetRemote<newb, new_body>>{};
-}
-
-	template <typename l, typename candidates, typename sub_map, typename b, typename h, typename body>
-	auto _recollapse(typename AST<l>::template Statement<typename AST<l>::template LetIsValid<b,h, body>>)
-{
-  using new_body = DECT(recollapse<l, candidates, sub_map>(body{}));
-  return typename AST<l>::template Statement<typename AST<l>::template LetIsValid<b,DECT(recollapse<l,candidates,sub_map>(h{})), new_body>>{};
 }
 	
 	template <typename l, typename candidates, typename sub_map, typename n, typename h, typename... a>

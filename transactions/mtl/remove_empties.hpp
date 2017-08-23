@@ -71,6 +71,58 @@ auto _clear_empty_statements(typename AST<l>::template Expression<y, typename AS
   return ret{};
 }
 
+	
+	template <typename l, typename y, typename h>
+	auto _clear_empty_statements(typename AST<l>::template Expression<y,typename AST<l>::template IsValid<h>>)
+{
+  using newh = DECT(clear_empty_statements<l>(h{}));
+  struct ret
+  {
+	  using ast = typename AST<l>::template Expression<y,typename AST<l>::template IsValid<typename newh::ast>>;
+    using remove_from_require = typename newh::remove_from_require;
+    using still_require = typename newh::still_require;
+  };
+  return ret{};
+}
+
+	template <typename l, typename n, typename h, typename... a>
+	auto _clear_empty_statements(typename AST<l>::template Operation<n,h, a...>)
+{
+  using newh = DECT(clear_empty_statements<l>(h{}));
+  struct ret
+  {
+	  using ast = typename AST<l>::template Operation<n, typename newh::ast, typename DECT(clear_empty_statements<l>(a{}))::ast...>;
+	  using remove_from_require = DECT(newh::remove_from_require::combine(typename DECT(clear_empty_statements<l>(a{}))::remove_from_require{}...));
+	  using still_require = DECT(newh::still_require::combine(typename DECT(clear_empty_statements<l>(a{}))::still_require{}...));
+  };
+  return ret{};
+}
+	
+	template <typename l, typename n, typename h, typename... a>
+	auto _clear_empty_statements(typename AST<l>::template Statement<typename AST<l>::template Operation<n,h, a...>>)
+{
+	using ret_p = DECT(_clear_empty_statements<l>(typename AST<l>::template Operation<n,h, a...>{}));
+  struct ret
+  {
+	  using ast = typename AST<l>::template Statement<typename ret_p::ast >;
+	  using remove_from_require = typename ret_p::remove_from_require;
+	  using still_require = typename ret_p::still_require;
+  };
+  return ret{};
+}
+	template <typename l, typename y, typename n, typename h, typename... a>
+	auto _clear_empty_statements(typename AST<l>::template Expression<y,typename AST<l>::template Operation<n,h, a...>>)
+{
+	using ret_p = DECT(_clear_empty_statements<l>(typename AST<l>::template Operation<n,h, a...>{}));
+  struct ret
+  {
+	  using ast = typename AST<l>::template Expression<y,typename ret_p::ast >;
+	  using remove_from_require = typename ret_p::remove_from_require;
+	  using still_require = typename ret_p::still_require;
+  };
+  return ret{};
+}
+
 template <typename l, typename l2, typename y, typename v, typename e>
 auto _clear_empty_statements(typename AST<l>::template Binding<l2, y, v, e>)
 {
@@ -108,33 +160,6 @@ auto _clear_empty_statements(typename AST<l>::template Statement<typename AST<l>
     using ast = typename AST<l>::template Statement<typename AST<l>::template LetRemote<typename newb::ast, typename new_body::ast>>;
     using remove_from_require = DECT(newb::remove_from_require::combine(typename new_body::remove_from_require{}));
     using still_require = DECT(newb::still_require::combine(typename new_body::still_require{}));
-  };
-  return ret{};
-}
-
-	template <typename l, typename n, typename h, typename body>
-	auto _clear_empty_statements(typename AST<l>::template Statement<typename AST<l>::template LetIsValid<n,h, body>>)
-{
-  using newh = DECT(clear_empty_statements<l>(h{}));
-  using new_body = DECT(clear_empty_statements<l>(body{}));
-  struct ret
-  {
-    using ast = typename AST<l>::template Statement<typename AST<l>::template LetIsValid<n, typename newh::ast, typename new_body::ast>>;
-    using remove_from_require = DECT(newh::remove_from_require::combine(typename new_body::remove_from_require{}));
-    using still_require = DECT(newh::still_require::combine(typename new_body::still_require{}));
-  };
-  return ret{};
-}
-
-	template <typename l, typename n, typename h, typename... a>
-	auto _clear_empty_statements(typename AST<l>::template Statement<typename AST<l>::template StatementOperation<n,h, a...>>)
-{
-  using newh = DECT(clear_empty_statements<l>(h{}));
-  struct ret
-  {
-	  using ast = typename AST<l>::template Statement<typename AST<l>::template StatementOperation<n, typename newh::ast, typename DECT(clear_empty_statements<l>(a{}))::ast...> >;
-	  using remove_from_require = DECT(newh::remove_from_require::combine(typename DECT(clear_empty_statements<l>(a{}))::remove_from_require{}...));
-	  using still_require = DECT(newh::still_require::combine(typename DECT(clear_empty_statements<l>(a{}))::still_require{}...));
   };
   return ret{};
 }

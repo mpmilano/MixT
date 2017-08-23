@@ -117,6 +117,13 @@ auto _run_phase(typename AST<l>::template Expression<y, typename AST<l>::templat
   return lval < rval;
 }
 
+	template <typename l, typename TranCtx, typename store, typename y, typename expr>
+	auto _run_phase(typename AST<l>::template Expression<y,typename AST<l>::template IsValid<expr>>*, TranCtx& ctx, store& s)
+{
+	constexpr expr* hndl{ nullptr };
+	return run_phase<l>(hndl, ctx, s).isValid(&ctx);
+}
+
 template <typename l, typename TranCtx, typename store, typename label, typename Yield, typename Expr, char... name>
 auto _run_phase(typename AST<l>::template Binding<Label<label>, Yield, String<name...>, Expr>*, TranCtx& ctx, store& s)
 {
@@ -144,19 +151,10 @@ auto _run_phase(typename AST<l>::template Statement<typename AST<l>::template Le
   run_phase<l>(binding, ctx, s);
   return run_phase<l>(body, ctx, s);
 }
-
-	template <typename l, typename TranCtx, typename store, typename name, typename expr, typename Body>
-	auto _run_phase(typename AST<l>::template Statement<typename AST<l>::template LetIsValid<name, expr, Body>>*, TranCtx& ctx, store& s)
-{
-  constexpr Body* body{ nullptr };
-	assert(false && "need to run this binding");
-  return run_phase<l>(body, ctx, s);
-}
 	
 	template <typename l, typename TranCtx, typename store, typename name, typename expr, typename... args>
-	auto _run_phase(typename AST<l>::template Statement<typename AST<l>::template StatementOperation<name, expr, args...>>*, TranCtx& ctx, store& s)
+	auto _run_phase(typename AST<l>::template Operation<name, expr, args...>*, TranCtx& ctx, store& s)
 {
-	//returns void; this is the *non-expression* variant.
 	constexpr OperationIdentifier<name> opname;
 	constexpr expr* _expr{nullptr};
 	auto hndl = run_phase<l>(_expr,ctx,s);
@@ -164,7 +162,22 @@ auto _run_phase(typename AST<l>::template Statement<typename AST<l>::template Le
 	auto &op = upCast.op;
 	assert(op);
 	auto &dop = *op;
-	dop.act(&ctx,hndl,run_phase<l>((args*)nullptr,ctx,s)...);
+	return dop.act(&ctx,hndl,run_phase<l>((args*)nullptr,ctx,s)...);
+}
+
+	template <typename l, typename TranCtx, typename store, typename name, typename expr, typename... args>
+	auto _run_phase(typename AST<l>::template Statement<typename AST<l>::template Operation<name, expr, args...>>*, TranCtx& ctx, store& s)
+{
+	//returns void; this is the *non-expression* variant.
+	constexpr typename AST<l>::template Operation<name, expr, args...>* recur{nullptr};
+	_run_phase<l, TranCtx, store, name, expr, args...>(recur,ctx,s);
+}
+
+	template <typename l, typename TranCtx, typename store, typename y, typename name, typename expr, typename... args>
+	auto _run_phase(typename AST<l>::template Expression<y,typename AST<l>::template Operation<name, expr, args...>>*, TranCtx& ctx, store& s)
+{
+	constexpr typename AST<l>::template Operation<name, expr, args...>* recur{nullptr};
+	return _run_phase<l, TranCtx, store, name, expr, args...>(recur,ctx,s);
 }
 
 template <typename l, typename TranCtx, typename store, typename L, typename y, typename R>

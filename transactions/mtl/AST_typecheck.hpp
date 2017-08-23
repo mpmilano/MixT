@@ -194,6 +194,7 @@ struct Expression<Label<l>, bool, IsValid<Expression<exprl, expry, expr>>>
   using label = Label<l>;
   using handle_label = typename expry::label;
   using expr_label = exprl;
+  using yield = bool;
   using subexpr = typename IsValid<Expression<exprl, expry, expr>>::subexpr;
 };
 
@@ -397,6 +398,7 @@ struct Binding<Label<l>, Yield, mutils::String<name...>, Expression<Exprl, EYiel
   using label = Label<l>;
   using subexpr = typename Expression<Exprl, EYield, ExprN>::subexpr;
   using e_yield = EYield;
+  using yield = Yield;
   using var = mutils::String<name...>;
   using expr = Expression<Exprl, EYield, ExprN>;
 };
