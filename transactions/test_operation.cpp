@@ -52,4 +52,5 @@ int main(){
 		std::cout << remote_bind_txn << std::endl;
 		assert(remote_bind_txn.run_local(ct,a) == 4);
 	}
+	TRANSACTION(return 7.endorse(top));
 }
