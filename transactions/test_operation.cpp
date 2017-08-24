@@ -26,6 +26,7 @@ int main(){
 	Store store;
 	constexpr int int_name = 23;
 	int_handle ih = store.template newObject<int>(nullptr,int_name,int_name);
+#if 0
 	using ClientTrk = ClientTracker<>;
 	ClientTrk ct;
 	assert(7 == TRANSACTION(return 3 + 4)::WITH(ih).run_local(ct,ih));
@@ -52,5 +53,6 @@ int main(){
 		std::cout << remote_bind_txn << std::endl;
 		assert(remote_bind_txn.run_local(ct,a) == 4);
 	}
-	TRANSACTION(return 7.endorse(top));
+	#endif
+	TRANSACTION(return 7.endorse(top))::WITH(ih).run_local(ct,ih);
 }

@@ -143,9 +143,10 @@ struct add_operations_struct
 
 	// this is endorse
 	template <typename hndl, char... label>
-	static constexpr auto add_operation_args(Operation<endorse_str, hndl,operation_args_exprs<>, operation_args_varrefs<> >, String<'L','a','b','e','l','<',label...,'>'>)
+	static constexpr auto add_operation_args(Operation<endorse_str, hndl,operation_args_exprs<>, operation_args_varrefs<> >, String<label...> l)
   {
-	  return Endorse<Label<String<label...> >,hndl>{};
+	  using inner_label = DECT(l);
+	  return Endorse<Label<inner_label>,hndl>{};
   }
 
   // no (further) arguments possible
@@ -159,7 +160,7 @@ struct add_operations_struct
   // last argument
   template <typename hndl, typename operations_str, char c, char... str>
   static constexpr auto add_operation_args(Operation<operations_str, hndl, operation_args_exprs<args...>, operation_args_varrefs<> >, String<c, str...> arg,
-                                           std::enable_if_t<!String<c, str...>::contains_outside_parens(String<','>{})>* = nullptr)
+                                           std::enable_if_t<operations_str{} != endorse_str{} && !String<c, str...>::contains_outside_parens(String<','>{})>* = nullptr)
   {
 	  return Operation<operations_str, hndl, operation_args_exprs<args..., DECT(parse_expression(arg))>, operation_args_varrefs<> >{};
   }
