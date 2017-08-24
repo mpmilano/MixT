@@ -32,6 +32,9 @@ constexpr auto remove_layer(Expression<Dereference<Expression<VarReference<V>>>>
 
 template <char seqnum, char depth, template <typename> class SubStatement, typename V>
 constexpr auto remove_layer(Expression<IsValid<Expression<VarReference<V>>>>);
+	
+	template <char seqnum, char depth, template <typename> class SubStatement, typename l, typename V>
+	constexpr auto remove_layer(Expression<Endorse<l,Expression<VarReference<V>>>>);
   
 template <char seqnum, char depth, template <typename> class SubStatement, typename Name, typename Hndl, typename... args>
 constexpr auto remove_layer(Expression<Operation<Name, Expression<VarReference<Hndl> >, operation_args_exprs<>, operation_args_varrefs<args...> > > a);
@@ -120,6 +123,15 @@ struct remove_layer_str<seqnum, depth, SubStatement, Expression<IsValid<E>>>
   using type = DECT(remove_layer<seqnum, depth, NewStatement>(E{}));
 };
 
+	template <char seqnum, char depth, template <typename> class SubStatement, typename l, typename E>
+	struct remove_layer_str<seqnum, depth, SubStatement, Expression<Endorse<l,E>>>
+{
+  static_assert(!is_var_reference<E>::value);
+  template <typename newE>
+	  using NewStatement = SubStatement<Expression<Endorse<l,newE>>>;
+  using type = DECT(remove_layer<seqnum, depth, NewStatement>(E{}));
+};
+
 template <char seqnum, char depth, template <typename> class SubStatement, typename oper_name, typename var, typename expr_arg1, typename var_args, typename... rest_expr_args>
 struct remove_layer_str<seqnum, depth, SubStatement, Expression<Operation<oper_name,Expression<VarReference<var> >,operation_args_exprs<Expression<VarReference<expr_arg1> >,rest_expr_args...>,var_args> > >
 {
@@ -156,6 +168,13 @@ constexpr auto remove_layer(Expression<Dereference<Expression<VarReference<V>>>>
 
 template <char seqnum, char depth, template <typename> class SubStatement, typename V>
 constexpr auto remove_layer(Expression<IsValid<Expression<VarReference<V>>>> a)
+{
+	using new_name = generate_name<seqnum,depth>;
+	return Statement<Let<Binding<new_name, DECT(a)>, SubStatement<Expression<VarReference<new_name>>>>>{};
+}
+
+	template <char seqnum, char depth, template <typename> class SubStatement, typename l, typename V>
+	constexpr auto remove_layer(Expression<Endorse<l,Expression<VarReference<V>>>> a)
 {
 	using new_name = generate_name<seqnum,depth>;
 	return Statement<Let<Binding<new_name, DECT(a)>, SubStatement<Expression<VarReference<new_name>>>>>{};
@@ -248,6 +267,14 @@ constexpr auto _flatten_exprs(Statement<Let<Binding<name, Expression<IsValid<h>>
   return Statement<Let<Binding<name, Expression<IsValid<h>>>, DECT(flatten_exprs<seqnum, depth + 1>(body{}))>>{};
 }
 
+	template <char seqnum, char depth, typename name, typename l, typename h, typename body>
+	constexpr auto _flatten_exprs(Statement<Let<Binding<name, Expression<Endorse<l,h>>>, body>>)
+{
+  // already flat, moving on
+	return Statement<Let<Binding<name, Expression<Endorse<l,h>>>, DECT(flatten_exprs<seqnum, depth + 1>(body{}))>>{};
+}
+
+	
 template <char seqnum, char depth, typename name, typename oper_name, typename Hndl, typename var_args, typename body>
 constexpr auto _flatten_exprs(Statement<Let<Binding<name, Expression<Operation<oper_name, Expression<VarReference<Hndl> >, operation_args_exprs<>, var_args>>>, body>>)
 {

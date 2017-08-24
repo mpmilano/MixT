@@ -57,6 +57,14 @@ constexpr auto _typecheck(type_environment<label_env, Env...>, parse_phase::Expr
   return Expression<new_label,bool, IsValid<binding_expr> >{};
 }
 
+	template <int seqnum, int depth, typename l, typename Expr, typename label_env, typename... Env>
+	constexpr auto _typecheck(type_environment<label_env, Env...>, parse_phase::Expression<parse_phase::Endorse<l,Expr>>)
+{
+  using old_env = type_environment<label_env, Env...>;
+  using binding_expr = DECT(typecheck<seqnum, depth + 1>(old_env{}, Expr{}));
+  return Expression<l,typename binding_expr::yield, Endorse<l,binding_expr> >{};
+}
+
 // bindings
 
 template <type_location loc, typename label, typename yield, typename Name, typename Expr, typename labele, typename... Env>
@@ -112,7 +120,7 @@ struct handle_operations{
 	}
 	
 };
-
+	
 template <int seqnum, int depth, typename old_env, typename choice, typename oper_name, typename Hndl, typename... var_args>
 constexpr auto _typecheck(old_env, parse_phase::Operation<oper_name, Hndl, parse_phase::operation_args_exprs<>,parse_phase::operation_args_varrefs<var_args...> >)
 {
@@ -127,7 +135,7 @@ constexpr auto _typecheck(old_env, parse_phase::Operation<oper_name, Hndl, parse
   static_assert(handle_supports<handle,oper_name,ret_t, SelfType, typename DECT(typecheck<seqnum,depth+1>(old_env{},var_args{}))::yield...>::value, "Error: Invalid arguments for handle operation");
   return handle_operations<seqnum,depth,oper_name,ptr_label,arguments_label_min,binding_expr,ret_t, var_args...>::handle_operation(choice{},old_env{});
 
-}//*/
+}
 template <int seqnum, int depth, typename old_env, typename oper_name, typename Hndl, typename... var_args>
 constexpr auto _typecheck(old_env a, parse_phase::Statement<parse_phase::Operation<oper_name, Hndl, parse_phase::operation_args_exprs<>,parse_phase::operation_args_varrefs<var_args...> > >)
 {

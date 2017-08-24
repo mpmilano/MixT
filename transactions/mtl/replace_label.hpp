@@ -72,6 +72,12 @@ struct replace_label<Label<temp_label<target1, target2>>, Label<newlabel>>
   {
 	  return Expression<DECT(label_replace(l{})), y, IsValid<DECT(replace(h{}))> >{};
   }
+
+    template <typename l, typename y, typename h>
+		static constexpr auto _replace(Expression<l, y, Endorse<l,h> >)
+  {
+	  return Expression<DECT(label_replace(l{})), y, Endorse<l,DECT(replace(h{}))> >{};
+  }
   
   template <typename l, typename y, typename oper_name, typename Hndl, typename... args>
 	  static constexpr auto _replace(Expression<l, y, Operation<oper_name, Hndl, args...>>)

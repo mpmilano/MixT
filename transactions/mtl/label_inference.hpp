@@ -174,6 +174,12 @@ constexpr auto _collect_constraints(Expression<l, y, IsValid<h>> a)
 	  .append(constraints<must_flow_to<typename This::expr_label, typename This::handle_label,MUTILS_STRING(isvalid, expr -> hndl)>>{});
 }
 
+template <typename pc_label, typename l, typename y, typename h>
+constexpr auto _collect_constraints(Expression<l, y, Endorse<l,h>> )
+{
+	return collect_constraints(pc_label{}, h{});
+}
+
 template <typename pc_label, typename l, typename lv, typename yv, typename v, typename le, typename ye, typename e>
 constexpr auto _collect_constraints(Statement<l, Assignment<Expression<lv, yv, v>, Expression<le, ye, e>>>)
 {

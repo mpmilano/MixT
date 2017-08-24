@@ -50,6 +50,12 @@ void print_ast(std::ostream& o, const Expression<l, y, IsValid<h>>&)
 	o << h{} << ".isValid@" << l{} << "()";
 }
 
+	template <typename l, typename lold, typename y, typename h>
+	void print_ast(std::ostream& o, const Expression<l, y, Endorse<lold,h>>&)
+{
+	o << h{} << ".endorse(" << l{} << ")";
+}
+
 
 template <typename l, typename b, typename body>
 void

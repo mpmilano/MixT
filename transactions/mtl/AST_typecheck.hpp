@@ -198,6 +198,24 @@ struct Expression<Label<l>, bool, IsValid<Expression<exprl, expry, expr>>>
   using subexpr = typename IsValid<Expression<exprl, expry, expr>>::subexpr;
 };
 
+template <typename l, typename hndl>
+struct Endorse;
+template <typename l, typename Exprl, typename ExprN, typename ExprY>
+struct Endorse<Label<l>,Expression<Exprl, ExprY, VarReference<ExprN> > >
+{
+  using subexpr = Endorse;
+  using yield = ExprY;
+};
+
+template <typename l, typename exprl, typename expry, typename expr>
+struct Expression<Label<l>, expry, Endorse<Label<l>,Expression<exprl, expry, expr>>>
+{
+  using label = Label<l>;
+  using expr_label = exprl;
+  using yield = expry;
+  using subexpr = typename Endorse<Label<l>,Expression<exprl, expry, expr>>::subexpr;
+};
+
 template <typename oper_name, typename Hndl, typename... args>
 struct Operation;
   template <typename oper_name, typename Hndl_l, typename Hndl_t, typename Hndl_e, typename... args>

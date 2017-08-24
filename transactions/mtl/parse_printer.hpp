@@ -96,12 +96,19 @@ print_ast(std::ostream& o, const Statement<LetRemote<b, body>>&)
     << "{" << body{} << "}";
 }
 
-template <typename b, typename h, typename body>
+template <typename h>
 void
-print_ast(std::ostream& o, const Statement<LetIsValid<b, h, body>>&)
+print_ast(std::ostream& o, const Expression<IsValid<h>>&)
 {
-  o << "let isValid " << b{} << " in "
-    << "{" << body{} << "}";
+	o << h{} << ".isValid()";
+}
+
+	
+	template <typename l, typename h>
+void
+	print_ast(std::ostream& o, const Expression<Endorse<l,h>>&)
+{
+	o << h{} << ".endorse(" << l{} << ")";
 }
 
 template <typename L, typename R>

@@ -55,6 +55,19 @@ struct Expression<Dereference<Struct>>
 {
   using subexpr = typename Dereference<Struct>::subexpr;
 };
+
+template <typename label, typename Hndl>
+struct Endorse;
+template <typename l, typename Hndl>
+struct Endorse<Label<l>,Expression<Hndl> >
+{
+  using subexpr = Endorse;
+};
+template <typename l, typename h>
+struct Expression<Endorse<l,h> >
+{
+	using subexpr = typename Endorse<l,h>::subexpr;
+};
 	
 template <typename Hndl>
 struct IsValid;

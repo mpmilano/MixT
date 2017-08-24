@@ -141,6 +141,13 @@ struct add_operations_struct
     return IsValid<hndl>{};
   }
 
+	// this is endorse
+	template <typename hndl, char... label>
+	static constexpr auto add_operation_args(Operation<endorse_str, hndl,operation_args_exprs<>, operation_args_varrefs<> >, String<'L','a','b','e','l','<',label...,'>'>)
+  {
+	  return Endorse<Label<String<label...> >,hndl>{};
+  }
+
   // no (further) arguments possible
   template <typename hndl, typename operations_str>
   static constexpr auto add_operation_args(Operation<operations_str, hndl, operation_args_exprs<args...>, operation_args_varrefs<> > a, String<>)
