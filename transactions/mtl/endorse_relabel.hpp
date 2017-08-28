@@ -251,12 +251,14 @@ constexpr auto _collect_pre_endorse(const Statement<l, Return<R> >&)
 template <typename current_worklist, typename l, typename c, typename t, typename e>
 constexpr auto _collect_pre_endorse(const Statement<l, If<c, t, e> >&)
 {
+	static_assert(false,"if there is an endorsement anywhere in t or e, need to upgrade c.");
 	return collect_pre_endorse<current_worklist>(t{}).combine(collect_pre_endorse<current_worklist>(e{}));
 }
 
 template <typename current_worklist, typename l, typename c, typename t, char... name>
 constexpr auto _collect_pre_endorse(const Statement<l, While<c, t, name...>>&)
 {
+	static_assert(false,"if there is an endorsement anywhere in t, need to upgrade c.");
 	return collect_pre_endorse<current_worklist>(t{});
 }
 

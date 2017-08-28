@@ -4,6 +4,7 @@
 #include "environments.hpp"
 #include "mtlutils.hpp"
 #include "top.hpp"
+#include "traverse_assist.hpp"
 #include <type_traits>
 #include <vector>
 
@@ -37,6 +38,15 @@ struct Expression<Label<l>, Yields, VarReference<Var>>
   using label = Label<l>;
   using yield = Yields;
   using subexpr = typename VarReference<Var>::subexpr;
+
+    template<template <typename, typename> class , class  >
+		using default_traverse = Expression;
+
+	template<template <typename, typename> class , class , template<typename,typename> class , class >
+		using default_recurse = Default;
+
+  template<template <typename, typename> class , class  >
+	  using fold = Accum;
 };
 	
 template <typename>
@@ -71,6 +81,15 @@ struct Expression<Label<l>, Yields, FieldReference<Struct, Field>>
   using label = Label<l>;
   using yield = Yields;
   using subexpr = typename FieldReference<Struct, Field>::subexpr;
+
+  template<template <typename, typename> class F, class Accum >
+	  using default_traverse = Expression<typename F<Accum,Struct>::label, Yields, FieldReference<F<Accum,Struct>,Field > >;
+
+  template<template <typename, typename> class F, class Accum, template<typename,typename> class Combine, class Default>
+	  using default_recurse = F<Accum,Struct>;
+
+  template<template <typename, typename> class F, class Accum >
+	  using fold = F<Accum,Struct>;
 };
 
 template <int>
@@ -83,6 +102,15 @@ struct Expression<Label<top>, int, Constant<i>>
   using label = Label<top>;
   using yield = int;
   using subexpr = Constant<i>;
+
+  template<template <typename, typename> class , class  >
+	  using default_traverse = Expression;
+  
+  template<template <typename, typename> class , class , template<typename,typename> class , class >
+	  using default_recurse = Default;
+
+  template<template <typename, typename> class , class  >
+	  using fold = Accum;
 };
 
 template <char op, typename L, typename R>
@@ -165,6 +193,16 @@ struct Expression<Label<l>, typename BinOp<op, L, R>::yield, BinOp<op, L, R>>
   using label = Label<l>;
   using yield = typename BinOp<op, L, R>::yield;
   using subexpr = typename BinOp<op, L, R>::subexpr;
+
+  template<template <typename, typename> class F, class Accum >
+	  using default_traverse = Expression<resolved_label_min<typename F<Accum,L>::label, typename F<Accum,R>::label>, Yields,
+										  BinOp<op,F<Accum,L>,F<Accum,R> > >;
+
+  template<template <typename, typename> class F, class Accum, template<typename,typename> class Combine, class Default>
+	  using default_recurse = Combine<F<Accum,L>, F<Accum,R> >;
+
+  template<template <typename, typename> class F, class Accum >
+	  using fold = F<F<Accum,L>, R>;
 };
 
 struct GenerateTombstone
@@ -177,6 +215,14 @@ struct Expression<Label<l>, tracker::Tombstone, GenerateTombstone>
   using label = Label<l>;
   using yield = tracker::Tombstone;
   using subexpr = typename GenerateTombstone::subexpr;
+	template<template <typename, typename> class F, class Accum >
+	using default_traverse = Expression;
+	
+	template<template <typename, typename> class F, class Accum, template<typename,typename> class Combine, class Default>
+	using default_recurse = Default;
+
+	template<template <typename, typename> class F, class Accum >
+	using fold = Accum;
 };
 
 template <typename hndl>
@@ -196,6 +242,16 @@ struct Expression<Label<l>, bool, IsValid<Expression<exprl, expry, expr>>>
   using expr_label = exprl;
   using yield = bool;
   using subexpr = typename IsValid<Expression<exprl, expry, expr>>::subexpr;
+
+  template<template <typename, typename> class F, class Accum >
+	  using default_traverse = Expression<resolved_label_min<typename F<Accum,Expression<exprl, expry, expr> >::label, handle_label>, Yields,
+										  IsValid<F<Accum,Expression<exprl, expry, expr> > > >;
+
+  template<template <typename, typename> class F, class Accum, template<typename,typename> class Combine, class Default>
+	  using default_recurse = F<Accum, Expression<exprl, expry, expr> >;
+
+  template<template <typename, typename> class F, class Accum >
+	  using fold = F<Accum,Expression<exprl, expry, expr> >;
 };
 
 template <typename l, typename hndl>
@@ -214,6 +270,18 @@ struct Expression<Label<l>, expry, Endorse<Label<l>,Expression<exprl, expry, exp
   using expr_label = exprl;
   using yield = expry;
   using subexpr = typename Endorse<Label<l>,Expression<exprl, expry, expr>>::subexpr;
+
+  using endorse_expr = Expression<exprl, expry, expr>;
+
+  template<template <typename, typename> class F, class Accum >
+	  using default_traverse = Expression<Label<l>, expry,Endorse<Label<l>,F<Accum,endorse_expr > > >;
+
+  template<template <typename, typename> class F, class Accum, template<typename,typename> class Combine, class Default>
+	  using default_recurse = F<Accum, endorse_expr >;
+
+  template<template <typename, typename> class F, class Accum >
+	  using fold = F<Accum,endorse_expr >;
+  
 };
 
 template <typename oper_name, typename Hndl, typename... args>
@@ -235,6 +303,18 @@ struct Operation;
   using substatement = typename Operation<oper_name, Expression<Hndl_l, Hndl_t, Hndl_e>, args...>::substatement;
 	using subexpr = substatement;
 	static_assert((is_var_reference<args>::value && ... && true));
+
+	using hndl_expr = Expression<Hndl_l, Hndl_t, Hndl_e>;
+	
+	template<template <typename, typename> class F, class Accum >
+	using default_traverse = Expression<Label<l>, yield,
+										Operation<oper_name,F<Accum,hndl_expr >, F<Accum,args>... > >;
+	
+  template<template <typename, typename> class F, class Accum, template<typename,typename> class Combine, class Default>
+  using default_recurse = Combine_all<Combine,Default,F<Accum, hndl_expr>, F<Accum,args>...>;
+
+  template<template <typename, typename> class F, class Accum >
+  using fold = Fold_all<F,Accum, hndl_expr,args...>;
 };
 	template <typename l, typename oper_name, typename Hndl_l, typename Hndl_t, typename Hndl_e, typename... args>
 	struct Statement<Label<l>, Operation<oper_name, Expression<Hndl_l, Hndl_t, Hndl_e>, args...> >
@@ -361,12 +441,22 @@ struct If<Expression<exprl, bool, VarReference<condition>>, Statement<labelthen,
   using subexpr = typename Expression<exprl, bool, VarReference<condition>>::subexpr;
   using subthen = typename Statement<labelthen, then>::substatement;
   using subelse = typename Statement<labelelse, els>::substatement;
+  
 };
 template <typename l, typename condition, typename then, typename els>
 struct Statement<Label<l>, If<condition, then, els>>
 {
   using label = Label<l>;
   using substatement = typename If<condition, then, els>::substatement;
+  
+  template<template <typename, typename> class F, class Accum >
+	  using default_traverse = Statement<typename F<Accum,condition>::label, If<F<Accum,condition>, F<Accum,then>, F<Accum,els> > >;
+
+  template<template <typename, typename> class F, class Accum, template<typename,typename> class Combine, class Default>
+	  using default_recurse = Combine< Combine<F<Accum,condition>, F<Accum,then> >, F<Accum,els> >;
+
+  template<template <typename, typename> class F, class Accum >
+	  using fold = F<F<F<Accum,condition>, then >, els>;
 };
 
 template <typename condition, typename body, char...>
@@ -383,6 +473,15 @@ struct Statement<Label<l>, While<condition, Body, name...>>
 {
   using label = Label<l>;
   using substatement = typename While<condition, Body, name...>::substatement;
+
+    template<template <typename, typename> class F, class Accum >
+	  using default_traverse = Statement<typename F<Accum,condition>::label, While<F<Accum,condition>, F<Accum,Body> > >;
+
+  template<template <typename, typename> class F, class Accum, template<typename,typename> class Combine, class Default>
+	  using default_recurse = Combine<F<Accum,condition>, F<Accum,Body> >;
+
+  template<template <typename, typename> class F, class Accum >
+	  using fold = F<F<Accum,condition>, Body >;
 };
 
 template <typename>
@@ -408,6 +507,15 @@ struct Statement<Label<l>, Sequence<Body...>>
 {
   using label = Label<l>;
   using substatement = typename Sequence<Body...>::substatement;
+
+  template<template <typename, typename> class F, class Accum >
+	  using default_traverse = Statement<Label<l>, Sequence<F<Accum,Body>...> >;
+
+  template<template <typename, typename> class F, class Accum, template<typename,typename> class Combine, class Default>
+	  using default_recurse = Combine_all<Combine,Default,F<Accum,Body>... >;
+
+  template<template <typename, typename> class F, class Accum >
+	  using fold = Fold_all<F,Accum,Body...>;
 };
 
 template <typename l, typename Yield, typename EYield, typename Exprl, typename ExprN, char... name>
@@ -419,6 +527,15 @@ struct Binding<Label<l>, Yield, mutils::String<name...>, Expression<Exprl, EYiel
   using yield = Yield;
   using var = mutils::String<name...>;
   using expr = Expression<Exprl, EYield, ExprN>;
+
+  template<template <typename, typename> class F, class Accum >
+	  using default_traverse = Binding<typename F<Accum,expr>::label, Yield, var, F<Accum,expr> >;
+
+  template<template <typename, typename> class F, class Accum, template<typename,typename> class Combine, class Default>
+	  using default_recurse = F<Accum,expr>;
+
+  template<template <typename, typename> class F, class Accum >
+	  using fold = F<Accum,expr>;
 };
 
 template <typename label, typename Stmt>
