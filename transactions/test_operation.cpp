@@ -9,6 +9,7 @@
 #include "mtl/split_phase.hpp"
 #include "mtl/transaction.hpp"
 #include "mtl/transaction_macros.hpp"
+#include "testing_store/mid.hpp"
 
 using namespace myria;
 using namespace mtl;
@@ -55,14 +56,17 @@ int main(){
 	}
 	#else
 	{
-		using transaction_text = MUTILS_STRING({return 7.endorse(top)});
+		int seven = 7;
+		using transaction_text = MUTILS_STRING({return (seven * 2).endorse(mid)});
 		using parsed_t = DECT(parse_statement(transaction_text{}));
 		{
 			using namespace parse_phase;
 			using flattened_t = DECT(parse_phase::flatten_expressions(parsed_t{}));
 			{
 				using namespace typecheck_phase;
-				using checked_t = DECT(typecheck_phase::typecheck<1, 1>(typecheck_phase::type_environment<Label<top> >{}, flattened_t{}));
+				using checked_t = DECT(typecheck_phase::typecheck<1, 1>(typecheck_phase::type_environment<Label<top>,
+																		type_binding<MUTILS_STRING(seven), DECT(seven),Label<bottom>,type_location::local> >{},
+																		flattened_t{}));
 				{
 					using namespace label_inference;
 					using inferred_t = DECT(infer_labels(checked_t{}));
@@ -77,6 +81,6 @@ int main(){
 			}
 		}
 	}
-	//TRANSACTION(return 7.endorse(top))::WITH(ih).run_local(ct,ih);
+	//TRANSACTION(return 7.endorse(mid))::WITH(ih).run_local(ct,ih);
 	#endif
 }

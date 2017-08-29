@@ -146,6 +146,7 @@ struct add_operations_struct
 	static constexpr auto add_operation_args(Operation<endorse_str, hndl,operation_args_exprs<>, operation_args_varrefs<> >, String<label...> l)
   {
 	  using inner_label = DECT(l);
+	  static_assert(!std::is_same<inner_label, top>::value, "Error: cannot endorse all the way to top (sorry)");
 	  return Endorse<Label<inner_label>,hndl>{};
   }
 

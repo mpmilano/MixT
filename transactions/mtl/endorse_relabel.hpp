@@ -14,7 +14,10 @@ template <typename endorse_variable_list, typename l, typename y, typename v, ty
 constexpr auto _endorse_relabel(const Binding<l, y, v, Expression<l,y,e> >&)
 {
 	using new_e = DECT(endorse_relabel<endorse_variable_list>(Expression<l,y,e>{}));
-	return Binding<typename new_e::label, y,v,new_e >{};
+	if constexpr (endorse_variable_list::template contains<v>()){
+			return Binding<Label<PreEndorse_notop<l> >, y,v,new_e >{};
+		}
+	else return Binding<l, y,v,new_e >{};
 }
 
 template <typename endorse_variable_list, typename l, typename y, typename s, typename f>
@@ -28,7 +31,7 @@ template <typename endorse_variable_list, typename l, typename y, typename v>
 constexpr auto _endorse_relabel(const Expression<l, y, VarReference<v>>&)
 {
 	if constexpr (endorse_variable_list::template contains<v>()) {
-			return Expression<Label<PreEndorse<l>>,y,VarReference<v> >{};
+			return Expression<Label<PreEndorse_notop<l>>,y,VarReference<v> >{};
 		}
 	else {
 		return Expression<l,y,VarReference<v> >{};
@@ -79,7 +82,7 @@ constexpr auto _endorse_relabel(const Statement<l, LetRemote<b, body>>&)
 	using newbod = DECT(endorse_relabel<endorse_variable_list>(body{}));
 	using newlr = LetRemote<newb, newbod>;
 	if constexpr (is_pre_endorsed<typename newb::label>()){
-			return Statement<Label<PreEndorse<l>>, newlr>{};
+			return Statement<Label<PreEndorse_notop<l>>, newlr>{};
 		}
 	else return Statement<l,newlr>{};
 }
@@ -118,7 +121,7 @@ template <typename endorse_variable_list, typename l, typename R>
 constexpr auto _endorse_relabel(const Statement<l, Return<R> >&)
 {
 	using sub = DECT(endorse_relabel<endorse_variable_list>(R{}));
-	return Statement<typename sub::label, Return<sub> >{};
+	return Statement<Label<bottom>, Return<sub> >{};
 }
 
 
@@ -130,7 +133,7 @@ constexpr auto _endorse_relabel(const Statement<l, If<c, t, e>>&)
 	using newe = DECT(endorse_relabel<endorse_variable_list>(e{}));
 	using newif = If<newc,newt,newe>;
 	if constexpr (is_pre_endorsed<typename newc::label>()){
-			return Statement<Label<PreEndorse<l>>, newif>{};
+			return Statement<Label<PreEndorse_notop<l>>, newif>{};
 		}
 	else return Statement<l,newif>{};
 }
@@ -154,141 +157,66 @@ constexpr auto _endorse_relabel(const Statement<l, Sequence<Seq...>>&)
 		return _endorse_relabel<endorse_variable_list>(a);
 	}
 
-//set the "current_worklist" field whenever the expression (or binding) needs to be endorsed.
-
-//let's say that the expression-ones return booleans that indicate whether the relevant items are present,
-//whereas the statement-ones return the new worklist.  The worklist's "ever-seen" set is then the final
-//list of variables
-
-	template<typename current_worklist, typename AST> constexpr auto collect_pre_endorse(AST);
-	
-template <typename current_worklist, typename l, typename y, typename v, typename e>
-constexpr auto _collect_pre_endorse(const Binding<l, y, v, Expression<l,y,e> >&)
-{
-	if constexpr (collect_pre_endorse<current_worklist>(Expression<l,y,e>{})){
-			return current_worklist::template append<v>();
-		}
-	else return current_worklist{};
-}
-
-template <typename current_worklist, typename l, typename y, typename s, typename f>
-constexpr auto _collect_pre_endorse(const Expression<l, y, FieldReference<s, f>>&)
-{
-	return collect_pre_endorse<current_worklist>(s{});
-}
-
-template <typename current_worklist, typename l, typename y, typename v>
-constexpr auto _collect_pre_endorse(const Expression<l, y, VarReference<v>>&)
-{
-	return current_worklist::current_elements::template contains<v>();
-}
-
-template <typename current_worklist, int i>
-constexpr auto _collect_pre_endorse(const Expression<Label<top>, int, Constant<i>>& )
-{
-	return false;
-}
-
-template <typename current_worklist, typename l, typename y, char op, typename L, typename R>
-constexpr auto _collect_pre_endorse(const Expression<l, y, BinOp<op, L, R>>&)
-{
-	return collect_pre_endorse<current_worklist>(L{}) || collect_pre_endorse<current_worklist>(R{});
-}
-
-template <typename current_worklist, typename l, typename y, typename h>
-constexpr auto _collect_pre_endorse(const Expression<l, y, IsValid<h>>&)
-{
-	return collect_pre_endorse<current_worklist>(h{});
-}
-
-	template <typename current_worklist, typename l, typename name, typename lold, typename y, typename v, typename body>
-	constexpr auto _collect_pre_endorse(const Statement<l, Let<Binding<l,y,name, Expression<l, y, Endorse<l,Expression<lold,y,VarReference<v> > > > >, body > > )
-{	
-	return current_worklist::template append<v>().combine(collect_pre_endorse<current_worklist>(body{}));
-}
-	
-	template <typename current_worklist, typename l, typename name, typename lold, typename y, typename v, typename body>
-	constexpr auto _collect_pre_endorse(const Statement<l, LetRemote<Binding<l,y, name,Expression<l, y, Endorse<l,Expression<lold,y,VarReference<v> > > > >, body > > )
-{	
-	return current_worklist::template append<v>().combine(collect_pre_endorse<current_worklist>(body{}));
-}
-
-template <typename current_worklist, typename l, typename b, typename body>
-constexpr auto _collect_pre_endorse(const Statement<l, Let<b, body>>&)
-{
-	return collect_pre_endorse<current_worklist>(b{}).combine(collect_pre_endorse<current_worklist>(body{}));
-}
-
-template <typename current_worklist, typename l, typename b, typename body>
-constexpr auto _collect_pre_endorse(const Statement<l, LetRemote<b, body>>&)
-{
-	return collect_pre_endorse<current_worklist>(b{}).combine(collect_pre_endorse<current_worklist>(body{}));
-}
-	
-template <typename current_worklist, typename l, typename y, typename oper_name, typename Hndl, typename... args>
-constexpr auto _collect_pre_endorse(const Expression<l, y, Operation<oper_name,Hndl,args...>>& )
-{
-	return (collect_pre_endorse<current_worklist>(Hndl{}) || ... || collect_pre_endorse<current_worklist>(args{}));
-}
-template <typename current_worklist, typename l, typename oper_name, typename Hndl, typename... args>
-constexpr auto _collect_pre_endorse(const Statement<l, Operation<oper_name,Hndl,args...>>&)
-{
-	return current_worklist{};
-}
-	
-template <typename current_worklist, typename l, typename L, typename R>
-constexpr auto _collect_pre_endorse(const Statement<l, Assignment<L, R>>& )
-{
-	//no need to convey influence here, since it will be an error to have an endorser in assignment.
-	//same with operations above.
-	return current_worklist{};
-}
-
-template <typename current_worklist, typename l, typename R>
-constexpr auto _collect_pre_endorse(const Statement<l, Return<R> >&)
-{
-	return current_worklist{};
-}
 
 	template<bool b, typename WL>
 	struct contains_endorsement_argument : public std::integral_constant<bool,b>{};
 
-	template<bool already_found, typename worklist, typename l, typename T>
-	constexpr auto contains_endorsement(contains_endorsement_argument<already_found,worklist>, Statement<l,T>);
-	template<bool already_found, typename worklist, typename l, typename y, typename T>
-	constexpr auto contains_endorsement(contains_endorsement_argument<already_found,worklist>, Expression<l,y,T> ce);
-
+	template<bool already_found, typename worklist, typename AST>
+	constexpr auto contains_endorsement(contains_endorsement_argument<already_found,worklist>, AST);
+	
 	template<bool already_found, typename worklist, typename l, typename lold, typename v, typename y, typename T>
 	constexpr auto contains_endorsement(contains_endorsement_argument<already_found,worklist>,
 										Expression<l, y, Endorse<l,Expression<lold,y,VarReference<v> > > >){
 		return contains_endorsement_argument<true,worklist>{};
 	}
+	template<bool already_found, typename worklist, typename l, typename lold, typename v, typename y, typename T>
+	constexpr auto contains_endorsement(contains_endorsement_argument<already_found,worklist>,
+										Expression<l, y, VarReference<v> >){
+		return worklist::current_elements::template contains<v>();
+	}
 
 	template<typename Arg, typename AST>
 	using Contains_endorsement = DECT(contains_endorsement(Arg{},AST{}));
 
-	template<bool already_found, typename worklist, typename l, typename T>
-	constexpr auto contains_endorsement(contains_endorsement_argument<already_found,worklist>, Statement<l,T>){
-		constexpr bool b = already_found || Statement<l,T>::template fold<Contains_endorsement,already_found>::value;
+	template<bool already_found, typename worklist, typename AST>
+	constexpr auto contains_endorsement(contains_endorsement_argument<already_found,worklist>, AST){
+		constexpr bool b = already_found || AST::template fold<Contains_endorsement,already_found>::value;
 		return contains_endorsement_argument<b,worklist>{};
 	}
-	template<bool already_found, typename worklist, typename l, typename y, typename T>
-	constexpr auto contains_endorsement(contains_endorsement_argument<already_found,worklist>, Expression<l,y,T> ce){
-		constexpr bool b = already_found || collect_pre_endorse<worklist>(ce);
-		return contains_endorsement_argument<b,worklist>{};
-	}
-
-	template<typename current_worklist, typename AST>
-	using Collect_pre_endorse = DECT(collect_pre_endorse<current_worklist>(AST{}));
-
-	template<typename wl1, typename wl2> using Combine_worklists = DECT(wl1::combine(wl2{}));
-
-	template<typename current_worklist, typename AST>
-	using pre_endorse_default = AST::default_recurse<Collect_pre_endorse, current_worklist, Combine_worklists, current_worklist>
 	
-template <typename current_worklist, typename l, typename s>
-constexpr auto _collect_pre_endorse(const Statement<l,s>){
-}
+//set the "current_worklist" field whenever the expression (or binding) needs to be endorsed.
+
+	template<typename current_worklist, typename AST>
+	constexpr auto add_all_varrefs(AST);
+
+	template<typename current_worklist, typename l, typename y, typename v>
+	constexpr auto add_all_varrefs(Expression<l,y,VarReference<v> >){
+		return current_worklist::template append<v>();
+	}
+	
+	template<typename current_worklist, typename AST>
+	using Add_all_varrefs = DECT(add_all_varrefs<current_worklist>(AST{}));
+	
+	template<typename current_worklist, typename AST>
+	constexpr auto add_all_varrefs(AST){
+		return typename AST::template default_recurse<Add_all_varrefs, current_worklist, mutils::Combine_worklists, current_worklist>{};
+	}
+
+	template<typename current_worklist, typename AST> constexpr auto collect_pre_endorse(AST);
+	
+	template <typename current_worklist, typename l, typename lold, typename y, typename v>
+	constexpr auto _collect_pre_endorse(const Expression<l, y, Endorse<l,Expression<lold,y,VarReference<v> > > >&)
+	{
+		return current_worklist::template append<v>();
+	}
+
+	template <typename current_worklist, typename l, typename y, typename v, typename e>
+	constexpr auto _collect_pre_endorse(const Binding<l, y, v, e >&){
+		if constexpr (current_worklist::current_elements::template contains<v>()){
+				return add_all_varrefs<current_worklist>(e{});
+			}
+		else return collect_pre_endorse<current_worklist>(e{});
+	}
 
 template <typename current_worklist, typename l, typename v, typename t, typename e>
 constexpr auto _collect_pre_endorse(const Statement<l, If<Expression<l,bool,VarReference<v> >, t, e> >&)
@@ -311,15 +239,19 @@ constexpr auto _collect_pre_endorse(const Statement<l, While<Expression<l,bool,V
 	else return partial;
 }
 
-template <typename current_worklist, typename l, typename... Seq>
-constexpr auto _collect_pre_endorse(const Statement<l, Sequence<Seq...>>&)
-{
-	return current_worklist::combine(collect_pre_endorse<current_worklist>(Seq{})...);
-}
+	//boilerplate / defaults
+	template<typename current_worklist, typename AST>
+	using Collect_pre_endorse = DECT(collect_pre_endorse<current_worklist>(AST{}));
+	
+	template <typename current_worklist, typename AST>
+	constexpr auto _collect_pre_endorse(const AST&){
+		return typename AST::template default_recurse<Collect_pre_endorse, current_worklist, mutils::Combine_worklists, current_worklist>{};
+	}
 	
 	template<typename current_worklist, typename AST> constexpr auto collect_pre_endorse(AST a){
 		return _collect_pre_endorse<current_worklist>(a);
 	}
+	//end boiler
 
 	template<typename AST, typename... ts>
 	constexpr auto do_pre_endorse(mutils::WorkList<mutils::typelist<>, mutils::typeset<ts...> > ){

@@ -44,4 +44,6 @@ struct WorkList<_current_elements, typeset<all_time_elements...> > {
 	using all_encountered_elements = typelist<all_time_elements...>;
 };
 
+	template<typename wl1, typename wl2> using Combine_worklists = DECT(wl1::combine(wl2{}));
+
 }

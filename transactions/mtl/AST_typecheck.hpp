@@ -273,6 +273,7 @@ struct Expression<Label<l>, expry, Endorse<Label<l>,Expression<exprl, expry, exp
 
   using endorse_expr = Expression<exprl, expry, expr>;
 
+  
   template<template <typename, typename> class F, class Accum >
 	  using default_traverse = Expression<Label<l>, expry,Endorse<Label<l>,F<Accum,endorse_expr > > >;
 
@@ -324,6 +325,17 @@ struct Operation;
   using expr_label = Hndl_l;
   using substatement = typename Operation<oper_name, Expression<Hndl_l, Hndl_t, Hndl_e>, args...>::substatement;
 	using subexpr = substatement;
+	using hndl_expr = Expression<Hndl_l, Hndl_t, Hndl_e>;
+
+	template<template <typename, typename> class F, class Accum >
+	using default_traverse = Statement<Label<l>,
+										Operation<oper_name,F<Accum,hndl_expr >, F<Accum,args>... > >;
+	
+  template<template <typename, typename> class F, class Accum, template<typename,typename> class Combine, class Default>
+  using default_recurse = Combine_all<Combine,Default,F<Accum, hndl_expr>, F<Accum,args>...>;
+
+  template<template <typename, typename> class F, class Accum >
+  using fold = Fold_all<F,Accum, hndl_expr,args...>;
 };
 
 template <typename Binding, typename Body>
@@ -341,6 +353,16 @@ struct Statement<Label<l>, Let<Binding, Body>>
 {
   using label = Label<l>;
   using substatement = typename Let<Binding, Body>::substatement;
+
+  template<template <typename, typename> class F, class Accum >
+	  using default_traverse = Statement<typename F<Accum,Binding >::label,
+										  Let<F<Accum,Binding >, F<Accum,Body> > >;
+	
+  template<template <typename, typename> class F, class Accum, template<typename,typename> class Combine, class Default>
+	  using default_recurse = Combine<F<Accum,Binding>, F<Accum,Body> >;
+
+  template<template <typename, typename> class F, class Accum >
+	  using fold = F<F<Accum,Binding>, Body >;
 };
 
 template <typename Binding, typename Body>
@@ -362,6 +384,17 @@ struct Statement<Label<l>, LetRemote<Binding<bl, y, var, Expression<exprl, expry
   using expr_label = exprl;
   using substatement =
     typename LetRemote<Binding<bl, y, var, Expression<exprl, expry, expr>>, Body>::substatement;
+
+  using _binding = Binding<bl, y, var, Expression<exprl, expry, expr>>;
+  template<template <typename, typename> class F, class Accum >
+	  using default_traverse = Statement<typename F<Accum,_binding >::label,
+										 LetRemote<F<Accum,_binding >, F<Accum,Body> > >;
+	
+  template<template <typename, typename> class F, class Accum, template<typename,typename> class Combine, class Default>
+	  using default_recurse = Combine<F<Accum,_binding>, F<Accum,Body> >;
+
+  template<template <typename, typename> class F, class Accum >
+	  using fold = F<F<Accum,_binding>, Body >;
 };
 
 template <typename Var, typename Expr>
@@ -378,6 +411,16 @@ struct Statement<Label<l>, Assignment<Var, Expr>>
 {
   using label = Label<l>;
   using substatement = typename Assignment<Var, Expr>::substatement;
+
+  template<template <typename, typename> class F, class Accum >
+	  using default_traverse = Statement<resolved_label_min<typename F<Accum,Var>::label, typename F<Accum,Expr>::label>,
+										 Assignment<F<Accum,Var >, F<Accum,Expr> > >;
+  
+  template<template <typename, typename> class F, class Accum, template<typename,typename> class Combine, class Default>
+	  using default_recurse = Combine<F<Accum,Var>, F<Accum,Expr> >;
+  
+  template<template <typename, typename> class F, class Accum >
+	  using fold = F<F<Accum,Var>, Expr >;
 };
 
 template <typename Expr>
@@ -389,11 +432,22 @@ struct Return<Expression<l, y, Expr>>
   using subexpr = typename Expression<l, y, Expr>::subexpr;
   using label = l;
 };
-template <typename l, typename Expr>
-struct Statement<l, Return<Expr>>
+template <typename Expr>
+struct Statement<Label<bottom>, Return<Expr>>
 {
-  using label = l;
+	using label = Label<bottom>;
   using substatement = typename Return<Expr>::substatement;
+
+  template<template <typename, typename> class F, class Accum >
+	  using default_traverse = Statement<Label<bottom>,
+										 Return<F<Accum,Expr> > >;
+  
+  template<template <typename, typename> class F, class Accum, template<typename,typename> class Combine, class Default>
+	  using default_recurse = F<Accum,Expr>;
+  
+  template<template <typename, typename> class F, class Accum >
+	  using fold = F<Accum,Expr>;
+  
 };
 
 #define TOMBSTONE_CHAR_SEQUENCE 't', 'o', 'm', 'b', 's', 't', 'o', 'n', 'e', 0
@@ -413,6 +467,16 @@ struct Statement<Label<l>, WriteTombstone<T>>
 {
   using label = Label<l>;
   using substatement = typename WriteTombstone<T>::substatement;
+
+  template<template <typename, typename> class F, class Accum >
+	  using default_traverse = Statement<typename F<Accum,T>::label,
+										 WriteTombstone<F<Accum,T> > >;
+  
+  template<template <typename, typename> class F, class Accum, template<typename,typename> class Combine, class Default>
+	  using default_recurse = F<Accum,T>;
+  
+  template<template <typename, typename> class F, class Accum >
+	  using fold = F<Accum,T>;
 };
 
 template <typename>
@@ -430,6 +494,16 @@ struct Statement<Label<l>, AccompanyWrite<T>>
   using label = Label<l>;
   using substatement = typename AccompanyWrite<T>::substatement;
   static_assert(std::is_same<label, typename substatement::sublabel>::value);
+
+  template<template <typename, typename> class F, class Accum >
+	  using default_traverse = Statement<typename F<Accum,T>::label,
+										 AccompanyWrite<F<Accum,T> > >;
+  
+  template<template <typename, typename> class F, class Accum, template<typename,typename> class Combine, class Default>
+	  using default_recurse = F<Accum,T>;
+  
+  template<template <typename, typename> class F, class Accum >
+	  using fold = F<Accum,T>;
 };
 
 template <typename condition, typename then, typename els>
@@ -529,7 +603,7 @@ struct Binding<Label<l>, Yield, mutils::String<name...>, Expression<Exprl, EYiel
   using expr = Expression<Exprl, EYield, ExprN>;
 
   template<template <typename, typename> class F, class Accum >
-	  using default_traverse = Binding<typename F<Accum,expr>::label, Yield, var, F<Accum,expr> >;
+	  using default_traverse = Binding<Label<l>, Yield, var, F<Accum,expr> >;
 
   template<template <typename, typename> class F, class Accum, template<typename,typename> class Combine, class Default>
 	  using default_recurse = F<Accum,expr>;

@@ -22,7 +22,6 @@ namespace myria {
 				return l::flows_to(T{});
 			}
 
-		template<char... c>
 		constexpr static bool flows_to(const Label<top>){
 			return false;
 		}
@@ -54,4 +53,7 @@ namespace myria {
 	constexpr bool is_pre_endorsed(Label<PreEndorse<l> >){
 		return true;
 	}
+
+	template<typename l>
+	using PreEndorse_notop = std::conditional_t<std::is_same<l,Label<top > >::value, top, PreEndorse<l> >;
 }
