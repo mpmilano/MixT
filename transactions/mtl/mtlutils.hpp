@@ -145,10 +145,10 @@ constexpr auto append(T, U... u)
   return T::append(u...);
 }
 
-	template<typename T1, typename... rest>
+	template<typename T1, typename... _rest>
 	struct first_struct {
 		using type = T1;
-		using rest = typelist<rest...>;
+		using rest = typelist<_rest...>;
 	};
 
 }

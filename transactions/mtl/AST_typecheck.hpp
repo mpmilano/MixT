@@ -42,10 +42,10 @@ struct Expression<Label<l>, Yields, VarReference<Var>>
     template<template <typename, typename> class , class  >
 		using default_traverse = Expression;
 
-	template<template <typename, typename> class , class , template<typename,typename> class , class >
+	template<template <typename, typename> class , class , template<typename,typename> class , class Default>
 		using default_recurse = Default;
 
-  template<template <typename, typename> class , class  >
+  template<template <typename, typename> class , class  Accum>
 	  using fold = Accum;
 };
 	
@@ -106,10 +106,10 @@ struct Expression<Label<top>, int, Constant<i>>
   template<template <typename, typename> class , class  >
 	  using default_traverse = Expression;
   
-  template<template <typename, typename> class , class , template<typename,typename> class , class >
+  template<template <typename, typename> class , class , template<typename,typename> class , class Default>
 	  using default_recurse = Default;
 
-  template<template <typename, typename> class , class  >
+  template<template <typename, typename> class , class  Accum>
 	  using fold = Accum;
 };
 
@@ -195,7 +195,7 @@ struct Expression<Label<l>, typename BinOp<op, L, R>::yield, BinOp<op, L, R>>
   using subexpr = typename BinOp<op, L, R>::subexpr;
 
   template<template <typename, typename> class F, class Accum >
-	  using default_traverse = Expression<resolved_label_min<typename F<Accum,L>::label, typename F<Accum,R>::label>, Yields,
+	  using default_traverse = Expression<resolved_label_min<typename F<Accum,L>::label, typename F<Accum,R>::label>, typename BinOp<op,F<Accum,L>,F<Accum,R> >::yield,
 										  BinOp<op,F<Accum,L>,F<Accum,R> > >;
 
   template<template <typename, typename> class F, class Accum, template<typename,typename> class Combine, class Default>
@@ -244,7 +244,7 @@ struct Expression<Label<l>, bool, IsValid<Expression<exprl, expry, expr>>>
   using subexpr = typename IsValid<Expression<exprl, expry, expr>>::subexpr;
 
   template<template <typename, typename> class F, class Accum >
-	  using default_traverse = Expression<resolved_label_min<typename F<Accum,Expression<exprl, expry, expr> >::label, handle_label>, Yields,
+	  using default_traverse = Expression<resolved_label_min<typename F<Accum,Expression<exprl, expry, expr> >::label, handle_label>, bool,
 										  IsValid<F<Accum,Expression<exprl, expry, expr> > > >;
 
   template<template <typename, typename> class F, class Accum, template<typename,typename> class Combine, class Default>

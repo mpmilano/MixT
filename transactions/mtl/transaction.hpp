@@ -14,6 +14,7 @@
 #include "transaction_listener.hpp"
 #include "mtlbasics.hpp"
 #include "insert_tracking.hpp"
+#include "endorse_relabel.hpp"
 //*/
 namespace myria {
 namespace mtl {
@@ -121,8 +122,9 @@ struct pre_transaction_str<mutils::String<Str...>>
           {
             using namespace tracking_phase;
             using tracked_t = DECT(insert_tracking_begin(inferred_t{}));
+			using endorsed_one_t = DECT(do_pre_endorse(tracked_t{}));
             using namespace split_phase;
-            using split_t = DECT(split_computation<tracked_t, bound_values...>());
+            using split_t = DECT(split_computation<endorsed_one_t, bound_values...>());
             using recollapsed_t = DECT(recollapse(split_t{}));
             struct inferred_and_recollapsed
             {

@@ -2,6 +2,7 @@
 
 #include "top.hpp"
 #include "AST_split.hpp"
+#include "pre_endorse.hpp"
 
 namespace myria {
 namespace pgsql {
@@ -19,6 +20,9 @@ template <> struct Label<pgsql::causal> {
   constexpr static bool flows_to(const Label<bottom> &) { return true; }
 
   constexpr static bool flows_to(const Label<top> &) { return false; }
+
+	template<typename l>
+	constexpr static bool flows_to(const Label<PreEndorse<l>> &) { return false; }
 
   constexpr static bool flows_to(const Label<pgsql::strong> &) { return false; }
 
@@ -49,6 +53,9 @@ template <> struct Label<pgsql::strong> {
   constexpr static bool flows_to(const Label<bottom> &) { return true; }
 
   constexpr static bool flows_to(const Label<top> &) { return false; }
+
+	template<typename l>
+	constexpr static bool flows_to(const Label<PreEndorse<l>> &) { return false; }
 
   constexpr static bool flows_to(const Label<pgsql::causal> &) { return true; }
 
