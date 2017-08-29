@@ -123,13 +123,14 @@ struct pre_transaction_str<mutils::String<Str...>>
             using namespace tracking_phase;
             using tracked_t = DECT(insert_tracking_begin(inferred_t{}));
 			using endorsed_one_t = DECT(do_pre_endorse(tracked_t{}));
+			static_assert(!Contains_endorsement<contains_endorsement_argument<false,mutils::EmptyWorkList>,  endorsed_one_t>::value);
             using namespace split_phase;
             using split_t = DECT(split_computation<endorsed_one_t, bound_values...>());
             using recollapsed_t = DECT(recollapse(split_t{}));
             struct inferred_and_recollapsed
             {
               constexpr inferred_and_recollapsed() = default;
-              using inferred = inferred_t;
+              using inferred = DECT(do_pre_endorse(inferred_t{}));
               using recollapsed = recollapsed_t;
             };
             return inferred_and_recollapsed{};

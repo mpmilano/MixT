@@ -1,5 +1,6 @@
 #pragma once
 #include "mtlutils.hpp"
+#include "AST_typecheck.hpp"
 
 namespace myria { namespace mtl  { namespace typecheck_phase {
 

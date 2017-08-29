@@ -22,6 +22,10 @@ test_mtl: $(object_files)
 	clang++ $(CPPFLAGS) $(LDFLAGS) $(object_files) test_complex_transaction.cpp -o /tmp/test
 test_operation: $(object_files)
 	clang++ $(CPPFLAGS) $(LDFLAGS)  $(object_files) test_operation.cpp -o /tmp/test
+test_endorse: $(object_files)
+	clang++ $(CPPFLAGS) $(LDFLAGS)  $(object_files) test_endorse.cpp -o /tmp/test
+regression_tests: $(object_files)
+	clang++ $(CPPFLAGS) $(LDFLAGS)  $(object_files) regression_tests.cpp -o /tmp/test
 test_isvalid: utils.o
 	clang++ $(CPPFLAGS) $(LDFLAGS)  test_isvalid.cpp utils.o -o /tmp/test
 

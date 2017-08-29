@@ -16,6 +16,11 @@ namespace myria{
 			return true;
 		}
 
+		template<typename l>
+		constexpr static bool flows_to(const Label<PreEndorse<l> >){
+			return false;
+		}
+
 		constexpr static bool flows_to(const Label){
 			return true;
 		}		

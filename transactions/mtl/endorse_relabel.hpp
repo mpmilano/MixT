@@ -10,21 +10,14 @@ namespace typecheck_phase {
 
 //set the "endorse_variable_list" field whenever the expression (or binding) needs to be endorsed.
 	
-template <typename endorse_variable_list, typename l, typename y, typename v, typename e>
-constexpr auto _endorse_relabel(const Binding<l, y, v, Expression<l,y,e> >&)
+	template <typename endorse_variable_list, typename l, typename l2, typename y, typename y2, typename v, typename e>
+constexpr auto _endorse_relabel(const Binding<l, y, v, Expression<l2,y2,e> >&)
 {
-	using new_e = DECT(endorse_relabel<endorse_variable_list>(Expression<l,y,e>{}));
+	using new_e = DECT(endorse_relabel<endorse_variable_list>(Expression<l2,y2,e>{}));
 	if constexpr (endorse_variable_list::template contains<v>()){
 			return Binding<Label<PreEndorse_notop<l> >, y,v,new_e >{};
 		}
 	else return Binding<l, y,v,new_e >{};
-}
-
-template <typename endorse_variable_list, typename l, typename y, typename s, typename f>
-constexpr auto _endorse_relabel(const Expression<l, y, FieldReference<s, f>>&)
-{
-	using sub = DECT(endorse_relabel<endorse_variable_list>(s{}));
-	return Expression<typename sub::label, y, FieldReference<sub,f> >{};
 }
 
 template <typename endorse_variable_list, typename l, typename y, typename v>
@@ -38,53 +31,11 @@ constexpr auto _endorse_relabel(const Expression<l, y, VarReference<v>>&)
 	}
 }
 
-template <typename endorse_variable_list, int i>
-constexpr auto _endorse_relabel(const Expression<Label<top>, int, Constant<i>>& a)
-{
-	return a;
-}
-
-template <typename endorse_variable_list, typename l, typename y, char op, typename L, typename R>
-constexpr auto _endorse_relabel(const Expression<l, y, BinOp<op, L, R>>&)
-{
-	using subL = DECT(endorse_relabel<endorse_variable_list>(L{}));
-	using subR = DECT(endorse_relabel<endorse_variable_list>(R{}));
-	return Expression<resolved_label_min<typename subL::label, typename subR::label>, y, BinOp<op,subL,subR> >{};
-}
-
 template <typename endorse_variable_list, typename l, typename y, typename h>
-constexpr auto _endorse_relabel(const Expression<l, y, IsValid<h>>&)
-{
-	using sub = DECT(endorse_relabel<endorse_variable_list>(h{}));
-	return Expression<typename sub::label,y, IsValid<sub> >{};
-}
-
-	template <typename endorse_variable_list, typename l, typename y, typename h>
 constexpr auto _endorse_relabel(const Expression<l, y, Endorse<l,h>>)
 {
 	//we have already dispatched this endorsement; we no longer need the node.
 	return endorse_relabel<endorse_variable_list>(h{});
-}
-
-
-template <typename endorse_variable_list, typename l, typename b, typename body>
-constexpr auto _endorse_relabel(const Statement<l, Let<b, body>>&)
-{
-	using newb = DECT(endorse_relabel<endorse_variable_list>(b{}));
-	using newbod = DECT(endorse_relabel<endorse_variable_list>(body{}));
-	return Statement<typename newb::label, Let<newb,newbod> >{};
-}
-
-template <typename endorse_variable_list, typename l, typename b, typename body>
-constexpr auto _endorse_relabel(const Statement<l, LetRemote<b, body>>&)
-{
-	using newb = DECT(endorse_relabel<endorse_variable_list>(b{}));
-	using newbod = DECT(endorse_relabel<endorse_variable_list>(body{}));
-	using newlr = LetRemote<newb, newbod>;
-	if constexpr (is_pre_endorsed<typename newb::label>()){
-			return Statement<Label<PreEndorse_notop<l>>, newlr>{};
-		}
-	else return Statement<l,newlr>{};
 }
 
 
@@ -111,51 +62,26 @@ constexpr auto _endorse_relabel(const Statement<l, Operation<oper_name,Hndl,args
 template <typename endorse_variable_list, typename l, typename L, typename R>
 constexpr auto _endorse_relabel(const Statement<l, Assignment<L, R>>& a)
 {
-	static_assert(!is_pre_endorsed<typename DECT(endorse_relabel<endorse_variable_list>(L{}))::label>() || 
-				  !is_pre_endorsed<typename DECT(endorse_relabel<endorse_variable_list>(R{}))::label>(),
+	static_assert(!is_pre_endorsed(typename DECT(endorse_relabel<endorse_variable_list>(L{}))::label{}) || 
+				  !is_pre_endorsed(typename DECT(endorse_relabel<endorse_variable_list>(R{}))::label{}),
 				  "Error: cannot assign during pre-endorse step");
 	return a;
 }
 
-template <typename endorse_variable_list, typename l, typename R>
-constexpr auto _endorse_relabel(const Statement<l, Return<R> >&)
-{
-	using sub = DECT(endorse_relabel<endorse_variable_list>(R{}));
-	return Statement<Label<bottom>, Return<sub> >{};
-}
-
-
-template <typename endorse_variable_list, typename l, typename c, typename t, typename e>
-constexpr auto _endorse_relabel(const Statement<l, If<c, t, e>>&)
-{
-	using newc = DECT(endorse_relabel<endorse_variable_list>(c{}));
-	using newt = DECT(endorse_relabel<endorse_variable_list>(t{}));
-	using newe = DECT(endorse_relabel<endorse_variable_list>(e{}));
-	using newif = If<newc,newt,newe>;
-	if constexpr (is_pre_endorsed<typename newc::label>()){
-			return Statement<Label<PreEndorse_notop<l>>, newif>{};
-		}
-	else return Statement<l,newif>{};
-}
-
-template <typename endorse_variable_list, typename l, typename c, typename t, char... name>
-constexpr auto _endorse_relabel(const Statement<l, While<Expression<l,bool,VarReference<c> >, t, name...>>&)
-{
-	using newc = DECT(endorse_relabel<endorse_variable_list>(Expression<l,bool,VarReference<c> >{}));
-	using newt = DECT(endorse_relabel<endorse_variable_list>(t{}));
-	using new_while = While<newc,newt,name...>;
-	return Statement<typename newc::label, new_while>{};
-}
-
-template <typename endorse_variable_list, typename l, typename... Seq>
-constexpr auto _endorse_relabel(const Statement<l, Sequence<Seq...>>&)
-{
-	return Statement<l,Sequence<DECT(endorse_relabel<endorse_variable_list>(Seq{}))...> >{};
-}
+	//boiler
+	template <typename endorse_variable_list, typename AST>
+	using Endorse_relabel = DECT(endorse_relabel<endorse_variable_list>(AST{}));
+	
+	template <typename endorse_variable_list, typename AST>
+	constexpr auto _endorse_relabel(const AST&)
+	{
+		return typename AST::template default_traverse<Endorse_relabel, endorse_variable_list>{};
+	}
 
 	template<typename endorse_variable_list, typename AST> constexpr auto endorse_relabel(AST a){
 		return _endorse_relabel<endorse_variable_list>(a);
 	}
+	//end boiler
 
 
 	template<bool b, typename WL>
@@ -164,23 +90,28 @@ constexpr auto _endorse_relabel(const Statement<l, Sequence<Seq...>>&)
 	template<bool already_found, typename worklist, typename AST>
 	constexpr auto contains_endorsement(contains_endorsement_argument<already_found,worklist>, AST);
 	
-	template<bool already_found, typename worklist, typename l, typename lold, typename v, typename y, typename T>
+	template<bool already_found, typename worklist, typename l, typename lold, typename v, typename y>
 	constexpr auto contains_endorsement(contains_endorsement_argument<already_found,worklist>,
 										Expression<l, y, Endorse<l,Expression<lold,y,VarReference<v> > > >){
 		return contains_endorsement_argument<true,worklist>{};
 	}
-	template<bool already_found, typename worklist, typename l, typename lold, typename v, typename y, typename T>
+	template<bool already_found, typename worklist, typename l, typename lold, typename v, typename y>
 	constexpr auto contains_endorsement(contains_endorsement_argument<already_found,worklist>,
 										Expression<l, y, VarReference<v> >){
-		return worklist::current_elements::template contains<v>();
+		return contains_endorsement_argument<worklist::current_elements::template contains<v>(),worklist>{};
 	}
 
-	template<typename Arg, typename AST>
-	using Contains_endorsement = DECT(contains_endorsement(Arg{},AST{}));
+	template<typename Arg, typename AST> struct Contains_endorsement_str;
+	template<bool already_found, typename worklist, typename AST>
+	struct Contains_endorsement_str<contains_endorsement_argument<already_found,worklist>,AST> {
+		using type = DECT(contains_endorsement(contains_endorsement_argument<already_found,worklist>{},AST{}));
+	};
+
+	template<typename Arg, typename AST> using Contains_endorsement = typename Contains_endorsement_str<Arg,AST>::type;
 
 	template<bool already_found, typename worklist, typename AST>
 	constexpr auto contains_endorsement(contains_endorsement_argument<already_found,worklist>, AST){
-		constexpr bool b = already_found || AST::template fold<Contains_endorsement,already_found>::value;
+		constexpr bool b = already_found || AST::template fold<Contains_endorsement,contains_endorsement_argument<already_found,worklist> >::value;
 		return contains_endorsement_argument<b,worklist>{};
 	}
 	

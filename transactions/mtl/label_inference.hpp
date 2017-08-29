@@ -203,8 +203,9 @@ template <typename pc_label, typename l, typename b, typename e>
 constexpr auto _collect_constraints(Statement<l, LetRemote<b, e>> a)
 {
   using This = DECT(a);
-  using new_pc = Label<label_min_of<Label<label_min_of<pc_label, typename This::expr_label>>, typename This::handle_label>>;
-  return collect_constraints(new_pc{}, b{})
+  using binding_pc = Label<label_min_of<Label<label_min_of<pc_label, typename This::expr_label>>, typename This::handle_label>>;
+  using new_pc = pc_label;
+  return collect_constraints(binding_pc{}, b{})
     .append(collect_constraints(new_pc{}, e{}))
     .append(constraints<must_flow_to<typename This::expr_label, typename This::handle_label,MUTILS_STRING(let_remote, expr -> hndl)>>{});
 }
@@ -375,7 +376,7 @@ std::ostream& operator<<(std::ostream& o, substitution<newl, oldl>)
   // this is an actual concrete pair of labels,
   // so let's check them.
   using intermediate = DECT(replace_all_less_than<_ast, label>(constraints<constraint...>{}));
-  static_assert(mutils::useful_static_assert<label::flows_to(to{}),typename intermediate::ast>(), "Error: flow violation");
+  static_assert(mutils::useful_static_assert<label::flows_to(to{}),why,typename intermediate::ast>(), "Error: flow violation");
   struct ret
   {
     constexpr ret() = default;

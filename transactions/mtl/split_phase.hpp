@@ -156,21 +156,28 @@ constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Statement
 	//keep in mind, the binding search works weirdly for remote-bound.
 	//need target of handle.
 	using yield = typename _binding::e_yield::type;
-	using needed_binding = type_binding_super<var, yield, label2>;
-	static_assert(mutils::useful_static_assert<
-		(old_api::provides::template contains_subtype<needed_binding>()
-		 || !std::is_same<typename old_api::inherits::template find_subtype<needed_binding>, mutils::mismatch >::value),
-				  needed_binding,typename old_api::inherits
-		>(),
-		 "Error: cannot find binding for this variable.");
-	using reqs = std::conditional_t<old_api::provides::template contains_subtype<needed_binding>(), requires<>,
-									requires<typename old_api::inherits::template find_subtype<needed_binding>>>;
-	using var_api = phase_api<label,reqs,provides<>,typename old_api::inherits>;
-	using new_api = combined_api<typename new_body::api, var_api>;
-	
-	using stmt = Statement<Sequence<Statement<IncrementRemoteOccurance<var>>, body_ast>>;
-	
-	return extracted_phase<label,new_api, typename new_body::returns, stmt>{};
+	if constexpr (label2::flows_to(Label<l>{})){
+			//make sure this binding is available
+			using needed_binding = type_binding_super<var, yield, label2>;
+			static_assert(mutils::useful_static_assert<
+						  (old_api::provides::template contains_subtype<needed_binding>()
+						   || !std::is_same<typename old_api::inherits::template find_subtype<needed_binding>, mutils::mismatch >::value),
+						  Label<l>,needed_binding,typename old_api::inherits
+						  >(),
+						  "Error: cannot find binding for this variable.");
+			using reqs = std::conditional_t<old_api::provides::template contains_subtype<needed_binding>(), requires<>,
+											requires<typename old_api::inherits::template find_subtype<needed_binding>>>;
+			using var_api = phase_api<label,reqs,provides<>,typename old_api::inherits>;
+			using new_api = combined_api<typename new_body::api, var_api>;
+			
+			using stmt = Statement<Sequence<Statement<IncrementRemoteOccurance<var>>, body_ast>>;
+			
+			return extracted_phase<label,new_api, typename new_body::returns, stmt>{};
+		}
+	else {
+		//this binding does not exist yet.
+		return new_body{};
+	}
 }
 
 template <typename l>

@@ -206,14 +206,13 @@ struct flatten_exprs_str;
 
 // statements
 // let statements need to have any depth-1 expression
-	/*
 template <char seqnum, char depth, typename name, typename var, typename body>
 constexpr auto _flatten_exprs(Statement<Let<Binding<name, Expression<VarReference<var>>>, body>>)
 {
-	//let's assume this isn't allowed.
+
   // already flat, moving on
   return Statement<Let<Binding<name, Expression<VarReference<var>>>, DECT(flatten_exprs<seqnum, depth + 1>(body{}))>>{};
-  }//*/
+}
 
 template <char seqnum, char depth, typename name, int i, typename body>
 constexpr auto _flatten_exprs(Statement<Let<Binding<name, Expression<Constant<i>>>, body>>)
@@ -406,7 +405,7 @@ constexpr auto _flatten_exprs_helper(Statement<stmt>)
 }
 
 template <char seqnum, char depth, typename name, typename expr, typename body>
-constexpr auto _flatten_exprs(Statement<Let<Binding<name, expr>, body>>)
+constexpr auto _flatten_exprs(Statement<Let<Binding<name, expr>, body>>, std::enable_if_t<!is_var_reference<expr>::value>* = nullptr)
 {
   static_assert(!is_var_reference<expr>::value);
   // static_assert(print_obj<Let<Binding<name,expr>, body>>(),"Error: Let fell into default case");
