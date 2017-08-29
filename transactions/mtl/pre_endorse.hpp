@@ -54,6 +54,26 @@ namespace myria {
 		return true;
 	}
 
+	template<typename T>
+	struct PreEndorse_notop_str;
+
+	template<>
+	struct PreEndorse_notop_str<Label<top> >
+	{
+		using type = top;
+	};
+	
 	template<typename l>
-	using PreEndorse_notop = std::conditional_t<std::is_same<l,Label<top > >::value, top, PreEndorse<l> >;
+	struct PreEndorse_notop_str<Label<PreEndorse<l> > >
+	{
+		using type = PreEndorse<l>;
+	};
+
+	template<typename l>
+	struct PreEndorse_notop_str{
+		using type = PreEndorse<l>;
+	};
+
+	template<typename l>
+	using PreEndorse_notop = typename PreEndorse_notop_str<l>::type;
 }

@@ -6,6 +6,7 @@
 #include "TransactionContext.hpp"
 #include "mtlutils.hpp"
 #include "top.hpp"
+#include "mtl/pre_endorse.hpp"
 #include <cassert>
 #include <iostream>
 #include <type_traits>
@@ -578,8 +579,25 @@ struct type_binding<String<str...>, T, Label<l>, type_location::local> : public 
   }
 };
 
+	template<typename L, typename R> struct decide_type_label_str;
+	template<typename L, typename R>
+	struct decide_type_label_str<Label<PreEndorse<L> >, R>{
+		using type = resolved_label_min<Label<PreEndorse_notop<L> >, Label< PreEndorse_notop<R> > >;
+	};
+	template<typename L, typename R>
+	struct decide_type_label_str<L,Label<PreEndorse<R> > >{
+		using type = resolved_label_min<Label<PreEndorse_notop<L> >, Label<PreEndorse_notop<R> > >;
+	};
+	template<typename L, typename R> struct decide_type_label_str{
+		using type = resolved_label_min<L,R>;
+	};
+	
+	template<typename L, typename R>
+	using decide_type_label = typename decide_type_label_str<L,R>::type;
+
 template <typename T, typename l, char... str>
-struct type_binding<String<str...>, T, Label<l>, type_location::remote> : public type_binding_super<String<str...>, typename T::type, resolved_label_min<Label<l>, typename T::label > >
+//note; if Label<l> is a pre-endorse label, then we should also have the handle bind at pre-endorse.
+struct type_binding<String<str...>, T, Label<l>, type_location::remote> : public type_binding_super<String<str...>, typename T::type, decide_type_label<Label<l>, typename T::label > >
 {
   static_assert(is_handle<T>::value);
   static_assert(!std::is_same<T, typename T::type>::value);
