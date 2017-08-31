@@ -202,8 +202,8 @@ constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Statement
 }
 	
 template <typename l>
-template <typename y, typename oper_name, typename hndl, typename old_api, typename... args>
-constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Expression<label, y,typecheck_phase::Operation<oper_name,hndl, args...> >)
+template <typename y, typename label2, typename oper_name, typename hndl, typename old_api, typename... args>
+constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Expression<label2, y,typecheck_phase::Operation<oper_name,hndl, args...> >)
 {
   using new_hndl = DECT(collect_phase(old_api{}, hndl{}));
   using new_api = combined_api<typename new_hndl::api, typename DECT(collect_phase(old_api{}, args{}))::api...>;
@@ -212,8 +212,8 @@ constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Expressio
 }
 	
 	template <typename l>
-	template <typename y, typename hndl, typename old_api>
-	constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Expression<label,y, typecheck_phase::IsValid<hndl>>)
+	template <typename y, typename label2, typename hndl, typename old_api>
+	constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Expression<label2,y, typecheck_phase::IsValid<hndl>>)
 	{
 		using hndl_post = DECT(AST<label>::collect_phase(old_api{}, hndl{}));
 		using hndl_ast = typename hndl_post::ast;
@@ -427,6 +427,13 @@ constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Statement
 {
   return build_seq1<label, typename old_api::inherits>(collect_phase(old_api{}, seq{})...);
 }
+
+	template <typename l>
+	template <typename _AST, typename phase_api>
+  constexpr auto AST<Label<l>>::collect_phase(phase_api, _AST)
+  {
+    return AST::_collect_phase(phase_api{}, _AST{});
+  }
 
 template <typename label, typename ast, typename oldinherit>
 constexpr auto collect_phase(ast, oldinherit)

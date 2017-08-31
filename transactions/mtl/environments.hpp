@@ -11,6 +11,7 @@
 #include <iostream>
 #include <type_traits>
 #include <vector>
+#include <array>
 
 namespace myria {
 
@@ -45,33 +46,36 @@ struct value_holder
     constexpr int ret = (adjusted_size * div < sizeof(T) ? 1 + adjusted_size : adjusted_size);
     return ret;
   }
-  static constexpr int adjusted_T_size() { return t_mem_length() * sizeof(unsigned long long); }
-  unsigned long long t_mem[t_mem_length()];
-  T* zeroed_t()
-  {
-    bzero(t_mem, adjusted_T_size());
-    return (T*)t_mem;
-  }
-  T& t{ *zeroed_t() };
+	std::array<unsigned long long, t_mem_length()> t_mem{{}};
+	T& zeroed_t_mem(){
+		bzero(t_mem.data(),sizeof(t_mem));
+		return *(T*) t_mem.data();
+	}
+	static_assert(sizeof(t_mem) >= sizeof(T));
+	T& t =  zeroed_t_mem();
 
-  bool mem_uninitialized() const
-  {
-    for (const auto& word : t_mem)
-      if (word != 0)
-        return false;
-    return true;
-  }
+	bool mem_uninitialized{true};
 
-  value_holder(T _t) { new (&t) T{ _t }; }
-  value_holder() = default;
-  value_holder(const value_holder& o) { new (&t) T{ o.t }; }
+	value_holder(T _t):mem_uninitialized{false} { new (&t) T{ _t }; }
+	value_holder() = default;
+	value_holder(const value_holder& o):mem_uninitialized(o.mem_uninitialized)
+		{
+			if (!o.mem_uninitialized) new (&t) T{ o.t };
+		}
   value_holder& operator=(const value_holder& o)
   {
-    if (mem_uninitialized())
-      new (&t) T{ o.t };
-    else
-      t = o.t;
-    return *this;
+	  if (mem_uninitialized && !o.mem_uninitialized){
+		  mem_uninitialized = false;
+		  new (&t) T{ o.t };
+	  }
+	  else if (!mem_uninitialized && !o.mem_uninitialized)
+		  t = o.t;
+	  else {
+/*receiving uninitialized*/
+		  zeroed_t_mem();
+		  mem_uninitialized = true;
+	  }
+	  return *this;
   }
   ~value_holder() { t.~T(); }
 
@@ -81,12 +85,14 @@ struct value_holder
   T& get(value_holder& _this, TransactionContext&)
   {
 	  assert(&_this == this);
+	  assert(!mem_uninitialized);
     return t;
   }
   template <typename TransactionContext>
   value_holder& push(value_holder& _this, TransactionContext&, const T& t2)
   {
 	  assert(&_this == this);
+	  assert(!mem_uninitialized);
     t = t2;
     return *this;
   }
@@ -94,8 +100,9 @@ struct value_holder
   value_holder& bind(value_holder& _this, TransactionContext&, const T& t2)
   {
 	  assert(&_this == this);
-    assert(mem_uninitialized());
+    assert(mem_uninitialized);
     new (&t) T{ t2 };
+	mem_uninitialized = false;
     return *this;
   }
   bool reset_index() { return true; }
@@ -415,6 +422,10 @@ protected:
     return _super.super[_this.handle[_this.curr_pos].name()];
   }
 
+	//Note: we need to do replacements before run_phase,
+	//because otherwise we get mismatched phase contexts.
+	//if you're here due to an error matching PhaseContext,
+	//that's probably why.
 public:
 	template<typename Store>
 	static auto& bind(Store &s, PhaseContext<typename T::label>& tc, T t)

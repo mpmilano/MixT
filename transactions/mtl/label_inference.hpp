@@ -171,7 +171,7 @@ constexpr auto _collect_constraints(Expression<l, y, IsValid<h>> a)
   using This = DECT(a);
   using new_pc = Label<label_min_of<Label<label_min_of<pc_label, typename This::expr_label>>, typename This::handle_label>>;
   return collect_constraints(new_pc{}, h{})
-	  .append(constraints<must_flow_to<typename This::expr_label, typename This::handle_label,MUTILS_STRING(isvalid, expr -> hndl)>>{});
+	  .append(constraints<must_flow_to<typename This::expr_label, typename This::handle_label,MUTILS_STRING(isvalid, expr -> hndl)> >{});
 }
 
 template <typename pc_label, typename l, typename y, typename h>

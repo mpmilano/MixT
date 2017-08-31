@@ -43,7 +43,7 @@ template <typename endorse_variable_list, typename oper_name, typename Hndl, typ
 constexpr auto _endorse_relabel(Operation<oper_name,Hndl,args...> a)
 {
 	using newh = DECT(endorse_relabel<endorse_variable_list>(Hndl{}));
-	static_assert(!(is_pre_endorsed<typename newh::label>() || ... || is_pre_endorsed<typename DECT(endorse_relabel<endorse_variable_list>(args{}))::label>()),
+	static_assert(!(is_pre_endorsed(typename newh::label{}) || ... || is_pre_endorsed(typename DECT(endorse_relabel<endorse_variable_list>(args{}))::label())),
 		"Error: cannot run an operation in pre-endorse step");
 	return a;
 }
@@ -154,7 +154,7 @@ constexpr auto _collect_pre_endorse(const Statement<l, If<Expression<l,bool,VarR
 {
 	constexpr auto partial = collect_pre_endorse<current_worklist>(t{}).combine(collect_pre_endorse<current_worklist>(e{}));
 	using c = Expression<l,bool,VarReference<v> >;
-	if constexpr (Contains_endorsement<contains_endorsement_argument<false,current_worklist>, If<c, t, e> >::value){
+	if constexpr (Contains_endorsement<contains_endorsement_argument<false,current_worklist>, Statement<l, If<c, t, e> > >::value){
 			return partial.template append<v>;
 		}
 	else return partial;

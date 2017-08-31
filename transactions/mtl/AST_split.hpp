@@ -56,6 +56,15 @@ struct AST<Label<l>>
   {
     using yield = Yields;
     using subexpr = typename FieldReference<Struct, Field>::subexpr;
+
+	template<template <typename, typename> class F, class Accum >
+		using default_traverse = Expression<Yields, FieldReference<F<Accum,Struct>,Field > >;
+	
+	template<template <typename, typename> class F, class Accum, template<typename,typename> class Combine, class Default>
+	  using default_recurse = F<Accum,Struct>;
+	
+	template<template <typename, typename> class F, class Accum >
+		using fold = F<Accum,Struct>;
   };
 
   template <typename Var>
@@ -70,6 +79,14 @@ struct AST<Label<l>>
   {
     using yield = Yields;
     using subexpr = typename VarReference<Var>::subexpr;
+	template<template <typename, typename> class , class  >
+		using default_traverse = Expression;
+	
+	template<template <typename, typename> class , class , template<typename,typename> class , class Default>
+		using default_recurse = Default;
+
+	template<template <typename, typename> class , class  Accum>
+		using fold = Accum;
   };
 
   template <int>
@@ -81,6 +98,15 @@ struct AST<Label<l>>
   {
     using yield = int;
     using subexpr = Constant<i>;
+
+	template<template <typename, typename> class , class  >
+		using default_traverse = Expression;
+	
+	template<template <typename, typename> class , class , template<typename,typename> class , class Default>
+		using default_recurse = Default;
+	
+	template<template <typename, typename> class , class  Accum>
+		using fold = Accum;
   };
 
   template <char op, typename L, typename R>
@@ -88,6 +114,7 @@ struct AST<Label<l>>
   template <typename L, typename R, typename Yieldsl, typename Yieldsr>
   struct BinOp<'+', Expression<Yieldsl, L>, Expression<Yieldsr, R>>
   {
+	  using yield = DECT(std::declval<Yieldsl>() + std::declval<Yieldsr>());
     using lexpr = typename Expression<Yieldsl, L>::subexpr;
     using rexpr = typename Expression<Yieldsr, R>::subexpr;
     using subexpr = BinOp;
@@ -95,6 +122,7 @@ struct AST<Label<l>>
   template <typename L, typename R, typename Yieldsl, typename Yieldsr>
   struct BinOp<'*', Expression<Yieldsl, L>, Expression<Yieldsr, R>>
   {
+	  using yield = DECT(std::declval<Yieldsl>() * std::declval<Yieldsr>());
     using lexpr = typename Expression<Yieldsl, L>::subexpr;
     using rexpr = typename Expression<Yieldsr, R>::subexpr;
     using subexpr = BinOp;
@@ -102,6 +130,7 @@ struct AST<Label<l>>
   template <typename L, typename R, typename Yieldsl, typename Yieldsr>
   struct BinOp<'-', Expression<Yieldsl, L>, Expression<Yieldsr, R>>
   {
+	  using yield = DECT(std::declval<Yieldsl>() - std::declval<Yieldsr>());
     using lexpr = typename Expression<Yieldsl, L>::subexpr;
     using rexpr = typename Expression<Yieldsr, R>::subexpr;
     using subexpr = BinOp;
@@ -109,6 +138,7 @@ struct AST<Label<l>>
   template <typename L, typename R, typename Yieldsl, typename Yieldsr>
   struct BinOp<'/', Expression<Yieldsl, L>, Expression<Yieldsr, R>>
   {
+	  using yield = DECT(std::declval<Yieldsl>() / std::declval<Yieldsr>());
     using lexpr = typename Expression<Yieldsl, L>::subexpr;
     using rexpr = typename Expression<Yieldsr, R>::subexpr;
     using subexpr = BinOp;
@@ -116,6 +146,7 @@ struct AST<Label<l>>
   template <typename L, typename R, typename Yieldsl, typename Yieldsr>
   struct BinOp<'&', Expression<Yieldsl, L>, Expression<Yieldsr, R>>
   {
+	  using yield = DECT(std::declval<Yieldsl>() && std::declval<Yieldsr>());
     using lexpr = typename Expression<Yieldsl, L>::subexpr;
     using rexpr = typename Expression<Yieldsr, R>::subexpr;
     using subexpr = BinOp;
@@ -123,6 +154,7 @@ struct AST<Label<l>>
   template <typename L, typename R, typename Yieldsl, typename Yieldsr>
   struct BinOp<'|', Expression<Yieldsl, L>, Expression<Yieldsr, R>>
   {
+	  using yield = DECT(std::declval<Yieldsl>() || std::declval<Yieldsr>());
     using lexpr = typename Expression<Yieldsl, L>::subexpr;
     using rexpr = typename Expression<Yieldsr, R>::subexpr;
     using subexpr = BinOp;
@@ -130,6 +162,7 @@ struct AST<Label<l>>
   template <typename L, typename R, typename Yieldsl, typename Yieldsr>
   struct BinOp<'>', Expression<Yieldsl, L>, Expression<Yieldsr, R>>
   {
+	  using yield = DECT(std::declval<Yieldsl>() > std::declval<Yieldsr>());
     using lexpr = typename Expression<Yieldsl, L>::subexpr;
     using rexpr = typename Expression<Yieldsr, R>::subexpr;
     using subexpr = BinOp;
@@ -137,6 +170,7 @@ struct AST<Label<l>>
   template <typename L, typename R, typename Yieldsl, typename Yieldsr>
   struct BinOp<'<', Expression<Yieldsl, L>, Expression<Yieldsr, R>>
   {
+	  using yield = DECT(std::declval<Yieldsl>() < std::declval<Yieldsr>());
     using lexpr = typename Expression<Yieldsl, L>::subexpr;
     using rexpr = typename Expression<Yieldsr, R>::subexpr;
     using subexpr = BinOp;
@@ -144,6 +178,7 @@ struct AST<Label<l>>
   template <typename L, typename R, typename Yieldsl, typename Yieldsr>
   struct BinOp<'=', Expression<Yieldsl, L>, Expression<Yieldsr, R>>
   {
+	  using yield = DECT(std::declval<Yieldsl>() == std::declval<Yieldsr>());
     using lexpr = typename Expression<Yieldsl, L>::subexpr;
     using rexpr = typename Expression<Yieldsr, R>::subexpr;
     using subexpr = BinOp;
@@ -152,7 +187,18 @@ struct AST<Label<l>>
   struct Expression<Yields, BinOp<op, L, R>>
   {
     using yield = Yields;
+	static_assert(std::is_same<yield, typename BinOp<op, L, R>::yield >::value);
     using subexpr = typename BinOp<op, L, R>::subexpr;
+	
+	template<template <typename, typename> class F, class Accum >
+		using default_traverse = Expression<typename BinOp<op,F<Accum,L>,F<Accum,R> >::yield,
+											BinOp<op,F<Accum,L>,F<Accum,R> > >;
+	
+	template<template <typename, typename> class F, class Accum, template<typename,typename> class Combine, class Default>
+		using default_recurse = Combine<F<Accum,L>, F<Accum,R> >;
+	
+	template<template <typename, typename> class F, class Accum >
+		using fold = F<F<Accum,L>, R>;
   };
 
   template <void*...>
@@ -165,6 +211,15 @@ struct AST<Label<l>>
   {
     using yield = tracker::Tombstone;
     using subexpr = typename GenerateTombstone<useless...>::subexpr;
+
+	template<template <typename, typename> class F, class Accum >
+		using default_traverse = Expression;
+	
+	template<template <typename, typename> class F, class Accum, template<typename,typename> class Combine, class Default>
+	using default_recurse = Default;
+
+	template<template <typename, typename> class F, class Accum >
+	using fold = Accum;
   };
 
   template <typename Binding, typename Body>
@@ -180,6 +235,16 @@ struct AST<Label<l>>
   struct Statement<Let<Binding, Body>>
   {
     using substatement = typename Let<Binding, Body>::substatement;
+	
+	template<template <typename, typename> class F, class Accum >
+		using default_traverse = Statement<Let<F<Accum,Binding >, F<Accum,Body> > >;
+	
+	template<template <typename, typename> class F, class Accum, template<typename,typename> class Combine, class Default>
+		using default_recurse = Combine<F<Accum,Binding>, F<Accum,Body> >;
+	
+	template<template <typename, typename> class F, class Accum >
+		using fold = F<F<Accum,Binding>, Body >;
+
   };
 
   template <typename Binding, typename Body>
@@ -195,6 +260,15 @@ struct AST<Label<l>>
   struct Statement<LetRemote<Binding, Body>>
   {
     using substatement = typename LetRemote<Binding, Body>::substatement;
+
+	template<template <typename, typename> class F, class Accum >
+		using default_traverse = Statement<LetRemote<F<Accum,Binding >, F<Accum,Body> > >;
+	
+	template<template <typename, typename> class F, class Accum, template<typename,typename> class Combine, class Default>
+		using default_recurse = Combine<F<Accum,Binding>, F<Accum,Body> >;
+	
+	template<template <typename, typename> class F, class Accum >
+		using fold = F<F<Accum,Binding>, Body >;
   };
 
 	template <typename Hndl>
@@ -211,7 +285,16 @@ struct AST<Label<l>>
   {
 	  using subexpr = typename IsValid<Hndl>::subexpr;
 	  using yield = bool;
-  };  
+
+	  template<template <typename, typename> class F, class Accum >
+	  using default_traverse = Expression<bool,IsValid<F<Accum,Hndl> > >;
+
+  template<template <typename, typename> class F, class Accum, template<typename,typename> class Combine, class Default>
+	  using default_recurse = F<Accum, Hndl>;
+
+  template<template <typename, typename> class F, class Accum >
+	  using fold = F<Accum,Hndl>;
+  };
 
   template <typename oper_name, typename Hndl, typename... args>
 	struct Operation
@@ -225,6 +308,16 @@ struct AST<Label<l>>
   {
 	  using substatement = typename Operation<oper_name,Hndl, args...>::substatement;
 	  using subexpr = substatement;
+
+	template<template <typename, typename> class F, class Accum >
+	using default_traverse = Statement<Operation<oper_name,F<Accum,Hndl >, F<Accum,args>... > >;
+	
+	  template<template <typename, typename> class F, class Accum, template<typename,typename> class Combine, class Default>
+	  using default_recurse = Combine_all<Combine,Default,F<Accum, Hndl>, F<Accum,args>...>;
+	  
+	  template<template <typename, typename> class F, class Accum >
+	  using fold = Fold_all<F,Accum, Hndl,args...>;
+	  
   };
   template <typename y, typename oper_name, typename Hndl, typename... args>
 	  struct Expression<y,Operation<oper_name,Hndl,args...> >
@@ -232,6 +325,16 @@ struct AST<Label<l>>
 	  using substatement = typename Operation<oper_name,Hndl, args...>::substatement;
 	  using subexpr = substatement;
 	  using yield = y;
+
+	  template<template <typename, typename> class F, class Accum >
+	  using default_traverse = Expression<yield,
+										Operation<oper_name,F<Accum,Hndl >, F<Accum,args>... > >;
+	  
+	  template<template <typename, typename> class F, class Accum, template<typename,typename> class Combine, class Default>
+	  using default_recurse = Combine_all<Combine,Default,F<Accum, Hndl>, F<Accum,args>...>;
+	  
+	  template<template <typename, typename> class F, class Accum >
+	  using fold = Fold_all<F,Accum, Hndl,args...>;
   };
 
   template <typename Var, typename Expr>
@@ -247,6 +350,15 @@ struct AST<Label<l>>
   struct Statement<Assignment<Var, Expr>>
   {
     using substatement = typename Assignment<Var, Expr>::substatement;
+
+	template<template <typename, typename> class F, class Accum >
+		using default_traverse = Statement<Assignment<F<Accum,Var >, F<Accum,Expr> > >;
+	
+	template<template <typename, typename> class F, class Accum, template<typename,typename> class Combine, class Default>
+		using default_recurse = Combine<F<Accum,Var>, F<Accum,Expr> >;
+	
+	template<template <typename, typename> class F, class Accum >
+		using fold = F<F<Accum,Var>, Expr >;
   };
   template <typename Expr>
   struct Return;
@@ -260,6 +372,15 @@ struct AST<Label<l>>
   struct Statement<Return<Expr>>
   {
     using substatement = typename Return<Expr>::substatement;
+	
+	template<template <typename, typename> class F, class Accum >
+		using default_traverse = Statement<Return<F<Accum,Expr> > >;
+  
+	template<template <typename, typename> class F, class Accum, template<typename,typename> class Combine, class Default>
+		using default_recurse = F<Accum,Expr>;
+	
+	template<template <typename, typename> class F, class Accum >
+		using fold = F<Accum,Expr>;
   };
 
   template <typename>
@@ -274,6 +395,15 @@ struct AST<Label<l>>
   struct Statement<WriteTombstone<T>>
   {
     using substatement = typename WriteTombstone<T>::substatement;
+
+	template<template <typename, typename> class F, class Accum >
+		using default_traverse = Statement<WriteTombstone<F<Accum,T> > >;
+	
+	template<template <typename, typename> class F, class Accum, template<typename,typename> class Combine, class Default>
+		using default_recurse = F<Accum,T>;
+	
+	template<template <typename, typename> class F, class Accum >
+		using fold = F<Accum,T>;
   };
 
   template <typename>
@@ -288,6 +418,15 @@ struct AST<Label<l>>
   struct Statement<AccompanyWrite<T>>
   {
     using substatement = typename AccompanyWrite<T>::substatement;
+
+	template<template <typename, typename> class F, class Accum >
+		using default_traverse = Statement<AccompanyWrite<F<Accum,T> > >;
+	
+	template<template <typename, typename> class F, class Accum, template<typename,typename> class Combine, class Default>
+		using default_recurse = F<Accum,T>;
+	
+	template<template <typename, typename> class F, class Accum >
+		using fold = F<Accum,T>;
   };
 
   template <typename Var>
@@ -352,7 +491,16 @@ struct AST<Label<l>>
   template <typename condition, typename then, typename els>
   struct Statement<If<condition, then, els>>
   {
-    using substatement = typename If<condition, then, els>::substatement;
+	  using substatement = typename If<condition, then, els>::substatement;
+  
+	  template<template <typename, typename> class F, class Accum >
+		  using default_traverse = Statement<If<F<Accum,condition>, F<Accum,then>, F<Accum,els> > >;
+
+	  template<template <typename, typename> class F, class Accum, template<typename,typename> class Combine, class Default>
+		  using default_recurse = Combine< Combine<F<Accum,condition>, F<Accum,then> >, F<Accum,els> >;
+
+	  template<template <typename, typename> class F, class Accum >
+		  using fold = F<F<F<Accum,condition>, then >, els>;
   };
 
   template <typename condition, typename body, char...>
@@ -368,6 +516,15 @@ struct AST<Label<l>>
   struct Statement<While<condition, Body, 1, name...>>
   {
     using substatement = typename While<condition, Body, 1, name...>::substatement;
+
+	template<template <typename, typename> class F, class Accum >
+	  using default_traverse = Statement<While<F<Accum,condition>, F<Accum,Body> > >;
+
+	template<template <typename, typename> class F, class Accum, template<typename,typename> class Combine, class Default>
+		using default_recurse = Combine<F<Accum,condition>, F<Accum,Body> >;
+	
+	template<template <typename, typename> class F, class Accum >
+		using fold = F<F<Accum,condition>, Body >;
   };
 
   template <typename body, char...>
@@ -411,6 +568,15 @@ struct AST<Label<l>>
   {
     using substatement = typename Sequence<b1, Body...>::substatement;
     using fst_stmt = b1;
+
+	template<template <typename, typename> class F, class Accum >
+		using default_traverse = Statement<Sequence<F<Accum,Body>...> >;
+	
+	template<template <typename, typename> class F, class Accum, template<typename,typename> class Combine, class Default>
+		using default_recurse = Combine_all<Combine,Default,F<Accum,Body>... >;
+	
+	template<template <typename, typename> class F, class Accum >
+		using fold = Fold_all<F,Accum,Body...>;
   };
 
   template <typename... Body>
@@ -426,7 +592,17 @@ struct AST<Label<l>>
   {
     using subexpr = Binding;
     using subsubexpr = typename Expr::subexpr;
-		using expr = Expr;
+	  using expr = Expr;
+	  using var = mutils::String<name...>;
+
+	  template<template <typename, typename> class F, class Accum >
+	  using default_traverse = Binding<Label<label>, Yield, var, F<Accum,expr> >;
+
+  template<template <typename, typename> class F, class Accum, template<typename,typename> class Combine, class Default>
+	  using default_recurse = F<Accum,expr>;
+
+  template<template <typename, typename> class F, class Accum >
+	  using fold = F<Accum,expr>;
   };
 
   template <typename>
@@ -500,22 +676,12 @@ struct AST<Label<l>>
   static constexpr auto _collect_phase(phase_api, typecheck_phase::Statement<label2, typecheck_phase::LetRemote<_binding, Body>>,
                                        std::enable_if_t<!are_equivalent(Label<l>{}, label2{})> const* const = nullptr);
 
-  template <typename y, typename hndl, typename old_api>
-	  static constexpr auto _collect_phase(old_api, typecheck_phase::Expression<label,y, typecheck_phase::IsValid<hndl>>);
-
-  template <typename label2, typename y, typename hndl, typename phase_api>
-	  static constexpr auto _collect_phase(phase_api, typecheck_phase::Expression<label2, y, typecheck_phase::IsValid<hndl>>,
-										   std::enable_if_t<!are_equivalent(Label<l>{}, label2{})> const* const = nullptr);
-  
   template <typename oper_name, typename hndl, typename old_api, typename... args>
 	  static constexpr auto _collect_phase(old_api, typecheck_phase::Statement<label, typecheck_phase::Operation<oper_name,hndl, args...>>);
   
   template <typename label2, typename oper_name, typename hndl, typename phase_api, typename... args>
 	  static constexpr auto _collect_phase(phase_api, typecheck_phase::Statement<label2, typecheck_phase::Operation<oper_name,hndl, args...>>,
 																				 std::enable_if_t<!are_equivalent(Label<l>{}, label2{})> const* const = nullptr);
-
-  template <typename y, typename oper_name, typename hndl, typename old_api, typename... args>
-	  static constexpr auto _collect_phase(old_api, typecheck_phase::Expression<label, y,typecheck_phase::Operation<oper_name,hndl, args...> >);
 
   template <typename Var, typename Expr, typename phase_api>
   static constexpr auto _collect_phase(phase_api, typecheck_phase::Statement<label, typecheck_phase::Assignment<Var, Expr>>);
@@ -559,6 +725,12 @@ struct AST<Label<l>>
   template <typename Yields, typename label2, typename Str, typename Fld, typename phase_api>
   static constexpr auto _collect_phase(phase_api, typecheck_phase::Expression<label2, Yields, typecheck_phase::FieldReference<Str, Fld>>);
 
+  template <typename y, typename label2, typename oper_name, typename hndl, typename old_api, typename... args>
+	  static constexpr auto _collect_phase(old_api, typecheck_phase::Expression<label2, y,typecheck_phase::Operation<oper_name,hndl, args...> >);
+  
+  template <typename y, typename label2, typename hndl, typename old_api>
+	  static constexpr auto _collect_phase(old_api, typecheck_phase::Expression<label2,y, typecheck_phase::IsValid<hndl>>);
+
   template <int i, typename phase_api>
   static constexpr auto _collect_phase(phase_api, typecheck_phase::Expression<Label<top>, int, typecheck_phase::Constant<i>>);
 
@@ -580,10 +752,7 @@ struct AST<Label<l>>
   static constexpr auto _collect_phase(phase_api, typecheck_phase::Statement<label2, typecheck_phase::Sequence<seq...>>);
 
   template <typename _AST, typename phase_api>
-  static constexpr auto collect_phase(phase_api, _AST)
-  {
-    return AST::_collect_phase(phase_api{}, _AST{});
-  }
+	  static constexpr auto collect_phase(phase_api, _AST);
 
   template <typename>
   struct is_ast;

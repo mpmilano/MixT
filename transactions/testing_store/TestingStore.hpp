@@ -123,6 +123,10 @@ namespace myria {
 				return TestingHandle<T>{sp,*this};
 			}
 
+			template<typename T> TestingHandle<T> nullObject(){
+				return TestingHandle<T>{mutils::identity_struct1<TestingObject>{}, *this};
+			}
+
 			template<typename T>
 			TestingHandle<T> existingObject(TestingContext *, Name name){
 				auto sp = std::make_shared<TestingObject<T> >(name,*this);

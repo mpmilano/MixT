@@ -53,7 +53,7 @@ constexpr auto _typecheck(type_environment<label_env, Env...>, parse_phase::Expr
   using binding_expr = DECT(typecheck<seqnum, depth + 1>(old_env{}, Expr{}));
   using ptr_label = typename binding_expr::label;
   // we dereference the pointer, which is an influencing action.  Reduce the label
-  using new_label = resolved_label_min<label_env, ptr_label>;
+  using new_label = resolved_label_min<resolved_label_min<label_env, ptr_label>, typename binding_expr::yield::label>;
   return Expression<new_label,bool, IsValid<binding_expr> >{};
 }
 

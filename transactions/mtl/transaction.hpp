@@ -15,6 +15,7 @@
 #include "mtlbasics.hpp"
 #include "insert_tracking.hpp"
 #include "endorse_relabel.hpp"
+#include "relabel.hpp"
 //*/
 namespace myria {
 namespace mtl {
@@ -34,7 +35,7 @@ struct previous_transaction_phases
   struct resume_compilation_inferred_str
   {
     using recollapsed =
-      DECT(recollapse(split_phase::split_computation<tracked, type_binding<typename value::name, typename value::type, Label<top>, type_location::local>...>()));
+		DECT(runnable_transaction::relabel(recollapse(split_phase::split_computation<tracked, type_binding<typename value::name, typename value::type, Label<top>, type_location::local>...>())));
 		using all_store = typename recollapsed::template all_store<value...>;
   };
 
@@ -131,7 +132,7 @@ struct pre_transaction_str<mutils::String<Str...>>
             {
               constexpr inferred_and_recollapsed() = default;
               using inferred = DECT(do_pre_endorse(inferred_t{}));
-              using recollapsed = recollapsed_t;
+				using recollapsed = DECT(runnable_transaction::relabel(recollapsed_t{}));
             };
             return inferred_and_recollapsed{};
           }

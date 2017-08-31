@@ -75,7 +75,7 @@ namespace myria{
     }
 
 	template<template<typename> class RO, typename DataStore>
-		Handle(DataStore &ds):OperationSuperclass<SupportedOperations>(OperationSuperclass<SupportedOperations>::template wrap_operation<RO>(ds))... {
+		Handle(mutils::identity_struct1<RO>, DataStore &ds):OperationSuperclass<SupportedOperations>(OperationSuperclass<SupportedOperations>::template wrap_operation<RO>(ds))... {
 		assert(_ro.get() == nullptr || _ro->isValid(nullptr));
 	}
     Handle(const Handle& h):OperationSuperclass<SupportedOperations>(h)...,_ro(h._ro) {

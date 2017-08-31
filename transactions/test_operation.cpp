@@ -27,7 +27,6 @@ int main(){
 	Store store;
 	constexpr int int_name = 23;
 	int_handle ih = store.template newObject<int>(nullptr,int_name,int_name);
-#if 0
 	using ClientTrk = ClientTracker<>;
 	ClientTrk ct;
 	assert(7 == TRANSACTION(return 3 + 4)::WITH(ih).run_local(ct,ih));
