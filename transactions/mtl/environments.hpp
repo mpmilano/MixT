@@ -97,10 +97,14 @@ struct value_holder
     return *this;
   }
   template <typename TransactionContext>
-  value_holder& bind(value_holder& _this, TransactionContext&, const T& t2)
+  value_holder& bind(value_holder& _this, TransactionContext& ctx, const T& t2)
   {
+      (void)ctx;
 	  assert(&_this == this);
-    assert(mem_uninitialized);
+
+	  //we might be in a while-loop, at which point
+	  //we want to destroy + replace the value here.
+	  if (!mem_uninitialized) t.~T();
     new (&t) T{ t2 };
 	mem_uninitialized = false;
     return *this;

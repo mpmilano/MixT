@@ -121,7 +121,8 @@ auto _run_phase(typename AST<l>::template Expression<y, typename AST<l>::templat
 	auto _run_phase(typename AST<l>::template Expression<y,typename AST<l>::template IsValid<expr>>*, TranCtx& ctx, store& s)
 {
 	constexpr expr* hndl{ nullptr };
-	return run_phase<l>(hndl, ctx, s).isValid(&ctx);
+    auto ret = run_phase<l>(hndl, ctx, s).isValid(&ctx);
+    return ret;
 }
 
 template <typename l, typename TranCtx, typename store, typename label, typename Yield, typename Expr, char... name>

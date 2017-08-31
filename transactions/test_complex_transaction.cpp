@@ -20,8 +20,8 @@ int main(){
   tstruct2.c = 0;
   using Store = testing_store::TestingStore<Label<bottom> >;
   Store store;
-  auto hndl = store.template nullObject<int>();
-  auto hndl2 = store.template nullObject<test_struct>();
+  auto hndl = store.template newObject<int>(nullptr, 12,12);
+  auto hndl2 = store.template newObject<test_struct>(nullptr,5,test_struct{});
 
   /*
   {
