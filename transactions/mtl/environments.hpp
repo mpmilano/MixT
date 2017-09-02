@@ -82,14 +82,14 @@ struct value_holder
   using type = T;
   using name = String<str...>;
   template <typename TransactionContext>
-  T& get(value_holder& _this, TransactionContext&)
+  T& get(value_holder& whendebug(_this), TransactionContext&)
   {
 	  assert(&_this == this);
 	  assert(!mem_uninitialized);
     return t;
   }
   template <typename TransactionContext>
-  value_holder& push(value_holder& _this, TransactionContext&, const T& t2)
+  value_holder& push(value_holder& whendebug(_this), TransactionContext&, const T& t2)
   {
 	  assert(&_this == this);
 	  assert(!mem_uninitialized);
@@ -97,7 +97,7 @@ struct value_holder
     return *this;
   }
   template <typename TransactionContext>
-  value_holder& bind(value_holder& _this, TransactionContext& ctx, const T& t2)
+  value_holder& bind(value_holder& whendebug(_this), TransactionContext& ctx, const T& t2)
   {
       (void)ctx;
 	  assert(&_this == this);
@@ -172,7 +172,7 @@ struct type_holder
   bool begin_phase() { return reset_index(); }
 
   template <typename TranCtx, typename... Args>
-  type_holder& push(type_holder& _this, TranCtx&, Args&&... args)
+  type_holder& push(type_holder& whendebug(_this), TranCtx&, Args&&... args)
   {
 	  assert(&_this == this);
     t.emplace_back(std::forward<Args>(args)...);
@@ -181,7 +181,7 @@ struct type_holder
   }
 
   template <typename TransactionContext>
-  type_holder& bind(type_holder& _this, TransactionContext&, T _t)
+  type_holder& bind(type_holder& whendebug(_this), TransactionContext&, T _t)
   {
 	  assert(&_this == this);
     bound = true;
@@ -198,7 +198,7 @@ struct type_holder
     return *this;
   }
   template <typename TranCtx>
-  T get(type_holder& _this, TranCtx&)
+  T get(type_holder& whendebug(_this), TranCtx&)
   {
 	  assert(&_this == this);
     assert(curr_pos < (int)t.size() && curr_pos >= 0);

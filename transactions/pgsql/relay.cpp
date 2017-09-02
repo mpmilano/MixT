@@ -15,11 +15,23 @@ using namespace mutils;
 using SQLInstanceManager = typename SQLStore<Level::STORE_LEVEL >::SQLInstanceManager;
 using Hndl = Handle<Label<STORE_LEVEL >, int, SupportedOperation<RegisteredOperations::Increment,void,SelfType> >;
 
+template<typename l, typename r> struct transactions {
+  using incr_trans = l;
+  using read_trans = r;
+};
+
+
+constexpr auto build_transactions(const Hndl &hndl){
+  constexpr auto incr_trans = TRANSACTION(remote x = hndl, x = x + 1)::WITH(hndl);
+  constexpr auto read_trans = TRANSACTION(remote x = hndl, {})::WITH(hndl);
+  return transactions<DECT(incr_trans), DECT(read_trans)>{};
+}
+
 int main(int whendebug(argc), char** argv){
 
-	Hndl hndl;
-	constexpr auto incr_trans = TRANSACTION(remote x = hndl, x = x + 1)::WITH(hndl);
-	constexpr auto read_trans = TRANSACTION(remote x = hndl, {})::WITH(hndl);
+	using both_transactions = DECT(build_transactions(std::declval<Hndl>()));
+	typename both_transactions::incr_trans incr_trans;
+	typename both_transactions::read_trans read_trans;
 	
 	using Relay = RelayForTransactions<SQLStore<Level::STORE_LEVEL>, DECT(incr_trans), DECT(read_trans) >;
 	using captive_store = typename Relay::captive_store;
