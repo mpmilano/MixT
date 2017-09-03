@@ -50,7 +50,7 @@ namespace myria{
     //but enable_if doesn't play nicely with constructors and specializing this class wastes a ton
     //of space
     Handle(std::integral_constant<std::size_t, sizeof...(SupportedOperations)>*,decltype(_ro) _ro):_ro(_ro){
-		assert(_ro.get() == nullptr || _ro->isValid(nullptr));
+
 	}
   public:
     using label = l;
@@ -61,7 +61,9 @@ namespace myria{
       SupportedOperations::template SupportsOn<Handle>
       (SupportedOperations::template SupportsOn<Handle>::template wrap_operation<RO>(ds))...,
       _ro(_ro){
-		  assert(_ro.get() == nullptr || _ro->isValid(nullptr));
+				whendebug(auto assert_txn = ds.begin_transaction("check handle validity"));
+				assert(_ro.get() == nullptr || _ro->isValid(assert_txn.get()));
+				whendebug(assert_txn->store_commit());
 	static_assert(std::is_same<typename DataStore::label,label>::value);
       }
 
@@ -76,15 +78,16 @@ namespace myria{
 
 	template<template<typename> class RO, typename DataStore>
 		Handle(mutils::identity_struct1<RO>, DataStore &ds):OperationSuperclass<SupportedOperations>(OperationSuperclass<SupportedOperations>::template wrap_operation<RO>(ds))... {
-		assert(_ro.get() == nullptr || _ro->isValid(nullptr));
+		whendebug(auto assert_txn = ds.begin_transaction("check handle validity"));
+		assert(_ro.get() == nullptr || _ro->isValid(assert_txn.get()));
+		whendebug(assert_txn->store_commit());
 	}
-    Handle(const Handle& h):OperationSuperclass<SupportedOperations>(h)...,_ro(h._ro) {
-		assert(_ro.get() == nullptr || _ro->isValid(nullptr));
+	Handle(const Handle& h):OperationSuperclass<SupportedOperations>(h)...,_ro(h._ro) {
+		
 	}
 	Handle& operator=(const Handle& o) {
 		(OperationSuperclass<SupportedOperations>::operator=(o),...);
 		_ro = o._ro;
-		assert(_ro.get() == nullptr || _ro->isValid(nullptr));
 		return *this;
 	}
 
