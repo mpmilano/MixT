@@ -22,7 +22,8 @@ namespace myria{
 	{
 		//using Handle = Handle<l,ha,T,ops...>;
 		assert(__v);
-		if (((bool*)__v)[0]) {
+		assert(((bool*)__v)[0] && "Handle should no longer be null at this level");
+		{
 			std::size_t expected_size = *((std::size_t*)__v + sizeof(bool));
 			auto *_v = __v + sizeof(bool) + sizeof(expected_size);
 			int read_id = ((int*)_v)[0];
@@ -53,7 +54,6 @@ namespace myria{
 			std::get_deleter<release_deleter<Handle<l,T,ops...> > >(ret)->release();
 			return std::unique_ptr<Handle<l,T,ops...> >{ret.get()};
 		}
-		else return std::make_unique<Handle<l,T,ops...>>();
 	}
 
 

@@ -231,9 +231,14 @@ struct is_type_holder : public std::false_type
 };
 
 template <typename T>
-struct remote_map_holder
+struct remote_map_holder;
+	
+	template <typename l, typename U, typename... SupportedOps>
+	struct remote_map_holder<Handle<l,U,SupportedOps...> >
 {
-	using stored = typename T::type;
+
+	using Handle_t = Handle<l,U,SupportedOps...>;
+	using stored = U;
 #ifndef NDEBUG
   bool is_initialized{ false };
   void initialize() { is_initialized = true; }
@@ -243,8 +248,8 @@ struct remote_map_holder
 	remote_map_holder(bool):is_initialized(true){}
 #endif
 
-	template<typename U>
-	void assign_to(U&& o) { this->operator=(std::forward<U>(o)); }
+	template<typename T>
+	void assign_to(T&& o) { this->operator=(std::forward<T>(o)); }
 
   std::map<Name, type_holder<stored>> super;
   bool reset_index()
@@ -264,7 +269,7 @@ struct remote_map_holder
     }
     return true;
   }
-	void increment_matching(T hndl){
+	void increment_matching(const Handle_t &hndl){
 		auto _this = super[hndl.name()];
 		_this.increment(_this);
 	}
@@ -458,14 +463,14 @@ public:
   template <typename TransactionContext>
   auto get_remote(TransactionContext&)
   {
-    assert(curr_pos < handle.size() && curr_pos >= 0);
+    assert(curr_pos < (long long)handle.size() && curr_pos >= 0);
     return handle.at(curr_pos);
   }
 
 	template <typename Store, typename TransactionContext>
 	static auto get(Store &s, TransactionContext& tc)
   {
-	  remote_holder &_this = s;
+	  whendebug(remote_holder &_this = s);
     assert(_this.curr_pos < (int)_this.handle.size() && _this.curr_pos >= 0);
     // assert(super.count(handle.at(curr_pos)));
     auto &_this_super = this_super(s);
