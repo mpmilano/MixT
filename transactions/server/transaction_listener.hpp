@@ -65,8 +65,10 @@ struct transaction_listener;
 				std::cout << remote_phase_str << std::endl;
 				std::cout << phase_str << std::endl;
 			}
-			char* remote_phase_charstar = remote_phase_str.c_str();
-			char* phase_charstar = phase_str.c_str();
+			auto* remote_phase_charstar = remote_phase_str.c_str();
+			auto* phase_charstar = phase_str.c_str();
+			(void) remote_phase_charstar;
+			(void) phase_charstar;
 			assert(remote_phase_str == phase_str);
 		}
 		logfile << "transaction nonce: " << txn_nonce << std::endl;
