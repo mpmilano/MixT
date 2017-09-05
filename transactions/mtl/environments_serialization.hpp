@@ -132,6 +132,9 @@ namespace myria{ namespace mtl{
 			c.send(mutils::bytes_size(nonce),nonce);
 #endif
 			send_remote_maps(s.as_virtual_holder(),c);
+#ifndef NDEBUG
+			c.send(mutils::bytes_size(nonce),nonce);
+#endif
 			auto worked = (send_holder_values(typename requires::name{}, s, c) && ... && true);
 			assert(worked);
 			(void)worked;
@@ -156,14 +159,26 @@ namespace myria{ namespace mtl{
 			std::string nonce = mutils::type_name<mutils::typeset<provides...> >();
 			auto nonce_size = mutils::bytes_size(nonce);
 			c.receive(nonce_size);
-			auto remote = *c. template receive<std::string>(nullptr,nonce_size);
-			if (nonce != remote){
-				std::cout << nonce << std::endl << std::endl << std::endl << std::endl;
-				std::cout << remote << std::endl;
+			{
+				auto remote = *c. template receive<std::string>(nullptr,nonce_size);
+				if (nonce != remote){
+					std::cout << nonce << std::endl << std::endl << std::endl << std::endl;
+					std::cout << remote << std::endl;
+				}
+				assert(nonce == remote);
 			}
-			assert(nonce == remote);
 #endif
 			receive_remote_maps(dsm,s.as_virtual_holder(), c);
+#ifndef NDEBUG
+			{
+				auto remote = *c. template receive<std::string>(nullptr,nonce_size);
+				if (nonce != remote){
+					std::cout << nonce << std::endl << std::endl << std::endl << std::endl;
+					std::cout << remote << std::endl;
+				}
+				assert(nonce == remote);
+			}
+#endif
 			auto worked = (receive_holder_values(dsm,typename provides::name{}, s, c) && ... && true);
 			assert(worked);
 			(void)worked;
