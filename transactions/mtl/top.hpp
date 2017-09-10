@@ -75,13 +75,117 @@ struct is_temp_label : public std::false_type
 
 template <typename l, typename r>
 struct label_min_of;
-
-template <>
-struct Label<label_min_of<Label<bottom>, Label<bottom> > >
+template <typename real, typename l, typename r>
+struct label_min_of2;
+template <typename real, typename l, typename r>
+struct label_min_of4;
+	
+template <typename real, int l1, int l2, typename r>
+struct label_min_of4<real,Label<temp_label<l1, l2>>, Label<r>>
 {
-  static constexpr auto resolve() { return Label<bottom>{}; }
+  static constexpr auto resolve() { return real{}; }
+};
+
+template <typename real, int l1, int l2, typename r>
+struct label_min_of4<real,Label<r>, Label<temp_label<l1, l2> > >
+{
+  static constexpr auto resolve() { return real{}; }
+};
+
+template <typename real, int l1, int l2, int r1, int r2>
+struct label_min_of4<real,Label<temp_label<l1, l2>>, Label<temp_label<r1, r2>>>
+{
+  static constexpr auto resolve() { return real{}; }
+};
+
+template <typename real, typename l1, typename l2, typename r>
+struct label_min_of4<real,Label<label_min_of<l1, l2>>, Label<r>>
+{
+	static constexpr auto resolve()
+  {
+		using candidate = Label<label_min_of<DECT(Label<label_min_of<l1, l2>>::resolve()), Label<r>>>;
+		if constexpr (std::is_same<candidate,real>::value) return real{};
+    else return candidate::resolve();
+  }
+};
+
+template <typename real, typename l1, typename l2, typename r>
+struct label_min_of4<real,Label<r>, Label<label_min_of<l1, l2>>>
+{
+
+  static constexpr auto resolve()
+  {
+		using candidate = Label<label_min_of<DECT(Label<label_min_of<l1, l2>>::resolve()), Label<r>>>;
+		if constexpr (std::is_same<candidate,real>::value) return real{};
+    else return candidate::resolve();
+  }
+};
+
+template <typename real, typename l1, typename l2, int r1, int r2>
+struct label_min_of4<real,Label<label_min_of<l1, l2>>, Label<temp_label<r1, r2>>>
+{
+  static constexpr auto resolve()
+  {
+		using candidate = Label<label_min_of<DECT(Label<label_min_of<l1, l2>>::resolve()), Label<temp_label<r1, r2>>>>;
+		if constexpr (std::is_same<candidate,real>::value) return real{};
+    else return candidate::resolve();
+  }
+};
+
+template <typename real, typename l1, typename l2, int r1, int r2>
+struct label_min_of4<real,Label<temp_label<r1, r2>>, Label<label_min_of<l1, l2>>>
+{
+
+	static constexpr auto resolve()
+  {
+    using candidate = Label<label_min_of<DECT(Label<label_min_of<l1, l2>>::resolve()), Label<temp_label<r1, r2>>>>;
+		if constexpr (std::is_same<candidate,real>::value) return real{};
+    else return candidate::resolve();
+  }
+};
+
+template <typename real, typename l1, typename l2, typename r1, typename r2>
+struct label_min_of4<real,Label<label_min_of<l1, l2>>, Label<label_min_of<r1, r2>>>
+{
+  static constexpr auto resolve()
+  {
+    using candidate =  Label<label_min_of<DECT(Label<label_min_of<l1, l2>>::resolve()), DECT(Label<label_min_of<r1, r2>>::resolve())>>;
+		if constexpr (std::is_same<candidate,real>::value) return real{};
+		else return candidate::resolve();
+  }
+
 };
 	
+template <typename real, typename l, typename r>
+struct label_min_of2 : public label_min_of4<real,l, r>
+{
+	using label_min_of4<real,l, r>::resolve;
+};
+
+template <typename real, typename l>
+struct label_min_of2<real,l, Label<top> >
+{
+  static constexpr auto resolve() { return l{}; }
+};
+
+template <typename real, typename r>
+struct label_min_of2<real,Label<top>, r >
+{
+  static constexpr auto resolve() { return r{}; }
+};
+
+template <typename real>
+struct label_min_of2<real,Label<top>, Label<top> >
+{
+  static constexpr auto resolve() { return Label<top>{}; }
+};
+
+template <typename l, typename r>
+struct Label<label_min_of<l, r> > : public label_min_of2<Label<label_min_of<l, r> >, l, r>
+{
+	using label_min_of2<Label,l, r>::resolve;
+};
+
 template <typename l>
 struct Label<label_min_of<l, Label<bottom> > >
 {
@@ -94,113 +198,10 @@ struct Label<label_min_of<Label<bottom>, r > >
   static constexpr auto resolve() { return Label<bottom>{}; }
 };
 
-	template <typename l1, typename l2>
-struct Label<label_min_of<Label<label_min_of<l1,l2> >, Label<bottom> > >
+template <>
+struct Label<label_min_of<Label<bottom>, Label<bottom> > >
 {
   static constexpr auto resolve() { return Label<bottom>{}; }
-};
-
-	template <typename r1, typename r2>
-	struct Label<label_min_of<Label<bottom>, Label<label_min_of<r1,r2> > > >
-{
-  static constexpr auto resolve() { return Label<bottom>{}; }
-};
-
-template <int l1, int l2>
-struct Label<label_min_of<Label<bottom>, Label<temp_label<l1, l2>>>>
-{
-  static constexpr auto resolve() { return Label<bottom>{}; }
-};
-
-template <int l1, int l2>
-struct Label<label_min_of<Label<temp_label<l1, l2>>, Label<bottom> > >
-{
-  static constexpr auto resolve() { return Label<bottom>{}; }
-};
-	
-template <int l1, int l2, typename r>
-struct Label<label_min_of<Label<temp_label<l1, l2>>, Label<r>>>
-{
-  static constexpr auto resolve() { return Label{}; }
-};
-
-template <int l1, int l2, typename r>
-struct Label<label_min_of<Label<r>, Label<temp_label<l1, l2>>>>
-{
-  static constexpr auto resolve() { return Label{}; }
-};
-
-template <int l1, int l2, int r1, int r2>
-struct Label<label_min_of<Label<temp_label<l1, l2>>, Label<temp_label<r1, r2>>>>
-{
-  static constexpr auto resolve() { return Label{}; }
-};
-
-template <typename l1, typename l2, typename r>
-struct Label<label_min_of<Label<label_min_of<l1, l2>>, Label<r>>>
-{
-	static constexpr auto resolve()
-  {
-		using candidate = Label<label_min_of<DECT(Label<label_min_of<l1, l2>>::resolve()), Label<r>>>;
-		if constexpr (std::is_same<candidate,Label>::value) return Label{};
-    else return candidate::resolve();
-  }
-};
-
-template <typename l1, typename l2, typename r>
-struct Label<label_min_of<Label<r>, Label<label_min_of<l1, l2>>>>
-{
-
-  static constexpr auto resolve()
-  {
-		using candidate = Label<label_min_of<DECT(Label<label_min_of<l1, l2>>::resolve()), Label<r>>>;
-		if constexpr (std::is_same<candidate,Label>::value) return Label{};
-    else return candidate::resolve();
-  }
-};
-
-template <typename l1, typename l2, int r1, int r2>
-struct Label<label_min_of<Label<label_min_of<l1, l2>>, Label<temp_label<r1, r2>>>>
-{
-
-  static constexpr auto resolve()
-  {
-		using candidate = Label<label_min_of<DECT(Label<label_min_of<l1, l2>>::resolve()), Label<temp_label<r1, r2>>>>;
-		if constexpr (std::is_same<candidate,Label>::value) return Label{};
-    else return candidate::resolve();
-  }
-};
-
-template <typename l1, typename l2, int r1, int r2>
-struct Label<label_min_of<Label<temp_label<r1, r2>>, Label<label_min_of<l1, l2>>>>
-{
-
-	static constexpr auto resolve()
-  {
-    using candidate = Label<label_min_of<DECT(Label<label_min_of<l1, l2>>::resolve()), Label<temp_label<r1, r2>>>>;
-		if constexpr (std::is_same<candidate,Label>::value) return Label{};
-    else return candidate::resolve();
-  }
-};
-
-template <typename l1, typename l2, typename r1, typename r2>
-struct Label<label_min_of<Label<label_min_of<l1, l2>>, Label<label_min_of<r1, r2>>>>
-{
-  static constexpr auto resolve()
-  {
-    using candidate =  Label<label_min_of<DECT(Label<label_min_of<l1, l2>>::resolve()), DECT(Label<label_min_of<r1, r2>>::resolve())>>;
-		if constexpr (std::is_same<candidate,Label>::value) return Label{};
-		else return candidate::resolve();
-  }
-
-};
-
-template <typename l, typename r>
-struct Label<label_min_of<Label<l>, Label<r>>>
-{
-	
-  static constexpr auto resolve() {
-    return labels::min_of(Label<l>{}, Label<r>{}); }
 };
 
 template <typename l, typename r>
