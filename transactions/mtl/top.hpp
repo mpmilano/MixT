@@ -27,6 +27,21 @@ struct Label<top>
   using can_abort = std::false_type;
 };
 
+template <typename>
+struct is_top;
+template <>
+struct is_top<Label<top> > : public std::true_type
+{
+};
+template <>
+struct is_top<top> : public std::true_type
+{
+};
+template <typename>
+struct is_top : public std::false_type
+{
+};
+	
 using bottom = mutils::String<'b','o','t','t','o','m'>;
 template <>
 struct Label<bottom>
@@ -48,6 +63,29 @@ struct Label<bottom>
   using run_remotely = std::false_type;
   using can_abort = std::false_type;
 };
+
+template <typename>
+struct is_bottom;
+template <>
+struct is_bottom<Label<bottom> > : public std::true_type
+{
+};
+template <>
+struct is_bottom<bottom> : public std::true_type
+{
+};
+template <typename>
+struct is_bottom : public std::false_type
+{
+};
+
+	template<typename> struct is_real_label;
+	
+	template<char... c>
+	struct is_real_label<Label<mutils::String<c...> > > : public std::true_type{};
+
+	template<typename >
+	struct is_real_label : public std::false_type{};
 	
 template <int, int>
 struct temp_label;
@@ -73,140 +111,121 @@ struct is_temp_label : public std::false_type
 {
 };
 
-template <typename l, typename r>
+template <typename tmps, typename rls>
 struct label_min_of;
-template <typename real, typename l, typename r>
-struct label_min_of2;
-template <typename real, typename l, typename r>
-struct label_min_of4;
+
+template <typename>
+struct is_min_of;
+template <typename l, typename r>
+struct is_min_of<Label<label_min_of<l, r>>> : public std::true_type
+{
+};
+template <typename l, typename r>
+struct is_min_of<label_min_of<l, r>> : public std::true_type
+{
+};
+template <typename>
+struct is_min_of : public std::false_type
+{
+};
+
+	template<typename l, typename r>
+	constexpr auto min_real_labels(){
+		if constexpr (l::flows_to(r{})){ return r{}; }
+		else if constexpr (r::flows_to(l{})) {return l{};}
+		else return mutils::String<'c','r','i','s','i','s','!'>{};
+	}
 	
-template <typename real, int l1, int l2, typename r>
-struct label_min_of4<real,Label<temp_label<l1, l2>>, Label<r>>
-{
-  static constexpr auto resolve() { return real{}; }
-};
-
-template <typename real, int l1, int l2, typename r>
-struct label_min_of4<real,Label<r>, Label<temp_label<l1, l2> > >
-{
-  static constexpr auto resolve() { return real{}; }
-};
-
-template <typename real, int l1, int l2, int r1, int r2>
-struct label_min_of4<real,Label<temp_label<l1, l2>>, Label<temp_label<r1, r2>>>
-{
-  static constexpr auto resolve() { return real{}; }
-};
-
-template <typename real, typename l1, typename l2, typename r>
-struct label_min_of4<real,Label<label_min_of<l1, l2>>, Label<r>>
-{
-	static constexpr auto resolve()
-  {
-		using candidate = Label<label_min_of<DECT(Label<label_min_of<l1, l2>>::resolve()), Label<r>>>;
-		if constexpr (std::is_same<candidate,real>::value) return real{};
-    else return candidate::resolve();
-  }
-};
-
-template <typename real, typename l1, typename l2, typename r>
-struct label_min_of4<real,Label<r>, Label<label_min_of<l1, l2>>>
-{
-
-  static constexpr auto resolve()
-  {
-		using candidate = Label<label_min_of<DECT(Label<label_min_of<l1, l2>>::resolve()), Label<r>>>;
-		if constexpr (std::is_same<candidate,real>::value) return real{};
-    else return candidate::resolve();
-  }
-};
-
-template <typename real, typename l1, typename l2, int r1, int r2>
-struct label_min_of4<real,Label<label_min_of<l1, l2>>, Label<temp_label<r1, r2>>>
-{
-  static constexpr auto resolve()
-  {
-		using candidate = Label<label_min_of<DECT(Label<label_min_of<l1, l2>>::resolve()), Label<temp_label<r1, r2>>>>;
-		if constexpr (std::is_same<candidate,real>::value) return real{};
-    else return candidate::resolve();
-  }
-};
-
-template <typename real, typename l1, typename l2, int r1, int r2>
-struct label_min_of4<real,Label<temp_label<r1, r2>>, Label<label_min_of<l1, l2>>>
-{
-
-	static constexpr auto resolve()
-  {
-    using candidate = Label<label_min_of<DECT(Label<label_min_of<l1, l2>>::resolve()), Label<temp_label<r1, r2>>>>;
-		if constexpr (std::is_same<candidate,real>::value) return real{};
-    else return candidate::resolve();
-  }
-};
-
-template <typename real, typename l1, typename l2, typename r1, typename r2>
-struct label_min_of4<real,Label<label_min_of<l1, l2>>, Label<label_min_of<r1, r2>>>
-{
-  static constexpr auto resolve()
-  {
-    using candidate =  Label<label_min_of<DECT(Label<label_min_of<l1, l2>>::resolve()), DECT(Label<label_min_of<r1, r2>>::resolve())>>;
-		if constexpr (std::is_same<candidate,real>::value) return real{};
-		else return candidate::resolve();
-  }
-
-};
+template <typename tmps, typename rls>
+struct Label<label_min_of<tmps,mutils::typeset<rls> > >{
+	using _rls = mutils::typeset<rls>;
 	
-template <typename real, typename l, typename r>
-struct label_min_of2 : public label_min_of4<real,l, r>
-{
-	using label_min_of4<real,l, r>::resolve;
+	template<typename t2, typename r2>
+	static constexpr auto combine(Label<label_min_of<t2,mutils::typeset<r2> > >){
+		return Label<label_min_of<DECT(tmps::combine(t2{})), mutils::typeset<DECT(min_real_labels<rls,r2>()) > > >{};
+	}
+
+	template<typename t2>
+	static constexpr auto combine(Label<label_min_of<t2,mutils::typeset<> > >){
+		return Label<label_min_of<DECT(tmps::combine(t2{})), _rls> >{};
+	}
+
+	template<char... c>
+	static constexpr auto add(Label<mutils::String<c... > > r2){
+		return Label<label_min_of<tmps, mutils::typeset<DECT(min_real_labels<rls,DECT(r2)>()) > > >{};
+	}
+
+	template<int l, int r>
+	static constexpr auto add(Label<temp_label<l,r> > a){
+		return Label<label_min_of<DECT(tmps::template add<DECT(a)>()),_rls> >{};
+	}
 };
 
-template <typename real, typename l>
-struct label_min_of2<real,l, Label<top> >
-{
-  static constexpr auto resolve() { return l{}; }
+template <typename tmps>
+struct Label<label_min_of<tmps,mutils::typeset<> > >{
+	using _rls = mutils::typeset<>;
+	
+	template<typename t2, typename r2>
+	static constexpr auto combine(Label<label_min_of<t2,mutils::typeset<r2> > >){
+		return Label<label_min_of<DECT(tmps::combine(t2{})), mutils::typeset<r2> > >{};
+	}
+
+	template<typename t2>
+	static constexpr auto combine(Label<label_min_of<t2,mutils::typeset<> > >){
+		return Label<label_min_of<DECT(tmps::combine(t2{})), _rls> >{};
+	}
+
+	template<char... c>
+	static constexpr auto add(Label<mutils::String<c... > > r2){
+		return Label<label_min_of<tmps, mutils::typeset<DECT(r2)> > >{};
+	}
+
+	template<int l, int r>
+	static constexpr auto add(Label<temp_label<l,r> > a){
+		return Label<label_min_of<DECT(tmps::template add<DECT(a)>()),_rls> >{};
+	}
 };
 
-template <typename real, typename r>
-struct label_min_of2<real,Label<top>, r >
-{
-  static constexpr auto resolve() { return r{}; }
-};
 
-template <typename real>
-struct label_min_of2<real,Label<top>, Label<top> >
-{
-  static constexpr auto resolve() { return Label<top>{}; }
-};
+	template<typename l, typename r>
+	constexpr auto resolved_label_min_f(){
+		if constexpr (is_bottom<l>::value || is_bottom<r>::value){
+				return l{};
+			}
+		else if constexpr(is_top<l>::value){
+				return r{};
+			}
+		else if constexpr(is_top<r>::value){
+				return l{};
+			}
+		else if constexpr (is_min_of<l>::value && is_min_of<r>::value){
+				return l::combine(r{});
+			}
+		else if constexpr (is_min_of<l>::value){
+				return l::add(r{});
+			}
+		else if constexpr (is_min_of<r>::value){
+				return r::add(l{});
+			}
+		else if constexpr (is_real_label<l>::value && is_real_label<r>::value){
+				return min_real_labels<l,r>();
+			}
+		else return Label<label_min_of<mutils::typeset<>, mutils::typeset<> > >::add(l{}).add(r{});
+	}
 
 template <typename l, typename r>
-struct Label<label_min_of<l, r> > : public label_min_of2<Label<label_min_of<l, r> >, l, r>
-{
-	using label_min_of2<Label,l, r>::resolve;
-};
+using resolved_label_min = DECT(resolved_label_min_f<l,r>());
 
-template <typename l>
-struct Label<label_min_of<l, Label<bottom> > >
-{
-  static constexpr auto resolve() { return Label<bottom>{}; }
-};
-
-template <typename r>
-struct Label<label_min_of<Label<bottom>, r > >
-{
-  static constexpr auto resolve() { return Label<bottom>{}; }
-};
-
-template <>
-struct Label<label_min_of<Label<bottom>, Label<bottom> > >
-{
-  static constexpr auto resolve() { return Label<bottom>{}; }
-};
-
-template <typename l, typename r>
-using resolved_label_min = DECT(Label<label_min_of<l, r>>::resolve());
-
+constexpr auto* resolved_label_min_vararg_f(){
+	constexpr Label<top> *np{nullptr};
+	return np;
+}
+		
+template<typename L1>
+constexpr auto* resolved_label_min_vararg_f(L1* a){
+	return a;
+}
+		
 template<typename L1, typename L2>
 constexpr auto* resolved_label_min_vararg_f(L1*, L2*){
   constexpr resolved_label_min<L1,L2> *np{nullptr};
@@ -220,20 +239,6 @@ constexpr auto* resolved_label_min_vararg_f(L1* a, L2* b, L3* c, Lr*... d){
     
 template<typename... l>
 using resolved_label_min_vararg = DECT(*resolved_label_min_vararg_f(std::declval<l*>()... ));
-	
-template<typename L1, typename L2>
-constexpr auto* label_min_vararg_f(L1*, L2*){
-	constexpr Label<label_min_of<L1,L2> > *np{nullptr};
-	return np;
-}
-
-template<typename L1, typename L2, typename L3, typename... Lr>
-constexpr auto* label_min_vararg_f(L1* a, L2* b, L3* c, Lr*... d){
-  return label_min_vararg_f(label_min_vararg_f(a,b),c,d...);
-}
-	
-template<typename... l>
-using label_min_vararg = DECT(*label_min_vararg_f(std::declval<l*>()... ));
 
 template <typename L1, typename L2>
 using label_lte = std::integral_constant<bool, L2::flows_to(L1{})>;
@@ -246,12 +251,18 @@ auto print_label(const Label<mutils::String<c...>>&)
 {
 	return mutils::String<c...>{};
 }
-	
-template <typename... labels>
-auto print_label(const Label<label_min_of<labels...>>&)
+
+	template <typename... labels>
+	auto print_label(const Label<label_min_of<mutils::typeset<labels...>, mutils::typeset<> > >&)
 {
 	using namespace mutils;
 	return String<'m','i','n','('>::append(print_comma_separated(labels{})...).template append<')'>();
+}
+	
+	template <typename r, typename... labels>
+	auto print_label(const Label<label_min_of<mutils::typeset<labels...>, mutils::typeset<r> > >&)
+{
+	return print_label(Label<label_min_of<mutils::typeset<labels...,r>, mutils::typeset<> > >{});
 }
 
 template <int seq, int depth>

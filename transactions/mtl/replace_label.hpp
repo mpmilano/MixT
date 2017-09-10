@@ -30,10 +30,16 @@ struct replace_label<Label<temp_label<target1, target2>>, Label<newlabel>>
     return l{};
   }
 
-  template <typename l, typename r>
-  constexpr static auto _label_replace(Label<label_min_of<l, r>>)
+  template <typename r, typename... l>
+		constexpr static auto _label_replace(Label<label_min_of<mutils::typeset<l...>, mutils::typeset<r> > >)
   {
-    return Label<label_min_of<DECT(label_replace(l{})), DECT(label_replace(r{}))>>::resolve();
+		return resolved_label_min_vararg<DECT(label_replace(l{}))...,DECT(label_replace(r{}))>{};
+  }
+
+	template <typename r, typename... l>
+		constexpr static auto _label_replace(Label<label_min_of<mutils::typeset<l...>, mutils::typeset<> > >)
+  {
+		return resolved_label_min_vararg<DECT(label_replace(l{}))...>{};
   }
 
   template <typename l, typename y, typename v, typename e>

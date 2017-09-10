@@ -5,6 +5,8 @@
 #include "replace_label.hpp"
 #include "collect_proper_label.hpp"
 #include "typecheck_printer.hpp"
+#include "contains_improper_labels.hpp"
+#include "contains_min_ofs.hpp"
 
 namespace myria {
 namespace mtl {
@@ -37,20 +39,6 @@ less_than(Label<l1> a, Label<l2> b)
 }
 
 
-template <typename>
-struct is_min_of;
-template <typename l, typename r>
-struct is_min_of<Label<label_min_of<l, r>>> : public std::true_type
-{
-};
-template <typename l, typename r>
-struct is_min_of<label_min_of<l, r>> : public std::true_type
-{
-};
-template <typename>
-struct is_min_of : public std::false_type
-{
-};
 	template<typename l>
 	struct is_allowed_label;
 	
@@ -160,10 +148,10 @@ template <typename pc_label, typename ast>
 constexpr auto collect_constraints(Label<pc_label>, ast);
 
 template <typename pc_label, typename l, typename y, typename ye, typename v, typename le, typename e>
-constexpr auto _collect_constraints(Binding<l, y, v, Expression<le, ye, e>> a)
+constexpr auto _collect_constraints(Binding<Label<l>, y, v, Expression<le, ye, e>> a)
 {
-  return constraints<typename must_flow_to<le, l, DECT(MUTILS_STRING(bound expression, )::append(print_ast(a)))>::type,
-										 typename must_flow_to<pc_label, l, DECT(MUTILS_STRING(bound expression, pc, )::append(print_ast(a)))>::type>
+  return constraints<typename must_flow_to<le, Label<l>, DECT(MUTILS_STRING(bound expression, )::append(print_ast(a)))>::type,
+										 typename must_flow_to<pc_label, Label<l>, DECT(MUTILS_STRING(bound expression, pc, )::append(print_ast(a)))>::type>
 		::append(collect_constraints(pc_label{}, Expression<le, y, e>{}));
 }
 
@@ -195,7 +183,7 @@ template <typename pc_label, typename l, typename y, typename h>
 constexpr auto _collect_constraints(Expression<l, y, IsValid<h>> a)
 {
   using This = DECT(a);
-  using new_pc = Label<label_min_of<Label<label_min_of<pc_label, typename This::expr_label>>, typename This::handle_label>>;
+  using new_pc = resolved_label_min_vararg<pc_label, typename This::expr_label, typename This::handle_label>;
   return collect_constraints(new_pc{}, h{})
 	  .append(constraints<typename must_flow_to<typename This::expr_label, typename This::handle_label,MUTILS_STRING(isvalid, expr -> hndl)>::type >{});
 }
@@ -231,7 +219,7 @@ template <typename pc_label, typename l, typename b, typename e>
 constexpr auto _collect_constraints(Statement<l, LetRemote<b, e>> a)
 {
   using This = DECT(a);
-  using binding_pc = Label<label_min_of<Label<label_min_of<pc_label, typename This::expr_label>>, typename This::handle_label>>;
+  using binding_pc = resolved_label_min_vararg<pc_label, typename This::expr_label, typename This::handle_label>;
   using new_pc = pc_label;
   return collect_constraints(binding_pc{}, b{})
     .append(collect_constraints(new_pc{}, e{}))
@@ -241,7 +229,7 @@ constexpr auto _collect_constraints(Statement<l, LetRemote<b, e>> a)
 	template <typename pc_label, typename expr_label, typename handle_label, typename oper_name, typename Hndl, typename... args>
 constexpr auto _collect_constraints(Operation<oper_name,Hndl,args...> )
 {
-  using new_pc = label_min_vararg<pc_label, expr_label, handle_label, typename args::label...>;
+  using new_pc = resolved_label_min_vararg<pc_label, expr_label, handle_label, typename args::label...>;
   return collect_constraints(new_pc{}, Hndl{})
 	  .append(constraints<typename must_flow_to<expr_label, handle_label,MUTILS_STRING(statement_operation, expr -> hndl)>::type,
 						typename must_flow_to<typename args::label, handle_label, MUTILS_STRING(statement_operation, args -> hndl)>::type...>{})
@@ -265,14 +253,14 @@ constexpr auto _collect_constraints(Expression<l, y, Operation<oper_name,Hndl,ar
 template <typename pc_label, typename l, typename c, typename t, typename e>
 constexpr auto _collect_constraints(Statement<l, If<c, t, e>>)
 {
-  using new_pc = Label<label_min_of<pc_label, l>>;
+  using new_pc = resolved_label_min<pc_label, l>;
   return collect_constraints(new_pc{}, c{}).append(collect_constraints(new_pc{}, t{})).append(collect_constraints(new_pc{}, e{}));
 }
 
 template <typename pc_label, typename l, typename c, typename e>
 constexpr auto _collect_constraints(Statement<l, While<c, e>>)
 {
-  using new_pc = Label<label_min_of<pc_label, l>>;
+  using new_pc = resolved_label_min<pc_label, l>;
   return collect_constraints(new_pc{}, c{}).append(collect_constraints(new_pc{}, e{}));
 }
 
@@ -294,11 +282,22 @@ constexpr auto collect_constraints(Label<pc_label>, ast a)
   return _collect_constraints<Label<pc_label>>(a);
 }
 
+	template <typename to, typename r, typename why, typename... l>
+	constexpr auto collapse_single(must_flow_to<Label<label_min_of<mutils::typeset<l...>, mutils::typeset<r> > >, to, why>){
+		return constraints<typename must_flow_to<l, to,why>::type...,
+											 typename must_flow_to<r, to,why>::type>{};
+	}
+
+	template <typename to, typename why, typename... l>
+	constexpr auto collapse_single(must_flow_to<Label<label_min_of<mutils::typeset<l...>, mutils::typeset<> > >, to, why>){
+		return constraints<typename must_flow_to<l, to,why>::type...>{};
+	}
+	
   template <typename to, typename l, typename r, typename why, typename... rest>
   constexpr auto collapse_constraints(constraints<must_flow_to<Label<label_min_of<l, r> >, to, why>, rest...>)
 {
-  return collapse_constraints(constraints<typename must_flow_to<l, to,why>::type,
-															typename must_flow_to<r, to,why>::type, rest...>{});
+	return collapse_constraints(collapse_single(must_flow_to<Label<label_min_of<l, r> >, to, why>{})
+															.append(constraints<rest...>{}));
 }
 
   template <typename from, typename to, typename why, typename... rst>
@@ -447,7 +446,10 @@ constexpr auto infer_labels(ast)
 {
   constexpr auto real_labels = collect_proper_labels(ast{});
   using constraints = DECT(minimize_constraints(collapse_constraints(collect_constraints(Label<top>{}, ast{}))));
-  return typename DECT(infer_labels_helper1<ast, constraints>(real_labels))::ast{};
+	static_assert(!contains_min_ofs(ret{}));
+	using ret = typename DECT(infer_labels_helper1<ast, constraints>(real_labels))::ast;
+	static_assert(!contains_improper_labels(ret{}));
+  return ret{};
 }
 }
 }
