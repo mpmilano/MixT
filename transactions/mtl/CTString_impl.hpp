@@ -50,6 +50,17 @@ constexpr String<str2...> String<>::append(String<str2...>)
   return String<str2...>{};
 }
 
+template <char... str2>
+constexpr String<str2...> String<>::append()
+{
+  return String<str2...>{};
+}
+	
+template <typename s1, typename s2, typename... str2>
+constexpr auto String<>::append(s1,s2,str2...){
+	return append(s1{}).append(s2{},str2{}...);
+}
+
 constexpr auto String<>::reverse()
 {
   return String<>{};
@@ -250,6 +261,18 @@ constexpr String<str..., str2...> String<str...>::append(String<str2...>)
   return String<str..., str2...>{};
 }
 
+template <char... str>
+template <char... str2>
+constexpr String<str..., str2...> String<str...>::append(){
+	return append(String<str2...>{});
+}
+
+template <char... str>
+template <typename s1, typename s2, typename... str2>
+constexpr auto String<str...>::append(s1,s2,str2...){
+	return append(s1{}).append(s2{},str2{}...);
+}
+
 namespace CTString {
 template <char c1, char... str2>
 constexpr auto reverse_helper()
@@ -409,6 +432,19 @@ String<str...>::parseInt()
   }
   return accum;
 }
+
+	template<long long i>
+	constexpr auto string_from_int(){
+		if constexpr (i < 0) return String<'-'>::append(string_from_int<i * -1>());
+		else if constexpr (i < 10) return String<intToChar(i)>{};
+		else {
+			constexpr auto ones_place = i - ((i / 10 ) * 10);
+			static_assert(ones_place >= 0 && ones_place < 10);
+			return string_from_int<i/10>().append(String<intToChar(ones_place)>{});
+		}
+	}
+
+	static_assert(string_from_int<2524123456789089024>() == String<'2','5','2','4','1','2','3','4','5','6','7','8','9','0','8','9','0','2','4'>{});
 
 template <char... str>
 constexpr const decltype(sizeof...(str)) String<str...>::string_length;

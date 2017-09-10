@@ -4,6 +4,7 @@
 #include "AST_typecheck.hpp"
 #include "replace_label.hpp"
 #include "collect_proper_label.hpp"
+#include "typecheck_printer.hpp"
 
 namespace myria {
 namespace mtl {
@@ -35,15 +36,38 @@ less_than(Label<l1> a, Label<l2> b)
   return b.flows_to(a);
 }
 
-  template <typename high, typename low, typename why>
-struct must_flow_to
+
+template <typename>
+struct is_min_of;
+template <typename l, typename r>
+struct is_min_of<Label<label_min_of<l, r>>> : public std::true_type
 {
+};
+template <typename l, typename r>
+struct is_min_of<label_min_of<l, r>> : public std::true_type
+{
+};
+template <typename>
+struct is_min_of : public std::false_type
+{
+};
+	template<typename l>
+	struct is_allowed_label;
+	
+	template<char... c> struct is_allowed_label<Label<String<c...> > > : public std::true_type{};
+	template<int a, int b> struct is_allowed_label<Label<temp_label<a,b> > > : public std::true_type{};
+	
+template <typename high, typename low, typename why>
+struct must_flow_to : is_allowed_label<low>
+{
+	using is_allowed_label<low>::value;
+	using type = must_flow_to;
   constexpr must_flow_to() = default;
 
   template <typename newl, typename oldl>
   static constexpr auto substitute()
   {
-    return must_flow_to<std::conditional_t<std::is_same<oldl, high>::value, newl, high>, std::conditional_t<std::is_same<oldl, low>::value, newl, low>, why>{};
+    return typename must_flow_to<std::conditional_t<std::is_same<oldl, high>::value, newl, high>, std::conditional_t<std::is_same<oldl, low>::value, newl, low>, why>::type{};
   }
 
   template <typename high2, typename low2, typename why2>
@@ -125,7 +149,7 @@ std::ostream& operator<<(std::ostream& o, constraints<A...>)
 {
   o << "constraints: " << std::endl;
   static const auto print = [](auto& o, const auto& e) {
-    o << e << std::endl;
+    o << e << std::endl<< std::endl;
     return nullptr;
   };
   (print(o,A{}), ... );
@@ -136,9 +160,11 @@ template <typename pc_label, typename ast>
 constexpr auto collect_constraints(Label<pc_label>, ast);
 
 template <typename pc_label, typename l, typename y, typename ye, typename v, typename le, typename e>
-constexpr auto _collect_constraints(Binding<l, y, v, Expression<le, ye, e>>)
+constexpr auto _collect_constraints(Binding<l, y, v, Expression<le, ye, e>> a)
 {
-  return constraints<must_flow_to<le, l, MUTILS_STRING(bound expression)>, must_flow_to<pc_label, l, MUTILS_STRING(bound expression, pc)>>::append(collect_constraints(pc_label{}, Expression<le, y, e>{}));
+  return constraints<typename must_flow_to<le, l, DECT(MUTILS_STRING(bound expression, )::append(print_ast(a)))>::type,
+										 typename must_flow_to<pc_label, l, DECT(MUTILS_STRING(bound expression, pc, )::append(print_ast(a)))>::type>
+		::append(collect_constraints(pc_label{}, Expression<le, y, e>{}));
 }
 
 template <typename pc_label, typename l, typename y, typename s, typename f>
@@ -171,7 +197,7 @@ constexpr auto _collect_constraints(Expression<l, y, IsValid<h>> a)
   using This = DECT(a);
   using new_pc = Label<label_min_of<Label<label_min_of<pc_label, typename This::expr_label>>, typename This::handle_label>>;
   return collect_constraints(new_pc{}, h{})
-	  .append(constraints<must_flow_to<typename This::expr_label, typename This::handle_label,MUTILS_STRING(isvalid, expr -> hndl)> >{});
+	  .append(constraints<typename must_flow_to<typename This::expr_label, typename This::handle_label,MUTILS_STRING(isvalid, expr -> hndl)>::type >{});
 }
 
 template <typename pc_label, typename l, typename y, typename h>
@@ -183,7 +209,9 @@ constexpr auto _collect_constraints(Expression<l, y, Endorse<l,h>> )
 template <typename pc_label, typename l, typename lv, typename yv, typename v, typename le, typename ye, typename e>
 constexpr auto _collect_constraints(Statement<l, Assignment<Expression<lv, yv, v>, Expression<le, ye, e>>>)
 {
-  return constraints<must_flow_to<le, lv,MUTILS_STRING(assignment)>, must_flow_to<pc_label, lv,MUTILS_STRING(assignment, pc)>>::append(collect_constraints(pc_label{}, Expression<lv, yv, v>{}))
+  return constraints<typename must_flow_to<le, lv,MUTILS_STRING(assignment)>::type,
+										 typename must_flow_to<pc_label, lv,MUTILS_STRING(assignment, pc)>::type
+										 >::append(collect_constraints(pc_label{}, Expression<lv, yv, v>{}))
     .append(collect_constraints(pc_label{}, Expression<le, ye, e>{}));
 }
 
@@ -207,7 +235,7 @@ constexpr auto _collect_constraints(Statement<l, LetRemote<b, e>> a)
   using new_pc = pc_label;
   return collect_constraints(binding_pc{}, b{})
     .append(collect_constraints(new_pc{}, e{}))
-    .append(constraints<must_flow_to<typename This::expr_label, typename This::handle_label,MUTILS_STRING(let_remote, expr -> hndl)>>{});
+    .append(constraints<typename must_flow_to<typename This::expr_label, typename This::handle_label,MUTILS_STRING(let_remote, expr -> hndl)>::type>{});
 }
 
 	template <typename pc_label, typename expr_label, typename handle_label, typename oper_name, typename Hndl, typename... args>
@@ -215,8 +243,8 @@ constexpr auto _collect_constraints(Operation<oper_name,Hndl,args...> )
 {
   using new_pc = label_min_vararg<pc_label, expr_label, handle_label, typename args::label...>;
   return collect_constraints(new_pc{}, Hndl{})
-	  .append(constraints<must_flow_to<expr_label, handle_label,MUTILS_STRING(statement_operation, expr -> hndl)>,
-			  must_flow_to<typename args::label, handle_label, MUTILS_STRING(statement_operation, args -> hndl)>...>{})
+	  .append(constraints<typename must_flow_to<expr_label, handle_label,MUTILS_STRING(statement_operation, expr -> hndl)>::type,
+						typename must_flow_to<typename args::label, handle_label, MUTILS_STRING(statement_operation, args -> hndl)>::type...>{})
 	  .append(collect_constraints(new_pc{},args{})...);
 }
 	
@@ -269,28 +297,14 @@ constexpr auto collect_constraints(Label<pc_label>, ast a)
   template <typename to, typename l, typename r, typename why, typename... rest>
   constexpr auto collapse_constraints(constraints<must_flow_to<Label<label_min_of<l, r> >, to, why>, rest...>)
 {
-  return collapse_constraints(constraints<must_flow_to<l, to,why>, must_flow_to<r, to,why>, rest...>{});
+  return collapse_constraints(constraints<typename must_flow_to<l, to,why>::type,
+															typename must_flow_to<r, to,why>::type, rest...>{});
 }
-
-template <typename>
-struct is_min_of;
-template <typename l, typename r>
-struct is_min_of<Label<label_min_of<l, r>>> : public std::true_type
-{
-};
-template <typename l, typename r>
-struct is_min_of<label_min_of<l, r>> : public std::true_type
-{
-};
-template <typename>
-struct is_min_of : public std::false_type
-{
-};
 
   template <typename from, typename to, typename why, typename... rst>
   constexpr auto collapse_constraints(constraints<must_flow_to<from, to, why>, rst...>, std::enable_if_t<!(is_min_of<from>::value || is_min_of<to>::value)>* = nullptr)
 {
-  return constraints<must_flow_to<from, to, why>>::append(collapse_constraints(constraints<rst...>{}));
+  return constraints<typename must_flow_to<from, to, why>::type>::append(collapse_constraints(constraints<rst...>{}));
 }
 
 constexpr auto collapse_constraints(constraints<> a)
@@ -306,7 +320,7 @@ constexpr auto remove_reflexive_constraints(constraints<> a)
   template <typename l, typename l2, typename why, typename... t>
   constexpr auto remove_reflexive_constraints(constraints<must_flow_to<l, l2,why>, t...>, std::enable_if_t<!std::is_same<l, l2>::value>* = nullptr)
 {
-  return constraints<must_flow_to<l, l2, why>>::append(remove_reflexive_constraints(constraints<t...>{}));
+  return constraints<typename must_flow_to<l, l2, why>::type>::append(remove_reflexive_constraints(constraints<t...>{}));
 }
 
   template <typename l, typename why, typename... t>
@@ -364,7 +378,7 @@ std::ostream& operator<<(std::ostream& o, substitution<newl, oldl>)
     constexpr ret() = default;
     using ast = typename intermediate::ast;
     using substitutions = DECT(intermediate::substitutions::append(mutils::typelist<substitution<label, Label<temp_label<to1, to2>>>>{}));
-    using constraints = DECT(minimize_constraints(constraints<must_flow_to<label, label, MUTILS_STRING(this seems wrong)>>::append(typename intermediate::constraints{})));
+    using constraints = DECT(minimize_constraints(constraints<typename must_flow_to<label, label, MUTILS_STRING(this seems wrong)>::type >::append(typename intermediate::constraints{})));
   };
   return replace_all_less_than_ret<typename ret::ast, typename ret::constraints, typename ret::substitutions>{};
 
@@ -382,7 +396,7 @@ std::ostream& operator<<(std::ostream& o, substitution<newl, oldl>)
     constexpr ret() = default;
     using ast = typename intermediate::ast;
     using substitutions = typename intermediate::substitutions;
-    using constraints = DECT(minimize_constraints(constraints<must_flow_to<label, to, why>>::append(typename intermediate::constraints{})));
+    using constraints = DECT(minimize_constraints(constraints<typename must_flow_to<label, to, why>::type>::append(typename intermediate::constraints{})));
   };
   return replace_all_less_than_ret<typename ret::ast, typename ret::constraints, typename ret::substitutions>{};
 
@@ -400,7 +414,7 @@ constexpr auto replace_all_less_than(constraints<must_flow_to<from, to, why>, co
     using substitutions = typename intermediate::substitutions;
     // this constraint operates at a higher label than we do, so keep it around until
     // that higher label gets a turn.
-    using constraints = DECT(minimize_constraints(constraints<must_flow_to<from, to, why >>::append(typename intermediate::constraints{})));
+    using constraints = DECT(minimize_constraints(constraints<typename must_flow_to<from, to, why >::type>::append(typename intermediate::constraints{})));
   };
   return replace_all_less_than_ret<typename ret::ast, typename ret::constraints, typename ret::substitutions>{};
 }

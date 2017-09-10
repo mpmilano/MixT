@@ -22,6 +22,8 @@ test_mtl: $(object_files)
 	clang++ $(CPPFLAGS) $(LDFLAGS) $(object_files) test_complex_transaction.cpp -o /tmp/test
 test_operation: $(object_files)
 	clang++ $(CPPFLAGS) $(LDFLAGS)  $(object_files) test_operation.cpp -o /tmp/test
+logging_example: $(object_files)
+	clang++ $(CPPFLAGS) $(LDFLAGS)  $(object_files) logging_example.cpp -o /tmp/test
 test_endorse: $(object_files)
 	clang++ $(CPPFLAGS) $(LDFLAGS)  $(object_files) test_endorse.cpp -o /tmp/test
 regression_tests: $(object_files)

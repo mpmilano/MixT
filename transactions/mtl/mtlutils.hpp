@@ -512,6 +512,37 @@ toInt(char c)
   };
 }
 
+	constexpr char intToChar(int c)
+{
+  struct bad_arg
+  {
+  };
+  switch (c) {
+    case 0:
+      return '0';
+    case 1:
+      return '1';
+    case 2:
+      return '2';
+    case 3:
+      return '3';
+    case 4:
+      return '4';
+    case 5:
+      return '5';
+    case 6:
+      return '6';
+    case 7:
+      return '7';
+    case 8:
+      return '8';
+    case 9:
+      return '9';
+    default:
+      throw bad_arg{};
+  };
+}
+
 constexpr int
 exp(int base, int exponent)
 {
@@ -519,37 +550,41 @@ exp(int base, int exponent)
 }
 
 template <char a, char b>
-void
-print_varname(std::ostream& o, String<'a', 'n', 'o', 'r', 'm', a, b>)
+constexpr auto
+print_varname(String<'a', 'n', 'o', 'r', 'm', a, b>)
 {
-  int _a = a;
-  int _b = b;
-  o << "anorm(" << _a << "," << _b << ")";
+	return String<'a','n','o','r','m','<'>::append(string_from_int<a>())
+		.template append<','>().append(string_from_int<b>()).template append<'>'>();
 }
 
 template <char a, char b>
-void
-print_varname(std::ostream& o, String<1, a, b>)
+constexpr auto
+print_varname(String<1, a, b>)
 {
-  int _a = a;
-  int _b = b;
-  o << "[" << _a << "," << _b << "]";
+	return String<'['>::append(string_from_int<a>())
+		.append(String<','>{}).append(string_from_int<b>()).append(String<']'>{});
 }
 
 template <char a, char b>
-void
-print_varname(std::ostream& o, String<'w', 'h', 'i', 'l', 'e', a, b>)
+constexpr auto
+print_varname(String<'w', 'h', 'i', 'l', 'e', a, b>)
 {
-  int _a = a;
-  int _b = b;
-  o << "while(" << _a << "," << _b << ")";
+	return String<'w','h','i','l','e','<'>::append(string_from_int<a>()).template append<','>()
+		.append(string_from_int<b>()).template append<'>'>();
 }
 
 template <char... str>
-void
-print_varname(std::ostream& o, String<str...> s, std::enable_if_t<!String<str...>::begins_with(String<'a', 'n', 'o', 'r', 'm'>{})>* = nullptr)
+constexpr auto
+print_varname(String<str...> s, std::enable_if_t<!String<str...>::begins_with(String<'a', 'n', 'o', 'r', 'm'>{})>* = nullptr)
 {
-  o << s;
+	return s;
+}
+
+template <typename a>
+void
+print_varname(std::ostream& o, a)
+{
+	o << print_varname(a{});
 }
 
 template <typename K, typename V>
@@ -696,3 +731,8 @@ template<bool b, typename...> constexpr bool useful_static_assert(){
 	using is_sequence_end = std::is_same<follows_in_sequence<match,args...>, mismatch >;
 
 }
+
+#define MATCH_CONTEXT(NAME) struct NAME 
+#define MATCHES(a...) static auto match(const a &)
+#define RETURN(a...) a {struct dead_code{}; throw dead_code{};}
+#define MATCH(name,a...) DECT(name ::match(std::declval< a >()))

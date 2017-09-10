@@ -27,6 +27,28 @@ struct Label<top>
   using can_abort = std::false_type;
 };
 
+using bottom = mutils::String<'b','o','t','t','o','m'>;
+template <>
+struct Label<bottom>
+{
+
+  using is_label = std::true_type;
+
+  constexpr Label() = default;
+
+  template <typename T>
+  constexpr static bool flows_to(const Label<T>&)
+  {
+    return std::is_same<Label, Label<T>>::value;
+  }
+
+  using might_track = std::false_type;
+  template <typename>
+  using tracks_against = std::false_type;
+  using run_remotely = std::false_type;
+  using can_abort = std::false_type;
+};
+	
 template <int, int>
 struct temp_label;
 // temporary labels which have not been inferred yet.
@@ -54,106 +76,123 @@ struct is_temp_label : public std::false_type
 template <typename l, typename r>
 struct label_min_of;
 
+template <>
+struct Label<label_min_of<Label<bottom>, Label<bottom> > >
+{
+  static constexpr auto resolve() { return Label<bottom>{}; }
+};
+	
+template <typename l>
+struct Label<label_min_of<l, Label<bottom> > >
+{
+  static constexpr auto resolve() { return Label<bottom>{}; }
+};
+
+template <typename r>
+struct Label<label_min_of<Label<bottom>, r > >
+{
+  static constexpr auto resolve() { return Label<bottom>{}; }
+};
+
+	template <typename l1, typename l2>
+struct Label<label_min_of<Label<label_min_of<l1,l2> >, Label<bottom> > >
+{
+  static constexpr auto resolve() { return Label<bottom>{}; }
+};
+
+	template <typename r1, typename r2>
+	struct Label<label_min_of<Label<bottom>, Label<label_min_of<r1,r2> > > >
+{
+  static constexpr auto resolve() { return Label<bottom>{}; }
+};
+
+template <int l1, int l2>
+struct Label<label_min_of<Label<bottom>, Label<temp_label<l1, l2>>>>
+{
+  static constexpr auto resolve() { return Label<bottom>{}; }
+};
+
+template <int l1, int l2>
+struct Label<label_min_of<Label<temp_label<l1, l2>>, Label<bottom> > >
+{
+  static constexpr auto resolve() { return Label<bottom>{}; }
+};
+	
 template <int l1, int l2, typename r>
 struct Label<label_min_of<Label<temp_label<l1, l2>>, Label<r>>>
 {
   static constexpr auto resolve() { return Label{}; }
-  static constexpr bool can_resolve() { return false; }
 };
 
 template <int l1, int l2, typename r>
 struct Label<label_min_of<Label<r>, Label<temp_label<l1, l2>>>>
 {
   static constexpr auto resolve() { return Label{}; }
-  static constexpr bool can_resolve() { return false; }
 };
 
 template <int l1, int l2, int r1, int r2>
 struct Label<label_min_of<Label<temp_label<l1, l2>>, Label<temp_label<r1, r2>>>>
 {
   static constexpr auto resolve() { return Label{}; }
-  static constexpr bool can_resolve() { return false; }
 };
 
 template <typename l1, typename l2, typename r>
 struct Label<label_min_of<Label<label_min_of<l1, l2>>, Label<r>>>
 {
-  static constexpr bool can_resolve() { return Label<label_min_of<l1, l2>>::can_resolve(); }
-
-  static constexpr auto resolve(std::true_type*) { return Label<label_min_of<DECT(Label<label_min_of<l1, l2>>::resolve()), Label<r>>>::resolve(); }
-  static constexpr auto resolve(std::false_type*) { return Label{}; }
-  static constexpr auto resolve()
+	static constexpr auto resolve()
   {
-    std::integral_constant<bool, can_resolve()>* choice{ nullptr };
-    return resolve(choice);
+		using candidate = Label<label_min_of<DECT(Label<label_min_of<l1, l2>>::resolve()), Label<r>>>;
+		if constexpr (std::is_same<candidate,Label>::value) return Label{};
+    else return candidate::resolve();
   }
 };
 
 template <typename l1, typename l2, typename r>
 struct Label<label_min_of<Label<r>, Label<label_min_of<l1, l2>>>>
 {
-  static constexpr bool can_resolve() { return Label<label_min_of<l1, l2>>::can_resolve(); }
-  static constexpr auto resolve(std::true_type*) { return Label<label_min_of<DECT(Label<label_min_of<l1, l2>>::resolve()), Label<r>>>::resolve(); }
-
-  static constexpr auto resolve(std::false_type*) { return Label{}; }
 
   static constexpr auto resolve()
   {
-    std::integral_constant<bool, can_resolve()>* choice{ nullptr };
-    return resolve(choice);
+		using candidate = Label<label_min_of<DECT(Label<label_min_of<l1, l2>>::resolve()), Label<r>>>;
+		if constexpr (std::is_same<candidate,Label>::value) return Label{};
+    else return candidate::resolve();
   }
 };
 
 template <typename l1, typename l2, int r1, int r2>
 struct Label<label_min_of<Label<label_min_of<l1, l2>>, Label<temp_label<r1, r2>>>>
 {
-  static constexpr bool can_resolve() { return Label<label_min_of<l1, l2>>::can_resolve(); }
 
-  static constexpr auto resolve(std::true_type*)
-  {
-    return Label<label_min_of<DECT(Label<label_min_of<l1, l2>>::resolve()), Label<temp_label<r1, r2>>>>::resolve();
-  }
-  static constexpr auto resolve(std::false_type*) { return Label{}; }
   static constexpr auto resolve()
   {
-    std::integral_constant<bool, can_resolve()>* choice{ nullptr };
-    return resolve(choice);
+		using candidate = Label<label_min_of<DECT(Label<label_min_of<l1, l2>>::resolve()), Label<temp_label<r1, r2>>>>;
+		if constexpr (std::is_same<candidate,Label>::value) return Label{};
+    else return candidate::resolve();
   }
 };
 
 template <typename l1, typename l2, int r1, int r2>
 struct Label<label_min_of<Label<temp_label<r1, r2>>, Label<label_min_of<l1, l2>>>>
 {
-  static constexpr bool can_resolve() { return Label<label_min_of<l1, l2>>::can_resolve(); }
-  static constexpr auto resolve(std::true_type*)
-  {
-    return Label<label_min_of<DECT(Label<label_min_of<l1, l2>>::resolve()), Label<temp_label<r1, r2>>>>::resolve();
-  }
 
-  static constexpr auto resolve(std::false_type*) { return Label{}; }
-
-  static constexpr auto resolve()
+	static constexpr auto resolve()
   {
-    std::integral_constant<bool, can_resolve()>* choice{ nullptr };
-    return resolve(choice);
+    using candidate = Label<label_min_of<DECT(Label<label_min_of<l1, l2>>::resolve()), Label<temp_label<r1, r2>>>>;
+		if constexpr (std::is_same<candidate,Label>::value) return Label{};
+    else return candidate::resolve();
   }
 };
 
 template <typename l1, typename l2, typename r1, typename r2>
 struct Label<label_min_of<Label<label_min_of<l1, l2>>, Label<label_min_of<r1, r2>>>>
 {
-  static constexpr bool can_resolve() { return Label<label_min_of<l1, l2>>::can_resolve() || Label<label_min_of<r1, r2>>::can_resolve(); }
-  static constexpr auto resolve(std::true_type*)
-  {
-    return Label<label_min_of<DECT(Label<label_min_of<l1, l2>>::resolve()), DECT(Label<label_min_of<r1, r2>>::resolve())>>::resolve();
-  }
-  static constexpr auto resolve(std::false_type*) { return Label{}; }
-
   static constexpr auto resolve()
   {
-    std::integral_constant<bool, can_resolve()>* choice{ nullptr };
-    return resolve(choice);
+    using candidate =  Label<label_min_of<DECT(Label<label_min_of<l1, l2>>::resolve()), DECT(Label<label_min_of<r1, r2>>::resolve())>>;
+		if constexpr (std::is_same<candidate,Label>::value) return Label{};
+		else return candidate::resolve();
   }
+
 };
 
 template <typename l, typename r>
@@ -164,31 +203,8 @@ struct Label<label_min_of<Label<l>, Label<r>>>
     return labels::min_of(Label<l>{}, Label<r>{}); }
 };
 
-using bottom = mutils::String<'b','o','t','t','o','m'>;
-template <>
-struct Label<bottom>
-{
-
-  using is_label = std::true_type;
-
-  constexpr Label() = default;
-
-  template <typename T>
-  constexpr static bool flows_to(const Label<T>&)
-  {
-    return std::is_same<Label, Label<T>>::value;
-  }
-
-  using might_track = std::false_type;
-  template <typename>
-  using tracks_against = std::false_type;
-  using run_remotely = std::false_type;
-  using can_abort = std::false_type;
-};
-
 template <typename l, typename r>
-using resolved_label_min =
-  std::conditional_t<std::is_same<l, Label<bottom>>::value || std::is_same<r, Label<bottom>>::value, Label<bottom>, DECT(Label<label_min_of<l, r>>::resolve())>;
+using resolved_label_min = DECT(Label<label_min_of<l, r>>::resolve());
 
 template<typename L1, typename L2>
 constexpr auto* resolved_label_min_vararg_f(L1*, L2*){
@@ -221,22 +237,38 @@ using label_min_vararg = DECT(*label_min_vararg_f(std::declval<l*>()... ));
 template <typename L1, typename L2>
 using label_lte = std::integral_constant<bool, L2::flows_to(L1{})>;
 
-template <typename... labels>
-std::ostream& operator<<(std::ostream& o, const Label<label_min_of<labels...>>&)
+template<typename label>
+constexpr auto print_comma_separated(label);
+
+template <char... c>
+auto print_label(const Label<mutils::String<c...>>&)
 {
-  static const auto print = [](auto& o, const auto& e) {
-    o << e << ",";
-    return nullptr;
-  };
-  o << "min(";
-  (print(o,labels{}) , ...);
-  return o << ")";
+	return mutils::String<c...>{};
+}
+	
+template <typename... labels>
+auto print_label(const Label<label_min_of<labels...>>&)
+{
+	using namespace mutils;
+	return String<'m','i','n','('>::append(print_comma_separated(labels{})...).template append<')'>();
 }
 
 template <int seq, int depth>
-std::ostream& operator<<(std::ostream& o, const Label<temp_label<seq, depth>>&)
+auto print_label(const Label<temp_label<seq, depth>>&)
 {
-  return o << "temp<" << seq << depth << ">";
+	using namespace mutils;
+	return String<'t','e','m','p','<'>::append(string_from_int<seq>())
+		.append(string_from_int<depth>()).append(String<'>'>{});
 }
 
+	template<typename label>
+	constexpr auto print_comma_separated(label){
+		return print_label(label{}).template append<','>();
+	}
+
+	template<typename l>
+	std::ostream& operator<<(std::ostream& o, const Label<l>& a){
+		return o << print_label(a);
+	}
+	
 }
