@@ -120,7 +120,7 @@ constexpr auto _contains_min_ofs_helper(Expression<Label<temp_label<l, r>>, y, V
 template <int l, int r, typename y, char op, typename L, typename R>
 constexpr auto _contains_min_ofs_helper(Expression<Label<temp_label<l, r>>, y, BinOp<op, L, R>>)
 {
-  return contains_min_ofs_helper(L{}).combine(contains_min_ofs_helper(R{}));
+  return contains_min_ofs_helper(L{})||(contains_min_ofs_helper(R{}));
 }
 template <int l, int r>
 constexpr auto _contains_min_ofs_helper(Expression<Label<temp_label<l, r> >, tracker::Tombstone, GenerateTombstone>)
@@ -131,19 +131,19 @@ constexpr auto _contains_min_ofs_helper(Expression<Label<temp_label<l, r> >, tra
 template <int l, int r, typename v, typename e>
 constexpr auto _contains_min_ofs_helper(Statement<Label<temp_label<l, r>>, Assignment<v, e>>)
 {
-  return contains_min_ofs_helper(v{}).combine(contains_min_ofs_helper(e{}));
+  return contains_min_ofs_helper(v{})||(contains_min_ofs_helper(e{}));
 }
 
 template <int l, int r, typename b, typename e>
 constexpr auto _contains_min_ofs_helper(Statement<Label<temp_label<l, r>>, Let<b, e>>)
 {
-  return contains_min_ofs_helper(b{}).combine(contains_min_ofs_helper(e{}));
+  return contains_min_ofs_helper(b{})||(contains_min_ofs_helper(e{}));
 }
 
 template <int l, int r, typename b, typename e>
 constexpr auto _contains_min_ofs_helper(Statement<Label<temp_label<l, r>>, LetRemote<b, e>>)
 {
-  return contains_min_ofs_helper(b{}).combine(contains_min_ofs_helper(e{}));
+  return contains_min_ofs_helper(b{})||(contains_min_ofs_helper(e{}));
 }
 
 	template <int l, int r, typename y, typename h>
@@ -155,25 +155,25 @@ constexpr auto _contains_min_ofs_helper(Statement<Label<temp_label<l, r>>, LetRe
 template <int l, int r, typename y, typename oper_name, typename Hndl, typename... args>
 constexpr auto _contains_min_ofs_helper(Expression<Label<temp_label<l, r>>, y, Operation< oper_name,  Hndl,  args...>>)
 {
-	return contains_min_ofs_helper(Hndl{}).combine(contains_min_ofs_helper(args{})...);
+	return (contains_min_ofs_helper(Hndl{})|| ... || contains_min_ofs_helper(args{}));
 }
 	
 template <int l, int r, typename oper_name, typename Hndl, typename... args>
 constexpr auto _contains_min_ofs_helper(Statement<Label<temp_label<l, r>>, Operation< oper_name,  Hndl,  args...>>)
 {
-	return contains_min_ofs_helper(Hndl{}).combine(contains_min_ofs_helper(args{})...);
+	return (contains_min_ofs_helper(Hndl{})|| ... || contains_min_ofs_helper(args{}));
 }
 
 template <int l, int r, typename c, typename t, typename e>
 constexpr auto _contains_min_ofs_helper(Statement<Label<temp_label<l, r>>, If<c, t, e>>)
 {
-  return contains_min_ofs_helper(c{}).combine(contains_min_ofs_helper(t{})).combine(contains_min_ofs_helper(e{}));
+  return contains_min_ofs_helper(c{})||(contains_min_ofs_helper(t{}))||(contains_min_ofs_helper(e{}));
 }
 
 template <int l, int r, typename c, typename e>
 constexpr auto _contains_min_ofs_helper(Statement<Label<temp_label<l, r>>, While<c, e>>)
 {
-  return contains_min_ofs_helper(c{}).combine(contains_min_ofs_helper(e{}));
+  return contains_min_ofs_helper(c{})||(contains_min_ofs_helper(e{}));
 }
 
 template <int l, int r>
@@ -185,7 +185,7 @@ constexpr auto _contains_min_ofs_helper(Statement<Label<temp_label<l, r>>, Seque
 template <int l, int r, typename s1, typename... seq>
 constexpr auto _contains_min_ofs_helper(Statement<Label<temp_label<l, r>>, Sequence<s1, seq...>>)
 {
-  return contains_min_ofs_helper(s1{}).combine(contains_min_ofs_helper(seq{})...);
+  return (contains_min_ofs_helper(s1{})|| ... || contains_min_ofs_helper(seq{}));
 }
 // match
 
@@ -216,7 +216,7 @@ constexpr auto _contains_min_ofs_helper(Expression<Label<top>, int, Constant<i>>
 template <typename l, typename y, char op, typename L, typename R>
 constexpr auto _contains_min_ofs_helper(Expression<l, y, BinOp<op, L, R>>)
 {
-  return (contains_min_ofs_helper(L{})).combine(contains_min_ofs_helper(R{}));
+  return (contains_min_ofs_helper(L{}))||(contains_min_ofs_helper(R{}));
 }
 
 	
@@ -229,7 +229,7 @@ constexpr auto _contains_min_ofs_helper(Expression<l, tracker::Tombstone, Genera
 template <typename l, typename v, typename e>
 constexpr auto _contains_min_ofs_helper(Statement<l, Assignment<v, e>>)
 {
-	return (contains_min_ofs_helper(v{})).combine(contains_min_ofs_helper(e{}));
+	return (contains_min_ofs_helper(v{}))||(contains_min_ofs_helper(e{}));
 }
 
 template <typename l, typename e>
@@ -253,13 +253,13 @@ constexpr auto _contains_min_ofs_helper(Statement<l, AccompanyWrite<e>>)
 template <typename l, typename b, typename e>
 constexpr auto _contains_min_ofs_helper(Statement<l, Let<b, e>>)
 {
-	return (contains_min_ofs_helper(b{})).combine(contains_min_ofs_helper(e{}));
+	return (contains_min_ofs_helper(b{}))||(contains_min_ofs_helper(e{}));
 }
 
 template <typename l, typename b, typename e>
 constexpr auto _contains_min_ofs_helper(Statement<l, LetRemote<b, e>>)
 {
-	return (contains_min_ofs_helper(b{})).combine(contains_min_ofs_helper(e{}));
+	return (contains_min_ofs_helper(b{}))||(contains_min_ofs_helper(e{}));
 }
 
 	template <typename l, typename y, typename h>
@@ -277,31 +277,31 @@ constexpr auto _contains_min_ofs_helper(Statement<l, LetRemote<b, e>>)
 template <typename l, typename y, typename oper_name, typename Hndl, typename... args>
 constexpr auto _contains_min_ofs_helper(Expression<l, y, Operation< oper_name,  Hndl,  args...>>)
 {
-	return (contains_min_ofs_helper(Hndl{})).combine(contains_min_ofs_helper(args{})...);
+	return (contains_min_ofs_helper(Hndl{})|| ... || contains_min_ofs_helper(args{}));
 }
 	
 template <typename l, typename oper_name, typename Hndl, typename... args>
 constexpr auto _contains_min_ofs_helper(Statement<l, Operation< oper_name,  Hndl,  args...>>)
 {
-	return (contains_min_ofs_helper(Hndl{})).combine(contains_min_ofs_helper(args{})...);
+	return (contains_min_ofs_helper(Hndl{})|| ... || contains_min_ofs_helper(args{}));
 }
 
 template <typename l, typename c, typename t, typename e>
 constexpr auto _contains_min_ofs_helper(Statement<l, If<c, t, e>>)
 {
-	return (contains_min_ofs_helper(c{})).combine(contains_min_ofs_helper(t{})).combine(contains_min_ofs_helper(e{}));
+	return (contains_min_ofs_helper(c{}))||(contains_min_ofs_helper(t{}))||(contains_min_ofs_helper(e{}));
 }
 
 template <typename l, typename c, typename e>
 constexpr auto _contains_min_ofs_helper(Statement<l, While<c, e>>)
 {
-	return combine(contains_min_ofs_helper(c{})).combine(contains_min_ofs_helper(e{}));
+	return (contains_min_ofs_helper(c{}))||(contains_min_ofs_helper(e{}));
 }
 
 template <typename l, typename... seq>
 constexpr auto _contains_min_ofs_helper(Statement<l, Sequence<seq...>>)
 {
-	return combine(contains_min_ofs_helper(seq{})...);
+	return (contains_min_ofs_helper(seq{}) || ...);
 }
 
 template <typename ast>

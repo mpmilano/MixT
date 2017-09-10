@@ -549,6 +549,18 @@ exp(int base, int exponent)
   return (exponent == 0 ? 1 : base * exp(base, exponent - 1));
 }
 
+constexpr auto
+print_varname(String<'z', 'e', 'r', 'o', 0, 1>)
+{
+	return String<'z', 'e', 'r', 'o'>{};
+}
+
+constexpr auto
+print_varname(String<'o', 'n', 'e', 0, 1>)
+{
+	return String<'o', 'n', 'e'>{};
+}
+	
 template <char a, char b>
 constexpr auto
 print_varname(String<'a', 'n', 'o', 'r', 'm', a, b>)

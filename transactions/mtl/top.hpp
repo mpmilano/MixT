@@ -136,9 +136,10 @@ struct is_min_of : public std::false_type
 		else return mutils::String<'c','r','i','s','i','s','!'>{};
 	}
 	
-template <typename tmps, typename rls>
-struct Label<label_min_of<tmps,mutils::typeset<rls> > >{
-	using _rls = mutils::typeset<rls>;
+	template <typename _tmps1, typename rls, typename... _tmps>
+	struct Label<label_min_of<mutils::typeset<_tmps1,_tmps...>,mutils::typeset<rls> > >{
+		using _rls = mutils::typeset<rls>;
+		using tmps = mutils::typeset<_tmps1,_tmps...>;
 	
 	template<typename t2, typename r2>
 	static constexpr auto combine(Label<label_min_of<t2,mutils::typeset<r2> > >){
@@ -161,9 +162,10 @@ struct Label<label_min_of<tmps,mutils::typeset<rls> > >{
 	}
 };
 
-template <typename tmps>
-struct Label<label_min_of<tmps,mutils::typeset<> > >{
+	template <typename _t1, typename _t2, typename... _tmps>
+	struct Label<label_min_of<mutils::typeset<_t1,_t2,_tmps...>,mutils::typeset<> > >{
 	using _rls = mutils::typeset<>;
+		using tmps = mutils::typeset<_t1,_t2,_tmps...>;
 	
 	template<typename t2, typename r2>
 	static constexpr auto combine(Label<label_min_of<t2,mutils::typeset<r2> > >){
@@ -210,7 +212,15 @@ struct Label<label_min_of<tmps,mutils::typeset<> > >{
 		else if constexpr (is_real_label<l>::value && is_real_label<r>::value){
 				return min_real_labels<l,r>();
 			}
-		else return Label<label_min_of<mutils::typeset<>, mutils::typeset<> > >::add(l{}).add(r{});
+		else if constexpr (is_real_label<l>::value && !is_real_label<r>::value){
+				return Label<label_min_of<mutils::typeset<r>, mutils::typeset<l> > >::add(l{}).add(r{});
+			}
+		else if constexpr (!is_real_label<l>::value && is_real_label<r>::value){
+				return Label<label_min_of<mutils::typeset<l>, mutils::typeset<r> > >::add(l{}).add(r{});
+			}
+		else if constexpr (!is_real_label<l>::value && !is_real_label<r>::value){
+				return Label<label_min_of<mutils::typeset<l,r>, mutils::typeset<> > >::add(l{}).add(r{});
+			}
 	}
 
 template <typename l, typename r>

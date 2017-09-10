@@ -282,15 +282,14 @@ constexpr auto collect_constraints(Label<pc_label>, ast a)
   return _collect_constraints<Label<pc_label>>(a);
 }
 
-	template <typename to, typename r, typename why, typename... l>
-	constexpr auto collapse_single(must_flow_to<Label<label_min_of<mutils::typeset<l...>, mutils::typeset<r> > >, to, why>){
-		return constraints<typename must_flow_to<l, to,why>::type...,
-											 typename must_flow_to<r, to,why>::type>{};
-	}
-
 	template <typename to, typename why, typename... l>
 	constexpr auto collapse_single(must_flow_to<Label<label_min_of<mutils::typeset<l...>, mutils::typeset<> > >, to, why>){
 		return constraints<typename must_flow_to<l, to,why>::type...>{};
+	}
+
+	template <typename to, typename r, typename why, typename... l>
+	constexpr auto collapse_single(must_flow_to<Label<label_min_of<mutils::typeset<l...>, mutils::typeset<r> > >, to, why>){
+		return collapse_single(must_flow_to<Label<label_min_of<mutils::typeset<l...,r>, mutils::typeset<> > >, to, why>{});
 	}
 	
   template <typename to, typename l, typename r, typename why, typename... rest>
@@ -446,8 +445,8 @@ constexpr auto infer_labels(ast)
 {
   constexpr auto real_labels = collect_proper_labels(ast{});
   using constraints = DECT(minimize_constraints(collapse_constraints(collect_constraints(Label<top>{}, ast{}))));
-	static_assert(!contains_min_ofs(ret{}));
 	using ret = typename DECT(infer_labels_helper1<ast, constraints>(real_labels))::ast;
+	static_assert(!contains_min_ofs(ret{}));
 	static_assert(!contains_improper_labels(ret{}));
   return ret{};
 }

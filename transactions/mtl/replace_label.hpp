@@ -25,7 +25,8 @@ struct replace_label<Label<temp_label<target1, target2>>, Label<newlabel>>
   constexpr static auto _label_replace(old_label) { return new_label{}; }
 
   template <typename l>
-  constexpr static auto _label_replace(l, std::enable_if_t<!std::is_same<l, old_label>::value>* = nullptr)
+  constexpr static auto _label_replace(l, std::enable_if_t<!std::is_same<l, old_label>::value>* = nullptr
+																			 , std::enable_if_t<!is_min_of<l>::value>* = nullptr)
   {
     return l{};
   }
@@ -36,7 +37,7 @@ struct replace_label<Label<temp_label<target1, target2>>, Label<newlabel>>
 		return resolved_label_min_vararg<DECT(label_replace(l{}))...,DECT(label_replace(r{}))>{};
   }
 
-	template <typename r, typename... l>
+	template <typename... l>
 		constexpr static auto _label_replace(Label<label_min_of<mutils::typeset<l...>, mutils::typeset<> > >)
   {
 		return resolved_label_min_vararg<DECT(label_replace(l{}))...>{};
@@ -151,7 +152,7 @@ template <int target1, int target2, typename newlabel>
 template <typename l>
 constexpr auto replace_label<Label<temp_label<target1, target2>>, Label<newlabel>>::label_replace(l)
 {
-  return _label_replace(l{});
+  return replace_label::_label_replace(l{});
 }
 }
 }

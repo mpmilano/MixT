@@ -35,15 +35,25 @@ int main(){
 	constexpr int a_name = 43;
 	int_handle_handle a = store.template newObject<int_handle>(nullptr,a_name,store.template newObject<int>(nullptr,int_name,23));
 	using str = MUTILS_STRING({(*a).noop(1,2,3,4)});
+	using str2 = MUTILS_STRING({a.noop(1,2,3,4)});
 	constexpr auto parsed = flatten_expressions(parse_statement(str{}));
+	constexpr auto parsed2 = flatten_expressions(parse_statement(str2{}));
 	constexpr auto tmp = typecheck<1,1>(type_environment<Label<top>,
 										type_binding<MUTILS_STRING(a),DECT(a),Label<top>, type_location::local > >{},parsed);
+	constexpr auto tmp2 = typecheck<1,1>(type_environment<Label<top>,
+																			type_binding<MUTILS_STRING(a),DECT(a),Label<top>, type_location::local > >{},parsed2);
+
+
 	using inferred_t = DECT(infer_labels(tmp));
+	using inferred_t2 = DECT(infer_labels(tmp2));
 	//std::cout << tmp << std::endl;
 	//std::cout << inferred_t{} << std::endl;
 	using tracked_t = DECT(insert_tracking_begin(inferred_t{}));
+	using tracked_t2= DECT(insert_tracking_begin(inferred_t2{}));
 	auto split = split_computation<tracked_t, type_binding<MUTILS_STRING(a),DECT(a),Label<top>, type_location::local > >();
-	std::cout << split << std::endl;//*/
+	auto split2 = split_computation<tracked_t2, type_binding<MUTILS_STRING(a),DECT(a),Label<top>, type_location::local > >();
+	std::cout << split << std::endl;
+	std::cout << split2 << std::endl;
 	TRANSACTION(a.noop(1,2,3,4))::WITH(a).run_local(ct,a);
 	TRANSACTION((*a).noop(1,2,3,4))::WITH(a).run_local(ct,a);
 	{
@@ -53,5 +63,7 @@ int main(){
 		std::cout << remote_bind_txn << std::endl;
 		assert(remote_bind_txn.run_local(ct,a) == 4);
 	}
+
+	//*/
 
 }

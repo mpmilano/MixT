@@ -216,7 +216,7 @@ constexpr auto _contains_improper_labels_helper(Expression<Label<top>, int, Cons
 template <typename l, typename y, char op, typename L, typename R>
 constexpr auto _contains_improper_labels_helper(Expression<l, y, BinOp<op, L, R>>)
 {
-  return (contains_improper_labels_helper(L{})).combine(contains_improper_labels_helper(R{}));
+  return (contains_improper_labels_helper(L{}))||(contains_improper_labels_helper(R{}));
 }
 
 	
@@ -229,7 +229,7 @@ constexpr auto _contains_improper_labels_helper(Expression<l, tracker::Tombstone
 template <typename l, typename v, typename e>
 constexpr auto _contains_improper_labels_helper(Statement<l, Assignment<v, e>>)
 {
-	return (contains_improper_labels_helper(v{})).combine(contains_improper_labels_helper(e{}));
+	return (contains_improper_labels_helper(v{}))||(contains_improper_labels_helper(e{}));
 }
 
 template <typename l, typename e>
@@ -253,13 +253,13 @@ constexpr auto _contains_improper_labels_helper(Statement<l, AccompanyWrite<e>>)
 template <typename l, typename b, typename e>
 constexpr auto _contains_improper_labels_helper(Statement<l, Let<b, e>>)
 {
-	return (contains_improper_labels_helper(b{})).combine(contains_improper_labels_helper(e{}));
+	return (contains_improper_labels_helper(b{}))||(contains_improper_labels_helper(e{}));
 }
 
 template <typename l, typename b, typename e>
 constexpr auto _contains_improper_labels_helper(Statement<l, LetRemote<b, e>>)
 {
-	return (contains_improper_labels_helper(b{})).combine(contains_improper_labels_helper(e{}));
+	return (contains_improper_labels_helper(b{}))||(contains_improper_labels_helper(e{}));
 }
 
 	template <typename l, typename y, typename h>
@@ -277,31 +277,31 @@ constexpr auto _contains_improper_labels_helper(Statement<l, LetRemote<b, e>>)
 template <typename l, typename y, typename oper_name, typename Hndl, typename... args>
 constexpr auto _contains_improper_labels_helper(Expression<l, y, Operation< oper_name,  Hndl,  args...>>)
 {
-	return (contains_improper_labels_helper(Hndl{})).combine(contains_improper_labels_helper(args{})...);
+	return (contains_improper_labels_helper(Hndl{}) || ... || contains_improper_labels_helper(args{})) ;
 }
 	
 template <typename l, typename oper_name, typename Hndl, typename... args>
 constexpr auto _contains_improper_labels_helper(Statement<l, Operation< oper_name,  Hndl,  args...>>)
 {
-	return (contains_improper_labels_helper(Hndl{})).combine(contains_improper_labels_helper(args{})...);
+	return (contains_improper_labels_helper(Hndl{}) || ... || contains_improper_labels_helper(args{}));
 }
 
 template <typename l, typename c, typename t, typename e>
 constexpr auto _contains_improper_labels_helper(Statement<l, If<c, t, e>>)
 {
-	return (contains_improper_labels_helper(c{})).combine(contains_improper_labels_helper(t{})).combine(contains_improper_labels_helper(e{}));
+	return (contains_improper_labels_helper(c{}))||(contains_improper_labels_helper(t{}))||(contains_improper_labels_helper(e{}));
 }
 
 template <typename l, typename c, typename e>
 constexpr auto _contains_improper_labels_helper(Statement<l, While<c, e>>)
 {
-	return combine(contains_improper_labels_helper(c{})).combine(contains_improper_labels_helper(e{}));
+	return (contains_improper_labels_helper(c{}))||(contains_improper_labels_helper(e{}));
 }
 
 template <typename l, typename... seq>
 constexpr auto _contains_improper_labels_helper(Statement<l, Sequence<seq...>>)
 {
-	return combine(contains_improper_labels_helper(seq{})...);
+	return (contains_improper_labels_helper(seq{}) || ...);
 }
 
 template <typename ast>
