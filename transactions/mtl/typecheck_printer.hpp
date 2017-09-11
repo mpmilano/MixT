@@ -7,170 +7,189 @@ namespace mtl {
 namespace typecheck_phase {
 
 template <typename l, typename y, typename v, typename e>
-void
-print_ast(std::ostream& o, const Binding<l, y, v, e>&)
+auto
+print_ast(const Binding<l, y, v, e>&)
 {
-  print_varname(o, v{});
-  o << "@" << l{} << " = " << e{};
+	using namespace mutils;
+  return print_varname(v{}).append(String<'@'>{}).append(print_label(l{})).append(String<'='>{}).append(print_ast(e{}));
 }
 
 template <typename l, typename y, typename s, typename f>
-void
-print_ast(std::ostream& o, const Expression<l, y, FieldReference<s, f>>&)
+auto
+print_ast(const Expression<l, y, FieldReference<s, f>>&)
 {
-  o << s{} << "." << f{} << "@" << l{};
+	using namespace mutils;
+	return print_ast(s{}).append(String<'.'>{}).append(f{}).append(String<'@'>{}).append(print_label(l{}));
 }
 
 template <typename l, typename y, typename v>
-void
-print_ast(std::ostream& o, const Expression<l, y, VarReference<v>>&)
+auto
+print_ast(const Expression<l, y, VarReference<v>>&)
 {
-  print_varname(o, v{});
-  o << "@" << l{};
+	using namespace mutils;
+	return print_varname(v{}).append(String<'@'>{}).append(print_label(l{}));
 }
 
 template <int i>
-void
-print_ast(std::ostream& o, const Expression<Label<top>, int, Constant<i>>&)
+auto
+print_ast(const Expression<Label<top>, int, Constant<i>>&)
 {
-  o << i;
+	using namespace mutils;
+	return string_from_int<i>();
 }
 
 template <typename l, typename y, char op, typename L, typename R>
-void
-print_ast(std::ostream& o, const Expression<l, y, BinOp<op, L, R>>&)
+auto
+print_ast(const Expression<l, y, BinOp<op, L, R>>&)
 {
-  static const std::string opstr{ 1, op };
-  o << L{} << " " << opstr << "@" << l{} << " " << R{};
+	using namespace mutils;
+	return print_ast(L{}).append(String<' ',op,'@'>{}).append(print_label(l{})).append(String<' '>{}).append(print_ast(R{}));
 }
 
 template <typename l, typename y, typename h>
-void print_ast(std::ostream& o, const Expression<l, y, IsValid<h>>&)
+auto print_ast(const Expression<l, y, IsValid<h>>&)
 {
-	o << h{} << ".isValid@" << l{} << "()";
+	using namespace mutils;
+	return print_ast(h{}).append(MUTILS_STRING(.isValid@){}).append(print_label(l{})).template append<'(',')'>();
 }
 
 	template <typename l, typename lold, typename y, typename h>
-	void print_ast(std::ostream& o, const Expression<l, y, Endorse<lold,h>>&)
+	auto print_ast(const Expression<l, y, Endorse<lold,h>>&)
 {
-	o << h{} << ".endorse(" << l{} << ")";
+	using namespace mutils;
+	return print_ast(h{}).append(MUTILS_STRING(.endorse()){}).append(print_label(l{})).template append<')'>();
 }
 
 
-template <typename l, typename b, typename body>
-void
-print_ast(std::ostream& o, const Statement<l, Let<b, body>>&, const std::string& tab)
+	template <typename l, typename b, typename body, typename tab>
+	auto print_ast(const Statement<l, Let<b, body>>&, tab)
 {
-  o << tab << "let@" << l{} << " " << b{} << " in "
-    << "{";
-  print_ast(o, body{}, tab);
-  o << tab << "}";
+	using namespace mutils;
+	return tab{}.append(MUTILS_STRING(let@){})
+								 .append(print_label(l{}))
+								 .append(String<' '>{})
+								 .append(print_ast(b{})).append(String<' ','i','n',' ','{'>{})
+								 .append(print_ast(body{},tab{})).append(tab{}).append(String<'}'>{});
 }
 
-template <typename l, typename b, typename body>
-void
-print_ast(std::ostream& o, const Statement<l, LetRemote<b, body>>&, const std::string& tab)
+	template <typename l, typename b, typename body, typename tab>
+auto
+	print_ast(const Statement<l, LetRemote<b, body>>&, tab)
 {
-  o << tab << "let remote@" << l{} << " " << b{} << " in "
-    << "{";
-  print_ast(o, body{}, tab);
-  o << tab << "}";
+	using namespace mutils;
+	return tab{}.append(MUTILS_STRING(let remote@){}).
+								 append(print_label(l{})).append(String<' '>{}).append(print_ast(b{})).append(String<' ','i','n',' '>{})
+								 .append(print_ast(body{},tab{}))
+								 .append(tab::append(String<'}'>{}));
 }
 
 
 	template <typename l, typename y, typename oper_name, typename Hndl, typename... args>
-void
-	print_ast(std::ostream& o, const Expression<l, y, Operation<oper_name,Hndl,args...>>&)
+auto
+	print_ast(const Expression<l, y, Operation<oper_name,Hndl,args...>>&)
 {
-	print_ast(o,Hndl{});
-	o << ". @" << l{} << " " << oper_name{} << "(";
-	(print_ast(o,args{}),...);
-	o << ")";
+	using namespace mutils;
+
+	return print_ast(Hndl{}).append(String<'.',' ','@'>{}).append(print_label(l{})).append(String<' '>{})
+		.append(oper_name{}).append(String<'('>{})
+		.append(print_ast(args{})...).append(String<')'>{});
+	
 }
-	template <typename l, typename oper_name, typename Hndl, typename... args>
-void
-	print_ast(std::ostream& o, const Statement<l, Operation<oper_name,Hndl,args...>>&, const std::string& tab)
+	template <typename l, typename oper_name, typename Hndl, typename tab, typename... args>
+auto
+	print_ast(const Statement<l, Operation<oper_name,Hndl,args...>>&, tab)
 {
-	o << tab;
-	print_ast(o,Hndl{});
-	o << ". @" << l{} << " " << oper_name{} << "(";
-	(print_ast(o,args{}),...);
-	o << ")";
+	using namespace mutils;
+	return tab::append(print_ast(Expression<l, void, Operation<oper_name,Hndl,args...>>{}));
 }
 
 	
-template <typename l, typename L, typename R>
-void
-print_ast(std::ostream& o, const Statement<l, Assignment<L, R>>&, const std::string& tab)
+	template <typename l, typename L, typename R, typename tab>
+auto
+print_ast(const Statement<l, Assignment<L, R>>&, tab)
 {
-  o << tab << L{} << " =@" << l{} << " " << R{};
+	using namespace mutils;
+	return tab::append(print_ast(L{})).append(String<' ','=','@'>{}).append(print_label(l{})).append(String<' '>{}).append(print_ast(R{}));
 }
 
-template <typename l, typename R>
-void
-print_ast(std::ostream& o, const Statement<l, Return<R> >&, const std::string& tab)
+	template <typename l, typename R, typename tab>
+auto
+print_ast(const Statement<l, Return<R> >&, tab)
 {
-  o << tab << "return ";
-  print_ast(o, R{});
+	using namespace mutils;
+	return tab::append(String<'r','e','t','u','r','n',' '>{}).append(print_ast(R{}));
+
 }
 
 
-template <typename l, typename c, typename t, typename e>
-void
-print_ast(std::ostream& o, const Statement<l, If<c, t, e>>&, const std::string& tab)
+	template <typename l, typename c, typename t, typename e, typename tab>
+auto
+print_ast(const Statement<l, If<c, t, e>>&, tab)
 {
-  o << tab << "if@" << l{} << " (" << c{} << ") {";
-  print_ast(o, t{}, tab);
-  o << tab << "} else {";
-  print_ast(o, e{}, tab);
-  o << tab << "}";
+	using namespace mutils;
+	return tab::append(String<'i','f','@'>{}).append(print_label(l{})).append(String<' ','('>{}).append(print_ast(c{}))
+		.append(String<')',' ', '{'>{})
+		.append(print_ast(t{},tab{})).append(String<'}',' ','e','l','s','e',' ','{'>{})
+		.append(print_ast(e{},tab{})).append(String<'}'>{});
 }
 
-template <typename l, typename c, typename t, char... name>
-void
-print_ast(std::ostream& o, const Statement<l, While<c, t, name...>>&, const std::string& tab)
+	template <typename l, typename c, typename t, typename tab, char... name>
+auto
+print_ast(const Statement<l, While<c, t, name...>>&, tab)
 {
-  o << tab << "while@" << l{} << " (" << c{} << ") {";
-  print_ast(o, t{}, tab);
-  o << tab << "} ";
+	using namespace mutils;
+	return tab::append(MUTILS_STRING(while@){}).append(print_label(l{}))
+		.append(String<' ','('>{}).append(print_ast(c{})).append(String<')',' ','{'>{})
+		.append(print_ast(t{},tab{}))
+		.append(tab::append(String<'}',' '>{}));
 }
 
-template <typename l, typename... Seq>
-void
-print_ast(std::ostream& o, const Statement<l, Sequence<Seq...>>&, const std::string& _tab)
+template <typename l, typename _tab>
+auto
+print_ast(const Statement<l, Sequence<>>&, _tab)
 {
-  auto tab = _tab + std::string{ "  " };
-  using namespace std;
-  const auto print = [tab](auto& o, const auto& e) {
-    o << tab;
-    print_ast(o, e, tab);
-    o << ";" << endl;
-    return nullptr;
-  };
-  o << "{ label::" << l{} << ";" << endl;
-  (print(o,Seq{}),...);
-  o << _tab << "}";
+	return mutils::String<>{};
+}
+
+template<typename tab>
+struct print_one{
+	template<typename e>
+	static constexpr auto f(e){
+		return tab::append(print_ast(e{},tab{})).template append<';'>();
+	}
+};
+	
+template <typename l, typename _tab, typename... Seq>
+auto
+print_ast(const Statement<l, Sequence<Seq...>>&, _tab)
+{
+	using tab = DECT(_tab::append(String<' ',' '>{}));
+	using namespace std;
+	using namespace mutils;
+
+	using label_str = String<'{',' ','l','a','b','e','l',':',':',')'>;
+	return _tab::append(label_str{}).append(print_label(l{})).append(String<';'>{}).append(String<'\n'>{})
+		.append(print_one<tab>::f(Seq{})...)
+		.append(_tab::template append<'}'>());
+	
 }
 
 template <typename l, typename s>
 auto& operator<<(std::ostream& o, const Statement<l, s>& ast)
 {
-  print_ast(o, ast, "");
-  return o;
+	return o << print_ast(ast, String<>{});
 }
 
 template <typename l, typename y, typename e>
 auto& operator<<(std::ostream& o, const Expression<l, y, e>& ast)
 {
-  print_ast(o, ast);
-  return o;
+	return o << print_ast(ast);
 }
 
 template <typename l, typename y, typename v, typename e>
 auto& operator<<(std::ostream& o, const Binding<l, y, v, e>& ast)
 {
-  print_ast(o, ast);
-  return o;
+	return o << print_ast(ast);
 }
 }
 }

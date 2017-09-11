@@ -141,8 +141,26 @@ struct SupportedOperation {
 				new operation_impl<DataStore,RemoteObject>(ds)};
 		}
 
+		using op_identifier = OperationIdentifier<Name>;
 		virtual Handle& downCast() = 0;
 		SupportsOn& upCast(OperationIdentifier<Name>){
+			return *this;
+		}
+
+		template<typename T>
+		static auto ifMatches(){
+			if constexpr (std::is_same<T,op_identifier>::value){
+					return mutils::identity_struct<SupportsOn>{};
+				}
+			else {
+				static const mutils::mismatch ret;
+				return ret;
+			}
+		}
+		
+
+		template<typename T>
+		auto& operator||(T&){
 			return *this;
 		}
 

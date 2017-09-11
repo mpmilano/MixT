@@ -41,8 +41,8 @@ namespace myria {
 
 
 	template<typename l>
-	std::ostream &operator<<(std::ostream &o, const Label<PreEndorse<l> > &){
-		return o << "Pre(" << l{} << ")";
+	constexpr auto print_label(const Label<PreEndorse<l> > &){
+		return mutils::String<'P','r','e','('>::append(print_label(l{})).template append<')'>();
 	}
 
 	template<typename l>

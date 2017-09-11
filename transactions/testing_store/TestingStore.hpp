@@ -9,6 +9,7 @@
 #include "Operations.hpp"
 #include "tracker/trackable_datastore_impl.hpp"
 #include <map>
+#include "mutils-serialization/SerializationSupport.hpp"
 
 //I'm sure I've written this a dozen times, but here's another one.  This is supposed to be a local-only store used for testing
 //MTL, and anything else that doesn't actually need a backend to correct against.
@@ -16,11 +17,20 @@
 namespace myria {
 
 	using noop = MUTILS_STRING(noop);
+	using append = MUTILS_STRING(append);
 	
 	template<>
 	struct OperationIdentifier<noop>{
 		using name = noop;
 	};
+
+	template<>
+	struct OperationIdentifier<append>{
+		using name = append;
+	};
+
+	using supports_noop = SupportedOperation<noop,void,SelfType,int,int,int,int>;
+	template<typename T> using supports_append = SupportedOperation<append,void,SelfType,T>;
 	
 	namespace testing_store{
 		
@@ -29,10 +39,14 @@ namespace myria {
 		template<typename l>
 		struct TestingStore<Label<l> > : public TrackableDataStore<TestingStore<Label<l> >, Label<l> >{
 			using label = Label<l>;
-			template<typename T>
-				using TestingHandle =
-				Handle<label,T,SupportedOperation<noop,void,SelfType,int,int,int,int> >;
 
+			MATCH_CONTEXT(decide_testing_handle){
+				template<typename U> MATCHES(std::list<U>) -> RETURN(Handle<label,std::list<U>,supports_noop, supports_append<U> >);
+				template<typename T> MATCHES(T) -> RETURN(Handle<label,T,supports_noop>);
+			};
+
+			template<typename T> using TestingHandle = MATCH(decide_testing_handle, T);
+			
 			struct TestingContext;
 
 			mutils::HeteroMap<Name> object_store;
@@ -144,6 +158,13 @@ namespace myria {
 			template<typename T>
 			void operation(mtl::PhaseContext<label>*, StoreContext&, OperationIdentifier<noop>,TestingObject<T>&,int,int,int,int){
 				std::cout << "operation executed" << std::endl;
+			}
+			
+			template<typename T>
+			void operation(mtl::PhaseContext<label>*, StoreContext&, OperationIdentifier<append>,TestingObject<std::list<T> >& hndl,const T& t){
+				std::cout << "append executed" << std::endl;
+				std::list<T> &lst = **object_store. template at<stored<std::list<T>>>(hndl._name);
+				lst.push_back(t);
 			}
 
 #ifndef NDEBUG

@@ -221,22 +221,38 @@ using label_min_vararg = DECT(*label_min_vararg_f(std::declval<l*>()... ));
 template <typename L1, typename L2>
 using label_lte = std::integral_constant<bool, L2::flows_to(L1{})>;
 
-template <typename... labels>
-std::ostream& operator<<(std::ostream& o, const Label<label_min_of<labels...>>&)
+	template<typename label>
+constexpr auto print_comma_separated(label);
+
+template <char... c>
+auto print_label(const Label<mutils::String<c...>>&)
 {
-  static const auto print = [](auto& o, const auto& e) {
-    o << e << ",";
-    return nullptr;
-  };
-  o << "min(";
-  (print(o,labels{}) , ...);
-  return o << ")";
+	return mutils::String<c...>{};
+}
+
+template <typename l1, typename l2>
+auto print_label(const Label<label_min_of<l1, l2> >&)
+{
+	using namespace mutils;
+	return String<'m','i','n','('>::append(print_comma_separated(l1{},l2{}).template append<')'>());
 }
 
 template <int seq, int depth>
-std::ostream& operator<<(std::ostream& o, const Label<temp_label<seq, depth>>&)
+auto print_label(const Label<temp_label<seq, depth>>&)
 {
-  return o << "temp<" << seq << depth << ">";
+	using namespace mutils;
+	return String<'t','e','m','p','<'>::append(string_from_int<seq>())
+		.append(string_from_int<depth>()).append(String<'>'>{});
 }
+
+	template<typename label>
+	constexpr auto print_comma_separated(label){
+		return print_label(label{}).template append<','>();
+	}
+
+	template<typename l>
+	std::ostream& operator<<(std::ostream& o, const Label<l>& a){
+		return o << print_label(a);
+	}
 
 }

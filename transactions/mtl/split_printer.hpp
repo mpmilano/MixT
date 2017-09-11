@@ -194,6 +194,14 @@ print_ast(std::ostream& o, const typename AST<l>::template Statement<typename AS
   o << ")";
 }
 
+template <typename l, typename var>
+void
+print_ast(std::ostream& o, const typename AST<l>::template Statement<typename AST<l>::template RefreshRemoteOccurance<var>>&, const std::string& tab)
+{
+  o << tab << "refresh remote(";
+  print_ast<l>(o,var{});
+  o << ")";
+}
 
 template <typename l, typename c, typename t, typename e>
 void

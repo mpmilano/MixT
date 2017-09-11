@@ -52,6 +52,12 @@ struct String<>
   template <char... str2>
   static constexpr String<str2...> append(String<str2...>);
 
+	template <char... str2>
+  static constexpr String<str2...> append();
+
+	template <typename s1, typename s2, typename... str2>
+  static constexpr auto append(s1,s2,str2...);
+
   static constexpr auto reverse();
 
   template <char... str2>
@@ -111,6 +117,12 @@ struct String
   template <char... str2>
   static constexpr String<str..., str2...> append(String<str2...>);
 
+	template <char... str2>
+  static constexpr String<str..., str2...> append();
+	
+	template <typename s1, typename s2, typename... str2>
+  static constexpr auto append(s1,s2,str2...);
+
   static constexpr auto reverse();
 
   template <char... str2>
@@ -143,6 +155,9 @@ struct String
 
   static constexpr int parseInt();
 };
+
+	template<long long i>
+	constexpr auto string_from_int();
 
 template <char... str>
 std::ostream& operator<<(std::ostream& o, const String<str...>&);
