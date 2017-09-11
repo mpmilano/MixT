@@ -11,7 +11,7 @@ auto
 print_ast(const Binding<l, y, v, e>&)
 {
 	using namespace mutils;
-  return print_varname(v{}).append(String<'@'>{}).append(print_label(l{})).append(String<'='>{}).append(print_ast(e{}));
+  return print_varname(v{}).append(String<'/','*','@'>{}).append(print_label(l{}).append(String<'*','/'>{})).append(String<'='>{}).append(print_ast(e{}));
 }
 
 template <typename l, typename y, typename s, typename f>
@@ -19,7 +19,7 @@ auto
 print_ast(const Expression<l, y, FieldReference<s, f>>&)
 {
 	using namespace mutils;
-	return print_ast(s{}).append(String<'.'>{}).append(f{}).append(String<'@'>{}).append(print_label(l{}));
+	return print_ast(s{}).append(String<'.'>{}).append(f{}).append(String<'/','*','@'>{}).append(print_label(l{}).append(String<'*','/'>{}));
 }
 
 template <typename l, typename y, typename v>
@@ -27,7 +27,7 @@ auto
 print_ast(const Expression<l, y, VarReference<v>>&)
 {
 	using namespace mutils;
-	return print_varname(v{}).append(String<'@'>{}).append(print_label(l{}));
+	return print_varname(v{}).append(String<'/','*','@'>{}).append(print_label(l{}).append(String<'*','/'>{}));
 }
 
 template <int i>
@@ -43,21 +43,21 @@ auto
 print_ast(const Expression<l, y, BinOp<op, L, R>>&)
 {
 	using namespace mutils;
-	return print_ast(L{}).append(String<' ',op,'@'>{}).append(print_label(l{})).append(String<' '>{}).append(print_ast(R{}));
+	return print_ast(L{}).append(String<' ',op,'/','*','@'>{}).append(print_label(l{}).append(String<'*','/'>{})).append(String<' '>{}).append(print_ast(R{}));
 }
 
 template <typename l, typename y, typename h>
 auto print_ast(const Expression<l, y, IsValid<h>>&)
 {
 	using namespace mutils;
-	return print_ast(h{}).append(MUTILS_STRING(.isValid@){}).append(print_label(l{})).template append<'(',')'>();
+	return print_ast(h{}).append(String<'.','i','s','V','a','l','i','d','/','*','@'>{}).append(print_label(l{}).append(String<'*','/'>{})).template append<'(',')'>();
 }
 
 	template <typename l, typename lold, typename y, typename h>
 	auto print_ast(const Expression<l, y, Endorse<lold,h>>&)
 {
 	using namespace mutils;
-	return print_ast(h{}).append(MUTILS_STRING(.endorse()){}).append(print_label(l{})).template append<')'>();
+	return print_ast(h{}).append(MUTILS_STRING(.endorse()){}).append(print_label(l{}).append(String<'*','/'>{})).template append<')'>();
 }
 
 
@@ -65,10 +65,10 @@ auto print_ast(const Expression<l, y, IsValid<h>>&)
 	auto print_ast(const Statement<l, Let<b, body>>&, tab)
 {
 	using namespace mutils;
-	return tab{}.append(MUTILS_STRING(let@){})
-								 .append(print_label(l{}))
+	return tab{}.append(String<'/','*','@'>{})
+								 .append(print_label(l{}).append(String<'*','/'>{}))
 								 .append(String<' '>{})
-								 .append(print_ast(b{})).append(String<' ','i','n',' ','{'>{})
+								 .append(print_ast(b{})).append(String<' ',';',' ','{'>{})
 								 .append(print_ast(body{},tab{})).append(tab{}).append(String<'}'>{});
 }
 
@@ -77,8 +77,8 @@ auto
 	print_ast(const Statement<l, LetRemote<b, body>>&, tab)
 {
 	using namespace mutils;
-	return tab{}.append(MUTILS_STRING(let remote@){}).
-								 append(print_label(l{})).append(String<' '>{}).append(print_ast(b{})).append(String<' ','i','n',' '>{})
+	return tab{}.append(String<'/','*',' ','r','e','m','o','t','e','@'>{}).
+								 append(print_label(l{}).append(String<'*','/'>{})).append(String<' '>{}).append(print_ast(b{})).append(String<' ',';',' '>{})
 								 .append(print_ast(body{},tab{}))
 								 .append(tab::append(String<'}'>{}));
 }
@@ -90,7 +90,7 @@ auto
 {
 	using namespace mutils;
 
-	return print_ast(Hndl{}).append(String<'.',' ','@'>{}).append(print_label(l{})).append(String<' '>{})
+	return print_ast(Hndl{}).append(String<'.',' ','/','*','@'>{}).append(print_label(l{}).append(String<'*','/'>{})).append(String<' '>{})
 		.append(oper_name{}).append(String<'('>{})
 		.append(print_ast(args{})...).append(String<')'>{});
 	
@@ -109,7 +109,7 @@ auto
 print_ast(const Statement<l, Assignment<L, R>>&, tab)
 {
 	using namespace mutils;
-	return tab::append(print_ast(L{})).append(String<' ','=','@'>{}).append(print_label(l{})).append(String<' '>{}).append(print_ast(R{}));
+	return tab::append(print_ast(L{})).append(String<' ','=','/','*','@'>{}).append(print_label(l{}).append(String<'*','/'>{})).append(String<' '>{}).append(print_ast(R{}));
 }
 
 	template <typename l, typename R, typename tab>
@@ -127,7 +127,7 @@ auto
 print_ast(const Statement<l, If<c, t, e>>&, tab)
 {
 	using namespace mutils;
-	return tab::append(String<'i','f','@'>{}).append(print_label(l{})).append(String<' ','('>{}).append(print_ast(c{}))
+	return tab::append(String<'i','f','/','*','@'>{}).append(print_label(l{}).append(String<'*','/'>{})).append(String<' ','('>{}).append(print_ast(c{}))
 		.append(String<')',' ', '{'>{})
 		.append(print_ast(t{},tab{})).append(String<'}',' ','e','l','s','e',' ','{'>{})
 		.append(print_ast(e{},tab{})).append(String<'}'>{});
@@ -138,7 +138,7 @@ auto
 print_ast(const Statement<l, While<c, t, name...>>&, tab)
 {
 	using namespace mutils;
-	return tab::append(MUTILS_STRING(while@){}).append(print_label(l{}))
+	return tab::append(String<'w','h','i','l','e',' ','/','*','@'>{}).append(print_label(l{}).append(String<'*','/'>{}))
 		.append(String<' ','('>{}).append(print_ast(c{})).append(String<')',' ','{'>{})
 		.append(print_ast(t{},tab{}))
 		.append(tab::append(String<'}',' '>{}));
@@ -167,8 +167,8 @@ print_ast(const Statement<l, Sequence<Seq...>>&, _tab)
 	using namespace std;
 	using namespace mutils;
 
-	using label_str = String<'{',' ','l','a','b','e','l',':',':',')'>;
-	return _tab::append(label_str{}).append(print_label(l{})).append(String<';'>{}).append(String<'\n'>{})
+	using label_str = String<'{',' ','/','*','l','a','b','e','l',':',':',')'>;
+	return _tab::append(label_str{}).append(print_label(l{}).append(String<'*','/'>{})).append(String<';'>{}).append(String<'\n'>{})
 		.append(print_one<tab>::f(Seq{})...)
 		.append(_tab::template append<'}'>());
 	

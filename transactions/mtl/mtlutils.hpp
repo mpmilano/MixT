@@ -555,6 +555,13 @@ print_varname(String<'z', 'e', 'r', 'o', 0, 1>)
 	return String<'z', 'e', 'r', 'o'>{};
 }
 
+template<char a, char b>
+constexpr auto
+print_varname(String<'r','e','m','o','t','e','_','b','o','u','n','d','_','t','m','p', 0, a,b>)
+{
+	return String<'r','e','m','o','t','e','_','b','o','u','n','d','_','t','m','p'>{};
+}
+
 constexpr auto
 print_varname(String<'o', 'n', 'e', 0, 1>)
 {
@@ -565,15 +572,15 @@ template <char a, char b>
 constexpr auto
 print_varname(String<'a', 'n', 'o', 'r', 'm', a, b>)
 {
-	return String<'a','n','o','r','m','<'>::append(string_from_int<a>())
-		.template append<','>().append(string_from_int<b>()).template append<'>'>();
+	return String<'a','n','o','r','m','_'>::append(string_from_int<a>())
+		.template append<'_'>().append(string_from_int<b>());
 }
 
 template <char a, char b>
 constexpr auto
 print_varname(String<1, a, b>)
 {
-	return String<'['>::append(string_from_int<a>())
+	return String<'a','['>::append(string_from_int<a>())
 		.append(String<','>{}).append(string_from_int<b>()).append(String<']'>{});
 }
 
@@ -581,8 +588,8 @@ template <char a, char b>
 constexpr auto
 print_varname(String<'w', 'h', 'i', 'l', 'e', a, b>)
 {
-	return String<'w','h','i','l','e','<'>::append(string_from_int<a>()).template append<','>()
-		.append(string_from_int<b>()).template append<'>'>();
+	return String<'w','h','i','l','e','_'>::append(string_from_int<a>()).template append<'_'>()
+		.append(string_from_int<b>());
 }
 
 template <char... str>

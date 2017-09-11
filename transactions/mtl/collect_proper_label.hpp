@@ -7,95 +7,112 @@ namespace typecheck_phase {
 template <typename ast>
 constexpr auto collect_labels_helper(ast);
 
+	template<typename l> using dummy_varref = Expression<l,bool,VarReference<mutils::String<> > >;
+	
 // label_min_of
 template <typename l, typename r, typename y, typename v, typename e>
 constexpr auto _collect_labels_helper(Binding<Label<label_min_of<l, r>>, y, v, e>)
 {
-  return collect_labels_helper(e{});
+	return collect_labels_helper(dummy_varref<l>{}).combine(collect_labels_helper(dummy_varref<r>{})).combine(
+		collect_labels_helper(e{}));
 }
 
 template <typename l, typename r, typename y, typename s, typename f>
 constexpr auto _collect_labels_helper(Expression<Label<label_min_of<l, r>>, y, FieldReference<s, f>>)
 {
-  return collect_labels_helper(s{});
+	return collect_labels_helper(dummy_varref<l>{}).combine(collect_labels_helper(dummy_varref<r>{})).combine(
+		collect_labels_helper(s{}));
 }
 
 template <typename l, typename r, typename y, typename v>
 constexpr auto _collect_labels_helper(Expression<Label<label_min_of<l, r>>, y, VarReference<v>>)
 {
-  return mutils::typeset<>{};
+	return collect_labels_helper(dummy_varref<l>{}).combine(collect_labels_helper(dummy_varref<r>{})).combine(
+		mutils::typeset<>{});
 }
 
 template <typename l, typename r, typename y, char op, typename L, typename R>
 constexpr auto _collect_labels_helper(Expression<Label<label_min_of<l, r>>, y, BinOp<op, L, R>>)
 {
-  return collect_labels_helper(L{}).combine(collect_labels_helper(R{}));
+	return collect_labels_helper(dummy_varref<l>{}).combine(collect_labels_helper(dummy_varref<r>{})).combine(
+		collect_labels_helper(L{}).combine(collect_labels_helper(R{})));
 }
 
 template <typename l, typename r>
 constexpr auto _collect_labels_helper(Expression<Label<label_min_of<l, r>>, tracker::Tombstone, GenerateTombstone>)
 {
-  return mutils::typeset<>{};
+	return collect_labels_helper(dummy_varref<l>{}).combine(collect_labels_helper(dummy_varref<r>{})).combine(
+		mutils::typeset<>{});
 }
 
 template <typename l, typename r, typename v, typename e>
 constexpr auto _collect_labels_helper(Statement<Label<label_min_of<l, r>>, Assignment<v, e>>)
 {
-  return collect_labels_helper(v{}).combine(collect_labels_helper(e{}));
+	return collect_labels_helper(dummy_varref<l>{}).combine(collect_labels_helper(dummy_varref<r>{})).combine(
+		collect_labels_helper(v{}).combine(collect_labels_helper(e{})));
 }
 
 template <typename l, typename r, typename b, typename e>
 constexpr auto _collect_labels_helper(Statement<Label<label_min_of<l, r>>, Let<b, e>>)
 {
-  return collect_labels_helper(b{}).combine(collect_labels_helper(e{}));
+	return collect_labels_helper(dummy_varref<l>{}).combine(collect_labels_helper(dummy_varref<r>{})).combine(
+		collect_labels_helper(b{}).combine(collect_labels_helper(e{})));
 }
 
 template <typename l, typename r, typename b, typename e>
 constexpr auto _collect_labels_helper(Statement<Label<label_min_of<l, r>>, LetRemote<b, e>>)
 {
-  return collect_labels_helper(b{}).combine(collect_labels_helper(e{}));
+	return collect_labels_helper(dummy_varref<l>{}).combine(collect_labels_helper(dummy_varref<r>{})).combine(
+		collect_labels_helper(b{}).combine(collect_labels_helper(e{})));
 }
 
 	template <typename l, typename r, typename y, typename h>
 constexpr auto _collect_labels_helper(Expression<Label<label_min_of<l, r>>, y, IsValid<h>>)
 {
-	return collect_labels_helper(h{});
+	return collect_labels_helper(dummy_varref<l>{}).combine(collect_labels_helper(dummy_varref<r>{})).combine(
+		collect_labels_helper(h{}));
 }
 
 	template <typename l, typename r, typename y, typename oper_name, typename Hndl, typename... args>
 	constexpr auto _collect_labels_helper(Expression<Label<label_min_of<l, r>>, y, Operation<oper_name, Hndl, args...>>)
 {
-	return collect_labels_helper(Hndl{}).combine(collect_labels_helper(args{})...);
+	return collect_labels_helper(dummy_varref<l>{}).combine(collect_labels_helper(dummy_varref<r>{})).combine(
+		collect_labels_helper(Hndl{}).combine(collect_labels_helper(args{})...));
 }
 	
 template <typename l, typename r, typename oper_name, typename Hndl, typename... args>
 constexpr auto _collect_labels_helper(Statement<Label<label_min_of<l, r>>, Operation<oper_name, Hndl, args...>>)
 {
-	return collect_labels_helper(Hndl{}).combine(collect_labels_helper(args{})...);
+	return collect_labels_helper(dummy_varref<l>{}).combine(collect_labels_helper(dummy_varref<r>{})).combine(
+		collect_labels_helper(Hndl{}).combine(collect_labels_helper(args{})...));
 }
 
 template <typename l, typename r, typename c, typename t, typename e>
 constexpr auto _collect_labels_helper(Statement<Label<label_min_of<l, r>>, If<c, t, e>>)
 {
-  return collect_labels_helper(c{}).combine(collect_labels_helper(t{})).combine(collect_labels_helper(e{}));
+	return collect_labels_helper(dummy_varref<l>{}).combine(collect_labels_helper(dummy_varref<r>{})).combine(
+		collect_labels_helper(c{}).combine(collect_labels_helper(t{})).combine(collect_labels_helper(e{})));
 }
 
 template <typename l, typename r, typename c, typename e>
 constexpr auto _collect_labels_helper(Statement<Label<label_min_of<l, r>>, While<c, e>>)
 {
-  return collect_labels_helper(c{}).combine(collect_labels_helper(e{}));
+	return collect_labels_helper(dummy_varref<l>{}).combine(collect_labels_helper(dummy_varref<r>{})).combine(
+		collect_labels_helper(c{}).combine(collect_labels_helper(e{})));
 }
 
 template <typename l, typename r>
 constexpr auto _collect_labels_helper(Statement<Label<label_min_of<l, r>>, Sequence<>>)
 {
-  return mutils::typeset<>{};
+	return collect_labels_helper(dummy_varref<l>{}).combine(collect_labels_helper(dummy_varref<r>{})).combine(
+		mutils::typeset<>{});
 }
 
 template <typename l, typename r, typename s1, typename... seq>
 constexpr auto _collect_labels_helper(Statement<Label<label_min_of<l, r>>, Sequence<s1, seq...>>)
 {
-  return collect_labels_helper(s1{}).combine(collect_labels_helper(seq{})...);
+	return collect_labels_helper(dummy_varref<l>{}).combine(collect_labels_helper(dummy_varref<r>{})).combine(
+		collect_labels_helper(s1{}).combine(collect_labels_helper(seq{})...));
 }
 
 // temp

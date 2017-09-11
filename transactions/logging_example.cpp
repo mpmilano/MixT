@@ -38,54 +38,9 @@ int main(){
 	MidStore ms;
 	BotStore bs;
 	
-	auto lst_ptr = ms.template newObject<IntList>(nullptr, 12, IntList{bs.template nullObject<int>(),ms.template nullObject<IntList>()});
+	auto lst_ptr = ms.template newObject<IntList>(nullptr, 12, IntList{bs.template newObject<int>(nullptr,13,13),ms.template nullObject<IntList>()});
 	auto log_ptr = bs.template newObject<Log>(nullptr, 10, Log{});
-	{
-		using transaction_text = MUTILS_STRING({
-		var lst = lst_ptr,
-		var accum = 0,
-		while (lst.isValid() || midtru){
-			remote lst_value = lst->value,
-			log_ptr.append(lst_value),
-			lst = lst->next,
-			accum = accum + lst_value,
-			lst_value = lst_value + accum
-		},
-		return accum
-			});
-		    using parsed_t = DECT(parse_statement(transaction_text{}));
-    {
-      using namespace parse_phase;
-      using flattened_t = DECT(parse_phase::flatten_expressions(parsed_t{}));
-      {
-        using namespace typecheck_phase;
-        using checked_t = DECT(typecheck_phase::typecheck<1, 1>(
-            typecheck_phase::type_environment<
-                Label<top>,
-						type_binding<MUTILS_STRING(midtru), bool, Label<mid>,type_location::local>,
-			type_binding<MUTILS_STRING(lst_ptr), DECT(lst_ptr), Label<top>,type_location::local>,
-			type_binding<MUTILS_STRING(log_ptr), DECT(log_ptr), Label<top>,type_location::local>
-			>{},
-            flattened_t{}));
-        {
-          using namespace label_inference;
-					/*
-  constexpr auto real_labels = collect_proper_labels(ast{});
-  using constraints = DECT(minimize_constraints(collapse_constraints(collect_constraints(Label<top>{}, ast{}))));
-					 */
-					constexpr auto constraints = collapse_constraints(collect_constraints(Label<top>{}, checked_t{}));
-					std::cout << constraints << std::endl;
-					/*
-          using inferred_t = DECT(infer_labels(checked_t{}));
-          {
-            using namespace tracking_phase;
-            using tracked_t = DECT(insert_tracking_begin(inferred_t{}));
-            using endorsed_one_t = DECT(do_pre_endorse(tracked_t{}));
-            std::cout << endorsed_one_t{} << std::endl;
-					}//*/
-				}}}
-	}
-	/*
+
 	constexpr auto txn = TRANSACTION(
 		var lst = lst_ptr,
 		var accum = 0,

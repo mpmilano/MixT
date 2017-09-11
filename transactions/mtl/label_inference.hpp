@@ -117,7 +117,7 @@ constexpr auto constraints_from_typelist(mutils::typelist<t...>)
   template <typename high, typename low, typename why>
 std::ostream& operator<<(std::ostream& o, must_flow_to<high, low,why>)
 {
-  return o << high{} << " ==> " << low{} << "  (" << why{} << ")";
+  return o << "" << high{} << " -> " << low{} << " /*(" << why{} << ")*/";
 }
 
 template <typename... A>
