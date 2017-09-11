@@ -422,14 +422,18 @@ operator<<(std::ostream& o, transaction<phase...>)
   (void)ignore;
   return o;
 }
-
-template <typename l>
-using tombstone_only_phase =
-  phase<l, void, typename AST<l>::template Statement<typename AST<l>::template Sequence<
-                   typename AST<l>::template Statement<typename AST<l>::template IncrementOccurance<mutils::String<TOMBSTONE_CHAR_SEQUENCE>>>,
-                   typename AST<l>::template Statement<typename AST<l>::template WriteTombstone<typename AST<l>::template Expression<
-                     tracker::Tombstone, typename AST<l>::template VarReference<mutils::String<TOMBSTONE_CHAR_SEQUENCE>>>>>>>,
+	BEGIN_SPLIT_CONTEXT(topc);
+	using tombstone_only_phase =
+  phase<l, void, Statement<Sequence<
+                   Statement<IncrementOccurance<mutils::String<TOMBSTONE_CHAR_SEQUENCE>>>,
+                   Statement<WriteTombstone<Expression<
+                     tracker::Tombstone, VarReference<mutils::String<TOMBSTONE_CHAR_SEQUENCE>>>>>>>,
         mutils::typeset<type_holder<tracker::Tombstone, TOMBSTONE_CHAR_SEQUENCE>>, mutils::typeset<>, mutils::typeset<>, mutils::typeset<>>;
+	END_SPLIT_CONTEXT;
+	
+template <typename l>
+using tombstone_only_phase = typename topc<l>::tombstone_only_phase;
+
 template <typename l>
 using tombstone_only_txn = transaction<tombstone_only_phase<l>>;
 template <typename l>

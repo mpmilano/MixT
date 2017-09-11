@@ -44,6 +44,8 @@
 		using ForEach = typename AST<l>::template ForEach<t, name...>;			\
 		template <typename... Seq>																					\
 		using Sequence = typename AST<l>::template Sequence<Seq...>;				\
+		template<typename T> using is_empty_sequence = typename AST<l>::template is_empty_sequence<T>; \
+		template<typename T> static auto collapse(T t){return AST<l>::collapse(t);}
 
 
 #define END_SPLIT_CONTEXT };
