@@ -51,15 +51,18 @@ int main() {
 			>{},
             flattened_t{}));
         {
+					std::cout << checked_t{} << std::endl;
           using namespace label_inference;
           using inferred_t = DECT(infer_labels(checked_t{}));
           {
             using namespace tracking_phase;
             using tracked_t = DECT(insert_tracking_begin(inferred_t{}));
-            using endorsed_one_t = DECT(do_pre_endorse(tracked_t{}));
             std::cout << tracked_t{} << std::endl;
-            std::cout << endorsed_one_t{} << std::endl;
 
+
+            using endorsed_one_t = DECT(do_pre_endorse(tracked_t{}));
+						std::cout << endorsed_one_t{} << std::endl;
+						/*
             using split_t = DECT(split_computation<
                                  endorsed_one_t,
                                  type_binding<MUTILS_STRING(ih), DECT(ih),
@@ -67,18 +70,23 @@ int main() {
 								 type_location::local>,
 								 type_binding<MUTILS_STRING(mih), DECT(mih), Label<top>,type_location::local>>());
             using recollapsed_t = DECT(recollapse(split_t{}));
-            //std::cout << recollapsed_t{} << std::endl;//*/
-			std::cout << runnable_transaction::relabel(recollapsed_t{}) << std::endl;
+            //std::cout << recollapsed_t{} << std::endl;
+			std::cout << runnable_transaction::relabel(recollapsed_t{}) << std::endl;//*/
           }
         }
       }
     }
   }
+	(void) seven;
+	(void) ct;
+	
+
+	TRANSACTION(remote y = mih, remote x = ih, y = (x * 2).endorse(mid), return y)::WITH(mih,ih).run_local(ct,mih,ih);
   auto fourteen =
       TRANSACTION(return (seven * 2).endorse(mid))::WITH(seven).run_local(
           ct, seven);
   auto fourty_six = TRANSACTION(remote x = ih, return (x * 2).endorse(mid))::WITH(ih).run_local(ct, ih);
   assert(fourteen == seven * 2);
   assert(fourty_six == 46);
-  std::cout << fourty_six << std::endl;
+  std::cout << fourty_six << std::endl;//*/
 }

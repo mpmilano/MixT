@@ -44,12 +44,43 @@ less_than(Label<l1> a, Label<l2> b)
 	
 	template<char... c> struct is_allowed_label<Label<String<c...> > > : public std::true_type{};
 	template<int a, int b> struct is_allowed_label<Label<temp_label<a,b> > > : public std::true_type{};
+
+	template<typename l>
+	struct is_allowed_label : public std::false_type{};
+
+
+	template<char... c> 
+	constexpr auto resolve_label(Label<String<c...> > a){
+		return a;
+	}
+
+	template<int a, int b>
+	constexpr auto resolve_label(Label<temp_label<a,b> > c){
+		return c;
+	}
+	
+	template<typename... l>
+	constexpr auto resolve_label(Label<label_min_of<mutils::typeset<l...>, mutils::typeset<> > > ){
+		return resolved_label_min_vararg<DECT(resolve_label(l{}))...>{};
+	}
+
+	static_assert(std::is_same<Label<bottom>,DECT(resolve_label(myria::Label<myria::label_min_of<mutils::typeset<myria::Label<myria::label_min_of<mutils::typeset<myria::Label<top>, myria::Label<top>
+																													 >, mutils::typeset<> > >, myria::Label<bottom> >, mutils::typeset<> > >{}))>::value);
+
+	static_assert(std::is_same<Label<bottom>,DECT(resolve_label(Label<label_min_of<mutils::typeset<Label<label_min_of<mutils::typeset<Label<top>,Label<top>>, mutils::typeset<>> >, Label<bottom> >, mutils::typeset<> > >{}))>::value);
 	
 template <typename high, typename low, typename why>
 struct must_flow_to : is_allowed_label<low>
 {
 	using is_allowed_label<low>::value;
-	using type = must_flow_to;
+
+	constexpr static auto type_f(){
+		if constexpr(value) return (must_flow_to*) nullptr;
+		else return (must_flow_to<high,DECT(resolve_label(low{})), why>*) nullptr;
+	}
+	
+	using type = DECT(*type_f());
+	static_assert(type::value);
   constexpr must_flow_to() = default;
 
   template <typename newl, typename oldl>
@@ -183,7 +214,7 @@ template <typename pc_label, typename l, typename y, typename h>
 constexpr auto _collect_constraints(Expression<l, y, IsValid<h>> a)
 {
   using This = DECT(a);
-  using new_pc = resolved_label_min_vararg<pc_label, typename This::expr_label, typename This::handle_label>;
+  using new_pc = raw_label_min<pc_label, typename This::expr_label, typename This::handle_label>;
   return collect_constraints(new_pc{}, h{})
 	  .append(constraints<typename must_flow_to<typename This::expr_label, typename This::handle_label,MUTILS_STRING(isvalid, expr -> hndl)>::type >{});
 }
@@ -219,7 +250,7 @@ template <typename pc_label, typename l, typename b, typename e>
 constexpr auto _collect_constraints(Statement<l, LetRemote<b, e>> a)
 {
   using This = DECT(a);
-  using binding_pc = resolved_label_min_vararg<pc_label, typename This::expr_label, typename This::handle_label>;
+  using binding_pc = raw_label_min<pc_label, typename This::expr_label, typename This::handle_label>;
   using new_pc = pc_label;
   return collect_constraints(binding_pc{}, b{})
     .append(collect_constraints(new_pc{}, e{}))
@@ -229,7 +260,7 @@ constexpr auto _collect_constraints(Statement<l, LetRemote<b, e>> a)
 	template <typename pc_label, typename expr_label, typename handle_label, typename oper_name, typename Hndl, typename... args>
 constexpr auto _collect_constraints(Operation<oper_name,Hndl,args...> )
 {
-  using new_pc = resolved_label_min_vararg<pc_label, expr_label, handle_label, typename args::label...>;
+  using new_pc = raw_label_min<pc_label, expr_label, handle_label, typename args::label...>;
   return collect_constraints(new_pc{}, Hndl{})
 	  .append(constraints<typename must_flow_to<expr_label, handle_label,MUTILS_STRING(statement_operation, expr -> hndl)>::type,
 						typename must_flow_to<typename args::label, handle_label, MUTILS_STRING(statement_operation, args -> hndl)>::type...>{})
@@ -253,14 +284,14 @@ constexpr auto _collect_constraints(Expression<l, y, Operation<oper_name,Hndl,ar
 template <typename pc_label, typename l, typename c, typename t, typename e>
 constexpr auto _collect_constraints(Statement<l, If<c, t, e>>)
 {
-  using new_pc = resolved_label_min<pc_label, l>;
+  using new_pc = raw_label_min<pc_label, l>;
   return collect_constraints(new_pc{}, c{}).append(collect_constraints(new_pc{}, t{})).append(collect_constraints(new_pc{}, e{}));
 }
 
 template <typename pc_label, typename l, typename c, typename e>
 constexpr auto _collect_constraints(Statement<l, While<c, e>>)
 {
-  using new_pc = resolved_label_min<pc_label, l>;
+  using new_pc = raw_label_min<pc_label, l>;
   return collect_constraints(new_pc{}, c{}).append(collect_constraints(new_pc{}, e{}));
 }
 

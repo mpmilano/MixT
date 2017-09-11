@@ -109,7 +109,7 @@ auto
 print_ast(const Statement<l, Assignment<L, R>>&, tab)
 {
 	using namespace mutils;
-	return tab::append(print_ast(print_label(l{}))).append(String<' ','=','@'>{}).append(print_label(l{})).append(String<' '>{}).append(print_ast(R{}));
+	return tab::append(print_ast(L{})).append(String<' ','=','@'>{}).append(print_label(l{})).append(String<' '>{}).append(print_ast(R{}));
 }
 
 	template <typename l, typename R, typename tab>

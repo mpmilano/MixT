@@ -188,11 +188,12 @@ struct is_min_of : public std::false_type
 	}
 };
 
+static_assert(std::is_same<DECT(min_real_labels<Label<top>,Label<bottom> >()), Label<bottom> >::value);
 
 	template<typename l, typename r>
 	constexpr auto resolved_label_min_f(){
 		if constexpr (is_bottom<l>::value || is_bottom<r>::value){
-				return l{};
+				return Label<bottom>{};
 			}
 		else if constexpr(is_top<l>::value){
 				return r{};
@@ -213,13 +214,13 @@ struct is_min_of : public std::false_type
 				return min_real_labels<l,r>();
 			}
 		else if constexpr (is_real_label<l>::value && !is_real_label<r>::value){
-				return Label<label_min_of<mutils::typeset<r>, mutils::typeset<l> > >::add(l{}).add(r{});
+				return Label<label_min_of<mutils::typeset<r>, mutils::typeset<l> > >{};
 			}
 		else if constexpr (!is_real_label<l>::value && is_real_label<r>::value){
-				return Label<label_min_of<mutils::typeset<l>, mutils::typeset<r> > >::add(l{}).add(r{});
+				return Label<label_min_of<mutils::typeset<l>, mutils::typeset<r> > >{};
 			}
 		else if constexpr (!is_real_label<l>::value && !is_real_label<r>::value){
-				return Label<label_min_of<mutils::typeset<l,r>, mutils::typeset<> > >::add(l{}).add(r{});
+				return Label<label_min_of<mutils::typeset<l,r>, mutils::typeset<> > >{};
 			}
 	}
 
@@ -249,6 +250,13 @@ constexpr auto* resolved_label_min_vararg_f(L1* a, L2* b, L3* c, Lr*... d){
     
 template<typename... l>
 using resolved_label_min_vararg = DECT(*resolved_label_min_vararg_f(std::declval<l*>()... ));
+
+static_assert(std::is_same<Label<bottom>,resolved_label_min_vararg<Label<top>,Label<bottom> > >::value);
+
+static_assert(std::is_same<Label<bottom>,resolved_label_min_vararg<Label<top>,Label<top>,Label<bottom> > >::value);
+
+template<typename... l>
+using raw_label_min = Label<label_min_of<mutils::typeset<l...>, mutils::typeset<> > >;
 
 template <typename L1, typename L2>
 using label_lte = std::integral_constant<bool, L2::flows_to(L1{})>;
