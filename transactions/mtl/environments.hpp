@@ -34,6 +34,9 @@ enum class type_location
 template <typename Name, typename type, typename Label, type_location>
 struct type_binding;
 
+	using true_binding = type_binding<mutils::String<'t','r','u','e'>, bool, Label<top>,type_location::local>;
+	using false_binding = type_binding<mutils::String<'f','a','l','s','e'>, bool, Label<top>,type_location::local>;
+	
 template <typename T, char... str>
 struct value_holder
 {
@@ -88,6 +91,7 @@ struct value_holder
 	  assert(!mem_uninitialized);
     return t;
   }
+
   template <typename TransactionContext>
   value_holder& push(value_holder& whendebug(_this), TransactionContext&, const T& t2)
   {
@@ -124,6 +128,31 @@ struct value_holder
   }
   using value = value_holder;
 };
+
+template <>
+struct value_holder<bool,'t','r','u','e'>
+{
+
+  template <typename ignore, typename TransactionContext>
+  static const bool& get(ignore& , TransactionContext&)
+  {
+		static const bool ret{true};
+    return ret;
+  }
+};
+	
+template <>
+struct value_holder<bool,'f','a','l','s','e'>
+{
+
+  template <typename ignore, typename TransactionContext>
+  static const bool& get(ignore& , TransactionContext&)
+  {
+		static const bool ret{false};
+    return ret;
+  }
+};
+	
 template <typename>
 struct is_value_holder;
 template <typename T, char... str>

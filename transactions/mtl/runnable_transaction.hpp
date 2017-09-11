@@ -57,6 +57,67 @@ struct implicitly_extended_remotes<mutils::typeset<T...>>
 template <typename... T>
 using virtual_holders = typename implicitly_extended_remotes<DECT(mutils::to_typeset(mutils::typelist<T...>::template filter<is_remote_holder>().template map<get_virtual_holders>()))>::type;
 
+template <>
+struct store<>
+{
+
+  store() = default;
+  store(store&&) = default;
+
+private:
+  store(const store& s) = default;
+  store& operator=(store&& s) = default;
+
+public:
+  store clone() { return *this; }
+  store& take(store s) { return this->operator=(std::move(s)); }
+
+  store& begin_phase() {return *this;}
+
+  store& rollback_phase(){return *this;}
+
+  static constexpr store* add_f()
+  {
+    constexpr store* ret{ nullptr };
+    return ret;
+  }
+	
+  template <typename T, typename... U>
+  static constexpr auto* add_f(T*, U*...)
+  {
+    return store<T>::add_f(((U*)nullptr)...);
+  }
+
+  template <typename... T>
+  using add = DECT(*add_f(((T*)nullptr)...));
+
+  template <typename>
+  using remove = store;
+
+  static constexpr store* replace_f()
+  {
+    constexpr store* ret{ nullptr };
+    return ret;
+  }
+	
+  template <typename T, typename... U>
+  static constexpr auto* replace_f(T*, U*...)
+  {
+		return add<T>::replace_f(((U*)nullptr)...);
+  }
+
+  template <typename... T>
+  using replace = DECT(*replace_f(((T*)nullptr)...));
+
+  using holder_count = std::integral_constant<std::size_t, 0>;
+
+  template <typename... >
+  using restrict_to_holders = store;
+
+  template <typename>
+  using restrict_to_phase = store;
+};
+	
 template <typename... holders>
 struct store : public holders..., public virtual_holders<holders...>
 {
@@ -109,6 +170,17 @@ public:
     using type_p = DECT(*mutils::find_match<DECT(holders::template get_holder<String<str...>>(this, name))...>());
     type_p ret = this;
     return *ret;
+  }
+	const auto& get(String<'t','r','u','e'> )
+  {
+		static value_holder<bool,'t','r','u','e'> ret;
+		return ret;
+  }
+	
+	const auto& get(String<'f','a','l','s','e'> )
+  {
+		static value_holder<bool,'f','a','l','s','e'> ret;
+		return ret;
   }
 
   template <typename... args>

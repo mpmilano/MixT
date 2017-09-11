@@ -612,6 +612,7 @@ template <typename AST>
 constexpr auto
 flatten_expressions(AST a)
 {
+	/*
   using namespace mutils;
   using zeroname = String<'z', 'e', 'r', 'o', 0, 1>;
   using zeroval = Expression<Constant<0>>;
@@ -626,6 +627,8 @@ flatten_expressions(AST a)
         Statement<Let<Binding<onename, oneval>,
                       Statement<Let<Binding<truename, trueval>,
                                     Statement<Let<Binding<falsename, falseval>, DECT(anorm::flatten_exprs<1, 1>(anorm::desugar_while<1, 1>(a)))>>>>>>>>{};
+	//*/
+	return anorm::flatten_exprs<1, 1>(anorm::desugar_while<1, 1>(a));
 }
 }
 }
