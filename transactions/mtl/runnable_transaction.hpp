@@ -406,7 +406,7 @@ operator<<(std::ostream& o, phase<l, returns, AST, mutils::typeset<reqs...>, pro
   o << std::endl;
   o << "Level " << l{} << ": provides " << provides{} << std::endl;
   o << "Level " << l{} << ": owns " << owns{} << std::endl;
-  split_phase::template print_ast<l>(o, AST{}, "");
+  split_phase::template split_printer<l>::print_ast(o, AST{}, "");
   return o << std::endl;
 }
 

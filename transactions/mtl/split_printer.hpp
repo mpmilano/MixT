@@ -2,251 +2,216 @@
 #include "AST_split.hpp"
 #include <iostream>
 #include <sstream>
+#include "split_context.hpp"
 
 namespace myria {
 namespace mtl {
 namespace split_phase {
 
-template <typename l, typename l2, typename y, typename v, typename e>
-void
-print_ast(std::ostream& o, const typename AST<l>::template Binding<l2, y, v, e>&)
-{
-  print_varname(o, v{});
-  o << " : " << mutils::type_name<y>() << " = ";
-  print_ast<l>(o, e{});
-}
+	BEGIN_SPLIT_CONTEXT(split_printer);
+	
+	template <typename l2, typename y, typename v, typename e>
+	static void print_ast(std::ostream& o, const Binding<l2, y, v, e>&)
+	{
+		print_varname(o, v{});
+		o << " : " << mutils::typename_str<y>::f() << " = ";
+		print_ast(o, e{});
+	}
 
-template <typename l, typename y, typename s, typename f>
-void
-print_ast(std::ostream& o, const typename AST<l>::template Expression<y, typename AST<l>::template FieldReference<s, f>>&)
-{
-  print_ast<l>(o, s{});
-  o << "." << f{};
-}
-
-  template<typename> struct print_split_type_str;
-  template<typename T>
-  const std::string& print_split_type();
+	template <typename y, typename s, typename f>
+	static void print_ast(std::ostream& o, const Expression<y, FieldReference<s, f>>&)
+	{
+		print_ast(o, s{});
+		o << "." << f{};
+	}
   
-  template<typename l, typename y, typename... ops> struct print_split_type_str<Handle<l,y,ops...> >{
-    static const auto& print(){
-      using namespace std;
-      static const std::string s{
-	[](){
-	  stringstream ss;
-	  ss << "Handle<" << l{} << "," << print_split_type<y>() << ">";
-	  return ss.str();
-	}()};
-      return s;
-    }
-  };
-
-  template<typename T> struct print_split_type_str{
-    static const auto& print(){
-      static const auto ret = mutils::type_name<T>();
-      return ret;
-    }
-  };
-  
-  template<typename T>
-  const std::string& print_split_type(){
-    return print_split_type_str<T>::print();
-  };
-  
-template <typename l, typename y, typename v>
-void
-print_ast(std::ostream& o, const typename AST<l>::template Expression<y, typename AST<l>::template VarReference<v>>&)
+template < typename y, typename v>
+static void print_ast(std::ostream& o, const Expression<y, VarReference<v>>&)
 {
   o << "(";
   print_varname(o, v{});
-  o << " : " << print_split_type<y>() << ")";
+  o << " : " << mutils::typename_str<y>::f() << ")";
 }
 
-template <typename l, int i>
-void
-print_ast(std::ostream& o, const typename AST<l>::template Expression<int, typename AST<l>::template Constant<i>>&)
+template < int i>
+static void print_ast(std::ostream& o, const Expression<int, Constant<i>>&)
 {
   o << i;
 }
 
-template <typename l>
-void
-print_ast(std::ostream& o, const typename AST<l>::template Expression<tracker::Tombstone, typename AST<l>::template GenerateTombstone<>>&)
+static void print_ast(std::ostream& o, const Expression<tracker::Tombstone, GenerateTombstone>&)
 {
   o << "random_tombstone()";
 }
 
 
-template <typename l, typename y, char op, typename L, typename R>
-void
-print_ast(std::ostream& o, const typename AST<l>::template Expression<y, typename AST<l>::template BinOp<op, L, R>>&)
+template < typename y, char op, typename L, typename R>
+static void print_ast(std::ostream& o, const Expression<y, BinOp<op, L, R>>&)
 {
   static const std::string opstr{{ op, (op == '=' ? '=' : 0) , 0 }};
-  print_ast<l>(o, L{});
+  print_ast(o, L{});
   o << " " << opstr << " ";
-  print_ast<l>(o, R{});
+  print_ast(o, R{});
 }
 
-template <typename l, typename b, typename body>
-void
-print_ast(std::ostream& o, const typename AST<l>::template Statement<typename AST<l>::template Let<b, body>>&, const std::string& tab)
+	MATCH_CONTEXT(is_sequence) {
+		template<typename... S>
+			MATCHES(Statement<Sequence<S...>>) -> RETURNVAL(true);
+		template<typename S>
+			MATCHES(Statement<S>) -> RETURNVAL(false);
+	};
+	
+template < typename b, typename _body>
+static void print_ast(std::ostream& o, const Statement<Let<b, _body>>&, const std::string& tab)
 {
+	
   o << tab << "let [";
-  print_ast<l>(o, b{});
+  print_ast(o, b{});
   o << "] in "
     << "{";
-  print_ast<l>(o, body{}, tab);
+	using body = std::conditional_t<MATCH(is_sequence,_body)::value, _body , Statement<Sequence<_body> > >;
+  print_ast(o, body{}, tab);
   o << "}";
 }
 
-template <typename l, typename b, typename body>
-void
-print_ast(std::ostream& o, const typename AST<l>::template Statement<typename AST<l>::template LetRemote<b, body>>&, const std::string& tab)
+template < typename b, typename _body>
+static void print_ast(std::ostream& o, const Statement<LetRemote<b, _body>>&, const std::string& tab)
 {
+	using body = std::conditional_t<MATCH(is_sequence,_body)::value, _body , Statement<Sequence<_body> > >;
   o << tab << "let remote [";
-  print_ast<l>(o, b{});
+  print_ast(o, b{});
   o << "] in "
     << "{";
-  print_ast<l>(o, body{}, tab);
+  print_ast(o, body{}, tab);
   o << "}";
 }
 
-	template <typename l, typename y, typename h>
-void
-	print_ast(std::ostream& o, const typename AST<l>::template Expression<y,typename AST<l>::template IsValid<h>>&)
+	template < typename y, typename h>
+static void print_ast(std::ostream& o, const Expression<y,IsValid<h>>&)
 {
-	print_ast<l>(o,h{});
+	print_ast(o,h{});
 	o << ".isValid()";
 }
 
-template <typename l, typename oper_name, typename Hndl, typename... args>
-void
-print_ast(std::ostream& o, const typename AST<l>::template Statement<typename AST<l>::template Operation<oper_name,Hndl,args...>>&, const std::string& tab)
+template < typename oper_name, typename Hndl, typename... args>
+static void print_ast(std::ostream& o, const Statement<Operation<oper_name,Hndl,args...>>&, const std::string& tab)
 {
 	o << tab;
-	print_ast<l>(o,Hndl{});
+	print_ast(o,Hndl{});
 	o << "." << oper_name{} << "(";
-	((print_ast<l>(o,args{}),o << ","),...);
+	((print_ast(o,args{}),o << ","),...);
 	o << ")";
 }
 
-template <typename l, typename y, typename oper_name, typename Hndl, typename... args>
-void
-print_ast(std::ostream& o, const typename AST<l>::template Expression<y,typename AST<l>::template Operation<oper_name,Hndl,args...>>&)
+template < typename y, typename oper_name, typename Hndl, typename... args>
+static void print_ast(std::ostream& o, const Expression<y,Operation<oper_name,Hndl,args...>>&)
 {
-	print_ast<l>(o,Hndl{});
+	print_ast(o,Hndl{});
 	o << "." << oper_name{} << "(";
-	((print_ast<l>(o,args{}),o << ","),...);
+	((print_ast(o,args{}),o << ","),...);
 	o << ")";
 }
 
 	
-template <typename l, typename L, typename R>
-void
-print_ast(std::ostream& o, const typename AST<l>::template Statement<typename AST<l>::template Assignment<L, R>>&, const std::string& tab)
+template < typename L, typename R>
+static void print_ast(std::ostream& o, const Statement<Assignment<L, R>>&, const std::string& tab)
 {
 	o << tab;
-  print_ast<l>(o, L{});
+  print_ast(o, L{});
   o << " = ";
-  print_ast<l>(o, R{});
+  print_ast(o, R{});
 }
 
-template <typename l, typename R>
-void
-print_ast(std::ostream& o, const typename AST<l>::template Statement<typename AST<l>::template Return<R>>&, const std::string& tab)
+template < typename R>
+static void print_ast(std::ostream& o, const Statement<Return<R>>&, const std::string& tab)
 {
   o << tab << "return ";
-  print_ast<l>(o, R{});
+  print_ast(o, R{});
 }
   
-template <typename l, typename R>
-void
-print_ast(std::ostream& o, const typename AST<l>::template Statement<typename AST<l>::template AccompanyWrite<R>>&, const std::string& tab)
+template < typename R>
+static void print_ast(std::ostream& o, const Statement<AccompanyWrite<R>>&, const std::string& tab)
 {
   o << tab << "track ";
-  print_ast<l>(o, R{});
+  print_ast(o, R{});
 }
 
-  template <typename l, typename e>
-void
-print_ast(std::ostream& o, const typename AST<l>::template Statement<typename AST<l>::template WriteTombstone<e>>&, const std::string& tab)
+  template < typename e>
+static void print_ast(std::ostream& o, const Statement<WriteTombstone<e>>&, const std::string& tab)
 {
   o << tab << "write(";
-  print_ast<l>(o,e{});
+  print_ast(o,e{});
   o << ")";
 }
 
-template <typename l, char... var>
-void
-print_ast(std::ostream& o, const typename AST<l>::template Statement<typename AST<l>::template IncrementOccurance<String<var...>>>&, const std::string& tab)
+template < char... var>
+static void print_ast(std::ostream& o, const Statement<IncrementOccurance<String<var...>>>&, const std::string& tab)
 {
   o << tab << "use(";
   print_varname(o, String<var...>{});
   o << ")";
 }
 
-template <typename l, char... var>
-void
-print_ast(std::ostream& o, const typename AST<l>::template Statement<typename AST<l>::template IncrementRemoteOccurance<String<var...>>>&, const std::string& tab)
+template < char... var>
+static void print_ast(std::ostream& o, const Statement<IncrementRemoteOccurance<String<var...>>>&, const std::string& tab)
 {
   o << tab << "use remote(";
   print_varname(o, String<var...>{});
   o << ")";
 }
 
-template <typename l, typename var>
-void
-print_ast(std::ostream& o, const typename AST<l>::template Statement<typename AST<l>::template RefreshRemoteOccurance<var>>&, const std::string& tab)
+template < typename var>
+static void print_ast(std::ostream& o, const Statement<RefreshRemoteOccurance<var>>&, const std::string& tab)
 {
   o << tab << "refresh remote(";
-  print_ast<l>(o,var{});
+  print_ast(o,var{});
   o << ")";
 }
 
-template <typename l, typename c, typename t, typename e>
-void
-print_ast(std::ostream& o, const typename AST<l>::template Statement<typename AST<l>::template If<c, t, e>>&, const std::string& tab)
+template < typename c, typename _t, typename _e>
+static void print_ast(std::ostream& o, const Statement<If<c, _t, _e>>&, const std::string& tab)
 {
+	using t = std::conditional_t<MATCH(is_sequence,_t)::value, _t , Statement<Sequence<_t> > >;
+	using e = std::conditional_t<MATCH(is_sequence,_e)::value, _e , Statement<Sequence<_e> > >;
   o << "if (";
-  print_ast<l>(o, c{});
+  print_ast(o, c{});
   o << ") {";
-  print_ast<l>(o, t{}, tab);
+  print_ast(o, t{}, tab);
   o << "} else {";
-  print_ast<l>(o, e{}, tab);
+  print_ast(o, e{}, tab);
   o << "}";
 }
 
-template <typename l, typename c, typename t, char... name>
-void
-print_ast(std::ostream& o, const typename AST<l>::template Statement<typename AST<l>::template While<c, t, name...>>&, const std::string& tab)
+template < typename c, typename _t, char... name>
+static void print_ast(std::ostream& o, const Statement<While<c, _t, name...>>&, const std::string& tab)
 {
+	using t = std::conditional_t<MATCH(is_sequence,_t)::value, _t , Statement<Sequence<_t> > >;
   o << "while (";
-  print_ast<l>(o, c{});
+  print_ast(o, c{});
   o << ") {";
-  print_ast<l>(o, t{}, tab);
+  print_ast(o, t{}, tab);
   o << "} ";
 }
 
-template <typename l, typename t, char... name>
-void
-print_ast(std::ostream& o, const typename AST<l>::template Statement<typename AST<l>::template ForEach<t, name...>>&, const std::string& tab)
+template < typename _t, char... name>
+static void print_ast(std::ostream& o, const Statement<ForEach<_t, name...>>&, const std::string& tab)
 {
+	using t = std::conditional_t<MATCH(is_sequence,_t)::value, _t , Statement<Sequence<_t> > >;
   o << "ForEach (";
   print_varname(o, String<name...>{});
   o << ") {";
-  print_ast<l>(o, t{}, tab);
+  print_ast(o, t{}, tab);
   o << "} ";
 }
 
-template <typename l, typename... Seq>
-void
-print_ast(std::ostream& o, const typename AST<l>::template Statement<typename AST<l>::template Sequence<Seq...>>&, const std::string& _tab)
+template < typename... Seq>
+static void print_ast(std::ostream& o, const Statement<Sequence<Seq...>>&, const std::string& _tab)
 {
   auto tab = _tab + std::string{ "  " };
   using namespace std;
   auto print = [&](const auto& e) {
     o << tab;
-    print_ast<l>(o, e, tab);
+    print_ast(o, e, tab);
     o << ";" << endl;
     return nullptr;
   };
@@ -256,48 +221,10 @@ print_ast(std::ostream& o, const typename AST<l>::template Statement<typename AS
   o << _tab << "}";
 }
 
-template <typename s>
-auto& operator<<(std::ostream& o, const typename AST<Label<bottom>>::template Statement<s>& ast)
-{
-  print_ast(o, ast, "");
-  return o;
+	END_SPLIT_CONTEXT;
+		
+
+}
+}
 }
 
-template <typename y, typename e>
-auto& operator<<(std::ostream& o, const typename AST<Label<bottom>>::template Expression<y, e>& ast)
-{
-  print_ast<Label<bottom>>(o, ast);
-  return o;
-}
-
-template <typename l2, typename y, typename v, typename e>
-auto& operator<<(std::ostream& o, const typename AST<Label<bottom>>::template Binding<l2, y, v, e>& ast)
-{
-  print_ast(o, ast);
-  return o;
-}
-template <typename s>
-auto& operator<<(std::ostream& o, const typename AST<Label<top>>::template Statement<s>& ast)
-{
-  print_ast(o, ast, "");
-  return o;
-}
-
-template <typename y, typename e>
-auto& operator<<(std::ostream& o, const typename AST<Label<top>>::template Expression<y, e>& ast)
-{
-  print_ast<Label<top>>(o, ast);
-  return o;
-}
-
-template <typename l2, typename y, typename v, typename e>
-auto& operator<<(std::ostream& o, const typename AST<Label<top>>::template Binding<l2, y, v, e>& ast)
-{
-  print_ast(o, ast);
-  return o;
-}
-}
-}
-}
-namespace mutils {
-}

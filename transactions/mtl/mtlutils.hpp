@@ -749,9 +749,28 @@ template<bool b, typename...> constexpr bool useful_static_assert(){
 	template<typename match, typename... args>
 	using is_sequence_end = std::is_same<follows_in_sequence<match,args...>, mismatch >;
 
+	template<typename> struct typename_str;
+
+	template<> struct typename_str<bool> {
+		static std::string f(){return "bool";}
+	};
+
+	template<typename T> struct typename_str<std::list<T> > {
+		static std::string f(){
+			std::stringstream ss;
+			ss << "list<" << typename_str<T>::f() << ">";
+			return ss.str();
+		}
+	};
+
+	template<> struct typename_str<int> {
+		static std::string f(){return "int";}
+	};
+	
 }
 
 #define MATCH_CONTEXT(NAME) struct NAME 
-#define MATCHES(a...) static auto match(const a &)
-#define RETURN(a...) a {struct dead_code{}; throw dead_code{};}
-#define MATCH(name,a...) DECT(name ::match(std::declval< a >()))
+#define MATCHES(m...) static constexpr auto match(const m &)
+#define RETURN(r...) r* {constexpr r* ret{nullptr}; return ret;}
+#define RETURNVAL(r...) std::integral_constant<DECT(r), r>* {constexpr std::integral_constant<DECT(r), r>* ret{nullptr}; return ret;}
+#define MATCH(name,c...) DECT(*name ::match(std::declval< c >()))

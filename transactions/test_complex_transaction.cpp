@@ -8,8 +8,15 @@ using namespace myria;
 using namespace mtl;
 using namespace tracker;
 
+using test_struct = STRUCT(int, a, int, b, int, c);
+namespace mutils{
+		template<> struct typename_str<test_struct> {
+			static std::string f(){return "test_struct";}
+	};
+}
+
 int main(){
-  using test_struct = STRUCT(int, a, int, b, int, c);
+  
   test_struct tstruct2;
   test_struct tstruct;
   tstruct.a = 0;

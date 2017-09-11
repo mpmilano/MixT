@@ -5,6 +5,7 @@
 #include "RemoteObject.hpp"
 #include "Tracker.hpp"
 #include "top.hpp"
+#include "mtl/mtlutils.hpp"
 #include <memory>
 
 namespace myria{
@@ -208,9 +209,17 @@ namespace myria{
   
   template<typename T>
   struct is_not_handle : std::integral_constant<bool, !is_handle<T>::value >::type {};
-  
+	
 }
 namespace mutils{
+
+	template<typename l, typename T, typename... ops> struct typename_str<myria::Handle<l,T,ops...> > {
+		static std::string f(){
+			std::stringstream ss;
+			ss << "Handle<" << l{} << "," << typename_str<T>::f() << ">";
+			return ss.str();
+		}
+	};
   
   template<typename l, typename T,typename... Ops>
   std::size_t to_bytes(const myria::Handle<l,T,Ops...>& h, char* v){
