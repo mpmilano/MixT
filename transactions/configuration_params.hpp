@@ -1,10 +1,10 @@
 #pragma once
-#include "Hertz.hpp"
+#include "mutils/Hertz.hpp"
 #include <cassert>
 #include <locale>
 #include <chrono>
-#include "mutils.hpp"
-#include "type_utils.hpp"
+#include "mutils/mutils.hpp"
+#include "mutils/type_utils.hpp"
 
 namespace myria{
 

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "typecheck_and_label_decl.hpp"
-#include "struct.hpp"
+#include "mtl/typecheck_and_label_decl.hpp"
+#include "mtl/struct.hpp"
 #include "Operations.hpp"
 
 namespace myria {

@@ -1,9 +1,9 @@
 #pragma once
 
-#include "mtlutils.hpp"
-#include "CTString_decl.hpp"
-#include "CTString_split.hpp"
-#include "CTString_strip_paren_group.hpp"
+#include "mtl/mtlutils.hpp"
+#include "mtl/CTString_decl.hpp"
+#include "mtl/CTString_split.hpp"
+#include "mtl/CTString_strip_paren_group.hpp"
 
 namespace mutils {
 

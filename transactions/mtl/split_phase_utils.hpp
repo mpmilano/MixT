@@ -1,6 +1,6 @@
 #pragma once
-#include "environments.hpp"
-#include "typecheck_and_label.hpp"
+#include "mtl/environments.hpp"
+#include "mtl/typecheck_and_label.hpp"
 
 namespace myria {
 namespace mtl {

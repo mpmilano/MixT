@@ -3,8 +3,8 @@
 #include "run_result.hpp"
 #include "relay_connections_pool.hpp"
 #include "test_client.hpp"
-#include "blockingconcurrentqueue.h"
-#include "ctpl_stl.h"
+#include "mutils-tasks/blockingconcurrentqueue.h"
+#include "mutils-tasks/ctpl_stl.h"
 
 namespace myria {
 

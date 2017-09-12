@@ -4,9 +4,9 @@
 #include <cxxabi.h>
 #include <unistd.h>
 #include <cassert>
-#include "as_value.hpp"
-#include "macro_utils.hpp"
-#include "peano.hpp"
+#include "mtl/as_value.hpp"
+#include "mutils/macro_utils.hpp"
+#include "mtl/peano.hpp"
 
 namespace mutils {
 

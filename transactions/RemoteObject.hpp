@@ -1,8 +1,8 @@
 #pragma once
 
-#include "type_utils.hpp"
-#include "tuple_extras.hpp"
-#include "SerializationSupport.hpp"
+#include "mutils/type_utils.hpp"
+#include "mutils/tuple_extras.hpp"
+#include "mutils-serialization/SerializationSupport.hpp"
 #include "DataStore.hpp"
 
 namespace myria{

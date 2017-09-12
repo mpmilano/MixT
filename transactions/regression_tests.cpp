@@ -1,14 +1,14 @@
-#include "flatten_expressions.hpp"
+#include "mtl/flatten_expressions.hpp"
 #include "mtl/insert_tracking.hpp"
 #include "mtl/label_inference.hpp"
 #include "mtl/split_phase.hpp"
 #include "mtl/transaction.hpp"
 #include "mtl/transaction_macros.hpp"
-#include "parse_statements.hpp"
+#include "mtl/parse_statements.hpp"
 #include "testing_store/TestingStore.hpp"
 #include "testing_store/mid.hpp"
-#include "typecheck_and_label.hpp"
-#include "typecheck_printer.hpp"
+#include "mtl/typecheck_and_label.hpp"
+#include "mtl/typecheck_printer.hpp"
 #include <iostream>
 
 using namespace myria;

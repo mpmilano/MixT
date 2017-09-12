@@ -1,4 +1,4 @@
-#include "SQLLevels.hpp"
+#include "pgsql/SQLLevels.hpp"
 
 namespace myria {
 

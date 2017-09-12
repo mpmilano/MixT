@@ -1,6 +1,6 @@
 #pragma once
-#include "pre_endorse.hpp"
-#include "worklist.hpp"
+#include "mtl/pre_endorse.hpp"
+#include "mtl/worklist.hpp"
 
 namespace myria {
 namespace mtl {

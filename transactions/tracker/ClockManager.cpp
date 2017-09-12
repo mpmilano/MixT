@@ -1,6 +1,6 @@
-#include "Tracker.hpp"
-#include "Tracker_private_declarations.hpp"
-#include "ServerSocket.hpp"
+#include "tracker/Tracker.hpp"
+#include "tracker/Tracker_private_declarations.hpp"
+#include "mutils-networking/ServerSocket.hpp"
 #include <thread>
 
 using namespace std;

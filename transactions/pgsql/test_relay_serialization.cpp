@@ -1,8 +1,8 @@
-#include "StoreRelay.hpp"
-#include "SQLStore.hpp"
-#include "transaction.hpp"
-#include "transaction_macros.hpp"
-#include "split_printer.hpp"
+#include "server/StoreRelay.hpp"
+#include "pgsql/SQLStore.hpp"
+#include "mtl/transaction.hpp"
+#include "mtl/transaction_macros.hpp"
+#include "mtl/split_printer.hpp"
 #include <iostream>
 #define STORE_LEVEL causal
 #define STORE_LIST pgsql::SQLStore<pgsql::Level::STORE_LEVEL>

@@ -1,7 +1,6 @@
-#include "FileStore.hpp"
-#include "SQLStore.hpp"
+#include "pgsql/SQLStore.hpp"
 #include "FinalHeader.hpp"
-#include "Tracker.hpp"
+#include "tracker/Tracker.hpp"
 
 
 int main(){

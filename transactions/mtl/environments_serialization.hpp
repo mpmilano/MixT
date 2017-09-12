@@ -1,7 +1,7 @@
 #pragma once
-#include "SerializationSupport.hpp"
-#include "local_connection.hpp"
-#include "additional_serialization_support.hpp"
+#include "mutils-serialization/SerializationSupport.hpp"
+#include "mutils-networking/local_connection.hpp"
+#include "mutils-networking/additional_serialization_support.hpp"
 
 namespace myria{ namespace mtl{
 

@@ -1,8 +1,8 @@
 
-#include "StoreRelay.hpp"
-#include "SQLStore.hpp"
-#include "transaction.hpp"
-#include "transaction_macros.hpp"
+#include "server/StoreRelay.hpp"
+#include "pgsql/SQLStore.hpp"
+#include "mtl/transaction.hpp"
+#include "mtl/transaction_macros.hpp"
 #define STORE_LIST pgsql::SQLStore<pgsql::Level::STORE_LEVEL>
 #include "FinalHeader.hpp"
 

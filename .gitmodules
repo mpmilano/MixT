@@ -1,0 +1,15 @@
+[submodule "transactions/mutils"]
+	path = transactions/mutils
+	url = git@github.com:mpmilano/mutils
+[submodule "transactions/mutils-serialization"]
+	path = transactions/mutils-serialization
+	url = git@github.com:mpmilano/mutils-serialization
+[submodule "transactions/mutils-tasks"]
+	path = transactions/mutils-tasks
+	url = git@github.com:mpmilano/mutils-tasks
+[submodule "transactions/mutils-networking"]
+	path = transactions/mutils-networking
+	url = git@github.com:mpmilano/mutils-networking
+[submodule "transactions/mutils-containers"]
+	path = transactions/mutils-containers
+	url = git@github.com:mpmilano/mutils-containers

@@ -1,9 +1,9 @@
 #pragma once
 
 #include "DataStore.hpp"
-#include "cexprutils.hpp"
-#include "SQLLevels.hpp"
-#include "SQLConnection.hpp"
+#include "mutils/cexprutils.hpp"
+#include "pgsql/SQLLevels.hpp"
+#include "pgsql/SQLConnection.hpp"
 #include <memory>
 #include <vector>
 #include <array>

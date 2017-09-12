@@ -1,7 +1,7 @@
 #pragma once
-#include "../tracker/TrackingContext.hpp"
-#include "top.hpp"
-#include "macro_utils.hpp"
+#include "tracker/TrackingContext.hpp"
+#include "mtl/top.hpp"
+#include "mutils/macro_utils.hpp"
 #include <memory>
 
 namespace myria {

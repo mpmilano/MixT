@@ -1,6 +1,6 @@
 #pragma once
-#include "SQLConnection.hpp"
-#include "myria_utils.hpp"
+#include "pgsql/SQLConnection.hpp"
+#include "myria-utils/myria_utils.hpp"
 #include <pqxx/pqxx>
 
 namespace myria{ namespace pgsql {

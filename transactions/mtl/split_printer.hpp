@@ -1,8 +1,8 @@
 #pragma once
-#include "AST_split.hpp"
+#include "mtl/AST_split.hpp"
 #include <iostream>
 #include <sstream>
-#include "split_context.hpp"
+#include "mtl/split_context.hpp"
 
 namespace myria {
 namespace mtl {

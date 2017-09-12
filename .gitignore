@@ -1,5 +1,5 @@
 # Compiled Object files
-*.slo
+1;4602;0c*.slo
 *.lo
 *.o
 *.obj
@@ -23,7 +23,6 @@ votes
 test
 MyriaStore.*
 MyriaStore
-mutils*
 postgres_stuff/print_causal
 postgres_stuff/print_strong
 postgres_stuff/sync

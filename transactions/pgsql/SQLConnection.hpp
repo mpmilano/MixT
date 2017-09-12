@@ -2,7 +2,7 @@
 #include "test_utils.hpp"
 #include <pqxx/pqxx>
 #include <mutex>
-#include <resource_pool.hpp>
+#include "mutils-tasks/resource_pool.hpp"
 
 namespace myria{ namespace pgsql {
 

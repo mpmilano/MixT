@@ -1,6 +1,6 @@
 #pragma once
-#include "SQLStore.hpp"
-#include "ClientTracker.hpp"
+#include "pgsql/SQLStore.hpp"
+#include "tracker/ClientTracker.hpp"
 
 namespace myria{
 

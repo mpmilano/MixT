@@ -1,7 +1,7 @@
 #pragma once
 
-#include "parse_bindings_decl.hpp"
-#include "parse_expressions_decl.hpp"
+#include "mtl/parse_bindings_decl.hpp"
+#include "mtl/parse_expressions_decl.hpp"
 
 namespace myria {
 namespace mtl {

@@ -1,6 +1,6 @@
 #pragma once
-#include "resource_pool.hpp"
-#include "simple_rpc.hpp"
+#include "mutils-tasks/resource_pool.hpp"
+#include "mutils-networking/simple_rpc.hpp"
 #include "configuration_params.hpp"
 
 namespace myria{

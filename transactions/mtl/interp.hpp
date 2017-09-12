@@ -1,10 +1,10 @@
 #pragma once
-#include "AST_split.hpp"
-#include "split_printer.hpp"
-#include "environments.hpp"
-#include "runnable_transaction.hpp"
-#include "remote_interp.hpp"
-#include "run_phase.hpp"
+#include "mtl/AST_split.hpp"
+#include "mtl/split_printer.hpp"
+#include "mtl/environments.hpp"
+#include "mtl/runnable_transaction.hpp"
+#include "mtl/remote_interp.hpp"
+#include "mtl/run_phase.hpp"
 
 namespace myria {
 namespace mtl {

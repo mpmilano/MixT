@@ -1,7 +1,7 @@
 #pragma once
 #include <cmath>
-#include "Hertz.hpp"
-#include "mutils.hpp"
+#include "mutils/Hertz.hpp"
+#include "mutils/mutils.hpp"
 
 namespace mutils{
 

@@ -1,9 +1,9 @@
 #pragma once
-#include "AST_split.hpp"
-#include "environments.hpp"
-#include "environments_serialization.hpp"
-#include "mtlbasics.hpp"
-#include "split_printer.hpp"
+#include "mtl/AST_split.hpp"
+#include "mtl/environments.hpp"
+#include "mtl/environments_serialization.hpp"
+#include "mtl/mtlbasics.hpp"
+#include "mtl/split_printer.hpp"
 
 namespace myria {
 namespace mtl {

@@ -1,8 +1,8 @@
 #pragma once
-#include "simple_rpc.hpp"
+#include "mutils-networking/simple_rpc.hpp"
 #include "DataStore.hpp"
-#include "readerwriterqueue.h"
-#include "transaction_listener.hpp"
+#include "mutils-networking/readerwriterqueue.h"
+#include "server/transaction_listener.hpp"
 
 namespace myria {
 namespace server {

@@ -1,8 +1,8 @@
 #pragma once
 #include <iostream>
-#include "SQLStore_impl.hpp"
+#include "pgsql/SQLStore_impl.hpp"
 #include "Operations.hpp"
-#include "SQLTransaction.hpp"
+#include "pgsql/SQLTransaction.hpp"
 
 namespace myria { namespace pgsql {
 
@@ -299,4 +299,4 @@ namespace myria { namespace pgsql {
 			}
 		};
 	}}
-#include "trackable_datastore_impl.hpp"
+#include "tracker/trackable_datastore_impl.hpp"

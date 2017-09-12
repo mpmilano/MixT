@@ -1,13 +1,13 @@
 //oh look, a source file! We remember those.
 #include <pqxx/pqxx>
 #include <arpa/inet.h>
-#include "SQLStore_impl.hpp"
-#include "SQLTransaction.hpp"
-#include "SQLCommands.hpp"
-#include "SQLStore.hpp"
-#include "Ends.hpp"
+#include "pgsql/SQLStore_impl.hpp"
+#include "pgsql/SQLTransaction.hpp"
+#include "pgsql/SQLCommands.hpp"
+#include "pgsql/SQLStore.hpp"
+#include "tracker/Ends.hpp"
 #include "Ostreams.hpp"
-#include "SafeSet.hpp"
+#include "mutils-containers/SafeSet.hpp"
 
 namespace myria{ namespace pgsql {
 

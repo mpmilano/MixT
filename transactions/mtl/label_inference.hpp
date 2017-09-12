@@ -1,9 +1,9 @@
 #pragma once
 
-#include "top.hpp"
-#include "AST_typecheck.hpp"
-#include "replace_label.hpp"
-#include "collect_proper_label.hpp"
+#include "mtl/top.hpp"
+#include "mtl/AST_typecheck.hpp"
+#include "mtl/replace_label.hpp"
+#include "mtl/collect_proper_label.hpp"
 
 namespace myria {
 namespace mtl {

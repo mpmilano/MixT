@@ -1,6 +1,6 @@
 #pragma once
-#include "mtlutils.hpp"
-#include "label_utilities.hpp"
+#include "mtl/mtlutils.hpp"
+#include "mtl/label_utilities.hpp"
 
 namespace myria {
 template <typename>

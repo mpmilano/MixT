@@ -1,8 +1,8 @@
 #pragma once
-#include "CTString.hpp"
-#include "mtlutils.hpp"
-#include "AST_parse.hpp"
-#include "AST_typecheck.hpp"
+#include "mtl/CTString.hpp"
+#include "mtl/mtlutils.hpp"
+#include "mtl/AST_parse.hpp"
+#include "mtl/AST_typecheck.hpp"
 
 namespace myria {
 namespace mtl {

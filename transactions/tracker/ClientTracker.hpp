@@ -1,8 +1,8 @@
 #pragma once
-#include "Ends.hpp"
-#include "Tracker.hpp"
-#include "Tombstone.hpp"
-#include "insert_tracking.hpp"
+#include "tracker/Ends.hpp"
+#include "tracker/Tracker.hpp"
+#include "tracker/Tombstone.hpp"
+#include "mtl/insert_tracking.hpp"
 
 namespace myria {
 namespace tracker {

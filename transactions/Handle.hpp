@@ -1,10 +1,9 @@
 //new handle.  the old one is pretty broken.
 #pragma once
-#include "../BitSet.hpp"
 #include "Basics.hpp"
 #include "RemoteObject.hpp"
-#include "Tracker.hpp"
-#include "top.hpp"
+#include "tracker/Tracker.hpp"
+#include "mtl/top.hpp"
 #include "mtl/mtlutils.hpp"
 #include <memory>
 

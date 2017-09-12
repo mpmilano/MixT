@@ -2,8 +2,8 @@
 #include <cstdlib>
 #include <time.h>
 #include "GDataStore.hpp"
-#include "compile-time-lambda.hpp"
-#include "utils.hpp"
+#include "mutils/compile-time-lambda.hpp"
+#include "myria-utils/utils.hpp"
 #include <functional>
 #include <array>
 #include <map>
@@ -13,11 +13,11 @@
 #include <thread>
 #include <unistd.h>
 
-#include "CompactSet.hpp"
-#include "Ends.hpp"
-#include "SafeSet.hpp"
+#include "mutils-containers/CompactSet.hpp"
+#include "tracker/Ends.hpp"
+#include "mutils-containers/SafeSet.hpp"
 #include "Ostreams.hpp"
-#include "Tracker_private_declarations.hpp"
+#include "tracker/Tracker_private_declarations.hpp"
 namespace {
 constexpr unsigned long long bigprime_lin =
 #include "big_prime"

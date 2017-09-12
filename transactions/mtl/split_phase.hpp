@@ -1,13 +1,13 @@
 #pragma once
 
-#include "AST_typecheck.hpp"
-#include "AST_split.hpp"
-#include "mtlutils.hpp"
-#include "name_while.hpp"
-#include "runnable_transaction.hpp"
-#include "remove_unused.hpp"
-#include "without_names.hpp"
-#include "remove_empties.hpp"
+#include "mtl/AST_typecheck.hpp"
+#include "mtl/AST_split.hpp"
+#include "mtl/mtlutils.hpp"
+#include "mtl/name_while.hpp"
+#include "mtl/runnable_transaction.hpp"
+#include "mtl/remove_unused.hpp"
+#include "mtl/without_names.hpp"
+#include "mtl/remove_empties.hpp"
 
 namespace myria {
 namespace mtl {

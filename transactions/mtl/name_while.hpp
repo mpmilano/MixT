@@ -1,7 +1,7 @@
 #pragma once
 
-#include "AST_typecheck.hpp"
-#include "mtlutils.hpp"
+#include "mtl/AST_typecheck.hpp"
+#include "mtl/mtlutils.hpp"
 
 namespace myria {
 namespace mtl {

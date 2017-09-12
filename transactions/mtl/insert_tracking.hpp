@@ -1,5 +1,5 @@
 #pragma once
-#include "writes_remote.hpp"
+#include "mtl/writes_remote.hpp"
 
 namespace myria {
 namespace mtl {

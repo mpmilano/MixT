@@ -1,8 +1,8 @@
-#include "parse_statements.hpp"
-#include "flatten_expressions.hpp"
-#include "typecheck_and_label.hpp"
+#include "mtl/parse_statements.hpp"
+#include "mtl/flatten_expressions.hpp"
+#include "mtl/typecheck_and_label.hpp"
 #include <iostream>
-#include "typecheck_printer.hpp"
+#include "mtl/typecheck_printer.hpp"
 #include "testing_store/TestingStore.hpp"
 #include "mtl/label_inference.hpp"
 #include "mtl/insert_tracking.hpp"

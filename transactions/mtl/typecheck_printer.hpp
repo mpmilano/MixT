@@ -1,5 +1,5 @@
 #pragma once
-#include "AST_typecheck.hpp"
+#include "mtl/AST_typecheck.hpp"
 #include <iostream>
 
 namespace myria {

@@ -1,6 +1,6 @@
 #include "sync_defs.h"
-#include "mutils.hpp"
-#include "Socket.hpp"
+#include "../mutils/mutils.hpp"
+#include "../mutils-networking/Socket.hpp"
 
 using namespace std;
 using namespace mutils;
