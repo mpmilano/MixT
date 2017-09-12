@@ -6,7 +6,7 @@
 #include "mtl/label_inference.hpp"
 #include "mtl/split_phase.hpp"
 #include "mtl/interp.hpp"
-#include "mtl/CTString.hpp"
+#include "mutils/CTString.hpp"
 #include "tracker/find_tombstones.hpp"
 #include "mtl/recollapse.hpp"
 #include <memory>
