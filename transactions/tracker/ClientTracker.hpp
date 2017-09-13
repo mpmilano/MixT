@@ -3,6 +3,7 @@
 #include "tracker/Tracker.hpp"
 #include "tracker/Tombstone.hpp"
 #include "mtl/insert_tracking.hpp"
+#include "mtl/mtlbasics.hpp"
 
 namespace myria {
 namespace tracker {
