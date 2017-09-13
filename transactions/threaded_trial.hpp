@@ -29,10 +29,9 @@ struct test {
 
   std::atomic<std::size_t> number_enqueued_clients{0};
 	
-	void push_client(mutils::GeneralQueue<std::unique_ptr<client> >& q) {
-		q.push_new(std::make_unique<client>(
-								 *this, spool, cpool, strong_connections.weakspawn(),
-								 causal_connections.weakspawn()));
+	void push_client(mutils::ReturningQueue<client>& q) {
+		q.push_new(*this, spool, cpool, strong_connections.weakspawn(),
+								 causal_connections.weakspawn());
     ++number_enqueued_clients;
   }
   ctpl::thread_pool tp{(int)std::max(params.max_clients() / 2, params.starting_num_clients)};
@@ -136,7 +135,10 @@ struct test {
     auto stop_time = start_time + params.test_duration;
     auto next_event_time = schedule_event(start_time, parallel_factor);
     auto next_desired_delay = next_event_time - now();
-		mutils::GeneralQueue<std::unique_ptr<client> > client_queue;
+		//can't construct an empty queue
+		mutils::ReturningQueue<client> client_queue{*this, spool, cpool, strong_connections.weakspawn(),
+								 causal_connections.weakspawn()};
+		++number_enqueued_clients;
     unsigned short choose_logging{0};
     while (now() < stop_time) {
       choose_logging = ((choose_logging + 1) % params.log_every_n);
@@ -155,10 +157,8 @@ struct test {
       next_event_time = schedule_event(start_time, parallel_factor);
       next_desired_delay = next_event_time - now();
       // try and handle this event (hopefully before it's time for the next one)
-			auto node = client_queue.peek();
-			assert(node);
-			assert(node->t);
-      std::unique_ptr<client> client_p = std::move(node->t);
+			auto client_qnode = client_queue.peek();
+			assert(client_qnode);
 			client_queue.pop();
       bool log_this = (choose_logging == 0);
       auto fut = tp.push([
@@ -168,7 +168,8 @@ struct test {
         effective_delay,
         this_event_time,
         &client_queue,
-        client_ptr = client_p.release()
+				client_qnode,
+        client_ptr = &client_qnode->t
       ](int) {
         std::unique_ptr<run_result> ret;
         if (log_this) {
@@ -181,9 +182,9 @@ struct test {
         try {
             assert(client_ptr);
           client_ptr->client_action(ret);
-						assert(client_ptr);
-					client_queue.push_new(client_ptr);
+					client_qnode->return_me(client_queue);
         } catch (const ProtocolException &) {
+					//we will leak the client on a Protocol Exception.
 					if (!ret && log_this) ret.reset(new run_result());
 					if (ret){
 						// record this here and in simple_txn_test so
