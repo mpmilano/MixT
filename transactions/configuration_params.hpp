@@ -15,7 +15,7 @@ struct configuration_parameters{
 	std::chrono::seconds test_duration; double percent_dedicated_connections;
 	double percent_causal; double percent_read; std::string output_file;
 	std::chrono::seconds log_delay_tolerance;
-	unsigned short log_every_n;
+	unsigned short log_every_n; unsigned short parallel_factor;
 	
 	//derived values
 	std::size_t max_clients() const {
@@ -52,7 +52,7 @@ struct configuration_parameters{
 			&& p1.client_freq == p2.client_freq && p1.starting_num_clients == p2.starting_num_clients
 			&& p1.increase_clients_freq == p2.increase_clients_freq && p1.test_duration == p2.test_duration
 			&& p1.percent_dedicated_connections == p2.percent_dedicated_connections && p1.percent_read == p2.percent_read
-			&& p1.percent_causal == p2.percent_causal && p1.log_every_n == p2.log_every_n;
+			&& p1.percent_causal == p2.percent_causal && p1.log_every_n == p2.log_every_n && p1.parallel_factor == p2.parallel_factor;
 	}
 	
 	std::ostream& operator<<(std::ostream& o, const configuration_parameters& p){
@@ -63,7 +63,7 @@ struct configuration_parameters{
 			p.client_freq << cs << p.starting_num_clients << cs << p.increase_clients_freq << cs <<
 			p.test_duration << cs << p.percent_dedicated_connections << cs <<
 			p.percent_causal << cs << p.percent_read << cs << p.output_file << cs <<
-			p.log_delay_tolerance << cs << p.log_every_n;
+			p.log_delay_tolerance << cs << p.log_every_n << cs << p.parallel_factor;
 	}
 	
 	std::istream& operator>>(std::istream& i, configuration_parameters& p){
@@ -77,7 +77,7 @@ struct configuration_parameters{
 			p.client_freq >> cs >> p.starting_num_clients >> cs >> p.increase_clients_freq >> cs >>
 			p.test_duration >> cs >> p.percent_dedicated_connections >> cs >>
 			p.percent_causal >> cs >> p.percent_read >> cs >> p.output_file >> cs >>
-			p.log_delay_tolerance >> cs >> p.log_every_n;
+			p.log_delay_tolerance >> cs >> p.log_every_n >> cs >> p.parallel_factor;
 		std::cout << strong_ip << std::endl
 							<< causal_ip << std::endl;
 		p.strong_ip = decode_ip(strong_ip.c_str());
@@ -152,6 +152,11 @@ struct configuration_parameters{
       std::istringstream ss{std::string{args[13]}};
 			std::cout << "log_every_n decoding: " << args[13] << std::endl;
       ss >> params.log_every_n;
+    }
+		{
+      std::istringstream ss{std::string{args[14]}};
+			std::cout << "parallel_factor decoding: " << args[14] << std::endl;
+      ss >> params.parallel_factor;
     }
 	}
 }

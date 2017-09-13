@@ -33,7 +33,7 @@ struct test {
         causal_connections.weakspawn()));
     ++number_enqueued_clients;
   }
-  ctpl::thread_pool tp{(int)params.max_clients() / 2};
+  ctpl::thread_pool tp{(int)std::max(params.max_clients() / 2, params.starting_num_clients)};
 
   test(configuration_parameters params) : params(params) {
     output_file << params << std::endl;
@@ -88,7 +88,8 @@ struct test {
     using namespace chrono;
     using namespace mutils;
     using namespace moodycamel;
-    std::size_t parallel_factor = 8;
+    std::size_t parallel_factor = std::min<std::size_t>(params.parallel_factor,tp.size());
+		assert(parallel_factor > 0);
     ConcurrentQueue<std::future<std::unique_ptr<run_result>>> results;
     auto start_time = now();
     DECT(start_time) last_log_write_time = start_time;

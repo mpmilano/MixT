@@ -84,7 +84,7 @@ template <Level l> void client::txn_write() {
 
 int main(int argc, char **argv) {
   configuration_parameters params;
-  assert(argc == 1 || argc == 15);
+  assert(argc == 1 || argc == 16);
   if (argc == 1) {
     std::cin >> params;
   } else read_from_args(params,argv + 1);
