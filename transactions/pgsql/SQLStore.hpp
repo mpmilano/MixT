@@ -120,7 +120,7 @@ namespace myria { namespace pgsql {
 			std::string why_in_transaction() const {
 #ifndef NOPOOL
 				if (in_transaction()){
-					assert(this->default_connection.acquire_if_locked()->current_trans);
+                                        assert(this->default_connection.acquire_if_locked()->current_trans);
 					return this->default_connection.acquire_if_locked()->current_trans->why;
 				}
 				else return "error: not in transaction";
@@ -238,6 +238,7 @@ namespace myria { namespace pgsql {
 
 			template<typename T>
 			auto existingObject(SQLContext *, Name name){
+                            whennopool(assert(this->default_connection));
 				static constexpr Table t =
 					(std::is_same<T,int>::value ? Table::IntStore : Table::BlobStore);
 				GSQLObject gso(*this,t,name);
