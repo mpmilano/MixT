@@ -39,9 +39,10 @@ namespace myria{ namespace pgsql {
 
 		unique_ptr<SQLTransaction> SQLStore_impl::begin_transaction(whendebug(const std::string &why))
 		{
-			assert(whenpool(!(default_connection.is_locked() &&
-												default_connection.lock()->in_trans()))
-						 whennopool(default_connection && !default_connection->in_trans())
+			assert(whenpool(!(default_connection.is_locked()))
+						 whennopool(default_connection ));
+			assert(whenpool(!(default_connection.lock()->in_trans()))
+						 whennopool(!default_connection->in_trans())
 						 && "Concurrency support doesn't exist yet."
 				);
 			return unique_ptr<SQLTransaction>(

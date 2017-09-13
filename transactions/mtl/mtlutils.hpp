@@ -487,6 +487,15 @@ print_varname(String<str...> s, std::enable_if_t<!String<str...>::begins_with(St
 	return s;
 }
 
+	template<char c>
+	constexpr auto print_operator(){
+		constexpr String<c> cand;
+		if constexpr (c == '=') {
+				return cand.append(cand);
+			}
+		else return cand;
+	}
+
 template <typename a>
 void
 print_varname(std::ostream& o, a)

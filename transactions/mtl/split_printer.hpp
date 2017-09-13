@@ -48,9 +48,8 @@ static void print_ast(std::ostream& o, const Expression<tracker::Tombstone, Gene
 template < typename y, char op, typename L, typename R>
 static void print_ast(std::ostream& o, const Expression<y, BinOp<op, L, R>>&)
 {
-  static const std::string opstr{{ op, (op == '=' ? '=' : 0) , 0 }};
   print_ast(o, L{});
-  o << " " << opstr << " ";
+  o << " " << mutils::print_operator<op>() << " ";
   print_ast(o, R{});
 }
 

@@ -1,6 +1,8 @@
 #pragma once
 #include <cassert>
 #include <atomic>
+#include <thread>
+#include <iostream>
 #include "mutils/macro_utils.hpp"
 
 namespace mutils{
@@ -151,6 +153,7 @@ struct PonyQ{
     prev = (node*)((uintptr_t)prev & ~(uintptr_t)1);
     
     std::atomic_store_explicit(&prev->next, m, std::memory_order_release);
+		//if (blocking_mode){ blocker.notify_all();}
   }
 
   //only thread-safe if d.construct_node is thread-safe
@@ -182,6 +185,21 @@ struct PonyQ{
     if (!head) pop();
     return head;
   }
+
+	std::condition_variable blocker;
+	std::mutex blocker_lock;
+	bool blocking_mode{false};
+	node& blocking_pop(){
+		using namespace std::chrono;
+		auto cand = peek();
+		while (!cand){
+			//std::unique_lock<std::mutex> blocker_lock{};
+			//blocker.wait(blocker_lock,[this]{return this->peek();});
+			cand = peek();
+		}
+		pop();
+		return *cand;
+	}
 
   std::size_t total_allocations{0};
 

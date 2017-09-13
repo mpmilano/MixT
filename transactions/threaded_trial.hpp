@@ -138,6 +138,7 @@ struct test {
 		//can't construct an empty queue
 		mutils::ReturningQueue<client> client_queue{*this, spool, cpool, strong_connections.weakspawn(),
 								 causal_connections.weakspawn()};
+		client_queue.blocking_mode = true;
 		++number_enqueued_clients;
     unsigned short choose_logging{0};
     while (now() < stop_time) {
@@ -157,7 +158,7 @@ struct test {
       next_event_time = schedule_event(start_time, parallel_factor);
       next_desired_delay = next_event_time - now();
       // try and handle this event (hopefully before it's time for the next one)
-			auto client_qnode = client_queue.peek();
+			auto* client_qnode = &client_queue.blocking_pop();
 			assert(client_qnode);
 			client_queue.pop();
       bool log_this = (choose_logging == 0);
@@ -194,6 +195,10 @@ struct test {
 					}
           --client_ptr->t.number_enqueued_clients;
         }
+        catch(...){
+            std::cout << "error! major error!" << std::endl;
+        }
+
         return ret;
       });
       if (log_this)
