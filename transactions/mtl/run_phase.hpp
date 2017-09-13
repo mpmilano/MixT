@@ -230,7 +230,6 @@ static tracker::Tombstone _run_phase(Expression<tracker::Tombstone, GenerateTomb
 #ifdef TRACK
   return tracker::Tracker::generateTombstone();
 #else
-	(void) ctx;
 	return tracker::Tombstone{0,0,0};
 #endif
 }

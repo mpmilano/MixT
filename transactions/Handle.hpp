@@ -61,9 +61,6 @@ namespace myria{
       SupportedOperations::template SupportsOn<Handle>
       (SupportedOperations::template SupportsOn<Handle>::template wrap_operation<RO>(ds))...,
       _ro(_ro){
-				whendebug(auto assert_txn = ds.begin_transaction("check handle validity"));
-				assert(_ro.get() == nullptr || _ro->isValid(assert_txn.get()));
-				whendebug(assert_txn->store_commit());
 	static_assert(std::is_same<typename DataStore::label,label>::value);
       }
 
@@ -83,9 +80,6 @@ namespace myria{
 
 	template<template<typename> class RO, typename DataStore>
 		Handle(mutils::identity_struct1<RO>, DataStore &ds):OperationSuperclass<SupportedOperations>(OperationSuperclass<SupportedOperations>::template wrap_operation<RO>(ds))... {
-		whendebug(auto assert_txn = ds.begin_transaction("check handle validity"));
-		assert(_ro.get() == nullptr || _ro->isValid(assert_txn.get()));
-		whendebug(assert_txn->store_commit());
 	}
 	Handle(const Handle& h):OperationSuperclass<SupportedOperations>(h)...,_ro(h._ro) {
 		
