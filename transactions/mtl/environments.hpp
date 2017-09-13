@@ -80,6 +80,16 @@ struct value_holder
 	  }
 	  return *this;
   }
+
+  value_holder& operator=(const T& newt){
+      if (mem_uninitialized) {
+          mem_uninitialized = false;
+          new (&t) T{newt};
+      }
+      else t = newt;
+      return *this;
+  }
+
   ~value_holder() {if (!mem_uninitialized) t.~T(); }
 
   using type = T;

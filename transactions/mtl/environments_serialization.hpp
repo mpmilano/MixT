@@ -55,7 +55,7 @@ namespace myria{ namespace mtl{
 			assert((*remote_name == my_name));
 #endif
 			auto t_p = mutils::from_bytes_noalloc<DECT(t.t)>(dsm,c.raw_buf());
-			t.t = *t_p;
+            t = *t_p;
 			c.mark_used(mutils::bytes_size(*t_p));
 		}
 
