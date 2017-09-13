@@ -35,11 +35,9 @@ struct PonyQ{
   template<typename R, typename... Args>
   constexpr static bool is_fp(R (*) (Args...)){
     return true;
-  }
-  
-  static_assert(is_fp<node*>(&MemoryManager::construct_node),
-		"Error: Memory Manager does not contain single construct_node() function of type [unspecified...] -> node*");
-  static_assert(is_fp<void,PonyQ&,node&>(&MemoryManager::release_node),
+  }  
+
+  static_assert(PonyQ::is_fp<void,PonyQ&,node&>(&MemoryManager::release_node),
 		"Error: Memory Manager does not contain single release_node() function of type PonyQ& -> node& -> void");
 
   //END STATIC ASSERTS, BEGIN CODE PROPER.
@@ -116,12 +114,9 @@ struct PonyQ{
     sentinel = stub;
     head = stub;
   }
-  template<typename MM_arg, typename... Args>
-  PonyQ(MM_arg&& d_arg, Args && ... args):d(std::forward<MM_arg>(d_arg)){
+  template<typename... Args>
+  PonyQ(Args && ... args){
     init(std::forward<Args>(args)...);
-  }
-  PonyQ(){
-    init();
   }
 
   ~PonyQ() {
