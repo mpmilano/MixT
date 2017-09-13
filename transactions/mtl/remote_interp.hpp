@@ -45,13 +45,17 @@ auto remote_interp(mutils::DeserializationManager* dsm, tombstone_tracker& trk, 
 		ss << phase{};
 		phase_str = ss.str();
 	}
-	whendebug(auto sent =) mlc.send(txn_nonce,mutils::bytes_size(phase_str),phase_str);
+	mlc.send(txn_nonce,mutils::bytes_size(phase_str));
+	whendebug(auto phase_str_starts_at = lc.data.size());
+	whendebug(auto sent =) mlc.send(phase_str);
 	assert(mutils::bytes_size(phase_str) >= phase_str.length());
 	logfile << "sending phase str: " << phase_str << std::endl;
-	assert(sent == (mutils::bytes_size(txn_nonce) + sizeof(mutils::bytes_size(phase_str)) + mutils::bytes_size(phase_str)));
+	assert(sent == mutils::bytes_size(phase_str));
   assert(lc.data.size() >= sizeof(txn_nonce));
 #endif
   send_store_values(requires, s, lc);
+	whendebug(char* data = lc.data.data());
+	assert(phase_str == data + phase_str_starts_at);
   c.c.send(phase::txnID(),
 	 trk.template tombstones_for_phase<phase>(),
 	 lc.data);

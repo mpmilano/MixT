@@ -1,8 +1,8 @@
+#include "threaded_trial.hpp"
 #include "pgsql/SQLStore.hpp"
 #include "mtl/transaction.hpp"
 #include "mtl/transaction_macros.hpp"
 #include "test_utils.hpp"
-#include "threaded_trial.hpp"
 #include "FinalHeader.hpp"
 #include "configuration_params.hpp"
 
@@ -84,7 +84,7 @@ template <Level l> void client::txn_write() {
 
 int main(int argc, char **argv) {
   configuration_parameters params;
-  assert(argc == 1 || argc == 15);
+  assert(argc == 1 || argc == 16);
   if (argc == 1) {
     std::cin >> params;
   } else read_from_args(params,argv + 1);

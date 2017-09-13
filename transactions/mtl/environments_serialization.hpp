@@ -133,7 +133,8 @@ namespace myria{ namespace mtl{
 #endif
 			send_remote_maps(s.as_virtual_holder(),c);
 #ifndef NDEBUG
-			c.send(mutils::bytes_size(nonce),nonce);
+			c.send(nonce);
+			c.get_log_file() << "resending nonce: " << nonce << std::endl<< std::endl;
 #endif
 			auto worked = (send_holder_values(typename requires::name{}, s, c) && ... && true);
 			assert(worked);
