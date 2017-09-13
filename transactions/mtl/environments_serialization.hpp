@@ -172,6 +172,9 @@ namespace myria{ namespace mtl{
 #ifndef NDEBUG
 			{
 				auto remote = *c. template receive<std::string>(nullptr,nonce_size);
+				c.get_log_file() << "environment serialization nonce from remote: " << remote << std::endl
+						 << std::endl;
+				c.get_log_file() << "environment serialization nonce expected: " << nonce << std::endl;
 				if (nonce != remote){
 					std::cout << nonce << std::endl << std::endl << std::endl << std::endl;
 					std::cout << remote << std::endl;
