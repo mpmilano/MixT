@@ -19,7 +19,7 @@ auto remote_interp(mutils::DeserializationManager* dsm, tombstone_tracker& trk, 
   using namespace mutils;
   constexpr typename phase::requirements requires{};
   constexpr typename phase::provides provides{};
-  mutils::local_connection lc;
+  mutils::local_connection lc whendebug({c.c.get_log_file()});
 	//NOTE TO SELF: USE THE TOMBSTONE TRACKER TO FIND ALL THE LEVELS WE CARE ABOUT.
 	//CALL THE JUST-WRITE-A-TOMBSTONE TRANSACTION FROM THERE TOO.
 #ifndef NDEBUG
@@ -60,7 +60,7 @@ auto remote_interp(mutils::DeserializationManager* dsm, tombstone_tracker& trk, 
   assert(remote_txn_nonce == txn_nonce);
 #endif
   {
-    mutils::local_connection lc;
+    mutils::local_connection lc whendebug({logfile});
     if (*mutils::receive_from_connection<bool>(dsm, c.c)) {
       // transaction was successful!
 			{

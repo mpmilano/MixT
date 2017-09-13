@@ -43,7 +43,7 @@ struct transaction_listener;
 		auto tombstones_to_find =
 			mutils::from_bytes_noalloc<std::vector<tracker::Tombstone>>(&dsm,
 																																	_data);
-		mutils::local_connection _lc;
+		mutils::local_connection _lc whendebug({c.get_log_file()});
 		_lc.data = *mutils::from_bytes_noalloc<std::vector<char>>(
 			&dsm, _data + mutils::bytes_size(*tombstones_to_find));
 #ifndef NDEBUG
@@ -57,6 +57,7 @@ struct transaction_listener;
 		DECT(mutils::bytes_size(std::string{})) phase_str_size;
 		lc.receive(phase_str_size);
 		std::string remote_phase_str = *lc.template receive<std::string>(nullptr,phase_str_size);
+		logfile << "remote phase str: " << remote_phase_str << std::endl;
 		{
 			std::stringstream ss;
 			ss << phase{};
@@ -93,7 +94,7 @@ struct transaction_listener;
 		}
 		whendebug(logfile << "about to send response to client" << std::endl);
 		if (transaction_successful) {
-			mutils::local_connection lc;
+		  mutils::local_connection lc whendebug({logfile});
 			send_store_values(provided, s, lc);
 			trk.updateClock();
 			c.send(transaction_successful, trk.min_clock(), trk.recent_clock(), trk.all_encountered_tombstones(), lc.data);
