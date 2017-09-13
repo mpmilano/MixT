@@ -156,6 +156,8 @@ struct test {
       next_desired_delay = next_event_time - now();
       // try and handle this event (hopefully before it's time for the next one)
 			auto node = client_queue.peek();
+			assert(node);
+			assert(node->t);
       std::unique_ptr<client> client_p = std::move(node->t);
 			client_queue.pop();
       bool log_this = (choose_logging == 0);
@@ -177,7 +179,9 @@ struct test {
           ret->start_time = this_event_time;
         }
         try {
+            assert(client_ptr);
           client_ptr->client_action(ret);
+						assert(client_ptr);
 					client_queue.push_new(client_ptr);
         } catch (const ProtocolException &) {
 					if (!ret && log_this) ret.reset(new run_result());
