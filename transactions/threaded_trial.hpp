@@ -1,4 +1,6 @@
 #pragma once
+#include "ponyq/ponyq.hpp"
+#include "ponyq/normalq.hpp"
 #include "configuration_params.hpp"
 #include "run_result.hpp"
 #include "relay_connections_pool.hpp"
@@ -25,21 +27,18 @@ struct test {
                                             params.strong_relay_port,
                                             (int)params.max_clients()};
 
-  moodycamel::BlockingConcurrentQueue<std::unique_ptr<client>> client_queue;
   std::atomic<std::size_t> number_enqueued_clients{0};
-  void push_client() {
-    client_queue.enqueue(std::make_unique<client>(
-        *this, spool, cpool, strong_connections.weakspawn(),
-        causal_connections.weakspawn()));
+	
+	void push_client(mutils::GeneralQueue<std::unique_ptr<client> >& q) {
+		q.push_new(std::make_unique<client>(
+								 *this, spool, cpool, strong_connections.weakspawn(),
+								 causal_connections.weakspawn()));
     ++number_enqueued_clients;
   }
   ctpl::thread_pool tp{(int)params.max_clients() / 2};
 
   test(configuration_parameters params) : params(params) {
     output_file << params << std::endl;
-    for (std::size_t i = 0; i < params.starting_num_clients; ++i) {
-      push_client();
-    }
   }
 
   auto now() { return std::chrono::high_resolution_clock::now(); }
@@ -81,7 +80,6 @@ struct test {
     r.print(start_time, output_file);
   }
   void run_test() {
-    using namespace server;
     using namespace pgsql;
     using namespace mtl;
     using namespace std;
@@ -102,11 +100,6 @@ struct test {
       for (auto &e : launch_threads) {
         // do some work in the meantime
         while (e.wait_for(1s) != future_status::ready) {
-          // increase client pool based on elapsed time
-          while (number_enqueued_clients <
-                 params.total_clients_at(now() - start_time)) {
-            push_client();
-          }
 
           // if it's been forever since our last log write, write the log *now*
           if (now() > (params.log_delay_tolerance + last_log_write_time)) {
@@ -133,7 +126,6 @@ struct test {
   void launcher_loop(moodycamel::ConcurrentQueue<
                          std::future<std::unique_ptr<run_result>>> &results,
                      time start_time, std::size_t parallel_factor) {
-    using namespace server;
     using namespace pgsql;
     using namespace mtl;
     using namespace std;
@@ -143,14 +135,14 @@ struct test {
     auto stop_time = start_time + params.test_duration;
     auto next_event_time = schedule_event(start_time, parallel_factor);
     auto next_desired_delay = next_event_time - now();
-    auto &client_queue = this->client_queue;
+		mutils::GeneralQueue<std::unique_ptr<client> > client_queue;
     unsigned short choose_logging{0};
     while (now() < stop_time) {
       choose_logging = ((choose_logging + 1) % params.log_every_n);
       // always at least enqueue one client if needed
       if (number_enqueued_clients <
           params.total_clients_at(now() - start_time)) {
-        push_client();
+				push_client(client_queue);
       }
       auto effective_delay = next_event_time - now();
       // work done, wait until event launch
@@ -162,8 +154,9 @@ struct test {
       next_event_time = schedule_event(start_time, parallel_factor);
       next_desired_delay = next_event_time - now();
       // try and handle this event (hopefully before it's time for the next one)
-      std::unique_ptr<client> client_p;
-      client_queue.wait_dequeue(client_p);
+			auto node = client_queue.peek();
+      std::unique_ptr<client> client_p = std::move(node->t);
+			client_queue.pop();
       bool log_this = (choose_logging == 0);
       auto fut = tp.push([
         slept_for,
@@ -184,7 +177,7 @@ struct test {
         }
         try {
           client_ptr->client_action(ret);
-          client_queue.enqueue(std::unique_ptr<client>(client_ptr));
+					client_queue.push_new(client_ptr);
         } catch (const ProtocolException &) {
 					if (!ret && log_this) ret.reset(new run_result());
 					if (ret){

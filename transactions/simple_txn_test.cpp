@@ -1,8 +1,8 @@
+#include "threaded_trial.hpp"
 #include "pgsql/SQLStore.hpp"
 #include "mtl/transaction.hpp"
 #include "mtl/transaction_macros.hpp"
 #include "test_utils.hpp"
-#include "threaded_trial.hpp"
 #include "FinalHeader.hpp"
 #include "configuration_params.hpp"
 
