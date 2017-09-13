@@ -1,6 +1,4 @@
 #pragma once
-#include "ponyq/ponyq.hpp"
-#include "ponyq/normalq.hpp"
 #include "configuration_params.hpp"
 #include "run_result.hpp"
 #include "relay_connections_pool.hpp"
@@ -27,17 +25,21 @@ struct test {
                                             params.strong_relay_port,
                                             (int)params.max_clients()};
 
+  moodycamel::BlockingConcurrentQueue<std::unique_ptr<client>> client_queue;
   std::atomic<std::size_t> number_enqueued_clients{0};
-	
-	void push_client(mutils::ReturningQueue<client>& q) {
-		q.push_new(*this, spool, cpool, strong_connections.weakspawn(),
-								 causal_connections.weakspawn());
+  void push_client() {
+    client_queue.enqueue(std::make_unique<client>(
+        *this, spool, cpool, strong_connections.weakspawn(),
+        causal_connections.weakspawn()));
     ++number_enqueued_clients;
   }
   ctpl::thread_pool tp{(int)std::max(params.max_clients() / 2, params.starting_num_clients)};
 
   test(configuration_parameters params) : params(params) {
     output_file << params << std::endl;
+    for (std::size_t i = 0; i < params.starting_num_clients; ++i) {
+      push_client();
+    }
   }
 
   auto now() { return std::chrono::high_resolution_clock::now(); }
@@ -85,8 +87,7 @@ struct test {
     using namespace chrono;
     using namespace mutils;
     using namespace moodycamel;
-    std::size_t parallel_factor = std::min<std::size_t>(params.parallel_factor,tp.size());
-		assert(parallel_factor > 0);
+    std::size_t parallel_factor = 8;
     ConcurrentQueue<std::future<std::unique_ptr<run_result>>> results;
     auto start_time = now();
     DECT(start_time) last_log_write_time = start_time;
@@ -100,6 +101,11 @@ struct test {
       for (auto &e : launch_threads) {
         // do some work in the meantime
         while (e.wait_for(1s) != future_status::ready) {
+          // increase client pool based on elapsed time
+          while (number_enqueued_clients <
+                 params.total_clients_at(now() - start_time)) {
+            push_client();
+          }
 
           // if it's been forever since our last log write, write the log *now*
           if (now() > (params.log_delay_tolerance + last_log_write_time)) {
@@ -135,18 +141,14 @@ struct test {
     auto stop_time = start_time + params.test_duration;
     auto next_event_time = schedule_event(start_time, parallel_factor);
     auto next_desired_delay = next_event_time - now();
-		//can't construct an empty queue
-		mutils::ReturningQueue<client> client_queue{*this, spool, cpool, strong_connections.weakspawn(),
-								 causal_connections.weakspawn()};
-		client_queue.blocking_mode = true;
-		++number_enqueued_clients;
+    auto &client_queue = this->client_queue;
     unsigned short choose_logging{0};
     while (now() < stop_time) {
       choose_logging = ((choose_logging + 1) % params.log_every_n);
       // always at least enqueue one client if needed
       if (number_enqueued_clients <
           params.total_clients_at(now() - start_time)) {
-				push_client(client_queue);
+        push_client();
       }
       auto effective_delay = next_event_time - now();
       // work done, wait until event launch
@@ -158,9 +160,8 @@ struct test {
       next_event_time = schedule_event(start_time, parallel_factor);
       next_desired_delay = next_event_time - now();
       // try and handle this event (hopefully before it's time for the next one)
-			auto* client_qnode = &client_queue.blocking_pop();
-			assert(client_qnode);
-			client_queue.pop();
+      std::unique_ptr<client> client_p;
+      client_queue.wait_dequeue(client_p);
       bool log_this = (choose_logging == 0);
       auto fut = tp.push([
         slept_for,
@@ -169,36 +170,39 @@ struct test {
         effective_delay,
         this_event_time,
         &client_queue,
-				client_qnode,
-        client_ptr = &client_qnode->t
+        _client_ptr = client_p.release()
       ](int) {
-        std::unique_ptr<run_result> ret;
+				struct Cleanup{
+					bool cleanup_required{true};
+					struct client &client;
+					Cleanup(struct client &client):client(client){}
+					~Cleanup(){
+						if (cleanup_required) {
+							--client.t.number_enqueued_clients;
+						}
+					}
+				};
+				std::unique_ptr<client> client_ptr{_client_ptr};
+				Cleanup cln{*client_ptr};
+        std::unique_ptr<run_result> ret{(log_this ? new run_result() : (run_result*) nullptr)};
         if (log_this) {
-					ret.reset(new run_result());
           ret->desired_delay = duration_cast<microseconds>(desired_delay);
           ret->effective_delay = duration_cast<microseconds>(effective_delay);
           ret->slept_for = duration_cast<microseconds>(slept_for);
           ret->start_time = this_event_time;
         }
         try {
-            assert(client_ptr);
           client_ptr->client_action(ret);
-					client_qnode->return_me(client_queue);
+          client_queue.enqueue(std::unique_ptr<client>(std::move(client_ptr)));
+					cln.cleanup_required = false;
         } catch (const ProtocolException &) {
-					//we will leak the client on a Protocol Exception.
-					if (!ret && log_this) ret.reset(new run_result());
 					if (ret){
 						// record this here and in simple_txn_test so
 						// overhead of re-enqueueing client is not included.
 						ret->stop_time = high_resolution_clock::now();
 						ret->is_protocol_error = true;
 					}
-          --client_ptr->t.number_enqueued_clients;
         }
-        catch(...){
-            std::cout << "error! major error!" << std::endl;
-        }
-
         return ret;
       });
       if (log_this)
