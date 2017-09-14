@@ -65,6 +65,10 @@ namespace myria {
 					return *parent.object_store. template at<stored >(_name);
 				}
 
+				std::shared_ptr<RemoteObject<label,T> > create_new(mtl::StoreContext<label>* ctx, const T& t) const {
+					return parent.newObject<T>(dynamic_cast<TestingContext*>(ctx),124,t)._ro;
+				}
+
 				const std::array<long long, NUM_CAUSAL_GROUPS>& timestamp() const {
 					static const std::array<long long, NUM_CAUSAL_GROUPS> ret{{0,0,0,0}};
 					return ret;

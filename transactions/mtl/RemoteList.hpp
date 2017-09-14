@@ -2,10 +2,14 @@
 #include <sstream>
 
 namespace myria {
-	template<typename T, template<typename> class Hndl>
+	template<typename T, template<typename> class _Hndl>
 	struct RemoteList {
+		using Hndl = _Hndl<RemoteList>;
+		
 		T value;
-		Hndl<RemoteList> next;
+		Hndl next;
+
+		
 
 		RemoteList(const DECT(value)& v, const DECT(next) &n)
 			:value(v),

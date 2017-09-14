@@ -35,6 +35,7 @@ namespace myria{
     
     virtual bool isValid(mtl::StoreContext<l>*) const = 0;
     virtual std::shared_ptr<const T> get(mtl::StoreContext<l>*) = 0;
+		virtual std::shared_ptr<RemoteObject> create_new(mtl::StoreContext<l>*, const T&) const = 0;
     virtual void put(mtl::StoreContext<l>*,const T&) = 0;
     
     //TODO: delete these when you're done hacking around.

@@ -1,7 +1,7 @@
 #pragma once
 #include "mutils/CTString_macro.hpp"
 
-#define TRANSACTION(x...) ::myria::mtl::pre_transaction_str<MUTILS_STRING({x})>
+#define TRANSACTION(x...) ::myria::mtl::pre_transaction_str<DECT(::mutils::String<'{'>::append(MUTILS_STRING(x){}).template append<'}'>())>
 
 #define WITH1(x) template with<::myria::mtl::value_with_stringname<DECT(x), MUTILS_STRING(x)>>()
 #define WITH2(x, y)                                                                                                                                            \
@@ -16,3 +16,5 @@
 #define WITH_IMPL2(count, ...) WITH##count(__VA_ARGS__)
 #define WITH_IMPL(count, ...) WITH_IMPL2(count, __VA_ARGS__)
 #define WITH(...) WITH_IMPL(VA_NARGS(__VA_ARGS__), __VA_ARGS__)
+
+#define RUN_LOCAL_WITH(ct, a...) WITH(a).run_local(ct,a)

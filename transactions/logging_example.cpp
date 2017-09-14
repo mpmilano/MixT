@@ -7,13 +7,7 @@
 #include "mtl/split_printer.hpp"
 
 using namespace myria;
-using namespace mtl;
-using namespace parse_phase;
-using namespace typecheck_phase;
 using namespace testing_store;
-using namespace label_inference;
-using namespace tracking_phase;
-using namespace split_phase;
 using namespace tracker;
 
 int main(){

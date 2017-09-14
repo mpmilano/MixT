@@ -123,6 +123,17 @@ namespace myria{
       auto &store_ctx = ctx.store_context(this->store() whendebug(, "calling get() via handle"));
 			return _ro->get(&store_ctx);
     }
+		Handle create_new(mtl::PhaseContext<l> *tc, const T& newt) const {
+      assert(_ro);
+      assert(tc);
+      auto &ctx = *tc;
+      
+      //If the Transacion Context does not yet exist for this store, we create it now.
+      auto &store_ctx = ctx.store_context(this->store() whendebug(, "calling get() via handle"));
+			auto copy_of_this = *this;
+			copy_of_this._ro = _ro->create_new(&store_ctx,newt);
+			return copy_of_this;
+    }
   protected:
     std::shared_ptr<const T> get(mtl::GPhaseContext *tc) const {
       auto *ctx = dynamic_cast<mtl::PhaseContext<l>*>(tc);
