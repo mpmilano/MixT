@@ -238,7 +238,6 @@ namespace myria { namespace pgsql {
 
 			template<typename T>
 			auto existingObject(SQLContext *, Name name){
-                            whennopool(assert(this->default_connection));
 				static constexpr Table t =
 					(std::is_same<T,int>::value ? Table::IntStore : Table::BlobStore);
 				GSQLObject gso(*this,t,name);
