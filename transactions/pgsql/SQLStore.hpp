@@ -163,6 +163,10 @@ namespace myria { namespace pgsql {
 					return t;
 				}
 
+				std::shared_ptr<RemoteObject<label,T> > create_new(mtl::StoreContext<label>* c, const T& t) const {
+					return SQLStore::template newObject_static<T> (const_cast<GSQLObject&>(gso).store(),tds,dynamic_cast<SQLContext*>(c),mutils::int_rand(),t);
+				}
+
 				const std::array<long long,NUM_CAUSAL_GROUPS>& timestamp() const {
 					return gso.timestamp();
 				}
@@ -214,17 +218,23 @@ namespace myria { namespace pgsql {
 														 Handle<label,T> > >;
 
 		  struct SQLContext;
+
 			template<typename T>
-			SQLHandle<T> newObject(SQLContext *ctx, Name name, const T& init){
-				static constexpr Table t =
+			static std::shared_ptr<SQLObject<T> > newObject_static(SQLStore_impl& ss, mutils::DeserializationManager& dsm,
+																														 SQLContext *ctx, Name name, const T& init){
+				constexpr Table t =
 					(std::is_same<T,int>::value ? Table::IntStore : Table::BlobStore);
 				int size = mutils::bytes_size(init);
 				std::vector<char> v(size);
 				whendebug(int tb_size = mutils::to_bytes(init,&v[0]));
 				assert(size == tb_size);
-				GSQLObject gso(ctx->i.get(),*this,t,name,v);
-				SQLHandle<T> ret{std::make_shared<SQLObject<T> >(std::move(gso),mutils::heap_copy(init),this_mgr),*this };
-				return ret;
+				GSQLObject gso(ctx->i.get(),ss,t,name,v);
+				return std::make_shared<SQLObject<T> >(std::move(gso),mutils::heap_copy(init),dsm);
+			}
+			
+			template<typename T>
+			SQLHandle<T> newObject(SQLContext *ctx, Name name, const T& init){
+				return SQLHandle<T>{newObject_static(*this,this_mgr,ctx,name,init),*this};
 			}
 
 			template<typename T>

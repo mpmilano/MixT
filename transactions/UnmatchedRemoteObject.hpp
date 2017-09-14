@@ -81,6 +81,12 @@ namespace myria{
 				assert(false && "Cannot call unmatched things");
 				throw UnmatchedUseException{};
 			}
+
+			virtual std::shared_ptr<RemoteObject<l,T>> create_new(mtl::StoreContext<l>*, const T&) const {
+				assert(false && "Cannot call unmatched things");
+				throw UnmatchedUseException{};
+			}
+			
 			void put(mtl::StoreContext<l>*,const T&) {
 				assert(false && "Cannot call unmatched things");
 				throw UnmatchedUseException{};
