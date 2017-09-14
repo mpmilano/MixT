@@ -2,7 +2,10 @@
 
 namespace examples{
 	void group::post_new_message(ClientTrk& ct, std::string message_contents){
-		TRANSACTION(
+#ifdef USE_PRECOMPILED
+#include "mailing_list_post_new_message.cpp.precompiled"
+#else
+		constexpr auto txn = TRANSACTION(
 			var curr_user = users,
 			/*iterate through the users list*/
 			while (curr_user.isValid()){
@@ -22,6 +25,8 @@ namespace examples{
 				/*advance the while-loop*/
 				curr_user = curr_user->next
 			}
-			)::RUN_LOCAL_WITH(ct,message_contents,users);
+			)::WITH(message_contents,users);
+#endif
+		txn.run_local(ct,message_contents,users);
 	}
 }

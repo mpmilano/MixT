@@ -27,7 +27,7 @@ logging_example: $(object_files)
 mailing_list_example: $(object_files) mailing_list_post_new_message.o mailing_list_add_new_user.o
 	clang++ $(CPPFLAGS) $(LDFLAGS)  $(object_files) mailing_list_example.cpp -o /tmp/test
 mailing_list_post_new_message.o: $(object_files)
-	clang++ -c mailing_list_post_new_message.cpp $(CPPFLAGS) -ftemplate-depth=10000
+	clang++ -c -DUSE_PRECOMPILED mailing_list_post_new_message.cpp $(CPPFLAGS) -ftemplate-depth=10000
 mailing_list_add_new_user.o: $(object_files)
 	clang++ -c mailing_list_add_new_user.cpp $(CPPFLAGS) -ftemplate-depth=10000
 test_endorse: $(object_files)
