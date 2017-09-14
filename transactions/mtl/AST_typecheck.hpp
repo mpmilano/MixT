@@ -285,6 +285,7 @@ struct Expression<Label<l>, expry, Endorse<Label<l>,Expression<exprl, expry, exp
   
 };
 
+
 template <typename oper_name, typename Hndl, typename... args>
 struct Operation;
   template <typename oper_name, typename Hndl_l, typename Hndl_t, typename Hndl_e, typename... args>

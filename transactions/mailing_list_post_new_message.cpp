@@ -8,7 +8,7 @@ namespace examples{
 		constexpr auto txn = TRANSACTION(
 			var curr_user = users,
 			/*iterate through the users list*/
-			while (curr_user.isValid()){
+			while (curr_user.isValid()) {
 				/*will hold the end of the user messages list*/
 				var user_msgs_tl = curr_user->value->i,
 				/* advance to the end of messages here */

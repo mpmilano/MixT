@@ -111,6 +111,14 @@ void
 	o << h{} << ".endorse(" << l{} << ")";
 }
 
+	template <typename l, typename h>
+void
+	print_ast(std::ostream& o, const Expression<Ensure<l,h>>&)
+{
+	o << h{} << ".ensure(" << l{} << ")";
+}
+
+	
 template <typename L, typename R>
 void
 print_ast(std::ostream& o, const Statement<Assignment<L, R>>&)

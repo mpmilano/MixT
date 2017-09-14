@@ -597,28 +597,27 @@ struct string_of<String<'a', 'n', 'o', 'r', 'm', s1, s2>>
 namespace myria {
 namespace mtl {
 
-template <typename, typename, typename>
+template <typename, typename>
 struct type_binding_super;
 
-template <typename T, typename l, char... str>
-struct type_binding_super<String<str...>, T, Label<l>>
+template <typename T, char... str>
+struct type_binding_super<String<str...>, T>
 {
 
   using name = String<str...>;
-  using label = Label<l>;
 
   constexpr type_binding_super() = default;
 };
 
 template <typename T, typename l, char... str>
-struct type_binding<String<str...>, T, Label<l>, type_location::local> : public type_binding_super<String<str...>, T, Label<l>>
+struct type_binding<String<str...>, T, Label<l>, type_location::local> : public type_binding_super<String<str...>, T>
 {
   using holder = type_holder<T, str...>;
 
   constexpr type_binding() = default;
-  using super = type_binding_super<String<str...>, T, Label<l>>;
+  using super = type_binding_super<String<str...>, T>;
   using name = typename super::name;
-  using label = typename super::label;
+  using label = Label<l>;
   using type = T;
 
   template <typename Other>
@@ -656,15 +655,15 @@ struct type_binding<String<str...>, T, Label<l>, type_location::local> : public 
 
 template <typename T, typename l, char... str>
 //note; if Label<l> is a pre-endorse label, then we should also have the handle bind at pre-endorse.
-struct type_binding<String<str...>, T, Label<l>, type_location::remote> : public type_binding_super<String<str...>, typename T::type, decide_type_label<Label<l>, typename T::label > >
+struct type_binding<String<str...>, T, Label<l>, type_location::remote> : public type_binding_super<String<str...>, typename T::type>
 {
   static_assert(is_handle<T>::value);
   static_assert(!std::is_same<T, typename T::type>::value);
 
   constexpr type_binding() = default;
-  using super = type_binding_super<String<str...>, typename T::type, Label<l>>;
+  using super = type_binding_super<String<str...>, typename T::type>;
   using name = typename super::name;
-  using label = typename super::label;
+  using label = decide_type_label<Label<l>, typename T::label>;
 
   using holder = remote_holder<T, str...>;
   using type = typename T::type;

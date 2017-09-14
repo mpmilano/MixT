@@ -292,7 +292,8 @@ static auto _run_phase(Statement<RefreshRemoteOccurance<Expression<hndl_t,VarRef
 				TranCtx& ctx, store& s, std::enable_if_t<std::is_base_of<remote_map_holder<hndl_t>, store>::value >* = nullptr)
 {
 	remote_map_holder<hndl_t> &super = s;
-	auto hndl = run_phase(Expression<hndl_t,VarReference<var> >{},ctx,s);
+	constexpr Expression<hndl_t,VarReference<var> > *var_ref{nullptr};
+	auto hndl = run_phase(var_ref,ctx,s);
 	auto &_this_super = super.super[hndl.name()];
 	_this_super.push(_this_super,ctx,*hndl.get(&ctx));
 }

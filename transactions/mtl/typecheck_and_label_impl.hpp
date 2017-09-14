@@ -65,6 +65,15 @@ constexpr auto _typecheck(type_environment<label_env, Env...>, parse_phase::Expr
   return Expression<l,typename binding_expr::yield, Endorse<l,binding_expr> >{};
 }
 
+	template <int seqnum, int depth, typename l, typename Expr, typename label_env, typename... Env>
+	constexpr auto _typecheck(type_environment<label_env, Env...>, parse_phase::Expression<parse_phase::Ensure<l,Expr>>)
+{
+  using old_env = type_environment<label_env, Env...>;
+  using binding_expr = DECT(typecheck<seqnum, depth + 1>(old_env{}, Expr{}));
+  return Expression<l,typename binding_expr::yield, typename binding_expr::subexpr>{};
+}
+
+	
 // bindings
 
 template <type_location loc, typename label, typename yield, typename Name, typename Expr, typename labele, typename... Env>
@@ -120,39 +129,33 @@ struct handle_operations{
 	}
 	
 };
-	
-template <int seqnum, int depth, typename old_env, typename choice, typename oper_name, typename Hndl, typename... var_args>
-constexpr auto _typecheck(old_env, parse_phase::Operation<oper_name, Hndl, parse_phase::operation_args_exprs<>,parse_phase::operation_args_varrefs<var_args...> >, std::enable_if_t<!std::is_same<oper_name, mutils::String<'n','e','w'> >::value>* = nullptr)
-{
-  using binding_expr = DECT(typecheck<seqnum, depth + 1>(old_env{}, Hndl{}));
-  using ptr_label = typename binding_expr::label;
-  using handle = typename binding_expr::yield;
-  // we dereference the pointer, which is an influencing action.  Reduce the label
-  // of the environment if needed.
-  using arguments_label_min = resolved_label_min_vararg<typename handle::label, /*the duplication is on purpose*/ typename handle::label, typename DECT(typecheck<seqnum,depth+1>(old_env{},var_args{}))::label...>;
-  constexpr OperationIdentifier<oper_name> op;
-  using ret_t = typename DECT(std::declval<handle>().upCast(op))::Return;
-  static_assert(handle_supports<handle,oper_name,ret_t, SelfType, typename DECT(typecheck<seqnum,depth+1>(old_env{},var_args{}))::yield...>::value, "Error: Invalid arguments for handle operation");
-  return handle_operations<seqnum,depth,oper_name,ptr_label,arguments_label_min,binding_expr,ret_t, var_args...>::handle_operation(choice{},old_env{});
 
+#define MYRIA_SPECIAL_OPERATIONS(oper_name_binding, oper_name_use, rett_def, enableif, disable_args_check) \
+	template <int seqnum, int depth, typename old_env, typename choice, oper_name_binding, typename Hndl, typename... var_args> \
+	constexpr auto _typecheck(old_env, parse_phase::Operation<oper_name_use, Hndl, parse_phase::operation_args_exprs<>,parse_phase::operation_args_varrefs<var_args...> >, enableif * = nullptr) \
+	{																																			\
+		using oper_name = oper_name_use;																		\
+		using binding_expr = DECT(typecheck<seqnum, depth + 1>(old_env{}, Hndl{}));	\
+		using ptr_label = typename binding_expr::label;											\
+		using handle = typename binding_expr::yield;												\
+		/* we dereference the pointer, which is an influencing action.  Reduce the label
+			 of the environment if needed. */																	\
+  using arguments_label_min = resolved_label_min_vararg<typename handle::label, /*the duplication is on purpose*/ typename handle::label, typename DECT(typecheck<seqnum,depth+1>(old_env{},var_args{}))::label...>; \
+	rett_def;																															\
+  static_assert(disable_args_check || handle_supports<handle,oper_name,ret_t, SelfType, typename DECT(typecheck<seqnum,depth+1>(old_env{},var_args{}))::yield...>::value, "Error: Invalid arguments for handle operation");	\
+  return handle_operations<seqnum,depth,oper_name,ptr_label,arguments_label_min,binding_expr,ret_t, var_args...>::handle_operation(choice{},old_env{});	\
+																																				\
 }
 
-	template <int seqnum, int depth, typename old_env, typename choice, typename, typename Hndl, typename... var_args>
-	constexpr auto _typecheck(old_env, parse_phase::Operation<mutils::String<'n','e','w'>, Hndl, parse_phase::operation_args_exprs<>,parse_phase::operation_args_varrefs<var_args...> >)
-{
-	static_assert(DECT(*std::declval<choice>())::value == false);
-	using oper_name = mutils::String<'n','e','w'>;
-  using binding_expr = DECT(typecheck<seqnum, depth + 1>(old_env{}, Hndl{}));
-  using ptr_label = typename binding_expr::label;
-  using handle = typename binding_expr::yield;
-  // we dereference the pointer, which is an influencing action.  Reduce the label
-  // of the environment if needed.
-  using arguments_label_min = resolved_label_min_vararg<typename handle::label, /*the duplication is on purpose*/ typename handle::label, typename DECT(typecheck<seqnum,depth+1>(old_env{},var_args{}))::label...>;
-  using ret_t = handle;
-  return handle_operations<seqnum,depth,oper_name,ptr_label,arguments_label_min,binding_expr,ret_t, var_args...>::handle_operation(choice{},old_env{});
+	MYRIA_SPECIAL_OPERATIONS(typename _oper_name, _oper_name,
+													 constexpr OperationIdentifier<oper_name> op;
+													 using ret_t = typename DECT(std::declval<handle>().upCast(op))::Return;,
+													 std::enable_if_t<!(std::is_same<_oper_name, mutils::String<'n','e','w'> >::value)>,
+													 false
+		)
 
-}
-	
+	MYRIA_SPECIAL_OPERATIONS(typename, DECT(mutils::String<'n','e','w'>{}), using ret_t = handle, void*, true)
+
 template <int seqnum, int depth, typename old_env, typename oper_name, typename Hndl, typename... var_args>
 constexpr auto _typecheck(old_env a, parse_phase::Statement<parse_phase::Operation<oper_name, Hndl, parse_phase::operation_args_exprs<>,parse_phase::operation_args_varrefs<var_args...> > >)
 {

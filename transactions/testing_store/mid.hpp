@@ -33,7 +33,7 @@ namespace myria{
 		using can_abort = std::false_type;
 	};
 
-	std::ostream &operator<<(std::ostream &o, const Label<mid> &){
+	inline std::ostream &operator<<(std::ostream &o, const Label<mid> &){
 		return o << "mid";
 	}
 }

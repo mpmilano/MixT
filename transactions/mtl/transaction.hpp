@@ -108,7 +108,7 @@ struct pre_transaction_str<mutils::String<Str...>>
   using requires_tracking = typename label::requires_causal_tracking;
 
   template <typename... bound_values>
-  constexpr static auto compile()
+  constexpr static auto typecheck()
   {
     using parsed_t = DECT(parse_statement(transaction_text{}));
     {
@@ -120,25 +120,39 @@ struct pre_transaction_str<mutils::String<Str...>>
         {
           using namespace label_inference;
           using inferred_t = DECT(infer_labels(checked_t{}));
-          {
-            using namespace tracking_phase;
-            using tracked_t = DECT(insert_tracking_begin(inferred_t{}));
-			using endorsed_one_t = DECT(do_pre_endorse(tracked_t{}));
-			static_assert(!Contains_endorsement<contains_endorsement_argument<false,mutils::EmptyWorkList>,  endorsed_one_t>::value);
-            using namespace split_phase;
-            using split_t = DECT(split_computation<endorsed_one_t, true_binding, false_binding, bound_values...>());
-            using recollapsed_t = DECT(recollapse(split_t{}));
-            struct inferred_and_recollapsed
-            {
-              constexpr inferred_and_recollapsed() = default;
-              using inferred = DECT(do_pre_endorse(inferred_t{}));
-				using recollapsed = DECT(runnable_transaction::relabel(recollapsed_t{}));
-            };
-            return inferred_and_recollapsed{};
-          }
+					return inferred_t{};
         }
       }
     }
+  }
+	
+  template <typename... bound_values>
+  constexpr static auto compile()
+  {
+		using inferred_t = DECT(typecheck<bound_values...>());
+		{
+			using namespace typecheck_phase;
+			using namespace tracking_phase;
+			using tracked_t = DECT(insert_tracking_begin(inferred_t{}));
+			using endorsed_one_t = DECT(do_pre_endorse(tracked_t{}));
+			static_assert(!Contains_endorsement<contains_endorsement_argument<false,mutils::EmptyWorkList>,  endorsed_one_t>::value);
+			using namespace split_phase;
+			using split_t = DECT(split_computation<endorsed_one_t, true_binding, false_binding, bound_values...>());
+			using recollapsed_t = DECT(recollapse(split_t{}));
+			struct inferred_and_recollapsed
+			{
+				constexpr inferred_and_recollapsed() = default;
+				using inferred = DECT(do_pre_endorse(inferred_t{}));
+				using recollapsed = DECT(runnable_transaction::relabel(recollapsed_t{}));
+			};
+			return inferred_and_recollapsed{};
+		}
+  }
+
+	template <typename... value>
+  static constexpr auto typecheck_only()
+  {
+		return typecheck<type_binding<typename value::name, typename value::type, Label<top>, type_location::local>...>();
   }
 
   template <typename... value>

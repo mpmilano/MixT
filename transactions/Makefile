@@ -25,10 +25,10 @@ test_operation: $(object_files)
 logging_example: $(object_files)
 	clang++ $(CPPFLAGS) $(LDFLAGS)  $(object_files) logging_example.cpp -o /tmp/test
 mailing_list_example: $(object_files) mailing_list_post_new_message.o mailing_list_add_new_user.o
-	clang++ $(CPPFLAGS) $(LDFLAGS)  $(object_files) mailing_list_example.cpp -o /tmp/test
-mailing_list_post_new_message.o: $(object_files)
+	clang++ $(CPPFLAGS) $(LDFLAGS)  $(object_files) mailing_list_post_new_message.o mailing_list_add_new_user.o mailing_list_example.cpp -o /tmp/test
+mailing_list_post_new_message.o: $(object_files) mailing_list_post_new_message.cpp
 	clang++ -c -DUSE_PRECOMPILED mailing_list_post_new_message.cpp $(CPPFLAGS) -ftemplate-depth=10000
-mailing_list_add_new_user.o: $(object_files)
+mailing_list_add_new_user.o: $(object_files) mailing_list_add_new_user.cpp
 	clang++ -c mailing_list_add_new_user.cpp $(CPPFLAGS) -ftemplate-depth=10000
 test_endorse: $(object_files)
 	clang++ $(CPPFLAGS) $(LDFLAGS)  $(object_files) test_endorse.cpp -o /tmp/test

@@ -314,6 +314,7 @@ constexpr auto _collect_labels_helper(Statement<l, LetRemote<b, e>>)
   return typeset<l>::combine(collect_labels_helper(h{}));
 }
 
+
 template <typename l, typename y, typename oper_name, typename Hndl, typename... args>
 constexpr auto _collect_labels_helper(Expression<l, y, Operation< oper_name,  Hndl,  args...>>)
 {

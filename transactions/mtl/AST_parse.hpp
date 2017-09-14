@@ -68,6 +68,20 @@ struct Expression<Endorse<l,h> >
 {
 	using subexpr = typename Endorse<l,h>::subexpr;
 };
+
+template <typename label, typename Hndl>
+struct Ensure;
+template <typename l, typename Hndl>
+struct Ensure<Label<l>,Expression<Hndl> >
+{
+  using subexpr = Ensure;
+};
+template <typename l, typename h>
+struct Expression<Ensure<l,h> >
+{
+	using subexpr = typename Ensure<l,h>::subexpr;
+};
+
 	
 template <typename Hndl>
 struct IsValid;
@@ -268,17 +282,6 @@ struct Expression<Operation<oper_name, Hndl, expr_args, var_args> >
 	using subexpr = substatement;
 };
 	
-template <typename Binding, typename Body, typename label>
-struct LetEndorsed;
-template <typename Name, typename Expr, typename Body, typename label>
-struct LetEndorsed<Binding<Name, Expr>, Statement<Body>, Label<label> >
-{
-};
-template <typename Binding, typename Body, typename label>
-struct Statement<LetEndorsed<Binding, Body,label> >
-{
-};
-
 template <typename Var, typename Expr>
 struct Assignment;
 template <typename Expr, typename Var>

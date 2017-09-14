@@ -28,6 +28,7 @@ using minus_s = mutils::String<'-',' '>;
 using return_s = mutils::String<'r','e','t','u','r','n'>;
 using isValid_str = mutils::String<'i','s','V','a','l','i','d'>;
 using endorse_str = mutils::String<'e','n','d','o','r','s','e'>;
+	using ensure_str = mutils::String<'e','n','s','u','r','e'>;
   
 }
 }

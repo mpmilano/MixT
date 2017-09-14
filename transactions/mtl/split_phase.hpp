@@ -54,7 +54,7 @@ template <typename Yields, typename label2, typename Str, typename old_api>
 constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Expression<label2, Yields, typecheck_phase::VarReference<Str>>)
 {
 	using namespace mutils;
-  using needed_binding = type_binding_super<Str, Yields, label2>;
+  using needed_binding = type_binding_super<Str, Yields>;
   static_assert(label2::flows_to(label{}), "Error: encountered VarReference before passing definition phase");
 	constexpr bool needed_binding_present = old_api::provides::template contains_subtype<needed_binding>() || old_api::inherits::template contains_subtype<needed_binding>();
   static_assert(useful_static_assert<needed_binding_present, needed_binding, old_api>());
@@ -158,7 +158,7 @@ constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Statement
 	using yield = typename _binding::e_yield::type;
 	if constexpr (label2::flows_to(Label<l>{})){
 			//make sure this binding is available
-			using needed_binding = type_binding_super<var, yield, label2>;
+			using needed_binding = type_binding_super<var, yield>;
 			static_assert(mutils::useful_static_assert<
 						  (old_api::provides::template contains_subtype<needed_binding>()
 						   || !std::is_same<typename old_api::inherits::template find_subtype<needed_binding>, mutils::mismatch >::value),

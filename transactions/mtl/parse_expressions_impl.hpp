@@ -140,6 +140,14 @@ struct add_operations_struct
   {
     return IsValid<hndl>{};
   }
+	// this is ensure
+	template <typename hndl, char... label>
+	static constexpr auto add_operation_args(Operation<ensure_str, hndl,operation_args_exprs<>, operation_args_varrefs<> >, String<label...> l)
+  {
+	  using inner_label = DECT(l);
+		static_assert(Label<String<label...> >::is_label::value);
+	  return Ensure<Label<inner_label>,hndl>{};
+  }
 
 	// this is endorse
 	template <typename hndl, char... label>
@@ -150,6 +158,8 @@ struct add_operations_struct
 	  return Endorse<Label<inner_label>,hndl>{};
   }
 
+
+	
   // no (further) arguments possible
   template <typename hndl, typename operations_str>
   static constexpr auto add_operation_args(Operation<operations_str, hndl, operation_args_exprs<args...>, operation_args_varrefs<> > a, String<>)
@@ -161,7 +171,7 @@ struct add_operations_struct
   // last argument
   template <typename hndl, typename operations_str, char c, char... str>
   static constexpr auto add_operation_args(Operation<operations_str, hndl, operation_args_exprs<args...>, operation_args_varrefs<> >, String<c, str...> arg,
-                                           std::enable_if_t<operations_str{} != endorse_str{} && !String<c, str...>::contains_outside_parens(String<','>{})>* = nullptr)
+                                           std::enable_if_t<operations_str{} != endorse_str{} && operations_str{} != ensure_str{} && !String<c, str...>::contains_outside_parens(String<','>{})>* = nullptr)
   {
 	  return Operation<operations_str, hndl, operation_args_exprs<args..., DECT(parse_expression(arg))>, operation_args_varrefs<> >{};
   }

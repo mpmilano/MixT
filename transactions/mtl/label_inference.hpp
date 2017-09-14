@@ -266,11 +266,6 @@ constexpr auto collect_constraints(Label<pc_label>, ast a)
   return _collect_constraints<Label<pc_label>>(a);
 }
 
-  template <typename to, typename l, typename r, typename why, typename... rest>
-  constexpr auto collapse_constraints(constraints<must_flow_to<Label<label_min_of<l, r> >, to, why>, rest...>)
-{
-  return collapse_constraints(constraints<must_flow_to<l, to,why>, must_flow_to<r, to,why>, rest...>{});
-}
 
 template <typename>
 struct is_min_of;
@@ -286,6 +281,13 @@ template <typename>
 struct is_min_of : public std::false_type
 {
 };
+	
+  template <typename to, typename l, typename r, typename why, typename... rest>
+  constexpr auto collapse_constraints(constraints<must_flow_to<Label<label_min_of<l, r> >, to, why>, rest...>)
+{
+  return collapse_constraints(constraints<must_flow_to<l, to,why>, must_flow_to<r, to,why>, rest...>{});
+}
+
 
   template <typename from, typename to, typename why, typename... rst>
   constexpr auto collapse_constraints(constraints<must_flow_to<from, to, why>, rst...>, std::enable_if_t<!(is_min_of<from>::value || is_min_of<to>::value)>* = nullptr)

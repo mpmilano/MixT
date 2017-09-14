@@ -60,7 +60,6 @@ auto print_ast(const Expression<l, y, IsValid<h>>&)
 	return print_ast(h{}).append(MUTILS_STRING(.endorse()){}).append(print_label(l{}).append(String<'*','/'>{})).template append<')'>();
 }
 
-
 	template <typename l, typename b, typename body, typename tab>
 	auto print_ast(const Statement<l, Let<b, body>>&, tab)
 {

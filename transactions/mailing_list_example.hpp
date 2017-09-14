@@ -33,9 +33,12 @@ struct user {
 
 using user_hndl = typename BotStore::template TestingHandle<user>;
 
-struct group {
-	typename RemoteList<user_hndl,MidStore::TestingHandle>::Hndl users;
 
+struct group {
+	using users_lst = RemoteList<user_hndl,MidStore::TestingHandle>;
+	typename users_lst::Hndl users;
+	group(DECT(users) users):users(users){}
+	
 	void post_new_message(ClientTrk& ct, std::string message_contents);
 	void add_new_user(ClientTrk& ct, user_hndl newbie);
 	

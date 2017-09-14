@@ -243,7 +243,7 @@ auto print_label(const Label<temp_label<seq, depth>>&)
 }
 
 	template<typename l>
-	std::ostream& operator<<(std::ostream& o, const Label<l>& a){
+	inline std::ostream& operator<<(std::ostream& o, const Label<l>& a){
 		return o << print_label(a);
 	}
 
