@@ -46,9 +46,10 @@ struct test {
 
   template <typename Time>
   auto schedule_event(const Time &start_time, std::size_t parallel_factor) {
+		using namespace mutils;
     return now() +
-           getArrivalInterval(params.current_arrival_rate(now() - start_time) /
-                              parallel_factor);
+			getArrivalInterval(std::max(params.current_arrival_rate(now() - start_time) /
+																	parallel_factor, 1_Hz));
   }
 
   template <typename timeout, typename time>
@@ -87,7 +88,7 @@ struct test {
     using namespace chrono;
     using namespace mutils;
     using namespace moodycamel;
-    std::size_t parallel_factor = 8;
+    std::size_t parallel_factor = std::min<std::size_t>(params.parallel_factor,tp.size());
     ConcurrentQueue<std::future<std::unique_ptr<run_result>>> results;
     auto start_time = now();
     DECT(start_time) last_log_write_time = start_time;
@@ -140,7 +141,9 @@ struct test {
     using namespace moodycamel;
     auto stop_time = start_time + params.test_duration;
     auto next_event_time = schedule_event(start_time, parallel_factor);
+		assert(next_event_time > now());
     auto next_desired_delay = next_event_time - now();
+		assert(next_desired_delay > 0s);
     auto &client_queue = this->client_queue;
     unsigned short choose_logging{0};
     while (now() < stop_time) {
@@ -178,6 +181,7 @@ struct test {
 					Cleanup(struct client &client):client(client){}
 					~Cleanup(){
 						if (cleanup_required) {
+							std::cout << "cleanup required" << std::endl;
 							--client.t.number_enqueued_clients;
 						}
 					}

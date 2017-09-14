@@ -14,8 +14,8 @@ template <typename label> struct TombHolder<Label<label>> {
   std::unique_ptr<std::vector<Tombstone>> obligations{
       new std::vector<Tombstone>()};
 	std::set<Tombstone> observed_tombstones;
-	Clock global_min_clock;
-	Clock max_recent_clock;
+	Clock global_min_clock{{0,0,0,0}};
+	Clock max_recent_clock{{0,0,0,0}};
 	void reset_obligations(){
 		obligations.reset(new std::vector<Tombstone>());
 	}
