@@ -663,6 +663,10 @@ template<bool b, typename...> constexpr bool useful_static_assert(){
 	template<> struct typename_str<int> {
 		static std::string f(){return "int";}
 	};
+
+	template<> struct typename_str<std::string> {
+		static std::string f(){return "string";}
+	};
 	
 }
 

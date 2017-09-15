@@ -4,6 +4,8 @@
 #include "mtl/mtlutils.hpp"
 #include "mtl/top.hpp"
 #include "mtl/traverse_assist.hpp"
+#include "tracker/Tombstone.hpp"
+#include "Handle.hpp"
 #include <type_traits>
 #include <vector>
 

@@ -183,6 +183,12 @@ public:
 		return ret;
   }
 
+	const auto& get(typename builtins::ListStub::name )
+  {
+		static value_holder<typename builtins::ListStub,'d','e','f','a','u','l','t',' ','l','i','s','t'> ret;
+		return ret;
+  }
+
   template <typename... args>
   auto get(mutils::typeset<args...>)
   {

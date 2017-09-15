@@ -121,7 +121,7 @@ struct pre_transaction_str<mutils::String<Str...>>
         {
           using namespace label_inference;
           using inferred_t = DECT(infer_labels(checked_t{}));
-					return inferred_t{};
+					return builtins::do_your_thing(inferred_t{});
         }
       }
     }

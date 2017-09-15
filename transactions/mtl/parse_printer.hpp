@@ -43,16 +43,26 @@ print_ast(std::ostream& o, const Expression<BinOp<op, L, R>>&)
   o << L{} << " " << opstr << " " << R{};
 }
 
-template <typename Name, typename Hndl>
+  template <typename Name, typename Hndl>
 void
-print_ast(std::ostream& o, const Expression<Operation<Name, Hndl>>&)
+  print_ast(std::ostream& o, const Expression<Operation<Name, Hndl, operation_args_exprs<>, operation_args_varrefs<> > >&)
 {
   o << Hndl{} << "." << Name{} << "()";
 }
 
-  template <typename Name, typename Hndl, typename a1, typename... args>
+	
+	template <typename Name, typename Hndl, typename... vfs>
 void
-  print_ast(std::ostream& o, const Expression<Operation<Name, Hndl, a1, args...>>&)
+print_ast(std::ostream& o, const Expression<Operation<Name, Hndl, operation_args_exprs<>, operation_args_varrefs<vfs...> >>&)
+{
+  o << Hndl{} << "." << Name{} << "(";
+  ((o <<  "," << vfs{} ), ...);
+	o << ")";
+}
+
+  template <typename Name, typename Hndl, typename vfs, typename a1, typename... args>
+void
+  print_ast(std::ostream& o, const Expression<Operation<Name, Hndl, operation_args_exprs<a1, args...>, vfs>>&)
 {
   o << Hndl{} << "." << Name{} << "(" << a1{};
   ((o <<  "," << args{} ), ...);
@@ -72,13 +82,6 @@ void
     ((o << args{} << ","),...);
   }
   
-  template <typename bound_name, typename oper_name, typename Hndl, typename Body, typename expr_args, typename var_args>
-void
-  print_ast(std::ostream& o, const Statement<LetOperation<bound_name, oper_name, Hndl, Body, expr_args, var_args> >&)
-{
-  o << "let " << bound_name{} << " = " << Hndl{} << "." << oper_name{} << "(" << expr_args{} << "," << var_args{} << ") in " <<  Body{};
-  
-}
 
 template <typename b, typename body>
 void

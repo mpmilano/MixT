@@ -5,6 +5,7 @@
 #include "mtl/split_phase_utils.hpp"
 #include "mtl/label_utilities.hpp"
 #include "mtl/AST_typecheck.hpp"
+#include "mtl/builtins_declarations.hpp"
 
 namespace myria {
 

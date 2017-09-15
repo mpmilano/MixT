@@ -211,7 +211,7 @@ constexpr auto _collect_constraints(Statement<l, LetRemote<b, e>> a)
 }
 
 	template <typename pc_label, typename expr_label, typename handle_label, typename oper_name, typename Hndl, typename... args>
-constexpr auto _collect_constraints(Operation<oper_name,Hndl,args...> )
+constexpr auto _collect_operation_constraints(Operation<oper_name,Hndl,args...> )
 {
   using new_pc = label_min_vararg<pc_label, expr_label, handle_label, typename args::label...>;
   return collect_constraints(new_pc{}, Hndl{})
@@ -224,14 +224,14 @@ template <typename pc_label, typename l, typename oper_name, typename Hndl, type
 constexpr auto _collect_constraints(Statement<l, Operation<oper_name,Hndl,args...> > a)
 {
 	using This = DECT(a);
-	return _collect_constraints<pc_label,typename This::expr_label, typename This::handle_label, oper_name,Hndl,args...>(Operation<oper_name,Hndl,args...>{});
+	return _collect_operation_constraints<pc_label,typename This::expr_label, typename This::handle_label, oper_name,Hndl,args...>(Operation<oper_name,Hndl,args...>{});
 }
 
 template <typename pc_label, typename l, typename y, typename oper_name, typename Hndl, typename... args>
 constexpr auto _collect_constraints(Expression<l, y, Operation<oper_name,Hndl,args...> > a)
 {
 	using This = DECT(a);
-	return _collect_constraints<pc_label,typename This::expr_label, typename This::handle_label, oper_name,Hndl,args...>(Operation<oper_name,Hndl,args...>{});
+	return _collect_operation_constraints<pc_label,typename This::expr_label, typename This::handle_label, oper_name,Hndl,args...>(Operation<oper_name,Hndl,args...>{});
 }
 
 template <typename pc_label, typename l, typename c, typename t, typename e>

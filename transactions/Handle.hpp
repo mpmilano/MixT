@@ -145,6 +145,12 @@ namespace myria{
     Handle clone() const {
       return *this;
     }
+
+		Handle nulled() const {
+			auto copy_of_this = *this;
+			copy_of_this._ro = nullptr;
+			return copy_of_this;
+		}
     
     operator Handle<l,T>(){
       return Handle<l,T>((std::integral_constant<std::size_t,0>*)nullptr, _ro);

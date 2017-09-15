@@ -167,7 +167,8 @@ static auto _run_phase(Statement<LetRemote<Binding, Body>>*, TranCtx& ctx, store
 	
 	template <typename TranCtx, typename store, typename name, typename expr, typename... args>
 	static auto _run_phase(Operation<name, expr, args...>*, TranCtx& ctx, store& s,
-												 std::enable_if_t<!(name{} == mutils::String<'n','e','w'>{})>* = nullptr)
+												 std::enable_if_t<!(name{} == typename builtins::ListStub::push_back_name{}
+|| name{} == mutils::String<'n','e','w'>{})>* = nullptr)
 {
 	constexpr OperationIdentifier<name> opname;
 	constexpr expr* _expr{nullptr};
@@ -178,6 +179,20 @@ static auto _run_phase(Statement<LetRemote<Binding, Body>>*, TranCtx& ctx, store
 	auto &dop = *op;
 	return dop.act(&ctx,hndl,run_phase((args*)nullptr,ctx,s)...);
 }
+
+	template <typename TranCtx, typename store, typename, typename expr, typename... args>
+			static auto _run_phase(Operation<typename builtins::ListStub::push_back_name, expr, args...>*, TranCtx& ctx, store& s)
+			{
+			}
+
+		template <typename TranCtx, typename store, typename, typename expr, typename... args>
+			static auto _run_phase(Operation<typename builtins::NulledOp::name, expr, args...>*, TranCtx& ctx, store& s)
+			{
+					constexpr expr* _expr{nullptr};
+					auto hndl = run_phase(_expr,ctx,s);
+					return hndl.nulled();
+			}
+
 
 	template <typename TranCtx, typename store, typename name, typename expr, typename... args>
 	static auto _run_phase(Statement<Operation<name, expr, args...>>*, TranCtx& ctx, store& s)

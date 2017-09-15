@@ -34,6 +34,8 @@ mailing_list_add_new_user.o: $(object_files) mailing_list_add_new_user.cpp
 	clang++ -c mailing_list_add_new_user.cpp $(CPPFLAGS) -ftemplate-depth=10000
 test_endorse: $(object_files)
 	clang++ $(CPPFLAGS) $(LDFLAGS)  $(object_files) test_endorse.cpp -o /tmp/test
+debug_scratch: $(object_files)
+	clang++ $(CPPFLAGS) $(LDFLAGS)  $(object_files) debug_scratch.cpp -o /tmp/test
 test_builtins: $(object_files)
 	clang++ $(CPPFLAGS) $(LDFLAGS)  $(object_files) test_builtins.cpp -o /tmp/test
 regression_tests: $(object_files)
