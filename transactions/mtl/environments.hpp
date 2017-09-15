@@ -144,17 +144,16 @@ struct value_holder<bool,'f','a','l','s','e'>
   }
 };
 
-template <typename T>
-struct value_holder<typename builtins::List<T>,'d','e','f','a','u','l','t',' ','l','i','s','t'>
+template <>
+struct value_holder<typename builtins::ListStub,'d','e','f','a','u','l','t',' ','l','i','s','t'>
 {
 
   template <typename ignore, typename TransactionContext>
-  static const auto& get(ignore& , TransactionContext&)
+  static auto get(ignore& , TransactionContext&) 
   {
-		static const builtins::List<T> ret;
-		return ret;
+		return builtins::ListStub{};
   }
-};
+};	
 	
 template <typename>
 struct is_value_holder;

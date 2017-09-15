@@ -180,9 +180,16 @@ static auto _run_phase(Statement<LetRemote<Binding, Body>>*, TranCtx& ctx, store
 	return dop.act(&ctx,hndl,run_phase((args*)nullptr,ctx,s)...);
 }
 
-	template <typename TranCtx, typename store, typename, typename expr, typename... args>
-			static auto _run_phase(Operation<typename builtins::ListStub::push_back_name, expr, args...>*, TranCtx& ctx, store& s)
+	template <typename TranCtx, typename store, typename, typename expr, typename arg>
+			static auto _run_phase(Operation<typename builtins::ListStub::push_back_name, expr, arg>*, TranCtx& ctx, store& s)
 			{
+				constexpr expr* _expr{nullptr};
+				constexpr arg* _arg{nullptr};
+				auto lst = run_phase(_expr,ctx,s);
+				if (!*lst.real_list){
+					*lst.real_list = new std::list<typename arg::yield>();
+				}
+				((std::list<typename arg::yield>*) *lst.real_list)->push_back(run_phase(_arg,ctx,s));
 			}
 
 		template <typename TranCtx, typename store, typename, typename expr, typename... args>

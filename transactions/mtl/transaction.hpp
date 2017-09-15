@@ -36,7 +36,7 @@ struct previous_transaction_phases
   struct resume_compilation_inferred_str
   {
     using recollapsed =
-			DECT(runnable_transaction::relabel(recollapse(split_phase::split_computation<tracked, true_binding, false_binding, type_binding<typename value::name, typename value::type, Label<top>, type_location::local>...>())));
+			DECT(runnable_transaction::relabel(recollapse(split_phase::split_computation<tracked, true_binding, false_binding, list_binding, type_binding<typename value::name, typename value::type, Label<top>, type_location::local>...>())));
 		using all_store = typename recollapsed::template all_store<value...>;
   };
 
@@ -117,11 +117,11 @@ struct pre_transaction_str<mutils::String<Str...>>
       using flattened_t = DECT(parse_phase::flatten_expressions(parsed_t{}));
       {
         using namespace typecheck_phase;
-        using checked_t = DECT(typecheck_phase::typecheck<1, 1>(typecheck_phase::type_environment<Label<top>, true_binding, false_binding, bound_values...>{}, flattened_t{}));
+        using checked_t = DECT(typecheck_phase::typecheck<1, 1>(typecheck_phase::type_environment<Label<top>, true_binding, false_binding, list_binding, bound_values...>{}, flattened_t{}));
         {
           using namespace label_inference;
           using inferred_t = DECT(infer_labels(checked_t{}));
-					return builtins::do_your_thing(inferred_t{});
+					return inferred_t{};
         }
       }
     }
@@ -138,7 +138,7 @@ struct pre_transaction_str<mutils::String<Str...>>
 			using endorsed_one_t = DECT(do_pre_endorse(tracked_t{}));
 			static_assert(!Contains_endorsement<contains_endorsement_argument<false,mutils::EmptyWorkList>,  endorsed_one_t>::value);
 			using namespace split_phase;
-			using split_t = DECT(split_computation<endorsed_one_t, true_binding, false_binding, bound_values...>());
+			using split_t = DECT(split_computation<endorsed_one_t, true_binding, false_binding, list_binding, bound_values...>());
 			using recollapsed_t = DECT(recollapse(split_t{}));
 			struct inferred_and_recollapsed
 			{

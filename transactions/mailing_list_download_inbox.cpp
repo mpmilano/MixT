@@ -19,7 +19,6 @@ namespace examples{
 				)::WITH(i);
 		
 		std::cout << txn << std::endl;
-		txn.run_local(ct,i);
-		return std::list<message>{};
+		return txn.run_local(ct,i);
 	}
 }

@@ -30,7 +30,6 @@ enum class type_location
 template <typename Name, typename type, typename Label, type_location>
 struct type_binding;
 
-using true_binding = type_binding<mutils::String<'t','r','u','e'>, bool, Label<top>,type_location::local>;
-using false_binding = type_binding<mutils::String<'f','a','l','s','e'>, bool, Label<top>,type_location::local>;
+
 	
 }}
