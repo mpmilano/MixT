@@ -29,6 +29,9 @@ struct user {
 	//boilerplate; must find a way to eliminate it.
 	bool is_struct{ true };
 	auto& field(MUTILS_STRING(i)) { return i; }
+
+	std::list<message> download_inbox(ClientTrk& ct);
+	
 };
 
 using user_hndl = typename BotStore::template TestingHandle<user>;

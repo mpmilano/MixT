@@ -24,14 +24,18 @@ test_operation: $(object_files)
 	clang++ $(CPPFLAGS) $(LDFLAGS)  $(object_files) test_operation.cpp -o /tmp/test
 logging_example: $(object_files)
 	clang++ $(CPPFLAGS) $(LDFLAGS)  $(object_files) logging_example.cpp -o /tmp/test
-mailing_list_example: $(object_files) mailing_list_post_new_message.o mailing_list_add_new_user.o
+mailing_list_example: $(object_files) mailing_list_post_new_message.o mailing_list_add_new_user.o mailing_list_download_inbox.o
 	clang++ $(CPPFLAGS) $(LDFLAGS)  $(object_files) mailing_list_post_new_message.o mailing_list_add_new_user.o mailing_list_example.cpp -o /tmp/test
 mailing_list_post_new_message.o: $(object_files) mailing_list_post_new_message.cpp
 	clang++ -c -DUSE_PRECOMPILED mailing_list_post_new_message.cpp $(CPPFLAGS) -ftemplate-depth=10000
+mailing_list_download_inbox.o: $(object_files) mailing_list_download_inbox.cpp
+	clang++ -c -DUSE_PRECOMPILED mailing_list_download_inbox.cpp $(CPPFLAGS) -ftemplate-depth=10000	
 mailing_list_add_new_user.o: $(object_files) mailing_list_add_new_user.cpp
 	clang++ -c mailing_list_add_new_user.cpp $(CPPFLAGS) -ftemplate-depth=10000
 test_endorse: $(object_files)
 	clang++ $(CPPFLAGS) $(LDFLAGS)  $(object_files) test_endorse.cpp -o /tmp/test
+test_builtins: $(object_files)
+	clang++ $(CPPFLAGS) $(LDFLAGS)  $(object_files) test_builtins.cpp -o /tmp/test
 regression_tests: $(object_files)
 	clang++ $(CPPFLAGS) $(LDFLAGS)  $(object_files) regression_tests.cpp -o /tmp/test
 test_isvalid: utils.o

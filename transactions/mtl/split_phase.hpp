@@ -8,6 +8,8 @@
 #include "mtl/remove_unused.hpp"
 #include "mtl/without_names.hpp"
 #include "mtl/remove_empties.hpp"
+#include "mtl/split_phase_impl_utils.hpp"
+#include "mtl/builtins_declarations.hpp"
 
 namespace myria {
 namespace mtl {
@@ -51,16 +53,22 @@ struct extracted_phase<Label<_label>, phase_api<Label<_label>, requires, provide
 
 template <typename l>
 template <typename Yields, typename label2, typename Str, typename old_api>
-constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Expression<label2, Yields, typecheck_phase::VarReference<Str>>)
+constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Expression<label2, Yields, typecheck_phase::VarReference<Str>>,std::enable_if_t<builtins::is_builtin<Str>::value>* ){
+	return extracted_phase<label, phase_api<label, requires<>, provides<>, typename old_api::inherits>, void, Expression<Yields, VarReference<Str>>>{};
+}
+	
+template <typename l>
+template <typename Yields, typename label2, typename Str, typename old_api>
+constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Expression<label2, Yields, typecheck_phase::VarReference<Str>>,std::enable_if_t<!builtins::is_builtin<Str>::value>* )
 {
-	using namespace mutils;
-  using needed_binding = type_binding_super<Str, Yields>;
-  static_assert(label2::flows_to(label{}), "Error: encountered VarReference before passing definition phase");
-	constexpr bool needed_binding_present = old_api::provides::template contains_subtype<needed_binding>() || old_api::inherits::template contains_subtype<needed_binding>();
-  static_assert(useful_static_assert<needed_binding_present, needed_binding, old_api>());
-  using requires = std::conditional_t<old_api::provides::template contains_subtype<needed_binding>(), requires<>,
-                                      requires<typename old_api::inherits::template find_subtype<needed_binding>>>;
-  return extracted_phase<label, phase_api<label, requires, provides<>, typename old_api::inherits>, void, Expression<Yields, VarReference<Str>>>{};
+		using namespace mutils;
+		using needed_binding = type_binding_super<Str, Yields>;
+		static_assert(label2::flows_to(label{}), "Error: encountered VarReference before passing definition phase");
+		constexpr bool needed_binding_present = old_api::provides::template contains_subtype<needed_binding>() || old_api::inherits::template contains_subtype<needed_binding>();
+		static_assert(useful_static_assert<needed_binding_present, needed_binding, old_api>());
+		using requires = std::conditional_t<old_api::provides::template contains_subtype<needed_binding>(), requires<>,
+																				requires<typename old_api::inherits::template find_subtype<needed_binding>>>;
+		return extracted_phase<label, phase_api<label, requires, provides<>, typename old_api::inherits>, void, Expression<Yields, VarReference<Str>>>{};
 }
 
 template <typename label, typename old_api, typename label2, typename Yields, typename var, typename expr>
@@ -182,15 +190,26 @@ constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Statement
 
 template <typename l>
 template <typename oper_name, typename hndl, typename old_api, typename... args>
-constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Statement<label, typecheck_phase::Operation<oper_name,hndl, args...>>)
+constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Statement<label, typecheck_phase::Operation<oper_name,hndl, args...>>,
+																						 std::enable_if_t<!builtins::is_builtin<oper_name>::value>*)
 {
   using new_hndl = DECT(collect_phase(old_api{}, hndl{}));
   using new_api = combined_api<typename new_hndl::api, typename DECT(collect_phase(old_api{}, args{}))::api...>;
-  using new_ast = Statement<Sequence<Statement<Operation<oper_name,typename new_hndl::ast, typename DECT(collect_phase(old_api{}, args{}))::ast...> >,
-									 Statement<RefreshRemoteOccurance<typename DECT(collect_phase(old_api{},hndl{}))::ast> > > >;
+  using new_ast = Statement<Sequence<Statement<Operation<oper_name,typename new_hndl::ast, typename DECT(collect_phase(old_api{}, args{}))::ast...> > ,
+																		 Statement<RefreshRemoteOccurance<typename DECT(collect_phase(old_api{},hndl{}))::ast> > > >;
   return extracted_phase<label, new_api, void, new_ast>{};
 }
 
+template <typename l>
+template <typename oper_name, typename hndl, typename old_api, typename... args>
+constexpr auto AST<Label<l>>::_collect_phase(old_api, typecheck_phase::Statement<label, typecheck_phase::Operation<oper_name,hndl, args...>>,
+																						 std::enable_if_t<builtins::is_builtin<oper_name>::value>*)
+{
+  using new_hndl = DECT(collect_phase(old_api{}, hndl{}));
+  using new_api = combined_api<typename new_hndl::api, typename DECT(collect_phase(old_api{}, args{}))::api...>;
+  using new_ast = Statement<Operation<oper_name,typename new_hndl::ast, typename DECT(collect_phase(old_api{}, args{}))::ast...> >;
+  return extracted_phase<label, new_api, void, new_ast>{};
+}
 	
 template <typename l>
 template <typename label2, typename oper_name, typename hndl, typename old_api, typename... args>

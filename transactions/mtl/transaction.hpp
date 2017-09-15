@@ -4,6 +4,7 @@
 #include "mutils-containers/better_constructable_array.hpp"
 #include "mtl/parse_statements.hpp"
 #include "mtl/flatten_expressions.hpp"
+#include "mtl/typecheck_and_label.hpp"
 #include "mtl/label_inference.hpp"
 #include "mtl/split_phase.hpp"
 #include "mtl/interp.hpp"

@@ -2,6 +2,7 @@
 #include "mtl/common_strings.hpp"
 #include "mtl/parse_expressions_decl.hpp"
 #include "mtl/parse_utilities.hpp"
+#include "mtl/builtins.hpp"
 
 namespace myria {
 namespace mtl {
@@ -289,13 +290,12 @@ _parse_expression(
   return parse_binop<'-', str...>(String<str...>{});
 }
 
-/*
-template<char... str>
-constexpr auto _parse_expression(String<str...>){
-        return Expression<bool>{};
-        }//*/
+//extra special keyword expressions!
+			
 }
 
+
+	
 template <char... str>
 constexpr auto
 parse_expression(mutils::String<str...>)

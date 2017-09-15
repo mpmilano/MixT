@@ -1,6 +1,7 @@
 #pragma once
 
 #include "mtl/typecheck_and_label_decl.hpp"
+#include "mtl/builtins.hpp"
 #include "mtl/struct.hpp"
 #include "Operations.hpp"
 
@@ -8,8 +9,8 @@ namespace myria {
 namespace mtl {
 namespace typecheck_phase {
 
-// expressions
-
+	// expressions
+	
 template <int seqnum, int depth, typename Obj, typename F, typename Env>
 constexpr auto _typecheck(Env, parse_phase::Expression<parse_phase::FieldReference<Obj, F>>)
 {
@@ -110,51 +111,15 @@ constexpr auto _typecheck(type_environment<label_env, Env...>, parse_phase::Stat
   return Statement<resolved_label_min<label_env, typename handle::label>, LetRemote<next_binding, next_body>>{};
 }
 
-template <int seqnum, int depth, typename oper_name, typename ptr_label, typename arguments_label_min, typename next_binding_expr, typename ret_t, typename... var_args>
-struct handle_operations{
-	//void-returning or result unused
-	template<typename label_env, typename... Env>
-	constexpr static auto handle_operation(std::true_type* /*won't use result*/, type_environment<label_env, Env...> a){
-		using old_env = DECT(a);
-		using oper_label = resolved_label_min<ptr_label,resolved_label_min<label_env, arguments_label_min> >;
-		return Statement<oper_label, Operation<oper_name,next_binding_expr, DECT(typecheck<seqnum,depth+1>(old_env{},var_args{}))...> >{};
-	}
-
-	//non-void-returning
-	template<typename label_env, typename... Env>
-	constexpr static auto handle_operation(std::false_type* /*might use result*/, type_environment<label_env, Env...> a){
-		using old_env = DECT(a);
-		using operation_execution_label = resolved_label_min<ptr_label,resolved_label_min<label_env, arguments_label_min> >;
-		return Expression<operation_execution_label, ret_t, Operation<oper_name,next_binding_expr, DECT(typecheck<seqnum,depth+1>(old_env{},var_args{}))...>>{};
-	}
-	
-};
-
-#define MYRIA_SPECIAL_OPERATIONS(oper_name_binding, oper_name_use, rett_def, enableif, disable_args_check) \
-	template <int seqnum, int depth, typename old_env, typename choice, oper_name_binding, typename Hndl, typename... var_args> \
-	constexpr auto _typecheck(old_env, parse_phase::Operation<oper_name_use, Hndl, parse_phase::operation_args_exprs<>,parse_phase::operation_args_varrefs<var_args...> >, enableif * = nullptr) \
-	{																																			\
-		using oper_name = oper_name_use;																		\
-		using binding_expr = DECT(typecheck<seqnum, depth + 1>(old_env{}, Hndl{}));	\
-		using ptr_label = typename binding_expr::label;											\
-		using handle = typename binding_expr::yield;												\
-		/* we dereference the pointer, which is an influencing action.  Reduce the label
-			 of the environment if needed. */																	\
-  using arguments_label_min = resolved_label_min_vararg<typename handle::label, /*the duplication is on purpose*/ typename handle::label, typename DECT(typecheck<seqnum,depth+1>(old_env{},var_args{}))::label...>; \
-	rett_def;																															\
-  static_assert(disable_args_check || handle_supports<handle,oper_name,ret_t, SelfType, typename DECT(typecheck<seqnum,depth+1>(old_env{},var_args{}))::yield...>::value, "Error: Invalid arguments for handle operation");	\
-  return handle_operations<seqnum,depth,oper_name,ptr_label,arguments_label_min,binding_expr,ret_t, var_args...>::handle_operation(choice{},old_env{});	\
-																																				\
-}
-
-	MYRIA_SPECIAL_OPERATIONS(typename _oper_name, _oper_name,
+	MYRIA_TYPECHECK_OPERATIONS(typename _oper_name, _oper_name,
 													 constexpr OperationIdentifier<oper_name> op;
 													 using ret_t = typename DECT(std::declval<handle>().upCast(op))::Return;,
 													 std::enable_if_t<!(std::is_same<_oper_name, mutils::String<'n','e','w'> >::value)>,
-													 false
+														 static_assert(handle_supports<handle,oper_name,ret_t, SelfType, typename DECT(typecheck<seqnum,depth+1>(old_env{},var_args{}))::yield...>::value, "Error: Invalid arguments for handle operation"),
+														 typename handle::label
 		)
 
-	MYRIA_SPECIAL_OPERATIONS(typename, DECT(mutils::String<'n','e','w'>{}), using ret_t = handle, void*, true)
+	MYRIA_SPECIAL_OPERATIONS(DECT(mutils::String<'n','e','w'>{}), handle, ;, typename handle::label);
 
 template <int seqnum, int depth, typename old_env, typename oper_name, typename Hndl, typename... var_args>
 constexpr auto _typecheck(old_env a, parse_phase::Statement<parse_phase::Operation<oper_name, Hndl, parse_phase::operation_args_exprs<>,parse_phase::operation_args_varrefs<var_args...> > >)

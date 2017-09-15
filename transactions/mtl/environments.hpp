@@ -7,6 +7,7 @@
 #include "mtl/mtlutils.hpp"
 #include "mtl/top.hpp"
 #include "mtl/pre_endorse.hpp"
+#include "mtl/type_environment.hpp"
 #include <cassert>
 #include <iostream>
 #include <type_traits>
@@ -17,26 +18,6 @@ namespace myria {
 
 namespace mtl {
 
-template <char... str>
-using String = mutils::String<str...>;
-}
-
-template <typename>
-struct Label;
-
-namespace mtl {
-
-enum class type_location
-{
-  local,
-  remote
-};
-template <typename Name, typename type, typename Label, type_location>
-struct type_binding;
-
-	using true_binding = type_binding<mutils::String<'t','r','u','e'>, bool, Label<top>,type_location::local>;
-	using false_binding = type_binding<mutils::String<'f','a','l','s','e'>, bool, Label<top>,type_location::local>;
-	
 template <typename T, char... str>
 struct value_holder
 {
@@ -93,7 +74,7 @@ struct value_holder
   ~value_holder() {if (!mem_uninitialized) t.~T(); }
 
   using type = T;
-  using name = String<str...>;
+  using name = mutils::String<str...>;
   template <typename TransactionContext>
   T& get(value_holder& whendebug(_this), TransactionContext&)
   {
@@ -180,7 +161,7 @@ using value = value_holder<T, str...>;
 template <typename, typename>
 struct value_with_stringname_str;
 template <typename T, char... str>
-struct value_with_stringname_str<T, String<str...>>
+struct value_with_stringname_str<T, mutils::String<str...>>
 {
   using type = value<T, str...>;
 };
@@ -193,7 +174,7 @@ struct type_holder
 {
 
   using held_type = T;
-  using name = String<str...>;
+  using name = mutils::String<str...>;
 
   std::vector<T> t;
   int curr_pos{ -1 };

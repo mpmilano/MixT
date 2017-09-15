@@ -4,6 +4,7 @@
 #include "mtl/mtlutils.hpp"
 #include "mtl/split_phase_utils.hpp"
 #include "mtl/label_utilities.hpp"
+#include "mtl/AST_typecheck.hpp"
 
 namespace myria {
 
@@ -660,7 +661,12 @@ struct AST<Label<l>>
   static constexpr auto _collect_phase(phase_api, typecheck_phase::Binding<label2, Yields, var, expr>);
 
   template <typename Yields, typename label2, typename Str, typename phase_api>
-  static constexpr auto _collect_phase(phase_api, typecheck_phase::Expression<label2, Yields, typecheck_phase::VarReference<Str>>);
+		static constexpr auto _collect_phase(phase_api, typecheck_phase::Expression<label2, Yields, typecheck_phase::VarReference<Str>>,
+																				 std::enable_if_t<!builtins::is_builtin<Str>::value>* = nullptr);
+
+	  template <typename Yields, typename label2, typename Str, typename phase_api>
+		static constexpr auto _collect_phase(phase_api, typecheck_phase::Expression<label2, Yields, typecheck_phase::VarReference<Str>>,
+																				 std::enable_if_t<builtins::is_builtin<Str>::value>* = nullptr);
 
   template <typename _binding, typename Body, typename phase_api>
   static constexpr auto _collect_phase(phase_api, typecheck_phase::Statement<label, typecheck_phase::Let<_binding, Body>>);
@@ -677,11 +683,16 @@ struct AST<Label<l>>
                                        std::enable_if_t<!are_equivalent(Label<l>{}, label2{})> const* const = nullptr);
 
   template <typename oper_name, typename hndl, typename old_api, typename... args>
-	  static constexpr auto _collect_phase(old_api, typecheck_phase::Statement<label, typecheck_phase::Operation<oper_name,hndl, args...>>);
+	  static constexpr auto _collect_phase(old_api, typecheck_phase::Statement<label, typecheck_phase::Operation<oper_name,hndl, args...>>,
+																				 std::enable_if_t<!builtins::is_builtin<oper_name>::value>* = nullptr);
   
   template <typename label2, typename oper_name, typename hndl, typename phase_api, typename... args>
 	  static constexpr auto _collect_phase(phase_api, typecheck_phase::Statement<label2, typecheck_phase::Operation<oper_name,hndl, args...>>,
-																				 std::enable_if_t<!are_equivalent(Label<l>{}, label2{})> const* const = nullptr);
+																				 std::enable_if_t<!are_equivalent(Label<l>{}, label2{}) > const* const = nullptr);
+
+	template <typename oper_name, typename hndl, typename old_api, typename... args>
+		static constexpr auto _collect_phase(old_api, typecheck_phase::Statement<label, typecheck_phase::Operation<oper_name,hndl, args...>>,
+																				 std::enable_if_t<builtins::is_builtin<oper_name>::value>* = nullptr);
 
   template <typename Var, typename Expr, typename phase_api>
   static constexpr auto _collect_phase(phase_api, typecheck_phase::Statement<label, typecheck_phase::Assignment<Var, Expr>>);

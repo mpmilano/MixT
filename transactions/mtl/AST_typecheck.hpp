@@ -1,7 +1,6 @@
 #pragma once
 
 #include "mutils/CTString.hpp"
-#include "mtl/environments.hpp"
 #include "mtl/mtlutils.hpp"
 #include "mtl/top.hpp"
 #include "mtl/traverse_assist.hpp"

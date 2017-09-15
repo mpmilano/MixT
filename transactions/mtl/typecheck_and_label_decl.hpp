@@ -3,6 +3,8 @@
 #include "mtl/mtlutils.hpp"
 #include "mtl/AST_parse.hpp"
 #include "mtl/AST_typecheck.hpp"
+#include "mtl/typecheck_and_label_macros.hpp"
+#include "mtl/type_environment.hpp"
 
 namespace myria {
 namespace mtl {
@@ -48,10 +50,10 @@ struct type_environment<Label<l>, Bindings...>
   }
 };
 
-template <typename T, typename... Bindings>
-constexpr auto typecheck(type_environment<Bindings...>, parse_phase::Statement<T>);
-template <typename T, typename... Bindings>
-constexpr auto typecheck(type_environment<Bindings...>, parse_phase::Expression<T>);
+template <int seqnum, int depth, typename T, typename pc_label, typename... Bindings>
+constexpr auto typecheck(type_environment<pc_label, Bindings...>, parse_phase::Statement<T>);
+template <int seqnum, int depth, typename T, typename pc_label, typename... Bindings>
+constexpr auto typecheck(type_environment<pc_label, Bindings...>, parse_phase::Expression<T>);
 /*
 template <typename Var, typename Val, typename... Bindings>
 constexpr auto typecheck(type_environment<Bindings...>,
