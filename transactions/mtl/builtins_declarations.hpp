@@ -7,11 +7,13 @@ namespace myria { namespace mtl { namespace builtins {
 				using name = mutils::String<'d','e','f','a','u','l','t',' ','l','i','s','t'>;
 				using push_back_name = mutils::String<'p','u','s','h','_','b','a','c','k'>;
 				std::shared_ptr<void*> real_list{new void*{nullptr}};
-				template<typename T> operator std::list<T>*(){
-					return (std::list<T>*) *real_list;
-				}
 				template<typename T> operator std::list<T>() {
-					return *(std::list<T>*) *real_list;
+					assert(real_list);
+					auto *ret_p = (std::list<T>*) *real_list;
+					auto ret = *ret_p;
+					delete ret_p;
+					real_list = nullptr;
+					return ret;
 				}
 			};
 
