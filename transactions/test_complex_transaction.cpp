@@ -122,10 +122,12 @@ int main(){
 			    var a = z,
 			    z = a
 			  },
+				var ret = 0,
 			  if (45 > y) {
 			    y = tstruct.a,
 			    tstruct.b = x
-			  } else {if (hndl.isValid()){return 7} else {}}
+			  } else {if (hndl.isValid()){ret = 7} else {}},
+				return ret
 				   )::WITH(tstruct,tstruct2,hndl,hndl2);//*/
   //txn.just_print_it();
 	/*

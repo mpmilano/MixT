@@ -507,7 +507,7 @@ constexpr auto _split_computation(AST a, mutils::typelist<curr_label, Labels...>
 	template <typename AST, typename... bindings>
 constexpr auto split_computation()
 {
-  constexpr auto a = typecheck_phase::name_while<1, 1>(AST{});
+  constexpr auto a = typecheck_phase::easy_processing_pass(AST{});
   using labels = DECT(collect_proper_labels(AST{}).reverse());
   return typename DECT(_split_computation<DECT(a), inherits<bindings...>>(a, labels{}))
 		::processed{};

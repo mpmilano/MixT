@@ -141,6 +141,11 @@ namespace myria {
 				return TestingHandle<T>{sp,*this};
 			}
 
+			template<typename T>
+			TestingHandle<T> newObject(const T& init){
+				return newObject(nullptr, mutils::int_rand(), init);
+			}
+
 			template<typename T> TestingHandle<T> nullObject(){
 				return TestingHandle<T>{mutils::identity_struct1<TestingObject>{}, *this};
 			}

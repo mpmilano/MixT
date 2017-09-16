@@ -22,7 +22,8 @@ using message = std::string;
 
 using message_hndl = typename BotStore::template TestingHandle<message>;
 
-using Inbox = typename RemoteList<message_hndl, BotStore::TestingHandle>::Hndl;
+using inbox_str = RemoteList<message_hndl, BotStore::TestingHandle>;
+using Inbox = typename inbox_str::Hndl;
 
 struct user {
 	Inbox i;

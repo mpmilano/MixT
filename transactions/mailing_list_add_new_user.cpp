@@ -17,8 +17,6 @@ namespace examples{
 			remote mutable_alias = curr_user,
 			mutable_alias.next.ensure(mid) = curr_user.new(new_user_node)
 			)::WITH(newbie,users);
-
-		std::cout << txn << std::endl;
 		txn.run_local(ct,newbie,users);
 		
 	}
