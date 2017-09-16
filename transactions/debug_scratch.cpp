@@ -13,6 +13,7 @@
 #include "mtl/split_printer.hpp"
 #include "mtl/relabel.hpp"
 #include "mtl/RemoteList.hpp"
+#include "mailing_list_example.hpp"
 #include <iostream>
 
 using namespace myria;
@@ -35,5 +36,6 @@ int main() {
 	constexpr 
 	#include "/tmp/debug"
 		type_of_the_day;
-	std::cout << type_of_the_day << std::endl;
+	split_printer<Label<mid> >::print_ast(std::cout, type_of_the_day, "");
+	std::cout << std::endl;
 }

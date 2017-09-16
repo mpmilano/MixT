@@ -17,6 +17,7 @@ namespace examples{
 				},
 				return lst
 				)::WITH(i);
+		std::cout << txn << std::endl;
 		return txn.run_local(ct,i);
 	}
 }

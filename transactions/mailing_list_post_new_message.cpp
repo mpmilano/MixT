@@ -1,14 +1,18 @@
 #include "mailing_list_example.hpp"
+#include "mtl/typecheck_printer.hpp"
 
 namespace examples{
 	void group::post_new_message(ClientTrk& ct, std::string message_contents){
 #ifdef USE_PRECOMPILED
 #include "mailing_list_post_new_message.cpp.precompiled"
 #else
-		constexpr auto txn = TRANSACTION(
-			var curr_user = users,
+		using pre_txn = TRANSACTION(
+			var index = users,
 			/*iterate through the users list*/
-			while (curr_user.isValid()) {
+			while (index.isValid()) {
+				var curr_user = index,
+				/*advance the while-loop*/
+				index = index->next,
 				/*will hold the end of the user messages list*/
 				var user_msgs_tl = curr_user->value->i,
 				/* advance to the end of messages here */
@@ -21,12 +25,14 @@ namespace examples{
 				new_msg_node.next = user_msgs_tl->next,
 				/*deref the current tail and replace it with the new node*/
 				remote derefd_user_msgs_tl = user_msgs_tl,
-				derefd_user_msgs_tl.next = user_msgs_tl.new(new_msg_node),
-				/*advance the while-loop*/
-				curr_user = curr_user->next
+				derefd_user_msgs_tl.next = user_msgs_tl.new(new_msg_node)
 			}
-			)::WITH(message_contents,users);
+			);
+		auto txn = pre_txn::WITH(message_contents,users);
 #endif
+		using namespace myria::mtl::typecheck_phase;
+		using namespace myria::mtl::split_phase;
+		std::cout << txn << std::endl;
 		txn.run_local(ct,message_contents,users);
 	}
 }
