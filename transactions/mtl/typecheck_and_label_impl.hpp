@@ -27,6 +27,7 @@ constexpr auto _typecheck(Env, parse_phase::Expression<parse_phase::VarReference
   using match = DECT(Env::get_binding(Var{}));
   using label = typename match::label;
   using type = typename match::type;
+	static_assert(!std::is_void<type>::value);
   return Expression<label, type, VarReference<Var>>{};
 }
 
@@ -89,6 +90,7 @@ template <int seqnum, int depth, typename Name, typename Expr, typename Body, ty
 constexpr auto _typecheck(old_env, parse_phase::Statement<parse_phase::Let<parse_phase::Binding<Name, Expr>, Body>>)
 {
   using binding_expr = DECT(typecheck<seqnum, depth + 1>(old_env{}, Expr{}));
+	static_assert(mutils::useful_static_assert<!std::is_void<typename binding_expr::yield>::value, binding_expr>());
   using next_binding = Binding<Label<temp_label<seqnum, depth>>, typename binding_expr::yield, Name, binding_expr>;
   using new_env = DECT(enhance_env<type_location::local>(old_env{}, next_binding{}));
   using next_body = DECT(typecheck<seqnum + 1, depth + 1>(new_env{}, Body{}));

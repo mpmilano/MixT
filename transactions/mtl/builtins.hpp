@@ -24,7 +24,7 @@ namespace myria { namespace mtl {
 
 			MYRIA_SPECIAL_OPERATIONS(typename builtins::ListStub::push_back_name,
 															 void,
-															 static_assert(std::is_same<handle,builtins::ListStub>::value),
+															 static_assert(mutils::useful_static_assert<std::is_same<handle,builtins::ListStub>::value, handle>()),
 															 typename builtins::ListStub::label
 				);
 

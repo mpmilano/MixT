@@ -117,6 +117,12 @@ constexpr auto _relabel(const typename AST<l>::template Statement<typename AST<l
 	return typename AST<newl>::template Statement<typename AST<newl>::template IncrementRemoteOccurance<String<var...>>>{};
 }
 
+template <typename newl, typename l, typename var>
+constexpr auto _relabel(const typename AST<l>::template Statement<typename AST<l>::template RefreshRemoteOccurance<var>>&)
+{
+	return typename AST<newl>::template Statement<typename AST<newl>::template RefreshRemoteOccurance<relabel<newl,l,var> > >{};
+}
+
 
 template <typename newl, typename l, typename c, typename t, typename e>
 constexpr auto _relabel(const typename AST<l>::template Statement<typename AST<l>::template If<c, t, e>>&)

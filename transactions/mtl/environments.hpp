@@ -596,6 +596,7 @@ template <typename T, char... str>
 struct type_binding_super<String<str...>, T>
 {
 
+	static_assert(!std::is_void<T>::value);
   using name = String<str...>;
 
   constexpr type_binding_super() = default;

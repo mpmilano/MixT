@@ -24,6 +24,8 @@ test_operation: $(object_files)
 	clang++ $(CPPFLAGS) $(LDFLAGS)  $(object_files) test_operation.cpp -o /tmp/test
 logging_example: $(object_files)
 	clang++ $(CPPFLAGS) $(LDFLAGS)  $(object_files) logging_example.cpp -o /tmp/test
+voting_example: $(object_files)
+	clang++ $(CPPFLAGS) $(LDFLAGS)  $(object_files) voting_example.cpp -o /tmp/test
 mailing_list_example: $(object_files) mailing_list_post_new_message.o mailing_list_add_new_user.o mailing_list_download_inbox.o
 	clang++ $(CPPFLAGS) $(LDFLAGS)  $(object_files) mailing_list_download_inbox.o mailing_list_post_new_message.o mailing_list_add_new_user.o mailing_list_example.cpp -o /tmp/test
 mailing_list_post_new_message.o: $(object_files) mailing_list_post_new_message.cpp mtl/run_phase.hpp

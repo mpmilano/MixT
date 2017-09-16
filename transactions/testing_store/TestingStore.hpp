@@ -18,6 +18,8 @@ namespace myria {
 
 	using noop = MUTILS_STRING(noop);
 	using append = MUTILS_STRING(append);
+	using consistent_read = MUTILS_STRING(consistent_read);
+	using increment = MUTILS_STRING(increment);
 	
 	template<>
 	struct OperationIdentifier<noop>{
@@ -29,8 +31,15 @@ namespace myria {
 		using name = append;
 	};
 
+	template<>
+	struct OperationIdentifier<consistent_read>{
+		using name = consistent_read;
+	};
+
+	using supports_increment = SupportedOperation<increment,void,SelfType>;
 	using supports_noop = SupportedOperation<noop,void,SelfType,int,int,int,int>;
 	template<typename T> using supports_append = SupportedOperation<append,void,SelfType,T>;
+	template<typename T> using supports_consistent_read = SupportedOperation<consistent_read,T,SelfType>;
 	
 	namespace testing_store{
 		
@@ -41,8 +50,9 @@ namespace myria {
 			using label = Label<l>;
 
 			MATCH_CONTEXT(decide_testing_handle){
-				template<typename U> MATCHES(std::list<U>) -> RETURN(Handle<label,std::list<U>,supports_noop, supports_append<U> >);
-				template<typename T> MATCHES(T) -> RETURN(Handle<label,T,supports_noop>);
+				template<typename U> MATCHES(std::list<U>) -> RETURN(Handle<label,std::list<U>,supports_noop, supports_consistent_read<std::list<U> >, supports_append<U> >);
+				template<typename T> MATCHES(T) -> RETURN(Handle<label,T,supports_noop, supports_consistent_read<T> >);
+				MATCHES(int) -> RETURN(Handle<label,int,supports_noop, supports_consistent_read<int>, supports_increment>);
 			};
 
 			template<typename T> using TestingHandle = MATCH(decide_testing_handle, T);
@@ -175,6 +185,17 @@ namespace myria {
 				std::list<T> &lst = **object_store. template at<stored<std::list<T>>>(hndl._name);
 				lst.push_back(t);
 			}
+
+			template<typename T>
+			void operation(mtl::PhaseContext<label>* , StoreContext& ctx, OperationIdentifier<consistent_read>,TestingObject<T>& hndl){
+				std::cout << "consistent read" << std::endl;
+				return hndl.get(&ctx);
+			}
+
+			void operation(mtl::PhaseContext<label>* , StoreContext& ctx, OperationIdentifier<consistent_read>,TestingObject<int>& hndl){
+				return hndl.put(&ctx,hndl.get(&ctx)+1);
+			}
+
 
 #ifndef NDEBUG
 			std::string why_in_transaction() const {

@@ -65,8 +65,9 @@ namespace myria{
       }
 
     Handle& downCast() { return *this;}
+		
 		template<typename U>
-			auto& upCast(const U& t){
+		auto& upCast(const U& t){
 			using target = DECT(*mutils::find_match<DECT(OperationSuperclass<SupportedOperations>::template ifMatches<U>())...>());
 			return target::type::upCast(t);
 		}
