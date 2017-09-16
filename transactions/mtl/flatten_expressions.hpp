@@ -446,6 +446,9 @@ constexpr auto _flatten_exprs(Statement<LetRemote<Binding<name, expr>, body>>)
   return _flatten_exprs_helper<seqnum, depth>(Statement<LetRemote<Binding<name, expr>, body>>{});
 }
 
+	template<typename n,typename e,typename binding, typename body>
+	auto operation_to_statement_f(Statement<Let<Binding<n,e>, Statement<LetRemote<binding, body> > > >);
+
 	template<typename n, typename name, typename hndl, typename v, typename... args>
 	auto operation_to_statement_f(Statement<Let<Binding<n,Expression<Operation<name,hndl,args...> > >, Statement<Return<Expression<VarReference<v> > > > > >){
 		return Statement<Operation<name,hndl,args...> >{};

@@ -5,6 +5,11 @@
 
 namespace examples{
 	void group::add_new_user(ClientTrk& ct, user_hndl newbie){
+#ifdef USE_PRECOMPILED
+		constexpr
+#include "mailing_list_add_new_user.cpp.precompiled"
+			txn;
+#else
 		constexpr auto txn = 
 		TRANSACTION(
 			var curr_user = users.ensure(mid),
@@ -17,8 +22,8 @@ namespace examples{
 			remote mutable_alias = curr_user,
 			mutable_alias.next.ensure(mid) = curr_user.new(new_user_node)
 			)::WITH(newbie,users);
+#endif
 		std::cout << txn << std::endl;
 		txn.run_local(ct,newbie,users);
-		
 	}
 }

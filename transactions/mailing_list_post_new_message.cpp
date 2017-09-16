@@ -4,7 +4,9 @@
 namespace examples{
 	void group::post_new_message(ClientTrk& ct, std::string message_contents){
 #ifdef USE_PRECOMPILED
+		constexpr 
 #include "mailing_list_post_new_message.cpp.precompiled"
+			txn;
 #else
 		using pre_txn = TRANSACTION(
 			var index = users,
