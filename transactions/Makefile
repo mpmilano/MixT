@@ -29,13 +29,13 @@ voting_example: $(object_files)
 mailing_list_example: $(object_files) mailing_list_post_new_message.o mailing_list_add_new_user.o mailing_list_download_inbox.o mailing_list_create_user.o
 	clang++ $(CPPFLAGS) $(LDFLAGS)  $(object_files) mailing_list_create_user.o mailing_list_download_inbox.o mailing_list_post_new_message.o mailing_list_add_new_user.o mailing_list_example.cpp -o /tmp/test
 mailing_list_post_new_message.o: $(object_files) mailing_list_post_new_message.cpp mtl/run_phase.hpp
-	clang++  -c mailing_list_post_new_message.cpp $(CPPFLAGS) -ftemplate-depth=10000
+	clang++ -DUSE_PRECOMPILED  -c mailing_list_post_new_message.cpp $(CPPFLAGS) -ftemplate-depth=10000
 mailing_list_download_inbox.o: $(object_files) mailing_list_download_inbox.cpp mtl/run_phase.hpp
-	clang++  -c mailing_list_download_inbox.cpp $(CPPFLAGS) -ftemplate-depth=10000	
+	clang++ -DUSE_PRECOMPILED -c mailing_list_download_inbox.cpp $(CPPFLAGS) -ftemplate-depth=10000	
 mailing_list_add_new_user.o: $(object_files) mailing_list_add_new_user.cpp mtl/run_phase.hpp
-	clang++  -c mailing_list_add_new_user.cpp $(CPPFLAGS) -ftemplate-depth=10000
+	clang++ -DUSE_PRECOMPILED -c mailing_list_add_new_user.cpp $(CPPFLAGS) -ftemplate-depth=10000
 mailing_list_create_user.o: $(object_files) mailing_list_create_user.cpp mtl/run_phase.hpp
-	clang++  -c mailing_list_create_user.cpp $(CPPFLAGS) -ftemplate-depth=10000
+	clang++ -DUSE_PRECOMPILED -c mailing_list_create_user.cpp $(CPPFLAGS) -ftemplate-depth=10000
 test_endorse: $(object_files)
 	clang++ $(CPPFLAGS) $(LDFLAGS)  $(object_files) test_endorse.cpp -o /tmp/test
 debug_scratch: $(object_files)
