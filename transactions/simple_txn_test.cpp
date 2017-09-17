@@ -6,15 +6,21 @@
 #include "FinalHeader.hpp"
 #include "configuration_params.hpp"
 
-using namespace myria;
-using namespace server;
-using namespace pgsql;
-using namespace mtl;
-using namespace std;
-using namespace chrono;
-using namespace mutils;
+using test = ::myria::test<mutils::mismatch>;
 
 namespace myria {
+
+	namespace experiment{
+		
+		using namespace myria;
+		using namespace server;
+		using namespace pgsql;
+		using namespace mtl;
+		using namespace std;
+		using namespace chrono;
+		using namespace mutils;
+		
+		using client = ::myria::client<mutils::mismatch>;
 
 template <Level l> void txn_read(client &c) {
 	using namespace tracker;
@@ -42,8 +48,11 @@ template <Level l> void txn_write(client & c) {
 	return incr_trans.run_optimistic(c.trk, &c.dsm,connections{ConnectionReference<Label<strong> >{*strong_connection},ConnectionReference<Label<causal> >{*causal_connection}} , hndl);
   // return incr_trans.run_local(hndl);
 }
+	}
 
-	std::unique_ptr<run_result> & client::client_action(std::unique_ptr<run_result> &result) {
+	template<>
+	std::unique_ptr<run_result> & experiment::client::client_action(std::unique_ptr<run_result> &result) {
+		using namespace experiment;
   auto &params = t.params;
   Level l = (mutils::better_rand() > params.percent_causal ? Level::strong
                                                            : Level::causal);
@@ -82,7 +91,7 @@ template <Level l> void txn_write(client & c) {
 }
 
 int main(int argc, char **argv) {
-  configuration_parameters params;
+	myria::configuration_parameters params;
   assert(argc == 1 || argc == 16);
   if (argc == 1) {
     std::cin >> params;

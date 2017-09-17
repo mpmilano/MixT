@@ -398,6 +398,14 @@ is_ast_node_f(const T&)
 {
   return is_ast_node<T>::value;
 }
+
+	template<typename T> struct contains_fieldpointer_ref;
+	template<typename T> struct contains_fieldpointer_ref<Expression<T> > : contains_fieldpointer_ref<T>{};
+	template<typename T> struct contains_fieldpointer_ref<VarReference<T> > : std::false_type{};
+	template<typename T, typename F> struct contains_fieldpointer_ref<FieldReference<T,F> > : contains_fieldpointer_ref<T>{};
+	template<typename T, typename F> struct contains_fieldpointer_ref<FieldReference<Expression<Dereference<T> >,F> > : std::true_type{};
+	template<typename T, typename F> struct contains_fieldpointer_ref<FieldPointerReference<T,F> > : std::true_type{};
+	
 }
 }
 }

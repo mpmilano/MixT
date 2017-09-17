@@ -8,8 +8,11 @@
 
 namespace myria {
 
+	template<typename Internals>
 struct test {
   configuration_parameters params;
+
+		using client = ::myria::client<Internals>;
 
 #ifndef NOPOOL
   pgsql::SQLConnectionPool<pgsql::Level::strong> spool;
@@ -177,12 +180,12 @@ struct test {
       ](int) {
 				struct Cleanup{
 					bool cleanup_required{true};
-					struct client &client;
-					Cleanup(struct client &client):client(client){}
+					client &_client;
+					Cleanup(client &_client):_client(_client){}
 					~Cleanup(){
 						if (cleanup_required) {
 							std::cout << "cleanup required" << std::endl;
-							--client.t.number_enqueued_clients;
+							--_client.t.number_enqueued_clients;
 						}
 					}
 				};

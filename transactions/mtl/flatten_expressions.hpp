@@ -280,24 +280,24 @@ constexpr auto _flatten_exprs(Statement<Let<Binding<name, Expression<FieldRefere
 }
 
 template <char seqnum, char depth, typename name, typename h, typename body>
-constexpr auto _flatten_exprs(Statement<Let<Binding<name, Expression<IsValid<h>>>, body>>)
+constexpr auto _flatten_exprs(Statement<Let<Binding<name, Expression<IsValid<Expression<VarReference<h>>>>>, body>>)
 {
   // already flat, moving on
-  return Statement<Let<Binding<name, Expression<IsValid<h>>>, DECT(flatten_exprs<seqnum, depth + 1>(body{}))>>{};
+  return Statement<Let<Binding<name, Expression<IsValid<Expression<VarReference<h>>>>>, DECT(flatten_exprs<seqnum, depth + 1>(body{}))>>{};
 }
 
 	template <char seqnum, char depth, typename name, typename l, typename h, typename body>
-	constexpr auto _flatten_exprs(Statement<Let<Binding<name, Expression<Endorse<l,h>>>, body>>)
+	constexpr auto _flatten_exprs(Statement<Let<Binding<name, Expression<Endorse<l,Expression<VarReference<h>>>>>, body>>)
 {
   // already flat, moving on
-	return Statement<Let<Binding<name, Expression<Endorse<l,h>>>, DECT(flatten_exprs<seqnum, depth + 1>(body{}))>>{};
+	return Statement<Let<Binding<name, Expression<Endorse<l,Expression<VarReference<h>>>>>, DECT(flatten_exprs<seqnum, depth + 1>(body{}))>>{};
 }
 
 		template <char seqnum, char depth, typename name, typename l, typename h, typename body>
-	constexpr auto _flatten_exprs(Statement<Let<Binding<name, Expression<Ensure<l,h>>>, body>>)
+		constexpr auto _flatten_exprs(Statement<Let<Binding<name, Expression<Ensure<l,Expression<VarReference<h>>>>>, body>>)
 {
   // already flat, moving on
-	return Statement<Let<Binding<name, Expression<Ensure<l,h>>>, DECT(flatten_exprs<seqnum, depth + 1>(body{}))>>{};
+	return Statement<Let<Binding<name, Expression<Ensure<l,Expression<VarReference<h>>>>>, DECT(flatten_exprs<seqnum, depth + 1>(body{}))>>{};
 }
 
 	
@@ -344,7 +344,7 @@ struct flatten_exprs_str<seqnum, depth, Statement<LetRemote<Binding<name, expr>,
 };
 
 template <char seqnum, char depth, typename var, typename expr>
-constexpr auto _flatten_exprs(Statement<Assignment<var, Expression<VarReference<expr>>>>)
+constexpr auto _flatten_exprs(Statement<Assignment<var, Expression<VarReference<expr>>>>, std::enable_if_t<!contains_fieldpointer_ref<var>::value>* = nullptr)
 {
   // flat, move on
   return Statement<Assignment<var, Expression<VarReference<expr>>>>{};
@@ -364,6 +364,15 @@ struct flatten_exprs_str<seqnum, depth, Statement<Assignment<var, expr>>>
   template <typename new_expr>
   using SubStatementR = Statement<Assignment<var, new_expr>>;
   using type = DECT(remove_layer<seqnum, depth, SubStatementR>(expr{}));
+};
+
+template <char seqnum, char depth, typename var, typename expr>
+struct flatten_exprs_str<seqnum, depth, Statement<Assignment<var, Expression<VarReference<expr>>>>>
+{
+	static_assert(contains_fieldpointer_ref<var>::value);
+  template <typename new_var>
+  using SubStatementL = Statement<Assignment<new_var, Expression<VarReference<expr>>>>;
+  using type = DECT(remove_layer<seqnum, depth, SubStatementL>(var{}));
 };
 
 template <char seqnum, char depth, typename expr>

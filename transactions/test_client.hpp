@@ -8,15 +8,21 @@ template<pgsql::Level l> using SQLInstanceManager = typename pgsql::SQLStore<l>:
 using LockedConnection = typename mutils::ResourcePool<mutils::simple_rpc::connection>::LockedResource;
 using WeakConnection = typename mutils::ResourcePool<mutils::simple_rpc::connection>::WeakResource;
 
+	template<typename Internals>
 struct test;
 
+	template<typename Internals>
 struct client{
+
+		using test = ::myria::test<Internals>;
+		
 	SQLInstanceManager<pgsql::Level::causal> sc;
 	SQLInstanceManager<pgsql::Level::strong> ss;
 	mutils::DeserializationManager dsm{{&ss,&sc}};
 	WeakConnection strong_relay;
 	WeakConnection causal_relay;
 	test &t;
+	Internals i;
   tracker::ClientTracker<Label<top>,Label<pgsql::strong>, Label<pgsql::causal>, Label<bottom> > trk;
 
 	template<typename s, typename c>

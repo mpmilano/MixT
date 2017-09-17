@@ -21,6 +21,20 @@ print_ast(std::ostream& o, const Expression<FieldReference<s, f>>&)
   o << s{} << "." << f{};
 }
 
+template <typename s, typename f>
+void
+print_ast(std::ostream& o, const Expression<FieldPointerReference<s, f>>&)
+{
+  o << s{} << "->" << f{};
+}
+
+template <typename s>
+void
+print_ast(std::ostream& o, const Expression<Dereference<s>>&)
+{
+  o << "*" << s{};
+}
+
 template <typename v>
 void
 print_ast(std::ostream& o, const Expression<VarReference<v>>&)
@@ -127,6 +141,13 @@ void
 print_ast(std::ostream& o, const Statement<Assignment<L, R>>&)
 {
   o << L{} << " = " << R{};
+}
+
+template <typename R>
+void
+print_ast(std::ostream& o, const Statement<Return<R>>&)
+{
+  o << "return " << R{};
 }
 
 template <typename c, typename t, typename e>
