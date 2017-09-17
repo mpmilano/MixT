@@ -288,11 +288,61 @@ struct is_min_of : public std::false_type
   return collapse_constraints(constraints<must_flow_to<l, to,why>, must_flow_to<r, to,why>, rest...>{});
 }
 
+	template<typename l1, typename l2>
+	constexpr auto pick_min_match(Label<l1> a, Label<l2> b){
+		if constexpr (less_than(a,b)) return a;
+		else return b;
+	}
+
+	template<int l11, int l12, typename l2>
+	constexpr auto pick_min_match(Label<temp_label<l11,l12> > a, Label<l2> b){
+		return b;
+	}
+	
+	template<typename l11, typename l12, typename l2>
+	constexpr auto pick_min_match(Label<label_min_of<l11,l12> > a, Label<l2> b){
+		return b;
+	}
+
+	
+	template<typename l>
+	constexpr auto pick_min_match(mutils::mismatch, l){
+		return l{};
+	}
+
+	template<typename l>
+	constexpr auto pick_min_match(l, mutils::mismatch){
+		return l{};
+	}	
+
+	constexpr auto pick_min_match(mutils::mismatch, mutils::mismatch a){
+		return a;
+	}
+
+	template<typename l>
+	constexpr auto find_concrete_label(l a){
+		return a;
+	}
+	
+	template<int l, int r>
+	constexpr auto find_concrete_label(Label<temp_label<l,r> >){
+		return mutils::mismatch{};
+	}
+
+		//HACK: hope there is a real label in any minimization, and just replace the minimization with that real label.
+	template<typename l, typename r>
+	constexpr auto find_concrete_label(Label<label_min_of<l,r> >){
+		constexpr auto ret = pick_min_match(find_concrete_label(l{}),find_concrete_label(r{}));
+		static_assert(!std::is_same<DECT(ret),mutils::mismatch>::value, "Error: no concrete label in this minimization.  Can't use hack anymore.");
+		return ret;
+	}
+
 
   template <typename from, typename to, typename why, typename... rst>
-  constexpr auto collapse_constraints(constraints<must_flow_to<from, to, why>, rst...>, std::enable_if_t<!(is_min_of<from>::value || is_min_of<to>::value)>* = nullptr)
+  constexpr auto collapse_constraints(constraints<must_flow_to<from, to, why>, rst...>, std::enable_if_t<!(is_min_of<from>::value)>* = nullptr)
 {
-  return constraints<must_flow_to<from, to, why>>::append(collapse_constraints(constraints<rst...>{}));
+	using _to = DECT(pick_min_match(to{},find_concrete_label(to{})));
+  return constraints<must_flow_to<from, _to, why>>::append(collapse_constraints(constraints<rst...>{}));
 }
 
 constexpr auto collapse_constraints(constraints<> a)

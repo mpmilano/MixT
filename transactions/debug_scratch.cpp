@@ -24,6 +24,9 @@ using namespace split_phase;
 using namespace tracker;
 
 int main() {
+	using namespace std;
+	using namespace chrono;
+	this_thread::sleep_for(1s);
 	constexpr 
 	#include "/tmp/debug"
 		type_of_the_day;

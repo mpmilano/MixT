@@ -24,6 +24,6 @@ namespace examples{
 				)::WITH(user_hndl);
 #endif
 		std::cout << txn << std::endl;
-		return txn.run_local(ct,i);
+		return txn.run_local(ct,user_hndl);
 	}
 }
