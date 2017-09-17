@@ -19,7 +19,7 @@ using namespace examples;
 
 namespace examples{
 	struct mailing_list_state{
-		static groups() all_groups();
+		static groups all_groups();
 		std::vector<group> cached_groups;
 		std::vector<user_hndl> my_users;
 		group& pick_group();

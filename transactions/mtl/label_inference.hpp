@@ -295,12 +295,12 @@ struct is_min_of : public std::false_type
 	}
 
 	template<int l11, int l12, typename l2>
-	constexpr auto pick_min_match(Label<temp_label<l11,l12> > a, Label<l2> b){
+	constexpr auto pick_min_match(Label<temp_label<l11,l12> >, Label<l2> b){
 		return b;
 	}
 	
 	template<typename l11, typename l12, typename l2>
-	constexpr auto pick_min_match(Label<label_min_of<l11,l12> > a, Label<l2> b){
+	constexpr auto pick_min_match(Label<label_min_of<l11,l12> >, Label<l2> b){
 		return b;
 	}
 
