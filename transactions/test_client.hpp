@@ -19,9 +19,6 @@ struct client{
 	test &t;
   tracker::ClientTracker<Label<top>,Label<pgsql::strong>, Label<pgsql::causal>, Label<bottom> > trk;
 
-	template<pgsql::Level> void txn_write();
-	template<pgsql::Level> void txn_read();
-
 	template<typename s, typename c>
 	client(test &t, s &spool, c &cpool, WeakConnection strong_relay, WeakConnection causal_relay)
 		:sc(cpool),ss(spool),strong_relay(std::move(strong_relay)),causal_relay(std::move(causal_relay)),t(t){}

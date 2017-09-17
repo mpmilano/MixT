@@ -16,31 +16,30 @@ using namespace mutils;
 
 namespace myria {
 
-template <Level l> void client::txn_read() {
+template <Level l> void txn_read(client &c) {
 	using namespace tracker;
-  auto &store = get_store<l>();
+  auto &store = c.get_store<l>();
   auto hndl = store.template existingObject<int>(nullptr, get_name_read(0.5));
   constexpr auto read_trans = TRANSACTION(remote x = hndl, {})::WITH(hndl);
-	using connections = typename DECT(trk)::connection_references;
-	auto strong_connection = get_relay<Level::strong>().lock();
-	auto causal_connection = get_relay<Level::causal>().lock();
-	return read_trans.run_optimistic (trk, &dsm,
+	using connections = typename DECT(c.trk)::connection_references;
+	auto strong_connection = c.get_relay<Level::strong>().lock();
+	auto causal_connection = c.get_relay<Level::causal>().lock();
+	return read_trans.run_optimistic (c.trk, &c.dsm,
 																		connections{ConnectionReference<Label<strong> >{*strong_connection},
 																				ConnectionReference<Label<causal> >{*causal_connection}}, hndl);
   // return read_trans.run_local(hndl);
 }
 
-template <Level l> void client::txn_write() {
+template <Level l> void txn_write(client & c) {
 	using namespace tracker;
-  auto &store = get_store<l>();
+  auto &store = c.get_store<l>();
   auto hndl = store.template existingObject<int>(nullptr, get_name_write());
   constexpr auto incr_trans =
       TRANSACTION(remote x = hndl, x = x + 1)::WITH(hndl);
-	using connections = typename DECT(trk)::connection_references;
-	auto strong_connection = get_relay<Level::strong>().lock();
-	auto causal_connection = get_relay<Level::causal>().lock();
-  return incr_trans.run_optimistic(trk, &dsm,connections{ConnectionReference<Label<strong> >{*strong_connection},
-																				ConnectionReference<Label<causal> >{*causal_connection}} , hndl);
+	using connections = typename DECT(c.trk)::connection_references;
+	auto strong_connection = c.get_relay<Level::strong>().lock();
+	auto causal_connection = c.get_relay<Level::causal>().lock();
+	return incr_trans.run_optimistic(c.trk, &c.dsm,connections{ConnectionReference<Label<strong> >{*strong_connection},ConnectionReference<Label<causal> >{*causal_connection}} , hndl);
   // return incr_trans.run_local(hndl);
 }
 
@@ -57,15 +56,15 @@ template <Level l> void client::txn_write() {
     switch (l) {
     case Level::strong:
       if (write)
-        txn_write<Level::strong>();
+        txn_write<Level::strong>(*this);
       else
-        txn_read<Level::strong>();
+        txn_read<Level::strong>(*this);
       break;
     case Level::causal:
       if (write)
-        txn_write<Level::causal>();
+        txn_write<Level::causal>(*this);
       else
-        txn_read<Level::causal>();
+        txn_read<Level::causal>(*this);
       break;
     default:
       assert(false);

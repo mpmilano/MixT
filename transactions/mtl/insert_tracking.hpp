@@ -140,7 +140,7 @@ constexpr auto write_tombstones(mutils::typeset<>)
 template <typename l1, typename... labels>
 constexpr auto write_tombstones(mutils::typeset<l1, labels...>)
 {
-  return Sequence<Statement<l1, WriteTombstone<Expression<Label<top>, tracker::Tombstone, VarReference<tombstone_str>>>>>::append(
+  return Sequence<Statement<l1, WriteTombstone<Expression<l1, tracker::Tombstone, VarReference<tombstone_str>>>>>::append(
     write_tombstones(mutils::typeset<labels...>{}));
 }
 

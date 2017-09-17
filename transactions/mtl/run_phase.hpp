@@ -245,8 +245,8 @@ static void _run_phase(Statement<AccompanyWrite<Expression<y, VarReference<R>>>>
 #endif
 }
 
-template <typename TranCtx, typename store, typename V>
-static void _run_phase(Statement<WriteTombstone<Expression<tracker::Tombstone, VarReference<V>>>>*, TranCtx& ctx, store& s)
+template <typename store, typename V>
+static void _run_phase(Statement<WriteTombstone<Expression<tracker::Tombstone, VarReference<V>>>>*, TrackedPhaseContext& ctx, store& s)
 {
 #ifdef TRACK
 	ctx.trk_ctx.trk.writeTombstone(ctx, s.get(V{}).get(s,ctx).name());
@@ -392,7 +392,7 @@ static auto _run_phase(Statement<Sequence<S1, S2, Seq...>>*, TranCtx& ctx, store
 	
 	auto runtime<l>::run_phase(AST* a, TranCtx& ctx, store& s)
 	{
-		return _run_phase(a, ctx, s);
+		return runtime<l>::_run_phase(a, ctx, s);
 	}
 
 

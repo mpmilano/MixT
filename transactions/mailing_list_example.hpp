@@ -1,28 +1,34 @@
 #pragma once
 
 #include <iostream>
-#include "testing_store/TestingStore.hpp"
 #include "mtl/transaction.hpp"
 #include "mtl/transaction_macros.hpp"
-#include "testing_store/mid.hpp"
+#include "pgsql/SQLStore.hpp"
 #include "mtl/RemoteList.hpp"
 #include "mtl/split_printer.hpp"
-
+#include "FinalHeader.hpp"
+#include "threaded_trial.hpp"
+#include "pgsql/SQLStore.hpp"
+#include "mtl/transaction.hpp"
+#include "mtl/transaction_macros.hpp"
+#include "test_utils.hpp"
+#include "FinalHeader.hpp"
+#include "configuration_params.hpp"
 
 namespace examples{
 	using namespace myria;
-using namespace testing_store;
-using namespace tracker;
+	using namespace pgsql;
+	using namespace tracker;
 
-using MidStore = TestingStore<Label<mid> >;
-using BotStore = TestingStore<Label<bottom> >;
-using ClientTrk = ClientTracker<>;
+	using MidStore = SQLStore<Level::strong>;
+	using BotStore = SQLStore<Level::causal>;
+	using ClientTrk = ClientTracker<>;
 
 using message = std::string;
 
-using message_hndl = typename BotStore::template TestingHandle<message>;
+using message_hndl = typename BotStore::template SQLHandle<message>;
 
-using inbox_str = RemoteList<message_hndl, BotStore::TestingHandle>;
+using inbox_str = RemoteList<message_hndl, BotStore::SQLHandle>;
 using Inbox = typename inbox_str::Hndl;
 
 struct user {
@@ -35,11 +41,11 @@ struct user {
 	
 };
 
-using user_hndl = typename BotStore::template TestingHandle<user>;
+using user_hndl = typename BotStore::template SQLHandle<user>;
 
 
 struct group {
-	using users_lst = RemoteList<user_hndl,MidStore::TestingHandle>;
+	using users_lst = RemoteList<user_hndl,MidStore::SQLHandle>;
 	typename users_lst::Hndl users;
 	group(DECT(users) users):users(users){}
 	
