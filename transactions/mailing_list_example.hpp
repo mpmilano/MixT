@@ -64,14 +64,15 @@ using Inbox = typename inbox_str::Hndl;
 };
 
 	using groups = typename RemoteList<group, StrongStore::SQLHandle>::Hndl;
-	user_hndl create_user(client<mailing_list_state>& ct, groups& g);
+	user_hndl create_user(client<mailing_list_state>& ct, groups g);
 
 	struct mailing_list_state{
-		static groups all_groups();
+		static groups all_groups(client<mailing_list_state>&);
 		std::vector<group> cached_groups;
 		std::vector<user_hndl> my_users;
-		group& pick_group();
-		user_hndl& pick_user();
+		group& pick_group(client<mailing_list_state>&);
+		user_hndl& pick_user(client<mailing_list_state>&);
+		mailing_list_state();
 	};
 
 }

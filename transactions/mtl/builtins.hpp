@@ -35,27 +35,33 @@ namespace myria { namespace mtl {
 				);
 		}
 
-		inline bool send_holder_values(mutils::String<'t','r','u','e'> , ...){
+		template<typename... ignore>
+		inline bool send_holder_values(mutils::String<'t','r','u','e'> , const ignore&...){
 			return true;
 		}
 
-		inline bool send_holder_values(mutils::String<'f','a','l','s','e'> , ...){
+		template<typename... ignore>
+		inline bool send_holder_values(mutils::String<'f','a','l','s','e'> , const ignore&...){
 			return true;
 		}
 
-		inline bool send_holder_values(typename builtins::ListStub::name, ...){
+		template<typename... ignore>
+		inline bool send_holder_values(typename builtins::ListStub::name, const ignore&...){
 			return true;
 		}
 
-		inline bool receive_holder_values(mutils::DeserializationManager* , mutils::String<'t','r','u','e'> , ...){
+		template<typename... ignore>
+		inline bool receive_holder_values(mutils::DeserializationManager* , mutils::String<'t','r','u','e'> , const ignore&...){
 			return true;
 		}
 
-		inline bool receive_holder_values(mutils::DeserializationManager* , mutils::String<'f','a','l','s','e'> , ...){
+		template<typename... ignore>
+		inline bool receive_holder_values(mutils::DeserializationManager* , mutils::String<'f','a','l','s','e'> , const ignore&...){
 			return true;
 		}
 
-		inline bool receive_holder_values(mutils::DeserializationManager*, typename builtins::ListStub::name, ...){
+		template<typename... ignore>
+		inline bool receive_holder_values(mutils::DeserializationManager*, typename builtins::ListStub::name, const ignore&...){
 			return true;
 		}
 
