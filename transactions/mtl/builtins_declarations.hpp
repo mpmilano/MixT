@@ -27,6 +27,8 @@ namespace myria { namespace mtl { namespace builtins {
 			template<> struct is_builtin<typename ListStub::name> : std::true_type{};
 			template<> struct is_builtin<typename ListStub::push_back_name> : std::true_type{};
 			template<> struct is_builtin<typename NulledOp::name> : std::true_type{};
+			template<> struct is_builtin<mutils::String<'t','r','u','e'>> : std::true_type{};
+			template<> struct is_builtin<mutils::String<'f','a','l','s','e'>> : std::true_type{};
 			template<typename> struct is_builtin : std::false_type{};
 			
 		}

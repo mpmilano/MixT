@@ -1,7 +1,7 @@
 #include "mailing_list_example.hpp"
 
 namespace examples {
-		user_hndl create_user(ClientTrk& ct, groups& g){
+		user_hndl create_user(client<mailing_list_state>& ct, groups& g){
 #ifdef USE_PRECOMPILED
 			constexpr
 #include "mailing_list_create_user.cpp.precompiled"
@@ -15,6 +15,6 @@ namespace examples {
 			return sample_user_hndl.new(new_user);
 			)::WITH(g);
 #endif
-		return txn.run_local(ct,g);
+		return txn.run_local(ct.trk,g);
 	}
 }

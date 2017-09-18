@@ -4,7 +4,7 @@
 #include <iostream>
 
 namespace examples{
-	void group::add_new_user(ClientTrk& ct, user_hndl newbie){
+	void group::add_new_user(client<mailing_list_state>& ct, user_hndl newbie){
 #ifdef USE_PRECOMPILED
 		constexpr
 #include "mailing_list_add_new_user.cpp.precompiled"
@@ -24,6 +24,6 @@ namespace examples{
 			)::WITH(newbie,users);
 #endif
 		std::cout << txn << std::endl;
-		txn.run_local(ct,newbie,users);
+		txn.run_local(ct.trk,newbie,users);
 	}
 }

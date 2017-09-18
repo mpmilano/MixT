@@ -33,5 +33,31 @@ namespace myria { namespace mtl {
 															 ;,
 															 typename handle::label
 				);
-		}		
+		}
+
+		inline bool send_holder_values(mutils::String<'t','r','u','e'> , ...){
+			return true;
+		}
+
+		inline bool send_holder_values(mutils::String<'f','a','l','s','e'> , ...){
+			return true;
+		}
+
+		inline bool send_holder_values(typename builtins::ListStub::name, ...){
+			return true;
+		}
+
+		inline bool receive_holder_values(mutils::DeserializationManager* , mutils::String<'t','r','u','e'> , ...){
+			return true;
+		}
+
+		inline bool receive_holder_values(mutils::DeserializationManager* , mutils::String<'f','a','l','s','e'> , ...){
+			return true;
+		}
+
+		inline bool receive_holder_values(mutils::DeserializationManager*, typename builtins::ListStub::name, ...){
+			return true;
+		}
+
+		
 	}}

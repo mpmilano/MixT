@@ -1,15 +1,16 @@
 #pragma once
 #include <sstream>
+#include "mutils-serialization/SerializationSupport.hpp"
 
 namespace myria {
 	template<typename T, template<typename> class _Hndl>
-	struct RemoteList {
+	struct RemoteList : public mutils::ByteRepresentable {
 		using Hndl = _Hndl<RemoteList>;
 		
 		T value;
 		Hndl next;
 
-		
+		DEFAULT_SERIALIZATION_SUPPORT(RemoteList, value, next);
 
 		RemoteList(const DECT(value)& v, const DECT(next) &n)
 			:value(v),

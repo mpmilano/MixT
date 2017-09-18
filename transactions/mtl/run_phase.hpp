@@ -245,6 +245,18 @@ static void _run_phase(Statement<AccompanyWrite<Expression<y, VarReference<R>>>>
 #endif
 }
 
+	template <typename TranCtx, typename store, typename y, typename ys, typename R, typename f>
+	static void _run_phase(Statement<AccompanyWrite<Expression<y, FieldReference<Expression<ys,VarReference<R>>,f>>>>*, TranCtx& ctx, store& s)
+{
+#ifdef TRACK
+  ctx.trk_ctx.trk.accompanyWrite(ctx,s.get(R{}).get_remote(ctx).name(),
+																 s.get(typecheck_phase::tombstone_str{}).get(s,ctx).name());
+#else
+	(void) ctx;
+	(void) s;
+#endif
+}
+
 template <typename store, typename V>
 static void _run_phase(Statement<WriteTombstone<Expression<tracker::Tombstone, VarReference<V>>>>*, TrackedPhaseContext& ctx, store& s)
 {

@@ -257,9 +257,14 @@ public:
 
   using holder_count = std::integral_constant<std::size_t, sizeof...(holders)>;
 
+	template<typename Name>
+	static constexpr auto find_holder_by_name_f(){
+		static_assert(mutils::useful_static_assert<mutils::contains_single_match<std::conditional_t<std::is_same<typename Name::name, typename holders::name>::value, holders, mutils::mismatch>...>(),Name>());
+		return mutils::find_match<std::conditional_t<std::is_same<typename Name::name, typename holders::name>::value, holders, mutils::mismatch>...>();
+	}
+	
   template <typename Name>
-  using find_holder_by_name =
-    DECT(*mutils::find_match<std::conditional_t<std::is_same<typename Name::name, typename holders::name>::value, holders, mutils::mismatch>...>());
+		using find_holder_by_name = DECT(*find_holder_by_name_f<Name>());
 
   template <typename... holder_names>
   using restrict_to_holders = store_from_typeset<intersect_names<mutils::typeset<holders...>, mutils::typeset<holder_names...>>>;

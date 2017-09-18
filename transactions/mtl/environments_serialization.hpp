@@ -2,6 +2,7 @@
 #include "mutils-serialization/SerializationSupport.hpp"
 #include "mutils-networking/local_connection.hpp"
 #include "mutils-networking/additional_serialization_support.hpp"
+#include "mtl/builtins.hpp"
 
 namespace myria{ namespace mtl{
 
@@ -118,7 +119,8 @@ namespace myria{ namespace mtl{
 		}
 
 		template<typename store, char... str>
-		bool send_holder_values(mutils::String<str...> holder_name, store &s, mutils::local_connection &c){
+		bool send_holder_values(mutils::String<str...> holder_name, store &s, mutils::local_connection &c,
+														std::enable_if_t<!builtins::is_builtin<mutils::String<str...>>::value>* = nullptr){
 			using holder = typename store::template find_holder_by_name<DECT(holder_name)>;
 			holder& h = s;
 			serialize_holder(h,c);
@@ -142,7 +144,8 @@ namespace myria{ namespace mtl{
 		}
 		
 		template<typename store, char... str>
-		bool receive_holder_values(mutils::DeserializationManager* dsm, mutils::String<str...> holder_name, store &s, mutils::local_connection &c){
+		bool receive_holder_values(mutils::DeserializationManager* dsm, mutils::String<str...> holder_name, store &s, mutils::local_connection &c,
+															 std::enable_if_t<!builtins::is_builtin<mutils::String<str...>>::value>* = nullptr){
 			using holder = typename store::template find_holder_by_name<DECT(holder_name)>;
 			holder& h = s;
 			receive_holder(dsm,h,c);

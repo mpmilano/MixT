@@ -4,7 +4,7 @@
 #include <iostream>
 
 namespace examples{
-	std::list<message> download_inbox(ClientTrk& ct, user_hndl user_hndl){
+	std::list<message> download_inbox(client<mailing_list_state>& ct, user_hndl user_hndl){
 #ifdef USE_PRECOMPILED
 		constexpr 
 #include "mailing_list_download_inbox.cpp.precompiled"
@@ -24,6 +24,6 @@ namespace examples{
 				)::WITH(user_hndl);
 #endif
 		std::cout << txn << std::endl;
-		return txn.run_local(ct,user_hndl);
+		return txn.run_local(ct.trk,user_hndl);
 	}
 }
