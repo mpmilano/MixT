@@ -1,18 +1,24 @@
 #include "mailing_list_example.hpp"
 
 namespace examples {
-		user_hndl create_user(client<mailing_list_state>& ct, groups g){
+		group create_global_group(client<mailing_list_state>& ct, groups g){
 #ifdef USE_PRECOMPILED
 			constexpr
-#include "mailing_list_create_user.cpp.precompiled"
+#include "mailing_list_create_group.cpp.precompiled"
 				txn;
 #else
 		constexpr auto txn = TRANSACTION(
-			var sample_user_hndl = (g->value).users->value.ensure(causal),
-			var new_user = (*sample_user_hndl).ensure(causal),
-			/*break off the inbox after the first message (which is the same across all inboxes)*/
-			new_user.i->next = new_user.i->next.nulled().ensure(causal),
-			return sample_user_hndl.new(new_user);
+			var new_group = g->value,
+			new_group.users->next = new_group.users->next.nulled(),
+			var new_grouplist_node = *g,
+			new_grouplist_node.value = new_group,
+			new_grouplist_node.next = new_grouplist_node.next.nulled(),
+			var index = g,
+			while (index->next.isValid()){
+				index = index->next
+			},
+			index->next = g.new(new_grouplist_node),
+			return new_group
 			)::WITH(g);
 #endif
 		using connections = typename DECT(ct.trk)::connection_references;

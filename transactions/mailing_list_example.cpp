@@ -5,7 +5,6 @@
 #include "mtl/transaction.hpp"
 #include "mtl/transaction_macros.hpp"
 #include "test_utils.hpp"
-#include "FinalHeader.hpp"
 #include "configuration_params.hpp"
 
 using namespace myria;
@@ -21,26 +20,45 @@ using namespace examples;
 
 using namespace examples;
 
-groups mailing_list_state::all_groups(client<mailing_list_state>&){
-	struct die{}; throw die{};
+groups mailing_list_state::all_groups(client<mailing_list_state>& c){
+	static groups starting_groups = [&c]{
+		auto &sc = c.sc.inst();
+		auto &ss = c.ss.inst();
+		user u{sc.newObject(inbox_str{
+					sc.template newObject<message>("This is the head message. it will remain"),
+						sc.template nullObject<inbox_str>()})};
+		
+		auto ru = sc.newObject<user>(u);
+		group g{ss.newObject(typename group::users_lst{ru,ss.template nullObject<typename group::users_lst>()}) };
+		return ss.newObject(groups_node{g, ss.template nullObject<groups_node>() });
+	}();
+	return starting_groups;
 }
 
-group& mailing_list_state::pick_group(client<mailing_list_state>&){
+group& mailing_list_state::pick_group(client<mailing_list_state>& c){
 	if (cached_groups.size() > 0) return cached_groups[mutils::int_rand() % cached_groups.size()];
-	else { struct die{}; throw die{};}
+	else { create_group(c); return pick_group(c);}
 }
 
 user_hndl& mailing_list_state::pick_user(client<mailing_list_state>& c){
 	if (my_users.size() > 0)
 		return my_users[mutils::int_rand() % my_users.size()];
 	else {
-		my_users.emplace_back(create_user(c,all_groups(c)));
+		create_user(c);
 		return pick_user(c);
 	}	
 }
 
+void mailing_list_state::create_user(client<mailing_list_state>& c){
+	my_users.push_back(::create_user(c,all_groups(c)));
+}
+
+void mailing_list_state::create_group(client<mailing_list_state>& c){
+	cached_groups.push_back(create_global_group(c,all_groups(c)));
+}
+
 mailing_list_state::mailing_list_state(){
-	struct die{}; throw die{};
+
 }
 
 	enum class action_choice{
@@ -86,7 +104,7 @@ mailing_list_state::mailing_list_state(){
 				i.pick_group(*this).add_new_user(*this,i.pick_user(*this));
 				break;
 			case action_choice::create_user:
-				create_user(*this,i.all_groups(*this));
+				i.create_user(*this);
 				break;
 			case action_choice::download_inbox:
 				download_inbox(*this,i.pick_user(*this));
@@ -102,14 +120,3 @@ mailing_list_state::mailing_list_state(){
 		return result;
 	}
 	
-	int main(int argc, char **argv) {
-		configuration_parameters params;
-		assert(argc == 1 || argc == 16);
-		if (argc == 1) {
-			std::cin >> params;
-		} else read_from_args(params,argv + 1);
-		std::cout << params << std::endl;
-		test<mailing_list_state> t1{params};
-		t1.run_test();
-		exit(0);
-	}

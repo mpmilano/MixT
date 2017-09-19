@@ -3,6 +3,7 @@
 #include "mtl/phase_context.hpp"
 #include "mtl/AST_typecheck.hpp"
 #include "mtl/split_context.hpp"
+#include "Operations.hpp"
 #include <thread>
 
 namespace myria {

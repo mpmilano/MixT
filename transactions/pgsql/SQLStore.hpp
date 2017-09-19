@@ -238,8 +238,17 @@ namespace myria { namespace pgsql {
 			}
 
 			template<typename T>
-			auto newObject(SQLContext *, const T& init){
-				return newObject<T>(mutils::int_rand(),init);
+			auto newObject(SQLContext *ctx, const T& init){
+				return newObject<T>(ctx,mutils::int_rand(),init);
+			}
+
+			template<typename T>
+			auto newObject(const T& init){
+				return newObject<T>(nullptr,init);
+			}
+
+			template<typename T> SQLHandle<T> nullObject(){
+				return SQLHandle<T>{mutils::identity_struct1<SQLObject>{}, *this};
 			}
 
 			bool exists(SQLContext* ctx, Name n){

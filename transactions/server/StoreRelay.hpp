@@ -115,10 +115,35 @@ template <typename Store, typename... phases> struct StoreRelay {
 	}
 };
 
+	template<typename Store>
+	using tomb_listener = transaction_listener<mtl::runnable_transaction::tombstone_only_phase<typename Store::label>, mtl::runnable_transaction::tombstone_only_store<typename Store::label>,mtl::runnable_transaction::tombstone_only_phase<typename Store::label>, mtl::runnable_transaction::tombstone_only_store<typename Store::label> >;
+
+	template<typename label> constexpr auto get_applicable_listeners_2(){
+		return mutils::typelist<>{};
+	}
+	
+	template<typename label, typename transaction, typename... t>
+	constexpr auto get_applicable_listeners_2(){
+		if constexpr (!transaction::template contains_phase<label>::value){
+				return get_applicable_listeners_2<label,t...>();
+			}
+		else return
+					 mutils::typelist<listener_for<transaction, typename transaction:: template find_phase<label> > >::append(get_applicable_listeners_2<label,t...>());
+	}
+
+	template<typename Store, typename... transactions>
+	constexpr auto get_applicable_listeners_1(mutils::typelist<transactions...>){
+		constexpr StoreRelay<Store, tomb_listener<Store>, transactions...> * ret{nullptr};
+		return ret;
+	}
+
+	template<typename Store, typename... transactions>
+	constexpr auto get_applicable_listeners(){
+		using label = typename Store::label;
+		return get_applicable_listeners_1<Store>(get_applicable_listeners_2<label,transactions...>());
+	}
+	
 template <typename Store, typename... transactions>
-using RelayForTransactions =  StoreRelay<Store, transaction_listener<mtl::runnable_transaction::tombstone_only_phase<typename Store::label>, mtl::runnable_transaction::tombstone_only_store<typename Store::label>,mtl::runnable_transaction::tombstone_only_phase<typename Store::label>, mtl::runnable_transaction::tombstone_only_store<typename Store::label> >,
-																				 listener_for<transactions,
-																											typename transactions::template find_phase<
-																												typename Store::label>>...>;
+using RelayForTransactions =  DECT(*get_applicable_listeners<Store, transactions...>());
 }
 }

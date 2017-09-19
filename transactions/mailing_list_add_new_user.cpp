@@ -24,6 +24,11 @@ namespace examples{
 			)::WITH(newbie,users);
 #endif
 		std::cout << txn << std::endl;
-		txn.run_local(ct.trk,newbie,users);
+		using connections = typename DECT(ct.trk)::connection_references;
+		auto strong_connection = ct.get_relay<Level::strong>().lock();
+		auto causal_connection = ct.get_relay<Level::causal>().lock();
+		txn.run_optimistic(ct.trk,&ct.dsm,
+											 connections{ConnectionReference<Label<strong> >{*strong_connection},ConnectionReference<Label<causal> >{*causal_connection}},
+											 newbie,users);
 	}
 }

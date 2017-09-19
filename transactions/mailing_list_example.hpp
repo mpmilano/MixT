@@ -14,7 +14,6 @@
 #include "test_utils.hpp"
 #include "configuration_params.hpp"
 #include "test_client.hpp"
-#include "FinalHeader.hpp"
 
 namespace examples{
 	using namespace myria;
@@ -63,8 +62,10 @@ using Inbox = typename inbox_str::Hndl;
 	
 };
 
-	using groups = typename RemoteList<group, StrongStore::SQLHandle>::Hndl;
+	using groups_node = RemoteList<group, StrongStore::SQLHandle>;
+	using groups = typename groups_node::Hndl;
 	user_hndl create_user(client<mailing_list_state>& ct, groups g);
+	group create_global_group(client<mailing_list_state>& ct, groups g);
 
 	struct mailing_list_state{
 		static groups all_groups(client<mailing_list_state>&);
@@ -72,6 +73,8 @@ using Inbox = typename inbox_str::Hndl;
 		std::vector<user_hndl> my_users;
 		group& pick_group(client<mailing_list_state>&);
 		user_hndl& pick_user(client<mailing_list_state>&);
+		void create_user(client<mailing_list_state>&);
+		void create_group(client<mailing_list_state>&);
 		mailing_list_state();
 	};
 

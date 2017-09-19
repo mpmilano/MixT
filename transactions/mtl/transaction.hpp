@@ -52,6 +52,8 @@ struct previous_transaction_phases
     using previous_transaction_phases = _previous_transaction_phases;
     template <typename label>
     using find_phase = typename transaction::template find_phase<label>;
+		template <typename label>
+    using contains_phase = typename transaction::template contains_phase<label>;
   private:
     template <typename run_remotely, typename ClientTracker, typename connections>
     static auto interp(ClientTracker& trk, mutils::DeserializationManager* dsm, const connections &c, const typename bound_values::type&... v)
@@ -82,6 +84,8 @@ struct transaction_struct<0, _previous_transaction_phases, split, bound_values..
   constexpr transaction_struct() = default;
   using transaction = split;
   using previous_transaction_phases = _previous_transaction_phases;
+	template <typename label>
+  using contains_phase = typename transaction::template contains_phase<label>;
   template <typename label>
   using find_phase = typename transaction::template find_phase<label>;
   template <typename ClientTracker>

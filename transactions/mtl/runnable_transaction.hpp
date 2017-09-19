@@ -366,6 +366,15 @@ struct transaction<p1, phases...>
 
   template <typename label>
   using find_phase = DECT(*mutils::find_match<typename p1::template has_label<label>, typename phases::template has_label<label>...>());
+
+	template <typename label>
+  using contains_phase =
+		std::integral_constant<
+		bool,
+		!(std::is_same<mutils::mismatch,typename p1::template has_label<label> >::value
+			&& ... &&
+			std::is_same<mutils::mismatch,typename phases::template has_label<label> >::value)>;
+	
 };
 
 template <typename...>
