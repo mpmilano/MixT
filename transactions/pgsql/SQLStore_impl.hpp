@@ -100,7 +100,7 @@ namespace myria { namespace pgsql {
 				//required by ByteRepresentable
 				int bytes_size() const;
 				int to_bytes(char*) const;
-				static GSQLObject from_bytes(SQLStore_impl&, char const * v);
+				static GSQLObject from_bytes(DeserializationManager*, char const * v);
 				void post_object(const std::function<void (char const * const,std::size_t)>&) const;
 				virtual ~GSQLObject();
 			};

@@ -13,6 +13,16 @@ namespace myria { namespace pgsql {
 		using choose_strong = std::integral_constant<bool, l == Level::strong>*;
 		template<Level l>
 		using choose_causal = std::integral_constant<bool, l == Level::causal>*;
+
+		template<Level l>
+		struct SQLContext : public mtl::StoreContext<label> {
+				std::unique_ptr<SQLTransaction> i;
+				mutils::DeserializationManager & mngr;
+				SQLContext(decltype(i) i, mutils::DeserializationManager& mngr):i(std::move(i)),mngr(mngr){}
+				DataStore<label>& store() {return dynamic_cast<DataStore<label>&>( i->gstore);}
+				bool store_commit() {return i->store_commit();}
+			  bool store_abort() {i->store_abort(); return true;}
+			};
 		
 		template<Level l>
 		class SQLStore : public SQLStore_impl, public TrackableDataStore<SQLStore<l>,  level_to_label<l> > {
@@ -113,23 +123,9 @@ namespace myria { namespace pgsql {
 				Name name() const {
 					return gso.name();
 				}
-				std::size_t bytes_size() const {
-					auto ret = gso.bytes_size();
-					return ret;
-				}
+
 				INHERIT_SERIALIZATION_SUPPORT(SQLObject, RemoteObject<label,T>, 498645 + l, gso);
-				std::size_t to_bytes(char* c) const {
-					std::size_t ret = gso.to_bytes(c);
-					assert(ret == bytes_size());
-					return ret;
-				}
-				void post_object(const std::function<void (char const * const,std::size_t)>&f) const {
-					return gso.post_object(f);
-				}
-#ifndef NDEBUG
-				void ensure_registered(mutils::DeserializationManager &m){
-					assert(m. template registered<deserialization_context>());
-				}
+
 #endif
 			};
 
@@ -184,27 +180,7 @@ namespace myria { namespace pgsql {
 				return SQLHandle<T>{std::make_shared<SQLObject<T> >(std::move(gso),nullptr,*this->this_mgr),*this};
 			}
 
-			//deserializing this RemoteObject, not its stored thing.
-			template<typename T>
-			static std::unique_ptr<SQLHandle<T> > from_bytes(mutils::DeserializationManager* mngr, char const * v){
-				//this really can't be called via the normal deserialization process; it needs to be called in the process of deserializing a RemoteObject.
-				assert(mngr);
-				auto &insance_manager = mngr->template mgr<deserialization_context>();
-				auto gsql_obj = GSQLObject::from_bytes(insance_manager,v);
-				auto &this_ds = dynamic_cast<SQLStore&>(gsql_obj.store()); //this should never fail
-				return std::make_unique<SQLHandle<T> >(std::make_shared<SQLObject<T> >(std::move(gsql_obj),nullptr,*mngr),this_ds);
-			}
-
-			struct SQLContext : public mtl::StoreContext<label> {
-				std::unique_ptr<SQLTransaction> i;
-				mutils::DeserializationManager & mngr;
-				SQLContext(decltype(i) i, mutils::DeserializationManager& mngr):i(std::move(i)),mngr(mngr){}
-				DataStore<label>& store() {return dynamic_cast<DataStore<label>&>( i->gstore);}
-				bool store_commit() {return i->store_commit();}
-			  bool store_abort() {i->store_abort(); return true;}
-			};
-
-			using StoreContext = SQLContext;
+			using StoreContext = SQLContext<l>;
 
 			std::unique_ptr<mtl::StoreContext<label> > begin_transaction(whendebug(const std::string &why))
 				{

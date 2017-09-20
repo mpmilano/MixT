@@ -122,7 +122,9 @@ namespace myria{
 							UnmatchedStore::inst() }};
 			}
 			else {
-				//need to get access to operations from here somehow... 
+				auto ret = std::unique_ptr<Handle>{dynamic_cast<Handle*>(ret_ro.release()->wrapInHandle().release())};
+				assert(ret);
+				return ret;
 			}
     }
 

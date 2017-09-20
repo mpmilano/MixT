@@ -222,18 +222,15 @@ namespace myria{ namespace pgsql {
 		}
 
 		int SQLStore_impl::GSQLObject::bytes_size() const {
-			return sizeof(int)*4 + sizeof(Level) + sizeof(Table);
+			return sizeof(int)*3 + sizeof(Level) + sizeof(Table);
 		}
 
 		int SQLStore_impl::GSQLObject::to_bytes(char* c) const {
 			int* arr = (int*)c;
-			arr[0] = (i->level == Level::strong ?
-					  SQLStore<Level::strong>::id() :
-					  SQLStore<Level::causal>::id());
-			arr[1] = i->key;
-			arr[2] = i->size;
-			arr[3] = i->store_id;
-			Level* arrl = (Level*) (arr + 4);
+			arr[0] = i->key;
+			arr[1] = i->size;
+			arr[2] = i->store_id;
+			Level* arrl = (Level*) (arr + 3);
 			arrl[0] = i->level;
 			Table* arrt = (Table*) (arrl + 1);
 			arrt[0] = i->table;
@@ -247,9 +244,8 @@ namespace myria{ namespace pgsql {
 			f(buf,size);
 		}
 		
-		SQLStore_impl::GSQLObject SQLStore_impl::GSQLObject::from_bytes(SQLStore_impl& mgr, char const *_v){
-			//arr[0] has already been used to find this implementation
-			auto *v = _v + sizeof(int);
+		SQLStore_impl::GSQLObject SQLStore_impl::GSQLObject::from_bytes(DeserializationManager *dsm, char const *v){
+			auto &mgr = dsm->template mgr<SQLStore_impl>();
 			int* arr = (int*)v;
 			Level* arrl = (Level*) (arr + 3);
 			Table* arrt = (Table*) (arrl + 1);

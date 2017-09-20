@@ -12,7 +12,7 @@ namespace myria{
   }
 
 
-  struct GeneralRemoteObject : public InheritByteRepresentable{
+  struct GeneralRemoteObject {
     const int id = mutils::gensym();
     virtual const GDataStore& store() const = 0;
     virtual GDataStore& store() = 0;
@@ -29,7 +29,7 @@ namespace myria{
   template<typename l2, typename T2,typename...> struct Handle;
   
   template<typename l, typename T>
-  class RemoteObject : public TypedRemoteObject<T>
+  class RemoteObject : public TypedRemoteObject<T>, public InheritByteRepresentable
   {
     //extend this plz!
 		using level = l;
@@ -38,6 +38,7 @@ namespace myria{
     virtual std::shared_ptr<const T> get(mtl::StoreContext<l>*) = 0;
 		virtual std::shared_ptr<RemoteObject> create_new(mtl::StoreContext<l>*, const T&) const = 0;
     virtual void put(mtl::StoreContext<l>*,const T&) = 0;
+		virtual std::unique_ptr<LabelFreeHandle<T> > wrapInHandle() = 0;
     
     //TODO: delete these when you're done hacking around.
     RemoteObject(const RemoteObject&) = delete;
