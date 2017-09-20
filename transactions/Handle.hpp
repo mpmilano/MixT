@@ -96,9 +96,10 @@ namespace myria{
 		std::size_t to_bytes_hndl(char* v) const {
       //for serialization
       if (_ro) {
-				((bool*)v)[0] = true;
-				((std::size_t*)(v + sizeof(bool)))[0] = mutils::bytes_size(*_ro);
-				return sizeof(bool) + _ro->to_bytes(v + sizeof(bool) + sizeof(std::size_t));
+				auto ret = mutils::to_bytes_v(v,true,mutils::bytes_size(*_ro),*_ro);
+				whendebug(auto bsh = bytes_size_hndl());
+				assert(ret == bsh);
+				return ret;
       }
       else {
 				((bool*)v)[0] = false;

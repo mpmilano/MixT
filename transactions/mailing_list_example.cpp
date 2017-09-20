@@ -24,13 +24,20 @@ groups mailing_list_state::all_groups(client<mailing_list_state>& c){
 	static groups starting_groups = [&c]{
 		auto &sc = c.sc.inst();
 		auto &ss = c.ss.inst();
-		user u{sc.newObject(inbox_str{
-					sc.template newObject<message>("This is the head message. it will remain"),
+		auto _ctxn = sc.begin_transaction(whendebug("initial test setup"));
+		auto ctxn = dynamic_cast<typename DECT(sc)::SQLContext*>(_ctxn.get());
+		auto _stxn = ss.begin_transaction(whendebug("initial test setup"));
+		auto stxn = dynamic_cast<typename DECT(ss)::SQLContext*>(_stxn.get());
+		user u{sc.newObject(ctxn,inbox_str{
+					sc.template newObject<message>(ctxn,"This is the head message. it will remain"),
 						sc.template nullObject<inbox_str>()})};
 		
-		auto ru = sc.newObject<user>(u);
-		group g{ss.newObject(typename group::users_lst{ru,ss.template nullObject<typename group::users_lst>()}) };
-		return ss.newObject(groups_node{g, ss.template nullObject<groups_node>() });
+		auto ru = sc.newObject<user>(ctxn,u);
+		group g{ss.newObject(stxn,typename group::users_lst{ru,ss.template nullObject<typename group::users_lst>()}) };
+		auto ret = ss.newObject(stxn,groups_node{g, ss.template nullObject<groups_node>() });
+		stxn->store_commit();
+		ctxn->store_commit();
+		return ret;
 	}();
 	return starting_groups;
 }

@@ -1,7 +1,7 @@
 TRANS_DIR= `pwd`/
 IP_quad=`ifconfig | sed s/broadcast.*//g | tr " " "\n" | grep 128.84 | rev | sed s/'\..*'//g | rev`
 storeList='pgsql::SQLStore<pgsql::Level::strong>, pgsql::SQLStore<pgsql::Level::causal>'
-CPPFLAGS= -I$(PWD) -stdlib=libc++ --std=c++1z -DNUM_CAUSAL_GROUPS="4" -DSTORE_LIST=$(storeList) -DMY_IP=\"$(MY_IP)\" -DMAX_THREADS=$(MAX_THREADS) -DIP_QUAD=$(IP_quad) -DSTRONG_REMOTE_IP=\"$(STRONG_REMOTE_IP)\" -DCAUSAL_GROUP=$(causalGroup) -DCAUSAL_REMOTE_IP_1=\"$(CAUSAL_REMOTE_IP_1)\" -DCAUSAL_REMOTE_IP_2=\"$(CAUSAL_REMOTE_IP_2)\" -ferror-limit=1 -Wall -Werror -Wextra -DNOPOOL -DTRACK -O2 -g
+CPPFLAGS= -I$(PWD) -stdlib=libc++ --std=c++1z -DNUM_CAUSAL_GROUPS="4" -DSTORE_LIST=$(storeList) -DMY_IP=\"$(MY_IP)\" -DMAX_THREADS=$(MAX_THREADS) -DIP_QUAD=$(IP_quad) -DSTRONG_REMOTE_IP=\"$(STRONG_REMOTE_IP)\" -DCAUSAL_GROUP=$(causalGroup) -DCAUSAL_REMOTE_IP_1=\"$(CAUSAL_REMOTE_IP_1)\" -DCAUSAL_REMOTE_IP_2=\"$(CAUSAL_REMOTE_IP_2)\" -ferror-limit=1 -Wall -Werror -Wextra -DNOPOOL -DTRACK -O0 -g
 LDFLAGS= -stdlib=libc++ --std=c++1z -lm -pthread -lpqxx -ftemplate-depth=10000
 object_files=Ends.o utils.o test_utils.o Basics.o Tracker.o Ostreams.o SerializationSupport.o SQLStore.o GSQLObject.o SQLConnection.o SQLTransaction.o SQL_internal_utils.o SQLLevels.o TransactionContext.o ServerSocket.o Socket.o eventfd.o epoll.o simple_rpc.o local_connection.o Tombstone.o ClockManager.o configuration_params.o run_result.o
 mailing_list_object_files=mailing_list_post_new_message.o mailing_list_add_new_user.o mailing_list_download_inbox.o mailing_list_create_group.o mailing_list_create_user.o mailing_list_example.o
@@ -30,9 +30,9 @@ voting_example: $(object_files)
 mailing_list_test: $(object_files) $(mailing_list_object_files)
 	clang++ $(CPPFLAGS) $(LDFLAGS)  $(object_files) $(mailing_list_object_files) mailing_list_test.cpp -o mailing_list_test
 
-test_mailing_list: $(object_files) $(mailing_list_object_files)
+test_mailing_list: $(object_files) $(mailing_list_object_files) test_mailing_list.cpp
 	clang++ $(CPPFLAGS) $(LDFLAGS)  $(object_files) $(mailing_list_object_files) test_mailing_list.cpp -o test_mailing_list
-mailing_list_example.o: $(object_files)
+mailing_list_example.o: $(object_files) mailing_list_example.cpp
 	clang++ -c mailing_list_example.cpp $(CPPFLAGS) -ftemplate-depth=10000
 mailing_list_post_new_message.o: $(object_files) mailing_list_post_new_message.cpp mtl/run_phase.hpp
 	clang++ -DUSE_PRECOMPILED  -c mailing_list_post_new_message.cpp $(CPPFLAGS) -ftemplate-depth=10000

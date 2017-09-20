@@ -8,12 +8,27 @@
 #include "configuration_params.hpp"
 
 int main(int argc, char** argv){
-	assert(argc == 5);
+	assert(argc >= 5);
 	myria::configuration_parameters params;
 	params.strong_ip = mutils::decode_ip(argv[1]);
 	params.strong_relay_port = atoi(argv[2]);
 	params.causal_ip = mutils::decode_ip(argv[3]);
 	params.causal_relay_port = atoi(argv[4]);
+	{
+		using namespace mutils;
+		using namespace std::chrono;
+		params.client_freq = 1_Hz;
+		params.starting_num_clients = 1;
+		params.increase_clients_freq = 0_Hz;
+		params.test_duration = 30s;
+		params.percent_dedicated_connections = 1;
+		params.percent_causal = 1;
+		params.percent_read = 1;
+		params.output_file="/tmp/test_mailing_list_log";
+		params.log_delay_tolerance = 20s;
+		params.log_every_n = 2;
+		params.parallel_factor = 1;
+	}
 	myria::test<examples::mailing_list_state> t1{params};
 	t1.push_client();
 	std::unique_ptr<myria::client<examples::mailing_list_state> > client;

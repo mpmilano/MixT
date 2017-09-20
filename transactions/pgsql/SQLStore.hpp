@@ -193,10 +193,13 @@ namespace myria { namespace pgsql {
 					return gso.name();
 				}
 				std::size_t bytes_size() const {
-					return gso.bytes_size();
+					auto ret = gso.bytes_size();
+					return ret;
 				}
 				std::size_t to_bytes(char* c) const {
-					return gso.to_bytes(c);
+					std::size_t ret = gso.to_bytes(c);
+					assert(ret == bytes_size());
+					return ret;
 				}
 				void post_object(const std::function<void (char const * const,std::size_t)>&f) const {
 					return gso.post_object(f);
@@ -224,9 +227,10 @@ namespace myria { namespace pgsql {
 																														 SQLContext *ctx, Name name, const T& init){
 				constexpr Table t =
 					(std::is_same<T,int>::value ? Table::IntStore : Table::BlobStore);
-				int size = mutils::bytes_size(init);
+				std::size_t size = mutils::bytes_size(init);
 				std::vector<char> v(size);
-				whendebug(int tb_size = mutils::to_bytes(init,&v[0]));
+				whendebug(std::size_t tb_size) = mutils::to_bytes(init,v.data());
+				assert(mutils::bytes_size(init) == size);
 				assert(size == tb_size);
 				GSQLObject gso(ctx->i.get(),ss,t,name,v);
 				return std::make_shared<SQLObject<T> >(std::move(gso),mutils::heap_copy(init),dsm);
@@ -240,11 +244,6 @@ namespace myria { namespace pgsql {
 			template<typename T>
 			auto newObject(SQLContext *ctx, const T& init){
 				return newObject<T>(ctx,mutils::int_rand(),init);
-			}
-
-			template<typename T>
-			auto newObject(const T& init){
-				return newObject<T>(nullptr,init);
 			}
 
 			template<typename T> SQLHandle<T> nullObject(){
