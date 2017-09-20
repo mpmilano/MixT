@@ -221,11 +221,11 @@ namespace myria{ namespace pgsql {
 			return i->size;
 		}
 
-		int SQLStore_impl::GSQLObject::bytes_size() const {
+		std::size_t SQLStore_impl::GSQLObject::bytes_size() const {
 			return sizeof(int)*3 + sizeof(Level) + sizeof(Table);
 		}
 
-		int SQLStore_impl::GSQLObject::to_bytes(char* c) const {
+		std::size_t SQLStore_impl::GSQLObject::to_bytes(char* c) const {
 			int* arr = (int*)c;
 			arr[0] = i->key;
 			arr[1] = i->size;
@@ -250,7 +250,8 @@ namespace myria{ namespace pgsql {
 			Level* arrl = (Level*) (arr + 3);
 			Table* arrt = (Table*) (arrl + 1);
 			//of from_bytes
-			Level lvl = arrl[0];
+			whendebug(Level lvl = arrl[0]);
+			assert(lvl == mgr.level);
 			return GSQLObject(mgr,
 							  arrt[0],arr[0],arr[1]);
 		}

@@ -15,7 +15,8 @@ namespace myria { namespace pgsql {
 		using choose_causal = std::integral_constant<bool, l == Level::causal>*;
 
 		template<Level l>
-		struct SQLContext : public mtl::StoreContext<label> {
+		struct SQLContext : public mtl::StoreContext<level_to_label<l> > {
+			using label = level_to_label<l>;
 				std::unique_ptr<SQLTransaction> i;
 				mutils::DeserializationManager & mngr;
 				SQLContext(decltype(i) i, mutils::DeserializationManager& mngr):i(std::move(i)),mngr(mngr){}
@@ -27,6 +28,8 @@ namespace myria { namespace pgsql {
 		template<Level l>
 		class SQLStore : public SQLStore_impl, public TrackableDataStore<SQLStore<l>,  level_to_label<l> > {
 		public:
+
+			using SQLContext = ::myria::pgsql::SQLContext<l>;
 
 			using SQLStore_impl::exists;
 			//using TrackableDataStore<SQLStore<l>,  level_to_label<l> >::exists;
@@ -124,9 +127,8 @@ namespace myria { namespace pgsql {
 					return gso.name();
 				}
 
-				INHERIT_SERIALIZATION_SUPPORT(SQLObject, RemoteObject<label,T>, 498645 + l, gso);
-
-#endif
+				using ROSuper = RemoteObject<label,T>;
+				INHERIT_SERIALIZATION_SUPPORT(SQLObject, ROSuper, (498645 + (int) l), gso);
 			};
 
 			template<typename T>
@@ -137,8 +139,6 @@ namespace myria { namespace pgsql {
 														 std::is_same<T,int>::value,
 														 Handle<label,T,SupportedOperation<RegisteredOperations::Increment,void,SelfType> >,
 														 Handle<label,T> > >;
-
-		  struct SQLContext;
 
 			template<typename T>
 			static std::shared_ptr<SQLObject<T> > newObject_static(SQLStore_impl& ss, mutils::DeserializationManager& dsm,
@@ -180,7 +180,7 @@ namespace myria { namespace pgsql {
 				return SQLHandle<T>{std::make_shared<SQLObject<T> >(std::move(gso),nullptr,*this->this_mgr),*this};
 			}
 
-			using StoreContext = SQLContext<l>;
+			using StoreContext = SQLContext;
 
 			std::unique_ptr<mtl::StoreContext<label> > begin_transaction(whendebug(const std::string &why))
 				{

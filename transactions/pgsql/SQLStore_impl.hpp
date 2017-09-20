@@ -41,7 +41,7 @@ namespace myria { namespace pgsql {
 			};
 		}
 		
-		struct SQLStore_impl : public RemoteDeserializationContext {
+		struct SQLStore_impl : public mutils::RemoteDeserializationContext {
 		private:
 	
 			SQLStore_impl(whenpool(GeneralSQLConnectionPool& pool) whennopool(const std::string &host), GDataStore &store, /*int instanceID,*/ Level);
@@ -68,7 +68,7 @@ namespace myria { namespace pgsql {
 			bool exists(SQLTransaction*, Name id);
 			void remove(SQLTransaction*, Name id);
 	
-			struct GSQLObject {
+			struct GSQLObject : public mutils::ByteRepresentable{
 				struct Internals;
 			private:
 				Internals *i;
@@ -98,11 +98,12 @@ namespace myria { namespace pgsql {
 				Name name() const;
 
 				//required by ByteRepresentable
-				int bytes_size() const;
-				int to_bytes(char*) const;
-				static GSQLObject from_bytes(DeserializationManager*, char const * v);
+				std::size_t bytes_size() const;
+				std::size_t to_bytes(char*) const;
+				static GSQLObject from_bytes(mutils::DeserializationManager*, char const * v);
 				void post_object(const std::function<void (char const * const,std::size_t)>&) const;
 				virtual ~GSQLObject();
+				whendebug(void ensure_registered(mutils::DeserializationManager&));
 			};
 
 			//operations

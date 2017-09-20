@@ -29,7 +29,7 @@ namespace myria{
   template<typename l2, typename T2,typename...> struct Handle;
   
   template<typename l, typename T>
-  class RemoteObject : public TypedRemoteObject<T>, public InheritByteRepresentable
+  class RemoteObject : public TypedRemoteObject<T>, public mutils::InheritByteRepresentable
   {
     //extend this plz!
 		using level = l;

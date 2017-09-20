@@ -17,7 +17,7 @@ struct client{
 		
 	pgsql::SQLStore<pgsql::Level::causal> sc;
 	pgsql::SQLStore<pgsql::Level::strong> ss;
-		typename InheritGroup<>
+		typename mutils::InheritGroup<>
 		::template add_class_t<pgsql::SQLStore<pgsql::Level::causal>>
 		::template add_class_t<pgsql::SQLStore<pgsql::Level::strong>> inherit;
 		mutils::DeserializationManager dsm{{&ss,&sc,&inherit}};

@@ -1,4 +1,6 @@
 #pragma once
+#include "myria-utils/utils.hpp"
+#include "Operations.hpp"
 
 namespace myria{
 
@@ -114,5 +116,12 @@ namespace myria{
 			
 		};
 	};
+
+	template<typename l, typename T, typename... SupportedOperations>
+	std::unique_ptr<Handle<l,T,SupportedOperations...> > make_unmatched(char const * const v, std::size_t size){
+		using UnmatchedStore = UnmatchedDataStore<l,T,ops...>;
+		return std::unique_ptr<Handle>{new Handle{std::make_shared<typename UnmatchedStore::template UnmatchedRemoteObject<T> >(v,size),
+					UnmatchedStore::inst() }};
+	}
 	
 }

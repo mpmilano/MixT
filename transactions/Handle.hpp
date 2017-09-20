@@ -32,9 +32,12 @@ namespace myria{
     virtual ~LabelFreeHandle() = default;
     friend class tracker::Tracker;
   };
+
+  template<typename l, typename T, typename... SupportedOperations>
+	std::unique_ptr<Handle<l,T,SupportedOperations...> > make_unmatched(char const * const v, std::size_t size);
 	
   template<typename l, typename T, typename... SupportedOperations>
-  struct Handle : public ByteRepresentable, public GenericHandle<l>, public LabelFreeHandle<T>, public SupportedOperations::template SupportsOn<Handle<l,T,SupportedOperations...> >... {
+  struct Handle : public mutils::ByteRepresentable, public GenericHandle<l>, public LabelFreeHandle<T>, public SupportedOperations::template SupportsOn<Handle<l,T,SupportedOperations...> >... {
 
 	  template<typename SO>
 		  using OperationSuperclass = typename SO::template SupportsOn<Handle>;
@@ -115,11 +118,9 @@ namespace myria{
 			bool b = v[0];
 			assert(b && "looks like we need to allow null handles after all");
 			std::size_t size = ((std::size_t*) (v + 1))[0];
-			auto ret_ro = mutils::inherit_from_bytes<Remote_Object<l,T> >(rdc, v + sizeof(bool) + sizeof(std::size_t) );
+auto ret_ro = mutils::inherit_from_bytes<RemoteObject<l,T> >(rdc, v + sizeof(bool) + sizeof(std::size_t) );
 			if (!ret_ro) {
-				using UnmatchedStore = UnmatchedDataStore<l,T,ops...>;
-				return std::unique_ptr<Handle>{new Handle{std::make_shared<typename UnmatchedStore::template UnmatchedRemoteObject<T> >(v,size),
-							UnmatchedStore::inst() }};
+				return make_unmatched<l,T,SupportedOperations...>(v, size);
 			}
 			else {
 				auto ret = std::unique_ptr<Handle>{dynamic_cast<Handle*>(ret_ro.release()->wrapInHandle().release())};
