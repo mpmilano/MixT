@@ -3,6 +3,7 @@
 #include "mutils/type_utils.hpp"
 #include "mutils/tuple_extras.hpp"
 #include "mutils-serialization/SerializationSupport.hpp"
+#include "mutils-serialization/Inheritance.hpp"
 #include "DataStore.hpp"
 
 namespace myria{
@@ -11,7 +12,7 @@ namespace myria{
   }
 
 
-  struct GeneralRemoteObject : public mutils::ByteRepresentable{
+  struct GeneralRemoteObject : public InheritByteRepresentable{
     const int id = mutils::gensym();
     virtual const GDataStore& store() const = 0;
     virtual GDataStore& store() = 0;

@@ -32,12 +32,9 @@ namespace myria{
     virtual ~LabelFreeHandle() = default;
     friend class tracker::Tracker;
   };
-
-  template<typename l2, typename T2, typename... ops2>
-  std::unique_ptr<Handle<l2,T2,ops2...> > hndl_from_bytes(mutils::DeserializationManager* dm, char const * __v, Handle<l2,T2,ops2...>* = nullptr);
 	
   template<typename l, typename T, typename... SupportedOperations>
-  struct Handle : public GenericHandle<l>, public LabelFreeHandle<T>, public SupportedOperations::template SupportsOn<Handle<l,T,SupportedOperations...> >... {
+  struct Handle : public ByteRepresentable, public GenericHandle<l>, public LabelFreeHandle<T>, public SupportedOperations::template SupportsOn<Handle<l,T,SupportedOperations...> >... {
 
 	  template<typename SO>
 		  using OperationSuperclass = typename SO::template SupportsOn<Handle>;
@@ -93,11 +90,12 @@ namespace myria{
 
     typedef T stored_type;
 
-		std::size_t to_bytes_hndl(char* v) const {
+		std::size_t to_bytes(char* v) const {
       //for serialization
       if (_ro) {
-				auto ret = mutils::to_bytes_v(v,true,mutils::bytes_size(*_ro),*_ro);
-				whendebug(auto bsh = bytes_size_hndl());
+				auto accum = mutils::to_bytes_v(v,true,_ro->inherit_bytes_size());
+				auto ret = accum + _ro->inherit_to_bytes(v + accum);
+				whendebug(auto bsh = bytes_size());
 				assert(ret == bsh);
 				return ret;
       }
@@ -107,13 +105,23 @@ namespace myria{
       }
     }
 
-		std::size_t bytes_size_hndl() const {
-      return sizeof(bool) + (_ro ? _ro->bytes_size() + sizeof(std::size_t) : 0);
+		std::size_t bytes_size() const {
+      return sizeof(bool) + (_ro ? _ro->inherit_bytes_size() + sizeof(std::size_t) : 0);
     }
 
     static std::unique_ptr<Handle> from_bytes(mutils::DeserializationManager* rdc, char const *v){
-			constexpr Handle* np{nullptr};
-      return hndl_from_bytes<l,T,SupportedOperations...>(rdc,v,np);
+			static_assert(sizeof(bool) == sizeof(char));
+			static_assert(sizeof(bool) == 1);
+			bool b = v[0];
+			assert(b && "looks like we need to allow null handles after all");
+			std::size_t size = ((std::size_t*) (v + 1))[0];
+			auto ret = mutils::inherit_from_bytes(rdc, v + sizeof(bool) + sizeof(std::size_t) );
+			if (!ret) {
+				using UnmatchedStore = UnmatchedDataStore<l,T,ops...>;
+				ret.reset(new Handle{std::make_shared<typename UnmatchedStore::template UnmatchedRemoteObject<T> >(v,size),
+							UnmatchedStore::inst() });
+			}
+			return ret;
     }
 
     std::shared_ptr<const T> get(mtl::PhaseContext<l> *tc) const {
@@ -234,36 +242,23 @@ namespace mutils{
 	};
   
   template<typename l, typename T,typename... Ops>
-  std::size_t to_bytes(const myria::Handle<l,T,Ops...>& h, char* v){
-    return h.to_bytes_hndl(v);
-  }
-  
-  
-  template<typename l, typename T,typename... Ops>
-  std::size_t bytes_size(const myria::Handle<l,T,Ops...> &h){
-    return h.bytes_size_hndl();
-  }
-  
-  template<typename l, typename T,typename... Ops>
   void post_object(const std::function<void (char const *const, std::size_t)>&f,
-		   const myria::Handle<l,T,Ops...>& h){
+									 const myria::Handle<l,T,Ops...>& h){
     auto size = ::mutils::bytes_size(h);
     char buf[size];
-    h.to_bytes_hndl(buf);
+    h.to_bytes(buf);
     f(buf,size);
   }
-  
+
+#ifndef NDEBUG
   template<typename l, typename T, typename... Ops>
   void ensure_registered(const myria::Handle<l,T,Ops...>& v, DeserializationManager& dm){
     ensure_registered(*v._ro,dm);
   }
+#endif
   
-  template<typename T, typename P>
-  std::enable_if_t<myria::is_handle<T>::value,std::unique_ptr<T> > from_bytes(P* p, char const *v){
-    return T::from_bytes(p,v);
-  }
 	template<typename T, typename P>
-  std::enable_if_t<myria::is_handle<T>::value,std::unique_ptr<T> > from_bytes_noalloc(P* p, char const *v, context_ptr<T> = context_ptr<T>{}){
-    return std::unique_ptr<T>{T::from_bytes(p,v).release()};
+  std::enable_if_t<myria::is_handle<T>::value,mutils::context_ptr<T> > from_bytes_noalloc(P* p, char const *v, context_ptr<T> = context_ptr<T>{}){
+    return mutils::context_ptr<T>{T::from_bytes(p,v).release()};
   }
 }
