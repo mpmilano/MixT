@@ -4,7 +4,6 @@
 
 namespace myria{
 
-template<pgsql::Level l> using SQLInstanceManager = typename pgsql::SQLStore<l>::SQLInstanceManager;
 using LockedConnection = typename mutils::ResourcePool<mutils::simple_rpc::connection>::LockedResource;
 using WeakConnection = typename mutils::ResourcePool<mutils::simple_rpc::connection>::WeakResource;
 
@@ -16,9 +15,12 @@ struct client{
 
 		using test = ::myria::test<Internals>;
 		
-	SQLInstanceManager<pgsql::Level::causal> sc;
-	SQLInstanceManager<pgsql::Level::strong> ss;
-	mutils::DeserializationManager dsm{{&ss,&sc}};
+	pgsql::SQLStore<pgsql::Level::causal> sc;
+	pgsql::SQLStore<pgsql::Level::strong> ss;
+		typename InheritGroup<>
+		::template add_class_t<pgsql::SQLStore<pgsql::Level::causal>>
+		::template add_class_t<pgsql::SQLStore<pgsql::Level::strong>> inherit;
+		mutils::DeserializationManager dsm{{&ss,&sc,&inherit}};
 	WeakConnection strong_relay;
 	WeakConnection causal_relay;
 	test &t;
@@ -47,11 +49,11 @@ struct client{
 	}
 
 	auto& get_store(std::true_type*){
-		return ss.inst();
+		return ss;
 	}
 
 	auto& get_store(std::false_type*){
-		return sc.inst();
+		return sc;
 	}
 	
 	template<pgsql::Level l> auto& get_store(){

@@ -5,8 +5,7 @@
 #include "mtl/split_printer.hpp"
 #include <iostream>
 #define STORE_LEVEL causal
-#define STORE_LIST pgsql::SQLStore<pgsql::Level::STORE_LEVEL>
-#include "FinalHeader.hpp"
+
 
 using namespace myria;
 using namespace server;
@@ -15,7 +14,7 @@ using namespace mtl;
 using namespace std;
 using namespace mutils;
 using namespace runnable_transaction;
-using SQLInstanceManager = typename SQLStore<Level::STORE_LEVEL >::SQLInstanceManager;
+using SQLStore = pgsql::SQLStore<Level::STORE_LEVEL >;
 using Hndl = Handle<Label<STORE_LEVEL >, int, SupportedOperation<RegisteredOperations::Increment,void,SelfType> >;
 
 void write_debug_file(int i, char* data, std::size_t size){
@@ -27,10 +26,11 @@ void write_debug_file(int i, char* data, std::size_t size){
 int main(){
 
 	SQLConnectionPool<Level::STORE_LEVEL > pool;
-	SQLInstanceManager ss{pool};
-	DeserializationManager dsm{{&ss}};
+	typename InheritGroup<>::template add_class_t<SQLStore> inherit;
+	SQLStore ss{pool};
+	DeserializationManager dsm{{&ss,&inherit}};
 	constexpr auto name = 478446/2;
-	Hndl hndl = ss.inst().template existingObject<int>(name);
+	Hndl hndl = ss.template existingObject<int>(name);
 	constexpr auto incr_trans = TRANSACTION(Hndl::label::int_id::value,let remote x = hndl in {x = x + 1})::WITH(hndl);
 	constexpr auto read_trans = TRANSACTION(150 + Hndl::label::int_id::value,let remote x = hndl in {})::WITH(hndl);
 	cout << incr_trans << endl;

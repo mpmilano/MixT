@@ -26,92 +26,13 @@ namespace myria { namespace pgsql {
 			
 			virtual ~SQLStore() {}
 
-			struct SQLInstanceManager : public SQLInstanceManager_abs{
-			public:
-				whenpool(SQLConnectionPool<l> &p;)
-				whennopool(std::string p;)
-				SQLInstanceManager(decltype(p) p)
-					:SQLInstanceManager_abs(),p(p){
-				}
-				SQLInstanceManager(const SQLInstanceManager&) = delete;
-				virtual ~SQLInstanceManager(){
-					for (auto &p : ss){
-						SQLStore* ptr = p.second.release();
-						delete ptr;
-					}
-				}
-			private:
-				std::map<int,std::unique_ptr<SQLStore> > ss;
-				
-				void inst(Level whendebug(l2)){
-					assert(l == l2);
-					if (ss.count(0) == 0 || (!ss.at(0))){
-						assert(this->this_mgr);
-						ss[0].reset(new SQLStore(*this->this_mgr,p));
-					}
-				}
-
-				SQLStore<Level::strong>& choose_s(std::true_type*){
-					assert(ss.at(0));
-					return *ss.at(0);
-				}
-				
-				SQLStore<Level::strong>& choose_s(std::false_type*){
-					assert(false && "Error: This is not a strong instance manager");
-					struct die{}; throw die{};
-				}
-				
-				SQLStore<Level::causal>& choose_c(std::true_type*){
-					assert(ss.at(0));
-					return *ss.at(0);
-				}
-				
-				SQLStore<Level::causal>& choose_c(std::false_type*){
-					assert(false && "Error: This is not a causal instance manager");
-					struct die{}; throw die{};
-				}
-				
-			public:
-				
-				SQLStore<Level::strong>& inst_strong(){
-					inst(Level::strong);
-					choose_strong<l> choice{nullptr};
-					return choose_s(choice);
-				}
-				
-				SQLStore<Level::causal>& inst_causal(){
-					inst(Level::causal);
-					choose_causal<l> choice{nullptr};
-					return choose_c(choice);
-				}
-
-				auto& inst(){
-					inst(l);
-					assert(ss.at(0));
-					return *ss.at(0);
-				}
-			};
-
-			mutils::DeserializationManager &this_mgr;
-
-		private:
-			SQLStore(mutils::DeserializationManager &this_mgr,whenpool(GeneralSQLConnectionPool) whennopool(const std::string) &p)
-			  :SQLStore_impl(p,*this,l),this_mgr(this_mgr) {
-			}
-		public:
-
-			using deserialization_context = SQLInstanceManager;
-
-			using Store = SQLStore;	
-
-			static constexpr int id() {
-				return SQLStore_impl::ds_id_nl() + (int) l;
+			SQLStore(whenpool(GeneralSQLConnectionPool) whennopool(const std::string) &p)
+			  :SQLStore_impl(p,*this,l) {
 			}
 
-			int ds_id() const {
-				assert(SQLStore_impl::ds_id() == id());
-				return id();
-			}
+			using deserialization_context = SQLStore;
+
+			using Store = SQLStore;
 
 			SQLStore& store() {
 				return *this;
@@ -184,10 +105,10 @@ namespace myria { namespace pgsql {
 					return gso.isValid(tc);
 				}
 				const SQLStore& store() const{
-					return tds.template mgr<SQLInstanceManager>().inst();
+					return dynamic_cast<SQLStore&>(gso.store());
 				}
 				SQLStore& store(){
-					return tds.template mgr<SQLInstanceManager>().inst();
+					return dynamic_cast<SQLStore&>(gso.store());
 				}
 				Name name() const {
 					return gso.name();
@@ -196,6 +117,7 @@ namespace myria { namespace pgsql {
 					auto ret = gso.bytes_size();
 					return ret;
 				}
+				INHERIT_SERIALIZATION_SUPPORT(SQLObject, RemoteObject<label,T>, 498645 + l, gso);
 				std::size_t to_bytes(char* c) const {
 					std::size_t ret = gso.to_bytes(c);
 					assert(ret == bytes_size());
@@ -238,7 +160,7 @@ namespace myria { namespace pgsql {
 			
 			template<typename T>
 			SQLHandle<T> newObject(SQLContext *ctx, Name name, const T& init){
-				return SQLHandle<T>{newObject_static(*this,this_mgr,ctx,name,init),*this};
+				return SQLHandle<T>{newObject_static(*this,*this->this_mgr,ctx,name,init),*this};
 			}
 
 			template<typename T>
@@ -259,7 +181,7 @@ namespace myria { namespace pgsql {
 				static constexpr Table t =
 					(std::is_same<T,int>::value ? Table::IntStore : Table::BlobStore);
 				GSQLObject gso(*this,t,name);
-				return SQLHandle<T>{std::make_shared<SQLObject<T> >(std::move(gso),nullptr,this_mgr),*this};
+				return SQLHandle<T>{std::make_shared<SQLObject<T> >(std::move(gso),nullptr,*this->this_mgr),*this};
 			}
 
 			//deserializing this RemoteObject, not its stored thing.
@@ -287,7 +209,7 @@ namespace myria { namespace pgsql {
 			std::unique_ptr<mtl::StoreContext<label> > begin_transaction(whendebug(const std::string &why))
 				{
 					auto ret = SQLStore_impl::begin_transaction(whendebug(why));
-					return std::unique_ptr<mtl::StoreContext<label> >(new SQLContext{std::move(ret),this_mgr});
+					return std::unique_ptr<mtl::StoreContext<label> >(new SQLContext{std::move(ret),*this->this_mgr});
 				}
 
 			bool in_transaction() const {

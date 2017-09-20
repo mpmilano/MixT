@@ -247,7 +247,7 @@ namespace myria{ namespace pgsql {
 			f(buf,size);
 		}
 		
-		SQLStore_impl::GSQLObject SQLStore_impl::GSQLObject::from_bytes(SQLInstanceManager_abs& mgr, char const *_v){
+		SQLStore_impl::GSQLObject SQLStore_impl::GSQLObject::from_bytes(SQLStore_impl& mgr, char const *_v){
 			//arr[0] has already been used to find this implementation
 			auto *v = _v + sizeof(int);
 			int* arr = (int*)v;
@@ -255,7 +255,7 @@ namespace myria{ namespace pgsql {
 			Table* arrt = (Table*) (arrl + 1);
 			//of from_bytes
 			Level lvl = arrl[0];
-			return GSQLObject(mgr.inst(lvl),
+			return GSQLObject(mgr,
 							  arrt[0],arr[0],arr[1]);
 		}
 	}

@@ -1,5 +1,4 @@
 #include "pgsql/SQLStore.hpp"
-#include "FinalHeader.hpp"
 #include "tracker/Tracker.hpp"
 
 

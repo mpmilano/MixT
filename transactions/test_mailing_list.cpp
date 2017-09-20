@@ -4,7 +4,6 @@
 #include "mtl/transaction.hpp"
 #include "mtl/transaction_macros.hpp"
 #include "test_utils.hpp"
-#include "FinalHeader.hpp"
 #include "configuration_params.hpp"
 
 int main(int argc, char** argv){

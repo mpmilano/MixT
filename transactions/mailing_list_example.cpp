@@ -22,8 +22,8 @@ using namespace examples;
 
 groups mailing_list_state::all_groups(client<mailing_list_state>& c){
 	static groups starting_groups = [&c]{
-		auto &sc = c.sc.inst();
-		auto &ss = c.ss.inst();
+		auto &sc = c.sc;
+		auto &ss = c.ss;
 		auto _ctxn = sc.begin_transaction(whendebug("initial test setup"));
 		auto ctxn = dynamic_cast<typename DECT(sc)::SQLContext*>(_ctxn.get());
 		auto _stxn = ss.begin_transaction(whendebug("initial test setup"));

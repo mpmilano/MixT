@@ -1,7 +1,6 @@
 
 
 #include "SQLStore.hpp"
-#include "FinalHeader.hpp"
 
 using namespace myria;
 using namespace pgsql;

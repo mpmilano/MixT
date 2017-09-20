@@ -76,29 +76,10 @@ namespace myria{ namespace pgsql {
 			cmds::remove(level,*ctx,Table::BlobStore,id);
 		}
 
-
-		int SQLStore_impl::ds_id() const{
-			return 2 + (int) level;
-		}
-
 		int SQLStore_impl::instance_id() const{
 			constexpr auto ret = mutils::decode_ip(MY_IP);
 			return ret;
 		}
-
-
-
-
-
-		
-		SQLStore_impl& SQLInstanceManager_abs::inst(Level l){
-			if (l == Level::strong) return this->inst_strong();
-			else if (l == Level::causal) return this->inst_causal();
-			else assert(false && "what?");
-			struct die{}; throw die{};
-		}
-
-
 
 
 		SQLStore_impl::~SQLStore_impl(){

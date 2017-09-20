@@ -40,20 +40,8 @@ namespace myria { namespace pgsql {
 			case Table::IntStore : return CexprString{} + is;
 			};
 		}
-
-		struct SQLStore_impl;
 		
-		struct SQLInstanceManager_abs : public mutils::RemoteDeserializationContext {
-			virtual SQLStore<Level::strong>& inst_strong() = 0;
-			virtual SQLStore<Level::causal>& inst_causal() = 0;
-			SQLStore_impl& inst(Level l);
-			
-			virtual ~SQLInstanceManager_abs(){}
-			SQLInstanceManager_abs(const SQLInstanceManager_abs&) = delete;
-			SQLInstanceManager_abs(){}
-		};
-		
-		struct SQLStore_impl {
+		struct SQLStore_impl : public RemoteDeserializationContext {
 		private:
 	
 			SQLStore_impl(whenpool(GeneralSQLConnectionPool& pool) whennopool(const std::string &host), GDataStore &store, /*int instanceID,*/ Level);
@@ -79,9 +67,6 @@ namespace myria { namespace pgsql {
 			int instance_id() const;
 			bool exists(SQLTransaction*, Name id);
 			void remove(SQLTransaction*, Name id);
-
-			int ds_id() const;
-			static constexpr int ds_id_nl(){ return 2;}
 	
 			struct GSQLObject {
 				struct Internals;
@@ -102,6 +87,7 @@ namespace myria { namespace pgsql {
 				int obj_buffer_size() const;
 				const std::array<long long,NUM_CAUSAL_GROUPS>& timestamp() const ;
 				SQLStore_impl& store();
+				const SQLStore_impl& store() const;
 
 				//will crash if stored object is non-integral.
 				void increment(SQLTransaction*);
@@ -114,7 +100,7 @@ namespace myria { namespace pgsql {
 				//required by ByteRepresentable
 				int bytes_size() const;
 				int to_bytes(char*) const;
-				static GSQLObject from_bytes(SQLInstanceManager_abs&, char const * v);
+				static GSQLObject from_bytes(SQLStore_impl&, char const * v);
 				void post_object(const std::function<void (char const * const,std::size_t)>&) const;
 				virtual ~GSQLObject();
 			};

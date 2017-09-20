@@ -6,7 +6,6 @@
 #include "pgsql/SQLStore.hpp"
 #include "mtl/RemoteList.hpp"
 #include "mtl/split_printer.hpp"
-#include "FinalHeader.hpp"
 #include "threaded_trial.hpp"
 #include "pgsql/SQLStore.hpp"
 #include "mtl/transaction.hpp"

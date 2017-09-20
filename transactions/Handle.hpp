@@ -115,13 +115,15 @@ namespace myria{
 			bool b = v[0];
 			assert(b && "looks like we need to allow null handles after all");
 			std::size_t size = ((std::size_t*) (v + 1))[0];
-			auto ret = mutils::inherit_from_bytes(rdc, v + sizeof(bool) + sizeof(std::size_t) );
-			if (!ret) {
+			auto ret_ro = mutils::inherit_from_bytes<Remote_Object<l,T> >(rdc, v + sizeof(bool) + sizeof(std::size_t) );
+			if (!ret_ro) {
 				using UnmatchedStore = UnmatchedDataStore<l,T,ops...>;
-				ret.reset(new Handle{std::make_shared<typename UnmatchedStore::template UnmatchedRemoteObject<T> >(v,size),
-							UnmatchedStore::inst() });
+				return std::unique_ptr<Handle>{new Handle{std::make_shared<typename UnmatchedStore::template UnmatchedRemoteObject<T> >(v,size),
+							UnmatchedStore::inst() }};
 			}
-			return ret;
+			else {
+				//need to get access to operations from here somehow... 
+			}
     }
 
     std::shared_ptr<const T> get(mtl::PhaseContext<l> *tc) const {

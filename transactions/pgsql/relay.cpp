@@ -1,13 +1,11 @@
-#define STORE_LIST pgsql::SQLStore<pgsql::Level::STORE_LEVEL>
 #include "server/StoreRelay.hpp"
 #include "pgsql/SQLStore.hpp"
 #include "mtl/transaction.hpp"
 #include "mtl/transaction_macros.hpp"
 #include "mtl/RemoteList.hpp"
 #include "mailing_list_example.hpp"
-#include "FinalHeader.hpp"
 
-using namespace myria;
+namespace myria;
 using namespace server;
 using namespace pgsql;
 using namespace mtl;
@@ -53,12 +51,11 @@ int main(int whendebug(argc), char** argv){
 	using captive_store = typename Relay::captive_store;
 
 	struct captive_sqlstore : public captive_store{
-		using SQLInstanceManager = typename SQLStore<Level::STORE_LEVEL >::SQLInstanceManager;
-		SQLInstanceManager ss;
-		DeserializationManager _dsm{{&ss}};
-		SQLStore<Level::STORE_LEVEL>& _store{ss.inst()};
+		SQLStore<Level::STORE_LEVEL > ss;
+		typename InheritGroup<>::template add_class_t<SQLStore<Level::STORE_LEVEL >> inherit;
+		DeserializationManager _dsm{{&ss,&inherit}};
 		SQLStore<Level::STORE_LEVEL>& store(){
-			return _store;
+			return ss;
 		}
 		DeserializationManager &dsm() {
 			return _dsm;
