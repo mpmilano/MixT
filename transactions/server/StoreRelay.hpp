@@ -7,13 +7,13 @@
 namespace myria {
 namespace server {
 
-template <typename Store, typename... phases> struct StoreRelay {
+	template <typename Store, typename DeserializationManager, typename... phases> struct StoreRelay {
   static_assert(
       std::is_base_of<DataStore<typename Store::label>, Store>::value);
 
   struct captive_store {
     virtual Store &store() = 0;
-    virtual mutils::DeserializationManager &dsm() = 0;
+    virtual DeserializationManager &dsm() = 0;
     virtual ~captive_store() = default;
   };
 
@@ -22,7 +22,7 @@ template <typename Store, typename... phases> struct StoreRelay {
   struct StoreSession : public mutils::rpc::ReceiverFun {
     std::unique_ptr<captive_store> cstore;
     Store &store{cstore->store()};
-    mutils::DeserializationManager &dsm{cstore->dsm()};
+    DeserializationManager &dsm{cstore->dsm()};
     tracker::Tracker trk;
     mutils::connection &c;
     moodycamel::BlockingReaderWriterQueue<std::vector<char>> queue;

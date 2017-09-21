@@ -17,10 +17,17 @@ struct client{
 		
 	pgsql::SQLStore<pgsql::Level::causal> sc;
 	pgsql::SQLStore<pgsql::Level::strong> ss;
+		using Inherit = 
 		typename mutils::InheritGroup<>
 		::template add_class_t<pgsql::SQLStore<pgsql::Level::causal>>
-		::template add_class_t<pgsql::SQLStore<pgsql::Level::strong>> inherit;
-		mutils::DeserializationManager dsm{{&ss,&sc,&inherit}};
+			::template add_class_t<pgsql::SQLStore<pgsql::Level::strong>>;
+		Inherit inherit;
+		using DeserializationManager =
+			mutils::DeserializationManager<
+			pgsql::SQLStore<pgsql::Level::strong>,
+			pgsql::SQLStore<pgsql::Level::causal>,
+			Inherit>;
+		DeserializationManager dsm{&ss,&sc,&inherit};
 	WeakConnection strong_relay;
 	WeakConnection causal_relay;
 	test &t;

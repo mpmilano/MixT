@@ -34,12 +34,13 @@ using Hndl2 = Handle<Label<pgsql::strong >, int, SupportedOperation<RegisteredOp
 int main(){
 	SQLConnectionPool<Level::strong> sp;
 	SQLConnectionPool<Level::causal> cp;
-	typename SQLStore<Level::causal> ci{cp};
-	typename SQLStore<Level::strong> si{sp};
-	typename InheritGroup<>
+	SQLStore<Level::causal> ci{cp};
+	SQLStore<Level::strong> si{sp};
+	using Inherit = typename InheritGroup<>
 		::template add_class_t<SQLStore<pgsql::Level::causal>>
-		::template add_class_t<SQLStore<pgsql::Level::strong>> inherit;
-	DeserializationManager dsm{{&si,&ci,&inherit}};
+		::template add_class_t<SQLStore<pgsql::Level::strong>>;
+	Inherit inherit;
+	DeserializationManager<SQLStore<Level::strong>,SQLStore<Level::causal>, Inherit > dsm{&si,&ci,&inherit};
   Hndl1 hndl1 = ci.template existingObject<int>(nullptr, 13476);
   Hndl2 hndl2 = si.template existingObject<int>(nullptr, 13476);
 	constexpr auto txn = TRANSACTION(

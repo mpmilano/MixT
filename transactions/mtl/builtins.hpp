@@ -50,18 +50,18 @@ namespace myria { namespace mtl {
 			return true;
 		}
 
-		template<typename... ignore>
-		inline bool receive_holder_values(mutils::DeserializationManager* , mutils::String<'t','r','u','e'> , const ignore&...){
+		template<typename DSM, typename... ignore>
+		inline bool receive_holder_values(DSM* , mutils::String<'t','r','u','e'> , const ignore&...){
 			return true;
 		}
 
-		template<typename... ignore>
-		inline bool receive_holder_values(mutils::DeserializationManager* , mutils::String<'f','a','l','s','e'> , const ignore&...){
+		template<typename DSM, typename... ignore>
+		inline bool receive_holder_values(DSM* , mutils::String<'f','a','l','s','e'> , const ignore&...){
 			return true;
 		}
 
-		template<typename... ignore>
-		inline bool receive_holder_values(mutils::DeserializationManager*, typename builtins::ListStub::name, const ignore&...){
+		template<typename DSM, typename... ignore>
+		inline bool receive_holder_values(DSM*, typename builtins::ListStub::name, const ignore&...){
 			return true;
 		}
 

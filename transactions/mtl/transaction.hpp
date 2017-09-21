@@ -55,17 +55,18 @@ struct previous_transaction_phases
 		template <typename label>
     using contains_phase = typename transaction::template contains_phase<label>;
   private:
-    template <typename run_remotely, typename ClientTracker, typename connections>
-    static auto interp(ClientTracker& trk, mutils::DeserializationManager* dsm, const connections &c, const typename bound_values::type&... v)
+    template <typename run_remotely, typename ClientTracker, typename connections, typename... ctxs>
+    static auto interp(ClientTracker& trk, mutils::DeserializationManager<ctxs...>* dsm, const connections &c, const typename bound_values::type&... v)
     {
       using namespace runnable_transaction;
       using namespace mutils;
-      return begin_interp<previous_transaction_phases, transaction, connections, run_remotely, ClientTracker, bound_values...>(
+      return begin_interp<DeserializationManager<ctxs...>,
+													previous_transaction_phases, transaction, connections, run_remotely, ClientTracker, bound_values...>(
         dsm, trk, c, bound_values{ v }...);
     }
   public:
-    template <typename ClientTracker>
-    static auto run_optimistic(ClientTracker& trk, mutils::DeserializationManager* dsm, const typename ClientTracker::connection_references& c,
+    template <typename ClientTracker, typename... ctxs>
+    static auto run_optimistic(ClientTracker& trk, mutils::DeserializationManager<ctxs...>* dsm, const typename ClientTracker::connection_references& c,
                                const typename bound_values::type&... v)
     {
       return transaction_struct::template interp<std::true_type>(trk, dsm, c, v...);

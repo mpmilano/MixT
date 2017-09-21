@@ -18,18 +18,19 @@ namespace myria { namespace pgsql {
 		struct SQLContext : public mtl::StoreContext<level_to_label<l> > {
 			using label = level_to_label<l>;
 				std::unique_ptr<SQLTransaction> i;
-				mutils::DeserializationManager & mngr;
-				SQLContext(decltype(i) i, mutils::DeserializationManager& mngr):i(std::move(i)),mngr(mngr){}
+				SQLContext(decltype(i) i):i(std::move(i)){}
 				DataStore<label>& store() {return dynamic_cast<DataStore<label>&>( i->gstore);}
 				bool store_commit() {return i->store_commit();}
 			  bool store_abort() {i->store_abort(); return true;}
 			};
 		
-		template<Level l>
+		template<Level l, typename... OtherDeserializationContexts>
 		class SQLStore : public SQLStore_impl, public TrackableDataStore<SQLStore<l>,  level_to_label<l> > {
 		public:
 
 			using SQLContext = ::myria::pgsql::SQLContext<l>;
+			using DeserializationManager = mutils::DeserializationManager<OtherDeserializationContexts...>;
+			DeserializationManager *this_mgr{nullptr};
 
 			using SQLStore_impl::exists;
 			//using TrackableDataStore<SQLStore<l>,  level_to_label<l> >::exists;
@@ -68,20 +69,30 @@ namespace myria { namespace pgsql {
 				return this->clock;
 			}
 
+			template<typename T> using SQLRO = RemoteObject<label,T>;
+
 			template<typename T>
-			struct SQLObject : public RemoteObject<label,T> {
+			using SQLHandle =
+				std::conditional_t<mutils::is_set<T>::value,
+													 Handle<label,T,SupportedOperation<RegisteredOperations::Insert,void,SelfType,mutils::extract_type_if_set<T> > >,
+													 std::conditional_t<
+														 std::is_same<T,int>::value,
+														 Handle<label,T,SupportedOperation<RegisteredOperations::Increment,void,SelfType> >,
+														 Handle<label,T> > >;
+
+			using sqlobject_inherit_id = std::integral_constant<std::size_t,(498645 + (int) l)>;
+			
+			template<typename T>
+			struct SQLObject : public SQLRO<T> {
 				using Store = SQLStore;
 				GSQLObject gso;
 				std::shared_ptr<T> t;
-				mutils::DeserializationManager &tds;
+				DeserializationManager& tds;
 
-				SQLObject(GSQLObject gs, std::unique_ptr<T> _t, mutils::DeserializationManager &tds):
-					gso(std::move(gs)),tds(tds){
+				SQLObject(GSQLObject gs, DeserializationManager& dsm, std::unique_ptr<T> _t):
+					gso(std::move(gs)),tds(dsm){
 					assert(this);
 					if (_t){
-#ifndef NDEBUG
-						mutils::ensure_registered(*_t,tds);
-#endif
 						this->t = std::shared_ptr<T>{_t.release()};
 					}
 				}
@@ -118,7 +129,7 @@ namespace myria { namespace pgsql {
 					return gso.isValid(tc);
 				}
 				const SQLStore& store() const{
-					return dynamic_cast<SQLStore&>(gso.store());
+					return dynamic_cast<const SQLStore&>(gso.store());
 				}
 				SQLStore& store(){
 					return dynamic_cast<SQLStore&>(gso.store());
@@ -127,21 +138,22 @@ namespace myria { namespace pgsql {
 					return gso.name();
 				}
 
+				std::unique_ptr<LabelFreeHandle<T> > wrapInHandle(std::shared_ptr<RemoteObject<label,T> > ro)  {
+					return std::unique_ptr<LabelFreeHandle<T> >{ new SQLHandle<T>{std::dynamic_pointer_cast<SQLObject>(ro), store()}};
+				}
+
 				using ROSuper = RemoteObject<label,T>;
-				INHERIT_SERIALIZATION_SUPPORT(SQLObject, ROSuper, (498645 + (int) l), gso);
+				std::size_t serial_uuid() const { return sqlobject_inherit_id::value;}
+				DEFAULT_SERIALIZE(gso);
+				static std::unique_ptr<SQLObject> from_bytes(DeserializationManager* dsm, char const * const buf){
+					return std::unique_ptr<SQLObject>{new SQLObject{GSQLObject{GSQLObject::from_bytes_helper(dsm,buf), buf}, *dsm, nullptr}};
+				}
 			};
 
-			template<typename T>
-			using SQLHandle =
-				std::conditional_t<mutils::is_set<T>::value,
-													 Handle<label,T,SupportedOperation<RegisteredOperations::Insert,void,SelfType,mutils::extract_type_if_set<T> > >,
-													 std::conditional_t<
-														 std::is_same<T,int>::value,
-														 Handle<label,T,SupportedOperation<RegisteredOperations::Increment,void,SelfType> >,
-														 Handle<label,T> > >;
+			using InheritPair = mutils::InheritPairAbs1<SQLRO, SQLObject, (498645 + (int) l)>;
 
 			template<typename T>
-			static std::shared_ptr<SQLObject<T> > newObject_static(SQLStore_impl& ss, mutils::DeserializationManager& dsm,
+			static std::shared_ptr<SQLObject<T> > newObject_static(SQLStore_impl& ss, DeserializationManager &dsm,
 																														 SQLContext *ctx, Name name, const T& init){
 				constexpr Table t =
 					(std::is_same<T,int>::value ? Table::IntStore : Table::BlobStore);
@@ -151,7 +163,7 @@ namespace myria { namespace pgsql {
 				assert(mutils::bytes_size(init) == size);
 				assert(size == tb_size);
 				GSQLObject gso(ctx->i.get(),ss,t,name,v);
-				return std::make_shared<SQLObject<T> >(std::move(gso),mutils::heap_copy(init),dsm);
+				return std::make_shared<SQLObject<T> >(std::move(gso),dsm,mutils::heap_copy(init));
 			}
 			
 			template<typename T>
@@ -177,7 +189,7 @@ namespace myria { namespace pgsql {
 				static constexpr Table t =
 					(std::is_same<T,int>::value ? Table::IntStore : Table::BlobStore);
 				GSQLObject gso(*this,t,name);
-				return SQLHandle<T>{std::make_shared<SQLObject<T> >(std::move(gso),nullptr,*this->this_mgr),*this};
+				return SQLHandle<T>{std::shared_ptr<SQLObject<T> > { new SQLObject<T>{std::move(gso),*this_mgr,nullptr}},*this};
 			}
 
 			using StoreContext = SQLContext;
@@ -185,7 +197,7 @@ namespace myria { namespace pgsql {
 			std::unique_ptr<mtl::StoreContext<label> > begin_transaction(whendebug(const std::string &why))
 				{
 					auto ret = SQLStore_impl::begin_transaction(whendebug(why));
-					return std::unique_ptr<mtl::StoreContext<label> >(new SQLContext{std::move(ret),*this->this_mgr});
+					return std::unique_ptr<mtl::StoreContext<label> >(new SQLContext{std::move(ret)});
 				}
 
 			bool in_transaction() const {

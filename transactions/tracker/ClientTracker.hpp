@@ -37,7 +37,7 @@ protected:
 			c.send(debug_txn);
 			DECT(mutils::bytes_size(std::string{})) rcv_size{0};
 			c.receive(rcv_size);
-			assert(*c.template receive<std::string>(nullptr,rcv_size) == std::string{typename label::description{}.string});
+			assert(*c.template receive<std::string>((mutils::DeserializationManager<>*)nullptr,rcv_size) == std::string{typename label::description{}.string});
 #endif
 		}
 	};

@@ -14,8 +14,8 @@ namespace myria{ namespace mtl{
 				);
 		}
 
-		template<typename T, char... str>
-		void receive_holder(mutils::DeserializationManager *dsm, type_holder<T,str...>& t, mutils::local_connection &c){
+		template<typename T, typename DSM, char... str>
+		void receive_holder(DSM *dsm, type_holder<T,str...>& t, mutils::local_connection &c){
 #ifndef NDEBUG
 			DECT(mutils::bytes_size(std::string{})) remote_name_size;
 			c.receive(remote_name_size);
@@ -41,8 +41,8 @@ namespace myria{ namespace mtl{
 				);
 		}
 		
-		template<typename T, char... str>
-		void receive_holder(mutils::DeserializationManager *dsm, value_holder<T,str...>& t, mutils::local_connection &c){
+		template<typename T, typename DSM, char... str>
+		void receive_holder(DSM *dsm, value_holder<T,str...>& t, mutils::local_connection &c){
 #ifndef NDEBUG
 			DECT(mutils::bytes_size(std::string{})) remote_name_size;
 			c.receive(remote_name_size);
@@ -77,8 +77,8 @@ namespace myria{ namespace mtl{
 			}
 		}
 		
-		template<typename T>
-		void receive_holder(mutils::DeserializationManager *dsm, remote_map_holder<T>& t, mutils::local_connection &c){
+		template<typename T, typename... ctx>
+		void receive_holder(mutils::DeserializationManager<ctx...> *dsm, remote_map_holder<T>& t, mutils::local_connection &c){
 			whendebug(c.receive(t.is_initialized));
 			//receive map
 			std::size_t map_size{0};
@@ -93,8 +93,8 @@ namespace myria{ namespace mtl{
 			}
 		}
 		
-		template<typename T, char... str>
-		void receive_holder(mutils::DeserializationManager *dsm, remote_holder<T,str...>& t, mutils::local_connection &c){
+		template<typename T, typename DSM, char... str>
+		void receive_holder(DSM *dsm, remote_holder<T,str...>& t, mutils::local_connection &c){
 #ifndef NDEBUG
 			DECT(mutils::bytes_size(std::string{})) remote_name_size;
 			c.receive(remote_name_size);
@@ -143,8 +143,8 @@ namespace myria{ namespace mtl{
 			(void)worked;
 		}
 		
-		template<typename store, char... str>
-		bool receive_holder_values(mutils::DeserializationManager* dsm, mutils::String<str...> holder_name, store &s, mutils::local_connection &c,
+		template<typename store, typename DSM, char... str>
+		bool receive_holder_values(DSM* dsm, mutils::String<str...> holder_name, store &s, mutils::local_connection &c,
 															 std::enable_if_t<!builtins::is_builtin<mutils::String<str...>>::value>* = nullptr){
 			using holder = typename store::template find_holder_by_name<DECT(holder_name)>;
 			holder& h = s;
@@ -152,19 +152,19 @@ namespace myria{ namespace mtl{
 			return true;
 		}
 
-		template<typename... T>
-		void receive_remote_maps(mutils::DeserializationManager* dsm, remote_map_aggregator<T...>& a, mutils::local_connection &c){
+		template<typename DSM, typename... T>
+		void receive_remote_maps(DSM* dsm, remote_map_aggregator<T...>& a, mutils::local_connection &c){
 			return (receive_holder<typename T::Handle_t>(dsm,a,c),...);
 		}
 		
-		template<typename store, typename... provides>
-		void receive_store_values(mutils::DeserializationManager* dsm, const mutils::typeset<provides...>&, store &s, mutils::local_connection &c){
+		template<typename store, typename DSM, typename... provides>
+		void receive_store_values(DSM* dsm, const mutils::typeset<provides...>&, store &s, mutils::local_connection &c){
 #ifndef NDEBUG
 			std::string nonce = mutils::type_name<mutils::typeset<provides...> >();
 			auto nonce_size = mutils::bytes_size(nonce);
 			c.receive(nonce_size);
 			{
-				auto remote = *c. template receive<std::string>(nullptr,nonce_size);
+				auto remote = *c. template receive<std::string>((mutils::DeserializationManager<>*)nullptr,nonce_size);
 				if (nonce != remote){
 					std::cout << nonce << std::endl << std::endl << std::endl << std::endl;
 					std::cout << remote << std::endl;
@@ -175,7 +175,7 @@ namespace myria{ namespace mtl{
 			receive_remote_maps(dsm,s.as_virtual_holder(), c);
 #ifndef NDEBUG
 			{
-				auto remote = *c. template receive<std::string>(nullptr,nonce_size);
+				auto remote = *c. template receive<std::string>((mutils::DeserializationManager<>*)nullptr,nonce_size);
 				c.get_log_file() << "environment serialization nonce from remote: " << remote << std::endl
 						 << std::endl;
 				c.get_log_file() << "environment serialization nonce expected: " << nonce << std::endl;

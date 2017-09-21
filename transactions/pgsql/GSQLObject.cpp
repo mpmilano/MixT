@@ -84,6 +84,10 @@ namespace myria{ namespace pgsql {
 		SQLStore_impl& SQLStore_impl::GSQLObject::store() {
 			return i->_store;
 		}
+
+		const SQLStore_impl& SQLStore_impl::GSQLObject::store() const {
+			return i->_store;
+		}
 		
 		SQLStore_impl::GSQLObject::~GSQLObject(){
 			if (i){
@@ -243,17 +247,25 @@ namespace myria{ namespace pgsql {
 			to_bytes(buf);
 			f(buf,size);
 		}
-		
-		SQLStore_impl::GSQLObject SQLStore_impl::GSQLObject::from_bytes(DeserializationManager *dsm, char const *v){
-			auto &mgr = dsm->template mgr<SQLStore_impl>();
+
+		auto get_arrt0(char const * const v){
 			int* arr = (int*)v;
 			Level* arrl = (Level*) (arr + 3);
 			Table* arrt = (Table*) (arrl + 1);
-			//of from_bytes
-			whendebug(Level lvl = arrl[0]);
-			assert(lvl == mgr.level);
-			return GSQLObject(mgr,
-							  arrt[0],arr[0],arr[1]);
+			return arrt[0];
 		}
+		
+		auto get_arr0(char const * const v){
+			int* arr = (int*)v;
+			return arr[0];
+		}
+
+		auto get_arr1(char const * const v){
+			int* arr = (int*)v;
+			return arr[1];
+		}
+
+		SQLStore_impl::GSQLObject::GSQLObject(SQLStore_impl& mgr, char const *v)
+			:GSQLObject(mgr,get_arrt0(v), get_arr0(v), get_arr1(v)){}
 	}
 }

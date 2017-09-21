@@ -26,9 +26,11 @@ void write_debug_file(int i, char* data, std::size_t size){
 int main(){
 
 	SQLConnectionPool<Level::STORE_LEVEL > pool;
-	typename InheritGroup<>::template add_class_t<SQLStore> inherit;
+	using Inherit = typename InheritGroup<>::template add_class_t<SQLStore >;
+	Inherit inherit;
+	using DeserializationManager = ::mutils::DeserializationManager<SQLStore<Level::STORE_LEVEL >, Inherit>;
 	SQLStore ss{pool};
-	DeserializationManager dsm{{&ss,&inherit}};
+	DeserializationManager dsm{&ss,&inherit};
 	constexpr auto name = 478446/2;
 	Hndl hndl = ss.template existingObject<int>(name);
 	constexpr auto incr_trans = TRANSACTION(Hndl::label::int_id::value,let remote x = hndl in {x = x + 1})::WITH(hndl);

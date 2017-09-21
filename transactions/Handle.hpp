@@ -108,11 +108,19 @@ namespace myria{
       }
     }
 
+		void post_object(const std::function<void (char const *const, std::size_t)>&f) const {
+			auto size = ::mutils::bytes_size(*this);
+			char buf[size];
+			to_bytes(buf);
+			f(buf,size);
+		}
+
 		std::size_t bytes_size() const {
       return sizeof(bool) + (_ro ? _ro->inherit_bytes_size() + sizeof(std::size_t) : 0);
     }
 
-    static std::unique_ptr<Handle> from_bytes(mutils::DeserializationManager* rdc, char const *v){
+		template<typename... ctxs>
+			static std::unique_ptr<Handle> from_bytes(mutils::DeserializationManager<ctxs...>* rdc, char const *v){
 			static_assert(sizeof(bool) == sizeof(char));
 			static_assert(sizeof(bool) == 1);
 			bool b = v[0];
@@ -123,7 +131,8 @@ auto ret_ro = mutils::inherit_from_bytes<RemoteObject<l,T> >(rdc, v + sizeof(boo
 				return make_unmatched<l,T,SupportedOperations...>(v, size);
 			}
 			else {
-				auto ret = std::unique_ptr<Handle>{dynamic_cast<Handle*>(ret_ro.release()->wrapInHandle().release())};
+				auto ret_ro_p = ret_ro.release();
+				auto ret = std::unique_ptr<Handle>{dynamic_cast<Handle*>(ret_ro_p->wrapInHandle(std::shared_ptr<DECT(*ret_ro_p)>{ret_ro_p}).release())};
 				assert(ret);
 				return ret;
 			}
@@ -245,19 +254,10 @@ namespace mutils{
 			return ss.str();
 		}
 	};
-  
-  template<typename l, typename T,typename... Ops>
-  void post_object(const std::function<void (char const *const, std::size_t)>&f,
-									 const myria::Handle<l,T,Ops...>& h){
-    auto size = ::mutils::bytes_size(h);
-    char buf[size];
-    h.to_bytes(buf);
-    f(buf,size);
-  }
 
 #ifndef NDEBUG
-  template<typename l, typename T, typename... Ops>
-  void ensure_registered(const myria::Handle<l,T,Ops...>& v, DeserializationManager& dm){
+  template<typename l, typename T, typename DSM, typename... Ops>
+  void ensure_registered(const myria::Handle<l,T,Ops...>& v, DSM& dm){
     ensure_registered(*v._ro,dm);
   }
 #endif
@@ -267,3 +267,5 @@ namespace mutils{
     return mutils::context_ptr<T>{T::from_bytes(p,v).release()};
   }
 }
+
+#include "UnmatchedRemoteObject.hpp"

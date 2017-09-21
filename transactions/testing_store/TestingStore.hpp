@@ -117,7 +117,8 @@ namespace myria {
 					assert(false && "serialize this later");
 				}
 #ifndef NDEBUG
-				void ensure_registered(mutils::DeserializationManager &){}
+				template<typename... ctxs>
+				void ensure_registered(mutils::DeserializationManager<ctxs...> &){}
 #endif
 				
 			};

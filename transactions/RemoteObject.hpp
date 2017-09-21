@@ -38,7 +38,7 @@ namespace myria{
     virtual std::shared_ptr<const T> get(mtl::StoreContext<l>*) = 0;
 		virtual std::shared_ptr<RemoteObject> create_new(mtl::StoreContext<l>*, const T&) const = 0;
     virtual void put(mtl::StoreContext<l>*,const T&) = 0;
-		virtual std::unique_ptr<LabelFreeHandle<T> > wrapInHandle() = 0;
+		virtual std::unique_ptr<LabelFreeHandle<T> > wrapInHandle(std::shared_ptr<RemoteObject<l,T> >) = 0;
     
     //TODO: delete these when you're done hacking around.
     RemoteObject(const RemoteObject&) = delete;
@@ -71,8 +71,8 @@ namespace myria{
   template<typename> struct is_RemoteObject;
   template<typename l, typename T> struct is_RemoteObject<RemoteObject<l,T> > : std::true_type {};
   
-  template<typename T>
-  static std::unique_ptr<mutils::type_check<is_RemoteObject,T> > from_bytes(mutils::DeserializationManager*, char const * ){
+  template<typename T, typename... ctx>
+  static std::unique_ptr<mutils::type_check<is_RemoteObject,T> > from_bytes(mutils::DeserializationManager<ctx...>*, char const * ){
     static_assert(!is_RemoteObject<T>::value,"Error: Do not directly attempt to deserialize a Remote object.  It is not safe.  Deserialize the handle.");
   }
 

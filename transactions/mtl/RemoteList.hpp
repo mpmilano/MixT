@@ -29,12 +29,14 @@ struct RemoteList : public mutils::ByteRepresentable
     mutils::post_object(func, value);
     mutils::post_object(func, next);
   }
-  static std::unique_ptr<RemoteList> from_bytes(mutils::DeserializationManager* dsm, char const* buf)
+	template<typename... ctxs>
+  static std::unique_ptr<RemoteList> from_bytes(mutils::DeserializationManager<ctxs...>* dsm, char const* buf)
   {
     auto a_obj = mutils::from_bytes<std::decay_t<decltype(value)>>(dsm, buf);
     return std::make_unique<RemoteList>(*a_obj, *(mutils::from_bytes<std::decay_t<decltype(next)>>(dsm, buf + mutils::bytes_size(*a_obj))));
   }
-  void ensure_registered(mutils::DeserializationManager&){};
+	template<typename... ctxs>
+  void ensure_registered(mutils::DeserializationManager<ctxs...>&){};
 
   RemoteList(const DECT(value) & v, const DECT(next) & n)
     : value(v)

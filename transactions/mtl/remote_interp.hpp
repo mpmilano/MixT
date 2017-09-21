@@ -13,8 +13,8 @@ namespace myria {
 namespace mtl {
 namespace runnable_transaction {
 
-template <typename phase, typename FullStore, typename tombstone_tracker>
-auto remote_interp(mutils::DeserializationManager* dsm, tombstone_tracker& trk, tracker::ConnectionReference<typename phase::label>& c, FullStore& s)
+	template <typename phase, typename FullStore, typename tombstone_tracker, typename... ctxs>
+	auto remote_interp(mutils::DeserializationManager<ctxs...>* dsm, tombstone_tracker& trk, tracker::ConnectionReference<typename phase::label>& c, FullStore& s)
 {
   using namespace mutils;
   constexpr typename phase::requirements requires{};

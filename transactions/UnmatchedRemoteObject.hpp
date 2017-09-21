@@ -103,14 +103,22 @@ namespace myria{
 				f(bytes.data(),bytes.size());
 			}
 
-			whendebug(void ensure_registered(mutils::DeserializationManager&){})
+			whendebug(template<typename DSM> void ensure_registered(DSM&){})
 
 			std::size_t bytes_size() const {
 				return bytes.size();
 			}
 
-			std::unique_ptr<UnmatchedRemoteObject> from_bytes(mutils::DeserializationManager*, char const * const ){
+			template<typename... ctxs>
+			std::unique_ptr<UnmatchedRemoteObject> from_bytes(mutils::DeserializationManager<ctxs...>*, char const * const ){
 				assert(false && "Cannot deserialize directly; call constructor");
+				throw UnmatchedUseException{};
+			}
+
+			std::size_t serial_uuid() const { return 0;}
+
+			std::unique_ptr<LabelFreeHandle<T> > wrapInHandle(std::shared_ptr<RemoteObject<l,T> >){
+				assert(false && "Should never be attempting to re-wrap an unmatched handle!");
 				throw UnmatchedUseException{};
 			}
 			
@@ -119,7 +127,8 @@ namespace myria{
 
 	template<typename l, typename T, typename... SupportedOperations>
 	std::unique_ptr<Handle<l,T,SupportedOperations...> > make_unmatched(char const * const v, std::size_t size){
-		using UnmatchedStore = UnmatchedDataStore<l,T,ops...>;
+		using Handle = ::myria::Handle<l,T,SupportedOperations...>;
+		using UnmatchedStore = UnmatchedDataStore<l,T,SupportedOperations...>;
 		return std::unique_ptr<Handle>{new Handle{std::make_shared<typename UnmatchedStore::template UnmatchedRemoteObject<T> >(v,size),
 					UnmatchedStore::inst() }};
 	}

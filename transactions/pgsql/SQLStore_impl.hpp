@@ -20,7 +20,7 @@
 
 namespace myria { namespace pgsql {
 
-		template<Level l>
+		template<Level l, typename...>
 		class SQLStore;
 
 		struct SQLTransaction;
@@ -50,7 +50,7 @@ namespace myria { namespace pgsql {
 			
 			virtual ~SQLStore_impl();
 
-			template<Level l>
+			template<Level l, typename...>
 			friend class SQLStore;
 
 			std::array<long long, NUM_CAUSAL_GROUPS> clock;
@@ -100,10 +100,25 @@ namespace myria { namespace pgsql {
 				//required by ByteRepresentable
 				std::size_t bytes_size() const;
 				std::size_t to_bytes(char*) const;
-				static GSQLObject from_bytes(mutils::DeserializationManager*, char const * v);
+				//for constructing from serialized state
+				GSQLObject(SQLStore_impl&, char const * v);
+				template<typename... ctxs>
+				static SQLStore_impl& from_bytes_helper(mutils::DeserializationManager<ctxs...>* m, char const * v){
+					int* arr = (int*)v;
+					Level* arrl = (Level*) (arr + 3);
+					Level lvl = arrl[0];
+					SQLStore_impl *sstore{nullptr};
+					SQLStore_impl *cstore{nullptr};
+					if constexpr(DECT(*m)::template contains_mgr<SQLStore<Level::causal>>()){
+							cstore = &m->template mgr<SQLStore<Level::causal>>();
+						}
+					if constexpr(DECT(*m)::template contains_mgr<SQLStore<Level::strong>>()){
+							sstore = &m->template mgr<SQLStore<Level::strong>>();
+						}
+					return (lvl == Level::causal ? *cstore : *sstore);
+				}
 				void post_object(const std::function<void (char const * const,std::size_t)>&) const;
 				virtual ~GSQLObject();
-				whendebug(void ensure_registered(mutils::DeserializationManager&));
 			};
 
 			//operations

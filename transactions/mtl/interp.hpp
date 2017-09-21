@@ -11,14 +11,14 @@ namespace mtl {
 namespace runnable_transaction {
 
 	//remote interp
-	template <typename store,typename phase1, typename connection_pack, typename ClientTracker>
-	auto dispatch_to_runner(std::true_type*, mutils::DeserializationManager* dsm, ClientTracker& trk, connection_pack c, transaction<phase1>*, store& s, std::enable_if_t<phase1::label::run_remotely::value>* = nullptr)
+	template <typename store,typename phase1, typename connection_pack, typename ClientTracker, typename DSM>
+	auto dispatch_to_runner(std::true_type*, DSM* dsm, ClientTracker& trk, connection_pack c, transaction<phase1>*, store& s, std::enable_if_t<phase1::label::run_remotely::value>* = nullptr)
 	{
 		return remote_interp<phase1>(dsm,trk,c.template connection<phase1>(), s);
 	}
 	
-	template <typename store, typename phase1, typename phase2, typename connection_pack, typename ClientTracker, typename... phase>
-	auto dispatch_to_runner(std::true_type* choice, mutils::DeserializationManager* dsm, ClientTracker& trk, connection_pack c, transaction<phase1, phase2, phase...>*, store& s, std::enable_if_t<phase1::label::run_remotely::value>* = nullptr)
+	template <typename store, typename phase1, typename phase2, typename connection_pack, typename ClientTracker, typename DSM, typename... phase>
+	auto dispatch_to_runner(std::true_type* choice, DSM* dsm, ClientTracker& trk, connection_pack c, transaction<phase1, phase2, phase...>*, store& s, std::enable_if_t<phase1::label::run_remotely::value>* = nullptr)
 	{
 		constexpr transaction<phase2, phase...>* remains{ nullptr };
 		remote_interp<phase1>(dsm,trk,c.template connection<phase1>(), s);
@@ -26,8 +26,8 @@ namespace runnable_transaction {
 	}
 
 	//local interp
-	template <typename store,typename phase1, typename connection_pack, typename choice, typename ClientTracker>
-	auto dispatch_to_runner(choice*, mutils::DeserializationManager*, ClientTracker& trk, connection_pack, transaction<phase1>*, store& s,
+	template <typename store,typename phase1, typename connection_pack, typename choice, typename ClientTracker, typename DSM>
+	auto dispatch_to_runner(choice*, DSM*, ClientTracker& trk, connection_pack, transaction<phase1>*, store& s,
 													std::enable_if_t<(!phase1::label::run_remotely::value)
 													|| (!choice::value)
 													>* = nullptr)
@@ -35,8 +35,8 @@ namespace runnable_transaction {
 	  return common_interp<phase1>(s,trk.local_tracker);
 	}
 	
-	template <typename store, typename phase1, typename phase2, typename connection_pack, typename Choice, typename ClientTracker, typename... phase>
-	auto dispatch_to_runner(Choice* choice, mutils::DeserializationManager* dsm, ClientTracker& trk, connection_pack c, transaction<phase1, phase2, phase...>*, store& s,
+	template <typename store, typename phase1, typename phase2, typename connection_pack, typename Choice, typename ClientTracker, typename DSM, typename... phase>
+	auto dispatch_to_runner(Choice* choice, DSM* dsm, ClientTracker& trk, connection_pack c, transaction<phase1, phase2, phase...>*, store& s,
 													std::enable_if_t<(!phase1::label::run_remotely::value)
 													|| (!Choice::value)
 													>* = nullptr)
@@ -46,21 +46,21 @@ namespace runnable_transaction {
 		return dispatch_to_runner(choice, dsm,trk,c, remains, s);
 	}
 	
-  template <typename run_remotely, typename, typename split, typename store, typename connection_pack, typename ClientTracker>
-	auto interp3(mutils::DeserializationManager* dsm, ClientTracker& trk, connection_pack c, void*, split* np, store& s){
+  template <typename run_remotely, typename, typename split, typename store, typename connection_pack, typename ClientTracker, typename DSM>
+	auto interp3(DSM* dsm, ClientTracker& trk, connection_pack c, void*, split* np, store& s){
 		constexpr run_remotely* choice{nullptr};
 		dispatch_to_runner(choice,dsm,trk,c, np, s);
 	}
 
-	template <typename run_remotely, typename ptr, typename split, typename store, typename connection_pack, typename ClientTracker>
-	auto interp3(mutils::DeserializationManager* dsm, ClientTracker& trk, connection_pack c, ptr*, split* np, store& s, std::enable_if_t<!std::is_void<ptr>::value >* = nullptr){
+	template <typename run_remotely, typename ptr, typename split, typename store, typename connection_pack, typename ClientTracker, typename DSM>
+	auto interp3(DSM* dsm, ClientTracker& trk, connection_pack c, ptr*, split* np, store& s, std::enable_if_t<!std::is_void<ptr>::value >* = nullptr){
 		constexpr run_remotely* choice{nullptr};
 		auto ret = dispatch_to_runner(choice,dsm,trk,c, np, s);
 		return ret;
 	}
 	
-	template <typename split, typename connection_pack, typename run_remotely, typename ClientTracker, typename... required>
-  auto begin_interp2(mutils::DeserializationManager* dsm, ClientTracker& trk, connection_pack c, required... vals)
+	template <typename split, typename connection_pack, typename run_remotely, typename ClientTracker, typename DSM, typename... required>
+  auto begin_interp2(DSM* dsm, ClientTracker& trk, connection_pack c, required... vals)
 	{
 		static_assert(std::is_same<run_remotely, std::true_type>::value || std::is_same<run_remotely, std::false_type>::value);
 		constexpr split* np{ nullptr };
@@ -74,17 +74,17 @@ namespace runnable_transaction {
 		return interp3<run_remotely, ret_t>(dsm,trk,c, rt, np, store);
 	}
 
-  template <typename previous_transaction_phases, typename split, typename connection_pack, typename run_remotely, typename ClientTracker, typename... required>
-  auto begin_interp(mutils::DeserializationManager* dsm, ClientTracker& trk, connection_pack c, required... vals)
+  template <typename DSM, typename previous_transaction_phases, typename split, typename connection_pack, typename run_remotely, typename ClientTracker, typename... required>
+  auto begin_interp(DSM* dsm, ClientTracker& trk, connection_pack c, required... vals)
 	{
 		using with_tracking = typename ClientTracker::template alternative_tracked_txn<previous_transaction_phases>;
 		static_assert(std::is_same<with_tracking,with_tracking>::value);
 		using without_tracking = split;
 		if (trk.must_track()){
-			return begin_interp2<with_tracking,connection_pack,run_remotely,ClientTracker,required...>(dsm,trk,c,vals...);
+			return begin_interp2<with_tracking,connection_pack,run_remotely,ClientTracker,DSM,required...>(dsm,trk,c,vals...);
 		}
 		else {
-			return begin_interp2<without_tracking,connection_pack,run_remotely,ClientTracker,required...>(dsm,trk,c,vals...);
+			return begin_interp2<without_tracking,connection_pack,run_remotely,ClientTracker,DSM,required...>(dsm,trk,c,vals...);
 		}
 	}
 }

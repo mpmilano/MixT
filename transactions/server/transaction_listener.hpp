@@ -28,13 +28,13 @@ namespace runnable_transaction {}
 
 namespace server {
 
-	template <typename phase, typename normal_store, typename tracked_phase, typename tracked_store>
+	template <typename DeserializationManager, typename phase, typename normal_store, typename tracked_phase, typename tracked_store>
 struct transaction_listener;
 
-	template<typename phase,typename store, typename DataStore>
+	template<typename DeserializationManager, typename phase,typename store, typename DataStore>
 	static bool run_phase(txnID_t whendebug(id), DataStore &ds,
 												tracker::Tracker &trk,
-												mutils::DeserializationManager &dsm,
+												DeserializationManager &dsm,
 												mutils::connection &c, char const *const _data){
 		using reqs = typename phase::requirements;
 		using provides = typename phase::provides;
@@ -56,7 +56,7 @@ struct transaction_listener;
 		lc.receive(txn_nonce);
 		DECT(mutils::bytes_size(std::string{})) phase_str_size;
 		lc.receive(phase_str_size);
-		std::string remote_phase_str = *lc.template receive<std::string>(nullptr,phase_str_size);
+		std::string remote_phase_str = *lc.template receive<std::string>((mutils::DeserializationManager<>*)nullptr,phase_str_size);
 		logfile << "remote phase str: " << remote_phase_str << std::endl;
 		{
 			std::stringstream ss;
@@ -104,12 +104,12 @@ struct transaction_listener;
 		return true;
 	}
 
-	template <typename l, typename returns, 
+	template <typename DeserializationManager, typename l, typename returns, 
 						typename AST, typename reqs, typename provides, typename owns, typename passthrough,
 						typename tracked_AST, typename tracked_reqs, typename tracked_provides, typename tracked_owns, typename tracked_passthrough,
 						typename _tracked_store,
 						typename... normal_holders>
-struct transaction_listener<
+	struct transaction_listener<DeserializationManager,
     mtl::runnable_transaction::phase<l, returns, AST, reqs,
                                             provides, owns, passthrough>,
 		mtl::runnable_transaction::store<normal_holders...>,
@@ -131,7 +131,7 @@ struct transaction_listener<
   static bool run_if_match(std::size_t, txnID_t id,
 			   DataStore &ds,
 			   tracker::Tracker &trk,
-                           mutils::DeserializationManager &dsm,
+                           DeserializationManager &dsm,
                            mutils::connection &c, char const *const _data) {
     using namespace mutils;
     if (id == normal_phase::txnID()) return run_phase<normal_phase, normal_store>(id,ds,trk,dsm,c,_data);
@@ -140,8 +140,8 @@ struct transaction_listener<
   }
 };
 
-template <typename transaction, typename phase>
-using listener_for = transaction_listener<
+	template <typename DSM, typename transaction, typename phase>
+	using listener_for = transaction_listener<DSM,
 	phase,typename transaction::all_store::template restrict_to_phase<phase>,
 	typename tombstone_enhanced_txn<typename transaction::previous_transaction_phases, typename phase::label>::template find_phase<typename phase::label>,
 	tombstone_enhanced_store<typename transaction::previous_transaction_phases, typename phase::label>

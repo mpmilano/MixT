@@ -52,8 +52,10 @@ int main(int whendebug(argc), char** argv){
 
 	struct captive_sqlstore : public captive_store{
 		SQLStore<Level::STORE_LEVEL > ss;
-		typename InheritGroup<>::template add_class_t<SQLStore<Level::STORE_LEVEL >> inherit;
-		DeserializationManager _dsm{{&ss,&inherit}};
+		using Inherit = typename InheritGroup<>::template add_class_t<SQLStore<Level::STORE_LEVEL >;
+		Inherit inherit;
+		using DeserializationManager = ::mutils::DeserializationManager<SQLStore<Level::STORE_LEVEL >, Inherit>;
+		DeserializationManager _dsm{&ss,&inherit};
 		SQLStore<Level::STORE_LEVEL>& store(){
 			return ss;
 		}
