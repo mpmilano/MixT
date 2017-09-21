@@ -467,15 +467,15 @@ protected:
 	//if you're here due to an error matching PhaseContext,
 	//that's probably why.
 public:
-	template<typename Store>
-	static auto& bind(Store &s, PhaseContext<typename T::label>& tc, T t)
+	template<typename Store, typename... ctxs>
+	static auto& bind(Store &s, PhaseContext<typename T::label>& tc, mutils::DeserializationManager<ctxs...> *dsm, T t)
   {
 	  constexpr String<str...> name;
 	  (void)name;
 	  remote_holder& _this = s;
     _this.bind_common(t);
 	auto &_this_super = this_super(s);
-	auto &bind_target = *_this.handle[_this.curr_pos].get(&tc);
+	auto &bind_target = *_this.handle[_this.curr_pos].get(dsm,&tc);
     _this_super.bind(_this_super,tc, bind_target);
     _this.read_tracking_actions(tc);
     return _this;

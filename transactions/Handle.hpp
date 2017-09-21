@@ -138,14 +138,15 @@ auto ret_ro = mutils::inherit_from_bytes<RemoteObject<l,T> >(rdc, v + sizeof(boo
 			}
     }
 
-    std::shared_ptr<const T> get(mtl::PhaseContext<l> *tc) const {
+		template<typename... ctxs>
+			std::shared_ptr<const T> get(mutils::DeserializationManager<ctxs...>* dsm, mtl::PhaseContext<l> *tc) const {
       assert(_ro);
       assert(tc);
       auto &ctx = *tc;
       
       //If the Transacion Context does not yet exist for this store, we create it now.
       auto &store_ctx = ctx.store_context(this->store() whendebug(, "calling get() via handle"));
-			return _ro->get(&store_ctx);
+			dsm->template mgr<InheritManager>().run_on_match([dsm,&store_ctx](auto &subro){return subro.get(dsm,&store_ctx);}, *_ro,_ro->serial_uuid());
     }
 		Handle create_new(mtl::PhaseContext<l> *tc, const T& newt) const {
       assert(_ro);

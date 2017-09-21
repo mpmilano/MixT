@@ -98,14 +98,19 @@ namespace myria { namespace pgsql {
 				}
 				int fail_counter = 0;
 
-		
-				std::shared_ptr<const T> get(mtl::StoreContext<label>* _tc) {
+
+				template<typename... ctxs>
+				std::shared_ptr<const T> get(DeserializationManager<ctxs...>* tds, mtl::StoreContext<label>* _tc) {
 					SQLContext *sctx = (SQLContext*) _tc;
 					SQLTransaction *tc = (_tc ? sctx->i.get() : nullptr);
 					auto *res = gso.load(tc);
 					assert(res);
-					t.reset(mutils::from_bytes<T>(&tds,res).release());
+					t.reset(mutils::from_bytes<T>(tds,res).release());
 					return t;
+				}
+
+				std::shared_ptr<const T> get(DeserializationManager<>* tds, mtl::StoreContext<label>* _tc){
+					return get<>(tds,_tc);
 				}
 
 				std::shared_ptr<RemoteObject<label,T> > create_new(mtl::StoreContext<label>* c, const T& t) const {

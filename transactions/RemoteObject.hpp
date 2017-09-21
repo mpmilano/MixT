@@ -35,7 +35,7 @@ namespace myria{
 		using level = l;
     
     virtual bool isValid(mtl::StoreContext<l>*) const = 0;
-    virtual std::shared_ptr<const T> get(mtl::StoreContext<l>*) = 0;
+    virtual std::shared_ptr<const T> get(mutils::DeserializationManager<>*, mtl::StoreContext<l>*) = 0;
 		virtual std::shared_ptr<RemoteObject> create_new(mtl::StoreContext<l>*, const T&) const = 0;
     virtual void put(mtl::StoreContext<l>*,const T&) = 0;
 		virtual std::unique_ptr<LabelFreeHandle<T> > wrapInHandle(std::shared_ptr<RemoteObject<l,T> >) = 0;
