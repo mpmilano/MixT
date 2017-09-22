@@ -53,7 +53,7 @@ namespace runnable_transaction {
 	assert(sent == mutils::bytes_size(phase_str));
   assert(lc.data.size() >= sizeof(txn_nonce));
 #endif
-  send_store_values(requires, s, lc);
+  send_store_values<typename phase::label>(requires, s, lc);
 	whendebug(char* data = lc.data.data());
 	assert(phase_str == data + phase_str_starts_at);
   c.c.send(phase::txnID(),
@@ -76,7 +76,7 @@ namespace runnable_transaction {
 				trk.template set_phase_after<phase>(std::move(new_tombstones));
 			}
       lc.data = *mutils::receive_from_connection<std::vector<char>>(dsm, c.c);
-      receive_store_values(dsm, provides, s, lc);
+      receive_store_values<typename phase::label>(dsm, provides, s, lc);
       trk.template clear_tombstones<phase>();
     } else {
 			std::string failure_str = "";

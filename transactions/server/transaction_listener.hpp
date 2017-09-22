@@ -81,7 +81,7 @@ struct transaction_listener;
 		constexpr provides provided{};
 		whendebug(s.get(requires));
 		whendebug(s.get(provided));
-		receive_store_values(&dsm, requires, s, _lc);
+		mtl::receive_store_values<typename phase::label>(&dsm, requires, s, _lc);
 		bool transaction_successful{true};
 		try {
 			tracker::find_tombstones(ds,trk,dsm,*tombstones_to_find);
@@ -95,7 +95,7 @@ struct transaction_listener;
 		whendebug(logfile << "about to send response to client" << std::endl);
 		if (transaction_successful) {
 		  mutils::local_connection lc whendebug({logfile});
-			send_store_values(provided, s, lc);
+			mtl::send_store_values<typename phase::label>(provided, s, lc);
 			trk.updateClock();
 			c.send(transaction_successful, trk.min_clock(), trk.recent_clock(), trk.all_encountered_tombstones(), lc.data);
 		} else

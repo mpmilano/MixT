@@ -118,10 +118,12 @@ namespace myria{ namespace mtl{
 			c.receive(t.curr_pos);
 		}
 
-		template<typename... T>
+		template<typename label, typename... T>
 		void send_remote_maps(remote_map_aggregator<T...>& a, mutils::local_connection &c){
-			whendebug(c.get_log_file() << "Sending " << sizeof...(T) << " remote maps" << std::endl);
-			return (serialize_holder<typename T::Handle_t>(a,c), ...);
+			constexpr auto number_expected = ((std::is_same<typename T::label, label>::value ? 1 : 0) + ... + 0);
+			whendebug(c.get_log_file() << "Sending " << number_expected << " remote maps" << std::endl);
+			return ((std::is_same<typename T::label, label>::value ? serialize_holder<typename T::Handle_t>(a,c) : (void)a),...);
+			//return (serialize_holder<typename T::Handle_t>(a,c), ...);
 		}
 
 		template<typename store, char... str>
@@ -133,14 +135,14 @@ namespace myria{ namespace mtl{
 			return true;
 		}
 		
-		template<typename store, typename... requires>
+		template<typename label, typename store, typename... requires>
 		void send_store_values(const mutils::typeset<requires...>&, store &s, mutils::local_connection &c){
 #ifndef NDEBUG
 			std::string nonce = mutils::type_name<mutils::typeset<requires...> >();
 			c.send(mutils::bytes_size(nonce),nonce);
 			c.get_log_file() << "about to send remote maps" << std::endl;
 #endif
-			send_remote_maps(s.as_virtual_holder(),c);
+			send_remote_maps<label>(s.as_virtual_holder(),c);
 #ifndef NDEBUG
 			c.get_log_file() << "remote maps sent" << std::endl;
 			c.send(nonce);
@@ -160,13 +162,15 @@ namespace myria{ namespace mtl{
 			return true;
 		}
 
-		template<typename DSM, typename... T>
+		template<typename label, typename DSM, typename... T>
 		void receive_remote_maps(DSM* dsm, remote_map_aggregator<T...>& a, mutils::local_connection &c){
-			whendebug(c.get_log_file() << "Expecting " << sizeof...(T) << " remote maps" << std::endl);
-			return (receive_holder<typename T::Handle_t>(dsm,a,c),...);
+			constexpr auto number_expected = ((std::is_same<typename T::label, label>::value ? 1 : 0) + ... + 0);
+			whendebug(c.get_log_file() << "Expecting " << number_expected << " remote maps" << std::endl);
+			return ((std::is_same<typename T::label, label>::value ? receive_holder<typename T::Handle_t>(dsm,a,c) : (void)a),...);
+			//return (receive_holder<typename T::Handle_t>(dsm,a,c),...);
 		}
 		
-		template<typename store, typename DSM, typename... provides>
+		template<typename label, typename store, typename DSM, typename... provides>
 		void receive_store_values(DSM* dsm, const mutils::typeset<provides...>&, store &s, mutils::local_connection &c){
 #ifndef NDEBUG
 			std::string nonce = mutils::type_name<mutils::typeset<provides...> >();
@@ -182,7 +186,7 @@ namespace myria{ namespace mtl{
 				c.get_log_file() << "First verification passed.  Now receiving remote maps" << std::endl;
 			}
 #endif
-			receive_remote_maps(dsm,s.as_virtual_holder(), c);
+			receive_remote_maps<label>(dsm,s.as_virtual_holder(), c);
 #ifndef NDEBUG
 			{
 				auto remote = *c. template receive<std::string>((mutils::DeserializationManager<>*)nullptr,nonce_size);

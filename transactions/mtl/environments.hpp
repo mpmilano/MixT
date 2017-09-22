@@ -269,6 +269,7 @@ struct remote_map_holder;
 {
 
 	using Handle_t = Handle<l,U,SupportedOps...>;
+	using label = l;
 	using stored = U;
 #ifndef NDEBUG
   bool is_initialized{ false };
