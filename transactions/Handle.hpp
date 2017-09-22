@@ -85,6 +85,7 @@ namespace myria{
 	Handle(const Handle& h):OperationSuperclass<SupportedOperations>(h)...,_ro(h._ro) {
 		
 	}
+	Handle() = default;
 	Handle& operator=(const Handle& o) {
 		(OperationSuperclass<SupportedOperations>::operator=(o),...);
 		_ro = o._ro;
@@ -124,7 +125,7 @@ namespace myria{
 			static_assert(sizeof(bool) == sizeof(char));
 			static_assert(sizeof(bool) == 1);
 			bool b = v[0];
-			assert(b && "looks like we need to allow null handles after all");
+			if (b){
 			std::size_t size = ((std::size_t*) (v + 1))[0];
 			if constexpr (DECT(*rdc)::template contains_mgr<mutils::InheritManager>()){
 					auto &inherit = rdc->template mgr<mutils::InheritManager>();
@@ -140,6 +141,8 @@ namespace myria{
 				}
 			//falthrough
 			return make_unmatched<l,T,SupportedOperations...>(v, size);
+			}
+			else return Handle{};
     }
 
 		template<typename... ctxs>
