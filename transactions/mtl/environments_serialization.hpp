@@ -70,6 +70,7 @@ namespace myria{ namespace mtl{
 		template<typename T>
 		void serialize_holder(const remote_map_holder<T>& t, mutils::local_connection &c){
 			whendebug(c.get_log_file() << "This remote map holds " << mutils::typename_str<T>::f() << std::endl);
+			whendebug(c.send(mutils::typename_str<T>::f()));
 			whendebug(c.get_log_file() << "Sending " << t.super.size() << " entries in this remote map" << std::endl);
 			whendebug(c.send(t.is_initialized));
 			c.send((std::size_t)t.super.size());
@@ -77,6 +78,7 @@ namespace myria{ namespace mtl{
 				c.send(p.first);
 				serialize_holder(p.second, c);
 			}
+			whendebug(c.send(mutils::typename_str<T>::f()));
 		}
 		
 		template<typename T, typename... ctx>
@@ -85,7 +87,16 @@ namespace myria{ namespace mtl{
 			//receive map
 			std::size_t map_size{0};
 			c.receive(map_size);
-			whendebug(c.get_log_file() << "Expecting this remote map to hold " << mutils::typename_str<T>::f() << std::endl);
+			whendebug(const auto holder_name = mutils::typename_str<T>::f());
+			whendebug(c.get_log_file() << "Expecting this remote map to hold " << holder_name << std::endl);
+#ifndef NDEBUG
+			{//nonce time
+				auto str1 = c.receive<DECT(holder_name)>(dsm,mutils::bytes_size(holder_name));
+				c.get_log_file() << "Nonce reports " << *str1 << std::endl;
+				c.get_log_file().flush();
+				assert(*str1 == holder_name);
+			}
+#endif
 			whendebug(c.get_log_file() << "Receiving " << map_size << " entries in this remote map" << std::endl);
 			for (auto i = 0u; i < map_size; ++i){
 				using first_t = typename DECT(t.super)::key_type;
@@ -96,6 +107,14 @@ namespace myria{ namespace mtl{
 				receive_holder(dsm,entry,c);
 			}
 			assert(t.super.size() == map_size);
+#ifndef NDEBUG
+			{//nonce time
+				auto str1 = c.receive<DECT(holder_name)>(dsm,mutils::bytes_size(holder_name));
+				c.get_log_file() << "Nonce reports " << *str1 << std::endl;
+				c.get_log_file().flush();
+				assert(*str1 == holder_name);
+			}
+#endif
 		}
 		
 		template<typename T, typename DSM, char... str>
