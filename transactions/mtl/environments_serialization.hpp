@@ -69,6 +69,7 @@ namespace myria{ namespace mtl{
 		
 		template<typename T>
 		void serialize_holder(const remote_map_holder<T>& t, mutils::local_connection &c){
+			whendebug(c.get_log_file() << "This remote map holds " << mutils::typename_str<T>::f() << std::endl);
 			whendebug(c.get_log_file() << "Sending " << t.super.size() << " entries in this remote map" << std::endl);
 			whendebug(c.send(t.is_initialized));
 			c.send((std::size_t)t.super.size());
@@ -84,6 +85,7 @@ namespace myria{ namespace mtl{
 			//receive map
 			std::size_t map_size{0};
 			c.receive(map_size);
+			whendebug(c.get_log_file() << "Expecting this remote map to hold " << mutils::typename_str<T>::f() << std::endl);
 			whendebug(c.get_log_file() << "Receiving " << map_size << " entries in this remote map" << std::endl);
 			for (auto i = 0u; i < map_size; ++i){
 				using first_t = typename DECT(t.super)::key_type;
@@ -136,11 +138,13 @@ namespace myria{ namespace mtl{
 #ifndef NDEBUG
 			std::string nonce = mutils::type_name<mutils::typeset<requires...> >();
 			c.send(mutils::bytes_size(nonce),nonce);
+			c.get_log_file() << "about to send remote maps" << std::endl;
 #endif
 			send_remote_maps(s.as_virtual_holder(),c);
 #ifndef NDEBUG
+			c.get_log_file() << "remote maps sent" << std::endl;
 			c.send(nonce);
-			c.get_log_file() << "resending nonce: " << nonce << std::endl<< std::endl;
+			c.get_log_file() << "now resending nonce: " << nonce << std::endl<< std::endl;
 #endif
 			auto worked = (send_holder_values(typename requires::name{}, s, c) && ... && true);
 			assert(worked);
