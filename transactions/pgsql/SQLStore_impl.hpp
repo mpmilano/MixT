@@ -103,20 +103,7 @@ namespace myria { namespace pgsql {
 				//for constructing from serialized state
 				GSQLObject(SQLStore_impl&, char const * v);
 				template<typename... ctxs>
-				static SQLStore_impl& from_bytes_helper(mutils::DeserializationManager<ctxs...>* m, char const * v){
-					int* arr = (int*)v;
-					Level* arrl = (Level*) (arr + 3);
-					Level lvl = arrl[0];
-					SQLStore_impl *sstore{nullptr};
-					SQLStore_impl *cstore{nullptr};
-					if constexpr(DECT(*m)::template contains_mgr<SQLStore<Level::causal>>()){
-							cstore = &m->template mgr<SQLStore<Level::causal>>();
-						}
-					if constexpr(DECT(*m)::template contains_mgr<SQLStore<Level::strong>>()){
-							sstore = &m->template mgr<SQLStore<Level::strong>>();
-						}
-					return (lvl == Level::causal ? *cstore : *sstore);
-				}
+				static SQLStore_impl& from_bytes_helper(mutils::DeserializationManager<ctxs...>* m, char const * v);
 				void post_object(const std::function<void (char const * const,std::size_t)>&) const;
 				virtual ~GSQLObject();
 			};

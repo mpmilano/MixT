@@ -228,5 +228,24 @@ namespace myria { namespace pgsql {
 				//o.gso.increment(ctx->i.get());
 			}
 		};
+
+		template<typename... ctxs>
+		SQLStore_impl& SQLStore_impl::GSQLObject::from_bytes_helper(mutils::DeserializationManager<ctxs...>* m, char const * v){
+			int* arr = (int*)v;
+			Level* arrl = (Level*) (arr + 3);
+			Level lvl = arrl[0];
+			SQLStore_impl *sstore{nullptr};
+			SQLStore_impl *cstore{nullptr};
+			static_assert(DECT(*m)::template contains_mgr<SQLStore<Level::causal>>() || DECT(*m)::template contains_mgr<SQLStore<Level::strong>>());
+			if constexpr(DECT(*m)::template contains_mgr<SQLStore<Level::causal>>()){
+					cstore = &m->template mgr<SQLStore<Level::causal>>();
+				}
+			if constexpr(DECT(*m)::template contains_mgr<SQLStore<Level::strong>>()){
+					sstore = &m->template mgr<SQLStore<Level::strong>>();
+				}
+			assert(lvl != Level::causal || cstore);
+			assert(lvl != Level::strong || sstore);
+			return (lvl == Level::causal ? *cstore : *sstore);
+		}
 	}}
 #include "tracker/trackable_datastore_impl.hpp"
