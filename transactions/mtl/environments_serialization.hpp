@@ -69,16 +69,22 @@ namespace myria{ namespace mtl{
 		
 		template<typename T>
 		void serialize_holder(const remote_map_holder<T>& t, mutils::local_connection &c){
-			whendebug(c.get_log_file() << "This remote map holds " << mutils::typename_str<T>::f() << std::endl);
-			whendebug(c.send(mutils::typename_str<T>::f()));
-			whendebug(c.get_log_file() << "Sending " << t.super.size() << " entries in this remote map" << std::endl);
-			whendebug(c.send(t.is_initialized));
+#ifndef NDEBUG
+			auto map_name = mutils::typename_str<T>::f();
+			char map_name_cstr[map_name.size() + 1];
+			memcpy(map_name_cstr, map_name.c_str(),map_name.size());
+			map_name_cstr[map_name.size()] = 0;
+			c.get_log_file() << "This remote map holds " << map_name << std::endl;
+			c.send_data(map_name.size() + 1,map_name_cstr);
+			c.get_log_file() << "Sending " << t.super.size() << " entries in this remote map" << std::endl;
+			c.send(t.is_initialized);
+#endif
 			c.send((std::size_t)t.super.size());
 			for (const auto &p : t.super){
 				c.send(p.first);
 				serialize_holder(p.second, c);
 			}
-			whendebug(c.send(mutils::typename_str<T>::f()));
+			whendebug(c.send_data(map_name.size() + 1,map_name_cstr));
 		}
 		
 		template<typename T, typename... ctx>
@@ -91,10 +97,11 @@ namespace myria{ namespace mtl{
 			whendebug(c.get_log_file() << "Expecting this remote map to hold " << holder_name << std::endl);
 #ifndef NDEBUG
 			{//nonce time
-				auto str1 = c.receive<DECT(holder_name)>(dsm,mutils::bytes_size(holder_name));
-				c.get_log_file() << "Nonce reports " << *str1 << std::endl;
+				char str1[holder_name.size()+1];
+				c.receive_data(holder_name.size()+1,str1);
+				c.get_log_file() << "Nonce reports " << str1 << std::endl;
 				c.get_log_file().flush();
-				assert(*str1 == holder_name);
+				assert(str1 == holder_name);
 			}
 #endif
 			whendebug(c.get_log_file() << "Receiving " << map_size << " entries in this remote map" << std::endl);
@@ -109,10 +116,11 @@ namespace myria{ namespace mtl{
 			assert(t.super.size() == map_size);
 #ifndef NDEBUG
 			{//nonce time
-				auto str1 = c.receive<DECT(holder_name)>(dsm,mutils::bytes_size(holder_name));
-				c.get_log_file() << "Nonce reports " << *str1 << std::endl;
+				char str1[holder_name.size()+1];
+				c.receive_data(holder_name.size()+1,str1);
+				c.get_log_file() << "Nonce reports " << str1 << std::endl;
 				c.get_log_file().flush();
-				assert(*str1 == holder_name);
+				assert(str1 == holder_name);
 			}
 #endif
 		}
