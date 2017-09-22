@@ -69,6 +69,7 @@ namespace myria{ namespace mtl{
 		
 		template<typename T>
 		void serialize_holder(const remote_map_holder<T>& t, mutils::local_connection &c){
+			whendebug(c.get_log_file() << "Sending " << t.super.size() << " entries in this remote map" << std::endl);
 			whendebug(c.send(t.is_initialized));
 			c.send((std::size_t)t.super.size());
 			for (const auto &p : t.super){
@@ -83,6 +84,7 @@ namespace myria{ namespace mtl{
 			//receive map
 			std::size_t map_size{0};
 			c.receive(map_size);
+			whendebug(c.get_log_file() << "Receiving " << map_size << " entries in this remote map" << std::endl);
 			for (auto i = 0u; i < map_size; ++i){
 				using first_t = typename DECT(t.super)::key_type;
 				using second_t = typename DECT(t.super)::mapped_type;
@@ -91,6 +93,7 @@ namespace myria{ namespace mtl{
 				second_t &entry = t.super[key];
 				receive_holder(dsm,entry,c);
 			}
+			assert(t.super.size() == map_size);
 		}
 		
 		template<typename T, typename DSM, char... str>
@@ -115,6 +118,7 @@ namespace myria{ namespace mtl{
 
 		template<typename... T>
 		void send_remote_maps(remote_map_aggregator<T...>& a, mutils::local_connection &c){
+			whendebug(c.get_log_file() << "Sending " << sizeof...(T) << " remote maps" << std::endl);
 			return (serialize_holder<typename T::Handle_t>(a,c), ...);
 		}
 
@@ -154,6 +158,7 @@ namespace myria{ namespace mtl{
 
 		template<typename DSM, typename... T>
 		void receive_remote_maps(DSM* dsm, remote_map_aggregator<T...>& a, mutils::local_connection &c){
+			whendebug(c.get_log_file() << "Expecting " << sizeof...(T) << " remote maps" << std::endl);
 			return (receive_holder<typename T::Handle_t>(dsm,a,c),...);
 		}
 		
@@ -170,6 +175,7 @@ namespace myria{ namespace mtl{
 					std::cout << remote << std::endl;
 				}
 				assert(nonce == remote);
+				c.get_log_file() << "First verification passed.  Now receiving remote maps" << std::endl;
 			}
 #endif
 			receive_remote_maps(dsm,s.as_virtual_holder(), c);
@@ -179,6 +185,7 @@ namespace myria{ namespace mtl{
 				c.get_log_file() << "environment serialization nonce from remote: " << remote << std::endl
 						 << std::endl;
 				c.get_log_file() << "environment serialization nonce expected: " << nonce << std::endl;
+				c.get_log_file().flush();
 				if (nonce != remote){
 					std::cout << nonce << std::endl << std::endl << std::endl << std::endl;
 					std::cout << remote << std::endl;
