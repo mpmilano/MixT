@@ -26,7 +26,7 @@ namespace myria{
   template<typename T>
   struct LabelFreeHandle {
   protected:
-    virtual std::shared_ptr<const T> get(mtl::GPhaseContext *tc) const  = 0;
+    virtual std::shared_ptr<const T> get_without_context(mtl::GPhaseContext *tc) const  = 0;
     virtual void put(mtl::GPhaseContext *tc, const T& t) = 0;
   public:
     virtual ~LabelFreeHandle() = default;
@@ -176,10 +176,11 @@ namespace myria{
 			return copy_of_this;
     }
   protected:
-    std::shared_ptr<const T> get(mtl::GPhaseContext *tc) const {
-      auto *ctx = dynamic_cast<mtl::PhaseContext<l>*>(tc);
-      assert(ctx);
-      return get(ctx);
+			std::shared_ptr<const T> get_without_context(mtl::GPhaseContext *tc) const {
+				mutils::DeserializationManager<> empty_dsm;
+				auto *ctx = dynamic_cast<mtl::PhaseContext<l>*>(tc);
+				assert(ctx);
+				return get(&empty_dsm,ctx);
     }
   public:
     

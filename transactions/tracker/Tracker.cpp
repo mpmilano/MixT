@@ -204,9 +204,9 @@ std::ostream &operator<<(std::ostream &os, const Tracker::Clock &c) {
     if (!is_lin_metadata(name)) {
       auto ts = make_lin_metaname(name);
       if (ds.exists_trk(&sctx, ts)) {
-	auto tomb_p = ds.existing_tombstone_trk(&sctx, ts)->get(&sctx);
-	auto &tomb = *tomb_p;
-	tctx.i->pending_nonces->emplace_back(tomb);
+				auto tomb_p = ds.existing_tombstone_trk(&sctx, ts)->get_without_context(&sctx);
+				auto &tomb = *tomb_p;
+				tctx.i->pending_nonces->emplace_back(tomb);
       }
     }
   }
