@@ -139,8 +139,11 @@ namespace myria{ namespace mtl{
 
 		template<typename label, typename... T>
 		void send_remote_maps(remote_map_aggregator<T...>& a, mutils::local_connection &c){
-			constexpr auto number_expected = ((std::is_same<typename T::label, label>::value ? 1 : 0) + ... + 0);
-			whendebug(c.get_log_file() << "Sending " << number_expected << " remote maps" << std::endl);
+			constexpr std::size_t number_expected = ((std::is_same<typename T::label, label>::value ? 1 : 0) + ... + 0);
+#ifndef NDEBUG
+			c.get_log_file() << "Sending " << number_expected << " remote maps" << std::endl;
+			c.send(number_expected);
+#endif
 			return ((std::is_same<typename T::label, label>::value ? serialize_holder<typename T::Handle_t>(a,c) : (void)a),...);
 			//return (serialize_holder<typename T::Handle_t>(a,c), ...);
 		}
@@ -184,7 +187,10 @@ namespace myria{ namespace mtl{
 		template<typename label, typename DSM, typename... T>
 		void receive_remote_maps(DSM* dsm, remote_map_aggregator<T...>& a, mutils::local_connection &c){
 			constexpr auto number_expected = ((std::is_same<typename T::label, label>::value ? 1 : 0) + ... + 0);
-			whendebug(c.get_log_file() << "Expecting " << number_expected << " remote maps" << std::endl);
+#ifndef NDEBUG
+			c.get_log_file() << "Expecting " << number_expected << " remote maps" << std::endl;
+			c.get_log_file() << "Remote expects to send: " << *c.receive<std::size_t>(dsm,sizeof(std::size_t)) << " remote maps" << std::endl;
+#endif
 			return ((std::is_same<typename T::label, label>::value ? receive_holder<typename T::Handle_t>(dsm,a,c) : (void)a),...);
 			//return (receive_holder<typename T::Handle_t>(dsm,a,c),...);
 		}
