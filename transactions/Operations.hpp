@@ -131,6 +131,7 @@ struct SupportedOperation {
 		
 		operation op;
 
+		SupportsOn() = default;
 		SupportsOn(operation op):op(op){assert(op);}
 		SupportsOn(const SupportsOn&) = default;
 		SupportsOn& operator=(const SupportsOn&) = default;

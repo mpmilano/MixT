@@ -142,7 +142,7 @@ namespace myria{
 			//falthrough
 			return make_unmatched<l,T,SupportedOperations...>(v, size);
 			}
-			else return Handle{};
+			else return std::unique_ptr<Handle>{new Handle{}};
     }
 
 		template<typename... ctxs>
