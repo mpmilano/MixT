@@ -5,13 +5,15 @@
 #include "mtl/RemoteList.hpp"
 #include "mailing_list_example.hpp"
 
-namespace myria;
+using namespace myria;
 using namespace server;
 using namespace pgsql;
 using namespace mtl;
 using namespace std;
 using namespace mutils;
 using Hndl = Handle<Label<STORE_LEVEL >, int, SupportedOperation<RegisteredOperations::Increment,void,SelfType> >;
+using Inherit = typename InheritGroup<>::template add_class_t<SQLStore<Level::STORE_LEVEL > >;
+using RelayDSM = ::mutils::DeserializationManager<SQLStore<Level::STORE_LEVEL >, Inherit>;
 
 template<typename l, typename r> struct transactions {
   using incr_trans = l;
@@ -29,7 +31,7 @@ template<typename l, typename r> struct transactions {
 #include "mailing_list_post_new_message.cpp.precompiled"
 		;
 	template<typename Store>
-	using Relay = RelayForTransactions<Store, incr_trans, read_trans,
+	using Relay = RelayForTransactions<Store, RelayDSM, incr_trans, read_trans,
 																		 mailing_list_add_new_user,
 																		 mailing_list_create_user,
 																		 mailing_list_download_inbox,
@@ -52,14 +54,12 @@ int main(int whendebug(argc), char** argv){
 
 	struct captive_sqlstore : public captive_store{
 		SQLStore<Level::STORE_LEVEL > ss;
-		using Inherit = typename InheritGroup<>::template add_class_t<SQLStore<Level::STORE_LEVEL >;
 		Inherit inherit;
-		using DeserializationManager = ::mutils::DeserializationManager<SQLStore<Level::STORE_LEVEL >, Inherit>;
-		DeserializationManager _dsm{&ss,&inherit};
+		RelayDSM _dsm{&ss,&inherit};
 		SQLStore<Level::STORE_LEVEL>& store(){
 			return ss;
 		}
-		DeserializationManager &dsm() {
+		RelayDSM &dsm() {
 			return _dsm;
 		}
 

@@ -27,12 +27,12 @@ namespace runnable_transaction {
 
 	//local interp
 	template <typename store,typename phase1, typename connection_pack, typename choice, typename ClientTracker, typename DSM>
-	auto dispatch_to_runner(choice*, DSM*, ClientTracker& trk, connection_pack, transaction<phase1>*, store& s,
+	auto dispatch_to_runner(choice*, DSM* dsm, ClientTracker& trk, connection_pack, transaction<phase1>*, store& s,
 													std::enable_if_t<(!phase1::label::run_remotely::value)
 													|| (!choice::value)
 													>* = nullptr)
 	{
-	  return common_interp<phase1>(s,trk.local_tracker);
+	  return common_interp<phase1>(dsm,s,trk.local_tracker);
 	}
 	
 	template <typename store, typename phase1, typename phase2, typename connection_pack, typename Choice, typename ClientTracker, typename DSM, typename... phase>
@@ -42,7 +42,7 @@ namespace runnable_transaction {
 													>* = nullptr)
 	{
 		constexpr transaction<phase2, phase...>* remains{ nullptr };
-		common_interp<phase1>(s,trk.local_tracker);
+		common_interp<phase1>(dsm,s,trk.local_tracker);
 		return dispatch_to_runner(choice, dsm,trk,c, remains, s);
 	}
 	
@@ -67,7 +67,7 @@ namespace runnable_transaction {
 		using store_t = typename split::template all_store<required...>;
 		// required should be struct value<>
 		static_assert(is_store<store_t>::value);
-		store_t store{vals... };
+		store_t store{dsm,vals... };
 		constexpr run_remotely* run_remotely_v{nullptr};
 		using ret_t = DECT(dispatch_to_runner(run_remotely_v,dsm,trk,c, np, store));
 		constexpr ret_t *rt{nullptr};

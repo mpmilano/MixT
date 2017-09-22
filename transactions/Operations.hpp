@@ -86,7 +86,7 @@ struct SupportedOperation {
 		using TransactionContext = mtl::PhaseContext<label_from_handle<Handle> >;
 	
 		struct operation_super {
-			virtual return_t act(TransactionContext* _ctx,typename convert_SelfType<Handle&>::template act<Args>...) = 0;
+			virtual return_t act(TransactionContext* _ctx,mutils::DeserializationManager<>* dsm,  typename convert_SelfType<Handle&>::template act<Args>...) = 0;
 			virtual ~operation_super(){}
 		};
 
@@ -107,22 +107,22 @@ struct SupportedOperation {
 			
 			operation_impl(DataStore &ds):ds(ds){}
 			
-			return_raw act(std::true_type*, TransactionContext* _ctx,typename convert_SelfType<Handle&>::template act<Args>... a){
+			return_raw act(std::true_type*, TransactionContext* _ctx, mutils::DeserializationManager<>* dsm,  typename convert_SelfType<Handle&>::template act<Args>... a){
 				auto *ctx = dynamic_cast<typename DataStore::StoreContext*>(&_ctx->store_context(ds whendebug(, typename OperationIdentifier<Name>::name{}.string)));
-				return ds.operation(_ctx,*ctx,OperationIdentifier<Name>{},
+				return ds.operation(_ctx,*ctx,dsm, OperationIdentifier<Name>{},
 									this->template reduce_selfTypes(((Args*)nullptr), a)...);
 			}
 
-			std::nullptr_t act(std::false_type*, TransactionContext* _ctx,typename convert_SelfType<Handle&>::template act<Args>... a){
+			std::nullptr_t act(std::false_type*, TransactionContext* _ctx,mutils::DeserializationManager<>* dsm,  typename convert_SelfType<Handle&>::template act<Args>... a){
 			  auto *ctx = dynamic_cast<typename DataStore::StoreContext*>(&_ctx->store_context(ds whendebug(, typename OperationIdentifier<Name>::name{}.string)));
-				ds.operation(_ctx,*ctx,OperationIdentifier<Name>{},
+				ds.operation(_ctx,*ctx,dsm,OperationIdentifier<Name>{},
 									this->template reduce_selfTypes(((Args*)nullptr), a)...);
 				return nullptr;
 			}
 
-			return_t act(TransactionContext* _ctx,typename convert_SelfType<Handle&>::template act<Args>... a){
+			return_t act(TransactionContext* _ctx,mutils::DeserializationManager<>* dsm,  typename convert_SelfType<Handle&>::template act<Args>... a){
 				std::integral_constant<bool,std::is_same<return_t,return_raw>::value> *choice{nullptr};
-				return act(choice,_ctx,a...);
+				return act(choice,_ctx,dsm,a...);
 			}
 
 		};

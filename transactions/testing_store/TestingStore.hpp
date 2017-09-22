@@ -71,8 +71,18 @@ namespace myria {
 				TestingObject(Name name, TestingStore &parent)
 					:_name(name),parent(parent){}
 				
-				std::shared_ptr<const T> get(mtl::StoreContext<label>*){
+				std::shared_ptr<const T> get(mutils::DeserializationManager<>*, mtl::StoreContext<label>*){
 					return *parent.object_store. template at<stored >(_name);
+				}
+
+				std::unique_ptr<LabelFreeHandle<T> > wrapInHandle(std::shared_ptr<RemoteObject<label,T> > _this){
+					auto __this = std::dynamic_pointer_cast<DECT(*this)>(_this);
+					assert(__this);
+					return std::unique_ptr<LabelFreeHandle<T> >{new TestingHandle<T>{__this,parent} };
+				}
+
+				std::size_t serial_uuid() const {
+					return 1;
 				}
 
 				std::shared_ptr<RemoteObject<label,T> > create_new(mtl::StoreContext<label>* ctx, const T& t) const {
@@ -176,25 +186,25 @@ namespace myria {
 			}
 
 			template<typename T>
-			void operation(mtl::PhaseContext<label>*, StoreContext&, OperationIdentifier<noop>,TestingObject<T>&,int,int,int,int){
+			void operation(mtl::PhaseContext<label>*, StoreContext&, mutils::DeserializationManager<>* ,  OperationIdentifier<noop>,TestingObject<T>&,int,int,int,int){
 				std::cout << "operation executed" << std::endl;
 			}
 			
 			template<typename T>
-			void operation(mtl::PhaseContext<label>*, StoreContext&, OperationIdentifier<append>,TestingObject<std::list<T> >& hndl,const T& t){
+			void operation(mtl::PhaseContext<label>*, StoreContext&, mutils::DeserializationManager<>* ,  OperationIdentifier<append>,TestingObject<std::list<T> >& hndl,const T& t){
 				std::cout << "append executed" << std::endl;
 				std::list<T> &lst = **object_store. template at<stored<std::list<T>>>(hndl._name);
 				lst.push_back(t);
 			}
 
 			template<typename T>
-			void operation(mtl::PhaseContext<label>* , StoreContext& ctx, OperationIdentifier<consistent_read>,TestingObject<T>& hndl){
+			auto operation(mtl::PhaseContext<label>* , StoreContext& ctx, mutils::DeserializationManager<>* dsm,  OperationIdentifier<consistent_read>,TestingObject<T>& hndl){
 				std::cout << "consistent read" << std::endl;
-				return hndl.get(&ctx);
+				return *hndl.get(dsm,&ctx);
 			}
 
-			void operation(mtl::PhaseContext<label>* , StoreContext& ctx, OperationIdentifier<consistent_read>,TestingObject<int>& hndl){
-				return hndl.put(&ctx,hndl.get(&ctx)+1);
+			auto operation(mtl::PhaseContext<label>* , StoreContext& ctx, mutils::DeserializationManager<>* dsm,  OperationIdentifier<increment>,TestingObject<int>& hndl){
+				return hndl.put(&ctx,*hndl.get(dsm,&ctx)+1);
 			}
 
 

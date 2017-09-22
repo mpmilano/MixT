@@ -12,7 +12,7 @@ namespace myria{
 	struct default_operation_impl{
 
 		template<typename Ctx1, typename Ctx2, typename... Args>
-		static typename op::Return operation(const Ctx1&, const Ctx2&, OperationIdentifier<typename op::OperationName>, const Args&...){
+		static typename op::Return operation(const Ctx1&, const Ctx2&, mutils::DeserializationManager<>* ,OperationIdentifier<typename op::OperationName>, const Args&...){
 			assert(false && "Cannot call unmatched things");
 			throw UnmatchedUseException{};
 		}
@@ -79,7 +79,7 @@ namespace myria{
 				assert(false && "Cannot call unmatched things");
 				throw UnmatchedUseException{};
 			}
-			std::shared_ptr<const T> get(mtl::StoreContext<l>*) {
+			std::shared_ptr<const T> get(mutils::DeserializationManager<>*, mtl::StoreContext<l>*) {
 				assert(false && "Cannot call unmatched things");
 				throw UnmatchedUseException{};
 			}

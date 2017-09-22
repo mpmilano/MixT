@@ -91,8 +91,8 @@ struct value_holder
     t = t2;
     return *this;
   }
-  template <typename TransactionContext>
-  value_holder& bind(value_holder& whendebug(_this), TransactionContext& ctx, const T& t2)
+  template <typename TransactionContext, typename DSM>
+  value_holder& bind(value_holder& whendebug(_this), TransactionContext& ctx, DSM*, const T& t2)
   {
       (void)ctx;
 	  assert(&_this == this);
@@ -211,8 +211,8 @@ struct type_holder
     return *this;
   }
 
-  template <typename TransactionContext>
-  type_holder& bind(type_holder& whendebug(_this), TransactionContext&, T _t)
+  template <typename TransactionContext, typename DSM>
+  type_holder& bind(type_holder& whendebug(_this), TransactionContext&, DSM*, T _t)
   {
 	  assert(&_this == this);
     bound = true;
@@ -476,7 +476,7 @@ public:
     _this.bind_common(t);
 	auto &_this_super = this_super(s);
 	auto &bind_target = *_this.handle[_this.curr_pos].get(dsm,&tc);
-    _this_super.bind(_this_super,tc, bind_target);
+	_this_super.bind(_this_super,tc, dsm, bind_target);
     _this.read_tracking_actions(tc);
     return _this;
   }

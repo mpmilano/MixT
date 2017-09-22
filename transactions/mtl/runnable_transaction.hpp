@@ -134,14 +134,15 @@ struct store : public holders..., public virtual_holders<holders...>
   store() = default;
 #endif
   store(store&&) = default;
+	template<typename... ctxs> store(mutils::DeserializationManager<ctxs...>*):store(){}
 
-  template <typename val1, typename... values>
-  store(const val1& val, const values&... vals)
-    : store(vals...)
+  template <typename DSM, typename val1, typename... values>
+		store(DSM* dsm, const val1& val, const values&... vals)
+    : store(dsm,vals...)
   {
     whendebug(virtual_holders::initialize());
     PhaseContext<Label<top>> ctx;
-    get(typename val1::name{}).bind(*this,ctx, val.t);
+    get(typename val1::name{}).bind(*this,ctx, dsm, val.t);
   }
 
 private:

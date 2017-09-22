@@ -86,7 +86,7 @@ struct transaction_listener;
 		try {
 			tracker::find_tombstones(ds,trk,dsm,*tombstones_to_find);
 			trk.set_persistent_store(ds);
-			mtl::runnable_transaction::common_interp<phase, store>(s,trk);
+			mtl::runnable_transaction::common_interp<phase, DECT(dsm), store>(&dsm, s,trk);
 		} catch (std::exception &whendebug(e)) {
 			// right now, *any* failure is just sent to the client as a byte;
 			transaction_successful = false;
@@ -127,15 +127,15 @@ struct transaction_listener;
 		
 		using tracked_store = _tracked_store;
 	
-  template<typename DataStore>
+		template<typename DataStore>
   static bool run_if_match(std::size_t, txnID_t id,
 			   DataStore &ds,
 			   tracker::Tracker &trk,
                            DeserializationManager &dsm,
                            mutils::connection &c, char const *const _data) {
     using namespace mutils;
-    if (id == normal_phase::txnID()) return run_phase<normal_phase, normal_store>(id,ds,trk,dsm,c,_data);
-		else if (id == tracked_phase::txnID()) return run_phase<tracked_phase, tracked_store>(id,ds,trk,dsm,c,_data);
+    if (id == normal_phase::txnID()) return run_phase<DeserializationManager,normal_phase, normal_store>(id,ds,trk,dsm,c,_data);
+		else if (id == tracked_phase::txnID()) return run_phase<DeserializationManager,tracked_phase, tracked_store>(id,ds,trk,dsm,c,_data);
 		else return false;
   }
 };

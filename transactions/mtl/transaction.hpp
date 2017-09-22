@@ -71,10 +71,10 @@ struct previous_transaction_phases
     {
       return transaction_struct::template interp<std::true_type>(trk, dsm, c, v...);
     }
-    template <typename ClientTracker>
-    static auto run_local(ClientTracker& trk, const typename bound_values::type&... v)
+    template <typename ClientTracker, typename... ctxs>
+    static auto run_local(ClientTracker& trk, mutils::DeserializationManager<ctxs...>* dsm, const typename bound_values::type&... v)
     {
-      return transaction_struct::template interp<std::false_type>(trk, nullptr, mutils::mismatch{}, v...);
+      return transaction_struct::template interp<std::false_type>(trk, dsm, mutils::mismatch{}, v...);
     }
     using all_store = typename transaction::template all_store<bound_values...>;
   };
@@ -89,13 +89,13 @@ struct transaction_struct<0, _previous_transaction_phases, split, bound_values..
   using contains_phase = typename transaction::template contains_phase<label>;
   template <typename label>
   using find_phase = typename transaction::template find_phase<label>;
-  template <typename ClientTracker>
-  static auto run_local(ClientTracker& trk, const typename bound_values::type&... v)
+  template <typename ClientTracker, typename... ctxs>
+  static auto run_local(ClientTracker& trk, mutils::DeserializationManager<ctxs...>* dsm, const typename bound_values::type&... v)
   {
     using namespace runnable_transaction;
     using namespace mutils;
-    return begin_interp<previous_transaction_phases, transaction, mutils::mismatch, std::false_type, ClientTracker, bound_values...>(
-	nullptr, trk, mutils::mismatch{}, bound_values{ v }...);
+    return begin_interp<DECT(*dsm),previous_transaction_phases, transaction, mutils::mismatch, std::false_type, ClientTracker, bound_values...>(
+			dsm, trk, mutils::mismatch{}, bound_values{ v }...);
   }
   using all_store = typename transaction::template all_store<bound_values...>;
 };

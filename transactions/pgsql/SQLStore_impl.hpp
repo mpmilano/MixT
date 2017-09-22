@@ -20,7 +20,7 @@
 
 namespace myria { namespace pgsql {
 
-		template<Level l, typename...>
+		template<Level l>
 		class SQLStore;
 
 		struct SQLTransaction;
@@ -50,7 +50,7 @@ namespace myria { namespace pgsql {
 			
 			virtual ~SQLStore_impl();
 
-			template<Level l, typename...>
+			template<Level l>
 			friend class SQLStore;
 
 			std::array<long long, NUM_CAUSAL_GROUPS> clock;

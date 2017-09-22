@@ -116,34 +116,34 @@ namespace server {
 };
 
 	template<typename Store>
-	using tomb_listener = transaction_listener<mtl::runnable_transaction::tombstone_only_phase<typename Store::label>, mtl::runnable_transaction::tombstone_only_store<typename Store::label>,mtl::runnable_transaction::tombstone_only_phase<typename Store::label>, mtl::runnable_transaction::tombstone_only_store<typename Store::label> >;
+	using tomb_listener = transaction_listener<mutils::DeserializationManager<>, mtl::runnable_transaction::tombstone_only_phase<typename Store::label>, mtl::runnable_transaction::tombstone_only_store<typename Store::label>,mtl::runnable_transaction::tombstone_only_phase<typename Store::label>, mtl::runnable_transaction::tombstone_only_store<typename Store::label> >;
 
-	template<typename label> constexpr auto get_applicable_listeners_2(){
+	template<typename DSM, typename label> constexpr auto get_applicable_listeners_2(){
 		return mutils::typelist<>{};
 	}
 	
-	template<typename label, typename transaction, typename... t>
+	template<typename DSM, typename label, typename transaction, typename... t>
 	constexpr auto get_applicable_listeners_2(){
 		if constexpr (!transaction::template contains_phase<label>::value){
-				return get_applicable_listeners_2<label,t...>();
+				return get_applicable_listeners_2<DSM,label,t...>();
 			}
 		else return
-					 mutils::typelist<listener_for<transaction, typename transaction:: template find_phase<label> > >::append(get_applicable_listeners_2<label,t...>());
+					 mutils::typelist<listener_for<DSM,transaction, typename transaction:: template find_phase<label> > >::append(get_applicable_listeners_2<DSM,label,t...>());
 	}
 
-	template<typename Store, typename... transactions>
+	template<typename DSM, typename Store, typename... transactions>
 	constexpr auto get_applicable_listeners_1(mutils::typelist<transactions...>){
-		constexpr StoreRelay<Store, tomb_listener<Store>, transactions...> * ret{nullptr};
+		constexpr StoreRelay<Store, DSM, tomb_listener<Store>, transactions...> * ret{nullptr};
 		return ret;
 	}
 
-	template<typename Store, typename... transactions>
+	template<typename Store, typename DSM, typename... transactions>
 	constexpr auto get_applicable_listeners(){
 		using label = typename Store::label;
-		return get_applicable_listeners_1<Store>(get_applicable_listeners_2<label,transactions...>());
+		return get_applicable_listeners_1<DSM, Store>(get_applicable_listeners_2<DSM,label,transactions...>());
 	}
 	
-template <typename Store, typename... transactions>
-using RelayForTransactions =  DECT(*get_applicable_listeners<Store, transactions...>());
+template <typename Store, typename DSM, typename... transactions>
+using RelayForTransactions =  DECT(*get_applicable_listeners<Store, DSM, transactions...>());
 }
 }

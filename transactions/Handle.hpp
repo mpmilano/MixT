@@ -126,16 +126,20 @@ namespace myria{
 			bool b = v[0];
 			assert(b && "looks like we need to allow null handles after all");
 			std::size_t size = ((std::size_t*) (v + 1))[0];
-auto ret_ro = mutils::inherit_from_bytes<RemoteObject<l,T> >(rdc, v + sizeof(bool) + sizeof(std::size_t) );
-			if (!ret_ro) {
-				return make_unmatched<l,T,SupportedOperations...>(v, size);
-			}
-			else {
-				auto ret_ro_p = ret_ro.release();
-				auto ret = std::unique_ptr<Handle>{dynamic_cast<Handle*>(ret_ro_p->wrapInHandle(std::shared_ptr<DECT(*ret_ro_p)>{ret_ro_p}).release())};
-				assert(ret);
-				return ret;
-			}
+			if constexpr (DECT(*rdc)::template contains_mgr<mutils::InheritManager>()){
+					auto &inherit = rdc->template mgr<mutils::InheritManager>();
+					if constexpr (DECT(inherit)::template contains_possible_match<RemoteObject<l,T> >()){
+							auto ret_ro = mutils::inherit_from_bytes<RemoteObject<l,T> >(rdc, v + sizeof(bool) + sizeof(std::size_t) );
+							if (ret_ro){
+								auto ret_ro_p = ret_ro.release();
+								auto ret = std::unique_ptr<Handle>{dynamic_cast<Handle*>(ret_ro_p->wrapInHandle(std::shared_ptr<DECT(*ret_ro_p)>{ret_ro_p}).release())};
+								assert(ret);
+								return ret;
+							}
+						}
+				}
+			//falthrough
+			return make_unmatched<l,T,SupportedOperations...>(v, size);
     }
 
 		template<typename... ctxs>
@@ -146,7 +150,19 @@ auto ret_ro = mutils::inherit_from_bytes<RemoteObject<l,T> >(rdc, v + sizeof(boo
       
       //If the Transacion Context does not yet exist for this store, we create it now.
       auto &store_ctx = ctx.store_context(this->store() whendebug(, "calling get() via handle"));
-			dsm->template mgr<InheritManager>().run_on_match([dsm,&store_ctx](auto &subro){return subro.get(dsm,&store_ctx);}, *_ro,_ro->serial_uuid());
+			//Try to find the most specific implementation of our RemoteObject via dsm
+			if constexpr (DECT(*dsm)::template contains_mgr<mutils::InheritManager>()) {
+					auto &inherit = dsm->template mgr<mutils::InheritManager>();
+					if constexpr (DECT(inherit)::template contains_possible_match<DECT(*_ro)>()){
+							try{
+								return inherit.run_on_match([dsm,&store_ctx](auto &subro){return subro.get(dsm,&store_ctx);},
+																						*_ro,_ro->serial_uuid());
+							}
+							catch (const mutils::InheritMissException&){/*the fallthrough case will happen*/}
+						}
+				}
+			//if we failed to find a valid more-specific implementation, then use the default mandated-by-interface one
+			return _ro->get(dsm,&store_ctx);
     }
 		Handle create_new(mtl::PhaseContext<l> *tc, const T& newt) const {
       assert(_ro);
