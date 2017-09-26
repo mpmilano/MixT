@@ -70,6 +70,7 @@ namespace myria{ namespace mtl{
 		template<typename T>
 		void serialize_holder(const remote_map_holder<T>& t, mutils::local_connection &c){
 #ifndef NDEBUG
+			c.send(t.is_initialized);
 			auto map_name = mutils::typename_str<T>::f();
 			char map_name_cstr[map_name.size() + 1];
 			memcpy(map_name_cstr, map_name.c_str(),map_name.size());
@@ -77,7 +78,6 @@ namespace myria{ namespace mtl{
 			c.get_log_file() << "This remote map holds " << map_name << std::endl;
 			c.send_data(map_name.size() + 1,map_name_cstr);
 			c.get_log_file() << "Sending " << t.super.size() << " entries in this remote map" << std::endl;
-			c.send(t.is_initialized);
 #endif
 			c.send((std::size_t)t.super.size());
 			for (const auto &p : t.super){
@@ -169,13 +169,13 @@ namespace myria{ namespace mtl{
 		void send_store_values(const mutils::typeset<requires...>&, store &s, mutils::local_connection &c){
 #ifndef NDEBUG
 			std::string nonce = mutils::type_name<mutils::typeset<requires...> >();
-			c.send(mutils::bytes_size(nonce),nonce);
+			c.send_data(nonce.size() + 1, nonce.c_str());
 			c.get_log_file() << "about to send remote maps" << std::endl;
 #endif
 			send_remote_maps<label>(s.as_virtual_holder(),c);
 #ifndef NDEBUG
 			c.get_log_file() << "remote maps sent" << std::endl;
-			c.send(nonce);
+			c.send_data(nonce.size() + 1, nonce.c_str());
 			c.get_log_file() << "now resending nonce: " << nonce << std::endl<< std::endl;
 #endif
 			auto worked = (send_holder_values(typename requires::name{}, s, c) && ... && true);
@@ -207,22 +207,24 @@ namespace myria{ namespace mtl{
 		void receive_store_values(DSM* dsm, const mutils::typeset<provides...>&, store &s, mutils::local_connection &c){
 #ifndef NDEBUG
 			std::string nonce = mutils::type_name<mutils::typeset<provides...> >();
-			auto nonce_size = mutils::bytes_size(nonce);
-			c.receive(nonce_size);
 			{
-				auto remote = *c. template receive<std::string>((mutils::DeserializationManager<>*)nullptr,nonce_size);
-				if (nonce != remote){
+				char remote_nonce[nonce.size() + 1];
+				remote_nonce[nonce.size()] = 0;
+				c.receive_data(nonce.size() + 1, remote_nonce);
+				if (nonce != remote_nonce){
 					std::cout << nonce << std::endl << std::endl << std::endl << std::endl;
-					std::cout << remote << std::endl;
+					std::cout << remote_nonce << std::endl;
 				}
-				assert(nonce == remote);
+				assert(nonce == remote_nonce);
 				c.get_log_file() << "First verification passed.  Now receiving remote maps" << std::endl;
 			}
 #endif
 			receive_remote_maps<label>(dsm,s.as_virtual_holder(), c);
 #ifndef NDEBUG
 			{
-				auto remote = *c. template receive<std::string>((mutils::DeserializationManager<>*)nullptr,nonce_size);
+				char remote[nonce.size() + 1];
+				remote[nonce.size()] = 0;
+				c.receive_data(nonce.size() + 1, remote);
 				c.get_log_file() << "environment serialization nonce from remote: " << remote << std::endl
 						 << std::endl;
 				c.get_log_file() << "environment serialization nonce expected: " << nonce << std::endl;
