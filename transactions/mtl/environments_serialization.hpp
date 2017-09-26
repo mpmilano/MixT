@@ -90,9 +90,6 @@ namespace myria{ namespace mtl{
 		template<typename T, typename... ctx>
 		void receive_holder(mutils::DeserializationManager<ctx...> *dsm, remote_map_holder<T>& t, mutils::local_connection &c){
 			whendebug(c.receive(t.is_initialized));
-			//receive map
-			std::size_t map_size{0};
-			c.receive(map_size);
 			whendebug(const auto holder_name = mutils::typename_str<T>::f());
 			whendebug(c.get_log_file() << "Expecting this remote map to hold " << holder_name << std::endl);
 #ifndef NDEBUG
@@ -104,6 +101,9 @@ namespace myria{ namespace mtl{
 				assert(str1 == holder_name);
 			}
 #endif
+			//receive map
+			std::size_t map_size{0};
+			c.receive(map_size);
 			whendebug(c.get_log_file() << "Receiving " << map_size << " entries in this remote map" << std::endl);
 			for (auto i = 0u; i < map_size; ++i){
 				using first_t = typename DECT(t.super)::key_type;
