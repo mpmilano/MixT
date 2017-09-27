@@ -34,7 +34,7 @@ namespace myria{
   };
 
   template<typename l, typename T, typename... SupportedOperations>
-	std::unique_ptr<Handle<l,T,SupportedOperations...> > make_unmatched(char const * const v, std::size_t size);
+	std::unique_ptr<Handle<l,T,SupportedOperations...> > make_unmatched(char const * const v, std::size_t size, std::size_t id);
 	
   template<typename l, typename T, typename... SupportedOperations>
   struct Handle : public mutils::ByteRepresentable, public GenericHandle<l>, public LabelFreeHandle<T>, public SupportedOperations::template SupportsOn<Handle<l,T,SupportedOperations...> >... {
@@ -126,21 +126,27 @@ namespace myria{
 			static_assert(sizeof(bool) == 1);
 			bool b = v[0];
 			if (b){
-			std::size_t size = ((std::size_t*) (v + 1))[0];
-			if constexpr (DECT(*rdc)::template contains_mgr<mutils::InheritManager>()){
-					auto &inherit = rdc->template mgr<mutils::InheritManager>();
-					if constexpr (DECT(inherit)::template contains_possible_match<RemoteObject<l,T> >()){
-							auto ret_ro = mutils::inherit_from_bytes<RemoteObject<l,T> >(rdc, v + sizeof(bool) + sizeof(std::size_t) );
-							if (ret_ro){
-								auto ret_ro_p = ret_ro.release();
-								auto ret = std::unique_ptr<Handle>{dynamic_cast<Handle*>(ret_ro_p->wrapInHandle(std::shared_ptr<DECT(*ret_ro_p)>{ret_ro_p}).release())};
-								assert(ret);
-								return ret;
-							}
-						}
+				std::size_t size = ((std::size_t*) (v + 1))[0];
+				try {
+					if constexpr (DECT(*rdc)::template contains_mgr<mutils::InheritManager>()){
+						auto &inherit = rdc->template mgr<mutils::InheritManager>();
+						//assert((DECT(inherit)::template contains_possible_match<RemoteObject<l,T> >()));
+						auto ret_ro = mutils::inherit_from_bytes<RemoteObject<l,T> >(rdc, v + sizeof(bool) + sizeof(std::size_t) );
+						assert(ret_ro);
+						auto ret_ro_p = ret_ro.release();
+						auto ret = std::unique_ptr<Handle>{dynamic_cast<Handle*>(ret_ro_p->wrapInHandle(std::shared_ptr<DECT(*ret_ro_p)>{ret_ro_p}).release())};
+						assert(ret);
+						return ret;
+					} else {
+						assert((DECT(*rdc)::template contains_mgr<mutils::InheritManager>()));
+						struct dead{}; throw dead{};
+					}
 				}
-			//falthrough
-			return make_unmatched<l,T,SupportedOperations...>(v, size);
+				catch (const mutils::InheritMissException& ime){
+					//falthrough
+					//assert((false &&  "should never happen on the client"));
+					return make_unmatched<l,T,SupportedOperations...>(ime.buffer_after_id, size, ime.id);
+				}
 			}
 			else return std::unique_ptr<Handle>{new Handle{}};
     }

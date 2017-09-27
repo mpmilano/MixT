@@ -55,9 +55,10 @@ namespace myria{
 		template<typename T2>
 		struct UnmatchedRemoteObject : public RemoteObject<l,T> {
 			static_assert(std::is_same<T2,T>::value);
+			const std::size_t stored_id;
 			std::vector<char> bytes;
-			UnmatchedRemoteObject(char const * const v, std::size_t size)
-				:bytes{v, v + size}{}
+			UnmatchedRemoteObject(char const * const v, std::size_t size, std::size_t id)
+				:stored_id(id),bytes{v, v + size}{}
 			
 			const UnmatchedDataStore& store() const{
 				return UnmatchedDataStore<l,T,ops...>::inst();
@@ -115,7 +116,7 @@ namespace myria{
 				throw UnmatchedUseException{};
 			}
 
-			std::size_t serial_uuid() const { return 0;}
+			std::size_t serial_uuid() const { return stored_id;}
 
 			std::unique_ptr<LabelFreeHandle<T> > wrapInHandle(std::shared_ptr<RemoteObject<l,T> >){
 				assert(false && "Should never be attempting to re-wrap an unmatched handle!");
@@ -126,10 +127,10 @@ namespace myria{
 	};
 
 	template<typename l, typename T, typename... SupportedOperations>
-	std::unique_ptr<Handle<l,T,SupportedOperations...> > make_unmatched(char const * const v, std::size_t size){
+	std::unique_ptr<Handle<l,T,SupportedOperations...> > make_unmatched(char const * const v, std::size_t size, std::size_t id){
 		using Handle = ::myria::Handle<l,T,SupportedOperations...>;
 		using UnmatchedStore = UnmatchedDataStore<l,T,SupportedOperations...>;
-		return std::unique_ptr<Handle>{new Handle{std::make_shared<typename UnmatchedStore::template UnmatchedRemoteObject<T> >(v,size),
+		return std::unique_ptr<Handle>{new Handle{std::make_shared<typename UnmatchedStore::template UnmatchedRemoteObject<T> >(v,size,id),
 					UnmatchedStore::inst() }};
 	}
 	
