@@ -83,16 +83,20 @@ namespace myria{ namespace mtl{
 			for (const auto &p : t.super){
 				c.send(p.first);
 				serialize_holder(p.second, c);
+#ifndef NDEBUG
+				const std::size_t simple_nonce{141341313};
+				c.send(simple_nonce);
+#endif
 			}
 			whendebug(c.send_data(map_name.size() + 1,map_name_cstr));
 		}
 		
 		template<typename T, typename... ctx>
 		void receive_holder(mutils::DeserializationManager<ctx...> *dsm, remote_map_holder<T>& t, mutils::local_connection &c){
-			whendebug(c.receive(t.is_initialized));
-			whendebug(const auto holder_name = mutils::typename_str<T>::f());
-			whendebug(c.get_log_file() << "Expecting this remote map to hold " << holder_name << std::endl);
 #ifndef NDEBUG
+			c.receive(t.is_initialized);
+			const auto holder_name = mutils::typename_str<T>::f();
+			c.get_log_file() << "Expecting this remote map to hold " << holder_name << std::endl;
 			{//nonce time
 				char str1[holder_name.size()+1];
 				c.receive_data(holder_name.size()+1,str1);
@@ -112,6 +116,11 @@ namespace myria{ namespace mtl{
 				c.receive(key);
 				second_t &entry = t.super[key];
 				receive_holder(dsm,entry,c);
+#ifndef NDEBUG
+				std::size_t simple_nonce{0};
+				c.receive(simple_nonce);
+				assert(simple_nonce == 141341313);
+#endif
 			}
 			assert(t.super.size() == map_size);
 #ifndef NDEBUG
