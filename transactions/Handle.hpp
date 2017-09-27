@@ -129,7 +129,7 @@ namespace myria{
 				std::size_t size = ((std::size_t*) (v + 1))[0];
 				try {
 					if constexpr (DECT(*rdc)::template contains_mgr<mutils::InheritManager>()){
-						auto &inherit = rdc->template mgr<mutils::InheritManager>();
+							//auto &inherit = rdc->template mgr<mutils::InheritManager>();
 						//assert((DECT(inherit)::template contains_possible_match<RemoteObject<l,T> >()));
 						auto ret_ro = mutils::inherit_from_bytes<RemoteObject<l,T> >(rdc, v + sizeof(bool) + sizeof(std::size_t) );
 						assert(ret_ro);
