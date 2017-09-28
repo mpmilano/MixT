@@ -154,7 +154,7 @@ namespace myria{
 						auto ret_ro_p = ret_ro.release();
 						auto ret = std::unique_ptr<Handle>{dynamic_cast<Handle*>(ret_ro_p->wrapInHandle(std::shared_ptr<DECT(*ret_ro_p)>{ret_ro_p}).release())};
 						assert(ret);
-						assert(mutils::bytes_size(*ret) == sizeof(bool) + sizeof(std::size_t) + size);
+						assert(mutils::bytes_size(*ret) == sizeof(bool) + sizeof(std::size_t) + size + mutils::bytes_size(debug_nonce()));
 						return ret;
 					} else {
 						assert((DECT(*rdc)::template contains_mgr<mutils::InheritManager>()));
@@ -165,7 +165,7 @@ namespace myria{
 					//falthrough
 					//assert((false &&  "should never happen on the client"));
 					auto ret = make_unmatched<l,T,SupportedOperations...>(ime.buffer_after_id, size, ime.id);
-					assert(mutils::bytes_size(*ret) == sizeof(bool) + sizeof(std::size_t) + size);
+					assert(mutils::bytes_size(*ret) == sizeof(bool) + sizeof(std::size_t) + size + mutils::bytes_size(debug_nonce()));
 					return ret;
 				}
 			}
