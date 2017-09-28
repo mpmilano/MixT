@@ -98,7 +98,7 @@ namespace myria{
 		std::size_t to_bytes(char* v) const {
       //for serialization
       if (_ro) {
-				auto accum = mutils::to_bytes_v(v,true,_ro->inherit_bytes_size());
+				auto accum = mutils::to_bytes_v(v,true,_ro->bytes_size());
 				auto _ret = accum + _ro->inherit_to_bytes(v + accum);
 #ifndef NDEBUG
 				auto ret = _ret + mutils::to_bytes(debug_nonce(), v + _ret);
@@ -142,7 +142,7 @@ namespace myria{
 				std::size_t size = ((std::size_t*) (v + 1))[0];
 				assert(size < 4092);
 #ifndef NDEBUG
-				auto *post_obj = v + 1 + sizeof(std::size_t) + size;
+				auto *post_obj = v + 1 + 2*sizeof(std::size_t) + size;
 				assert(post_obj == debug_nonce());
 #endif
 				try {
@@ -154,7 +154,7 @@ namespace myria{
 						auto ret_ro_p = ret_ro.release();
 						auto ret = std::unique_ptr<Handle>{dynamic_cast<Handle*>(ret_ro_p->wrapInHandle(std::shared_ptr<DECT(*ret_ro_p)>{ret_ro_p}).release())};
 						assert(ret);
-						assert(mutils::bytes_size(*ret) == sizeof(bool) + sizeof(std::size_t) + size + mutils::bytes_size(debug_nonce()));
+						assert(mutils::bytes_size(*ret) == sizeof(bool) + 2*sizeof(std::size_t) + size + mutils::bytes_size(debug_nonce()));
 						return ret;
 					} else {
 						assert((DECT(*rdc)::template contains_mgr<mutils::InheritManager>()));
@@ -165,7 +165,7 @@ namespace myria{
 					//falthrough
 					//assert((false &&  "should never happen on the client"));
 					auto ret = make_unmatched<l,T,SupportedOperations...>(ime.buffer_after_id, size, ime.id);
-					assert(mutils::bytes_size(*ret) == sizeof(bool) + sizeof(std::size_t) + size + mutils::bytes_size(debug_nonce()));
+					assert(mutils::bytes_size(*ret) == sizeof(bool) + 2*sizeof(std::size_t) + size + mutils::bytes_size(debug_nonce()));
 					return ret;
 				}
 			}
