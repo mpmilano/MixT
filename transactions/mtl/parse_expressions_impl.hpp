@@ -16,8 +16,8 @@ template <char op, char... str>
 constexpr auto
 parse_binop(String<str...>)
 {
-  constexpr auto l = parse_expression(String<str...>::split(zero{}, String<op, ' '>{}).trim_ends());
-  constexpr auto r = parse_expression(String<str...>::split(one{}, String<op, ' '>{}).trim_ends());
+  constexpr auto l = parse_expression(String<str...>::split(zero{}, binop_string<op>{}).trim_ends());
+  constexpr auto r = parse_expression(String<str...>::split(one{}, binop_string<op>{}).trim_ends());
   return parse_phase::BinOp<op, std::decay_t<decltype(l)>, std::decay_t<decltype(r)>>{};
 }
 

@@ -32,4 +32,4 @@
 #define TYPECHECK_ONLY(...) TYPECHECK_ONLY_IMPL(VA_NARGS(__VA_ARGS__), __VA_ARGS__)
 
 
-#define RUN_LOCAL_WITH(ct, a...) WITH(a).run_local(ct,a)
+#define RUN_LOCAL_WITH(ct, dsm, a...) WITH(a).run_local(ct,dsm, a)

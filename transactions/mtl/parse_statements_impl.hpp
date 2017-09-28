@@ -50,7 +50,7 @@ constexpr auto parse_if(String<'i', 'f', _str...>)
 template <char... str>
 constexpr auto parse_return(String<'r', 'e', 't', 'u', 'r', 'n', str...>)
 {
-  return parse_phase::Return<DECT(parse_expression(String<str...>{}))>{};
+  return parse_phase::Return<DECT(parse_expression(String<str...>::trim_ends()))>{};
 }
 
 template <char... _str>
