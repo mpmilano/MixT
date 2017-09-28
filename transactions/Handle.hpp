@@ -93,19 +93,31 @@ namespace myria{
 	}
 
     typedef T stored_type;
+		whendebug(const static std::string debug_nonce(){return "this is a nonce";});
 
 		std::size_t to_bytes(char* v) const {
       //for serialization
       if (_ro) {
 				auto accum = mutils::to_bytes_v(v,true,_ro->inherit_bytes_size());
-				auto ret = accum + _ro->inherit_to_bytes(v + accum);
-				whendebug(auto bsh = bytes_size());
+				auto _ret = accum + _ro->inherit_to_bytes(v + accum);
+#ifndef NDEBUG
+				auto ret = _ret + mutils::to_bytes(debug_nonce(), v + _ret);
+				auto bsh = bytes_size();
 				assert(ret == bsh);
+#else
+				auto ret = _ret;
+#endif
 				return ret;
       }
       else {
 				((bool*)v)[0] = false;
-				return sizeof(bool);
+				auto _ret = sizeof(bool);
+#ifndef NDEBUG
+				auto ret = _ret + mutils::to_bytes(debug_nonce(), v + _ret);
+#else
+				auto ret = _ret;
+#endif
+				return ret;
       }
     }
 
@@ -117,7 +129,8 @@ namespace myria{
 		}
 
 		std::size_t bytes_size() const {
-      return sizeof(bool) + (_ro ? _ro->inherit_bytes_size() + sizeof(std::size_t) : 0);
+      return whendebug(mutils::bytes_size(debug_nonce()) + )
+				sizeof(bool) + (_ro ? _ro->inherit_bytes_size() + sizeof(std::size_t) : 0);
     }
 
 		template<typename... ctxs>
@@ -127,6 +140,10 @@ namespace myria{
 			bool b = v[0];
 			if (b){
 				std::size_t size = ((std::size_t*) (v + 1))[0];
+#ifndef NDEBUG
+				auto *post_obj = v + 1 + sizeof(std::size_t) + size;
+				assert(post_obj == debug_nonce());
+#endif
 				try {
 					if constexpr (DECT(*rdc)::template contains_mgr<mutils::InheritManager>()){
 							//auto &inherit = rdc->template mgr<mutils::InheritManager>();
