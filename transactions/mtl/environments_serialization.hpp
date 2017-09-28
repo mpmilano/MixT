@@ -10,7 +10,7 @@ namespace myria{ namespace mtl{
 		template<typename T, char... str>
 		void serialize_holder(const type_holder<T,str...>& t, mutils::local_connection &c){
 			c.send(whendebug(mutils::bytes_size(mutils::type_name<type_holder<T,str...> >()), mutils::type_name<type_holder<T,str...> >(),)
-						 t.t,t.curr_pos,t.bound
+						 t.t,t.curr_pos,t.bound whendebug(, mutils::type_name<type_holder<T,str...> >())
 				);
 		}
 
@@ -19,19 +19,32 @@ namespace myria{ namespace mtl{
 #ifndef NDEBUG
 			DECT(mutils::bytes_size(std::string{})) remote_name_size;
 			c.receive(remote_name_size);
-			auto remote_name = c.receive<std::string>(dsm,remote_name_size);
 			auto my_name = mutils::type_name<type_holder<T,str...> >();
-			if (*remote_name != my_name){
-				std::cout << *remote_name << std::endl;
-				std::cout << std::endl;
-				std::cout << my_name << std::endl;
+			{
+				auto remote_name = c.receive<std::string>(dsm,remote_name_size);
+				if (*remote_name != my_name){
+					std::cout << *remote_name << std::endl;
+					std::cout << std::endl;
+					std::cout << my_name << std::endl;
+				}
+				assert((*remote_name == my_name));
 			}
-			assert((*remote_name == my_name));
 #endif
 			auto t_p = mutils::from_bytes_noalloc<DECT(t.t)>(dsm,c.raw_buf());
 			t.t = *t_p;
 			c.mark_used(mutils::bytes_size(*t_p));
 			c.receive(t.curr_pos,t.bound);
+#ifndef NDEBUG
+			{
+				auto remote_name = c.receive<std::string>(dsm,remote_name_size);
+				if (*remote_name != my_name){
+					std::cout << *remote_name << std::endl;
+					std::cout << std::endl;
+					std::cout << my_name << std::endl;
+				}
+				assert((*remote_name == my_name));
+			}
+#endif
 		}
 		
 		template<typename T, char... str>
