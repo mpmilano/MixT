@@ -13,7 +13,11 @@ namespace myria{ namespace mtl{
 			const auto name = mutils::type_name<type_holder<T,str...> >();
 			c.send_data(name.size() + 1, name.c_str());
 #endif
-			c.send(t.t,t.curr_pos,t.bound);
+			c.send(t.t);
+#ifndef NDEBUG
+			c.send_data(name.size() + 1, name.c_str());
+#endif
+			c.send(t.curr_pos,t.bound);
 #ifndef NDEBUG
 			c.send_data(name.size() + 1, name.c_str());
 #endif
@@ -35,6 +39,20 @@ namespace myria{ namespace mtl{
 			}
 #endif
 			auto t_p = mutils::from_bytes_noalloc<DECT(t.t)>(dsm,c.raw_buf());
+			
+#ifndef NDEBUG
+			{
+				char remote_name[my_name.size() + 1];
+				c.receive_data(my_name.size() + 1, remote_name);
+				if (remote_name != my_name){
+					std::cout << remote_name << std::endl;
+					std::cout << std::endl;
+					std::cout << my_name << std::endl;
+				}
+				assert((remote_name == my_name));
+			}
+#endif
+			
 			t.t = *t_p;
 			c.mark_used(mutils::bytes_size(*t_p));
 			c.receive(t.curr_pos,t.bound);
