@@ -3,6 +3,7 @@
 #include "mutils-networking/local_connection.hpp"
 #include "mutils-networking/additional_serialization_support.hpp"
 #include "mtl/builtins.hpp"
+#include "mtl/environments.hpp"
 
 namespace myria{ namespace mtl{
 
@@ -10,7 +11,8 @@ namespace myria{ namespace mtl{
 		template<typename T, char... str>
 		void serialize_holder(const type_holder<T,str...>& t, mutils::local_connection &c){
 #ifndef NDEBUG
-			const auto name = mutils::type_name<type_holder<T,str...> >();
+			using namespace mutils;
+			const auto name = typename_str<DECT(t)>::f();
 			c.send_data(name.size() + 1, name.c_str());
 #endif
 			c.send(t.t);
@@ -26,7 +28,8 @@ namespace myria{ namespace mtl{
 		template<typename T, typename DSM, char... str>
 		void receive_holder(DSM *dsm, type_holder<T,str...>& t, mutils::local_connection &c){
 #ifndef NDEBUG
-			auto my_name = mutils::type_name<type_holder<T,str...> >();
+			using namespace mutils;
+			const auto my_name = typename_str<DECT(t)>::f();
 			{
 				char remote_name[my_name.size() + 1];
 				c.receive_data(my_name.size() + 1, remote_name);

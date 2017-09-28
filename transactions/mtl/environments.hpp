@@ -249,6 +249,16 @@ struct type_holder
 
   using value = value_holder<T, str...>;
 };
+}} namespace mutils{
+		 template<typename T, char... str>
+		 struct typename_str<myria::mtl::type_holder<T,str...>>{
+			 static std::string f(){
+				 std::stringstream ss;
+				 ss << "type_holder<" << typename_str<T>::f() << "," << String<str...>{};
+				 return ss.str();
+			 }
+		 };
+} namespace myria { namespace mtl{
 
 template <typename>
 struct is_type_holder;
