@@ -42,6 +42,8 @@ namespace myria{ namespace mtl{
 			}
 #endif
 			auto t_p = mutils::from_bytes_noalloc<DECT(t.t)>(dsm,c.raw_buf());
+			t.t = *t_p;
+			c.mark_used(mutils::bytes_size(*t_p));
 			
 #ifndef NDEBUG
 			{
@@ -55,9 +57,6 @@ namespace myria{ namespace mtl{
 				assert((remote_name == my_name));
 			}
 #endif
-			
-			t.t = *t_p;
-			c.mark_used(mutils::bytes_size(*t_p));
 			c.receive(t.curr_pos,t.bound);
 #ifndef NDEBUG
 			{
