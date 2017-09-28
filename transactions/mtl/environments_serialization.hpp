@@ -9,25 +9,29 @@ namespace myria{ namespace mtl{
 		
 		template<typename T, char... str>
 		void serialize_holder(const type_holder<T,str...>& t, mutils::local_connection &c){
-			c.send(whendebug(mutils::bytes_size(mutils::type_name<type_holder<T,str...> >()), mutils::type_name<type_holder<T,str...> >(),)
-						 t.t,t.curr_pos,t.bound whendebug(, mutils::type_name<type_holder<T,str...> >())
-				);
+#ifndef NDEBUG
+			const auto name = mutils::type_name<type_holder<T,str...> >();
+			c.send_data(name.size() + 1, name.c_str());
+#endif
+			c.send(t.t,t.curr_pos,t.bound);
+#ifndef NDEBUG
+			c.send_data(name.size() + 1, name.c_str());
+#endif
 		}
 
 		template<typename T, typename DSM, char... str>
 		void receive_holder(DSM *dsm, type_holder<T,str...>& t, mutils::local_connection &c){
 #ifndef NDEBUG
-			DECT(mutils::bytes_size(std::string{})) remote_name_size;
-			c.receive(remote_name_size);
 			auto my_name = mutils::type_name<type_holder<T,str...> >();
 			{
-				auto remote_name = c.receive<std::string>(dsm,remote_name_size);
-				if (*remote_name != my_name){
-					std::cout << *remote_name << std::endl;
+				char remote_name[my_name.size() + 1];
+				c.receive_data(my_name.size() + 1, remote_name);
+				if (remote_name != my_name){
+					std::cout << remote_name << std::endl;
 					std::cout << std::endl;
 					std::cout << my_name << std::endl;
 				}
-				assert((*remote_name == my_name));
+				assert((remote_name == my_name));
 			}
 #endif
 			auto t_p = mutils::from_bytes_noalloc<DECT(t.t)>(dsm,c.raw_buf());
@@ -36,13 +40,14 @@ namespace myria{ namespace mtl{
 			c.receive(t.curr_pos,t.bound);
 #ifndef NDEBUG
 			{
-				auto remote_name = c.receive<std::string>(dsm,remote_name_size);
-				if (*remote_name != my_name){
-					std::cout << *remote_name << std::endl;
+				char remote_name[my_name.size() + 1];
+				c.receive_data(my_name.size() + 1, remote_name);
+				if (remote_name != my_name){
+					std::cout << remote_name << std::endl;
 					std::cout << std::endl;
 					std::cout << my_name << std::endl;
 				}
-				assert((*remote_name == my_name));
+				assert((remote_name == my_name));
 			}
 #endif
 		}
