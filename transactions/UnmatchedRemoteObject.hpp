@@ -57,8 +57,9 @@ namespace myria{
 			static_assert(std::is_same<T2,T>::value);
 			const std::size_t stored_id;
 			std::vector<char> bytes;
-			UnmatchedRemoteObject(char const * const v, std::size_t size, std::size_t id)
-				:stored_id(id),bytes{v, v + size}{}
+			const Name _name;
+			UnmatchedRemoteObject(char const * const v, std::size_t size, std::size_t id, Name _name)
+				:stored_id(id),bytes{v, v + size},_name(_name){}
 			
 			const UnmatchedDataStore& store() const{
 				return UnmatchedDataStore<l,T,ops...>::inst();
@@ -67,8 +68,7 @@ namespace myria{
 				return UnmatchedDataStore<l,T,ops...>::inst();
 			}
 			Name name() const{
-				assert(false && "Cannot call unmatched things");
-				throw UnmatchedUseException{};
+				return _name;
 			}
 			
 			const std::array<long long,NUM_CAUSAL_GROUPS>& timestamp() const{
@@ -127,10 +127,10 @@ namespace myria{
 	};
 
 	template<typename l, typename T, typename... SupportedOperations>
-	std::unique_ptr<Handle<l,T,SupportedOperations...> > make_unmatched(char const * const v, std::size_t size, std::size_t id){
+	std::unique_ptr<Handle<l,T,SupportedOperations...> > make_unmatched(char const * const v, std::size_t size, std::size_t id, std::size_t name){
 		using Handle = ::myria::Handle<l,T,SupportedOperations...>;
 		using UnmatchedStore = UnmatchedDataStore<l,T,SupportedOperations...>;
-		return std::unique_ptr<Handle>{new Handle{std::make_shared<typename UnmatchedStore::template UnmatchedRemoteObject<T> >(v,size,id),
+		return std::unique_ptr<Handle>{new Handle{std::make_shared<typename UnmatchedStore::template UnmatchedRemoteObject<T> >(v,size,id,name),
 					UnmatchedStore::inst() }};
 	}
 	

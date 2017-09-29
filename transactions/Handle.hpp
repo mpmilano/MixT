@@ -34,7 +34,7 @@ namespace myria{
   };
 
   template<typename l, typename T, typename... SupportedOperations>
-	std::unique_ptr<Handle<l,T,SupportedOperations...> > make_unmatched(char const * const v, std::size_t size, std::size_t id);
+	std::unique_ptr<Handle<l,T,SupportedOperations...> > make_unmatched(char const * const v, std::size_t size, std::size_t id, std::size_t name);
 	
   template<typename l, typename T, typename... SupportedOperations>
   struct Handle : public mutils::ByteRepresentable, public GenericHandle<l>, public LabelFreeHandle<T>, public SupportedOperations::template SupportsOn<Handle<l,T,SupportedOperations...> >... {
@@ -98,7 +98,7 @@ namespace myria{
 		std::size_t to_bytes(char* v) const {
       //for serialization
       if (_ro) {
-				auto accum = mutils::to_bytes_v(v,true,_ro->bytes_size());
+				auto accum = mutils::to_bytes_v(v,true,_ro->bytes_size(), name());
 				auto _ret = accum + _ro->inherit_to_bytes(v + accum);
 #ifndef NDEBUG
 				auto ret = _ret + mutils::to_bytes(debug_nonce(), v + _ret);
@@ -130,7 +130,7 @@ namespace myria{
 
 		std::size_t bytes_size() const {
       return whendebug(mutils::bytes_size(debug_nonce()) + )
-				sizeof(bool) + (_ro ? _ro->inherit_bytes_size() + sizeof(std::size_t) : 0);
+				sizeof(bool) + (_ro ? _ro->inherit_bytes_size() + sizeof(std::size_t) + sizeof(Name) : 0);
     }
 
 		template<typename... ctxs>
@@ -140,21 +140,23 @@ namespace myria{
 			bool b = v[0];
 			if (b){
 				std::size_t size = ((std::size_t*) (v + 1))[0];
+				static_assert(sizeof(std::size_t) == sizeof(Name));
+				Name name = ((std::size_t*) (v + 1))[1];
 				assert(size < 4092);
 #ifndef NDEBUG
-				auto *post_obj = v + 1 + 2*sizeof(std::size_t) + size;
+				auto *post_obj = v + 1 + 3*sizeof(std::size_t) + size;
 				assert(post_obj == debug_nonce());
 #endif
 				try {
 					if constexpr (DECT(*rdc)::template contains_mgr<mutils::InheritManager>()){
 							//auto &inherit = rdc->template mgr<mutils::InheritManager>();
 						//assert((DECT(inherit)::template contains_possible_match<RemoteObject<l,T> >()));
-						auto ret_ro = mutils::inherit_from_bytes<RemoteObject<l,T> >(rdc, v + sizeof(bool) + sizeof(std::size_t) );
+						auto ret_ro = mutils::inherit_from_bytes<RemoteObject<l,T> >(rdc, v + sizeof(bool) + 2*sizeof(std::size_t) );
 						assert(ret_ro);
 						auto ret_ro_p = ret_ro.release();
 						auto ret = std::unique_ptr<Handle>{dynamic_cast<Handle*>(ret_ro_p->wrapInHandle(std::shared_ptr<DECT(*ret_ro_p)>{ret_ro_p}).release())};
 						assert(ret);
-						assert(mutils::bytes_size(*ret) == sizeof(bool) + 2*sizeof(std::size_t) + size + mutils::bytes_size(debug_nonce()));
+						assert(mutils::bytes_size(*ret) == sizeof(bool) + 3*sizeof(std::size_t) + size + mutils::bytes_size(debug_nonce()));
 						return ret;
 					} else {
 						assert((DECT(*rdc)::template contains_mgr<mutils::InheritManager>()));
@@ -164,8 +166,8 @@ namespace myria{
 				catch (const mutils::InheritMissException& ime){
 					//falthrough
 					//assert((false &&  "should never happen on the client"));
-					auto ret = make_unmatched<l,T,SupportedOperations...>(ime.buffer_after_id, size, ime.id);
-					assert(mutils::bytes_size(*ret) == sizeof(bool) + 2*sizeof(std::size_t) + size + mutils::bytes_size(debug_nonce()));
+					auto ret = make_unmatched<l,T,SupportedOperations...>(ime.buffer_after_id, size, ime.id, name);
+					assert(mutils::bytes_size(*ret) == sizeof(bool) + 3*sizeof(std::size_t) + size + mutils::bytes_size(debug_nonce()));
 					return ret;
 				}
 			}
