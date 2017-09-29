@@ -48,10 +48,11 @@ namespace server {
                                                   selected_txn, store, trk, dsm, c, data));
 				
         if (!found_match){
+					whendebug(c.get_log_file() << "Error: no match found. Selected txn id was " << selected_txn << std::endl);
 					std::string failure_str = std::string{"Error: no match found.  Selected txn id was "}
 					+ std::to_string(selected_txn);
 					c.send(false,mutils::bytes_size(failure_str),failure_str);
-					assert(false);
+					assert(false && "We did not find a match for this transaction.");
 					struct fatal{}; throw fatal{};
 				}
 

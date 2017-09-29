@@ -39,12 +39,14 @@ namespace runnable_transaction {
   std::size_t txn_nonce{ mutils::int_rand() };
   logfile << "sending id " << phase::txnID() << " with nonce " << txn_nonce << " for phase " << phase{} << std::endl;
   mutils::connection& mlc = lc;
+#ifndef NDEBUG
 	std::string phase_str;
 	{
 		std::stringstream ss;
 		ss << phase{};
 		phase_str = ss.str();
 	}
+#endif
 	mlc.send(txn_nonce,mutils::bytes_size(phase_str));
 	whendebug(auto phase_str_starts_at = lc.data.size());
 	whendebug(auto sent =) mlc.send(phase_str);
