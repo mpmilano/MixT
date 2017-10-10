@@ -52,7 +52,7 @@ namespace server {
 #ifndef NDEBUG
 					auto &lf = c.get_log_file();
 					lf << "Transactions we have here:" << std::endl;
-					(..., lf << phases::phase_strings().first << std::endl, lf << phases::phase_strings().second << std::endl);
+					(..., (lf << phases::phase_strings().first << std::endl, lf << phases::phase_strings().second << std::endl));
 #endif
 					std::string failure_str = std::string{"Error: no match found.  Selected txn id was "}
 					+ std::to_string(selected_txn);
