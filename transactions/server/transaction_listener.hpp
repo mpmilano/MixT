@@ -138,6 +138,16 @@ struct transaction_listener;
 		else if (id == tracked_phase::txnID()) return run_phase<DeserializationManager,tracked_phase, tracked_store>(id,ds,trk,dsm,c,_data);
 		else return false;
   }
+
+#ifndef NDEBUG
+		static std::pair<std::string,std::string> phase_strings(){
+			std::stringstream s1;
+			std::stringstream s2;
+			s1 << normal_phase{};
+			s2 << tracked_phase{};
+			return std::make_pair(s1.str(),s2.str());
+		}
+#endif
 };
 
 	template <typename DSM, typename transaction, typename phase>
