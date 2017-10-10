@@ -30,12 +30,16 @@ template<typename l, typename r> struct transactions {
 	using mailing_list_post_new_message =
 #include "mailing_list_post_new_message.cpp.precompiled"
 		;
+	using mailing_list_create_group =
+#include "mailing_list_create_group.cpp.precompiled"
+		;
 	template<typename Store>
 	using Relay = RelayForTransactions<Store, RelayDSM, incr_trans, read_trans,
 																		 mailing_list_add_new_user,
 																		 mailing_list_create_user,
 																		 mailing_list_download_inbox,
-																		 mailing_list_post_new_message>;
+																		 mailing_list_post_new_message,
+																		 mailing_list_create_group>;
 };
 
 
