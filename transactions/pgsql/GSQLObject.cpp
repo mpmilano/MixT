@@ -1,6 +1,7 @@
 //oh look, a source file! We remember those.
 #include <pqxx/pqxx>
 #include <arpa/inet.h>
+#include <algorithm>
 #include "pgsql/SQLStore_impl.hpp"
 #include "pgsql/SQLTransaction.hpp"
 #include "pgsql/SQLCommands.hpp"
@@ -44,7 +45,7 @@ namespace myria{ namespace pgsql {
 
 				SQLStore_impl::GSQLObject::GSQLObject(SQLStore_impl &ss, Table t, Name id, int size)
 			:i(new Internals{t,id,size,ss,nullptr}){
-			i->buf1 = (char*) malloc(size);
+					i->buf1 = (char*) malloc(std::max(2048,size));
 		}
 
 //existing object
@@ -58,7 +59,7 @@ namespace myria{ namespace pgsql {
 //"named" object
 		SQLStore_impl::GSQLObject::GSQLObject(SQLTransaction* trans, SQLStore_impl& ss, Table t, Name id, const vector<char> &c)
 			:i{new Internals{t,id,(int)c.size(),ss,
-					(char*) malloc(c.size())}}{
+					(char*) malloc(std::max(2048,c.size()))}}{
 
 			{
 				//assert(!isValid(trans));
@@ -167,7 +168,7 @@ namespace myria{ namespace pgsql {
 					binarystring bs(r[0][start_offset]);
 					i->size = bs.size();
 					assert(i->size >= 1);
-					if (!i->buf1) i->buf1 = (char*) malloc(i->size);
+					if (!i->buf1) i->buf1 = (char*) malloc(std::max(2048,i->size));
 					memcpy(i->buf1,bs.data(),i->size);
 				}
 				else if (i->table == Table::IntStore) {
@@ -204,10 +205,10 @@ namespace myria{ namespace pgsql {
 
 		void SQLStore_impl::GSQLObject::resize_buffer(std::size_t newsize){
 			if(!i->buf1) {
-				i->buf1 = (char*) malloc(newsize);
+				i->buf1 = (char*) malloc(std::max(2048,newsize));
 				i->size = newsize;
 			}
-			else assert(newsize == i->size);
+			else assert(newsize <= i->size || newsize <= 2048);
 		}
 
 		char* SQLStore_impl::GSQLObject::obj_buffer() {
