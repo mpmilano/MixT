@@ -125,6 +125,8 @@ namespace myria { namespace pgsql {
 					this->t = std::make_shared<T>(t);
 					gso.resize_buffer(mutils::bytes_size(t));
 					mutils::to_bytes(t,gso.obj_buffer());
+					whendebug(auto name = gso.name());
+					whendebug((void) name);
 					gso.save(tc);
 				}
 
