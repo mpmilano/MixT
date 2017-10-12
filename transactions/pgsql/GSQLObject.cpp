@@ -118,6 +118,15 @@ namespace myria{ namespace pgsql {
 #define upd_23425(x...) cmds::update_data(i->_store.level,*trans,i->table,SQLConnection::repl_group,i->key,i->_store.clock,x)
 	
 			if (i->table == Table::BlobStore){
+#ifndef NDEBUG
+				if (i->size < 1024/2){
+					unsigned long long* nullspace = (unsigned long long*) (c + i->size);
+					const std::size_t end_of_null_space{(1024 - i->size) / sizeof(nullspace) - 1};
+					for (auto i = 0u; i < end_of_null_space; ++i){
+						assert(nullspace[i] == 0);
+					}
+				}
+#endif
 				binarystring blob(c,i->size);
                                 auto res = upd_23425(blob);
                                 if (i->_store.level == Level::strong){
