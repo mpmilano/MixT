@@ -224,7 +224,7 @@ namespace myria{ namespace pgsql {
 				assert(newsize <= i->size || newsize <= 2048);
 			}
 			//wanna make the everything-after-is-zero assert in store() work.
-			whendebug(if (buf_size > new_size) bzero(i->buf1 + newsize, buf_size - newsize));
+			whendebug(if (buf_size > newsize) bzero(i->buf1 + newsize, buf_size - newsize));
 			i->size = newsize;
 		}
 
