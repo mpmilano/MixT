@@ -217,10 +217,12 @@ namespace myria{ namespace pgsql {
 		void SQLStore_impl::GSQLObject::resize_buffer(std::size_t newsize){
 			if(!i->buf1) {
 				i->buf1 = (char*) malloc(std::max<std::size_t>(2048,newsize));
-				i->size = newsize;
 				whendebug(bzero(i->buf1,std::max<std::size_t>(2048,i->size)));
 			}
-			else assert(newsize <= i->size || newsize <= 2048);
+			else {
+				assert(newsize <= i->size || newsize <= 2048);
+			}
+			i->size = newsize;
 		}
 
 		char* SQLStore_impl::GSQLObject::obj_buffer() {
