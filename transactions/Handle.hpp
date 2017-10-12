@@ -144,6 +144,7 @@ namespace myria{
 				Name name = ((std::size_t*) (v + 1))[1];
 				assert(size < 4092);
 #ifndef NDEBUG
+				//Size: my size record, plus my name, plus RO's size record + size of RO's record.
 				auto *post_obj = v + 1 + 3*sizeof(std::size_t) + size;
 				assert(post_obj == debug_nonce());
 #endif

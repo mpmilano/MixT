@@ -99,7 +99,9 @@ namespace myria { namespace pgsql {
 				template<typename... ctxs>
 				std::shared_ptr<const T> get(mutils::DeserializationManager<ctxs...>* tds, mtl::StoreContext<label>* _tc) {
 					SQLContext *sctx = (SQLContext*) _tc;
+					assert(_tc);
 					SQLTransaction *tc = (_tc ? sctx->i.get() : nullptr);
+					assert(tc);
 					auto *res = gso.load(tc);
 					assert(res);
 					t.reset(mutils::from_bytes<T>(tds,res).release());

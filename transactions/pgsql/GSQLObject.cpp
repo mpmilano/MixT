@@ -46,6 +46,7 @@ namespace myria{ namespace pgsql {
 				SQLStore_impl::GSQLObject::GSQLObject(SQLStore_impl &ss, Table t, Name id, int size)
 			:i(new Internals{t,id,size,ss,nullptr}){
 					i->buf1 = (char*) malloc(std::max<std::size_t>(2048,size));
+					whendebug(bzero(i->buf1,std::max<std::size_t>(2048,i->size)));
 		}
 
 //existing object
@@ -60,7 +61,7 @@ namespace myria{ namespace pgsql {
 		SQLStore_impl::GSQLObject::GSQLObject(SQLTransaction* trans, SQLStore_impl& ss, Table t, Name id, const vector<char> &c)
 			:i{new Internals{t,id,(int)c.size(),ss,
 					(char*) malloc(std::max<std::size_t>(2048,c.size()))}}{
-
+			whendebug(bzero(i->buf1,std::max<std::size_t>(2048,i->size)));
 			{
 				//assert(!isValid(trans));
 
@@ -166,9 +167,10 @@ namespace myria{ namespace pgsql {
 				else start_offset = process_version_update(r,i->vers);
 				if (i->table == Table::BlobStore){
 					binarystring bs(r[0][start_offset]);
-					i->size = bs.size();
+					resize_buffer(bs.size());
 					assert(i->size >= 1);
 					if (!i->buf1) i->buf1 = (char*) malloc(std::max<std::size_t>(2048,i->size));
+					whendebug(bzero(i->buf1,std::max<std::size_t>(2048,i->size)));
 					memcpy(i->buf1,bs.data(),i->size);
 				}
 				else if (i->table == Table::IntStore) {
@@ -207,6 +209,7 @@ namespace myria{ namespace pgsql {
 			if(!i->buf1) {
 				i->buf1 = (char*) malloc(std::max<std::size_t>(2048,newsize));
 				i->size = newsize;
+				whendebug(bzero(i->buf1,std::max<std::size_t>(2048,i->size)));
 			}
 			else assert(newsize <= i->size || newsize <= 2048);
 		}
