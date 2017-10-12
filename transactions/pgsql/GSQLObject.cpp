@@ -215,13 +215,16 @@ namespace myria{ namespace pgsql {
 		}
 
 		void SQLStore_impl::GSQLObject::resize_buffer(std::size_t newsize){
+			const auto buf_size = std::max<std::size_t>(2048,newsize);
 			if(!i->buf1) {
-				i->buf1 = (char*) malloc(std::max<std::size_t>(2048,newsize));
-				whendebug(bzero(i->buf1,std::max<std::size_t>(2048,i->size)));
+				i->buf1 = (char*) malloc(buf_size);
+				whendebug(bzero(i->buf1,buf_size));
 			}
 			else {
 				assert(newsize <= i->size || newsize <= 2048);
 			}
+			//wanna make the everything-after-is-zero assert in store() work.
+			whendebug(if (buf_size > new_size) bzero(i->buf1 + newsize, buf_size - newsize));
 			i->size = newsize;
 		}
 
