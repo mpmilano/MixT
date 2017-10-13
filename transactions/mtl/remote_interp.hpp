@@ -23,17 +23,6 @@ namespace runnable_transaction {
 	//NOTE TO SELF: USE THE TOMBSTONE TRACKER TO FIND ALL THE LEVELS WE CARE ABOUT.
 	//CALL THE JUST-WRITE-A-TOMBSTONE TRANSACTION FROM THERE TOO.
 #ifndef NDEBUG
-	{
-		static bool b = false;
-		static std::mutex print_mut;
-		if (!b){
-			std::unique_lock<DECT(print_mut)> l{print_mut};
-			if (!b){
-				std::cout << phase{} << std::endl;
-				b = true;
-			}
-		}
-	}
   auto& logfile = c.c.get_log_file();
   ;
   std::size_t txn_nonce{ mutils::int_rand() };

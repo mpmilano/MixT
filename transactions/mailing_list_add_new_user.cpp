@@ -23,7 +23,6 @@ namespace examples{
 			mutable_alias.next = curr_user.new(new_user_node)
 			)::WITH(newbie,users);
 #endif
-		std::cout << txn << std::endl;
 		using connections = typename DECT(ct.trk)::connection_references;
 		auto strong_connection = ct.get_relay<Level::strong>().lock();
 		auto causal_connection = ct.get_relay<Level::causal>().lock();

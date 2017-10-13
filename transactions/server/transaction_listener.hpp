@@ -97,6 +97,7 @@ struct transaction_listener;
 		  mutils::local_connection lc whendebug({logfile});
 			mtl::send_store_values<typename phase::label>(provided, s, lc);
 			trk.updateClock();
+			whendebug(lc.dump_bytes());
 			c.send(transaction_successful, trk.min_clock(), trk.recent_clock(), trk.all_encountered_tombstones(), lc.data);
 		} else
 			c.send(false whendebug(, mutils::bytes_size(exn_text), exn_text));

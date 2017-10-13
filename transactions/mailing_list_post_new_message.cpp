@@ -34,7 +34,6 @@ namespace examples{
 #endif
 		using namespace myria::mtl::typecheck_phase;
 		using namespace myria::mtl::split_phase;
-		std::cout << txn << std::endl;
 		using connections = typename DECT(ct.trk)::connection_references;
 		auto strong_connection = ct.get_relay<Level::strong>().lock();
 		auto causal_connection = ct.get_relay<Level::causal>().lock();
