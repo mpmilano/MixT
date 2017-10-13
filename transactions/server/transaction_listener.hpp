@@ -98,6 +98,24 @@ struct transaction_listener;
 			mtl::send_store_values<typename phase::label>(provided, s, lc);
 			trk.updateClock();
 			whendebug(lc.dump_bytes());
+#ifndef NDEBUG
+			//this is *entirely* to try and force a conditional move on uninitialized data.
+			for (auto &c : lc.data){
+				if (c){
+					c = *(char*)hidden_identity(&c);
+				}
+			}
+			{
+				char force_buf[mutils::bytes_size(lc.data)];
+				bzero(force_buf, mutils::bytes_size(lc.data));
+				mutils::to_bytes(lc.data,force_buf);
+				for (auto &c : force_buf){
+					if (c){
+						c = *(char*)hidden_identity(&c);
+					}
+				}
+			}
+#endif
 			c.send(transaction_successful, trk.min_clock(), trk.recent_clock(), trk.all_encountered_tombstones(), lc.data);
 		} else
 			c.send(false whendebug(, mutils::bytes_size(exn_text), exn_text));
