@@ -11,18 +11,24 @@ namespace myria{ namespace mtl{
 		template<typename T, char... str>
 		void serialize_holder(const type_holder<T,str...>& t, mutils::local_connection &c){
 #ifndef NDEBUG
+			whendebug(c.dump_bytes());
 			using namespace mutils;
 			const auto name = typename_str<DECT(t)>::f();
 			c.send_data(name.size() + 1, name.c_str());
 #endif
+			whendebug(c.dump_bytes());
 			c.send(t.t);
+			whendebug(c.dump_bytes());
 #ifndef NDEBUG
 			c.send_data(name.size() + 1, name.c_str());
 #endif
+			whendebug(c.dump_bytes());
 			c.send(t.curr_pos,t.bound);
+			whendebug(c.dump_bytes());
 #ifndef NDEBUG
 			c.send_data(name.size() + 1, name.c_str());
 #endif
+			whendebug(c.dump_bytes());
 		}
 
 		template<typename T, typename DSM, char... str>
@@ -74,9 +80,11 @@ namespace myria{ namespace mtl{
 		
 		template<typename T, char... str>
 		void serialize_holder(const value_holder<T,str...>& t, mutils::local_connection &c){
+			whendebug(c.dump_bytes());
 			c.send(whendebug(mutils::bytes_size(mutils::type_name<value_holder<T,str...> >()), mutils::type_name<value_holder<T,str...> >(),)
 						 t.t
 				);
+			whendebug(c.dump_bytes());
 		}
 		
 		template<typename T, typename DSM, char... str>
@@ -101,32 +109,47 @@ namespace myria{ namespace mtl{
 
 		template<typename T, char... str>
 		void serialize_holder(const remote_holder<T,str...>& t, mutils::local_connection &c){
+			whendebug(c.dump_bytes());
 			c.send(whendebug(mutils::bytes_size(mutils::type_name<remote_holder<T,str...> >()), mutils::type_name<remote_holder<T,str...> >(),)
 						 t.handle, t.curr_pos);
+			whendebug(c.dump_bytes());
 		}
 		
 		template<typename T>
 		void serialize_holder(const remote_map_holder<T>& t, mutils::local_connection &c){
+			whendebug(c.dump_bytes());
 #ifndef NDEBUG
+			whendebug(c.dump_bytes());
 			c.send(t.is_initialized);
+			whendebug(c.dump_bytes());
 			auto map_name = mutils::typename_str<T>::f();
 			char map_name_cstr[map_name.size() + 1];
 			memcpy(map_name_cstr, map_name.c_str(),map_name.size());
 			map_name_cstr[map_name.size()] = 0;
 			c.get_log_file() << "This remote map holds " << map_name << std::endl;
+			whendebug(c.dump_bytes());
 			c.send_data(map_name.size() + 1,map_name_cstr);
+			whendebug(c.dump_bytes());
 			c.get_log_file() << "Sending " << t.super.size() << " entries in this remote map" << std::endl;
 #endif
+			whendebug(c.dump_bytes());
 			c.send((std::size_t)t.super.size());
+			whendebug(c.dump_bytes());
 			for (const auto &p : t.super){
+				whendebug(c.dump_bytes());
 				c.send(p.first);
+				whendebug(c.dump_bytes());
 				serialize_holder(p.second, c);
+				whendebug(c.dump_bytes());
 #ifndef NDEBUG
 				const std::size_t simple_nonce{141341313};
+				whendebug(c.dump_bytes());
 				c.send(simple_nonce);
+				whendebug(c.dump_bytes());
 #endif
 			}
 			whendebug(c.send_data(map_name.size() + 1,map_name_cstr));
+			whendebug(c.dump_bytes());
 		}
 		
 		template<typename T, typename... ctx>
@@ -208,7 +231,9 @@ namespace myria{ namespace mtl{
 														std::enable_if_t<!builtins::is_builtin<mutils::String<str...>>::value>* = nullptr){
 			using holder = typename store::template find_holder_by_name<DECT(holder_name)>;
 			holder& h = s;
+			whendebug(c.dump_bytes());
 			serialize_holder(h,c);
+			whendebug(c.dump_bytes());
 			return true;
 		}
 		
