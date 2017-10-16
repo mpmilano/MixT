@@ -215,19 +215,25 @@ namespace myria{ namespace mtl{
 		template<typename label, typename store, typename... requires>
 		void send_store_values(const mutils::typeset<requires...>&, store &s, mutils::local_connection &c){
 #ifndef NDEBUG
+			whendebug(c.dump_bytes());
 			std::string nonce = mutils::type_name<mutils::typeset<requires...> >();
 			c.send_data(nonce.size() + 1, nonce.c_str());
 			c.get_log_file() << "about to send remote maps" << std::endl;
 #endif
+			whendebug(c.dump_bytes());
 			send_remote_maps<label>(s.as_virtual_holder(),c);
+			whendebug(c.dump_bytes());
 #ifndef NDEBUG
 			c.get_log_file() << "remote maps sent" << std::endl;
 			c.send_data(nonce.size() + 1, nonce.c_str());
 			c.get_log_file() << "now resending nonce: " << nonce << std::endl<< std::endl;
 #endif
+			whendebug(c.dump_bytes());
 			auto worked = (send_holder_values(typename requires::name{}, s, c) && ... && true);
+			whendebug(c.dump_bytes());
 			assert(worked);
 			(void)worked;
+			whendebug(c.dump_bytes());
 		}
 		
 		template<typename store, typename DSM, char... str>
