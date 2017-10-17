@@ -165,7 +165,7 @@ namespace myria { namespace pgsql {
 					(std::is_same<T,int>::value ? Table::IntStore : Table::BlobStore);
 				std::size_t size = mutils::bytes_size(init);
 				std::vector<char> v(size);
-				whendebug(std::size_t tb_size) = mutils::to_bytes(init,v.data());
+				whendebug(std::size_t tb_size = ) mutils::to_bytes(init,v.data());
 				assert(mutils::bytes_size(init) == size);
 				assert(size == tb_size);
 				GSQLObject gso(ctx->i.get(),ss,t,name,v);

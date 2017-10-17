@@ -217,8 +217,8 @@ namespace myria{ namespace mtl{
 
 		template<typename label, typename... T>
 		void send_remote_maps(remote_map_aggregator<T...>& a, mutils::local_connection &c){
-			constexpr std::size_t number_expected = ((std::is_same<typename T::label, label>::value ? 1 : 0) + ... + 0);
 #ifndef NDEBUG
+			constexpr std::size_t number_expected = ((std::is_same<typename T::label, label>::value ? 1 : 0) + ... + 0);
 			c.get_log_file() << "Sending " << number_expected << " remote maps" << std::endl;
 			c.send(number_expected);
 #endif
@@ -272,8 +272,8 @@ namespace myria{ namespace mtl{
 
 		template<typename label, typename DSM, typename... T>
 		void receive_remote_maps(DSM* dsm, remote_map_aggregator<T...>& a, mutils::local_connection &c){
-			constexpr auto number_expected = ((std::is_same<typename T::label, label>::value ? 1 : 0) + ... + 0);
 #ifndef NDEBUG
+			constexpr auto number_expected = ((std::is_same<typename T::label, label>::value ? 1 : 0) + ... + 0);
 			c.get_log_file() << "Expecting " << number_expected << " remote maps" << std::endl;
 			c.get_log_file() << "Remote expects to send: " << *c.receive<std::size_t>(dsm,sizeof(std::size_t)) << " remote maps" << std::endl;
 #endif
