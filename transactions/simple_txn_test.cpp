@@ -5,7 +5,9 @@
 #include "test_utils.hpp"
 #include "configuration_params.hpp"
 
-using test = ::myria::test<mutils::mismatch>;
+struct empty_test { template<typename... T> empty_test(const T&...){} };
+
+using test = ::myria::test<empty_test>;
 
 namespace myria {
 
@@ -19,7 +21,7 @@ namespace myria {
 		using namespace chrono;
 		using namespace mutils;
 		
-		using client = ::myria::client<mutils::mismatch>;
+		using client = ::myria::client<empty_test>;
 
 template <Level l> void txn_read(client &c) {
 	using namespace tracker;
