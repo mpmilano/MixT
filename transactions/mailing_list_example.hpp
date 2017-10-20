@@ -67,14 +67,14 @@ using Inbox = typename inbox_str::Hndl;
 	group create_global_group(client<mailing_list_state>& ct, groups g);
 
 	struct mailing_list_state{
-		static groups all_groups(client<mailing_list_state>&);
+		groups groups_linked_list;
 		std::vector<group> cached_groups;
 		std::vector<user_hndl> my_users;
 		group& pick_group(client<mailing_list_state>&);
 		user_hndl& pick_user(client<mailing_list_state>&);
 		void create_user(client<mailing_list_state>&);
 		void create_group(client<mailing_list_state>&);
-		mailing_list_state();
+		mailing_list_state(client<mailing_list_state>&);
 	};
 
 }

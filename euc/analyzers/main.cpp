@@ -69,13 +69,13 @@ int main(int argc, char **argv) {
 		if (bin_size)	--bin_size;
 		if (bin_size == 0 && i == results.size()-1) break;
 		else if (bin_size == 0) {
-			std::cout << "outlier: ";
-			results[i].print(now,std::cout);
+			//std::cout << "outlier: ";
+			//results[i].print(now,std::cout);
 			continue;
 		}
 		assert(i < results.size());
 		if (i + bin_size >= results.size()){
-			std::cout << i << " " << bin_size << " " << results.size() << std::endl;
+			//std::cout << i << " " << bin_size << " " << results.size() << std::endl;
 		}
 		assert(i + bin_size < results.size());
 		assert((results[bin_size + i].stop_time - results[i].stop_time).count() > 0);

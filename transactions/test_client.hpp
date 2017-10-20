@@ -31,7 +31,7 @@ struct client{
 	WeakConnection strong_relay;
 	WeakConnection causal_relay;
 	test &t;
-	Internals i;
+		Internals i{*this};
   tracker::ClientTracker<Label<top>,Label<pgsql::strong>, Label<pgsql::causal>, Label<bottom> > trk;
 
 	template<typename s, typename c>
