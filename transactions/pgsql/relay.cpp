@@ -18,6 +18,8 @@ using RelayDSM = ::mutils::DeserializationManager<SQLStore<Level::STORE_LEVEL >,
 template<typename l, typename r> struct transactions {
   using incr_trans = l;
   using read_trans = r;
+	using StrongStore = examples::StrongStore;
+	using CausalStore = examples::CausalStore;
 	using mailing_list_add_new_user =
 #include "mailing_list_add_new_user.cpp.precompiled"
 		;
