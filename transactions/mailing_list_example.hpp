@@ -68,8 +68,8 @@ using Inbox = typename inbox_str::Hndl;
 
 	struct mailing_list_state{
 		groups groups_linked_list;
-		std::vector<group> cached_groups;
-		std::vector<user_hndl> my_users;
+		std::vector<std::unique_ptr<group> > cached_groups;
+		std::vector<std::unique_ptr<user_hndl> > my_users;
 		group& pick_group(client<mailing_list_state>&);
 		user_hndl& pick_user(client<mailing_list_state>&);
 		void create_user(client<mailing_list_state>&);

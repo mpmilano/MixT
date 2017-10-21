@@ -21,25 +21,32 @@ using namespace examples;
 using namespace examples;
 
 group& mailing_list_state::pick_group(client<mailing_list_state>& c){
-	if (cached_groups.size() > 0) return cached_groups[mutils::int_rand() % cached_groups.size()];
-	else { create_group(c); return pick_group(c);}
+	auto choice = mutils::int_rand() % 40000;
+	auto &ret = cached_groups.at(choice);
+	if (!ret) {
+		ret.reset(new group{c.ss.template existingObject<typename group::users_lst>(nullptr,choice)});
+	}
+	return *ret;
 }
 
 user_hndl& mailing_list_state::pick_user(client<mailing_list_state>& c){
-	if (my_users.size() > 0)
-		return my_users[mutils::int_rand() % my_users.size()];
-	else {
-		create_user(c);
-		return pick_user(c);
-	}	
+	auto choice = mutils::int_rand() % 40000;
+	auto &ret = my_users.at(choice);
+	if (!ret){
+		auto hndl = c.sc.template existingObject<user>(nullptr,choice);
+		ret.reset(new DECT(hndl){hndl});
+	}
+	return *ret;
 }
 
 void mailing_list_state::create_user(client<mailing_list_state>& c){
-	my_users.push_back(::create_user(c,groups_linked_list));
+	auto ret = ::create_user(c,groups_linked_list);
+	my_users.emplace_back(new DECT(ret){ret});
 }
 
 void mailing_list_state::create_group(client<mailing_list_state>& c){
-	cached_groups.push_back(create_global_group(c,groups_linked_list));
+	auto ret = create_global_group(c,groups_linked_list);
+	cached_groups.emplace_back(new DECT(ret){ret});
 }
 
 template<typename SC, typename Ctxn>
@@ -47,14 +54,14 @@ auto create_user(std::size_t name, client<mailing_list_state>& c, SC &sc, Ctxn& 
 	auto ret = sc.template newObject<user>(ctxn,name*2,user{sc.newObject(ctxn,inbox_str{
 					sc.template newObject<message>(ctxn,name*2-1,"This is the head message. it will remain"),
 						sc.template nullObject<inbox_str>()})});
-	c.i.my_users.emplace_back(ret);
+	c.i.my_users.emplace_back(new DECT(ret){ret});
 	return ret;
 }
 
 template<typename User, typename SS, typename Stxn>
 auto create_group(std::size_t name, client<mailing_list_state>& c, const User &user, SS &ss, Stxn &stxn){
 	auto ret = group{ss.newObject(stxn,name*2,typename group::users_lst{user,ss.template nullObject<typename group::users_lst>()})};
-	c.i.cached_groups.emplace_back(ret);
+	c.i.cached_groups.emplace_back(new DECT(ret){ret});
 	return ret;
 }
 
@@ -63,7 +70,11 @@ Prev create_and_append_group(std::size_t name, client<mailing_list_state>& c, co
 	return ss.newObject(stxn,name*2-1,groups_node{create_group(name,c,user, ss, stxn), prev });
 }
 
-mailing_list_state::mailing_list_state(client<mailing_list_state>& c){
+#define INITIALIZE_MAILING_LIST_EXAMPLE	
+
+mailing_list_state::mailing_list_state(client<mailing_list_state>& c)
+#ifdef INITIALIZE_MAILING_LIST_EXAMPLE	
+{
 	auto &sc = c.sc;
 	auto &ss = c.ss;
 	auto _ctxn = sc.begin_transaction(whendebug("initial test setup"));
@@ -79,8 +90,11 @@ mailing_list_state::mailing_list_state(client<mailing_list_state>& c){
 	}();
 	_stxn->store_commit();
 	_ctxn->store_commit();
-	throw "okay we are done initializing";
 }
+#else
+: cached_groups(40000),my_users(40000){(void) c;}
+#endif
+
 
 	enum class action_choice{
 		post_new_message, add_new_user,
