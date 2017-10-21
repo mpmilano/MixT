@@ -13,15 +13,13 @@ namespace examples{
 		constexpr auto txn = 
 		TRANSACTION(
 			var curr_user = users,
-			while(curr_user.isValid() && curr_user->next.isValid()){
-				curr_user = curr_user->next
-			},
 			var new_user_node = *curr_user,
 			new_user_node.value = newbie,
 			new_user_node.next = curr_user->next,
 			remote mutable_alias = curr_user,
 			mutable_alias.next = curr_user.new(new_user_node)
 			)::WITH(newbie,users);
+		txn.precompiled();
 #endif
 		using connections = typename DECT(ct.trk)::connection_references;
 		auto strong_connection = ct.get_relay<Level::strong>().lock();

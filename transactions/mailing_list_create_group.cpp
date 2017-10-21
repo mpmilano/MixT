@@ -9,17 +9,14 @@ namespace examples {
 #else
 		constexpr auto txn = TRANSACTION(
 			var new_group = g->value,
+			/* cut off the users list */
 			new_group.users->next = new_group.users->next.nulled(),
 			var new_grouplist_node = *g,
 			new_grouplist_node.value = new_group,
-			new_grouplist_node.next = new_grouplist_node.next.nulled(),
-			var index = g,
-			while (index->next.isValid()){
-				index = index->next
-			},
-			index->next = g.new(new_grouplist_node),
+			g->next = g.new(new_grouplist_node),
 			return new_group
 			)::WITH(g);
+		txn.precompiled();
 #endif
 		using connections = typename DECT(ct.trk)::connection_references;
 		auto strong_connection = ct.get_relay<Level::strong>().lock();

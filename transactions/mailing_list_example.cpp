@@ -43,24 +43,24 @@ void mailing_list_state::create_group(client<mailing_list_state>& c){
 }
 
 template<typename SC, typename Ctxn>
-auto create_user(client<mailing_list_state>& c, SC &sc, Ctxn& ctxn){
-	auto ret = sc.template newObject<user>(ctxn,user{sc.newObject(ctxn,inbox_str{
-					sc.template newObject<message>(ctxn,"This is the head message. it will remain"),
+auto create_user(std::size_t name, client<mailing_list_state>& c, SC &sc, Ctxn& ctxn){
+	auto ret = sc.template newObject<user>(ctxn,name*2,user{sc.newObject(ctxn,inbox_str{
+					sc.template newObject<message>(ctxn,name*2-1,"This is the head message. it will remain"),
 						sc.template nullObject<inbox_str>()})});
 	c.i.my_users.emplace_back(ret);
 	return ret;
 }
 
 template<typename User, typename SS, typename Stxn>
-auto create_group(client<mailing_list_state>& c, const User &user, SS &ss, Stxn &stxn){
-	auto ret = group{ss.newObject(stxn,typename group::users_lst{user,ss.template nullObject<typename group::users_lst>()})};
+auto create_group(std::size_t name, client<mailing_list_state>& c, const User &user, SS &ss, Stxn &stxn){
+	auto ret = group{ss.newObject(stxn,name*2,typename group::users_lst{user,ss.template nullObject<typename group::users_lst>()})};
 	c.i.cached_groups.emplace_back(ret);
 	return ret;
 }
 
 template<typename User, typename SS, typename Stxn, typename Prev>
-Prev create_and_append_group(client<mailing_list_state>& c, const User &user, SS &ss, Stxn &stxn, const Prev& prev){
-	return ss.newObject(stxn,groups_node{create_group(c,user, ss, stxn), prev });
+Prev create_and_append_group(std::size_t name, client<mailing_list_state>& c, const User &user, SS &ss, Stxn &stxn, const Prev& prev){
+	return ss.newObject(stxn,name*2-1,groups_node{create_group(name,c,user, ss, stxn), prev });
 }
 
 mailing_list_state::mailing_list_state(client<mailing_list_state>& c){
@@ -73,12 +73,13 @@ mailing_list_state::mailing_list_state(client<mailing_list_state>& c){
 		auto stxn = dynamic_cast<typename DECT(ss)::SQLContext*>(_stxn.get());
 		auto hd = ss.template nullObject<groups_node>();
 		for (int i = 0u; i < 40000; ++i){
-			hd = create_and_append_group(c,::create_user(c,sc,ctxn),ss,stxn,hd);
+			hd = create_and_append_group(i,c,::create_user(i,c,sc,ctxn),ss,stxn,hd);
 		}
 		return hd;
 	}();
 	_stxn->store_commit();
 	_ctxn->store_commit();
+	throw "okay we are done initializing";
 }
 
 	enum class action_choice{

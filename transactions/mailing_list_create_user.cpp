@@ -14,6 +14,7 @@ namespace examples {
 			new_user.i->next = new_user.i->next.nulled().ensure(causal),
 			return sample_user_hndl.new(new_user);
 			)::WITH(g);
+		txn.precompiled();
 #endif
 		using connections = typename DECT(ct.trk)::connection_references;
 		auto strong_connection = ct.get_relay<Level::strong>().lock();
