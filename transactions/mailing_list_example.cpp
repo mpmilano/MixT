@@ -70,8 +70,6 @@ Prev create_and_append_group(std::size_t name, client<mailing_list_state>& c, co
 	return ss.newObject(stxn,name*2-1,groups_node{create_group(name,c,user, ss, stxn), prev });
 }
 
-#define INITIALIZE_MAILING_LIST_EXAMPLE	
-
 mailing_list_state::mailing_list_state(client<mailing_list_state>& c)
 #ifdef INITIALIZE_MAILING_LIST_EXAMPLE	
 {
