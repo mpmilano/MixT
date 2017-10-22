@@ -1,94 +1,94 @@
 TRANS_DIR= `pwd`/
 IP_quad=`ifconfig | sed s/broadcast.*//g | tr " " "\n" | grep 128.84 | rev | sed s/'\..*'//g | rev`
-CPPFLAGS= -I$(PWD)  --std=c++1z -DNUM_CAUSAL_GROUPS="4" -DMY_IP=\"$(MY_IP)\" -DMAX_THREADS=$(MAX_THREADS) -DIP_QUAD=$(IP_quad) -DSTRONG_REMOTE_IP=\"$(STRONG_REMOTE_IP)\" -DCAUSAL_GROUP=$(causalGroup) -DCAUSAL_REMOTE_IP_1=\"$(CAUSAL_REMOTE_IP_1)\" -DCAUSAL_REMOTE_IP_2=\"$(CAUSAL_REMOTE_IP_2)\" -ferror-limit=1 -Wall -Werror -Wextra -DNOPOOL -O2 -DNDEBUG
+CPPFLAGS= -I$(PWD) -Wno-unused-local-typedefs --std=c++1z -DNUM_CAUSAL_GROUPS="4" -DMY_IP=\"$(MY_IP)\" -DMAX_THREADS=$(MAX_THREADS) -DIP_QUAD=$(IP_quad) -DSTRONG_REMOTE_IP=\"$(STRONG_REMOTE_IP)\" -DCAUSAL_GROUP=$(causalGroup) -DCAUSAL_REMOTE_IP_1=\"$(CAUSAL_REMOTE_IP_1)\" -DCAUSAL_REMOTE_IP_2=\"$(CAUSAL_REMOTE_IP_2)\" -Wall -Werror -Wextra -DNOPOOL -O2 -DNDEBUG
 LDFLAGS=  --std=c++1z -lm -pthread -lpqxx -ftemplate-depth=10000
 object_files=Ends.o utils.o test_utils.o Basics.o Tracker.o Ostreams.o SerializationSupport.o SQLStore.o GSQLObject.o SQLConnection.o SQLTransaction.o SQL_internal_utils.o SQLLevels.o TransactionContext.o ServerSocket.o Socket.o eventfd.o epoll.o simple_rpc.o local_connection.o Tombstone.o ClockManager.o configuration_params.o run_result.o
 mailing_list_object_files=mailing_list_post_new_message.o mailing_list_add_new_user.o mailing_list_download_inbox.o mailing_list_create_group.o mailing_list_create_user.o mailing_list_example.o
-
+chosen_compiler=clang++
 all: $(object_files) 
 	@clang++ $(object_files)  -o test $(LDFLAGS)
 
 sample_arrival_intervals: utils.o test_utils.o
-	clang++ $(CPPFLAGS) $(LDFLAGS) utils.o test_utils.o sample_arrival_intervals.cpp -o sample
+	$(chosen_compiler) $(CPPFLAGS) $(LDFLAGS) utils.o test_utils.o sample_arrival_intervals.cpp -o sample
 test_parse_utilities: $(object_files)
-	clang++ $(CPPFLAGS) $(LDFLAGS) $(object_files) mtl/test_parse_utilities.cpp -o test_parse_utils
+	$(chosen_compiler) $(CPPFLAGS) $(LDFLAGS) $(object_files) mtl/test_parse_utilities.cpp -o test_parse_utils
 test_testing_store: $(object_files)
-	clang++ $(CPPFLAGS) $(LDFLAGS) $(object_files) test_testing_store.cpp -o test_store
+	$(chosen_compiler) $(CPPFLAGS) $(LDFLAGS) $(object_files) test_testing_store.cpp -o test_store
 test_parsing: utils.o
-	clang++ $(CPPFLAGS) $(LDFLAGS) utils.o test_parsing.cpp -o /tmp/test_parsing
+	$(chosen_compiler) $(CPPFLAGS) $(LDFLAGS) utils.o test_parsing.cpp -o /tmp/test_parsing
 test_deref: utils.o
-	clang++ $(CPPFLAGS) $(LDFLAGS) utils.o deref_test.cpp -o /tmp/test
+	$(chosen_compiler) $(CPPFLAGS) $(LDFLAGS) utils.o deref_test.cpp -o /tmp/test
 test_mtl: $(object_files)
-	clang++ $(CPPFLAGS) $(LDFLAGS) $(object_files) test_complex_transaction.cpp -o /tmp/test
+	$(chosen_compiler) $(CPPFLAGS) $(LDFLAGS) $(object_files) test_complex_transaction.cpp -o /tmp/test
 test_operation: $(object_files)
-	clang++ $(CPPFLAGS) $(LDFLAGS)  $(object_files) test_operation.cpp -o /tmp/test
+	$(chosen_compiler) $(CPPFLAGS) $(LDFLAGS)  $(object_files) test_operation.cpp -o /tmp/test
 logging_example: $(object_files)
-	clang++ $(CPPFLAGS) $(LDFLAGS)  $(object_files) logging_example.cpp -o /tmp/test
+	$(chosen_compiler) $(CPPFLAGS) $(LDFLAGS)  $(object_files) logging_example.cpp -o /tmp/test
 voting_example: $(object_files)
-	clang++ $(CPPFLAGS) $(LDFLAGS)  $(object_files) voting_example.cpp -o /tmp/test
+	$(chosen_compiler) $(CPPFLAGS) $(LDFLAGS)  $(object_files) voting_example.cpp -o /tmp/test
 mailing_list_test: $(object_files) $(mailing_list_object_files)
-	clang++ $(CPPFLAGS) $(LDFLAGS)  $(object_files) $(mailing_list_object_files) mailing_list_test.cpp -o mailing_list_test
+	$(chosen_compiler) $(CPPFLAGS) $(LDFLAGS)  $(object_files) $(mailing_list_object_files) mailing_list_test.cpp -o mailing_list_test
 
 test_mailing_list: $(object_files) $(mailing_list_object_files) test_mailing_list.cpp
-	clang++ $(CPPFLAGS) $(LDFLAGS)  $(object_files) $(mailing_list_object_files) test_mailing_list.cpp -o test_mailing_list
+	$(chosen_compiler) $(CPPFLAGS) $(LDFLAGS)  $(object_files) $(mailing_list_object_files) test_mailing_list.cpp -o test_mailing_list
 test_handle_serialization: $(object_files) test_handle_serialization.cpp
-	clang++ $(CPPFLAGS) $(LDFLAGS)  $(object_files) test_handle_serialization.cpp -o test_handle_serialization
+	$(chosen_compiler) $(CPPFLAGS) $(LDFLAGS)  $(object_files) test_handle_serialization.cpp -o test_handle_serialization
 mailing_list_example.o: $(object_files) mailing_list_example.cpp
-	clang++ -c mailing_list_example.cpp $(CPPFLAGS) -ftemplate-depth=10000
+	$(chosen_compiler) -c mailing_list_example.cpp $(CPPFLAGS) -ftemplate-depth=10000
 mailing_list_post_new_message.o: $(object_files) mailing_list_post_new_message.cpp mtl/run_phase.hpp
-	clang++ -DUSE_PRECOMPILED  -c mailing_list_post_new_message.cpp $(CPPFLAGS) -ftemplate-depth=10000
+	$(chosen_compiler) -DUSE_PRECOMPILED  -c mailing_list_post_new_message.cpp $(CPPFLAGS) -ftemplate-depth=10000
 mailing_list_download_inbox.o: $(object_files) mailing_list_download_inbox.cpp mtl/run_phase.hpp
-	clang++ -DUSE_PRECOMPILED -c mailing_list_download_inbox.cpp $(CPPFLAGS) -ftemplate-depth=10000	
+	$(chosen_compiler) -DUSE_PRECOMPILED -c mailing_list_download_inbox.cpp $(CPPFLAGS) -ftemplate-depth=10000	
 mailing_list_add_new_user.o: $(object_files) mailing_list_add_new_user.cpp mtl/run_phase.hpp
-	clang++ -DUSE_PRECOMPILED -c mailing_list_add_new_user.cpp $(CPPFLAGS) -ftemplate-depth=10000
+	$(chosen_compiler) -DUSE_PRECOMPILED -c mailing_list_add_new_user.cpp $(CPPFLAGS) -ftemplate-depth=10000
 mailing_list_create_user.o: $(object_files) mailing_list_create_user.cpp mtl/run_phase.hpp
-	clang++ -DUSE_PRECOMPILED -c mailing_list_create_user.cpp $(CPPFLAGS) -ftemplate-depth=10000
+	$(chosen_compiler) -DUSE_PRECOMPILED -c mailing_list_create_user.cpp $(CPPFLAGS) -ftemplate-depth=10000
 mailing_list_create_group.o: $(object_files) mailing_list_create_group.cpp mtl/run_phase.hpp
-	clang++ -DUSE_PRECOMPILED -c mailing_list_create_group.cpp $(CPPFLAGS) -ftemplate-depth=10000
+	$(chosen_compiler) -DUSE_PRECOMPILED -c mailing_list_create_group.cpp $(CPPFLAGS) -ftemplate-depth=10000
 test_endorse: $(object_files)
-	clang++ $(CPPFLAGS) $(LDFLAGS)  $(object_files) test_endorse.cpp -o /tmp/test
+	$(chosen_compiler) $(CPPFLAGS) $(LDFLAGS)  $(object_files) test_endorse.cpp -o /tmp/test
 debug_scratch: $(object_files)
-	clang++ $(CPPFLAGS) $(LDFLAGS)  $(object_files) debug_scratch.cpp -o /tmp/test
+	$(chosen_compiler) $(CPPFLAGS) $(LDFLAGS)  $(object_files) debug_scratch.cpp -o /tmp/test
 test_builtins: $(object_files)
-	clang++ $(CPPFLAGS) $(LDFLAGS)  $(object_files) test_builtins.cpp -o /tmp/test
+	$(chosen_compiler) $(CPPFLAGS) $(LDFLAGS)  $(object_files) test_builtins.cpp -o /tmp/test
 regression_tests: $(object_files)
-	clang++ $(CPPFLAGS) $(LDFLAGS)  $(object_files) regression_tests.cpp -o /tmp/test
+	$(chosen_compiler) $(CPPFLAGS) $(LDFLAGS)  $(object_files) regression_tests.cpp -o /tmp/test
 test_isvalid: utils.o
-	clang++ $(CPPFLAGS) $(LDFLAGS)  test_isvalid.cpp utils.o -o /tmp/test
+	$(chosen_compiler) $(CPPFLAGS) $(LDFLAGS)  test_isvalid.cpp utils.o -o /tmp/test
 
 test_causal: $(object_files) 
-	@clang++ test_causal.cpp DisabledTracker.o SQLStore.o Ends.o utils.o Basics.o Ostreams.o SerializationSupport.o GSQLObject.o SQLConnection.o SQLTransaction.o SQL_internal_utils.o ServerSocket.o Socket.o batched_connection_client.o batched_connection_common.o  -o test_causal $(CPPFLAGS) $(LDFLAGS)
+	$(chosen_compiler) test_causal.cpp DisabledTracker.o SQLStore.o Ends.o utils.o Basics.o Ostreams.o SerializationSupport.o GSQLObject.o SQLConnection.o SQLTransaction.o SQL_internal_utils.o ServerSocket.o Socket.o batched_connection_client.o batched_connection_common.o  -o test_causal $(CPPFLAGS) $(LDFLAGS)
 
 stress1: $(object_files) strxess_test1.o
-	@clang++ $(object_files) stress_test.o -o stress1 $(LDFLAGS)
+	$(chosen_compiler) $(object_files) stress_test.o -o stress1 $(LDFLAGS)
 
 stress2: $(object_files) stress_test2.o
-	@clang++ $(object_files) stress_test.o -o stress2 $(LDFLAGS)
+	$(chosen_compiler) $(object_files) stress_test.o -o stress2 $(LDFLAGS)
 
 stress3:  $(object_files) stress_test3.o
-	@clang++ $(object_files) stress_test.o -o stress3 $(LDFLAGS)
+	$(chosen_compiler) $(object_files) stress_test.o -o stress3 $(LDFLAGS)
 
 simple_txn_test: $(object_files) simple_txn_test.cpp
-	@clang++ simple_txn_test.cpp $(object_files) $(CPPFLAGS) $(LDFLAGS) -o simple_txn_test
+	$(chosen_compiler) simple_txn_test.cpp $(object_files) $(CPPFLAGS) $(LDFLAGS) -o simple_txn_test
 
 config_params_parsing_test: utils.o
-	@clang++ config_params_parsing_test.cpp utils.o -o config_params_parsing_test $(CPPFLAGS) $(LDFLAGS)
+	$(chosen_compiler) config_params_parsing_test.cpp utils.o -o config_params_parsing_test $(CPPFLAGS) $(LDFLAGS)
 
 vm: simple_txn_test simple_txn_test.cpp
 	cp -rfp vm.sh vm
 groups: $(object_files) groups_test.o
-	@clang++ $(object_files) groups_test.o -o groups $(LDFLAGS)
+	$(chosen_compiler) $(object_files) groups_test.o -o groups $(LDFLAGS)
 insert_tracking: $(object_files) 
-	@clang++ $(object_files) test_insert_tracking.cpp -o test_insert_tracking $(LDFLAGS) $(CPPFLAGS)
+	$(chosen_compiler) $(object_files) test_insert_tracking.cpp -o test_insert_tracking $(LDFLAGS) $(CPPFLAGS)
 
 cache_test: $(object_files) cache_interacter.o
-	@clang++ $(object_files) cache_interacter.o -o cache_test $(LDFLAGS)
+	$(chosen_compiler) $(object_files) cache_interacter.o -o cache_test $(LDFLAGS)
 
 cache_interacter.o:
-	@clang++ -c cache_interacter.cpp $(CPPFLAGS)
+	$(chosen_compiler) -c cache_interacter.cpp $(CPPFLAGS)
 
 chat: $(object_files) chat_example.o
-	@clang++ $(object_files) chat_example.o -o chat $(LDFLAGS)
+	$(chosen_compiler) $(object_files) chat_example.o -o chat $(LDFLAGS)
 
 sqlstore: sqlstore_clean all
 	echo "done"
@@ -97,89 +97,89 @@ tracker: tracker_clean all
 	echo "done"
 
 run_result.o:
-	@clang++ -c run_result.cpp $(CPPFLAGS)
+	$(chosen_compiler) -c run_result.cpp $(CPPFLAGS)
 configuration_params.o:
-	@clang++ -c configuration_params.cpp $(CPPFLAGS)
+	$(chosen_compiler) -c configuration_params.cpp $(CPPFLAGS)
 stress_test1.o:
-	@clang++ -c stress_test.cpp -DTEST_MODE=1 $(CPPFLAGS)
+	$(chosen_compiler) -c stress_test.cpp -DTEST_MODE=1 $(CPPFLAGS)
 stress_test2.o:
-	@clang++ -c stress_test.cpp -DTEST_MODE=2 $(CPPFLAGS)
+	$(chosen_compiler) -c stress_test.cpp -DTEST_MODE=2 $(CPPFLAGS)
 stress_test3.o:
-	@clang++ -c stress_test.cpp -DTEST_MODE=3 $(CPPFLAGS)
+	$(chosen_compiler) -c stress_test.cpp -DTEST_MODE=3 $(CPPFLAGS)
 vm_main.o:
-	@clang++ -c vm_main.cpp -DCLIENT_RATE=$(client_rate) $(CPPFLAGS)
+	$(chosen_compiler) -c vm_main.cpp -DCLIENT_RATE=$(client_rate) $(CPPFLAGS)
 groups_test.o:
-	@clang++ -c groups_test.cpp  $(CPPFLAGS)
+	$(chosen_compiler) -c groups_test.cpp  $(CPPFLAGS)
 sqlstore_clean:
 	@touch SQLStore.o; rm SQLStore.o
 tracker_clean:
 	@rm Tracker.o;  true
 chat_example.o:
-	@clang++ -c chat_example.cpp $(CPPFLAGS)
+	$(chosen_compiler) -c chat_example.cpp $(CPPFLAGS)
 Basics.o:
-	@clang++ -c Basics.cpp $(CPPFLAGS)
+	$(chosen_compiler) -c Basics.cpp $(CPPFLAGS)
 utils.o:
-	@clang++ -c */utils.cpp $(CPPFLAGS)
+	$(chosen_compiler) -c */utils.cpp $(CPPFLAGS)
 epoll.o:
-	@clang++ -c */epoll.cpp $(CPPFLAGS)
+	$(chosen_compiler) -c */epoll.cpp $(CPPFLAGS)
 test_utils.o:
-	@clang++ -c test_utils.cpp $(CPPFLAGS)
+	$(chosen_compiler) -c test_utils.cpp $(CPPFLAGS)
 Profiler.o:
-	@clang++ -c */Profiler.cpp $(CPPFLAGS)
+	$(chosen_compiler) -c */Profiler.cpp $(CPPFLAGS)
 GC_pointer.o:
-	@clang++ -c */GC_pointer.cpp $(CPPFLAGS)
+	$(chosen_compiler) -c */GC_pointer.cpp $(CPPFLAGS)
 eventfd.o:
-	@clang++ -c */eventfd.cpp $(CPPFLAGS)
+	$(chosen_compiler) -c */eventfd.cpp $(CPPFLAGS)
 Ends.o:
-	@clang++ -c */Ends.cpp $(CPPFLAGS)
+	$(chosen_compiler) -c */Ends.cpp $(CPPFLAGS)
 Tracker.o:
-	@clang++ -c */Tracker.cpp $(CPPFLAGS) #&& ln -s DisabledTracker.o Tracker.o
+	$(chosen_compiler) -c */Tracker.cpp $(CPPFLAGS) #&& ln -s DisabledTracker.o Tracker.o
 Tombstone.o:
-	@clang++ -c */Tombstone.cpp $(CPPFLAGS)
+	$(chosen_compiler) -c */Tombstone.cpp $(CPPFLAGS)
 ClockManager.o:
-	@clang++ -c */ClockManager.cpp $(CPPFLAGS)
+	clang++ -c */ClockManager.cpp $(CPPFLAGS)
 TransactionContext.o:
-	@clang++ -c */TransactionContext.cpp $(CPPFLAGS)
+	$(chosen_compiler) -c */TransactionContext.cpp $(CPPFLAGS)
 Ostreams.o:
-	@clang++ -c Ostreams.cpp $(CPPFLAGS)
+	$(chosen_compiler) -c Ostreams.cpp $(CPPFLAGS)
 SerializationSupport.o:
-	@clang++ -c */SerializationSupport.cpp $(CPPFLAGS)
+	$(chosen_compiler) -c */SerializationSupport.cpp $(CPPFLAGS)
 ServerSocket.o:
-	@clang++ -c */ServerSocket.cpp $(CPPFLAGS)
+	clang++ -c */ServerSocket.cpp $(CPPFLAGS)
 Socket.o:
-	@clang++ -c */Socket.cpp $(CPPFLAGS)
+	$(chosen_compiler) -c */Socket.cpp $(CPPFLAGS)
 SQLStore.o:
-	@clang++ -c */SQLStore.cpp -DNUM_CAUSAL_MASTERS="2" -DCAUSAL_GROUP=$(causalGroup) $(CPPFLAGS)
+	$(chosen_compiler) -c */SQLStore.cpp -DNUM_CAUSAL_MASTERS="2" -DCAUSAL_GROUP=$(causalGroup) $(CPPFLAGS)
 SQLConstants.o:
-	@clang++ -c */SQLConstants.cpp -DNUM_CAUSAL_MASTERS="2" -DCAUSAL_GROUP=$(causalGroup) $(CPPFLAGS)
+	$(chosen_compiler) -c */SQLConstants.cpp -DNUM_CAUSAL_MASTERS="2" -DCAUSAL_GROUP=$(causalGroup) $(CPPFLAGS)
 GSQLObject.o:
-	@clang++ -c */GSQLObject.cpp -DNUM_CAUSAL_MASTERS="2" -DCAUSAL_GROUP=$(causalGroup) $(CPPFLAGS)
+	$(chosen_compiler) -c */GSQLObject.cpp -DNUM_CAUSAL_MASTERS="2" -DCAUSAL_GROUP=$(causalGroup) $(CPPFLAGS)
 SQLConnection.o:
-	@clang++ -c */SQLConnection.cpp -DNUM_CAUSAL_MASTERS="2" -DCAUSAL_GROUP=$(causalGroup) $(CPPFLAGS)
+	$(chosen_compiler) -c */SQLConnection.cpp -DNUM_CAUSAL_MASTERS="2" -DCAUSAL_GROUP=$(causalGroup) $(CPPFLAGS)
 SQLTransaction.o:
-	@clang++ -c */SQLTransaction.cpp -DNUM_CAUSAL_MASTERS="2" -DCAUSAL_GROUP=$(causalGroup) $(CPPFLAGS)
+	$(chosen_compiler) -c */SQLTransaction.cpp -DNUM_CAUSAL_MASTERS="2" -DCAUSAL_GROUP=$(causalGroup) $(CPPFLAGS)
 SQL_internal_utils.o:
-	@clang++ -c */SQL_internal_utils.cpp -DNUM_CAUSAL_MASTERS="2" -DCAUSAL_GROUP=$(causalGroup) $(CPPFLAGS)
+	$(chosen_compiler) -c */SQL_internal_utils.cpp -DNUM_CAUSAL_MASTERS="2" -DCAUSAL_GROUP=$(causalGroup) $(CPPFLAGS)
 SQLLevels.o:
-	@clang++ -c */SQLLevels.cpp -DNUM_CAUSAL_MASTERS="2" -DCAUSAL_GROUP=$(causalGroup) $(CPPFLAGS)
+	$(chosen_compiler) -c */SQLLevels.cpp -DNUM_CAUSAL_MASTERS="2" -DCAUSAL_GROUP=$(causalGroup) $(CPPFLAGS)
 abiutils.o:
-	@clang++ -c */abiutils.cpp $(CPPFLAGS)
+	$(chosen_compiler) -c */abiutils.cpp $(CPPFLAGS)
 batched_connection_server.o:
-	@clang++ -c -O3 */batched_connection_server.cpp $(CPPFLAGS)
+	$(chosen_compiler) -c -O3 */batched_connection_server.cpp $(CPPFLAGS)
 
 batched_connection_client.o:
-	@clang++ -c -O3 */batched_connection_client.cpp $(CPPFLAGS)
+	$(chosen_compiler) -c -O3 */batched_connection_client.cpp $(CPPFLAGS)
 
 batched_connection_common.o:
-	@clang++ -c -O3 */batched_connection_common.cpp $(CPPFLAGS)
+	$(chosen_compiler) -c -O3 */batched_connection_common.cpp $(CPPFLAGS)
 dual_connection.o:
-	@clang++ -c -O3  */dual_connection.cpp $(CPPFLAGS)
+	$(chosen_compiler) -c -O3  */dual_connection.cpp $(CPPFLAGS)
 simple_rpc.o:
-	@clang++ -c */simple_rpc.cpp $(CPPFLAGS)
+	$(chosen_compiler) -c */simple_rpc.cpp $(CPPFLAGS)
 local_connection.o:
-	@clang++ -c */local_connection.cpp $(CPPFLAGS)
+	$(chosen_compiler) -c */local_connection.cpp $(CPPFLAGS)
 proxy_connection.o:
-	@clang++ -c */proxy_connection.cpp $(CPPFLAGS)
+	$(chosen_compiler) -c */proxy_connection.cpp $(CPPFLAGS)
 
 
 run: test

@@ -161,14 +161,14 @@ struct pre_transaction_str<mutils::String<Str...>>
 		return typecheck<type_binding<typename value::name, typename value::type, Label<top>, type_location::local>...>();
   }
 
-  template <typename... value>
+  template <typename... values>
   static constexpr auto with()
   {
-    constexpr auto inferred_and_recollapsed = compile<type_binding<typename value::name, typename value::type, Label<top>, type_location::local>...>();
+    constexpr auto inferred_and_recollapsed = compile<type_binding<typename values::name, typename values::type, Label<top>, type_location::local>...>();
     using recollapsed = typename DECT(inferred_and_recollapsed)::recollapsed;
     using inferred = typename DECT(inferred_and_recollapsed)::inferred;
-    using previous_phases = previous_transaction_phases<inferred, value...>;
-    return transaction_struct<recollapsed::number_remote_phases::value, previous_phases, recollapsed, value...>{};
+    using previous_phases = previous_transaction_phases<inferred, values...>;
+    return transaction_struct<recollapsed::number_remote_phases::value, previous_phases, recollapsed, values...>{};
   }
 };
 }

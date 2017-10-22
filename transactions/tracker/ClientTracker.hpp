@@ -42,12 +42,12 @@ protected:
 		}
 	};
 
-	template<typename... label> struct ConnectionReferences : public ConnectionReference<label>...{
-		ConnectionReferences(typename ConnectionReference<label>::connection&... c)
-			:ConnectionReference<label>(c)...{}
+	template<typename... _label> struct ConnectionReferences : public ConnectionReference<_label>...{
+		ConnectionReferences(typename ConnectionReference<_label>::connection&... c)
+			:ConnectionReference<_label>(c)...{}
 
-		ConnectionReferences(const ConnectionReference<label>&... c)
-			:ConnectionReference<label>(c.c)...{}
+		ConnectionReferences(const ConnectionReference<_label>&... c)
+			:ConnectionReference<_label>(c.c)...{}
 
 		template<typename phase> auto& connection(){
 			using CR = ConnectionReference<typename phase::label>;
