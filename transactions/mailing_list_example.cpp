@@ -21,7 +21,7 @@ using namespace examples;
 using namespace examples;
 
 group& mailing_list_state::pick_group(client<mailing_list_state>& c){
-	auto choice = mutils::int_rand() % 40000;
+	auto choice = (mutils::int_rand() % 40000)*2;
 	auto &ret = cached_groups.at(choice);
 	if (!ret) {
 		ret.reset(new group{c.ss.template existingObject<typename group::users_lst>(nullptr,choice)});
@@ -30,7 +30,7 @@ group& mailing_list_state::pick_group(client<mailing_list_state>& c){
 }
 
 user_hndl& mailing_list_state::pick_user(client<mailing_list_state>& c){
-	auto choice = mutils::int_rand() % 40000;
+	auto choice = (mutils::int_rand() % 40000)*3;
 	auto &ret = my_users.at(choice);
 	if (!ret){
 		auto hndl = c.sc.template existingObject<user>(nullptr,choice);

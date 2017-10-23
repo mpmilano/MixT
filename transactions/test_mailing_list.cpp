@@ -33,6 +33,7 @@ int main(int argc, char** argv){
 	t1.push_client();
 	std::unique_ptr<myria::client<examples::mailing_list_state> > client;
 	t1.client_queue.wait_dequeue(client);
+	client->i.create_user(*client);
 	client->i.pick_group(*client).add_new_user(*client, client->i.pick_user(*client));
 	client->i.pick_group(*client).post_new_message(*client, "This is only a test");
 	auto inbox = download_inbox(*client,client->i.pick_user(*client));
