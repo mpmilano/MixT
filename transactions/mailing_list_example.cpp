@@ -51,8 +51,8 @@ void mailing_list_state::create_group(client<mailing_list_state>& c){
 
 template<typename SC, typename Ctxn>
 auto create_user(std::size_t name, client<mailing_list_state>& c, SC &sc, Ctxn& ctxn){
-	auto ret = sc.template newObject<user>(ctxn,name*2,user{sc.newObject(ctxn,inbox_str{
-					sc.template newObject<message>(ctxn,name*2-1,"This is the head message. it will remain"),
+	auto ret = sc.template newObject<user>(ctxn,name*3,user{sc.newObject(ctxn,name*3-2,inbox_str{
+					sc.template newObject<message>(ctxn,name*3-1,"This is the head message. it will remain"),
 						sc.template nullObject<inbox_str>()})});
 	c.i.my_users.emplace_back(new DECT(ret){ret});
 	return ret;
@@ -81,8 +81,14 @@ mailing_list_state::mailing_list_state(client<mailing_list_state>& c)
 		auto ctxn = dynamic_cast<typename DECT(sc)::SQLContext*>(_ctxn.get());
 		auto stxn = dynamic_cast<typename DECT(ss)::SQLContext*>(_stxn.get());
 		auto hd = ss.template nullObject<groups_node>();
-		for (int i = 0u; i < 40000; ++i){
-			hd = create_and_append_group(i,c,::create_user(i,c,sc,ctxn),ss,stxn,hd);
+		for (int i = 1u; i < 40000; ++i){
+			try {
+				hd = create_and_append_group(i,c,::create_user(i,c,sc,ctxn),ss,stxn,hd);
+			}
+			catch(const std::exception &e ){
+				std::cerr << "We have failed to insert: " << i << " because " << e.what() << std::endl;
+				throw e;
+			}
 		}
 		return hd;
 	}();
