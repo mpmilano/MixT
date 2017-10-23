@@ -163,7 +163,7 @@ namespace myria{ namespace pgsql {
 				else if (i->_store.level == Level::strong){
 					auto old = i->vers;
 					int newi = -12;
-                                        process_version_update(cmds::select_version(i->_store.level, *trans,i->table,i->key),newi);
+					process_version_update(cmds::select_version(i->_store.level, *trans,i->table,i->key),newi);
 					store_same = (old == newi);
 					i->vers = newi;
 				}
