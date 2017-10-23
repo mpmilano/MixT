@@ -158,7 +158,6 @@ namespace myria{ namespace pgsql {
 					process_version_update(cmds::select_version(i->_store.level, *trans,i->table,i->key),i->causal_vers);
 					store_same = ends::is_same(old,i->causal_vers);
 					if (!store_same) i->_store.clock = max(i->_store.clock,i->causal_vers);
-					assert(i->_store.clock[2] < 30);
 				}
 				else if (i->_store.level == Level::strong){
 					auto old = i->vers;
