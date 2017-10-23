@@ -5,6 +5,7 @@
 
 namespace examples{
 	std::list<message> download_inbox(client<mailing_list_state>& ct, user_hndl user_hndl){
+		assert(user_hndl._ro);
 #ifdef USE_PRECOMPILED
 		constexpr 
 #include "mailing_list_download_inbox.cpp.precompiled"

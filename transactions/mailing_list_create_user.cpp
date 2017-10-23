@@ -2,6 +2,7 @@
 
 namespace examples {
 		user_hndl create_user(client<mailing_list_state>& ct, groups g){
+			assert(g._ro);
 #ifdef USE_PRECOMPILED
 			constexpr
 #include "mailing_list_create_user.cpp.precompiled"

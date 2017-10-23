@@ -3,6 +3,7 @@
 
 namespace examples{
 	void group::post_new_message(client<mailing_list_state>& ct, std::string message_contents){
+		assert(users._ro);
 #ifdef USE_PRECOMPILED
 		constexpr 
 #include "mailing_list_post_new_message.cpp.precompiled"

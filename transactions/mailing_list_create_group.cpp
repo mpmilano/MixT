@@ -2,6 +2,7 @@
 
 namespace examples {
 		group create_global_group(client<mailing_list_state>& ct, groups g){
+			assert(g._ro);
 #ifdef USE_PRECOMPILED
 			constexpr
 #include "mailing_list_create_group.cpp.precompiled"

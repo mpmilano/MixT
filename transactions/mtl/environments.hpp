@@ -470,7 +470,7 @@ protected:
 	  remote_map_holder<T> &_super = s.as_virtual_holder();
 	  remote_holder &_this = s;
 	  assert(_super.is_initialized);
-    return _super.super[_this.handle[_this.curr_pos].name()];
+    return _super.super[_this.handle.at(_this.curr_pos).name()];
   }
 
 	//Note: we need to do replacements before run_phase,

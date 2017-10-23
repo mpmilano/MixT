@@ -90,7 +90,8 @@ mailing_list_state::mailing_list_state(client<mailing_list_state>& c)
 	_ctxn->store_commit();
 }
 #else
-: cached_groups(40000),my_users(40000){(void) c;}
+: groups_linked_list(c.ss.existingObject<groups_node>(nullptr,(40000*2)-1) ),
+		cached_groups(40000),my_users(40000){(void) c;}
 #endif
 
 

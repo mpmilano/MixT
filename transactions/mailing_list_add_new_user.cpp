@@ -5,6 +5,8 @@
 
 namespace examples{
 	void group::add_new_user(client<mailing_list_state>& ct, user_hndl newbie){
+		assert(newbie._ro);
+		assert(users._ro);
 #ifdef USE_PRECOMPILED
 		constexpr
 #include "mailing_list_add_new_user.cpp.precompiled"

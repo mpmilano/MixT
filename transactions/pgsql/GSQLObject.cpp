@@ -45,8 +45,10 @@ namespace myria{ namespace pgsql {
 
 				SQLStore_impl::GSQLObject::GSQLObject(SQLStore_impl &ss, Table t, Name id, int size)
 			:i(new Internals{t,id,size,ss,nullptr}){
-					i->buf1 = (char*) malloc(std::max<std::size_t>(2048,size));
-					whendebug(bzero(i->buf1,std::max<std::size_t>(2048,i->size)));
+					if (size != -1){
+						i->buf1 = (char*) malloc(std::max<std::size_t>(2048,size));
+						whendebug(bzero(i->buf1,std::max<std::size_t>(2048,i->size)));
+					}
 		}
 
 //existing object
