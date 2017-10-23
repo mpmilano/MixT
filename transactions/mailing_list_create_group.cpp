@@ -16,7 +16,7 @@ namespace examples {
 			g->next = g.new(new_grouplist_node),
 			return new_group
 			)::WITH(g);
-		txn.precompiled();
+
 #endif
 		using connections = typename DECT(ct.trk)::connection_references;
 		auto strong_connection = ct.get_relay<Level::strong>().lock();
