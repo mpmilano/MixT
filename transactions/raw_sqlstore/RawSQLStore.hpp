@@ -20,64 +20,44 @@ namespace myria{
 	struct OperationIdentifier<sql_command>{
 		using name = sql_command;
 	};
-
-	template<typename Transactor>
-	void enter_txn(pqxx::work& w, Transactor& t){
-		t(w);
-	}
-
-	struct anonymous_transactor : public pqxx::transactor<> {
-		virtual void execute(pqxx::work& w) const = 0;
-		virtual ~anonymous_transactor(){}
-	};
 	
-	template<typename subclass>
-	struct concrete_transactor : public anonymous_transactor{
-		static_assert(std::is_base_of<concrete_transactor,subclass>::value );
-		void execute(pqxx::work& w) const {
-			(*((subclass*)this))(w);
-		}
-	};
-	
-	using supports_sql = SupportedOperation<sql_command,SelfType,SelfType,anonymous_transactor>;
+	struct Unsupported{};
+
+	template<typename transactor>
+	using supports_sql = SupportedOperation<sql_command,SelfType,SelfType,transactor>;
 
 	namespace raw_sql_store{
-		struct opaque{};
-		template<typename label>
+		template<typename label, typename... Transactors>
 		struct RawSQLStore;
-		template<typename l>
-		struct RawSQLStore<Label<l> > : public DataStore<Label<l> > {
+		template<typename l, typename... Transactors>
+		struct RawSQLStore<Label<l>, Transactors... > : public DataStore<Label<l> > {
 			using label = Label<l>;
-
-			MATCH_CONTEXT(decide_sql_handle){
-				MATCHES(opaque) -> RETURN(Handle<label,opaque,supports_sql> );
-				template<typename any> MATCHES(any) -> RETURN(Handle<label,any>);
-			};
 			
-			template<typename T> using SQLHandle = MATCH(decide_sql_handle, T);
+			template<typename T> using SQLHandle = Handle<label,T,supports_sql<Transactors>...>;
 
 			template<typename T> using SQLRO = RemoteObject<label,T>;
-			template<typename _opaque> struct SQLObject : public SQLRO<opaque>, public std::enable_shared_from_this<SQLObject<_opaque> > {
-				static_assert(std::is_same<_opaque,opaque>::value);
+			template<typename T> struct SQLObject : public SQLRO<T>, public std::enable_shared_from_this<SQLObject<T> > {
 				RawSQLStore &parent;
+				std::unique_ptr<T> data;
 
-				SQLObject(DECT(parent) &parent):parent(parent){}
+				SQLObject(DECT(parent) &parent, std::unique_ptr<T> data):parent(parent),data(std::move(data)){}
 				
 				bool isValid(mtl::StoreContext<label>*) const { return true;}
 				
-				std::shared_ptr<const opaque> get(mutils::DeserializationManager<>*, mtl::StoreContext<label>*){
-					return std::make_shared<opaque>();
+				std::shared_ptr<const T> get(mutils::DeserializationManager<>*, mtl::StoreContext<label>*){
+					throw Unsupported{};
 				}
 				
-				std::shared_ptr<RemoteObject<label,opaque>> create_new(mtl::StoreContext<label>*, const opaque&) const{
-					return std::make_shared<SQLObject>(parent);
+				std::shared_ptr<RemoteObject<label,T>> create_new(mtl::StoreContext<label>*, const T& t) const{
+					return std::make_shared<SQLObject>(parent, std::make_unique<T>(t));
 				}
 				
-				void put(mtl::StoreContext<label>*,const opaque&){}
+				void put(mtl::StoreContext<label>*,const T&){
+					throw Unsupported{};
+				}
 				
-				std::unique_ptr<LabelFreeHandle<opaque> > wrapInHandle(std::shared_ptr<RemoteObject<label,opaque> > ){
-					static_assert(std::is_same<SQLHandle<opaque>, Handle<label,opaque,supports_sql>>::value );
-					return std::unique_ptr<LabelFreeHandle<opaque> >{new SQLHandle<opaque>{this->shared_from_this(),parent}};
+				std::unique_ptr<LabelFreeHandle<T> > wrapInHandle(std::shared_ptr<RemoteObject<label,T> > ){
+					return std::unique_ptr<LabelFreeHandle<T> >{new SQLHandle<T>{this->shared_from_this(),parent}};
 				}
 				
 				const RawSQLStore& store() const {
@@ -146,14 +126,16 @@ namespace myria{
 			}
 #endif
 
-			SQLHandle<opaque> operation(mtl::PhaseContext<label>*, StoreContext& sc, mutils::DeserializationManager<>* ,
-										 OperationIdentifier<sql_command>,SQLObject<opaque>& obj, const anonymous_transactor& t){
-				t.execute(sc.pq_txn);
-				return SQLHandle<opaque>{obj.shared_from_this(), obj.parent};
+			template<typename T, typename transactor>
+			SQLHandle<T> operation(mtl::PhaseContext<label>*, StoreContext& sc, mutils::DeserializationManager<>* ,
+										 OperationIdentifier<sql_command>,SQLObject<T>& obj, const transactor& t){
+				t(sc.pq_txn, obj.data);
+				return SQLHandle<T>{obj.shared_from_this(), obj.parent};
 			}
 
-			SQLHandle<opaque> get_handle(){
-				return SQLHandle<opaque>{std::make_shared<SQLObject<opaque>>(*this),*this};
+			template<typename T>
+			SQLHandle<T> get_handle(std::unique_ptr<T> o){
+				return SQLHandle<T>{std::make_shared<SQLObject<T>>(*this,std::move(o)),*this};
 			}
 			
 		};
