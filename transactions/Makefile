@@ -33,6 +33,8 @@ test_mailing_list: $(object_files) $(mailing_list_object_files) test_mailing_lis
 	$(chosen_compiler) $(CPPFLAGS) $(LDFLAGS)  $(object_files) $(mailing_list_object_files) test_mailing_list.cpp -o test_mailing_list
 test_handle_serialization: $(object_files) test_handle_serialization.cpp
 	$(chosen_compiler) $(CPPFLAGS) $(LDFLAGS)  $(object_files) test_handle_serialization.cpp -o test_handle_serialization
+test_rawsql: $(object_files) test_rawsql.cpp raw_sqlstore/RawSQLStore.hpp
+	$(chosen_compiler) $(CPPFLAGS) $(LDFLAGS)  $(object_files) test_rawsql.cpp -o test_rawsql
 mailing_list_example.o: $(object_files) mailing_list_example.cpp
 	$(chosen_compiler) -c mailing_list_example.cpp $(CPPFLAGS) -ftemplate-depth=10000
 mailing_list_post_new_message.o: $(object_files) mailing_list_post_new_message.cpp mtl/run_phase.hpp
