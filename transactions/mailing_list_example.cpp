@@ -107,26 +107,26 @@ mailing_list_state::mailing_list_state(client<mailing_list_state>& c)
 			create_user, download_inbox
 	};
 
-	action_choice choose_action(){
+	action_choice choose_action(const configuration_parameters& params){
 		auto choice = mutils::better_rand();
+		bool is_read = (choice <= params.percent_read);
+		bool is_easy = mutils::better_rand() <= params.percent_causal;
 		assert(choice > 0);
 		assert(choice < 1);
-		if (choice < .25){
-			return action_choice::post_new_message;
-		} else if (choice < .5){
-			return action_choice::add_new_user;
-		} else if (choice < .75) {
-			return action_choice::create_user;
+		if (is_easy){
+			if (is_read) return action_choice::download_inbox;
+			else return action_choice::add_new_user;
 		}
 		else {
-			return action_choice::download_inbox;
+			if (is_read) return action_choice::create_user;
+			else return action_choice::post_new_message;
 		}
 	}
 
 	template<>
 	std::unique_ptr<run_result> & client<mailing_list_state>::client_action(std::unique_ptr<run_result> &result) {
 		//four options: post message, join group, create user, download_inbox
-		auto choice = choose_action();
+		auto choice = choose_action(t.params);
 		if (result){
 			if (choice == action_choice::download_inbox) result->l = Level::causal;
 			else result->l = Level::strong;
