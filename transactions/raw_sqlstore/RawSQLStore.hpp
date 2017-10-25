@@ -76,14 +76,13 @@ namespace myria{
 				std::size_t serial_uuid() const {
 					return 14312;
 				}
-				std::size_t bytes_size() const {return 1;}
+				std::size_t bytes_size() const {return mutils::bytes_size(*data);}
 				std::size_t to_bytes(char* c) const {
-					c[0] = true;
-					return 1;
+					return mutils::to_bytes(*data,c);
 				}
 				template<typename... ctxs>
-				static std::unique_ptr<SQLObject> from_bytes(mutils::DeserializationManager<ctxs...>* dsm, char const * const ){
-					return std::unique_ptr<SQLObject>{new SQLObject{dsm->template mgr<RawSQLStore>()}};	
+				static std::unique_ptr<SQLObject> from_bytes(mutils::DeserializationManager<ctxs...>* dsm, char const * const buf){
+					return std::unique_ptr<SQLObject>{new SQLObject{dsm->template mgr<RawSQLStore>(), mutils::from_bytes<T>(dsm,buf)}};	
 				}
 				
 			};
