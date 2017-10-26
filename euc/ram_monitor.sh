@@ -1,4 +1,4 @@
-if [[ `free -m | awk '{print $7}' | grep [0-9]` -lt 800 ]]; then
+if ssh $* ./low_ram.sh; then
 		echo "low ram";
 		killall strong_relay;
 		killall causal_relay;
