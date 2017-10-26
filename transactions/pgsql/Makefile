@@ -1,6 +1,6 @@
 TRANS_DIR= `pwd`/
 IP_quad=`ifconfig | sed s/broadcast.*//g | tr " " "\n" | grep 128.84 | rev | sed s/'\..*'//g | rev`
-CPPFLAGS= -I$(PWD) -I$(PWD)/../ --std=c++1z -Wall -DNUM_CAUSAL_GROUPS="4" -DCAUSAL_GROUP=$(causalGroup) -DSTRONG_REMOTE_IP=\"$(STRONG_REMOTE_IP)\" -DCAUSAL_REMOTE_IP_1=\"$(CAUSAL_REMOTE_IP_1)\" -DCAUSAL_REMOTE_IP_2=\"$(CAUSAL_REMOTE_IP_2)\" -DMY_IP=\"$(MY_IP)\" -DMAX_THREADS=$(MAX_THREADS) -ferror-limit=1 -Wall -Werror -Wextra -DNUM_CAUSAL_MASTERS="2" -DNOPOOL -O2  -DNDEBUG -DTRACK
+CPPFLAGS= -I$(PWD) -I$(PWD)/../ --std=c++1z -Wall -DNUM_CAUSAL_GROUPS="4" -DCAUSAL_GROUP=$(causalGroup) -DSTRONG_REMOTE_IP=\"$(STRONG_REMOTE_IP)\" -DCAUSAL_REMOTE_IP_1=\"$(CAUSAL_REMOTE_IP_1)\" -DCAUSAL_REMOTE_IP_2=\"$(CAUSAL_REMOTE_IP_2)\" -DMY_IP=\"$(MY_IP)\" -DMAX_THREADS=$(MAX_THREADS) -ferror-limit=1 -Wall -Werror -Wextra -DNUM_CAUSAL_MASTERS="2" -DNOPOOL -O2  -DNDEBUG 
 LDFLAGS=  --std=c++1z -lpqxx -lm -pthread 
 client_object_files=utils.o Basics.o Ostreams.o SerializationSupport.o SQLStore.o GSQLObject.o SQLConnection.o SQLTransaction.o SQL_internal_utils.o SQLLevels.o TransactionContext.o ServerSocket.o Socket.o simple_rpc.o local_connection.o Tombstone.o ClockManager.o Tracker.o Ends.o
 
@@ -23,6 +23,12 @@ strong_relay: $(client_object_files)
 
 causal_relay: $(client_object_files)
 	clang++ relay.cpp $(client_object_files) -o causal_relay -DSTORE_LEVEL=causal $(CPPFLAGS) $(LDFLAGS)
+
+strong_relay_tracked: $(client_object_files)
+	clang++ -DTRACK relay.cpp $(client_object_files) -o strong_relay_tracked -DSTORE_LEVEL=strong $(CPPFLAGS) $(LDFLAGS)
+
+causal_relay_tracked: $(client_object_files)
+	clang++ -DTRACK relay.cpp $(client_object_files) -o causal_relay_tracked -DSTORE_LEVEL=causal $(CPPFLAGS) $(LDFLAGS)
 
 test: $(object_files)
 	clang++ test_local_transactions.cpp $(object_files) -o test $(CPPFLAGS) $(LDFLAGS)
