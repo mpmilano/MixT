@@ -51,7 +51,7 @@ namespace myria{ namespace pgsql {
 		constexpr unsigned long num_sql_connections(){
 			using namespace std::chrono;
 			using namespace mutils;
-			return 400;
+			return 6512;
 		}
 		
 		template<Level l>
