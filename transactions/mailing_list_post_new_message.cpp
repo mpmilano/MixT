@@ -18,10 +18,6 @@ namespace examples{
 				index = index->next,
 				/*will hold the end of the user messages list*/
 				var user_msgs_tl = curr_user->value->i,
-				/* advance to the end of messages here */
-				while (user_msgs_tl.isValid() && user_msgs_tl->next.isValid() ){
-					user_msgs_tl = user_msgs_tl->next
-				},
 				/*make a copy to base the new node on*/
 				var new_msg_node = *user_msgs_tl,
 				new_msg_node.value = new_msg_node.value.new(message_contents),
