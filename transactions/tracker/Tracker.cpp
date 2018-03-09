@@ -117,7 +117,7 @@ void Tracker::writeTombstone(mtl::TrackedPhaseContext &ctx,Tracker::Nonce nonce)
 }
 
   void Tracker::accompanyWrite(mtl::TrackedPhaseContext &ctx, Name name, Nonce nonce) {
-  const auto write_lin_metadata = [this](mtl::TrackedPhaseContext &ctx,
+  const auto write_lin_metadata = [](mtl::TrackedPhaseContext &ctx,
                                          StrongTrackableDataStore &ds_real,
                                          Name name, Tracker::Nonce nonce) {
     assert(ctx.store_context());
