@@ -11,8 +11,8 @@ class test_mix_methods {
 	int one{1};
 	int two{2};
 public:
-	mixt_method(test_method) (three) mixt_captures(one,two) (
-		return one + two + three
+	mixt_method(test_method) (three, four) mixt_captures(one,two) (
+		return one + two + three + four
     )
 };
 
@@ -20,5 +20,5 @@ int main(){
     test_mix_methods tmm;
     ClientTracker<> trk;
     DeserializationManager<> *dsm{nullptr};
-    tmm.test_method(trk,dsm,15);
+    return tmm.test_method(trk,dsm,15,16);
 }
