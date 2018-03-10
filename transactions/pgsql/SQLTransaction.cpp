@@ -17,17 +17,22 @@ namespace myria{ namespace pgsql {
 		using namespace mutils;
 		
 		SQLTransaction::SQLTransaction(SQLStore_impl &whennopool(parent), GDataStore& store, LockedSQLConnection c whendebug(, std::string why))
-			:gstore(store),whennopool(parent(parent),) sql_conn(std::move(c)),conn_lock(
+			:gstore(store),whennopool(parent(parent),) sql_conn(std::move(c))
+#ifndef NOSQLCONNECTION
+			,conn_lock(
 				[](auto& l) -> auto& {
 					assert(l.try_lock());
 					l.unlock();
 					return l;
 				}(sql_conn->con_guard)),
 			trans(sql_conn->conn)
+#endif
 			whendebug(,why(why))
 		{
+#ifndef NOSQLCONNECTION
 			assert(!sql_conn->in_trans());
 			sql_conn->current_trans = this;
+#endif
 		}
 		
 
@@ -38,16 +43,24 @@ namespace myria{ namespace pgsql {
 
 	
 		pqxx::result SQLTransaction::exec(const std::string &str){
+#ifndef NOSQLCONNECTION
 				try{
 					return trans.exec(str);
 				}
 				default_sqltransaction_catch
+#else
+					(void)str;
+					struct SQLConnectionDisabled{};
+				throw SQLConnectionDisabled{};
+#endif
 					}
 		
 	
 		bool SQLTransaction::store_commit() {
+#ifndef NOSQLCONNECTION
 			sql_conn->current_trans = nullptr;
 			trans.commit();
+#endif
 			return true;
 		}
 
@@ -60,6 +73,7 @@ namespace myria{ namespace pgsql {
 		}
 		
 		SQLTransaction::~SQLTransaction(){
+#ifndef NOSQLCONNECTION
 			auto &sql_conn = *this->sql_conn;
 			AtScopeEnd ase{[&sql_conn](){
 					sql_conn.current_trans = nullptr;
@@ -67,6 +81,7 @@ namespace myria{ namespace pgsql {
 			if (commit_on_delete) {
 				store_commit();
 			}
+#endif
 			whennopool(parent.default_connection = std::move(this->sql_conn));
 		}
 	}

@@ -30,9 +30,16 @@ namespace myria{ namespace pgsql {
 		}
 		
 		SQLConnection::SQLConnection(std::string host)
-			:prepared(((std::size_t) TransactionNames::MAX),false),conn{std::string("host=") + host}{
+			:prepared(((std::size_t) TransactionNames::MAX),false)
+#ifndef NOSQLCONNECTION
+			,conn{std::string("host=") + host}
+#endif
+		{
+			(void) host;
 			static_assert(int{CAUSAL_GROUP} > 0, "errorr: did not set CAUSAL_GROUP or failed to 1-index");
+#ifndef NOSQLCONNECTION
 			assert(conn.is_open());
+#endif
 		}
 		const int SQLConnection::repl_group;
 

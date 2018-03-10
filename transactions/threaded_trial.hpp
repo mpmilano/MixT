@@ -1,4 +1,5 @@
 #pragma once
+#include "pgsql/SQLConnection.hpp"
 #include "configuration_params.hpp"
 #include "run_result.hpp"
 #include "relay_connections_pool.hpp"

@@ -128,11 +128,11 @@ mailing_list_state::mailing_list_state(client<mailing_list_state>& c)
 		//four options: post message, join group, create user, download_inbox
 		auto choice = choose_action(t.params);
 		if (result){
-			if (choice == action_choice::download_inbox) result->l = Level::causal;
+			if (choice == action_choice::download_inbox || choice == action_choice::add_new_user) result->l = Level::causal;
 			else result->l = Level::strong;
 		}
 		if (result){
-			if (choice == action_choice::download_inbox) result->is_write = true;
+			if (choice == action_choice::add_new_user || choice == action_choice::post_new_message) result->is_write = true;
 			else result->is_write = false;
 		}
 

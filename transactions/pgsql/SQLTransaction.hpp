@@ -25,8 +25,10 @@ namespace myria{ namespace pgsql {
 		private:
 			whennopool(SQLStore_impl &parent;)
 			LockedSQLConnection sql_conn;
+#ifndef NOSQLCONNECTION
 			std::unique_lock<std::mutex> conn_lock;
 			pqxx::work trans;
+#endif
 		public:
 			whendebug(const std::string why);
 			bool commit_on_delete = false;
@@ -62,6 +64,7 @@ namespace myria{ namespace pgsql {
 		template<typename Arg1, typename... Args>
 		auto SQLTransaction::prepared(TransactionNames name, const std::string &stmt,
 									  Arg1 && a1, Args && ... args){
+#ifndef NOSQLCONNECTION
 			auto nameint = (int) name;
 			auto namestr = std::to_string(nameint);
 			try{
@@ -74,6 +77,14 @@ namespace myria{ namespace pgsql {
 				return exec_prepared_hlpr(fwd,std::forward<Args>(args)...);
 			}
 			default_sqltransaction_catch
+#else
+				if (false){
+					using fwd_t = DECT(std::declval<pqxx::work>().prepared(std::to_string((int)name))(std::forward<Arg1>(a1)));
+					fwd_t *fwd{nullptr};
+					return exec_prepared_hlpr(*fwd,std::forward<Args>(args)...);
+				}
+			struct SQLConnectionDisabled{}; throw SQLConnectionDisabled{};
+#endif
 		}
 
 	}}

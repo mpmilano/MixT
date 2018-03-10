@@ -18,15 +18,21 @@ namespace myria{ namespace pgsql {
 		
 		//strong
 		int process_version_update(const result &res, int& where){
+#ifndef NOSQLCONNECTION
 			assert(!res.empty());
 			whendebug(bool worked = )res[0][0].to(where);
 			assert(worked);
 			assert(where != -1);
+#else
+			(void) res;
+			(void) where;
+#endif			
 			return 1;
 		}
 			
 		//causal
 		int process_version_update(const result &r, std::array<long long,NUM_CAUSAL_GROUPS>& vers){
+#ifndef NOSQLCONNECTION
 			assert(!r.empty());
 			whendebug(auto res1 = )r[0][0].to(vers[0]);
 			assert(res1);
@@ -36,6 +42,10 @@ namespace myria{ namespace pgsql {
 			assert(res3);
 			whendebug(auto res4 = )r[0][3].to(vers[3]);
 			assert(res4);
+#else
+			(void) r;
+			(void) vers;
+#endif
 			return 4;
 		}
 	}

@@ -97,19 +97,16 @@ int main(int argc, char **argv) {
       if (it->stop_time > finish_time)
         finish_time = it->stop_time;
     }
-    if (bin_size > 0) {
-			if (bin_size * params.log_every_n * duration_cast<duration_t>(1s).count() / segment_duration.count() == 0)
-				std::cout << duration_cast<microseconds>(segment_duration) << std::endl;
-			assert(bin_size * params.log_every_n * duration_cast<duration_t>(1s).count() / segment_duration.count() != 0);
+    if (bin_size > 0 && bin_size * params.log_every_n * duration_cast<duration_t>(1s).count() / segment_duration.count() != 0) {
       bin_averages.emplace_back(
-          Frequency{bin_size * params.log_every_n * duration_cast<duration_t>(1s).count() /
-                    segment_duration.count()},
-          milliseconds{duration_cast<milliseconds>(total_time).count() /
-                       bin_size},
-          duration_cast<milliseconds>(finish_time - now),
-          microseconds{total_delay.count() / ((int)bin_size)},
-          microseconds{total_desired_delay.count() / ((int)bin_size)},
-          microseconds{total_effective_delay.count() / ((int)bin_size)});
+				Frequency{bin_size * params.log_every_n * duration_cast<duration_t>(1s).count() /
+						segment_duration.count()},
+				milliseconds{duration_cast<milliseconds>(total_time).count() /
+						bin_size},
+				duration_cast<milliseconds>(finish_time - now),
+				microseconds{total_delay.count() / ((int)bin_size)},
+				microseconds{total_desired_delay.count() / ((int)bin_size)},
+				microseconds{total_effective_delay.count() / ((int)bin_size)});
     }
   }
   auto sort_tvl = [](const auto &l, const auto &r) {

@@ -66,7 +66,7 @@ namespace myria{ namespace pgsql {
 			whendebug(bzero(i->buf1,std::max<std::size_t>(2048,i->size)));
 			{
 				//assert(!isValid(trans));
-
+#ifndef NOSQLCONNECTION
 				if (t == Table::BlobStore){
 					binarystring blob(&c.at(0),c.size());
 					cmds::initialize_with_id(ss.level,*trans,t,SQLConnection::repl_group,id,ss.clock,blob);
@@ -74,6 +74,9 @@ namespace myria{ namespace pgsql {
 				else if (t == Table::IntStore){
 					cmds::initialize_with_id(ss.level,*trans,t,SQLConnection::repl_group,id,ss.clock,((int*)c.data())[0]);
 				}
+#else
+				(void) trans;
+#endif
                                 if (i->_store.level == Level::causal){
                                     for (auto& val : i->causal_vers)
                                         val = 0;
@@ -113,6 +116,7 @@ namespace myria{ namespace pgsql {
 		}
 
 		void SQLStore_impl::GSQLObject::save(SQLTransaction *trans){
+#ifndef NOSQLCONNECTION
 			assert(trans);
 			char *c = i->buf1;
 			assert(c);
@@ -147,6 +151,9 @@ namespace myria{ namespace pgsql {
                                     process_version_update(res,i->causal_vers);
                                 }
 			}
+#else
+			(void) trans;
+#endif
 		}
 
 		char* SQLStore_impl::GSQLObject::load(SQLTransaction *trans){
@@ -240,7 +247,7 @@ namespace myria{ namespace pgsql {
 		}
 
 		int SQLStore_impl::GSQLObject::obj_buffer_size() const {
-			assert(i->size >= 0);
+                        //assert(i->size >= 0);
 			return i->size;
 		}
 

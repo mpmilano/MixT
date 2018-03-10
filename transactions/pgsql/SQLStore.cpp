@@ -5,6 +5,7 @@
 #include "pgsql/SQLTransaction.hpp"
 #include "pgsql/SQLCommands.hpp"
 #include "pgsql/SQLStore.hpp"
+#include "pgsql/SQLConnection.hpp"
 #include "tracker/Ends.hpp"
 #include "Ostreams.hpp"
 #include "pgsql/SQL_internal_utils.hpp"
@@ -24,6 +25,7 @@ namespace myria{ namespace pgsql {
 				whenpool(pool.acquire_weak())
 					whennopool(new SQLConnection(host))
 					} {
+#ifndef NOSQLCONNECTION
 				auto t = begin_transaction(whendebug("Setting up this new SQLStore; gotta configure search paths and stuff."));
 				((SQLTransaction*)t.get())
 					->exec(l == Level::strong ?
@@ -35,6 +37,7 @@ namespace myria{ namespace pgsql {
 						   : "SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL REPEATABLE READ");
 				whendebug(auto cres = )t->store_commit();
 				assert(cres);
+#endif
 			}
 
 		unique_ptr<SQLTransaction> SQLStore_impl::begin_transaction(whendebug(const std::string &why))
@@ -62,6 +65,8 @@ namespace myria{ namespace pgsql {
 			catch (const mutils::ResourceInvalidException&) {
 				return false;
 			}
+#elif defined(NOSQLCONNECTION)
+			return false;
 #else
 			return !this->default_connection;
 #endif

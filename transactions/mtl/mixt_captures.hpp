@@ -11,7 +11,7 @@
     {                                                                                                                                                          \
       const auto& capture1 = a;                                                                                                                                \
       using capture1_name = MUTILS_STRING(a);                                                                                                                  \
-      TRANSACTION_METHOD_WITH6(arg1_string, arg1, arg2_string,arg2,capture1_name, a, ) TRANSACTION_METHOD_TRANSACTION_LOCAL
+      TRANSACTION_METHOD_WITH6(arg1_string, arg1, arg2_string,arg2,capture1_name, a ) TRANSACTION_METHOD_TRANSACTION_LOCAL1
 
 #define mixt_captures2(a, b)                                                                                                                                    \
   using this_t = DECT(this);                                                                                                                                   \
@@ -25,7 +25,7 @@
       const auto& capture2 = b;                                                                                                                                \
       using capture1_name = MUTILS_STRING(a);                                                                                                                  \
       using capture2_name = MUTILS_STRING(b);                                                                                                                  \
-      TRANSACTION_METHOD_WITH8(arg1_string, arg1, arg2_string,arg2,capture1_name, a, capture2_name, b) TRANSACTION_METHOD_TRANSACTION_LOCAL
+      TRANSACTION_METHOD_WITH8(arg1_string, arg1, arg2_string,arg2,capture1_name, a, capture2_name, b) TRANSACTION_METHOD_TRANSACTION_LOCAL2
 
 #define mixt_captures_IMPL2(count, ...) mixt_captures##count(__VA_ARGS__)
 #define mixt_captures_IMPL(count, ...) mixt_captures_IMPL2(count, __VA_ARGS__)

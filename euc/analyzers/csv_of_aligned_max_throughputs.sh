@@ -13,16 +13,12 @@ while read outer; do
 						echo $type > /tmp/csv_of_aligned_workdir/l_"$i"
 						echo $line | tr "," "\n" | tr -d ' ' >> /tmp/csv_of_aligned_workdir/l_"$i"
 				fi
-				if [[ $sort = 2 ]]; then
-						echo $type > /tmp/csv_of_aligned_workdir/r_"$i"
-						echo $line | tr "," "\n" | tr -d ' ' >> /tmp/csv_of_aligned_workdir/r_"$i"
-				fi
 				sort=$[sort+1]
 		done
+		echo /tmp/csv_of_aligned_workdir/l_"$i" >> /tmp/csv_of_aligned_workdir/lefts
 		i=$[i+1]
 done < /dev/stdin
-paste /tmp/csv_of_aligned_workdir/r_* -d',' > /tmp/csvright.csv
-paste /tmp/csv_of_aligned_workdir/l_* -d',' > /tmp/csvleft.csv
-rm /tmp/csv_of_aligned_workdir/r_*
+cat /tmp/csv_of_aligned_workdir/lefts | xargs paste -d',' > /tmp/csvleft.csv
+rm /tmp/csv_of_aligned_workdir/lefts
 rm /tmp/csv_of_aligned_workdir/l_*
 rmdir /tmp/csv_of_aligned_workdir

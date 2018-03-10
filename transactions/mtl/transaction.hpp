@@ -173,12 +173,15 @@ struct pre_transaction_str<mutils::String<Str...>>
 };
 
 template<typename pre_txn_str>
-struct with_operand_right{};
+struct with_operand_right{
+    constexpr with_operand_right(){}
+};
 
 template<typename... with_args>
 struct with_pre_operand_left{
+    constexpr with_pre_operand_left(){}
   template<typename pre_txn_str>
-  auto operator+(const with_operand_right<pre_txn_str>&) const {
+  constexpr auto operator+(const with_operand_right<pre_txn_str>&) const {
     return pre_txn_str::template with<with_args...>();
   }
 };

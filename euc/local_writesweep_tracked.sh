@@ -6,11 +6,11 @@ if [[ $1 ]]; then
 else start_at=0
 fi
 
-full_range=".01 .05 .1 .15 .2 .25 .3 .35 .4 .45 .5 .55 .6 .65 .7 .75 .8 .85 .9 .99"
+full_range=".01 .05 .15 .25 .35 .45 .55 .65 .75 .85 .9 .99"
 
-short_sweep=".05 .3 .7 .95"
+short_sweep=".7"
 
-for iteration_number in 2 3 4 5; do
+for iteration_number in 2; do
 for percent_causal in $full_range; do
 		if [[ `echo "$percent_causal >= $start_at" | bc` = 1 ]]
 		then for percent_read in $short_sweep; do

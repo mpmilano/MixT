@@ -1,5 +1,6 @@
 #pragma once
 #include <iostream>
+#include "pgsql/SQLConnection.hpp"
 #include "pgsql/SQLStore_impl.hpp"
 #include "Operations.hpp"
 #include "pgsql/SQLTransaction.hpp"

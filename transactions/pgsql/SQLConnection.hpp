@@ -3,6 +3,7 @@
 #include <pqxx/pqxx>
 #include <mutex>
 #include "mutils-tasks/resource_pool.hpp"
+#include "pgsql/SQLLevels.hpp"
 
 namespace myria{ namespace pgsql {
 
@@ -37,13 +38,20 @@ namespace myria{ namespace pgsql {
 	
 			//hoping specifying nothing means
 			//env will be used.
+#ifndef NOSQLCONNECTION
 			pqxx::connection conn;
+#endif
 			SQLConnection(std::string host);
 			SQLConnection(const SQLConnection&) = delete;
 		};
 
 		std::string get_hostname(Level l);
-		
+
+#ifdef NOSQLCONNECTION
+#ifndef NOPOOL
+#define NOPOOL
+#endif
+#endif
 #ifndef NOPOOL
 #define whenpool(x...) x
 #define whennopool(x...)
@@ -82,8 +90,13 @@ namespace myria{ namespace pgsql {
 #else
 #define whenpool(x...)
 #define whennopool(x...) x
+#ifndef NOSQLCONNECTION
 		using WeakSQLConnection = std::unique_ptr<SQLConnection>;
 		using LockedSQLConnection = WeakSQLConnection;
+#else
+		using WeakSQLConnection = struct unit{unit(...){}};
+		using LockedSQLConnection = WeakSQLConnection;
+#endif
 #endif
 
 	} }
