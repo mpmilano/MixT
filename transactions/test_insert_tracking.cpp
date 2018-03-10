@@ -49,7 +49,7 @@ int main(){
   std::cout << txn << std::endl;
   using ClientTrk = ClientTracker<Label<strong>, Label<causal> >;
   ClientTrk ctrk;
-  using res = DECT(txn.run_optimistic<ClientTrk>(ctrk, nullptr, std::declval<typename ClientTrk::connection_references>(),hndl1,hndl2));
+  using res = DECT(txn.run_remote<ClientTrk>(ctrk, nullptr, std::declval<typename ClientTrk::connection_references>(),hndl1,hndl2));
 	static_assert(std::is_same<res,int>::value);
 	txn.run_local(ctrk, hndl1,hndl2);
 }

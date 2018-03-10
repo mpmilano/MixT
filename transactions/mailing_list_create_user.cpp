@@ -20,7 +20,7 @@ namespace examples {
 		using connections = typename DECT(ct.trk)::connection_references;
 		auto strong_connection = ct.get_relay<Level::strong>().lock();
 		auto causal_connection = ct.get_relay<Level::causal>().lock();
-		return txn.run_optimistic(ct.trk,&ct.dsm,
+		return txn.run_remote(ct.trk,&ct.dsm,
 											 connections{ConnectionReference<Label<strong> >{*strong_connection},ConnectionReference<Label<causal> >{*causal_connection}},g);
 	}
 }

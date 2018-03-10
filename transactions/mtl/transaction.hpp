@@ -66,7 +66,7 @@ struct previous_transaction_phases
     }
   public:
     template <typename ClientTracker, typename... ctxs>
-    static auto run_optimistic(ClientTracker& trk, mutils::DeserializationManager<ctxs...>* dsm, const typename ClientTracker::connection_references& c,
+    static auto run_remote(ClientTracker& trk, mutils::DeserializationManager<ctxs...>* dsm, const typename ClientTracker::connection_references& c,
                                const typename bound_values::type&... v)
     {
       return transaction_struct::template interp<std::true_type>(trk, dsm, c, v...);

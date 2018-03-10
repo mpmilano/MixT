@@ -31,7 +31,7 @@ template <Level l> void txn_read(client &c) {
 	using connections = typename DECT(c.trk)::connection_references;
 	auto strong_connection = c.get_relay<Level::strong>().lock();
 	auto causal_connection = c.get_relay<Level::causal>().lock();
-	return read_trans.run_optimistic (c.trk, &c.dsm,
+	return read_trans.run_remote (c.trk, &c.dsm,
 																		connections{ConnectionReference<Label<strong> >{*strong_connection},
 																				ConnectionReference<Label<causal> >{*causal_connection}}, hndl);
   // return read_trans.run_local(hndl);
@@ -46,7 +46,7 @@ template <Level l> void txn_write(client & c) {
 	using connections = typename DECT(c.trk)::connection_references;
 	auto strong_connection = c.get_relay<Level::strong>().lock();
 	auto causal_connection = c.get_relay<Level::causal>().lock();
-	return incr_trans.run_optimistic(c.trk, &c.dsm,connections{ConnectionReference<Label<strong> >{*strong_connection},ConnectionReference<Label<causal> >{*causal_connection}} , hndl);
+	return incr_trans.run_remote(c.trk, &c.dsm,connections{ConnectionReference<Label<strong> >{*strong_connection},ConnectionReference<Label<causal> >{*causal_connection}} , hndl);
   // return incr_trans.run_local(hndl);
 }
 	}

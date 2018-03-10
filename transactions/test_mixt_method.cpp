@@ -11,7 +11,7 @@ class test_mix_methods {
 	int one{1};
 	int two{2};
 public:
-	mixt_method(test_method) (three) mixt_captures(one,two)(
+	mixt_method(test_method) (three) mixt_captures(one,two) (
 		return one + two + three
     )
 };
