@@ -238,7 +238,7 @@ template<bool b, typename...> constexpr bool useful_static_assert(){
 }
 
 #define MATCH_CONTEXT(NAME) struct NAME 
-#define MATCHES(m...) static constexpr auto match(const m &)
-#define RETURN(r...) r* {constexpr r* ret{nullptr}; return ret;}
-#define RETURNVAL(r...) std::integral_constant<DECT(r), r>* {constexpr std::integral_constant<DECT(r), r>* ret{nullptr}; return ret;}
-#define MATCH(name,c...) DECT(*name ::match(std::declval< c >()))
+#define MATCHES(...) static constexpr auto match(const __VA_ARGS__ &)
+#define RETURN(...) __VA_ARGS* {constexpr __VA_ARGS__* ret{nullptr}; return ret;}
+#define RETURNVAL(...) std::integral_constant<DECT(__VA_ARGS__), __VA_ARGS__>* {constexpr std::integral_constant<DECT(__VA_ARGS__), __VA_ARGS__>* ret{nullptr}; return ret;}
+#define MATCH(name,...) DECT(*name ::match(std::declval< __VA_ARGS__ >()))

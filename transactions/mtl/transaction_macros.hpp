@@ -1,5 +1,6 @@
 #pragma once
 #include "../mutils/macro_utils.hpp"
+#include "../mtl/mixt_method.hpp"
 //#include "../mutils/CTString_macro.hpp"
 
 #define TRANSACTION(x...) ::myria::mtl::pre_transaction_str<DECT(::mutils::String<'{'>::append(MUTILS_STRING(x){}).template append<'}'>())>
@@ -44,40 +45,7 @@
     const auto& arg = _this;                                                                                                                                   \
     TRANSACTION_FUNCTION_WITH(_this) TRANSACTION_FUNCTION_TRANSACTION
 
-#define TRANSACTION_METHOD_WITH2(name, ref) return (with_pre_operand_left<::myria::mtl::value_with_stringname<DECT(ref), name>>{} +
-#define METHOD_CPTR(ref, name) ::myria::mtl::value_with_stringname<DECT(ref), name>
-#define TRANSACTION_METHOD_WITH6(name1, ref1, name2, ref2, name3, ref3) return (with_pre_operand_left<METHOD_CPTR(ref1,name1),METHOD_CPTR(ref2,name2),METHOD_CPTR(ref3,name3)>{} +
-
-#define TRANSACTION_METHOD_TRANSACTION(x...) with_operand_right<TRANSACTION(x)>{}).run_local(ct,dsm,arg1,capture1,capture2);                                   \
-  }                                                                                                                                                            \
-  }                                                                                                                                                            \
-  ;                                                                                                                                                            \
-  return transaction_method_context::invoke(ct, dsm, arg1, transaction_method_context::capture1(this), transaction_method_context::capture2(this));            \
-  }
-
-#define mixt_captures(a, b)                                                                                                                                    \
-  using this_t = DECT(this);                                                                                                                                   \
-  struct transaction_method_context                                                                                                                            \
-  {                                                                                                                                                            \
-    static const auto& capture1(this_t _this) { return _this->a; }                                                                                             \
-    static const auto& capture2(this_t _this) { return _this->b; }                                                                                             \
-    static auto invoke(CT& ct, DSM* dsm, const T& arg1, const DECT(a) & a, const DECT(b) & b)                                                                  \
-    {                                                                                                                                                          \
-      const auto& capture1 = a;                                                                                                                                \
-      const auto& capture2 = b;                                                                                                                                \
-      using capture1_name = MUTILS_STRING(a);                                                                                                                  \
-      using capture2_name = MUTILS_STRING(b);                                                                                                                  \
-      TRANSACTION_METHOD_WITH6(arg1_string, arg1, capture1_name, a, capture2_name, b) TRANSACTION_METHOD_TRANSACTION
-
-#define TRANSACTION_METHOD_ARGUMENT(_this)                                                                                                                     \
-  (CT & ct, DSM * dsm, const T& _this)                                                                                                                         \
-  {                                                                                                                                                            \
-    const auto& arg1 = _this;                                                                                                                                  \
-    using arg1_string = MUTILS_STRING(_this);
 
 #define mixt_function(x)                                                                                                                                       \
   template <typename CT, typename DSM, typename T>                                                                                                             \
   auto x TRANSACTION_FUNCTION_ARGUMENT
-#define mixt_method(x)                                                                                                                                         \
-  template <typename CT, typename DSM, typename T>                                                                                                             \
-  auto x TRANSACTION_METHOD_ARGUMENT

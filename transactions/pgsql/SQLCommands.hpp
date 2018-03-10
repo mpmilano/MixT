@@ -67,6 +67,7 @@ namespace{
 			case Table::IntStore : return trans.prepared(TransactionNames::select2,is,id); 
 			}
 			assert(false && "forgot a case");
+			throw "forgot a case";
 		}
 
 		template<typename T, typename Blob>
@@ -80,6 +81,7 @@ namespace{
 			case Table::IntStore : return trans.prepared(TransactionNames::Updates2,is,id,b);
 			}
 			assert(false && "forgot a case");
+			throw "forgot a case";
 		}
 
 		template<typename T>
@@ -197,6 +199,7 @@ namespace{
 			case Table::IntStore : return trans.prepared(TransactionNames::select2,is,id); 
 			}
 			assert(false && "forgot a case");
+			throw "forgot a case";
 		}
 		
 		template<typename T, typename Blob>

@@ -38,6 +38,7 @@ namespace myria { namespace pgsql {
 			switch (t){
 			case Table::BlobStore : return CexprString{} + bs;
 			case Table::IntStore : return CexprString{} + is;
+			default : return CexprString{};
 			};
 		}
 		
