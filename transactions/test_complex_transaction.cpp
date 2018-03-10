@@ -7,6 +7,7 @@
 using namespace myria;
 using namespace mtl;
 using namespace tracker;
+using namespace mutils;
 
 using test_struct = STRUCT(int, a, int, b, int, c);
 namespace mutils{
@@ -138,5 +139,6 @@ std::cout << txn << std::endl;
 	
 
 	ClientTracker<> trk;
-	txn.run_local(trk,tstruct,tstruct2,hndl,hndl2);//*/
+	DeserializationManager<> *dsm{nullptr};
+	txn.run_local(trk,dsm,tstruct,tstruct2,hndl,hndl2);//*/
 }

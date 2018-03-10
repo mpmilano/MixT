@@ -171,5 +171,16 @@ struct pre_transaction_str<mutils::String<Str...>>
     return transaction_struct<recollapsed::number_remote_phases::value, previous_phases, recollapsed, values...>{};
   }
 };
+
+template<typename pre_txn_str>
+struct with_operand_right{};
+
+template<typename... with_args>
+struct with_pre_operand_left{
+  template<typename pre_txn_str>
+  auto operator+(const with_operand_right<pre_txn_str>&) const {
+    return pre_txn_str::template with<with_args...>();
+  }
+};
 }
 }
