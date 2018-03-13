@@ -65,7 +65,7 @@ namespace myria {
 			template<typename T>
 			struct TestingObject : public RemoteObject<label,T>{
 				using Store = TestingStore;
-				using stored = Store::template stored<T>;
+				using stored = std::shared_ptr<T>;
 				Name _name;
 				TestingStore &parent;
 				TestingObject(Name name, TestingStore &parent)

@@ -53,8 +53,9 @@ template <char op, typename L, typename R>
 void
 print_ast(std::ostream& o, const Expression<BinOp<op, L, R>>&)
 {
-  static const std::string opstr{ 1, op };
-  o << L{} << " " << opstr << " " << R{};
+  static const std::string opstr{  op, 0 };
+  static const std::string opstr_more = std::string{" "} + opstr + std::string{" "};
+  o << L{} << opstr_more << R{};
 }
 
   template <typename Name, typename Hndl>
@@ -180,7 +181,7 @@ print_ast(std::ostream& o, Statement<Sequence<Seq...>>)
   o << "}";
 }
 
-template <typename AST>
+template <typename AST, typename enable = std::enable_if_t<is_statement<AST>::value || is_expression<AST>::value>>
 auto&
 operator<<(std::ostream& o, const AST& ast)
 {

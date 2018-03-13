@@ -39,7 +39,7 @@ constexpr auto parse_if(String<'i', 'f', _str...>)
   constexpr auto else_s = remainder_s.trim_ends()
                             .template strip_paren_group<'{', '}'>(one{})
                             .trim_ends()
-                            .split(one{}, MUTILS_STRING(else){})
+                            .after_fst(MUTILS_STRING(else){})
                             .trim_ends()
                             .template strip_paren_group<'{', '}'>(zero{})
                             .trim_ends();
@@ -226,7 +226,7 @@ _parse_statement(std::enable_if_t<!(String<_str...>::begins_with(String<'{'>{}) 
   static_assert(!String<_str...>::contains_outside_parens(comma_s{}));
   using str = String<_str...>;
   auto var = parse_expression(str::split(zero{}, String<'='>{}).trim_ends());
-  auto expr = parse_expression(str::split(one{}, String<'='>{}).trim_ends());
+  auto expr = parse_expression(str::after_fst(String<'='>{}).trim_ends());
   return parse_phase::Assignment<std::decay_t<decltype(var)>, std::decay_t<decltype(expr)>>{};
 }
 

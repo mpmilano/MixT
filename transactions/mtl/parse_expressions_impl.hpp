@@ -17,7 +17,7 @@ constexpr auto
 parse_binop(String<str...>)
 {
   constexpr auto l = parse_expression(String<str...>::split(zero{}, binop_string<op>{}).trim_ends());
-  constexpr auto r = parse_expression(String<str...>::split(one{}, binop_string<op>{}).trim_ends());
+  constexpr auto r = parse_expression(String<str...>::after_fst(binop_string<op>{}).trim_ends());
   return parse_phase::BinOp<op, std::decay_t<decltype(l)>, std::decay_t<decltype(r)>>{};
 }
 
@@ -97,7 +97,9 @@ _parse_expression(std::enable_if_t<!parse_utilities::contains_invocation<str...>
   return parse_phase::Constant<String<str...>::trim_ends().parseInt()>{};
 }
 
+#ifndef constexpr
 static_assert(contains_operator<'a', '.', 'b', ' ', '<', ' ', 'e'>());
+#endif
 // field reference
 template <char... str>
 constexpr auto
@@ -146,7 +148,7 @@ struct add_operations_struct
 	static constexpr auto add_operation_args(Operation<ensure_str, hndl,operation_args_exprs<>, operation_args_varrefs<> >, String<label...> l)
   {
 	  using inner_label = DECT(l);
-		static_assert(Label<String<label...> >::is_label::value);
+		static_assert(Label<String<label...> >::is_label::value,"");
 	  return Ensure<Label<inner_label>,hndl>{};
   }
 
@@ -155,7 +157,7 @@ struct add_operations_struct
 	static constexpr auto add_operation_args(Operation<endorse_str, hndl,operation_args_exprs<>, operation_args_varrefs<> >, String<label...> l)
   {
 	  using inner_label = DECT(l);
-	  static_assert(!std::is_same<inner_label, top>::value, "Error: cannot endorse all the way to top (sorry)");
+	  static_assert((!std::is_same<inner_label, top>::value), "Error: cannot endorse all the way to top (sorry)");
 	  return Endorse<Label<inner_label>,hndl>{};
   }
 
@@ -165,7 +167,7 @@ struct add_operations_struct
   template <typename hndl, typename operations_str>
   static constexpr auto add_operation_args(Operation<operations_str, hndl, operation_args_exprs<args...>, operation_args_varrefs<> > a, String<>)
   {
-    static_assert((sizeof...(args) > 0) || !operations_str::contains(isValid_str{}));
+    static_assert((sizeof...(args) > 0) || !operations_str::contains(isValid_str{}),"");
     return a;
   }
 
