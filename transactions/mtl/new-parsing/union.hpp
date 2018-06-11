@@ -39,6 +39,7 @@ template<> struct Union_elem<std::nullptr_t> {
 	constexpr Union_elem():t{nullptr},is_this_elem{false}{}
 
 	constexpr Union_elem& operator=(const Union_elem& u){
+		is_this_elem = u.is_this_elem;
 		return *this;
 	}
 

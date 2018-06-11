@@ -11,7 +11,7 @@ template<std::size_t size, typename T> struct SingleAllocator{
 	bool open_slots[size];
 
 	template<typename Allocator>
-	constexpr SingleAllocator(SingleAllocator&& o, Allocator& _new)
+	constexpr SingleAllocator(SingleAllocator&& o, Allocator&)
 		:data(std::move(o.data)),open_slots{false} {
 		//initialize data as copy (if that's a thing)
 		for (auto i = 0u; i < size; ++i){
@@ -34,7 +34,7 @@ private:
 		//this will always assert false;
 		//gcc just gets upset if I do that directly,
 		//and clang gets upset if I don't. 
-		if (!open_slots[3]) assert(false && "out of memory");
+		if (!open_slots[3]) {assert(false && "out of memory"); return 0;}
 		else return 0;
 	}
 public:
@@ -50,7 +50,7 @@ public:
 		return o.free(*this);
 	}
 
-	friend class allocated_ref<T>;
+	friend struct allocated_ref<T>;
 };
 
 template<typename T> template<std::size_t s>

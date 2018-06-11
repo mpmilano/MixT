@@ -7,7 +7,13 @@
 namespace myria{
 namespace mtl{
 namespace new_parse_phase{
-using Alloc = as_values::AST_Allocator<150>;
+
+struct parse_error : public std::logic_error {
+  template<typename... T>
+  parse_error(T&&... t):std::logic_error(std::forward<T>(t)...){}
+};
+
+using Alloc = as_values::AST_Allocator<400>;
 
 template <typename string> struct parse {
   const string _str;
@@ -20,7 +26,7 @@ template <typename string> struct parse {
     using namespace mutils;
     using namespace cstring;
     <?php echo alloc("ret", "ref","BinOp")?>
-    str_nc operands[2] = {0};
+    str_nc operands[2] = {{0}};
     last_split(cause,str,operands);
     ref.L = parse_expression(operands[0]);
     ref.R = parse_expression(operands[1]);
@@ -33,7 +39,6 @@ template <typename string> struct parse {
     <?php function instantiate_builtin_op($type, $arg = "") : string{
       return "
       {".alloc("ret", "ref","$type")."
-      str_nc final_str = {0};
       ref.Hndl = parse_expression(split[0]); ".
       ($arg !== "" ? 
         "trim(ref.$arg.label, op_args);" : "")."
@@ -54,7 +59,7 @@ template <typename string> struct parse {
       case 's': <?php echo instantiate_builtin_op("Ensure","label") ?> //ensure
       case 'V': <?php echo instantiate_builtin_op("IsValid") ?> //isValid
     }
-    throw "Internal Error: ran off the end";
+    throw parse_error{"Internal Error: ran off the end finding builtin operations."};
   }
 
   constexpr allocated_ref<as_values::AST_elem> parse_args(const str_t &str){
@@ -94,7 +99,15 @@ template <typename string> struct parse {
   constexpr allocated_ref<as_values::AST_elem> parse_expr_operation(const str_t &str){
     return parse_operation(str,false);
   }
-
+/*
+<?php function error_check($name, $where, ...$look_for){
+  $ret = "if (contains_paren($where)) throw parse_error{\"Parse error: We thought this was a $name, but it contains parens\"};";
+  foreach ($look_for as $target){
+    $ret = $ret."if (contains_outside_parens(\"$target\",$where)) throw parse_error{\"Parse error: This should be a $name, but it contains a '$target', which is not allowed\"};";
+  }
+  return $ret;
+}?>
+*/
   constexpr allocated_ref<as_values::AST_elem> parse_fieldref(const str_t& str){
     using namespace mutils;
     using namespace cstring;
@@ -104,9 +117,7 @@ template <typename string> struct parse {
     last_split('.',trimmed,operands);
     {
       //error checking
-      if (contains_paren(operands[1])) throw "Parse error: We thought this was a fieldref, but it contains parens";
-      if (contains_outside_parens('.',operands[1])) throw "Parse error: This should be a field, but it contains a '.', which is not allowed";
-      if (contains(' ',operands[1])) throw "Parse error: a space snuck in here somehow";
+      <?php echo error_check("fieldref","operands[1]",'.','->','*',' ')?>
     }
     <?php echo alloc("ret", "ref","FieldReference")?>
     ref.Struct = parse_expression(operands[0]);
@@ -116,7 +127,7 @@ template <typename string> struct parse {
     return ret;
   }
 
-  constexpr allocated_ref<as_values::AST_elem> parse_fieldptrref(const str_t& str, const char* cause){
+  constexpr allocated_ref<as_values::AST_elem> parse_fieldptrref(const str_t& str, const char* ){
     using namespace mutils;
     using namespace cstring;
     str_nc trimmed = {0};
@@ -125,9 +136,7 @@ template <typename string> struct parse {
     last_split("->",trimmed,operands);
     {
       //error checking
-      if (contains_paren(operands[1])) throw "Parse error: We thought this should be a field, but it contains parens";
-      if (contains_outside_parens('.',operands[1])) throw "Parse error: This should be a field, but it contains a '.', which is not allowed";
-      if (contains(' ',operands[1])) throw "Parse error: a space snuck in here somehow";
+      <?php echo error_check("fieldptrref","operands[1]",'.','->','*',' ')?>
     }
     <?php echo alloc("ret", "ref","FieldPointerReference")?>
     ref.Struct = parse_expression(operands[0]);
@@ -137,7 +146,7 @@ template <typename string> struct parse {
     return ret;
   }
 
-  constexpr allocated_ref<as_values::AST_elem> parse_deref(const str_t& str, const char* cause){
+  constexpr allocated_ref<as_values::AST_elem> parse_deref(const str_t& str, const char* ){
     using namespace mutils;
     using namespace cstring;
     str_nc trimmed = {0};
@@ -165,9 +174,7 @@ template <typename string> struct parse {
     trim(ref.Var,str);
 		{
 			//error checking
-			if (contains_paren(ref.Var)) throw "Parse error: We thought this should be a variable, but it contains parens";
-      if (contains_outside_parens('.',ref.Var)) throw "Parse error: This should be a variable, but it contains a '.', which is not allowed";
-      if (contains(' ',ref.Var)) throw "Parse error: a space snuck in here somehow";
+      <?php echo error_check("variable access",'ref.Var','.','->','*',' ')?>
 		}
     return ret;
   }
@@ -188,7 +195,7 @@ template <typename string> struct parse {
   constexpr allocated_ref<as_values::AST_elem> parse_expression(const str_t &str) {
     using namespace mutils;
     using namespace cstring;
-    <?php echo parse_expr("binop","str","+","- ","* ","/","==","&&","||","!=") ?>
+    <?php echo parse_expr("binop","str","+","- ","* ","/","==","&&","||","!=",'>','<','>=','<=') ?>
     if (contains_outside_parens(".",str)){
       str_nc pretrim_splits[2] = {{0}};
       last_split(".",str,pretrim_splits);
@@ -216,7 +223,7 @@ template <typename string> struct parse {
       if (atom[0] >= '0' && atom[0] <= '9') return parse_constant(atom);
       else return parse_varref(atom);
     }
-    throw "Ran off the end!";
+    throw parse_error{std::string{"Parse Error:  Could not find Expression to match input of "} + str};
   }
 
   constexpr allocated_ref<as_values::AST_elem> parse_binding(const str_t &str){
@@ -332,12 +339,16 @@ constexpr allocated_ref<as_values::AST_elem> parse_assignment(const str_t &str) 
     else if (contains_paren(str)){
       return parse_operation(str,true);
     }
-    else if (str[0] == 0) {
-      <?php echo alloc("ret","sr","Skip") ?>;
-      (void) sr;
-      return ret;
+    else {
+      str_nc trimit = {0};
+      trim(trimit,str);
+      if (str[0] == ' '){
+        <?php echo alloc("ret","sr","Skip") ?>;
+        (void) sr;
+        return ret;
+      }
     }
-    else throw "Ran off the end!";
+    throw parse_error{std::string{"Parse Error:  Could not find Statement to match input of "} + str};
   }
 
   constexpr allocated_ref<as_values::AST_elem> parse_sequence(const str_t &str) {
@@ -347,7 +358,6 @@ constexpr allocated_ref<as_values::AST_elem> parse_assignment(const str_t &str) 
     auto *seq = &seqref;
     str_nc string_bufs[2] = {{0}};
     first_split(',', str, string_bufs);
-    bool sequence_empty = true;
     seq->e = parse_statement(string_bufs[0]);
     seq->next = parse_statement(string_bufs[1]);
     return ret;
@@ -362,7 +372,7 @@ constexpr allocated_ref<as_values::AST_elem> parse_assignment(const str_t &str) 
     // all parsing implemented in the constructor, so that
     // future things can just build this and expect it to work
     using namespace mutils::cstring;
-    if (contains(';',local_copy)) throw "Parse Error: Semicolons have no place here.  Did you mean ','? ";
+    if (contains(';',local_copy)) throw parse_error{"Parse Error: Semicolons have no place here.  Did you mean ','? "};
     allocator.top.e = parse_statement(local_copy);
   }
 };

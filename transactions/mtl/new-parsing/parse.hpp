@@ -7,7 +7,17 @@
 namespace myria {
 namespace mtl {
 namespace new_parse_phase {
-using Alloc = as_values::AST_Allocator<150>;
+
+struct parse_error : public std::logic_error
+{
+  template <typename... T>
+  parse_error(T&&... t)
+    : std::logic_error(std::forward<T>(t)...)
+  {
+  }
+};
+
+using Alloc = as_values::AST_Allocator<400>;
 
 template <typename string>
 struct parse
@@ -26,7 +36,7 @@ struct parse
     allocated_ref<as_values::AST_elem> ret = allocator.template allocate<as_values::AST_elem>();
     ret.get(allocator).template get_<as_values::BinOp>().is_this_elem = true;
     auto& ref = ret.get(allocator).template get_<as_values::BinOp>().t;
-    str_nc operands[2] = { 0 };
+    str_nc operands[2] = { { 0 } };
     last_split(cause, str, operands);
     ref.L = parse_expression(operands[0]);
     ref.R = parse_expression(operands[1]);
@@ -51,7 +61,6 @@ struct parse
         allocated_ref<as_values::AST_elem> ret = allocator.template allocate<as_values::AST_elem>();
         ret.get(allocator).template get_<as_values::Endorse>().is_this_elem = true;
         auto& ref = ret.get(allocator).template get_<as_values::Endorse>().t;
-        str_nc final_str = { 0 };
         ref.Hndl = parse_expression(split[0]);
         trim(ref.label.label, op_args);
         return ret;
@@ -61,7 +70,6 @@ struct parse
         allocated_ref<as_values::AST_elem> ret = allocator.template allocate<as_values::AST_elem>();
         ret.get(allocator).template get_<as_values::Ensure>().is_this_elem = true;
         auto& ref = ret.get(allocator).template get_<as_values::Ensure>().t;
-        str_nc final_str = { 0 };
         ref.Hndl = parse_expression(split[0]);
         trim(ref.label.label, op_args);
         return ret;
@@ -71,13 +79,12 @@ struct parse
         allocated_ref<as_values::AST_elem> ret = allocator.template allocate<as_values::AST_elem>();
         ret.get(allocator).template get_<as_values::IsValid>().is_this_elem = true;
         auto& ref = ret.get(allocator).template get_<as_values::IsValid>().t;
-        str_nc final_str = { 0 };
         ref.Hndl = parse_expression(split[0]);
         return ret;
       }
         // isValid
     }
-    throw "Internal Error: ran off the end";
+    throw parse_error{ "Internal Error: ran off the end finding builtin operations." };
   }
 
   constexpr allocated_ref<as_values::AST_elem> parse_args(const str_t& str)
@@ -126,7 +133,8 @@ struct parse
   }
 
   constexpr allocated_ref<as_values::AST_elem> parse_expr_operation(const str_t& str) { return parse_operation(str, false); }
-
+  /*
+   */
   constexpr allocated_ref<as_values::AST_elem> parse_fieldref(const str_t& str)
   {
     using namespace mutils;
@@ -138,11 +146,15 @@ struct parse
     {
       // error checking
       if (contains_paren(operands[1]))
-        throw "Parse error: We thought this was a fieldref, but it contains parens";
-      if (contains_outside_parens('.', operands[1]))
-        throw "Parse error: This should be a field, but it contains a '.', which is not allowed";
-      if (contains(' ', operands[1]))
-        throw "Parse error: a space snuck in here somehow";
+        throw parse_error{ "Parse error: We thought this was a fieldref, but it contains parens" };
+      if (contains_outside_parens(".", operands[1]))
+        throw parse_error{ "Parse error: This should be a fieldref, but it contains a '.', which is not allowed" };
+      if (contains_outside_parens("->", operands[1]))
+        throw parse_error{ "Parse error: This should be a fieldref, but it contains a '->', which is not allowed" };
+      if (contains_outside_parens("*", operands[1]))
+        throw parse_error{ "Parse error: This should be a fieldref, but it contains a '*', which is not allowed" };
+      if (contains_outside_parens(" ", operands[1]))
+        throw parse_error{ "Parse error: This should be a fieldref, but it contains a ' ', which is not allowed" };
     }
 
     allocated_ref<as_values::AST_elem> ret = allocator.template allocate<as_values::AST_elem>();
@@ -155,7 +167,7 @@ struct parse
     return ret;
   }
 
-  constexpr allocated_ref<as_values::AST_elem> parse_fieldptrref(const str_t& str, const char* cause)
+  constexpr allocated_ref<as_values::AST_elem> parse_fieldptrref(const str_t& str, const char*)
   {
     using namespace mutils;
     using namespace cstring;
@@ -166,11 +178,15 @@ struct parse
     {
       // error checking
       if (contains_paren(operands[1]))
-        throw "Parse error: We thought this should be a field, but it contains parens";
-      if (contains_outside_parens('.', operands[1]))
-        throw "Parse error: This should be a field, but it contains a '.', which is not allowed";
-      if (contains(' ', operands[1]))
-        throw "Parse error: a space snuck in here somehow";
+        throw parse_error{ "Parse error: We thought this was a fieldptrref, but it contains parens" };
+      if (contains_outside_parens(".", operands[1]))
+        throw parse_error{ "Parse error: This should be a fieldptrref, but it contains a '.', which is not allowed" };
+      if (contains_outside_parens("->", operands[1]))
+        throw parse_error{ "Parse error: This should be a fieldptrref, but it contains a '->', which is not allowed" };
+      if (contains_outside_parens("*", operands[1]))
+        throw parse_error{ "Parse error: This should be a fieldptrref, but it contains a '*', which is not allowed" };
+      if (contains_outside_parens(" ", operands[1]))
+        throw parse_error{ "Parse error: This should be a fieldptrref, but it contains a ' ', which is not allowed" };
     }
 
     allocated_ref<as_values::AST_elem> ret = allocator.template allocate<as_values::AST_elem>();
@@ -183,7 +199,7 @@ struct parse
     return ret;
   }
 
-  constexpr allocated_ref<as_values::AST_elem> parse_deref(const str_t& str, const char* cause)
+  constexpr allocated_ref<as_values::AST_elem> parse_deref(const str_t& str, const char*)
   {
     using namespace mutils;
     using namespace cstring;
@@ -224,11 +240,15 @@ struct parse
     {
       // error checking
       if (contains_paren(ref.Var))
-        throw "Parse error: We thought this should be a variable, but it contains parens";
-      if (contains_outside_parens('.', ref.Var))
-        throw "Parse error: This should be a variable, but it contains a '.', which is not allowed";
-      if (contains(' ', ref.Var))
-        throw "Parse error: a space snuck in here somehow";
+        throw parse_error{ "Parse error: We thought this was a variable access, but it contains parens" };
+      if (contains_outside_parens(".", ref.Var))
+        throw parse_error{ "Parse error: This should be a variable access, but it contains a '.', which is not allowed" };
+      if (contains_outside_parens("->", ref.Var))
+        throw parse_error{ "Parse error: This should be a variable access, but it contains a '->', which is not allowed" };
+      if (contains_outside_parens("*", ref.Var))
+        throw parse_error{ "Parse error: This should be a variable access, but it contains a '*', which is not allowed" };
+      if (contains_outside_parens(" ", ref.Var))
+        throw parse_error{ "Parse error: This should be a variable access, but it contains a ' ', which is not allowed" };
     }
     return ret;
   }
@@ -256,6 +276,14 @@ struct parse
       return parse_binop(str, "||");
     } else if (contains_outside_parens("!=", str)) {
       return parse_binop(str, "!=");
+    } else if (contains_outside_parens(">", str)) {
+      return parse_binop(str, ">");
+    } else if (contains_outside_parens("<", str)) {
+      return parse_binop(str, "<");
+    } else if (contains_outside_parens(">=", str)) {
+      return parse_binop(str, ">=");
+    } else if (contains_outside_parens("<=", str)) {
+      return parse_binop(str, "<=");
     } else if (contains_outside_parens(".", str)) {
       str_nc pretrim_splits[2] = { { 0 } };
       last_split(".", str, pretrim_splits);
@@ -291,7 +319,7 @@ struct parse
       else
         return parse_varref(atom);
     }
-    throw "Ran off the end!";
+    throw parse_error{ std::string{ "Parse Error:  Could not find Expression to match input of " } + str };
   }
 
   constexpr allocated_ref<as_values::AST_elem> parse_binding(const str_t& str)
@@ -429,16 +457,20 @@ struct parse
       return parse_statement(new_string);
     } else if (contains_paren(str)) {
       return parse_operation(str, true);
-    } else if (str[0] == 0) {
+    } else {
+      str_nc trimit = { 0 };
+      trim(trimit, str);
+      if (str[0] == ' ') {
 
-      allocated_ref<as_values::AST_elem> ret = allocator.template allocate<as_values::AST_elem>();
-      ret.get(allocator).template get_<as_values::Skip>().is_this_elem = true;
-      auto& sr = ret.get(allocator).template get_<as_values::Skip>().t;
-      ;
-      (void)sr;
-      return ret;
-    } else
-      throw "Ran off the end!";
+        allocated_ref<as_values::AST_elem> ret = allocator.template allocate<as_values::AST_elem>();
+        ret.get(allocator).template get_<as_values::Skip>().is_this_elem = true;
+        auto& sr = ret.get(allocator).template get_<as_values::Skip>().t;
+        ;
+        (void)sr;
+        return ret;
+      }
+    }
+    throw parse_error{ std::string{ "Parse Error:  Could not find Statement to match input of " } + str };
   }
 
   constexpr allocated_ref<as_values::AST_elem> parse_sequence(const str_t& str)
@@ -452,7 +484,6 @@ struct parse
     auto* seq = &seqref;
     str_nc string_bufs[2] = { { 0 } };
     first_split(',', str, string_bufs);
-    bool sequence_empty = true;
     seq->e = parse_statement(string_bufs[0]);
     seq->next = parse_statement(string_bufs[1]);
     return ret;
@@ -469,7 +500,7 @@ struct parse
     // future things can just build this and expect it to work
     using namespace mutils::cstring;
     if (contains(';', local_copy))
-      throw "Parse Error: Semicolons have no place here.  Did you mean ','? ";
+      throw parse_error{ "Parse Error: Semicolons have no place here.  Did you mean ','? " };
     allocator.top.e = parse_statement(local_copy);
   }
 };

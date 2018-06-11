@@ -36,21 +36,25 @@ template<typename T> struct array<T,1>{
 		return size;
 	}
 	constexpr T& operator[](std::size_t i){
+		(void)i;
 		assert(i == 0);
 		return hd[0];
 	}
 
 	constexpr const T& operator[](std::size_t i) const {
+		(void)i;
 		assert(i == 0);
 		return hd[0];
 	}
 	
 	constexpr T* ptr(std::size_t i){
+		(void) i;
 		assert(i == 0);
 		return hd;
 	}
 
 	constexpr const T* ptr(std::size_t i) const {
+		(void) i;
 		assert(i == 0);
 		return hd;
 	}
@@ -85,6 +89,7 @@ template<typename T, std::size_t _size> struct array {
 			}
 			else {
 				assert(false && "error: index out of bounds");
+				throw std::out_of_range{"Error: index out of bounds (constexpr array.hpp)"};
 			}
 		}
 	}
@@ -97,6 +102,7 @@ template<typename T, std::size_t _size> struct array {
 			}
 			else {
 				assert(false && "error: index out of bounds");
+				throw std::out_of_range{"Error: index out of bounds (constexpr array.hpp)"};
 			}
 		}
 	}
