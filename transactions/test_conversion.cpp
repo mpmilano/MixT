@@ -74,4 +74,6 @@ int main(){
 			  } else {if (hndl.isValid()){ret = 7} else {}},
 				return ret
 				   ).WITH(tstruct,tstruct2,hndl,hndl2);
+		std::cout << typename DECT(big_one)::transaction{} << std::endl;
+		
 }
