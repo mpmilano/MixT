@@ -145,8 +145,8 @@ struct parse
     last_split('.', trimmed, operands);
     {
       // error checking
-      if (contains_paren(operands[1]))
-        throw parse_error{ "Parse error: We thought this was a fieldref, but it contains parens" };
+      if (contains_space(operands[1]))
+        throw parse_error{ "Parse error: We thought this was a fieldref, but it contains whitespace" };
       if (contains_outside_parens(".", operands[1]))
         throw parse_error{ "Parse error: This should be a fieldref, but it contains a '.', which is not allowed" };
       if (contains_outside_parens("->", operands[1]))
@@ -177,8 +177,8 @@ struct parse
     last_split("->", trimmed, operands);
     {
       // error checking
-      if (contains_paren(operands[1]))
-        throw parse_error{ "Parse error: We thought this was a fieldptrref, but it contains parens" };
+      if (contains_space(operands[1]))
+        throw parse_error{ "Parse error: We thought this was a fieldptrref, but it contains whitespace" };
       if (contains_outside_parens(".", operands[1]))
         throw parse_error{ "Parse error: This should be a fieldptrref, but it contains a '.', which is not allowed" };
       if (contains_outside_parens("->", operands[1]))
@@ -239,8 +239,8 @@ struct parse
     trim(ref.Var, str);
     {
       // error checking
-      if (contains_paren(ref.Var))
-        throw parse_error{ "Parse error: We thought this was a variable access, but it contains parens" };
+      if (contains_space(ref.Var))
+        throw parse_error{ "Parse error: We thought this was a variable access, but it contains whitespace" };
       if (contains_outside_parens(".", ref.Var))
         throw parse_error{ "Parse error: This should be a variable access, but it contains a '.', which is not allowed" };
       if (contains_outside_parens("->", ref.Var))
@@ -276,8 +276,8 @@ struct parse
       return parse_binop(str, "||");
     } else if (contains_outside_parens("!=", str)) {
       return parse_binop(str, "!=");
-    } else if (contains_outside_parens(">", str)) {
-      return parse_binop(str, ">");
+    } else if (contains_outside_parens("> ", str)) {
+      return parse_binop(str, "> ");
     } else if (contains_outside_parens("<", str)) {
       return parse_binop(str, "<");
     } else if (contains_outside_parens(">=", str)) {
@@ -354,6 +354,24 @@ struct parse
     var.Body = parse_statement(let_components[1]);
     return ret;
   }
+
+  constexpr allocated_ref<as_values::AST_elem> parse_remote(const str_t& str)
+  {
+    using namespace mutils;
+    using namespace cstring;
+
+    allocated_ref<as_values::AST_elem> ret = allocator.template allocate<as_values::AST_elem>();
+    ret.get(allocator).template get_<as_values::LetRemote>().is_this_elem = true;
+    auto& remote = ret.get(allocator).template get_<as_values::LetRemote>().t;
+    str_nc let_expr = { 0 };
+    remove_first_word(let_expr, str);
+    str_nc let_components[2] = { { 0 } };
+    first_split(',', let_expr, let_components);
+    remote.Binding = parse_binding(let_components[0]);
+    remote.Body = parse_statement(let_components[1]);
+    return ret;
+  }
+
   constexpr allocated_ref<as_values::AST_elem> parse_return(const str_t& str)
   {
     using namespace mutils;
@@ -438,6 +456,8 @@ struct parse
     using namespace cstring;
     if (first_word_is("var", str)) {
       return parse_var(str);
+    } else if (first_word_is("remote", str)) {
+      return parse_remote(str);
     } else if (contains_outside_parens(',', str)) {
       return parse_sequence(str);
     } else if (contains_outside_parens("return", str)) {
@@ -460,7 +480,7 @@ struct parse
     } else {
       str_nc trimit = { 0 };
       trim(trimit, str);
-      if (str[0] == 0) {
+      if (trimit[0] == 0) {
 
         allocated_ref<as_values::AST_elem> ret = allocator.template allocate<as_values::AST_elem>();
         ret.get(allocator).template get_<as_values::Skip>().is_this_elem = true;
