@@ -215,8 +215,8 @@ static void print_ast(std::ostream& o, const Statement<Sequence<Seq...>>&, const
     return nullptr;
   };
   o << "{" << endl;
-  auto ignore = { nullptr, nullptr, print(Seq{})... };
-	(void)ignore;
+  (print(Seq{}),... );
+	(void)print;
   o << _tab << "}";
 }
 
