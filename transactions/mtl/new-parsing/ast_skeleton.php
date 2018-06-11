@@ -82,6 +82,10 @@ namespace as_types{
         echo $type->is_astnode_defn();
     }
     ?>
+    template<typename T>
+    struct is_astnode_Statement : public std::false_type{};
+    template<typename T>
+    struct is_astnode_Statement<Statement<T>> : public std::true_type{};
 }
 
 namespace as_values {

@@ -4,7 +4,7 @@ CPPFLAGS= -I$(PWD) -Wno-unused-local-typedefs --std=c++1z -DNUM_CAUSAL_GROUPS="4
 LDFLAGS=  --std=c++1z -lm -pthread -lpqxx -ftemplate-depth=10000
 object_files=Ends.o utils.o test_utils.o Basics.o Tracker.o Ostreams.o SerializationSupport.o SQLStore.o GSQLObject.o SQLConnection.o SQLTransaction.o SQL_internal_utils.o SQLLevels.o TransactionContext.o ServerSocket.o Socket.o eventfd.o epoll.o simple_rpc.o local_connection.o Tombstone.o ClockManager.o configuration_params.o run_result.o
 mailing_list_object_files=mailing_list_post_new_message.o mailing_list_add_new_user.o mailing_list_download_inbox.o mailing_list_create_group.o mailing_list_create_user.o mailing_list_example.o
-chosen_compiler=clang++-5.0 -ferror-limit=1
+chosen_compiler=clang++-5.0 -ferror-limit=1 -fconstexpr-steps=20048576
 all: $(object_files) 
 	@clang++ $(object_files)  -o test $(LDFLAGS)
 

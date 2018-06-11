@@ -9,7 +9,7 @@
     const char str[::mutils::cstring::str_len(#x) + 1]{#x};                    \
   };\
   return ::myria::mtl::pre_transaction_str<wrapper>{};\
-}
+}()
 
 #define WITH1(x) template with<::myria::mtl::value_with_stringname<DECT(x), MUTILS_STRING(x)>>()
 #define WITH2(x, y)                                                                                                                                            \

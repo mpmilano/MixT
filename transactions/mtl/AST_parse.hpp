@@ -367,6 +367,7 @@ struct Sequence
 template <typename... Body>
 struct Statement<Sequence<Body...>>
 {
+  using subseq = Sequence<Body...>;
 };
 
 template <typename Expr, char... name>

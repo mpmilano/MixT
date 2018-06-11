@@ -17,6 +17,7 @@
 #include "../mtl/insert_tracking.hpp"
 #include "../mtl/endorse_relabel.hpp"
 #include "../mtl/relabel.hpp"
+#include "new-parsing/parse.hpp"
 //*/
 namespace myria {
 namespace mtl {
@@ -106,10 +107,10 @@ struct transaction_struct<0, _previous_transaction_phases, split, bound_values..
   return o << split{};
 }
 
-template<typename wrapper> struct new_parsed{
-  static const constexpr parse<string> prev{};
+template<typename string> struct new_parsed{
+  static const constexpr new_parse_phase::parse<string> prev{};
   static constexpr auto parse_as_type() {
-    return as_values::as_type<flatten>();
+    return new_parse_phase::as_values::as_type<new_parsed>();
   }
   using parse_t = DECT(parse_as_type());
 };

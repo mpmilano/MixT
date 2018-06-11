@@ -6,6 +6,10 @@ namespace myria {
 namespace mtl {
 namespace parse_phase {
 
+template <typename AST, typename enable = std::enable_if_t<is_statement<AST>::value || is_expression<AST>::value>>
+std::ostream&
+operator<<(std::ostream& o, const AST& ast);
+
 template <typename v, typename e>
 void
 print_ast(std::ostream& o, const Binding<v, e>&)
@@ -60,7 +64,7 @@ print_ast(std::ostream& o, const Expression<BinOp<op, L, R>>&)
 
   template <typename Name, typename Hndl>
 void
-  print_ast(std::ostream& o, const Expression<Operation<Name, Hndl, operation_args_exprs<>, operation_args_varrefs<> > >&)
+  print_ast(std::ostream& o, const Operation<Name, Hndl, operation_args_exprs<>, operation_args_varrefs<> >&)
 {
   o << Hndl{} << "." << Name{} << "()";
 }
@@ -68,7 +72,7 @@ void
 	
 	template <typename Name, typename Hndl, typename... vfs>
 void
-print_ast(std::ostream& o, const Expression<Operation<Name, Hndl, operation_args_exprs<>, operation_args_varrefs<vfs...> >>&)
+print_ast(std::ostream& o, const Operation<Name, Hndl, operation_args_exprs<>, operation_args_varrefs<vfs...> >&)
 {
   o << Hndl{} << "." << Name{} << "(";
   ((o <<  "," << vfs{} ), ...);
@@ -77,13 +81,22 @@ print_ast(std::ostream& o, const Expression<Operation<Name, Hndl, operation_args
 
   template <typename Name, typename Hndl, typename vfs, typename a1, typename... args>
 void
-  print_ast(std::ostream& o, const Expression<Operation<Name, Hndl, operation_args_exprs<a1, args...>, vfs>>&)
+  print_ast(std::ostream& o, const Operation<Name, Hndl, operation_args_exprs<a1, args...>, vfs>&)
 {
   o << Hndl{} << "." << Name{} << "(" << a1{};
   ((o <<  "," << args{} ), ...);
   o << ")";
 }
 
+template<typename name, typename hndl, typename e1, typename e2>
+void print_ast(std::ostream& o, const Expression<Operation<name,hndl,e1,e2>>&){
+  print_ast(o,Operation<name,hndl,e1,e2>{});
+}
+
+template<typename name, typename hndl, typename e1, typename e2>
+void print_ast(std::ostream& o, const Statement<Operation<name,hndl,e1,e2>>&){
+  print_ast(o,Operation<name,hndl,e1,e2>{});
+}
 
   template<typename... args>
   void print_ast(std::ostream& o, const operation_args_exprs<args...>){
@@ -102,7 +115,7 @@ template <typename b, typename body>
 void
 print_ast(std::ostream& o, const Statement<Let<b, body>>&)
 {
-  o << "let " << b{} << " in "
+  o << "let "; print_ast(o, b{}); o << " in "
     << "{" << body{} << "}";
 }
 
@@ -110,7 +123,7 @@ template <typename b, typename body>
 void
 print_ast(std::ostream& o, const Statement<LetRemote<b, body>>&)
 {
-  o << "let remote " << b{} << " in "
+  o << "let remote "; print_ast(o, b{}) << " in "
     << "{" << body{} << "}";
 }
 
@@ -181,8 +194,8 @@ print_ast(std::ostream& o, Statement<Sequence<Seq...>>)
   o << "}";
 }
 
-template <typename AST, typename enable = std::enable_if_t<is_statement<AST>::value || is_expression<AST>::value>>
-auto&
+template <typename AST, typename>
+std::ostream&
 operator<<(std::ostream& o, const AST& ast)
 {
   print_ast(o, ast);

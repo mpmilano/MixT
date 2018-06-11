@@ -36,7 +36,7 @@ template <typename string> struct parse {
       str_nc final_str = {0};
       ref.Hndl = parse_expression(split[0]); ".
       ($arg !== "" ? 
-        "str_cpy(ref.$arg.label, op_args);" : "")."
+        "trim(ref.$arg.label, op_args);" : "")."
       return ret;}
       ";
     }?>
@@ -345,24 +345,11 @@ constexpr allocated_ref<as_values::AST_elem> parse_assignment(const str_t &str) 
     using namespace cstring;
     <?php echo alloc("ret","seqref","Sequence") ?>
     auto *seq = &seqref;
-    str_nc string_bufs[<?php echo $max_var_length ?>] = {{0}};
-    auto groups = split_outside_parens(',', str, string_bufs);
+    str_nc string_bufs[2] = {{0}};
+    first_split(',', str, string_bufs);
     bool sequence_empty = true;
-    assert(groups < <?php echo $max_var_length ?>);
-    assert(groups > 0);
-    for (auto i = 0u; i < groups; ++i){
-      seq->e = parse_statement(string_bufs[i]);
-      if ((i + 1) < groups){
-        <?php echo alloc("newret","seqref","Sequence")?>
-        seq->next = std::move(newret);
-        seq = &seqref;
-      }
-      else {
-        <?php echo alloc("skipref","voidref","Skip")?>
-        (void)voidref;
-        seq->next = std::move(skipref);
-      }
-    }
+    seq->e = parse_statement(string_bufs[0]);
+    seq->next = parse_statement(string_bufs[1]);
     return ret;
   }
 
