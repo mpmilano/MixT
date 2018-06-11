@@ -18,6 +18,7 @@
 #include "../mtl/endorse_relabel.hpp"
 #include "../mtl/relabel.hpp"
 #include "new-parsing/parse.hpp"
+#include "new-parsing/to-old-ast-parse.hpp"
 //*/
 namespace myria {
 namespace mtl {

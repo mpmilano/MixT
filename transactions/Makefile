@@ -44,15 +44,15 @@ test_rawsql: $(object_files) test_rawsql.cpp raw_sqlstore/RawSQLStore.hpp
 mailing_list_example.o: $(object_files) mailing_list_example.cpp
 	$(chosen_compiler) -c mailing_list_example.cpp $(CPPFLAGS) -ftemplate-depth=10000
 mailing_list_post_new_message.o: $(object_files) mailing_list_post_new_message.cpp mtl/run_phase.hpp
-	$(chosen_compiler)  -DUSE_PRECOMPILED -c mailing_list_post_new_message.cpp $(CPPFLAGS) -ftemplate-depth=10000
+	$(chosen_compiler)   -c mailing_list_post_new_message.cpp $(CPPFLAGS) -ftemplate-depth=10000
 mailing_list_download_inbox.o: $(object_files) mailing_list_download_inbox.cpp mtl/run_phase.hpp
-	$(chosen_compiler)  -DUSE_PRECOMPILED -c mailing_list_download_inbox.cpp $(CPPFLAGS) -ftemplate-depth=10000	
+	$(chosen_compiler)   -c mailing_list_download_inbox.cpp $(CPPFLAGS) -ftemplate-depth=10000	
 mailing_list_add_new_user.o: $(object_files) mailing_list_add_new_user.cpp mtl/run_phase.hpp
-	$(chosen_compiler)  -DUSE_PRECOMPILED -c mailing_list_add_new_user.cpp $(CPPFLAGS) -ftemplate-depth=10000
+	$(chosen_compiler)   -c mailing_list_add_new_user.cpp $(CPPFLAGS) -ftemplate-depth=10000
 mailing_list_create_user.o: $(object_files) mailing_list_create_user.cpp mtl/run_phase.hpp
-	$(chosen_compiler)  -DUSE_PRECOMPILED -c mailing_list_create_user.cpp $(CPPFLAGS) -ftemplate-depth=10000
+	$(chosen_compiler)   -c mailing_list_create_user.cpp $(CPPFLAGS) -ftemplate-depth=10000
 mailing_list_create_group.o: $(object_files) mailing_list_create_group.cpp mtl/run_phase.hpp
-	$(chosen_compiler)  -DUSE_PRECOMPILED -c mailing_list_create_group.cpp $(CPPFLAGS) -ftemplate-depth=10000
+	$(chosen_compiler)   -c mailing_list_create_group.cpp $(CPPFLAGS) -ftemplate-depth=10000
 test_endorse: $(object_files)
 	$(chosen_compiler) $(CPPFLAGS) $(LDFLAGS)  $(object_files) test_endorse.cpp -o /tmp/test
 debug_scratch: $(object_files)
