@@ -198,11 +198,6 @@ template <typename string> struct parse {
     using namespace cstring;
     str_nc str = {0};
     trim(str,_str);
-    if (str[0] == '(' && str[str_len(str)-1] == ')'){
-      str_nc next = {0};
-      next_paren_group(next,str);
-      return parse_expression(next);
-    }
     <?php echo parse_expr("binop","str","+","- ","* ","/","==","&&","||","!=",'> ','<','>=','<=') ?>
     if (contains_outside_parens(".",str)){
       str_nc pretrim_splits[2] = {{0}};
@@ -223,7 +218,11 @@ template <typename string> struct parse {
     }
     else <?php echo parse_expr("fieldptrref","str","->")?>
     <?php echo parse_expr("deref","str","*")?>
-    {
+    if (str[0] == '(' && str[str_len(str)-1] == ')'){
+      str_nc next = {0};
+      next_paren_group(next,str);
+      return parse_expression(next);
+    } else {
       //constants and variables here.
       str_nc atom = {0};
       trim(atom,str);

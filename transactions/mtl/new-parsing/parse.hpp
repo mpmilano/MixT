@@ -268,11 +268,6 @@ struct parse
     using namespace cstring;
     str_nc str = { 0 };
     trim(str, _str);
-    if (str[0] == '(' && str[str_len(str) - 1] == ')') {
-      str_nc next = { 0 };
-      next_paren_group(next, str);
-      return parse_expression(next);
-    }
     if (contains_outside_parens("+", str)) {
       return parse_binop(str, "+");
     } else if (contains_outside_parens("- ", str)) {
@@ -322,6 +317,10 @@ struct parse
       return parse_fieldptrref(str, "->");
     } else if (contains_outside_parens("*", str)) {
       return parse_deref(str, "*");
+    } else if (str[0] == '(' && str[str_len(str) - 1] == ')') {
+      str_nc next = { 0 };
+      next_paren_group(next, str);
+      return parse_expression(next);
     } else {
       // constants and variables here.
       str_nc atom = { 0 };
