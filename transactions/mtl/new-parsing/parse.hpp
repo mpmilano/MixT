@@ -268,7 +268,15 @@ struct parse
     using namespace cstring;
     str_nc str = { 0 };
     trim(str, _str);
-    if (contains_outside_parens("+", str)) {
+    if (streq("default list", str)) {
+      // this is a builtin, which apparently is allowed to have a space in it? silly past me
+
+      allocated_ref<as_values::AST_elem> ret = allocator.template allocate<as_values::AST_elem>();
+      ret.get(allocator).template get_<as_values::VarReference>().is_this_elem = true;
+      auto& ref = ret.get(allocator).template get_<as_values::VarReference>().t;
+      trim(ref.Var, str);
+      return ret;
+    } else if (contains_outside_parens("+", str)) {
       return parse_binop(str, "+");
     } else if (contains_outside_parens("- ", str)) {
       return parse_binop(str, "- ");

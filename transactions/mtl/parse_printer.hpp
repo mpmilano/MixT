@@ -123,7 +123,7 @@ template <typename b, typename body>
 void
 print_ast(std::ostream& o, const Statement<LetRemote<b, body>>&)
 {
-  o << "let remote "; print_ast(o, b{}) << " in "
+  o << "let remote "; print_ast(o, b{}); o << " in "
     << "{" << body{} << "}";
 }
 

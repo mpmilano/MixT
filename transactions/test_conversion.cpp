@@ -48,7 +48,7 @@ int main(){
   Store store;
   auto hndl = store.template newObject<int>(nullptr, 12,12);
   auto hndl2 = store.template newObject<test_struct>(nullptr,5,test_struct{});
-
+/*
     {WRAP(var iterator = users, interator.advance(), var b1 = 89.endorse(words).otherOp(more,words), var b2 = 4894.ensure(otherwords), b2 = 2341, var b3 = *b2.field.more.field->field.isValid(), if (true || false) {return b1} else {return b2}, while (iterator.isValid()) {iterator = iterator->next}, return b1)
     parse_phase::print_ast(std::cout,convert_to_old_parsed(new_parsed<wrapper>::parse_t{}));}
     constexpr auto big_one = TRANSACTION(var x = 3,
@@ -78,11 +78,14 @@ int main(){
 					 		std::cout << typename DECT(big_one)::transaction{} << std::endl;//*/
 		{
 			WRAP(
-			var sample_user_hndl = (g->value).users->value.ensure(causal),
-			var new_user = (*sample_user_hndl).ensure(causal),
-			/*break off the inbox after the first message (which is the same across all inboxes)*/
-			new_user.i->next = new_user.i->next.nulled().ensure(causal),
-			return sample_user_hndl.new(new_user))
+  var lst = default list,
+				var curr_msg_ptr = user_hndl->i,
+				while (curr_msg_ptr.isValid()){
+					lst.push_back(*curr_msg_ptr->value),
+					remote mutable = curr_msg_ptr,
+					curr_msg_ptr = curr_msg_ptr->next,
+					mutable.next = mutable.next.nulled()},
+				return lst)
 			parse_phase::print_ast(std::cout,convert_to_old_parsed(new_parsed<wrapper>::parse_t{}));
 		}
 		

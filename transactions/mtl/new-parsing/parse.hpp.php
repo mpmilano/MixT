@@ -198,7 +198,13 @@ template <typename string> struct parse {
     using namespace cstring;
     str_nc str = {0};
     trim(str,_str);
-    <?php echo parse_expr("binop","str","+","- ","* ","/","==","&&","||","!=",'> ','<','>=','<=') ?>
+    if (streq("default list",str)){
+      //this is a builtin, which apparently is allowed to have a space in it? silly past me
+      <?php echo alloc("ret", "ref","VarReference")?>
+      trim(ref.Var,str);
+      return ret;
+    }
+    else <?php echo parse_expr("binop","str","+","- ","* ","/","==","&&","||","!=",'> ','<','>=','<=') ?>
     if (contains_outside_parens(".",str)){
       str_nc pretrim_splits[2] = {{0}};
       last_split(".",str,pretrim_splits);
