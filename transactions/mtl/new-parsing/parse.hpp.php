@@ -342,7 +342,7 @@ constexpr allocated_ref<as_values::AST_elem> parse_assignment(const str_t &str) 
     else {
       str_nc trimit = {0};
       trim(trimit,str);
-      if (str[0] == ' '){
+      if (str[0] == 0){
         <?php echo alloc("ret","sr","Skip") ?>;
         (void) sr;
         return ret;

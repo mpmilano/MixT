@@ -460,7 +460,7 @@ struct parse
     } else {
       str_nc trimit = { 0 };
       trim(trimit, str);
-      if (str[0] == ' ') {
+      if (str[0] == 0) {
 
         allocated_ref<as_values::AST_elem> ret = allocator.template allocate<as_values::AST_elem>();
         ret.get(allocator).template get_<as_values::Skip>().is_this_elem = true;

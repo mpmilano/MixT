@@ -467,9 +467,9 @@ struct Skip : public Statement
 {
   // default constructor
   constexpr Skip(){};
-  constexpr Skip(Skip&& p) {}
+  constexpr Skip(Skip&&) {}
   // move-assignment
-  constexpr Skip& operator=(Skip&& p) { return *this; }
+  constexpr Skip& operator=(Skip&&) { return *this; }
 };
 } // namespace as_values
 
@@ -2022,7 +2022,7 @@ print(std::ostream& o, const Sequence& e, const Allocator& allocator)
 }
 template <typename Allocator>
 std::ostream&
-print(std::ostream& o, const Skip& e, const Allocator& allocator)
+print(std::ostream& o, const Skip&, const Allocator&)
 {
   o << "Skip{";
   return o << "}";
