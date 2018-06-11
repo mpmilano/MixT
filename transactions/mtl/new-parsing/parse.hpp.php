@@ -101,8 +101,8 @@ template <typename string> struct parse {
   }
 /*
 <?php function error_check($name, $where, ...$look_for){
-  $ret = "if (contains_paren($where)) throw parse_error{\"Parse error: We thought this was a $name, but it contains parens\"};";
-  $ret = "if (contains_space($where)) throw parse_error{\"Parse error: We thought this was a $name, but it contains whitespace\"};";
+  $ret = "if (contains_paren($where)) throw parse_error{\"Parse error: We thought this was a $name, but it contains parens\"};"
+  ."if (contains_space($where)) throw parse_error{\"Parse error: We thought this was a $name, but it contains whitespace\"};";
   foreach ($look_for as $target){
     $ret = $ret."if (contains_outside_parens(\"$target\",$where)) throw parse_error{\"Parse error: This should be a $name, but it contains a '$target', which is not allowed\"};";
   }
@@ -193,9 +193,16 @@ template <typename string> struct parse {
 } ?>
 */
 
-  constexpr allocated_ref<as_values::AST_elem> parse_expression(const str_t &str) {
+  constexpr allocated_ref<as_values::AST_elem> parse_expression(const str_t &_str) {
     using namespace mutils;
     using namespace cstring;
+    str_nc str = {0};
+    trim(str,_str);
+    if (str[0] == '(' && str[str_len(str)-1] == ')'){
+      str_nc next = {0};
+      next_paren_group(next,str);
+      return parse_expression(next);
+    }
     <?php echo parse_expr("binop","str","+","- ","* ","/","==","&&","||","!=",'> ','<','>=','<=') ?>
     if (contains_outside_parens(".",str)){
       str_nc pretrim_splits[2] = {{0}};

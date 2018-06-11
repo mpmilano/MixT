@@ -253,6 +253,23 @@ namespace as_values {
   }
 
   template<typename Allocator>
+  std::ostream& print(std::ostream &o, const Label& l, const Allocator&){
+    return o << "Label[" << l.label << "]";
+  }
+
+  template<typename Allocator>
+  std::ostream& print(std::ostream &o, const plain_array<allocated_ref<myria::mtl::new_parse_phase::as_values::AST_elem> > &arr, const Allocator& a){
+    o << "{";
+    for (auto& ref : arr){
+      if (ref){
+        print(o,ref,a);
+        o << ",";
+      }
+    }
+    return o << "}";
+  }
+
+  template<typename Allocator>
   std::ostream& print(std::ostream& o, const AST_elem& e, const Allocator &allocator){
     <?php 
     foreach ($types as $type){
