@@ -106,17 +106,24 @@ struct transaction_struct<0, _previous_transaction_phases, split, bound_values..
   return o << split{};
 }
 
-template <char... Str>
-struct pre_transaction_str<mutils::String<Str...>>
+template<typename wrapper> struct new_parsed{
+  static const constexpr parse<string> prev{};
+  static constexpr auto parse_as_type() {
+    return as_values::as_type<flatten>();
+  }
+  using parse_t = DECT(parse_as_type());
+};
+
+template <typename wrapper>
+struct pre_transaction_str
 {
-  using transaction_text = mutils::String<Str...>;
   template <typename label>
   using requires_tracking = typename label::requires_causal_tracking;
 
   template <typename... bound_values>
   constexpr static auto typecheck()
   {
-    using parsed_t = DECT(parse_statement(transaction_text{}));
+    using parsed_t = DECT(convert_to_old_parsed(typename new_parsed<wrapper>::parse_t{}));
     {
       using namespace parse_phase;
       using flattened_t = DECT(parse_phase::flatten_expressions(parsed_t{}));

@@ -1,0 +1,4 @@
+Current problem: Transaction macro expects to be a typename.  Probably the easiest way to deal with this is to change it and have it expect to be a value instead. 
+Then we can put it inside a constexpr lambda and forget about it. 
+
+TODO: make it expect a value.
