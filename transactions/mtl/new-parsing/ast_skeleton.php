@@ -104,7 +104,7 @@ static constexpr const DECT(prev_holder::prev.allocator) &allocator{prev_holder:
   };
 
 template<long budget, typename F>
-constexpr static auto as_type(std::enable_if_t<(budget > 0) && (budget < 50)>* = nullptr) {
+constexpr static auto as_type(std::enable_if_t<(budget > 0) && (budget <= 10000)>* = nullptr) {
   static_assert(budget > 0);
   if constexpr (budget > 0) {
     constexpr const AST_elem &e = F{}();
@@ -148,7 +148,7 @@ template <typename prev_holder> constexpr auto as_type() {
       return prev_holder::prev.allocator.top.e.get(prev_holder::prev.allocator);
     }
   };
-  return as_types::Statement<as_types::transaction<DECT(as_type_f<prev_holder>::template as_type<15,arg>()),prev_holder::prev.allocator.top.payload>>{};
+  return as_types::Statement<as_types::transaction<DECT(as_type_f<prev_holder>::template as_type<1000,arg>()),prev_holder::prev.allocator.top.payload>>{};
 }
 } // namespace as_values
 
