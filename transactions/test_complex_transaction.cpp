@@ -129,7 +129,7 @@ int main(){
 			    tstruct.b = x
 			  } else {if (hndl.isValid()){ret = 7} else {}},
 				return ret
-				   )::WITH(tstruct,tstruct2,hndl,hndl2);//*/
+				   ).WITH(tstruct,tstruct2,hndl,hndl2);//*/
   //txn.just_print_it();
 	/*
   constexpr 

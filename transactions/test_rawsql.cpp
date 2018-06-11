@@ -24,7 +24,7 @@ int main(){
 	auto hndl = test.get_handle(std::make_unique<int>(23));
 	sample_transactor st;
 	DeserializationManager<> dsm;
-	constexpr auto txn = TRANSACTION(hndl.sql_command(st))::WITH(hndl,st);
+	constexpr auto txn = TRANSACTION(hndl.sql_command(st)).WITH(hndl,st);
 	tracker::ClientTracker<> trk;
 	txn.run_local(trk, &dsm, hndl, st);
 }

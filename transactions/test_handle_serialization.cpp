@@ -33,12 +33,12 @@ int main(){
 	ctxn.store_commit();
 	stxn.~SQLContext();
 	ctxn.~SQLContext();
-	int b = TRANSACTION(return (*hndl) + (*dhndl))::RUN_LOCAL_WITH(ct,&dsm,hndl,dhndl);
+	int b = TRANSACTION(return (*hndl) + (*dhndl)).RUN_LOCAL_WITH(ct,&dsm,hndl,dhndl);
 	assert(b == 10);
 	auto degenerate_handle = *DECT(hndl)::from_bytes(&degenerate, buf);
 	char dgnbuf[degenerate_handle.bytes_size()];
 	degenerate_handle.to_bytes(dgnbuf);
 	auto rhndl = *DECT(hndl)::from_bytes(&dsm,dgnbuf);
-	int b2 = TRANSACTION(return (*hndl) + (*rhndl))::RUN_LOCAL_WITH(ct,&dsm,hndl,rhndl);
+	int b2 = TRANSACTION(return (*hndl) + (*rhndl)).RUN_LOCAL_WITH(ct,&dsm,hndl,rhndl);
 	assert(b2 == 10);
 }

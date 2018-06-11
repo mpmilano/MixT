@@ -36,8 +36,8 @@ int main() {
   //NOTE: should there be a flow from ih -> y = y?  YES argument: semantically deref of ih
   //happens before assignment and could fail.
   //No argument: this looks like a list of statements. It would be wrong to assume an ordering on them. 
-  constexpr auto txn1 = TRANSACTION(remote y = mih, remote x = ih, y = y)::WITH(ih,mih);
-  constexpr auto txn2 = TRANSACTION(remote ypre = mih, remote xpre = ih, var y = ypre, var x = xpre, y = y)::WITH(ih,mih);
+  constexpr auto txn1 = TRANSACTION(remote y = mih, remote x = ih, y = y).WITH(ih,mih);
+  constexpr auto txn2 = TRANSACTION(remote ypre = mih, remote xpre = ih, var y = ypre, var x = xpre, y = y).WITH(ih,mih);
   txn1.run_local(ct,ih,mih);
   txn2.run_local(ct,ih,mih);
   std::cout << txn1 << std::endl<< std::endl<< std::endl;

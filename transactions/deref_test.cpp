@@ -12,6 +12,6 @@ int main(){
 				   var y = *x,
 				   if (false) {return y}
 				   else {return (*tstruct->hndl) - 1})
-    ::WITH(tstruct);
+    .WITH(tstruct);
   std::cout << txn << std::endl;
 }

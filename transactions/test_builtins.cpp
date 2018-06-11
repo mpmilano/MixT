@@ -18,6 +18,6 @@ int main(){
 	using ClientTrk = ClientTracker<>;
   ClientTrk ct;
 	int three{3};
-	constexpr auto txn = TRANSACTION(var lst = default list, lst.push_back(three), return lst)::WITH(three);
+	constexpr auto txn = TRANSACTION(var lst = default list, lst.push_back(three), return lst).WITH(three);
 	std::cout << txn << std::endl;
 }

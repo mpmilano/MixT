@@ -22,7 +22,7 @@ namespace examples{
 					mutable.next = mutable.next.nulled()
 				},
 				return lst
-				)::WITH(user_hndl);
+				).WITH(user_hndl);
 #endif
 		using connections = typename DECT(ct.trk)::connection_references;
 		auto strong_connection = ct.get_relay<Level::strong>().lock();

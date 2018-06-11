@@ -9,7 +9,7 @@ namespace examples{
 #include "mailing_list_post_new_message.cpp.precompiled"
 			txn;
 #else
-		using pre_txn = TRANSACTION(
+		constexpr auto pre_txn = TRANSACTION(
 			var index = users,
 			/*iterate through the users list*/
 			while (index.isValid()) {
@@ -27,7 +27,7 @@ namespace examples{
 				derefd_user_msgs_tl.next = user_msgs_tl.new(new_msg_node)
 			}
 			);
-		auto txn = pre_txn::WITH(message_contents,users);
+		auto txn = pre_txn.WITH(message_contents,users);
 #endif
 		using namespace myria::mtl::typecheck_phase;
 		using namespace myria::mtl::split_phase;

@@ -7,7 +7,7 @@ using namespace mtl;
 using namespace tracker;
 
 constexpr auto mk_txn(const Handle<myria::Label<myria::bottom>,bool> &hndl){
-	return TRANSACTION(remote _hndl = hndl, _hndl= hndl.isValid())::WITH(hndl);
+	return TRANSACTION(remote _hndl = hndl, _hndl= hndl.isValid()).WITH(hndl);
 }
 
 int main(){

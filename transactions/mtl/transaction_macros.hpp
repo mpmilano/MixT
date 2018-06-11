@@ -43,7 +43,7 @@
 
 #define TRANSACTION_FUNCTION_WITH(x...) return (with_pre_operand_left:: WITH(x) +
 
-#define TRANSACTION_FUNCTION_TRANSACTION(x...) with_operand_right<TRANSACTION(x)>{}).run_local(ct,dsm,arg);                                                    \
+#define TRANSACTION_FUNCTION_TRANSACTION(x...) with_operand_right_f(TRANSACTION(x))).run_local(ct,dsm,arg);                                                    \
   }
 #define TRANSACTION_FUNCTION_ARGUMENT(_this)                                                                                                                   \
   (CT & ct, DSM * dsm, const T& _this)                                                                                                                         \

@@ -40,7 +40,7 @@ int main(){
 			lst_value = lst_value + accum
 		},
 		return accum
-		)::WITH(lst_ptr,log_ptr);
+		).WITH(lst_ptr,log_ptr);
 
 		txn.run_local(ct,lst_ptr,log_ptr);//*/
 		std::cout << txn << std::endl;

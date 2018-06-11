@@ -14,7 +14,7 @@ namespace examples {
 			/*break off the inbox after the first message (which is the same across all inboxes)*/
 			new_user.i->next = new_user.i->next.nulled().ensure(causal),
 			return sample_user_hndl.new(new_user);
-			)::WITH(g);
+			).WITH(g);
 
 #endif
 		using connections = typename DECT(ct.trk)::connection_references;

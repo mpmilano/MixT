@@ -30,8 +30,8 @@ int main(){
 	int_handle ih = store.template newObject<int>(nullptr,int_name,int_name);
 	using ClientTrk = ClientTracker<>;
 	ClientTrk ct;
-	assert(7 == TRANSACTION(return 3 + 4)::WITH(ih).run_local(ct,&dsm,ih));
-	assert(true == TRANSACTION(return ih.isValid())::WITH(ih).run_local(ct,&dsm,ih));
+	assert(7 == TRANSACTION(return 3 + 4).WITH(ih).run_local(ct,&dsm,ih));
+	assert(true == TRANSACTION(return ih.isValid()).WITH(ih).run_local(ct,&dsm,ih));
 	using int_handle_handle = typename Store::template TestingHandle<int_handle>;
 	constexpr int a_name = 43;
 	int_handle_handle a = store.template newObject<int_handle>(nullptr,a_name,store.template newObject<int>(nullptr,int_name,23));
@@ -45,12 +45,12 @@ int main(){
 	using tracked_t = DECT(insert_tracking_begin(inferred_t{}));
 	auto split = split_computation<tracked_t, type_binding<MUTILS_STRING(a),DECT(a),Label<top>, type_location::local > >();
 	std::cout << split << std::endl;//*/
-	TRANSACTION(a.noop(1,2,3,4))::WITH(a).run_local(ct,&dsm,a);
-	TRANSACTION((*a).noop(1,2,3,4))::WITH(a).run_local(ct,&dsm,a);
+	TRANSACTION(a.noop(1,2,3,4)).WITH(a).run_local(ct,&dsm,a);
+	TRANSACTION((*a).noop(1,2,3,4)).WITH(a).run_local(ct,&dsm,a);
 	{
 		std::cout << std::endl<< std::endl<< std::endl;
 		int_handle_handle a = store.template newObject<int_handle>(nullptr,a_name,store.template newObject<int>(nullptr,int_name,23));
-		constexpr auto remote_bind_txn = TRANSACTION(remote b = a, remote c = b, remote d = b, c = 4, return d)::WITH(a);
+		constexpr auto remote_bind_txn = TRANSACTION(remote b = a, remote c = b, remote d = b, c = 4, return d).WITH(a);
 		std::cout << remote_bind_txn << std::endl;
 		assert(remote_bind_txn.run_local(ct,&dsm,a) == 4);
 	}

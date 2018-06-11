@@ -45,7 +45,7 @@ int main(){
   Hndl2 hndl2 = si.template existingObject<int>(nullptr, 13476);
 	constexpr auto txn = TRANSACTION(
 		remote y = hndl2, remote x = hndl1, x = y, return x)
-		::WITH(hndl1,hndl2);
+		.WITH(hndl1,hndl2);
   std::cout << txn << std::endl;
   using ClientTrk = ClientTracker<Label<strong>, Label<causal> >;
   ClientTrk ctrk;

@@ -20,7 +20,7 @@ namespace examples{
 			new_user_node.next = curr_user->next,
 			remote mutable_alias = curr_user,
 			mutable_alias.next = curr_user.new(new_user_node)
-			)::WITH(newbie,users);
+			).WITH(newbie,users);
 
 #endif
 		using connections = typename DECT(ct.trk)::connection_references;

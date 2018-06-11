@@ -16,7 +16,7 @@ namespace examples {
 			new_grouplist_node.value = new_group,
 			g->next = g.new(new_grouplist_node),
 			return new_group
-			)::WITH(g);
+			).WITH(g);
 
 #endif
 		using connections = typename DECT(ct.trk)::connection_references;

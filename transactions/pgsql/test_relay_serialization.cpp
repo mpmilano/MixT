@@ -33,8 +33,8 @@ int main(){
 	DeserializationManager dsm{&ss,&inherit};
 	constexpr auto name = 478446/2;
 	Hndl hndl = ss.template existingObject<int>(name);
-	constexpr auto incr_trans = TRANSACTION(Hndl::label::int_id::value,let remote x = hndl in {x = x + 1})::WITH(hndl);
-	constexpr auto read_trans = TRANSACTION(150 + Hndl::label::int_id::value,let remote x = hndl in {})::WITH(hndl);
+	constexpr auto incr_trans = TRANSACTION(Hndl::label::int_id::value,let remote x = hndl in {x = x + 1}).WITH(hndl);
+	constexpr auto read_trans = TRANSACTION(150 + Hndl::label::int_id::value,let remote x = hndl in {}).WITH(hndl);
 	cout << incr_trans << endl;
 	cout << read_trans << endl;
 	using store = typename DECT(incr_trans)::all_store;

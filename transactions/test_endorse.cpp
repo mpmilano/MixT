@@ -75,9 +75,9 @@ int main() {
     }
   }
   auto fourteen =
-      TRANSACTION(return (seven * 2).endorse(mid))::WITH(seven).run_local(
+      TRANSACTION(return (seven * 2).endorse(mid)).WITH(seven).run_local(
           ct, seven);
-  auto fourty_six = TRANSACTION(remote x = ih, return (x * 2).endorse(mid))::WITH(ih).run_local(ct, ih);
+  auto fourty_six = TRANSACTION(remote x = ih, return (x * 2).endorse(mid)).WITH(ih).run_local(ct, ih);
   assert(fourteen == seven * 2);
   assert(fourty_six == 46);
   std::cout << fourty_six << std::endl;

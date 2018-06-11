@@ -46,8 +46,8 @@ template<typename l, typename r> struct transactions {
 
 
 constexpr auto build_transactions(const Hndl &hndl){
-  constexpr auto incr_trans = TRANSACTION(remote x = hndl, x = x + 1)::WITH(hndl);
-  constexpr auto read_trans = TRANSACTION(remote x = hndl, {})::WITH(hndl);
+  constexpr auto incr_trans = TRANSACTION(remote x = hndl, x = x + 1).WITH(hndl);
+  constexpr auto read_trans = TRANSACTION(remote x = hndl, {}).WITH(hndl);
   return transactions<DECT(incr_trans), DECT(read_trans)>{};
 }
 

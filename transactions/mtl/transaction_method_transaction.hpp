@@ -1,6 +1,6 @@
 #pragma once
 
-#define TRANSACTION_METHOD_TRANSACTION_LOCAL2(x...) with_operand_right<TRANSACTION(x)>{}); return txn.run_local(ct,dsm,arg1,arg2,capture1,capture2);                                   \
+#define TRANSACTION_METHOD_TRANSACTION_LOCAL2(x...) with_operand_right_f(TRANSACTION(x))); return txn.run_local(ct,dsm,arg1,arg2,capture1,capture2);                                   \
   }                                                                                                                                                            \
   }                                                                                                                                                            \
   ;                                                                                                                                                            \
@@ -8,7 +8,7 @@
   }
 
 
-#define TRANSACTION_METHOD_TRANSACTION_LOCAL1(x...) with_operand_right<TRANSACTION(x)>{});  return txn.run_local(ct,dsm,arg1,arg2,capture1);                                   \
+#define TRANSACTION_METHOD_TRANSACTION_LOCAL1(x...) with_operand_right_f(TRANSACTION(x)){});  return txn.run_local(ct,dsm,arg1,arg2,capture1);                                   \
   }                                                                                                                                                            \
   }                                                                                                                                                            \
   ;                                                                                                                                                            \
@@ -16,7 +16,7 @@
   }
 
 
-#define TRANSACTION_METHOD_TRANSACTION1(x...) with_operand_right<TRANSACTION(x)>{}); return txn.run_remote(ct,dsm,_this_handle,arg1);                                   \
+#define TRANSACTION_METHOD_TRANSACTION1(x...) with_operand_right_f(TRANSACTION(x))); return txn.run_remote(ct,dsm,_this_handle,arg1);                                   \
   }                                                                                                                                                            \
 
 

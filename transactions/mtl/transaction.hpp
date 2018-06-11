@@ -183,7 +183,13 @@ struct pre_transaction_str
 template<typename pre_txn_str>
 struct with_operand_right{
     constexpr with_operand_right(){}
+    constexpr with_operand_right(const pre_txn_str&){}
 };
+
+template<typename pre_txn_str>
+constexpr with_operand_right<pre_txn_str> with_operand_right_f(const pre_txn_str&){
+  return with_operand_right<pre_txn_str>{};
+}
 
 template<typename... with_args>
 struct with_pre_operand_left{

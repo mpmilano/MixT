@@ -30,7 +30,7 @@ struct election {
 	void vote(candidate_handle candidate){
 		return TRANSACTION(
 			candidate.increment()
-			)::RUN_LOCAL_WITH(ct,candidate);
+			).RUN_LOCAL_WITH(ct,candidate);
 	}
 
 	auto tally(){
@@ -38,7 +38,7 @@ struct election {
 			var lst = default list,
 			lst.push_back(candidate1.consistent_read().endorse(mid)),
 			lst.push_back(candidate2.consistent_read().endorse(mid)),
-			return lst)::RUN_LOCAL_WITH(ct,candidate1,candidate2);
+			return lst).RUN_LOCAL_WITH(ct,candidate1,candidate2);
 	}
 	
 };
