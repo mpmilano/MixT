@@ -300,6 +300,12 @@ struct parse
       return parse_binop(str, ">=");
     } else if (contains_outside_parens("<=", str)) {
       return parse_binop(str, "<=");
+    } else if (prefix_equal("*", str)) {
+      if (contains_outside_parens("*", str)) {
+        return parse_deref(str, "*");
+      } else {
+        assert(false && "then where is it?");
+      }
     } else if (contains_outside_parens(".", str)) {
       str_nc pretrim_splits[2] = { { 0 } };
       last_split(".", str, pretrim_splits);
@@ -323,8 +329,6 @@ struct parse
       }
     } else if (contains_outside_parens("->", str)) {
       return parse_fieldptrref(str, "->");
-    } else if (contains_outside_parens("*", str)) {
-      return parse_deref(str, "*");
     } else if (str[0] == '(' && str[str_len(str) - 1] == ')') {
       str_nc next = { 0 };
       next_paren_group(next, str);

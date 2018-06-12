@@ -16,7 +16,7 @@ namespace examples{
 				var lst = default list,
 				var curr_msg_ptr = user_hndl->i,
 				while (curr_msg_ptr.isValid()){
-					lst.push_back(*(curr_msg_ptr->value)),
+					lst.push_back(*curr_msg_ptr->value),
 					remote mutable = curr_msg_ptr,
 					curr_msg_ptr = curr_msg_ptr->next,
 					mutable.next = mutable.next.nulled()

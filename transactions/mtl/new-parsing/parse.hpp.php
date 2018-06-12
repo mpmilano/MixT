@@ -205,7 +205,11 @@ template <typename string> struct parse {
       return ret;
     }
     else <?php echo parse_expr("binop","str","+","- ","* ","/","==","&&","||","!=",'> ','<','>=','<=') ?>
-    if (contains_outside_parens(".",str)){
+    if (prefix_equal("*",str)){
+      <?php echo parse_expr("deref","str","*")?>
+      {assert(false && "then where is it?");}
+    }
+    else if (contains_outside_parens(".",str)){
       str_nc pretrim_splits[2] = {{0}};
       last_split(".",str,pretrim_splits);
       str_nc splits[2] = {{0}};
@@ -223,7 +227,6 @@ template <typename string> struct parse {
       }
     }
     else <?php echo parse_expr("fieldptrref","str","->")?>
-    <?php echo parse_expr("deref","str","*")?>
     if (str[0] == '(' && str[str_len(str)-1] == ')'){
       str_nc next = {0};
       next_paren_group(next,str);
