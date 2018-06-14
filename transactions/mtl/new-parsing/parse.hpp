@@ -312,6 +312,7 @@ struct parse
       } else {
         assert(false && "then where is it?");
       }
+      throw parse_error{ "internal parse error: * started a string, but wasn't in the string somehow." };
     } else if (contains_outside_parens(".", str)) {
       str_nc pretrim_splits[2] = { { 0 } };
       last_split(".", str, pretrim_splits);
