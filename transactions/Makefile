@@ -1,6 +1,6 @@
 TRANS_DIR= `pwd`/
 IP_quad=`ifconfig | sed s/broadcast.*//g | tr " " "\n" | grep 128.84 | rev | sed s/'\..*'//g | rev`
-CPPFLAGS= -I$(PWD) -Wno-unused-local-typedefs --std=c++1z -DNUM_CAUSAL_GROUPS="4" -DMY_IP=\"$(MY_IP)\" -DMAX_THREADS=$(MAX_THREADS) -DIP_QUAD=$(IP_quad) -DSTRONG_REMOTE_IP=\"$(STRONG_REMOTE_IP)\" -DCAUSAL_GROUP=$(causalGroup) -DCAUSAL_REMOTE_IP_1=\"$(CAUSAL_REMOTE_IP_1)\" -DCAUSAL_REMOTE_IP_2=\"$(CAUSAL_REMOTE_IP_2)\" -Wall -Werror -Wextra  -O2 -fPIC 
+CPPFLAGS= -I$(PWD) -Wno-unused-local-typedefs --std=c++1z -DNUM_CAUSAL_GROUPS="4" -DMY_IP=\"$(MY_IP)\" -DMAX_THREADS=$(MAX_THREADS) -DIP_QUAD=$(IP_quad) -DSTRONG_REMOTE_IP=\"$(STRONG_REMOTE_IP)\" -DCAUSAL_GROUP=$(causalGroup) -DCAUSAL_REMOTE_IP_1=\"$(CAUSAL_REMOTE_IP_1)\" -DCAUSAL_REMOTE_IP_2=\"$(CAUSAL_REMOTE_IP_2)\" -Wall -Werror -Wextra  -O2 -fPIC -DNDEBUG
 LDFLAGS=  --std=c++1z -lm -pthread -lpqxx -ftemplate-depth=10000
 object_files=Ends.o utils.o test_utils.o Basics.o Tracker.o Ostreams.o SerializationSupport.o SQLStore.o GSQLObject.o SQLConnection.o SQLTransaction.o SQL_internal_utils.o SQLLevels.o TransactionContext.o ServerSocket.o Socket.o eventfd.o epoll.o simple_rpc.o local_connection.o Tombstone.o ClockManager.o configuration_params.o run_result.o
 mailing_list_object_files=mailing_list_post_new_message.o mailing_list_add_new_user.o mailing_list_download_inbox.o mailing_list_create_group.o mailing_list_create_user.o mailing_list_example.o
@@ -44,15 +44,15 @@ test_rawsql: $(object_files) test_rawsql.cpp raw_sqlstore/RawSQLStore.hpp
 mailing_list_example.o: $(object_files) mailing_list_example.cpp
 	$(chosen_compiler) -c mailing_list_example.cpp $(CPPFLAGS) -ftemplate-depth=10000
 mailing_list_post_new_message.o: $(object_files) mailing_list_post_new_message.cpp mtl/run_phase.hpp
-	$(chosen_compiler)   -c mailing_list_post_new_message.cpp $(CPPFLAGS) -ftemplate-depth=10000
+	$(chosen_compiler) -DUSE_PRECOMPILED -c mailing_list_post_new_message.cpp $(CPPFLAGS) -ftemplate-depth=10000
 mailing_list_download_inbox.o: $(object_files) mailing_list_download_inbox.cpp mtl/run_phase.hpp
-	$(chosen_compiler)   -c mailing_list_download_inbox.cpp $(CPPFLAGS) -ftemplate-depth=10000	
+	$(chosen_compiler) -DUSE_PRECOMPILED -c mailing_list_download_inbox.cpp $(CPPFLAGS) -ftemplate-depth=10000	
 mailing_list_add_new_user.o: $(object_files) mailing_list_add_new_user.cpp mtl/run_phase.hpp
-	$(chosen_compiler)   -c mailing_list_add_new_user.cpp $(CPPFLAGS) -ftemplate-depth=10000
+	$(chosen_compiler) -DUSE_PRECOMPILED -c mailing_list_add_new_user.cpp $(CPPFLAGS) -ftemplate-depth=10000
 mailing_list_create_user.o: $(object_files) mailing_list_create_user.cpp mtl/run_phase.hpp
-	$(chosen_compiler)   -c mailing_list_create_user.cpp $(CPPFLAGS) -ftemplate-depth=10000
+	$(chosen_compiler) -DUSE_PRECOMPILED -c mailing_list_create_user.cpp $(CPPFLAGS) -ftemplate-depth=10000
 mailing_list_create_group.o: $(object_files) mailing_list_create_group.cpp mtl/run_phase.hpp
-	$(chosen_compiler)   -c mailing_list_create_group.cpp $(CPPFLAGS) -ftemplate-depth=10000
+	$(chosen_compiler) -DUSE_PRECOMPILED -c mailing_list_create_group.cpp $(CPPFLAGS) -ftemplate-depth=10000
 test_endorse: $(object_files)
 	$(chosen_compiler) $(CPPFLAGS) $(LDFLAGS)  $(object_files) test_endorse.cpp -o /tmp/test
 debug_scratch: $(object_files)
