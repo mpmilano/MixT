@@ -6,7 +6,7 @@ object_files=Ends.o utils.o test_utils.o Basics.o Tracker.o Ostreams.o Serializa
 mailing_list_object_files=mailing_list_post_new_message.o mailing_list_add_new_user.o mailing_list_download_inbox.o mailing_list_create_group.o mailing_list_create_user.o mailing_list_example.o
 chosen_compiler=clang++-5.0 -ferror-limit=1 -fconstexpr-steps=40048576
 all: $(object_files) 
-	@clang++ $(object_files)  -o test $(LDFLAGS)
+	@echo "Do not use this target.  Look in the makefile for valid targets"
 
 sample_arrival_intervals: utils.o test_utils.o
 	$(chosen_compiler) $(CPPFLAGS) $(LDFLAGS) utils.o test_utils.o sample_arrival_intervals.cpp -o sample
