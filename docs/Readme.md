@@ -6,7 +6,7 @@ Welcome to MixT!  Whether you're here because you happened to see my recent [PLD
 So what's this MixT thing all about, anyway?
 --------------------------------------------
 
-MixT is a domain-specific programming langauges for writing transactions, embedded into C++.  What makes MixT unique is its approach to consistency and transaction isolation: rather than associate consistency with operations, MixT __associates consistency with data__ and expects programmers to use __multiple consistency models__ in the same application.  MixT transactions compile down to a sequence of **standard, single-consistency transactions** appropriate for execution on any number of NoSQL/NeqSQL datastores.  To use MixT, [define an interface](somewhere) for your datastore, [write a few transactions](somewhere else),  and you're off to the races! 
+MixT is a domain-specific programming langauges for writing transactions, embedded into C++.  What makes MixT unique is its approach to consistency and transaction isolation: rather than associate consistency with operations, MixT __associates consistency with data__ and expects programmers to use __multiple consistency models__ in the same application.  MixT transactions compile down to a sequence of **standard, single-consistency transactions** appropriate for execution on any number of NoSQL/NeqSQL datastores.  To use MixT, [define an interface](https://github.com/mpmilano/MixT/blob/master/transactions/testing_store/TestingStore.hpp) for your datastore, [write a few transactions](https://github.com/mpmilano/MixT/blob/master/transactions/logging_example.cpp),  and you're off to the races! 
 
 Shouldn't I really just pick one consistency model?
 ---------------------------------------------
