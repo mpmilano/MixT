@@ -1,7 +1,7 @@
 MixT: An embedded, domain-specific language for Mixed-Consistency Transactions
 ==============================================================================
 
-Welcome to MixT!  Whether you're here because you happened to see my recent [PLDI Talk](https://pldi18.sigplan.org/event/pldi-2018-papers-mixt-a-language-for-mixing-consistency-in-geodistributed-transactions), [paper](https://dl.acm.org/citation.cfm?id=3192375), or happened to find it in some other way, I hope this website gives you a good idea of what to expect.  [The code](https://github.com/mpmilano/MixT/edit) is first and foremost a research artifact; some difficulties building and using this artifact are to be expected, and documentation beyond setup and "hello world" is spare.  I am happy to provide any help required; send me a message via e-mail, on github, or by filing an issue against this repository.
+Welcome to MixT!  Whether you're here because you happened to see my recent [PLDI Talk](https://pldi18.sigplan.org/event/pldi-2018-papers-mixt-a-language-for-mixing-consistency-in-geodistributed-transactions), [paper](https://dl.acm.org/citation.cfm?id=3192375), or happened to find it in some other way, I hope this website gives you a good idea of what to expect.  [The code](https://github.com/mpmilano/MixT) is first and foremost a research artifact; some difficulties building and using this artifact are to be expected, and documentation beyond setup and "hello world" is spare.  I am happy to provide any help required; send me a message via e-mail, on github, or by filing an issue against this repository.
 
 So what's this MixT thing all about, anyway?
 --------------------------------------------
