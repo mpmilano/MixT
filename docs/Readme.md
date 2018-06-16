@@ -6,7 +6,19 @@ Welcome to MixT!  Whether you're here because you happened to see my recent [PLD
 So what's this MixT thing all about, anyway?
 --------------------------------------------
 
-MixT is a domain-specific programming langauges for writing transactions, embedded into C++.  What makes MixT unique is its approach to consistency and transaction isolation: rather than associate consistency with operations, MixT __associates consistency with data__ and expects programmers to use __multiple consistency models__ in the same application.  MixT transactions compile down to a sequence of **standard, single-consistency transactions** appropriate for execution on any number of SQL/NoSQL/NewSQL datastores.  To use MixT, [define an interface](https://github.com/mpmilano/MixT/blob/master/transactions/testing_store/TestingStore.hpp) for your datastore, [write a few transactions](https://github.com/mpmilano/MixT/blob/master/transactions/logging_example.cpp),  and you're off to the races! 
+MixT is a domain-specific programming langauge for writing transactions, embedded into C++.  What makes MixT unique is its approach to consistency and transaction isolation: rather than associate consistency with operations, MixT __associates consistency with data__ and expects programmers to use __multiple consistency models__ in the same application.  With MixT:
+
+- Transactions compile down to a sequence of **standard, single-consistency transactions** appropriate for execution on any number of SQL/NoSQL/NewSQL datastores.  
+
+ - An **information-flow type system** keeps your consistent data safe from corruption by less-consistent data.
+ 
+  - You can use **multiple consistency models** even within a **single** transaction.
+  
+  - A single transaction can execute across **multiple independent datastores**, while still **preserving write atomicity**.
+  
+   - Transactions are **expressive**; you can define **custom operations** as methods, use while-loops and if-statements, and generally write code that looks and feels like the surrounding C++. For full details on the allowed syntax, please check [the paper](https://dl.acm.org/citation.cfm?id=3192375) (open access link, no paywall). 
+
+To use MixT, [define an interface](https://github.com/mpmilano/MixT/blob/master/transactions/testing_store/TestingStore.hpp) for your datastore, [write a few transactions](https://github.com/mpmilano/MixT/blob/master/transactions/logging_example.cpp),  and you're off to the races! 
 
 Shouldn't I really just pick one consistency model?
 ---------------------------------------------
