@@ -17,6 +17,7 @@ namespace examples {
 			g->next = g.new(new_grouplist_node),
 			return new_group
 			).WITH(g);
+		txn.print();
 
 #endif
 		using connections = typename DECT(ct.trk)::connection_references;

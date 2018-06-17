@@ -21,6 +21,7 @@ namespace examples{
 			remote mutable_alias = curr_user,
 			mutable_alias.next = curr_user.new(new_user_node)
 			).WITH(newbie,users);
+		txn.print();
 
 #endif
 		using connections = typename DECT(ct.trk)::connection_references;

@@ -22,7 +22,7 @@ namespace examples{
 	struct mailing_list_state;
 	
 	using StrongStore = SQLStore<Level::strong>;
-	using CausalStore = SQLStore<Level::causal>;
+	using CausalStore = SQLStore<Level::strong>;
 
 using message = std::string;
 

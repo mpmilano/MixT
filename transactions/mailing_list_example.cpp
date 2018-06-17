@@ -33,7 +33,7 @@ user_hndl& mailing_list_state::pick_user(client<mailing_list_state>& c){
 	auto choice = (1 + (mutils::int_rand() % (40000-1)))*3;
 	auto &ret = my_users.at(choice/3);
 	if (!ret){
-		auto hndl = c.sc.template existingObject<user>(nullptr,choice);
+		auto hndl = c.ss.template existingObject<user>(nullptr,choice + 3000000);
 		ret.reset(new DECT(hndl){hndl});
 	}
 	return *ret;
@@ -50,7 +50,8 @@ void mailing_list_state::create_group(client<mailing_list_state>& c){
 }
 
 template<typename SC, typename Ctxn>
-auto create_user(std::size_t name, client<mailing_list_state>& c, SC &sc, Ctxn& ctxn){
+auto create_user(std::size_t _name, client<mailing_list_state>& c, SC &sc, Ctxn& ctxn){
+	const auto name = _name + 1000000;
 	auto ret = sc.template newObject<user>(ctxn,name*3,user{sc.newObject(ctxn,name*3-2,inbox_str{
 					sc.template newObject<message>(ctxn,name*3-1,"This is the head message. it will remain"),
 						sc.template nullObject<inbox_str>()})});
@@ -73,17 +74,14 @@ Prev create_and_append_group(std::size_t name, client<mailing_list_state>& c, co
 mailing_list_state::mailing_list_state(client<mailing_list_state>& c)
 #ifdef INITIALIZE_MAILING_LIST_EXAMPLE	
 {
-	auto &sc = c.sc;
 	auto &ss = c.ss;
-	auto _ctxn = sc.begin_transaction(whendebug("initial test setup"));
 	auto _stxn = ss.begin_transaction(whendebug("initial test setup"));
 	this->groups_linked_list = [&]{
-		auto ctxn = dynamic_cast<typename DECT(sc)::SQLContext*>(_ctxn.get());
 		auto stxn = dynamic_cast<typename DECT(ss)::SQLContext*>(_stxn.get());
 		auto hd = ss.template nullObject<groups_node>();
 		for (int i = 1u; i < 40000; ++i){
 			try {
-				hd = create_and_append_group(i,c,::create_user(i,c,sc,ctxn),ss,stxn,hd);
+				hd = create_and_append_group(i,c,::create_user(i,c,ss,stxn),ss,stxn,hd);
 			}
 			catch(const std::exception &e ){
 				std::cerr << "We have failed to insert: " << i << " because " << e.what() << std::endl;
@@ -93,7 +91,6 @@ mailing_list_state::mailing_list_state(client<mailing_list_state>& c)
 		return hd;
 	}();
 	_stxn->store_commit();
-	_ctxn->store_commit();
 	throw "done";
 }
 #else

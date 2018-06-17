@@ -23,6 +23,7 @@ namespace examples{
 				},
 				return lst
 				).WITH(user_hndl);
+		txn.print();
 #endif
 		using connections = typename DECT(ct.trk)::connection_references;
 		auto strong_connection = ct.get_relay<Level::strong>().lock();

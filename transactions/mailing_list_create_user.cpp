@@ -9,12 +9,13 @@ namespace examples {
 				txn;
 #else
 		constexpr auto txn = TRANSACTION(
-			var sample_user_hndl = (g->value).users->value.ensure(causal),
-			var new_user = (*sample_user_hndl).ensure(causal),
+			var sample_user_hndl = (g->value).users->value,
+			var new_user = (*sample_user_hndl),
 			/*break off the inbox after the first message (which is the same across all inboxes)*/
-			new_user.i->next = new_user.i->next.nulled().ensure(causal),
+			new_user.i->next = new_user.i->next.nulled(),
 			return sample_user_hndl.new(new_user)
 			).WITH(g);
+		txn.print();
 
 #endif
 		using connections = typename DECT(ct.trk)::connection_references;
