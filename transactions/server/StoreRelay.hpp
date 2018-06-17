@@ -114,9 +114,9 @@ namespace server {
         receiver(port, start_session_wrapper) {
 #ifndef NDEBUG
 		std::cout << "Registered transactions (nontrack) " << std::endl;
-		(std::cout << typename phases::normal_phase{}, ...);
+		((std::cout << typename phases::normal_phase{}), ...);
 		std::cout << "Registered transactions (track) " << std::endl;
-		(std::cout << typename phases::tracked_phase{}, ...);
+		 ((std::cout << typename phases::tracked_phase{}), ...);
 #endif
 	}
 };
