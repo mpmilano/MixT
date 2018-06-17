@@ -422,13 +422,20 @@ std::ostream& operator<<(std::ostream& o, substitution<newl, oldl>)
 
 }
 
+template<typename from, typename to, typename...>
+constexpr bool check_flow_violation(){
+	static_assert(from::flows_to(to{}),"Error: flow violation.  The type parameters on this function contain an explanation.");
+	return from::flows_to(to{});
+}
+
   template <typename _ast, typename label, typename to, typename why, typename... constraint>
   constexpr auto replace_all_less_than(constraints<must_flow_to<label, to, why>, constraint...>)
 {
   // this is an actual concrete pair of labels,
   // so let's check them.
   using intermediate = DECT(replace_all_less_than<_ast, label>(constraints<constraint...>{}));
-  static_assert(mutils::useful_static_assert<label::flows_to(to{}),why,typename intermediate::ast>(), "Error: flow violation");
+	static_assert(check_flow_violation<label,to,why>(),"error: flow violation");
+  //static_assert(mutils::useful_static_assert<label::flows_to(to{}),label,to,why,typename intermediate::ast>(), "Error: flow violation");
   struct ret
   {
     constexpr ret() = default;
