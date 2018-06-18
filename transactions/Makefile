@@ -35,6 +35,9 @@ voting_example: $(object_files)
 mailing_list_test: $(object_files) $(mailing_list_object_files)
 	$(chosen_compiler) $(CPPFLAGS) $(LDFLAGS)  $(object_files) $(mailing_list_object_files) mailing_list_test.cpp -o mailing_list_test
 
+print_txn: $(object_files) $(mailing_list_object_files)
+	$(chosen_compiler) $(CPPFLAGS) $(LDFLAGS)  $(object_files) $(mailing_list_object_files) print_txn.cpp -o print_txn
+
 test_mailing_list: $(object_files) $(mailing_list_object_files) test_mailing_list.cpp
 	$(chosen_compiler) $(CPPFLAGS) $(LDFLAGS)  $(object_files) $(mailing_list_object_files) test_mailing_list.cpp -o test_mailing_list
 test_handle_serialization: $(object_files) test_handle_serialization.cpp
