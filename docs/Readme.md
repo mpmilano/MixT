@@ -3,6 +3,7 @@ MixT: An embedded, domain-specific language for Mixed-Consistency Transactions
 
 Welcome to MixT!  Whether you're here because you happened to see my recent [PLDI Talk](https://pldi18.sigplan.org/event/pldi-2018-papers-mixt-a-language-for-mixing-consistency-in-geodistributed-transactions), [paper](https://dl.acm.org/citation.cfm?id=3192375), or happened to find it in some other way, Welcome! 
 
+[MixT logo](mix-tea.png)
 
 So what's this MixT thing all about, anyway?
 --------------------------------------------
